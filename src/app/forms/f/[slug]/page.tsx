@@ -7,7 +7,16 @@ import { Button } from '@/components/ui/button';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { SignaturePad } from '@/components/forms/signature-pad';
 import { Tooltip } from '@/components/ui/tooltip';
-import { WIDTH_CLASS, parseObject, parseOptions, isEmptyValue, evaluateCondition, type PublicFormField as PublicField, type PublicFormDefinition } from '@/lib/form-utils';
+import {
+  WIDTH_CLASS,
+  parseObject,
+  parseOptions,
+  parseChoiceOptions,
+  isEmptyValue,
+  evaluateCondition,
+  type PublicFormField as PublicField,
+  type PublicFormDefinition,
+} from '@/lib/form-utils';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { cn } from '@/lib/utils';
 import DOMPurify from 'dompurify';
@@ -22,6 +31,18 @@ type UploadStatus = {
   fileName: string;
   mimeType: string;
   sizeBytes: number;
+};
+
+type RepeatSectionConfig = {
+  id: string;
+  minItems: number;
+  maxItems: number | null;
+  addLabel: string;
+};
+
+type ChoiceAnswerEntry = {
+  value: string;
+  detailText: string;
 };
 
 function normalizeOptionalText(value: unknown, maxLength: number): string | null {
@@ -64,6 +85,170 @@ function isValidHttpUrl(value: string | null): value is string {
   }
 }
 
+function isRepeatStartMarker(field: PublicField): boolean {
+  return field.type === 'PAGE_BREAK' && field.inputType === 'repeat_start';
+}
+
+function isRepeatEndMarker(field: PublicField): boolean {
+  return field.type === 'PAGE_BREAK' && field.inputType === 'repeat_end';
+}
+
+function getRepeatSectionConfig(startField: PublicField): RepeatSectionConfig {
+  const validation = parseObject(startField.validation);
+  const minItemsRaw = typeof validation?.repeatMinItems === 'number' ? Math.trunc(validation.repeatMinItems) : 1;
+  const maxItemsRaw = typeof validation?.repeatMaxItems === 'number' ? Math.trunc(validation.repeatMaxItems) : null;
+  const minItems = Math.max(1, Math.min(50, minItemsRaw));
+  const maxItems = maxItemsRaw === null ? null : Math.max(minItems, Math.min(50, maxItemsRaw));
+  const addLabelRaw = typeof validation?.repeatAddLabel === 'string' ? validation.repeatAddLabel.trim() : '';
+
+  return {
+    id: startField.id || startField.key,
+    minItems,
+    maxItems,
+    addLabel: addLabelRaw || 'Add row',
+  };
+}
+
+function getFieldErrorKey(fieldKey: string, rowIndex?: number): string {
+  return rowIndex === undefined ? fieldKey : `${fieldKey}__${rowIndex}`;
+}
+
+function parseChoiceAnswerEntry(value: unknown): ChoiceAnswerEntry | null {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    return { value: trimmed, detailText: '' };
+  }
+
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const answerValue = typeof record.value === 'string' ? record.value.trim() : '';
+  if (!answerValue) return null;
+  const detailText = typeof record.detailText === 'string' ? record.detailText : '';
+  return { value: answerValue, detailText };
+}
+
+function parseChoiceAnswerEntries(value: unknown): ChoiceAnswerEntry[] {
+  if (!Array.isArray(value)) {
+    const entry = parseChoiceAnswerEntry(value);
+    return entry ? [entry] : [];
+  }
+
+  const entries: ChoiceAnswerEntry[] = [];
+  for (const item of value) {
+    const entry = parseChoiceAnswerEntry(item);
+    if (!entry) continue;
+    entries.push(entry);
+  }
+  return entries;
+}
+
+function getChoiceDetailValidationError(
+  fieldLabel: string,
+  options: ReturnType<typeof parseChoiceOptions>,
+  value: unknown
+): string | null {
+  const entries = parseChoiceAnswerEntries(value);
+  if (entries.length === 0) return null;
+
+  for (const entry of entries) {
+    const option = options.find((candidate) => candidate.value === entry.value);
+    if (!option?.allowTextInput) continue;
+    if (entry.detailText.trim().length > 0) continue;
+    return `${fieldLabel}: please specify for ${option.label}`;
+  }
+
+  return null;
+}
+
+type RenderGroup = {
+  kind: 'group';
+  heading: PublicField | null;
+  fields: PublicField[];
+};
+
+type RenderStandalone = {
+  kind: 'standalone';
+  field: PublicField;
+};
+
+type RenderItem = RenderGroup | RenderStandalone;
+
+const CARD_ELIGIBLE_TYPES = new Set([
+  'SHORT_TEXT',
+  'LONG_TEXT',
+  'DROPDOWN',
+  'SINGLE_CHOICE',
+  'MULTIPLE_CHOICE',
+  'FILE_UPLOAD',
+  'SIGNATURE',
+]);
+
+function buildRenderGroups(fields: PublicField[]): RenderItem[] {
+  const items: RenderItem[] = [];
+  let currentGroup: RenderGroup | null = null;
+
+  function flushGroup() {
+    if (currentGroup && currentGroup.fields.length > 0) {
+      items.push(currentGroup);
+    }
+    currentGroup = null;
+  }
+
+  for (const field of fields) {
+    // Always-null renders — pass through as standalone
+    if (field.type === 'HIDDEN' || field.type === 'PAGE_BREAK') {
+      items.push({ kind: 'standalone', field });
+      continue;
+    }
+
+    // Repeat markers are standalone
+    if (field.key?.startsWith('__repeat_start__') || field.key?.startsWith('__repeat_end__')) {
+      flushGroup();
+      items.push({ kind: 'standalone', field });
+      continue;
+    }
+
+    // Heading blocks: flush current group, become next group's heading
+    if (
+      field.type === 'PARAGRAPH' &&
+      (field.inputType === 'info_heading_1' ||
+        field.inputType === 'info_heading_2' ||
+        field.inputType === 'info_heading_3')
+    ) {
+      flushGroup();
+      currentGroup = { kind: 'group', heading: field, fields: [] };
+      continue;
+    }
+
+    // Other PARAGRAPH variants and HTML: standalone
+    if (field.type === 'PARAGRAPH' || field.type === 'HTML') {
+      flushGroup();
+      items.push({ kind: 'standalone', field });
+      continue;
+    }
+
+    // Card-eligible: add to current group (start one if needed)
+    if (CARD_ELIGIBLE_TYPES.has(field.type)) {
+      if (!currentGroup) {
+        currentGroup = { kind: 'group', heading: null, fields: [] };
+      }
+      currentGroup.fields.push(field);
+      continue;
+    }
+
+    // Anything else: standalone
+    flushGroup();
+    items.push({ kind: 'standalone', field });
+  }
+
+  flushGroup();
+  return items;
+}
+
 export default function PublicFormPage() {
   const params = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
@@ -84,6 +269,7 @@ export default function PublicFormPage() {
   const [pdfEmailAccessToken, setPdfEmailAccessToken] = useState<string | null>(null);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [uploadedByFieldKey, setUploadedByFieldKey] = useState<Record<string, UploadStatus>>({});
+  const [repeatSectionCounts, setRepeatSectionCounts] = useState<Record<string, number>>({});
   const [pdfRecipientEmail, setPdfRecipientEmail] = useState('');
   const [emailFeedback, setEmailFeedback] = useState<string | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -140,12 +326,28 @@ export default function PublicFormPage() {
     };
   }, [slug, isPreview, previewFormId, previewTenantId]);
 
+  useEffect(() => {
+    if (!form) {
+      setRepeatSectionCounts({});
+      return;
+    }
+
+    const nextCounts: Record<string, number> = {};
+    for (const field of form.fields) {
+      if (!isRepeatStartMarker(field)) continue;
+      const config = getRepeatSectionConfig(field);
+      nextCounts[config.id] = config.minItems;
+    }
+
+    setRepeatSectionCounts(nextCounts);
+  }, [form]);
+
   const pages = useMemo(() => {
     if (!form) return [] as PublicField[][];
 
     const result: PublicField[][] = [[]];
     for (const field of form.fields) {
-      if (field.type === 'PAGE_BREAK') {
+      if (field.type === 'PAGE_BREAK' && !isRepeatStartMarker(field) && !isRepeatEndMarker(field)) {
         result.push([]);
       } else {
         result[result.length - 1].push(field);
@@ -169,14 +371,145 @@ export default function PublicFormPage() {
     });
   }
 
+  function getRepeatFieldValue(fieldKey: string, rowIndex: number): unknown {
+    const value = answers[fieldKey];
+    if (!Array.isArray(value)) return undefined;
+    return value[rowIndex];
+  }
+
+  function setRepeatFieldValue(fieldKey: string, rowIndex: number, value: unknown) {
+    setAnswers((prev) => {
+      const existing = Array.isArray(prev[fieldKey]) ? [...(prev[fieldKey] as unknown[])] : [];
+      existing[rowIndex] = value;
+      return { ...prev, [fieldKey]: existing };
+    });
+
+    const errorKey = getFieldErrorKey(fieldKey, rowIndex);
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[errorKey];
+      return next;
+    });
+  }
+
+  function addRepeatSectionRow(sectionId: string, maxItems: number | null) {
+    setRepeatSectionCounts((prev) => {
+      const current = prev[sectionId] || 1;
+      if (maxItems !== null && current >= maxItems) return prev;
+      return { ...prev, [sectionId]: current + 1 };
+    });
+  }
+
+  function removeRepeatSectionRow(sectionId: string, rowIndex: number, sectionFields: PublicField[]) {
+    const fieldKeys = sectionFields.map((field) => field.key);
+
+    setAnswers((prev) => {
+      const next = { ...prev };
+      for (const fieldKey of fieldKeys) {
+        const value = next[fieldKey];
+        if (!Array.isArray(value)) continue;
+        const rows = [...value];
+        rows.splice(rowIndex, 1);
+        next[fieldKey] = rows;
+      }
+      return next;
+    });
+
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        if (fieldKeys.some((fieldKey) => key === fieldKey || key.startsWith(`${fieldKey}__`))) {
+          delete next[key];
+        }
+      }
+      return next;
+    });
+
+    setRepeatSectionCounts((prev) => {
+      const current = prev[sectionId] || 1;
+      return { ...prev, [sectionId]: Math.max(1, current - 1) };
+    });
+  }
+
   function validateCurrentPage(): boolean {
     const nextErrors: Record<string, string> = {};
+    const pageFields = pages[currentPage] || [];
 
-    for (const field of visibleFields) {
+    for (let index = 0; index < pageFields.length; index += 1) {
+      const field = pageFields[index];
+
+      if (isRepeatStartMarker(field)) {
+        const sectionConfig = getRepeatSectionConfig(field);
+        const sectionFields: PublicField[] = [];
+        let cursor = index + 1;
+        while (cursor < pageFields.length && !isRepeatEndMarker(pageFields[cursor])) {
+          if (pageFields[cursor].type !== 'PAGE_BREAK') {
+            sectionFields.push(pageFields[cursor]);
+          }
+          cursor += 1;
+        }
+        index = cursor;
+
+        const repeatCount = repeatSectionCounts[sectionConfig.id] || sectionConfig.minItems;
+        for (let rowIndex = 0; rowIndex < repeatCount; rowIndex += 1) {
+          const rowAnswers: Record<string, unknown> = {};
+          for (const [answerKey, answerValue] of Object.entries(answers)) {
+            if (Array.isArray(answerValue)) {
+              rowAnswers[answerKey] = answerValue[rowIndex];
+            } else {
+              rowAnswers[answerKey] = answerValue;
+            }
+          }
+
+          for (const sectionField of sectionFields) {
+            if (!evaluateCondition(sectionField.condition, rowAnswers)) continue;
+            const value = getRepeatFieldValue(sectionField.key, rowIndex);
+            const errorKey = getFieldErrorKey(sectionField.key, rowIndex);
+
+            if (
+              sectionField.isRequired &&
+              sectionField.type !== 'PARAGRAPH' &&
+              sectionField.type !== 'HTML' &&
+              sectionField.type !== 'HIDDEN' &&
+              isEmptyValue(value)
+            ) {
+              nextErrors[errorKey] = `${sectionField.label || sectionField.key} is required`;
+              continue;
+            }
+
+            if (
+              sectionField.type === 'SHORT_TEXT' &&
+              sectionField.inputType === 'email' &&
+              typeof value === 'string' &&
+              value.trim().length > 0 &&
+              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+            ) {
+              nextErrors[errorKey] = `${sectionField.label || sectionField.key} must be a valid email`;
+              continue;
+            }
+
+            if (sectionField.type === 'SINGLE_CHOICE' || sectionField.type === 'MULTIPLE_CHOICE') {
+              const detailError = getChoiceDetailValidationError(
+                sectionField.label || sectionField.key,
+                parseChoiceOptions(sectionField.options),
+                value
+              );
+              if (detailError) {
+                nextErrors[errorKey] = detailError;
+              }
+            }
+          }
+        }
+        continue;
+      }
+
+      if (isRepeatEndMarker(field) || field.type === 'PAGE_BREAK') continue;
+
       const value = answers[field.key];
+      const errorKey = getFieldErrorKey(field.key);
 
       if (field.isRequired && field.type !== 'PARAGRAPH' && field.type !== 'HTML' && field.type !== 'HIDDEN' && isEmptyValue(value)) {
-        nextErrors[field.key] = `${field.label || field.key} is required`;
+        nextErrors[errorKey] = `${field.label || field.key} is required`;
         continue;
       }
 
@@ -187,7 +520,19 @@ export default function PublicFormPage() {
         value.trim().length > 0 &&
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
       ) {
-        nextErrors[field.key] = `${field.label || field.key} must be a valid email`;
+        nextErrors[errorKey] = `${field.label || field.key} must be a valid email`;
+        continue;
+      }
+
+      if (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') {
+        const detailError = getChoiceDetailValidationError(
+          field.label || field.key,
+          parseChoiceOptions(field.options),
+          value
+        );
+        if (detailError) {
+          nextErrors[errorKey] = detailError;
+        }
       }
     }
 
@@ -264,7 +609,8 @@ export default function PublicFormPage() {
       const uploadIds = fileUploadKeys
         .flatMap((key) => {
           const value = answers[key];
-          return Array.isArray(value) ? value : [];
+          if (!Array.isArray(value)) return [];
+          return value.flatMap((item) => (Array.isArray(item) ? item : [item]));
         })
         .filter((value): value is string => typeof value === 'string' && UUID_PATTERN.test(value));
 
@@ -462,6 +808,8 @@ export default function PublicFormPage() {
     );
   }
 
+  const hiddenFieldIds = new Set<string>();
+
   return (
     <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8')}>
       <div className={cn('mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
@@ -494,11 +842,13 @@ export default function PublicFormPage() {
         )}
 
         <div className={cn('grid grid-cols-12 gap-4', !isEmbed && 'mt-4')}>
-          {visibleFields.map((field) => {
-            const options = parseOptions(field.options);
+          {visibleFields.map((field, fieldIndex) => {
+            if (hiddenFieldIds.has(field.id)) return null;
+            const dropdownOptions = parseOptions(field.options);
+            const choiceOptions = parseChoiceOptions(field.options);
             const widthClass = WIDTH_CLASS[field.layoutWidth] || WIDTH_CLASS[100];
             const value = answers[field.key];
-            const errorText = fieldErrors[field.key];
+            const errorText = fieldErrors[getFieldErrorKey(field.key)];
             const uploadStatus = uploadedByFieldKey[field.key];
             const infoType = field.type === 'PARAGRAPH'
               ? (field.inputType === 'info_image' || field.inputType === 'info_url' ? field.inputType : 'info_text')
@@ -514,6 +864,291 @@ export default function PublicFormPage() {
             const useDateSelector = field.type === 'SHORT_TEXT' && field.inputType === 'date';
             const showTooltip = isTooltipEnabled(field);
             const tooltipText = showTooltip ? field.helpText!.trim() : null;
+
+            if (isRepeatEndMarker(field)) return null;
+
+            if (isRepeatStartMarker(field)) {
+              const sectionFields: PublicField[] = [];
+              let cursor = fieldIndex + 1;
+
+              while (cursor < visibleFields.length) {
+                const candidate = visibleFields[cursor];
+                if (isRepeatEndMarker(candidate)) {
+                  hiddenFieldIds.add(candidate.id);
+                  break;
+                }
+                if (isRepeatStartMarker(candidate)) {
+                  break;
+                }
+                hiddenFieldIds.add(candidate.id);
+                if (candidate.type !== 'PAGE_BREAK') {
+                  sectionFields.push(candidate);
+                }
+                cursor += 1;
+              }
+
+              const sectionConfig = getRepeatSectionConfig(field);
+              const sectionId = sectionConfig.id;
+              const rowCount = repeatSectionCounts[sectionId] || sectionConfig.minItems;
+              const canAddRow = sectionConfig.maxItems === null || rowCount < sectionConfig.maxItems;
+              const sectionTitle = field.label?.trim() || 'Dynamic section';
+
+              return (
+                <div key={field.id} className="col-span-12">
+                  <div className="rounded-xl border border-border-primary/60 bg-white p-4 shadow-sm">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <h3 className="text-sm font-semibold text-text-primary">{sectionTitle}</h3>
+                        {field.subtext && <p className="text-xs text-text-secondary">{field.subtext}</p>}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => addRepeatSectionRow(sectionId, sectionConfig.maxItems)}
+                        disabled={!canAddRow}
+                      >
+                        {sectionConfig.addLabel}
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {Array.from({ length: rowCount }).map((_, rowIndex) => (
+                        <div key={`${sectionId}-row-${rowIndex}`} className="rounded-lg border border-border-primary/50 bg-background-primary/40 p-3">
+                          <div className="mb-3 flex items-center justify-between">
+                            <span className="text-xs font-medium text-text-secondary">Card {rowIndex + 1}</span>
+                            {rowCount > sectionConfig.minItems && (
+                              <button
+                                type="button"
+                                onClick={() => removeRepeatSectionRow(sectionId, rowIndex, sectionFields)}
+                                className="text-xs text-text-secondary underline hover:text-text-primary"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-12 gap-3">
+                            {sectionFields.map((sectionField) => {
+                              const sectionWidthClass = WIDTH_CLASS[sectionField.layoutWidth] || WIDTH_CLASS[100];
+                              const sectionValue = getRepeatFieldValue(sectionField.key, rowIndex);
+                              const sectionErrorText = fieldErrors[getFieldErrorKey(sectionField.key, rowIndex)];
+                              const sectionDropdownOptions = parseOptions(sectionField.options);
+                              const sectionChoiceOptions = parseChoiceOptions(sectionField.options);
+                              const sectionFieldDomId = `repeat-${toDomSafeId(sectionId)}-${rowIndex}-${toDomSafeId(sectionField.id || sectionField.key)}`;
+                              const sectionControlId = `${sectionFieldDomId}-control`;
+                              const sectionLabelId = `${sectionFieldDomId}-label`;
+                              const sectionHintId = sectionField.subtext ? `${sectionFieldDomId}-hint` : undefined;
+                              const sectionErrorId = sectionErrorText ? `${sectionFieldDomId}-error` : undefined;
+                              const sectionDescribedBy = [sectionHintId, sectionErrorId].filter(Boolean).join(' ') || undefined;
+                              const sectionLabel = sectionField.label || sectionField.key;
+                              const sectionUseDateSelector = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'date';
+
+                              if (sectionField.type === 'HIDDEN') return null;
+
+                              return (
+                                <div key={`${sectionField.id}-${rowIndex}`} className={sectionWidthClass}>
+                                  {!sectionField.hideLabel && (
+                                    <label
+                                      htmlFor={sectionControlId}
+                                      id={sectionLabelId}
+                                      className="mb-1.5 block text-xs font-medium text-text-secondary"
+                                    >
+                                      {sectionLabel}
+                                      {sectionField.isRequired && <span className="text-oak-primary"> *</span>}
+                                    </label>
+                                  )}
+                                  {sectionField.subtext && (
+                                    <p id={sectionHintId} className="mb-2 text-xs text-text-muted">{sectionField.subtext}</p>
+                                  )}
+
+                                  {sectionField.type === 'SHORT_TEXT' && !sectionUseDateSelector && (
+                                    <input
+                                      id={sectionControlId}
+                                      type={sectionField.inputType === 'phone' ? 'tel' : sectionField.inputType || 'text'}
+                                      value={typeof sectionValue === 'string' ? sectionValue : ''}
+                                      onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
+                                      placeholder={sectionField.placeholder || ''}
+                                      readOnly={sectionField.isReadOnly}
+                                      aria-invalid={sectionErrorText ? 'true' : undefined}
+                                      aria-describedby={sectionDescribedBy}
+                                      className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
+                                    />
+                                  )}
+
+                                  {sectionUseDateSelector && (
+                                    <SingleDateInput
+                                      value={typeof sectionValue === 'string' ? sectionValue : ''}
+                                      onChange={(next) => setRepeatFieldValue(sectionField.key, rowIndex, next)}
+                                      placeholder={sectionField.placeholder || 'dd/mm/yyyy'}
+                                      disabled={sectionField.isReadOnly}
+                                      required={sectionField.isRequired}
+                                      error={sectionErrorText}
+                                      ariaLabel={sectionField.hideLabel ? sectionLabel : undefined}
+                                      className="w-full"
+                                    />
+                                  )}
+
+                                  {sectionField.type === 'LONG_TEXT' && (
+                                    <textarea
+                                      id={sectionControlId}
+                                      value={typeof sectionValue === 'string' ? sectionValue : ''}
+                                      onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
+                                      placeholder={sectionField.placeholder || ''}
+                                      readOnly={sectionField.isReadOnly}
+                                      aria-invalid={sectionErrorText ? 'true' : undefined}
+                                      aria-describedby={sectionDescribedBy}
+                                      className="w-full min-h-24 rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
+                                    />
+                                  )}
+
+                                  {sectionField.type === 'DROPDOWN' && (
+                                    <SearchableSelect
+                                      options={sectionDropdownOptions.map((opt) => ({ value: opt, label: opt }))}
+                                      value={typeof sectionValue === 'string' ? sectionValue : ''}
+                                      onChange={(val) => setRepeatFieldValue(sectionField.key, rowIndex, val)}
+                                      placeholder="Select an option"
+                                      clearable={false}
+                                      showKeyboardHints={false}
+                                      containerClassName="h-10"
+                                    />
+                                  )}
+
+                                  {sectionField.type === 'SINGLE_CHOICE' && (
+                                    <fieldset className="space-y-1.5">
+                                      {sectionChoiceOptions.map((option, optionIndex) => {
+                                        const selectedEntry = parseChoiceAnswerEntry(sectionValue);
+                                        const isSelected = selectedEntry?.value === option.value;
+                                        const optionId = `${sectionFieldDomId}-option-${optionIndex}`;
+                                        return (
+                                          <div key={`${option.value}-${optionIndex}`} className="space-y-1.5">
+                                            <label htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
+                                              <input
+                                                id={optionId}
+                                                type="radio"
+                                                name={`${sectionField.key}-${rowIndex}`}
+                                                checked={isSelected}
+                                                onChange={() => setRepeatFieldValue(
+                                                  sectionField.key,
+                                                  rowIndex,
+                                                  option.allowTextInput
+                                                    ? { value: option.value, detailText: selectedEntry?.value === option.value ? selectedEntry.detailText : '' }
+                                                    : option.value
+                                                )}
+                                              />
+                                              {option.label}
+                                            </label>
+                                            {option.allowTextInput && isSelected && (
+                                              <input
+                                                type="text"
+                                                value={selectedEntry?.detailText || ''}
+                                                onChange={(e) => setRepeatFieldValue(
+                                                  sectionField.key,
+                                                  rowIndex,
+                                                  { value: option.value, detailText: e.target.value }
+                                                )}
+                                                placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                                                className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
+                                              />
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </fieldset>
+                                  )}
+
+                                  {sectionField.type === 'MULTIPLE_CHOICE' && (
+                                    <fieldset className="space-y-1.5">
+                                      {sectionChoiceOptions.map((option, optionIndex) => {
+                                        const currentEntries = parseChoiceAnswerEntries(sectionValue);
+                                        const currentValues = currentEntries.map((entry) => entry.value);
+                                        const entry = currentEntries.find((candidate) => candidate.value === option.value);
+                                        const optionId = `${sectionFieldDomId}-option-${optionIndex}-${toDomSafeId(option.value)}`;
+                                        return (
+                                          <div key={`${option.value}-${optionIndex}`} className="space-y-1.5">
+                                            <label htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
+                                              <input
+                                                id={optionId}
+                                                type="checkbox"
+                                                checked={currentValues.includes(option.value)}
+                                                onChange={(e) => {
+                                                  if (e.target.checked) {
+                                                    const next = [
+                                                      ...currentEntries.filter((candidate) => candidate.value !== option.value),
+                                                      { value: option.value, detailText: option.allowTextInput ? '' : '' },
+                                                    ];
+                                                    const nextValue = next.map((candidate) => (
+                                                      option.allowTextInput && candidate.value === option.value
+                                                        ? { value: candidate.value, detailText: candidate.detailText }
+                                                        : (candidate.detailText ? { value: candidate.value, detailText: candidate.detailText } : candidate.value)
+                                                    ));
+                                                    setRepeatFieldValue(sectionField.key, rowIndex, nextValue);
+                                                  } else {
+                                                    const next = currentEntries
+                                                      .filter((candidate) => candidate.value !== option.value)
+                                                      .map((candidate) => (
+                                                        candidate.detailText
+                                                          ? { value: candidate.value, detailText: candidate.detailText }
+                                                          : candidate.value
+                                                      ));
+                                                    setRepeatFieldValue(sectionField.key, rowIndex, next);
+                                                  }
+                                                }}
+                                              />
+                                              {option.label}
+                                            </label>
+                                            {option.allowTextInput && currentValues.includes(option.value) && (
+                                              <input
+                                                type="text"
+                                                value={entry?.detailText || ''}
+                                                onChange={(e) => {
+                                                  const next = currentEntries.map((candidate) => (
+                                                    candidate.value === option.value
+                                                      ? { ...candidate, detailText: e.target.value }
+                                                      : candidate
+                                                  ));
+                                                  setRepeatFieldValue(
+                                                    sectionField.key,
+                                                    rowIndex,
+                                                    next.map((candidate) => (
+                                                      candidate.detailText
+                                                        ? { value: candidate.value, detailText: candidate.detailText }
+                                                        : candidate.value
+                                                    ))
+                                                  );
+                                                }}
+                                                placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                                                className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
+                                              />
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </fieldset>
+                                  )}
+
+                                  {(sectionField.type === 'FILE_UPLOAD' || sectionField.type === 'SIGNATURE') && (
+                                    <div className="rounded-lg border border-border-primary/60 bg-background-secondary/40 px-3 py-2 text-xs text-text-muted">
+                                      This field type is not supported inside dynamic sections yet.
+                                    </div>
+                                  )}
+
+                                  {sectionErrorText && !sectionUseDateSelector && (
+                                    <p id={sectionErrorId} className="mt-1 text-xs text-status-error">{sectionErrorText}</p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (field.type === 'PAGE_BREAK') return null;
 
             if (field.type === 'PARAGRAPH') {
               const headingType = field.inputType === 'info_heading_1' ? 'h1'
@@ -701,7 +1336,7 @@ export default function PublicFormPage() {
 
                 {field.type === 'DROPDOWN' && (
                   <SearchableSelect
-                    options={options.map((opt) => ({ value: opt, label: opt }))}
+                    options={dropdownOptions.map((opt) => ({ value: opt, label: opt }))}
                     value={typeof value === 'string' ? value : ''}
                     onChange={(val) => setFieldValue(field.key, val)}
                     placeholder="Select an option"
@@ -719,37 +1354,53 @@ export default function PublicFormPage() {
                     aria-describedby={describedBy}
                     aria-invalid={errorText ? 'true' : undefined}
                   >
-                    {options.map((option, index) => {
+                    {choiceOptions.map((option, index) => {
+                      const selectedEntry = parseChoiceAnswerEntry(value);
+                      const isSelected = selectedEntry?.value === option.value;
                       const optionId = `${fieldDomId}-option-${index}`;
-                      const isSelected = value === option;
                       return (
-                        <label
-                          key={option}
-                          htmlFor={optionId}
-                          className={cn(
-                            "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150",
-                            isSelected
-                              ? "border-oak-primary/40 bg-oak-primary/5 text-text-primary"
-                              : "border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60"
+                        <div key={`${option.value}-${index}`} className="space-y-1.5">
+                          <label
+                            htmlFor={optionId}
+                            className={cn(
+                              "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150",
+                              isSelected
+                                ? "border-oak-primary/40 bg-oak-primary/5 text-text-primary"
+                                : "border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60"
+                            )}
+                          >
+                            <input
+                              id={optionId}
+                              type="radio"
+                              name={field.key}
+                              value={option.value}
+                              checked={isSelected}
+                              onChange={() => setFieldValue(
+                                field.key,
+                                option.allowTextInput
+                                  ? { value: option.value, detailText: selectedEntry?.value === option.value ? selectedEntry.detailText : '' }
+                                  : option.value
+                              )}
+                              className="sr-only"
+                            />
+                            <span className={cn(
+                              "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-150",
+                              isSelected ? "border-oak-primary" : "border-border-primary"
+                            )}>
+                              {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-oak-primary" />}
+                            </span>
+                            {option.label}
+                          </label>
+                          {option.allowTextInput && isSelected && (
+                            <input
+                              type="text"
+                              value={selectedEntry?.detailText || ''}
+                              onChange={(e) => setFieldValue(field.key, { value: option.value, detailText: e.target.value })}
+                              placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                              className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary"
+                            />
                           )}
-                        >
-                          <input
-                            id={optionId}
-                            type="radio"
-                            name={field.key}
-                            value={option}
-                            checked={isSelected}
-                            onChange={() => setFieldValue(field.key, option)}
-                            className="sr-only"
-                          />
-                          <span className={cn(
-                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-150",
-                            isSelected ? "border-oak-primary" : "border-border-primary"
-                          )}>
-                            {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-oak-primary" />}
-                          </span>
-                          {option}
-                        </label>
+                        </div>
                       );
                     })}
                   </fieldset>
@@ -763,46 +1414,87 @@ export default function PublicFormPage() {
                     aria-describedby={describedBy}
                     aria-invalid={errorText ? 'true' : undefined}
                   >
-                    {options.map((option, index) => {
-                      const current = Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
-                      const isChecked = current.includes(option);
-                      const optionId = `${fieldDomId}-option-${index}-${toDomSafeId(option)}`;
+                    {choiceOptions.map((option, index) => {
+                      const entries = parseChoiceAnswerEntries(value);
+                      const values = entries.map((entry) => entry.value);
+                      const isChecked = values.includes(option.value);
+                      const optionId = `${fieldDomId}-option-${index}-${toDomSafeId(option.value)}`;
+                      const optionEntry = entries.find((entry) => entry.value === option.value);
                       return (
-                        <label
-                          key={option}
-                          htmlFor={optionId}
-                          className={cn(
-                            "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150",
-                            isChecked
-                              ? "border-oak-primary/40 bg-oak-primary/5 text-text-primary"
-                              : "border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60"
-                          )}
-                        >
-                          <input
-                            id={optionId}
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFieldValue(field.key, [...current, option]);
-                              } else {
-                                setFieldValue(field.key, current.filter((item) => item !== option));
-                              }
-                            }}
-                            className="sr-only"
-                          />
-                          <span className={cn(
-                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-150",
-                            isChecked ? "border-oak-primary bg-oak-primary" : "border-border-primary"
-                          )}>
-                            {isChecked && (
-                              <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M2 6l3 3 5-5" />
-                              </svg>
+                        <div key={`${option.value}-${index}`} className="space-y-1.5">
+                          <label
+                            htmlFor={optionId}
+                            className={cn(
+                              "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150",
+                              isChecked
+                                ? "border-oak-primary/40 bg-oak-primary/5 text-text-primary"
+                                : "border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60"
                             )}
-                          </span>
-                          {option}
-                        </label>
+                          >
+                            <input
+                              id={optionId}
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  const nextEntries = [
+                                    ...entries.filter((entry) => entry.value !== option.value),
+                                    { value: option.value, detailText: '' },
+                                  ];
+                                  setFieldValue(
+                                    field.key,
+                                    nextEntries.map((entry) => (
+                                      entry.detailText || (option.allowTextInput && entry.value === option.value)
+                                        ? { value: entry.value, detailText: entry.detailText }
+                                        : entry.value
+                                    ))
+                                  );
+                                } else {
+                                  const nextEntries = entries.filter((entry) => entry.value !== option.value);
+                                  setFieldValue(
+                                    field.key,
+                                    nextEntries.map((entry) => (
+                                      entry.detailText ? { value: entry.value, detailText: entry.detailText } : entry.value
+                                    ))
+                                  );
+                                }
+                              }}
+                              className="sr-only"
+                            />
+                            <span className={cn(
+                              "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-150",
+                              isChecked ? "border-oak-primary bg-oak-primary" : "border-border-primary"
+                            )}>
+                              {isChecked && (
+                                <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M2 6l3 3 5-5" />
+                                </svg>
+                              )}
+                            </span>
+                            {option.label}
+                          </label>
+                          {option.allowTextInput && isChecked && (
+                            <input
+                              type="text"
+                              value={optionEntry?.detailText || ''}
+                              onChange={(e) => {
+                                const nextEntries = entries.map((entry) => (
+                                  entry.value === option.value ? { ...entry, detailText: e.target.value } : entry
+                                ));
+                                setFieldValue(
+                                  field.key,
+                                  nextEntries.map((entry) => (
+                                    entry.detailText
+                                      ? { value: entry.value, detailText: entry.detailText }
+                                      : entry.value
+                                  ))
+                                );
+                              }}
+                              placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                              className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary"
+                            />
+                          )}
+                        </div>
                       );
                     })}
                   </fieldset>
