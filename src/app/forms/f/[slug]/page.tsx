@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Download, Info, Mail, UploadCloud } from 'lucide-react';
@@ -724,6 +725,692 @@ export default function PublicFormPage() {
     }
   }
 
+  function renderHeadingField(field: PublicField): React.ReactNode {
+    const headingType = field.inputType === 'info_heading_1' ? 'h1'
+      : field.inputType === 'info_heading_2' ? 'h2'
+      : 'h3';
+    const headingClasses: Record<string, string> = {
+      h1: 'text-xl font-bold text-text-primary mt-6 mb-2',
+      h2: 'text-lg font-semibold text-text-primary mt-4 mb-1.5',
+      h3: 'text-base font-semibold text-text-primary mt-3 mb-1',
+    };
+    const Tag = headingType as 'h1' | 'h2' | 'h3';
+    return (
+      <div key={field.id}>
+        <Tag className={headingClasses[headingType]}>{field.label || field.subtext}</Tag>
+        {field.subtext && field.label && (
+          <p className="text-sm text-text-secondary">{field.subtext}</p>
+        )}
+      </div>
+    );
+  }
+
+  function renderStandaloneField(field: PublicField): React.ReactNode {
+    if (field.type === 'HIDDEN') return null;
+    if (field.type === 'PAGE_BREAK') return null;
+
+    const widthClass = WIDTH_CLASS[field.layoutWidth] || WIDTH_CLASS[100];
+
+    // Heading blocks
+    if (
+      field.type === 'PARAGRAPH' &&
+      (field.inputType === 'info_heading_1' ||
+        field.inputType === 'info_heading_2' ||
+        field.inputType === 'info_heading_3')
+    ) {
+      return renderHeadingField(field);
+    }
+
+    // info_image
+    if (field.type === 'PARAGRAPH' && field.inputType === 'info_image') {
+      const imageUrl = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
+      return (
+        <div key={field.id} className={widthClass}>
+          <div className="overflow-hidden rounded-lg border border-border-primary bg-background-primary">
+            {imageUrl ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imageUrl} alt={field.subtext || field.label || 'Information image'} className="max-h-96 w-full object-contain" />
+                {field.subtext && (
+                  <p className="border-t border-border-primary px-3 py-2 text-xs text-text-secondary">{field.subtext}</p>
+                )}
+              </>
+            ) : (
+              <div className="px-3 py-4 text-sm text-text-secondary">Add a valid image URL in field settings.</div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // info_url
+    if (field.type === 'PARAGRAPH' && field.inputType === 'info_url') {
+      const href = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
+      return (
+        <div key={field.id} className={widthClass}>
+          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm">
+            {href ? (
+              <a href={href} target="_blank" rel="noopener noreferrer" className="break-all text-text-primary underline hover:text-text-secondary">
+                {field.subtext || field.label || href}
+              </a>
+            ) : (
+              <span className="text-text-secondary">Add a valid URL in field settings.</span>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // info_text (and any other PARAGRAPH fallback)
+    if (field.type === 'PARAGRAPH') {
+      return (
+        <div key={field.id} className={widthClass}>
+          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary whitespace-pre-wrap">
+            {field.subtext || field.label}
+          </div>
+        </div>
+      );
+    }
+
+    // HTML
+    if (field.type === 'HTML') {
+      return (
+        <div key={field.id} className={widthClass}>
+          <div className="text-sm text-text-primary" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(field.subtext || '') }} />
+        </div>
+      );
+    }
+
+    // Repeat section start marker
+    if (isRepeatStartMarker(field)) {
+      const sectionFields: PublicField[] = [];
+      const fieldIndex = visibleFields.findIndex((f) => f.id === field.id);
+      let cursor = fieldIndex + 1;
+
+      while (cursor < visibleFields.length) {
+        const candidate = visibleFields[cursor];
+        if (isRepeatEndMarker(candidate)) {
+          hiddenFieldIds.add(candidate.id);
+          break;
+        }
+        if (isRepeatStartMarker(candidate)) break;
+        hiddenFieldIds.add(candidate.id);
+        if (candidate.type !== 'PAGE_BREAK') sectionFields.push(candidate);
+        cursor += 1;
+      }
+
+      const sectionConfig = getRepeatSectionConfig(field);
+      const sectionId = sectionConfig.id;
+      const rowCount = repeatSectionCounts[sectionId] || sectionConfig.minItems;
+      const canAddRow = sectionConfig.maxItems === null || rowCount < sectionConfig.maxItems;
+      const sectionTitle = field.label?.trim() || 'Dynamic section';
+
+      return (
+        <div key={field.id} className="col-span-12">
+          <div className="rounded-xl border border-border-primary/60 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-semibold text-text-primary">{sectionTitle}</h3>
+                {field.subtext && <p className="text-xs text-text-secondary">{field.subtext}</p>}
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => addRepeatSectionRow(sectionId, sectionConfig.maxItems)}
+                disabled={!canAddRow}
+              >
+                {sectionConfig.addLabel}
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {Array.from({ length: rowCount }).map((_, rowIndex) => (
+                <div key={`${sectionId}-row-${rowIndex}`} className="rounded-lg border border-border-primary/50 bg-background-primary/40 p-3">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-xs font-medium text-text-secondary">Card {rowIndex + 1}</span>
+                    {rowCount > sectionConfig.minItems && (
+                      <button
+                        type="button"
+                        onClick={() => removeRepeatSectionRow(sectionId, rowIndex, sectionFields)}
+                        className="text-xs text-text-secondary underline hover:text-text-primary"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-12 gap-3">
+                    {sectionFields.map((sectionField) => {
+                      const sectionWidthClass = WIDTH_CLASS[sectionField.layoutWidth] || WIDTH_CLASS[100];
+                      const sectionValue = getRepeatFieldValue(sectionField.key, rowIndex);
+                      const sectionErrorText = fieldErrors[getFieldErrorKey(sectionField.key, rowIndex)];
+                      const sectionDropdownOptions = parseOptions(sectionField.options);
+                      const sectionChoiceOptions = parseChoiceOptions(sectionField.options);
+                      const sectionFieldDomId = `repeat-${toDomSafeId(sectionId)}-${rowIndex}-${toDomSafeId(sectionField.id || sectionField.key)}`;
+                      const sectionControlId = `${sectionFieldDomId}-control`;
+                      const sectionLabelId = `${sectionFieldDomId}-label`;
+                      const sectionHintId = sectionField.subtext ? `${sectionFieldDomId}-hint` : undefined;
+                      const sectionErrorId = sectionErrorText ? `${sectionFieldDomId}-error` : undefined;
+                      const sectionDescribedBy = [sectionHintId, sectionErrorId].filter(Boolean).join(' ') || undefined;
+                      const sectionLabel = sectionField.label || sectionField.key;
+                      const sectionUseDateSelector = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'date';
+
+                      if (sectionField.type === 'HIDDEN') return null;
+
+                      return (
+                        <div key={`${sectionField.id}-${rowIndex}`} className={sectionWidthClass}>
+                          {!sectionField.hideLabel && (
+                            <label
+                              htmlFor={sectionControlId}
+                              id={sectionLabelId}
+                              className="mb-1.5 block text-xs font-medium text-text-secondary"
+                            >
+                              {sectionLabel}
+                              {sectionField.isRequired && <span className="text-oak-primary"> *</span>}
+                            </label>
+                          )}
+                          {sectionField.subtext && (
+                            <p id={sectionHintId} className="mb-2 text-xs text-text-muted">{sectionField.subtext}</p>
+                          )}
+
+                          {sectionField.type === 'SHORT_TEXT' && !sectionUseDateSelector && (
+                            <input
+                              id={sectionControlId}
+                              type={sectionField.inputType === 'phone' ? 'tel' : sectionField.inputType || 'text'}
+                              value={typeof sectionValue === 'string' ? sectionValue : ''}
+                              onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
+                              placeholder={sectionField.placeholder || ''}
+                              readOnly={sectionField.isReadOnly}
+                              aria-invalid={sectionErrorText ? 'true' : undefined}
+                              aria-describedby={sectionDescribedBy}
+                              className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
+                            />
+                          )}
+
+                          {sectionUseDateSelector && (
+                            <SingleDateInput
+                              value={typeof sectionValue === 'string' ? sectionValue : ''}
+                              onChange={(next) => setRepeatFieldValue(sectionField.key, rowIndex, next)}
+                              placeholder={sectionField.placeholder || 'dd/mm/yyyy'}
+                              disabled={sectionField.isReadOnly}
+                              required={sectionField.isRequired}
+                              error={sectionErrorText}
+                              ariaLabel={sectionField.hideLabel ? sectionLabel : undefined}
+                              className="w-full"
+                            />
+                          )}
+
+                          {sectionField.type === 'LONG_TEXT' && (
+                            <textarea
+                              id={sectionControlId}
+                              value={typeof sectionValue === 'string' ? sectionValue : ''}
+                              onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
+                              placeholder={sectionField.placeholder || ''}
+                              readOnly={sectionField.isReadOnly}
+                              aria-invalid={sectionErrorText ? 'true' : undefined}
+                              aria-describedby={sectionDescribedBy}
+                              className="w-full min-h-24 rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
+                            />
+                          )}
+
+                          {sectionField.type === 'DROPDOWN' && (
+                            <SearchableSelect
+                              options={sectionDropdownOptions.map((opt) => ({ value: opt, label: opt }))}
+                              value={typeof sectionValue === 'string' ? sectionValue : ''}
+                              onChange={(val) => setRepeatFieldValue(sectionField.key, rowIndex, val)}
+                              placeholder="Select an option"
+                              clearable={false}
+                              showKeyboardHints={false}
+                              containerClassName="h-10"
+                            />
+                          )}
+
+                          {sectionField.type === 'SINGLE_CHOICE' && (
+                            <fieldset className="space-y-1.5">
+                              {sectionChoiceOptions.map((option, optionIndex) => {
+                                const selectedEntry = parseChoiceAnswerEntry(sectionValue);
+                                const isSelected = selectedEntry?.value === option.value;
+                                const optionId = `${sectionFieldDomId}-option-${optionIndex}`;
+                                return (
+                                  <div key={`${option.value}-${optionIndex}`} className="space-y-1.5">
+                                    <label htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
+                                      <input
+                                        id={optionId}
+                                        type="radio"
+                                        name={`${sectionField.key}-${rowIndex}`}
+                                        checked={isSelected}
+                                        onChange={() => setRepeatFieldValue(
+                                          sectionField.key,
+                                          rowIndex,
+                                          option.allowTextInput
+                                            ? { value: option.value, detailText: selectedEntry?.value === option.value ? selectedEntry.detailText : '' }
+                                            : option.value
+                                        )}
+                                      />
+                                      {option.label}
+                                    </label>
+                                    {option.allowTextInput && isSelected && (
+                                      <input
+                                        type="text"
+                                        value={selectedEntry?.detailText || ''}
+                                        onChange={(e) => setRepeatFieldValue(
+                                          sectionField.key,
+                                          rowIndex,
+                                          { value: option.value, detailText: e.target.value }
+                                        )}
+                                        placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                                        className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
+                                      />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </fieldset>
+                          )}
+
+                          {sectionField.type === 'MULTIPLE_CHOICE' && (
+                            <fieldset className="space-y-1.5">
+                              {sectionChoiceOptions.map((option, optionIndex) => {
+                                const currentEntries = parseChoiceAnswerEntries(sectionValue);
+                                const currentValues = currentEntries.map((entry) => entry.value);
+                                const entry = currentEntries.find((candidate) => candidate.value === option.value);
+                                const optionId = `${sectionFieldDomId}-option-${optionIndex}-${toDomSafeId(option.value)}`;
+                                return (
+                                  <div key={`${option.value}-${optionIndex}`} className="space-y-1.5">
+                                    <label htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
+                                      <input
+                                        id={optionId}
+                                        type="checkbox"
+                                        checked={currentValues.includes(option.value)}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            const next = [
+                                              ...currentEntries.filter((candidate) => candidate.value !== option.value),
+                                              { value: option.value, detailText: option.allowTextInput ? '' : '' },
+                                            ];
+                                            const nextValue = next.map((candidate) => (
+                                              option.allowTextInput && candidate.value === option.value
+                                                ? { value: candidate.value, detailText: candidate.detailText }
+                                                : (candidate.detailText ? { value: candidate.value, detailText: candidate.detailText } : candidate.value)
+                                            ));
+                                            setRepeatFieldValue(sectionField.key, rowIndex, nextValue);
+                                          } else {
+                                            const next = currentEntries
+                                              .filter((candidate) => candidate.value !== option.value)
+                                              .map((candidate) => (
+                                                candidate.detailText
+                                                  ? { value: candidate.value, detailText: candidate.detailText }
+                                                  : candidate.value
+                                              ));
+                                            setRepeatFieldValue(sectionField.key, rowIndex, next);
+                                          }
+                                        }}
+                                      />
+                                      {option.label}
+                                    </label>
+                                    {option.allowTextInput && currentValues.includes(option.value) && (
+                                      <input
+                                        type="text"
+                                        value={entry?.detailText || ''}
+                                        onChange={(e) => {
+                                          const next = currentEntries.map((candidate) => (
+                                            candidate.value === option.value
+                                              ? { ...candidate, detailText: e.target.value }
+                                              : candidate
+                                          ));
+                                          setRepeatFieldValue(
+                                            sectionField.key,
+                                            rowIndex,
+                                            next.map((candidate) => (
+                                              candidate.detailText
+                                                ? { value: candidate.value, detailText: candidate.detailText }
+                                                : candidate.value
+                                            ))
+                                          );
+                                        }}
+                                        placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                                        className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
+                                      />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </fieldset>
+                          )}
+
+                          {(sectionField.type === 'FILE_UPLOAD' || sectionField.type === 'SIGNATURE') && (
+                            <div className="rounded-lg border border-border-primary/60 bg-background-secondary/40 px-3 py-2 text-xs text-text-muted">
+                              This field type is not supported inside dynamic sections yet.
+                            </div>
+                          )}
+
+                          {sectionErrorText && !sectionUseDateSelector && (
+                            <p id={sectionErrorId} className="mt-1 text-xs text-status-error">{sectionErrorText}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  }
+
+  function renderCardField(
+    field: PublicField,
+    fieldIndexInGroup: number,
+    groupFields: PublicField[]
+  ): React.ReactNode {
+    const widthClass = WIDTH_CLASS[field.layoutWidth] || WIDTH_CLASS[100];
+    const value = answers[field.key];
+    const errorText = fieldErrors[getFieldErrorKey(field.key)];
+    const fieldDomId = `form-field-${toDomSafeId(field.id || field.key)}`;
+    const controlId = `${fieldDomId}-control`;
+    const labelId = `${fieldDomId}-label`;
+    const hintId = field.subtext ? `${fieldDomId}-hint` : undefined;
+    const errorId = errorText ? `${fieldDomId}-error` : undefined;
+    const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
+    const accessibleLabel = field.label || field.key;
+    const renderLabelAsText = ['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'SIGNATURE'].includes(field.type);
+    const useDateSelector = field.type === 'SHORT_TEXT' && field.inputType === 'date';
+    const showTooltip = isTooltipEnabled(field);
+    const tooltipText = showTooltip ? field.helpText!.trim() : null;
+    const uploadStatus = uploadedByFieldKey[field.key];
+
+    // Determine if this field starts a new row (needs a top divider)
+    let needsDivider = false;
+    if (fieldIndexInGroup > 0) {
+      let sum = 0;
+      for (let i = 0; i < fieldIndexInGroup; i++) {
+        const w = groupFields[i].layoutWidth || 100;
+        sum += Math.round((w / 100) * 12);
+        if (sum >= 12) sum = 0;
+      }
+      needsDivider = sum === 0;
+    }
+
+    return (
+      <React.Fragment key={field.id}>
+        {needsDivider && (
+          <div className="col-span-12 border-t border-border-primary/20" />
+        )}
+        <div className={cn(widthClass, needsDivider && 'mt-4')}>
+          {/* Label */}
+          {!field.hideLabel && (
+            renderLabelAsText ? (
+              <p id={labelId} className="mb-1.5 block text-sm font-medium text-text-secondary">
+                <span className="inline-flex items-center gap-1.5">
+                  <span>
+                    {accessibleLabel}
+                    {field.isRequired && <span className="text-oak-primary"> *</span>}
+                  </span>
+                  {tooltipText && (
+                    <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
+                      <span className="inline-flex h-4 w-4 cursor-help items-center justify-center text-text-muted hover:text-text-secondary">
+                        <Info className="h-3.5 w-3.5" />
+                      </span>
+                    </Tooltip>
+                  )}
+                </span>
+              </p>
+            ) : (
+              <label htmlFor={controlId} id={labelId} className="mb-1.5 block text-sm font-medium text-text-secondary">
+                <span className="inline-flex items-center gap-1.5">
+                  <span>
+                    {accessibleLabel}
+                    {field.isRequired && <span className="text-oak-primary"> *</span>}
+                  </span>
+                  {tooltipText && (
+                    <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
+                      <span className="inline-flex h-4 w-4 cursor-help items-center justify-center text-text-muted hover:text-text-secondary">
+                        <Info className="h-3.5 w-3.5" />
+                      </span>
+                    </Tooltip>
+                  )}
+                </span>
+              </label>
+            )
+          )}
+
+          {field.subtext && <p id={hintId} className="mb-2 text-sm text-text-secondary">{field.subtext}</p>}
+
+          {/* SHORT_TEXT */}
+          {field.type === 'SHORT_TEXT' && !useDateSelector && (
+            <input
+              id={controlId}
+              type={field.inputType === 'phone' ? 'tel' : field.inputType || 'text'}
+              value={typeof value === 'string' ? value : ''}
+              onChange={(e) => setFieldValue(field.key, e.target.value)}
+              placeholder={field.placeholder || ''}
+              readOnly={field.isReadOnly}
+              required={field.isRequired}
+              aria-label={field.hideLabel ? accessibleLabel : undefined}
+              aria-invalid={errorText ? 'true' : undefined}
+              aria-describedby={describedBy}
+              className={cn(
+                'w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60',
+                'focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150',
+                field.isReadOnly && 'bg-background-secondary cursor-not-allowed opacity-70'
+              )}
+            />
+          )}
+
+          {/* DATE */}
+          {useDateSelector && (
+            <SingleDateInput
+              value={typeof value === 'string' ? value : ''}
+              onChange={(next) => setFieldValue(field.key, next)}
+              placeholder={field.placeholder || 'dd/mm/yyyy'}
+              disabled={field.isReadOnly}
+              required={field.isRequired}
+              error={errorText}
+              ariaLabel={field.hideLabel ? accessibleLabel : undefined}
+              className="w-full"
+            />
+          )}
+
+          {/* LONG_TEXT */}
+          {field.type === 'LONG_TEXT' && (
+            <textarea
+              id={controlId}
+              value={typeof value === 'string' ? value : ''}
+              onChange={(e) => setFieldValue(field.key, e.target.value)}
+              placeholder={field.placeholder || ''}
+              readOnly={field.isReadOnly}
+              required={field.isRequired}
+              aria-label={field.hideLabel ? accessibleLabel : undefined}
+              aria-invalid={errorText ? 'true' : undefined}
+              aria-describedby={describedBy}
+              className={cn(
+                'w-full min-h-24 rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60',
+                'focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150 resize-y',
+                field.isReadOnly && 'bg-background-secondary cursor-not-allowed opacity-70'
+              )}
+            />
+          )}
+
+          {/* DROPDOWN */}
+          {field.type === 'DROPDOWN' && (
+            <SearchableSelect
+              options={parseOptions(field.options).map((opt) => ({ value: opt, label: opt }))}
+              value={typeof value === 'string' ? value : ''}
+              onChange={(val) => setFieldValue(field.key, val)}
+              placeholder="Select an option"
+              clearable={false}
+              showKeyboardHints={false}
+              containerClassName="h-10"
+            />
+          )}
+
+          {/* SINGLE_CHOICE */}
+          {field.type === 'SINGLE_CHOICE' && (
+            <fieldset
+              className="space-y-2"
+              aria-label={field.hideLabel ? accessibleLabel : undefined}
+              aria-labelledby={field.hideLabel ? undefined : labelId}
+              aria-describedby={describedBy}
+              aria-invalid={errorText ? 'true' : undefined}
+            >
+              {parseChoiceOptions(field.options).map((option, index) => {
+                const selectedEntry = parseChoiceAnswerEntry(value);
+                const isSelected = selectedEntry?.value === option.value;
+                const optionId = `${fieldDomId}-option-${index}`;
+                return (
+                  <div key={`${option.value}-${index}`} className="space-y-1.5">
+                    <label
+                      htmlFor={optionId}
+                      className={cn(
+                        'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150',
+                        isSelected
+                          ? 'border-oak-primary/40 bg-oak-primary/5 text-text-primary'
+                          : 'border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60'
+                      )}
+                    >
+                      <input id={optionId} type="radio" name={field.key} value={option.value} checked={isSelected}
+                        onChange={() => setFieldValue(field.key, option.allowTextInput ? { value: option.value, detailText: selectedEntry?.value === option.value ? selectedEntry.detailText : '' } : option.value)}
+                        className="sr-only"
+                      />
+                      <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-150', isSelected ? 'border-oak-primary' : 'border-border-primary')}>
+                        {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-oak-primary" />}
+                      </span>
+                      {option.label}
+                    </label>
+                    {option.allowTextInput && isSelected && (
+                      <input type="text" value={selectedEntry?.detailText || ''}
+                        onChange={(e) => setFieldValue(field.key, { value: option.value, detailText: e.target.value })}
+                        placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                        className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </fieldset>
+          )}
+
+          {/* MULTIPLE_CHOICE */}
+          {field.type === 'MULTIPLE_CHOICE' && (
+            <fieldset
+              className="space-y-2"
+              aria-label={field.hideLabel ? accessibleLabel : undefined}
+              aria-labelledby={field.hideLabel ? undefined : labelId}
+              aria-describedby={describedBy}
+              aria-invalid={errorText ? 'true' : undefined}
+            >
+              {parseChoiceOptions(field.options).map((option, index) => {
+                const entries = parseChoiceAnswerEntries(value);
+                const values = entries.map((e) => e.value);
+                const isChecked = values.includes(option.value);
+                const optionId = `${fieldDomId}-option-${index}-${toDomSafeId(option.value)}`;
+                const optionEntry = entries.find((e) => e.value === option.value);
+                return (
+                  <div key={`${option.value}-${index}`} className="space-y-1.5">
+                    <label
+                      htmlFor={optionId}
+                      className={cn(
+                        'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150',
+                        isChecked
+                          ? 'border-oak-primary/40 bg-oak-primary/5 text-text-primary'
+                          : 'border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60'
+                      )}
+                    >
+                      <input id={optionId} type="checkbox" checked={isChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            const nextEntries = [...entries.filter((en) => en.value !== option.value), { value: option.value, detailText: '' }];
+                            setFieldValue(field.key, nextEntries.map((en) => (en.detailText || (option.allowTextInput && en.value === option.value) ? { value: en.value, detailText: en.detailText } : en.value)));
+                          } else {
+                            const nextEntries = entries.filter((en) => en.value !== option.value);
+                            setFieldValue(field.key, nextEntries.map((en) => (en.detailText ? { value: en.value, detailText: en.detailText } : en.value)));
+                          }
+                        }}
+                        className="sr-only"
+                      />
+                      <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-150', isChecked ? 'border-oak-primary bg-oak-primary' : 'border-border-primary')}>
+                        {isChecked && (
+                          <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M2 6l3 3 5-5" />
+                          </svg>
+                        )}
+                      </span>
+                      {option.label}
+                    </label>
+                    {option.allowTextInput && isChecked && (
+                      <input type="text" value={optionEntry?.detailText || ''}
+                        onChange={(e) => {
+                          const nextEntries = entries.map((en) => (en.value === option.value ? { ...en, detailText: e.target.value } : en));
+                          setFieldValue(field.key, nextEntries.map((en) => (en.detailText ? { value: en.value, detailText: en.detailText } : en.value)));
+                        }}
+                        placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                        className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </fieldset>
+          )}
+
+          {/* FILE_UPLOAD */}
+          {field.type === 'FILE_UPLOAD' && (
+            <div className={cn(
+              'rounded-xl border border-dashed bg-background-primary/50 p-6 text-center transition-colors duration-150',
+              uploadStatus ? 'border-status-success/40' : 'border-border-primary/60 hover:border-oak-primary/40'
+            )}>
+              <UploadCloud className="mx-auto mb-2 h-8 w-8 text-text-muted" />
+              <label htmlFor={controlId} className="cursor-pointer text-sm text-text-primary underline">
+                {uploadStatus ? 'Replace file' : 'Upload a file'}
+              </label>
+              <input id={controlId} type="file" className="sr-only"
+                aria-label={field.hideLabel ? accessibleLabel : undefined}
+                aria-invalid={errorText ? 'true' : undefined}
+                aria-describedby={describedBy}
+                onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadFile(field.key, file); }}
+              />
+              <p className="mt-1 text-xs text-text-muted">
+                {uploadingField === field.key ? 'Uploading...' : uploadStatus ? 'File uploaded successfully' : 'Select a file to upload'}
+              </p>
+              {uploadStatus && (
+                <div className="mt-3 rounded-md border border-status-success/30 bg-status-success/5 px-2.5 py-2 text-left">
+                  <div className="flex items-start gap-2 text-sm text-text-primary">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-status-success" />
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{uploadStatus.fileName}</p>
+                      <p className="text-xs text-text-secondary">{formatFileSize(uploadStatus.sizeBytes)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SIGNATURE */}
+          {field.type === 'SIGNATURE' && (
+            <div role="group" aria-label={field.hideLabel ? accessibleLabel : undefined} aria-labelledby={field.hideLabel ? undefined : labelId} aria-describedby={describedBy}>
+              <SignaturePad
+                value={typeof value === 'string' ? value : ''}
+                onChange={(next) => setFieldValue(field.key, next)}
+                ariaLabel={accessibleLabel}
+              />
+            </div>
+          )}
+
+          {/* Error */}
+          {errorText && !useDateSelector && (
+            <p id={errorId} className="mt-1 text-xs text-status-error">{errorText}</p>
+          )}
+        </div>
+      </React.Fragment>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8 flex items-center justify-center">
@@ -810,6 +1497,7 @@ export default function PublicFormPage() {
   }
 
   const hiddenFieldIds = new Set<string>();
+  const renderItems = buildRenderGroups(visibleFields);
 
   return (
     <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8')}>
@@ -842,728 +1530,38 @@ export default function PublicFormPage() {
           </div>
         )}
 
-        <div className={cn('grid grid-cols-12 gap-4', !isEmbed && 'mt-4')}>
-          {visibleFields.map((field, fieldIndex) => {
-            if (hiddenFieldIds.has(field.id)) return null;
-            const dropdownOptions = parseOptions(field.options);
-            const choiceOptions = parseChoiceOptions(field.options);
-            const widthClass = WIDTH_CLASS[field.layoutWidth] || WIDTH_CLASS[100];
-            const value = answers[field.key];
-            const errorText = fieldErrors[getFieldErrorKey(field.key)];
-            const uploadStatus = uploadedByFieldKey[field.key];
-            const infoType = field.type === 'PARAGRAPH'
-              ? (field.inputType === 'info_image' || field.inputType === 'info_url' ? field.inputType : 'info_text')
-              : null;
-            const fieldDomId = `form-field-${toDomSafeId(field.id || field.key)}`;
-            const controlId = `${fieldDomId}-control`;
-            const labelId = `${fieldDomId}-label`;
-            const hintId = field.subtext ? `${fieldDomId}-hint` : undefined;
-            const errorId = errorText ? `${fieldDomId}-error` : undefined;
-            const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
-            const accessibleLabel = field.label || field.key;
-            const renderLabelAsText = ['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'SIGNATURE'].includes(field.type);
-            const useDateSelector = field.type === 'SHORT_TEXT' && field.inputType === 'date';
-            const showTooltip = isTooltipEnabled(field);
-            const tooltipText = showTooltip ? field.helpText!.trim() : null;
-
-            if (isRepeatEndMarker(field)) return null;
-
-            if (isRepeatStartMarker(field)) {
-              const sectionFields: PublicField[] = [];
-              let cursor = fieldIndex + 1;
-
-              while (cursor < visibleFields.length) {
-                const candidate = visibleFields[cursor];
-                if (isRepeatEndMarker(candidate)) {
-                  hiddenFieldIds.add(candidate.id);
-                  break;
-                }
-                if (isRepeatStartMarker(candidate)) {
-                  break;
-                }
-                hiddenFieldIds.add(candidate.id);
-                if (candidate.type !== 'PAGE_BREAK') {
-                  sectionFields.push(candidate);
-                }
-                cursor += 1;
-              }
-
-              const sectionConfig = getRepeatSectionConfig(field);
-              const sectionId = sectionConfig.id;
-              const rowCount = repeatSectionCounts[sectionId] || sectionConfig.minItems;
-              const canAddRow = sectionConfig.maxItems === null || rowCount < sectionConfig.maxItems;
-              const sectionTitle = field.label?.trim() || 'Dynamic section';
-
-              return (
-                <div key={field.id} className="col-span-12">
-                  <div className="rounded-xl border border-border-primary/60 bg-white p-4 shadow-sm">
-                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <h3 className="text-sm font-semibold text-text-primary">{sectionTitle}</h3>
-                        {field.subtext && <p className="text-xs text-text-secondary">{field.subtext}</p>}
-                      </div>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => addRepeatSectionRow(sectionId, sectionConfig.maxItems)}
-                        disabled={!canAddRow}
-                      >
-                        {sectionConfig.addLabel}
-                      </Button>
-                    </div>
-
-                    <div className="space-y-3">
-                      {Array.from({ length: rowCount }).map((_, rowIndex) => (
-                        <div key={`${sectionId}-row-${rowIndex}`} className="rounded-lg border border-border-primary/50 bg-background-primary/40 p-3">
-                          <div className="mb-3 flex items-center justify-between">
-                            <span className="text-xs font-medium text-text-secondary">Card {rowIndex + 1}</span>
-                            {rowCount > sectionConfig.minItems && (
-                              <button
-                                type="button"
-                                onClick={() => removeRepeatSectionRow(sectionId, rowIndex, sectionFields)}
-                                className="text-xs text-text-secondary underline hover:text-text-primary"
-                              >
-                                Remove
-                              </button>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-12 gap-3">
-                            {sectionFields.map((sectionField) => {
-                              const sectionWidthClass = WIDTH_CLASS[sectionField.layoutWidth] || WIDTH_CLASS[100];
-                              const sectionValue = getRepeatFieldValue(sectionField.key, rowIndex);
-                              const sectionErrorText = fieldErrors[getFieldErrorKey(sectionField.key, rowIndex)];
-                              const sectionDropdownOptions = parseOptions(sectionField.options);
-                              const sectionChoiceOptions = parseChoiceOptions(sectionField.options);
-                              const sectionFieldDomId = `repeat-${toDomSafeId(sectionId)}-${rowIndex}-${toDomSafeId(sectionField.id || sectionField.key)}`;
-                              const sectionControlId = `${sectionFieldDomId}-control`;
-                              const sectionLabelId = `${sectionFieldDomId}-label`;
-                              const sectionHintId = sectionField.subtext ? `${sectionFieldDomId}-hint` : undefined;
-                              const sectionErrorId = sectionErrorText ? `${sectionFieldDomId}-error` : undefined;
-                              const sectionDescribedBy = [sectionHintId, sectionErrorId].filter(Boolean).join(' ') || undefined;
-                              const sectionLabel = sectionField.label || sectionField.key;
-                              const sectionUseDateSelector = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'date';
-
-                              if (sectionField.type === 'HIDDEN') return null;
-
-                              return (
-                                <div key={`${sectionField.id}-${rowIndex}`} className={sectionWidthClass}>
-                                  {!sectionField.hideLabel && (
-                                    <label
-                                      htmlFor={sectionControlId}
-                                      id={sectionLabelId}
-                                      className="mb-1.5 block text-xs font-medium text-text-secondary"
-                                    >
-                                      {sectionLabel}
-                                      {sectionField.isRequired && <span className="text-oak-primary"> *</span>}
-                                    </label>
-                                  )}
-                                  {sectionField.subtext && (
-                                    <p id={sectionHintId} className="mb-2 text-xs text-text-muted">{sectionField.subtext}</p>
-                                  )}
-
-                                  {sectionField.type === 'SHORT_TEXT' && !sectionUseDateSelector && (
-                                    <input
-                                      id={sectionControlId}
-                                      type={sectionField.inputType === 'phone' ? 'tel' : sectionField.inputType || 'text'}
-                                      value={typeof sectionValue === 'string' ? sectionValue : ''}
-                                      onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
-                                      placeholder={sectionField.placeholder || ''}
-                                      readOnly={sectionField.isReadOnly}
-                                      aria-invalid={sectionErrorText ? 'true' : undefined}
-                                      aria-describedby={sectionDescribedBy}
-                                      className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
-                                    />
-                                  )}
-
-                                  {sectionUseDateSelector && (
-                                    <SingleDateInput
-                                      value={typeof sectionValue === 'string' ? sectionValue : ''}
-                                      onChange={(next) => setRepeatFieldValue(sectionField.key, rowIndex, next)}
-                                      placeholder={sectionField.placeholder || 'dd/mm/yyyy'}
-                                      disabled={sectionField.isReadOnly}
-                                      required={sectionField.isRequired}
-                                      error={sectionErrorText}
-                                      ariaLabel={sectionField.hideLabel ? sectionLabel : undefined}
-                                      className="w-full"
-                                    />
-                                  )}
-
-                                  {sectionField.type === 'LONG_TEXT' && (
-                                    <textarea
-                                      id={sectionControlId}
-                                      value={typeof sectionValue === 'string' ? sectionValue : ''}
-                                      onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
-                                      placeholder={sectionField.placeholder || ''}
-                                      readOnly={sectionField.isReadOnly}
-                                      aria-invalid={sectionErrorText ? 'true' : undefined}
-                                      aria-describedby={sectionDescribedBy}
-                                      className="w-full min-h-24 rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
-                                    />
-                                  )}
-
-                                  {sectionField.type === 'DROPDOWN' && (
-                                    <SearchableSelect
-                                      options={sectionDropdownOptions.map((opt) => ({ value: opt, label: opt }))}
-                                      value={typeof sectionValue === 'string' ? sectionValue : ''}
-                                      onChange={(val) => setRepeatFieldValue(sectionField.key, rowIndex, val)}
-                                      placeholder="Select an option"
-                                      clearable={false}
-                                      showKeyboardHints={false}
-                                      containerClassName="h-10"
-                                    />
-                                  )}
-
-                                  {sectionField.type === 'SINGLE_CHOICE' && (
-                                    <fieldset className="space-y-1.5">
-                                      {sectionChoiceOptions.map((option, optionIndex) => {
-                                        const selectedEntry = parseChoiceAnswerEntry(sectionValue);
-                                        const isSelected = selectedEntry?.value === option.value;
-                                        const optionId = `${sectionFieldDomId}-option-${optionIndex}`;
-                                        return (
-                                          <div key={`${option.value}-${optionIndex}`} className="space-y-1.5">
-                                            <label htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
-                                              <input
-                                                id={optionId}
-                                                type="radio"
-                                                name={`${sectionField.key}-${rowIndex}`}
-                                                checked={isSelected}
-                                                onChange={() => setRepeatFieldValue(
-                                                  sectionField.key,
-                                                  rowIndex,
-                                                  option.allowTextInput
-                                                    ? { value: option.value, detailText: selectedEntry?.value === option.value ? selectedEntry.detailText : '' }
-                                                    : option.value
-                                                )}
-                                              />
-                                              {option.label}
-                                            </label>
-                                            {option.allowTextInput && isSelected && (
-                                              <input
-                                                type="text"
-                                                value={selectedEntry?.detailText || ''}
-                                                onChange={(e) => setRepeatFieldValue(
-                                                  sectionField.key,
-                                                  rowIndex,
-                                                  { value: option.value, detailText: e.target.value }
-                                                )}
-                                                placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
-                                                className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
-                                              />
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                    </fieldset>
-                                  )}
-
-                                  {sectionField.type === 'MULTIPLE_CHOICE' && (
-                                    <fieldset className="space-y-1.5">
-                                      {sectionChoiceOptions.map((option, optionIndex) => {
-                                        const currentEntries = parseChoiceAnswerEntries(sectionValue);
-                                        const currentValues = currentEntries.map((entry) => entry.value);
-                                        const entry = currentEntries.find((candidate) => candidate.value === option.value);
-                                        const optionId = `${sectionFieldDomId}-option-${optionIndex}-${toDomSafeId(option.value)}`;
-                                        return (
-                                          <div key={`${option.value}-${optionIndex}`} className="space-y-1.5">
-                                            <label htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
-                                              <input
-                                                id={optionId}
-                                                type="checkbox"
-                                                checked={currentValues.includes(option.value)}
-                                                onChange={(e) => {
-                                                  if (e.target.checked) {
-                                                    const next = [
-                                                      ...currentEntries.filter((candidate) => candidate.value !== option.value),
-                                                      { value: option.value, detailText: option.allowTextInput ? '' : '' },
-                                                    ];
-                                                    const nextValue = next.map((candidate) => (
-                                                      option.allowTextInput && candidate.value === option.value
-                                                        ? { value: candidate.value, detailText: candidate.detailText }
-                                                        : (candidate.detailText ? { value: candidate.value, detailText: candidate.detailText } : candidate.value)
-                                                    ));
-                                                    setRepeatFieldValue(sectionField.key, rowIndex, nextValue);
-                                                  } else {
-                                                    const next = currentEntries
-                                                      .filter((candidate) => candidate.value !== option.value)
-                                                      .map((candidate) => (
-                                                        candidate.detailText
-                                                          ? { value: candidate.value, detailText: candidate.detailText }
-                                                          : candidate.value
-                                                      ));
-                                                    setRepeatFieldValue(sectionField.key, rowIndex, next);
-                                                  }
-                                                }}
-                                              />
-                                              {option.label}
-                                            </label>
-                                            {option.allowTextInput && currentValues.includes(option.value) && (
-                                              <input
-                                                type="text"
-                                                value={entry?.detailText || ''}
-                                                onChange={(e) => {
-                                                  const next = currentEntries.map((candidate) => (
-                                                    candidate.value === option.value
-                                                      ? { ...candidate, detailText: e.target.value }
-                                                      : candidate
-                                                  ));
-                                                  setRepeatFieldValue(
-                                                    sectionField.key,
-                                                    rowIndex,
-                                                    next.map((candidate) => (
-                                                      candidate.detailText
-                                                        ? { value: candidate.value, detailText: candidate.detailText }
-                                                        : candidate.value
-                                                    ))
-                                                  );
-                                                }}
-                                                placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
-                                                className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3 py-2 text-sm text-text-primary"
-                                              />
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                    </fieldset>
-                                  )}
-
-                                  {(sectionField.type === 'FILE_UPLOAD' || sectionField.type === 'SIGNATURE') && (
-                                    <div className="rounded-lg border border-border-primary/60 bg-background-secondary/40 px-3 py-2 text-xs text-text-muted">
-                                      This field type is not supported inside dynamic sections yet.
-                                    </div>
-                                  )}
-
-                                  {sectionErrorText && !sectionUseDateSelector && (
-                                    <p id={sectionErrorId} className="mt-1 text-xs text-status-error">{sectionErrorText}</p>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
+        <div className={cn('flex flex-col gap-4', !isEmbed && 'mt-4')}>
+          {renderItems.map((item, itemIndex) => {
+            if (item.kind === 'standalone') {
+              if (hiddenFieldIds.has(item.field.id)) return null;
+              return renderStandaloneField(item.field);
             }
 
-            if (field.type === 'PAGE_BREAK') return null;
+            // Group card
+            const groupFields = item.fields.filter((f) => !hiddenFieldIds.has(f.id));
+            if (groupFields.length === 0 && !item.heading) return null;
 
-            if (field.type === 'PARAGRAPH') {
-              const headingType = field.inputType === 'info_heading_1' ? 'h1'
-                : field.inputType === 'info_heading_2' ? 'h2'
-                : field.inputType === 'info_heading_3' ? 'h3'
-                : null;
-
-              if (headingType) {
-                const headingClasses = {
-                  h1: 'text-xl font-bold text-text-primary mt-6 mb-2',
-                  h2: 'text-lg font-semibold text-text-primary mt-4 mb-1.5',
-                  h3: 'text-base font-semibold text-text-primary mt-3 mb-1',
-                };
-                const Tag = headingType as 'h1' | 'h2' | 'h3';
-                return (
-                  <div key={field.id} className={widthClass}>
-                    <Tag className={headingClasses[headingType]}>
-                      {field.label || field.subtext}
-                    </Tag>
-                    {field.subtext && field.label && (
-                      <p className="text-sm text-text-secondary">{field.subtext}</p>
-                    )}
-                  </div>
-                );
-              }
-
-              if (infoType === 'info_image') {
-                const imageUrl = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
-                return (
-                  <div key={field.id} className={widthClass}>
-                    <div className="overflow-hidden rounded-lg border border-border-primary bg-background-primary">
-                      {imageUrl ? (
-                        <>
-                          {/* eslint-disable-next-line @next/next/no-img-element -- image source is user-provided URL for informational block */}
-                          <img src={imageUrl} alt={field.subtext || field.label || 'Information image'} className="max-h-96 w-full object-contain" />
-                          {field.subtext && (
-                            <p className="border-t border-border-primary px-3 py-2 text-xs text-text-secondary">{field.subtext}</p>
-                          )}
-                        </>
-                      ) : (
-                        <div className="px-3 py-4 text-sm text-text-secondary">
-                          Add a valid image URL in field settings.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
-
-              if (infoType === 'info_url') {
-                const href = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
-                return (
-                  <div key={field.id} className={widthClass}>
-                    <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm">
-                      {href ? (
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="break-all text-text-primary underline hover:text-text-secondary"
-                        >
-                          {field.subtext || field.label || href}
-                        </a>
-                      ) : (
-                        <span className="text-text-secondary">Add a valid URL in field settings.</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
-
-              return (
-                <div key={field.id} className={widthClass}>
-                  <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary whitespace-pre-wrap">
-                    {field.subtext || field.label}
-                  </div>
-                </div>
-              );
-            }
-
-            if (field.type === 'HTML') {
-              return (
-                <div key={field.id} className={widthClass}>
-                  <div className="text-sm text-text-primary" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(field.subtext || '') }} />
-                </div>
-              );
-            }
-
-            if (field.type === 'HIDDEN') return null;
+            const groupHasError = groupFields.some((f) => !!fieldErrors[getFieldErrorKey(f.key)]);
 
             return (
-              <div key={field.id} className={widthClass}>
-                <div className={cn(
-                  "rounded-xl border bg-white p-5 shadow-sm transition-shadow duration-150 hover:shadow-md",
-                  errorText ? "border-status-error/40 ring-1 ring-status-error/20" : "border-border-primary/50"
-                )}>
-                {!field.hideLabel && (
-                  renderLabelAsText ? (
-                    <p id={labelId} className="mb-1.5 block text-sm font-medium text-text-secondary">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span>
-                          {accessibleLabel}
-                          {field.isRequired && <span className="text-oak-primary"> *</span>}
-                        </span>
-                        {tooltipText && (
-                          <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
-                            <span className="inline-flex h-4 w-4 cursor-help items-center justify-center text-text-muted hover:text-text-secondary">
-                              <Info className="h-3.5 w-3.5" />
-                            </span>
-                          </Tooltip>
-                        )}
-                      </span>
-                    </p>
-                  ) : (
-                    <label htmlFor={controlId} id={labelId} className="mb-1.5 block text-sm font-medium text-text-secondary">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span>
-                          {accessibleLabel}
-                          {field.isRequired && <span className="text-oak-primary"> *</span>}
-                        </span>
-                        {tooltipText && (
-                          <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
-                            <span className="inline-flex h-4 w-4 cursor-help items-center justify-center text-text-muted hover:text-text-secondary">
-                              <Info className="h-3.5 w-3.5" />
-                            </span>
-                          </Tooltip>
-                        )}
-                      </span>
-                    </label>
-                  )
-                )}
-                {field.subtext && <p id={hintId} className="mb-2 text-sm text-text-secondary">{field.subtext}</p>}
-
-                {field.type === 'SHORT_TEXT' && !useDateSelector && (
-                  <input
-                    id={controlId}
-                    type={field.inputType === 'phone' ? 'tel' : field.inputType || 'text'}
-                    value={typeof value === 'string' ? value : ''}
-                    onChange={(e) => setFieldValue(field.key, e.target.value)}
-                    placeholder={field.placeholder || ''}
-                    readOnly={field.isReadOnly}
-                    required={field.isRequired}
-                    aria-label={field.hideLabel ? accessibleLabel : undefined}
-                    aria-invalid={errorText ? 'true' : undefined}
-                    aria-describedby={describedBy}
-                    className={cn(
-                      "w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60",
-                      "focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150",
-                      field.isReadOnly && "bg-background-secondary cursor-not-allowed opacity-70"
-                    )}
-                  />
-                )}
-
-                {useDateSelector && (
-                  <SingleDateInput
-                    value={typeof value === 'string' ? value : ''}
-                    onChange={(next) => setFieldValue(field.key, next)}
-                    placeholder={field.placeholder || 'dd/mm/yyyy'}
-                    disabled={field.isReadOnly}
-                    required={field.isRequired}
-                    error={errorText}
-                    ariaLabel={field.hideLabel ? accessibleLabel : undefined}
-                    className="w-full"
-                  />
-                )}
-
-                {field.type === 'LONG_TEXT' && (
-                  <textarea
-                    id={controlId}
-                    value={typeof value === 'string' ? value : ''}
-                    onChange={(e) => setFieldValue(field.key, e.target.value)}
-                    placeholder={field.placeholder || ''}
-                    readOnly={field.isReadOnly}
-                    required={field.isRequired}
-                    aria-label={field.hideLabel ? accessibleLabel : undefined}
-                    aria-invalid={errorText ? 'true' : undefined}
-                    aria-describedby={describedBy}
-                    className={cn(
-                      "w-full min-h-24 rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60",
-                      "focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150 resize-y",
-                      field.isReadOnly && "bg-background-secondary cursor-not-allowed opacity-70"
-                    )}
-                  />
-                )}
-
-                {field.type === 'DROPDOWN' && (
-                  <SearchableSelect
-                    options={dropdownOptions.map((opt) => ({ value: opt, label: opt }))}
-                    value={typeof value === 'string' ? value : ''}
-                    onChange={(val) => setFieldValue(field.key, val)}
-                    placeholder="Select an option"
-                    clearable={false}
-                    showKeyboardHints={false}
-                    containerClassName="h-10"
-                  />
-                )}
-
-                {field.type === 'SINGLE_CHOICE' && (
-                  <fieldset
-                    className="space-y-2"
-                    aria-label={field.hideLabel ? accessibleLabel : undefined}
-                    aria-labelledby={field.hideLabel ? undefined : labelId}
-                    aria-describedby={describedBy}
-                    aria-invalid={errorText ? 'true' : undefined}
-                  >
-                    {choiceOptions.map((option, index) => {
-                      const selectedEntry = parseChoiceAnswerEntry(value);
-                      const isSelected = selectedEntry?.value === option.value;
-                      const optionId = `${fieldDomId}-option-${index}`;
-                      return (
-                        <div key={`${option.value}-${index}`} className="space-y-1.5">
-                          <label
-                            htmlFor={optionId}
-                            className={cn(
-                              "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150",
-                              isSelected
-                                ? "border-oak-primary/40 bg-oak-primary/5 text-text-primary"
-                                : "border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60"
-                            )}
-                          >
-                            <input
-                              id={optionId}
-                              type="radio"
-                              name={field.key}
-                              value={option.value}
-                              checked={isSelected}
-                              onChange={() => setFieldValue(
-                                field.key,
-                                option.allowTextInput
-                                  ? { value: option.value, detailText: selectedEntry?.value === option.value ? selectedEntry.detailText : '' }
-                                  : option.value
-                              )}
-                              className="sr-only"
-                            />
-                            <span className={cn(
-                              "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-150",
-                              isSelected ? "border-oak-primary" : "border-border-primary"
-                            )}>
-                              {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-oak-primary" />}
-                            </span>
-                            {option.label}
-                          </label>
-                          {option.allowTextInput && isSelected && (
-                            <input
-                              type="text"
-                              value={selectedEntry?.detailText || ''}
-                              onChange={(e) => setFieldValue(field.key, { value: option.value, detailText: e.target.value })}
-                              placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
-                              className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary"
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </fieldset>
-                )}
-
-                {field.type === 'MULTIPLE_CHOICE' && (
-                  <fieldset
-                    className="space-y-2"
-                    aria-label={field.hideLabel ? accessibleLabel : undefined}
-                    aria-labelledby={field.hideLabel ? undefined : labelId}
-                    aria-describedby={describedBy}
-                    aria-invalid={errorText ? 'true' : undefined}
-                  >
-                    {choiceOptions.map((option, index) => {
-                      const entries = parseChoiceAnswerEntries(value);
-                      const values = entries.map((entry) => entry.value);
-                      const isChecked = values.includes(option.value);
-                      const optionId = `${fieldDomId}-option-${index}-${toDomSafeId(option.value)}`;
-                      const optionEntry = entries.find((entry) => entry.value === option.value);
-                      return (
-                        <div key={`${option.value}-${index}`} className="space-y-1.5">
-                          <label
-                            htmlFor={optionId}
-                            className={cn(
-                              "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150",
-                              isChecked
-                                ? "border-oak-primary/40 bg-oak-primary/5 text-text-primary"
-                                : "border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60"
-                            )}
-                          >
-                            <input
-                              id={optionId}
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  const nextEntries = [
-                                    ...entries.filter((entry) => entry.value !== option.value),
-                                    { value: option.value, detailText: '' },
-                                  ];
-                                  setFieldValue(
-                                    field.key,
-                                    nextEntries.map((entry) => (
-                                      entry.detailText || (option.allowTextInput && entry.value === option.value)
-                                        ? { value: entry.value, detailText: entry.detailText }
-                                        : entry.value
-                                    ))
-                                  );
-                                } else {
-                                  const nextEntries = entries.filter((entry) => entry.value !== option.value);
-                                  setFieldValue(
-                                    field.key,
-                                    nextEntries.map((entry) => (
-                                      entry.detailText ? { value: entry.value, detailText: entry.detailText } : entry.value
-                                    ))
-                                  );
-                                }
-                              }}
-                              className="sr-only"
-                            />
-                            <span className={cn(
-                              "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-150",
-                              isChecked ? "border-oak-primary bg-oak-primary" : "border-border-primary"
-                            )}>
-                              {isChecked && (
-                                <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M2 6l3 3 5-5" />
-                                </svg>
-                              )}
-                            </span>
-                            {option.label}
-                          </label>
-                          {option.allowTextInput && isChecked && (
-                            <input
-                              type="text"
-                              value={optionEntry?.detailText || ''}
-                              onChange={(e) => {
-                                const nextEntries = entries.map((entry) => (
-                                  entry.value === option.value ? { ...entry, detailText: e.target.value } : entry
-                                ));
-                                setFieldValue(
-                                  field.key,
-                                  nextEntries.map((entry) => (
-                                    entry.detailText
-                                      ? { value: entry.value, detailText: entry.detailText }
-                                      : entry.value
-                                  ))
-                                );
-                              }}
-                              placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
-                              className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary"
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </fieldset>
-                )}
-
-                {field.type === 'FILE_UPLOAD' && (
+              <div key={item.heading?.id ?? `group-${itemIndex}`}>
+                {item.heading && renderHeadingField(item.heading)}
+                {groupFields.length > 0 && (
                   <div className={cn(
-                    'rounded-xl border border-dashed bg-background-primary/50 p-6 text-center transition-colors duration-150',
-                    uploadStatus ? 'border-status-success/40' : 'border-border-primary/60 hover:border-oak-primary/40'
+                    'rounded-xl border bg-white shadow-sm',
+                    groupHasError
+                      ? 'border-status-error/40 ring-1 ring-status-error/20'
+                      : 'border-border-primary/50'
                   )}>
-                    <UploadCloud className="mx-auto mb-2 h-8 w-8 text-text-muted" />
-                    <label htmlFor={controlId} className="text-sm text-text-primary underline cursor-pointer">
-                      {uploadStatus ? 'Replace file' : 'Upload a file'}
-                    </label>
-                    <input
-                      id={controlId}
-                      type="file"
-                      className="sr-only"
-                      aria-label={field.hideLabel ? accessibleLabel : undefined}
-                      aria-invalid={errorText ? 'true' : undefined}
-                      aria-describedby={describedBy}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          uploadFile(field.key, file);
-                        }
-                      }}
-                    />
-                    <p className="mt-1 text-xs text-text-muted">
-                      {uploadingField === field.key
-                        ? 'Uploading...'
-                        : uploadStatus
-                          ? 'File uploaded successfully'
-                          : 'Select a file to upload'}
-                    </p>
-                    {uploadStatus && (
-                      <div className="mt-3 rounded-md border border-status-success/30 bg-status-success/5 px-2.5 py-2 text-left">
-                        <div className="flex items-start gap-2 text-sm text-text-primary">
-                          <CheckCircle2 className="mt-0.5 h-4 w-4 text-status-success" />
-                          <div className="min-w-0">
-                            <p className="truncate font-medium">{uploadStatus.fileName}</p>
-                            <p className="text-xs text-text-secondary">{formatFileSize(uploadStatus.sizeBytes)}</p>
-                          </div>
-                        </div>
+                    <div className="p-5">
+                      <div className="grid grid-cols-12 gap-x-4">
+                        {groupFields.map((field, fieldIndexInGroup) =>
+                          renderCardField(field, fieldIndexInGroup, groupFields)
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
-
-                {field.type === 'SIGNATURE' && (
-                  <div
-                    role="group"
-                    aria-label={field.hideLabel ? accessibleLabel : undefined}
-                    aria-labelledby={field.hideLabel ? undefined : labelId}
-                    aria-describedby={describedBy}
-                  >
-                    <SignaturePad
-                      value={typeof value === 'string' ? value : ''}
-                      onChange={(next) => setFieldValue(field.key, next)}
-                      ariaLabel={accessibleLabel}
-                    />
-                  </div>
-                )}
-
-                {errorText && !useDateSelector && (
-                  <p id={errorId} className="mt-1 text-xs text-status-error">{errorText}</p>
-                )}
-                </div>
               </div>
             );
           })}
