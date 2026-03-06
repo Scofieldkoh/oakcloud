@@ -67,6 +67,7 @@ export interface Tenant {
   status: string;
   contactEmail: string | null;
   contactPhone: string | null;
+  settings?: Record<string, unknown> | null;
   maxUsers: number;
   maxCompanies: number;
   maxStorageMb: number;

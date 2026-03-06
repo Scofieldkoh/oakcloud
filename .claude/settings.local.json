@@ -55,8 +55,9 @@
     "deny": [],
     "ask": []
   },
-  "enableAllProjectMcpServers": false,
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
+    "playwright",
     "browsermcp"
   ],
   "enabledPlugins": {

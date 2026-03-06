@@ -602,6 +602,41 @@
     border-top: 1px solid var(--border-primary);
     margin: 1rem 0;
   }
+
+  /* Rendered form rich text (outside editor) */
+  .form-rich-render p {
+    margin: 0;
+  }
+
+  .form-rich-render p + p {
+    margin-top: 0.75rem;
+  }
+
+  .form-rich-render p:empty::before {
+    content: '\00a0';
+  }
+
+  .form-rich-render ul,
+  .form-rich-render ol {
+    padding-left: 1.25rem;
+    margin: 0.75rem 0;
+  }
+
+  .form-rich-render ul {
+    list-style-type: disc;
+  }
+
+  .form-rich-render ol {
+    list-style-type: decimal;
+  }
+
+  .form-rich-render li + li {
+    margin-top: 0.2rem;
+  }
+
+  .form-rich-render a {
+    text-decoration: underline;
+  }
 }
 
 /* Page Break Visual Styles */

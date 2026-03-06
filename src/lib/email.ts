@@ -41,10 +41,17 @@ export interface EmailOptions {
   subject: string;
   html: string;
   text?: string;
+  attachments?: EmailAttachment[];
   from?: string;
   replyTo?: string;
   cc?: string | string[];
   bcc?: string | string[];
+}
+
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
 }
 
 export interface SendEmailResult {
@@ -136,6 +143,15 @@ async function sendViaGraph(options: EmailOptions): Promise<SendEmailResult> {
       }))
     : undefined;
 
+  const attachments = options.attachments?.map((attachment) => ({
+    '@odata.type': '#microsoft.graph.fileAttachment',
+    name: attachment.filename,
+    contentType: attachment.contentType || 'application/octet-stream',
+    contentBytes: Buffer.isBuffer(attachment.content)
+      ? attachment.content.toString('base64')
+      : Buffer.from(attachment.content).toString('base64'),
+  }));
+
   const message = {
     subject: options.subject,
     body: {
@@ -154,6 +170,7 @@ async function sendViaGraph(options: EmailOptions): Promise<SendEmailResult> {
     replyTo: options.replyTo
       ? [{ emailAddress: { address: options.replyTo } }]
       : undefined,
+    attachments,
   };
 
   try {
@@ -237,6 +254,11 @@ async function sendViaSmtp(options: EmailOptions): Promise<SendEmailResult> {
       subject: options.subject,
       html: options.html,
       text: options.text || stripHtml(options.html),
+      attachments: options.attachments?.map((attachment) => ({
+        filename: attachment.filename,
+        content: attachment.content,
+        contentType: attachment.contentType,
+      })),
     });
 
     return {

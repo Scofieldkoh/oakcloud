@@ -42,6 +42,38 @@ const TENANT_STATUSES = [
   { value: 'DEACTIVATED', label: 'Deactivated', color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300' },
 ];
 
+const DEFAULT_TENANT_TIMEZONE = 'Asia/Singapore';
+const TENANT_TIMEZONE_OPTIONS = [
+  'Asia/Singapore',
+  'UTC',
+  'Asia/Kuala_Lumpur',
+  'Asia/Hong_Kong',
+  'Asia/Tokyo',
+  'Asia/Seoul',
+  'Australia/Sydney',
+  'Europe/London',
+  'Europe/Paris',
+  'Europe/Berlin',
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+];
+
+function normalizeTenantTimezone(value: unknown): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return DEFAULT_TENANT_TIMEZONE;
+  }
+
+  const candidate = value.trim();
+  try {
+    Intl.DateTimeFormat('en-US', { timeZone: candidate }).format(new Date());
+    return candidate;
+  } catch {
+    return DEFAULT_TENANT_TIMEZONE;
+  }
+}
+
 function getStatusColor(status: string) {
   const found = TENANT_STATUSES.find((s) => s.value === status);
   return found?.color || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
@@ -83,6 +115,7 @@ export default function TenantsPage() {
     slug: '',
     contactEmail: '',
     contactPhone: '',
+    timezone: DEFAULT_TENANT_TIMEZONE,
     maxUsers: '50',
     maxCompanies: '100',
     maxStorageMb: '10240',
@@ -101,12 +134,17 @@ export default function TenantsPage() {
 
   // Open edit modal and populate form
   const openEditModal = (tenant: Tenant) => {
+    const currentSettings = (tenant.settings && typeof tenant.settings === 'object')
+      ? tenant.settings as Record<string, unknown>
+      : {};
+
     setEditingTenant(tenant);
     setEditFormData({
       name: tenant.name,
       slug: tenant.slug,
       contactEmail: tenant.contactEmail || '',
       contactPhone: tenant.contactPhone || '',
+      timezone: normalizeTenantTimezone(currentSettings.timezone),
       maxUsers: tenant.maxUsers.toString(),
       maxCompanies: tenant.maxCompanies.toString(),
       maxStorageMb: tenant.maxStorageMb.toString(),
@@ -122,6 +160,7 @@ export default function TenantsPage() {
       slug: '',
       contactEmail: '',
       contactPhone: '',
+      timezone: DEFAULT_TENANT_TIMEZONE,
       maxUsers: '50',
       maxCompanies: '100',
       maxStorageMb: '10240',
@@ -174,11 +213,20 @@ export default function TenantsPage() {
     }
 
     try {
+      const existingSettings = (editingTenant?.settings && typeof editingTenant.settings === 'object')
+        ? editingTenant.settings as Record<string, unknown>
+        : {};
+      const nextSettings = {
+        ...existingSettings,
+        timezone: normalizeTenantTimezone(editFormData.timezone),
+      };
+
       await updateTenantMutation.mutateAsync({
         name: editFormData.name,
         slug: editFormData.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
         contactEmail: editFormData.contactEmail || undefined,
         contactPhone: editFormData.contactPhone || undefined,
+        settings: nextSettings,
         maxUsers: parseInt(editFormData.maxUsers) || 50,
         maxCompanies: parseInt(editFormData.maxCompanies) || 100,
         maxStorageMb: parseInt(editFormData.maxStorageMb) || 10240,
@@ -762,6 +810,19 @@ export default function TenantsPage() {
                   inputSize="sm"
                   leftIcon={<Phone className="w-4 h-4" />}
                 />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-secondary">Timezone</label>
+                <select
+                  value={editFormData.timezone}
+                  onChange={(e) => setEditFormData({ ...editFormData, timezone: e.target.value })}
+                  className="input input-sm w-full"
+                >
+                  {TENANT_TIMEZONE_OPTIONS.map((timezone) => (
+                    <option key={timezone} value={timezone}>{timezone}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-3 gap-4">

@@ -24,6 +24,20 @@ import { createLogger } from '@/lib/logger';
 
 const log = createLogger('bizfile-processor');
 
+/**
+ * Parse user/AI-provided date input safely.
+ * Returns null for empty or invalid values to avoid Prisma invalid Date errors.
+ */
+function parseOptionalDate(value: string | Date | null | undefined): Date | null {
+  if (!value) return null;
+  const parsed = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatDateKey(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
 // ============================================================================
 // Selective Processing (Update existing company with changed fields only)
 // ============================================================================
@@ -690,20 +704,42 @@ export async function processBizFileExtraction(
     // Process former names
     if (normalizedData.entityDetails.formerNames?.length) {
       for (const formerName of normalizedData.entityDetails.formerNames) {
+        const formerNameValue = typeof formerName.name === 'string' ? formerName.name.trim() : '';
+        if (!formerNameValue) {
+          log.warn(`Skipping former name record for company ${company.id}: missing former name value`);
+          continue;
+        }
+
+        const effectiveFromDate =
+          parseOptionalDate(formerName.effectiveFrom) ??
+          parseOptionalDate(formerName.effectiveTo) ??
+          parseOptionalDate(entityDetails.dateOfNameChange) ??
+          parseOptionalDate(entityDetails.incorporationDate);
+
+        if (!effectiveFromDate) {
+          log.warn(
+            `Skipping former name record for company ${company.id}: no valid effective date for "${formerNameValue}"`
+          );
+          continue;
+        }
+
+        const effectiveToDate = parseOptionalDate(formerName.effectiveTo);
+        const formerNameId = `${company.id}-${formerNameValue}-${formatDateKey(effectiveFromDate)}`;
+
         await tx.companyFormerName.upsert({
           where: {
-            id: `${company.id}-${formerName.name}-${formerName.effectiveFrom}`,
+            id: formerNameId,
           },
           create: {
-            id: `${company.id}-${formerName.name}-${formerName.effectiveFrom}`,
+            id: formerNameId,
             companyId: company.id,
-            formerName: formerName.name,
-            effectiveFrom: new Date(formerName.effectiveFrom),
-            effectiveTo: formerName.effectiveTo ? new Date(formerName.effectiveTo) : null,
+            formerName: formerNameValue,
+            effectiveFrom: effectiveFromDate,
+            effectiveTo: effectiveToDate,
             sourceDocumentId: documentId,
           },
           update: {
-            effectiveTo: formerName.effectiveTo ? new Date(formerName.effectiveTo) : null,
+            effectiveTo: effectiveToDate,
           },
         });
       }

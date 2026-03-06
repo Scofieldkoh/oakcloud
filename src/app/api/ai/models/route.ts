@@ -4,11 +4,21 @@ import {
   getBestAvailableModelForTenant,
   getAvailableProvidersForTenant,
   PROVIDER_NAMES,
-  getModelsGroupedByProvider,
   getDefaultModelId,
   AI_MODELS,
 } from '@/lib/ai';
-import type { AIProvider } from '@/lib/ai';
+import type { AIModel, AIProvider } from '@/lib/ai';
+import { resolveConnector } from '@/services/connector.service';
+import { prisma } from '@/lib/prisma';
+
+type ConnectorProvider = 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'OPENROUTER';
+
+const PROVIDER_TO_CONNECTOR_PROVIDER: Record<AIProvider, ConnectorProvider> = {
+  openai: 'OPENAI',
+  anthropic: 'ANTHROPIC',
+  google: 'GOOGLE',
+  openrouter: 'OPENROUTER',
+};
 
 /**
  * GET /api/ai/models
@@ -38,38 +48,82 @@ export async function GET(request: NextRequest) {
     // Get available providers for this tenant (includes both connectors and env vars)
     const availableProviders = await getAvailableProvidersForTenant(tenantId);
 
-    // Get all models and mark availability based on tenant's providers
+    // Resolve active connector per provider (if any), so model overrides can be applied.
+    const providerList: AIProvider[] = ['openai', 'anthropic', 'google', 'openrouter'];
+    const resolvedConnectors = await Promise.all(
+      providerList.map(async (provider) => {
+        const resolved = await resolveConnector(
+          tenantId,
+          'AI_PROVIDER',
+          PROVIDER_TO_CONNECTOR_PROVIDER[provider]
+        );
+        return { provider, connectorId: resolved?.connector.id || null };
+      })
+    );
+    const connectorIdByProvider = new Map<AIProvider, string>();
+    for (const item of resolvedConnectors) {
+      if (item.connectorId) {
+        connectorIdByProvider.set(item.provider, item.connectorId);
+      }
+    }
+
+    const connectorIds = Array.from(new Set(Array.from(connectorIdByProvider.values())));
+    const connectorOverrides = connectorIds.length > 0
+      ? await prisma.connectorModelConfig.findMany({
+          where: {
+            connectorId: { in: connectorIds },
+          },
+          select: {
+            connectorId: true,
+            modelId: true,
+            isEnabled: true,
+          },
+        })
+      : [];
+    const overrideByConnectorAndModel = new Map(
+      connectorOverrides.map((item) => [`${item.connectorId}:${item.modelId}`, item.isEnabled])
+    );
+
+    // Get all models and mark availability based on tenant providers + connector model overrides
     const allModels = Object.values(AI_MODELS);
     const models = allModels.map((model) => ({
       ...model,
-      available: availableProviders.includes(model.provider as AIProvider),
+      available: (() => {
+        const provider = model.provider as AIProvider;
+        if (!availableProviders.includes(provider)) return false;
+        const connectorId = connectorIdByProvider.get(provider);
+        if (!connectorId) return true;
+        const override = overrideByConnectorAndModel.get(`${connectorId}:${model.id}`);
+        return override ?? true;
+      })(),
       providerConfigured: availableProviders.includes(model.provider as AIProvider),
     }));
 
     // Build provider status based on tenant's available providers
-    const providerList: AIProvider[] = ['openai', 'anthropic', 'google', 'openrouter'];
     const providers = providerList.map((provider) => ({
       provider,
       available: availableProviders.includes(provider),
       configured: availableProviders.includes(provider),
     }));
 
-    // Get best available model for this tenant
+    // Get best available model for this tenant and reconcile with connector model overrides
     const bestAvailableModel = await getBestAvailableModelForTenant(tenantId);
     const configuredDefault = getDefaultModelId();
-    const groupedModels = getModelsGroupedByProvider();
+    const availableModelIds = new Set(models.filter((m) => m.available).map((m) => m.id));
 
-    // Use the configured default if it's available, otherwise use best available
-    const configuredDefaultAvailable = models.find((m) => m.id === configuredDefault && m.available);
-    const defaultModel = configuredDefaultAvailable
-      ? configuredDefault
-      : bestAvailableModel;
+    // Prefer configured default, then best available, then first available model
+    const defaultModel = (
+      [configuredDefault, bestAvailableModel, ...Array.from(availableModelIds)]
+        .find((modelId): modelId is AIModel => !!modelId && availableModelIds.has(modelId))
+      || null
+    );
 
-    console.log('[DEBUG ai/models] DEFAULT_AI_MODEL env:', process.env.DEFAULT_AI_MODEL);
-    console.log('[DEBUG ai/models] configuredDefault:', configuredDefault);
-    console.log('[DEBUG ai/models] bestAvailableModel:', bestAvailableModel);
-    console.log('[DEBUG ai/models] configuredDefaultAvailable:', configuredDefaultAvailable?.id);
-    console.log('[DEBUG ai/models] defaultModel returned:', defaultModel);
+    const groupedModels = {
+      openai: models.filter((m) => m.provider === 'openai'),
+      anthropic: models.filter((m) => m.provider === 'anthropic'),
+      google: models.filter((m) => m.provider === 'google'),
+      openrouter: models.filter((m) => m.provider === 'openrouter'),
+    };
 
     // Format for frontend consumption
     const response = {
@@ -96,25 +150,25 @@ export async function GET(request: NextRequest) {
           id: m.id,
           name: m.name,
           description: m.description,
-          available: availableProviders.includes('openai'),
+          available: m.available,
         })),
         anthropic: groupedModels.anthropic.map((m) => ({
           id: m.id,
           name: m.name,
           description: m.description,
-          available: availableProviders.includes('anthropic'),
+          available: m.available,
         })),
         google: groupedModels.google.map((m) => ({
           id: m.id,
           name: m.name,
           description: m.description,
-          available: availableProviders.includes('google'),
+          available: m.available,
         })),
         openrouter: groupedModels.openrouter.map((m) => ({
           id: m.id,
           name: m.name,
           description: m.description,
-          available: availableProviders.includes('openrouter'),
+          available: m.available,
         })),
       },
     };

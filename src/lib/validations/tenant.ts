@@ -125,6 +125,9 @@ export type InviteUserInput = z.infer<typeof inviteUserSchema>;
 // ============================================================================
 
 export const tenantSettingsSchema = z.object({
+  // Localization settings
+  timezone: z.string().min(1).max(100).optional(),
+
   // Feature flags
   enableDocumentExtraction: z.boolean().optional(),
   enableAuditExport: z.boolean().optional(),

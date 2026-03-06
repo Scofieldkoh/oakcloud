@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import { FORM_FIELD_KEY_MAX_LENGTH } from '@/lib/form-utils';
+
+const MAX_FIELD_OPTIONS = 500;
+const MAX_FIELD_LABEL_LENGTH = 1000;
+const MAX_FIELD_SUBTEXT_LENGTH = 10000;
 
 export const formStatusSchema = z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']);
 
@@ -28,6 +33,8 @@ export const shortInputTypeSchema = z.enum([
   'info_heading_1',
   'info_heading_2',
   'info_heading_3',
+  'repeat_start',
+  'repeat_end',
 ]);
 
 export const fieldValidationSchema = z
@@ -39,7 +46,14 @@ export const fieldValidationSchema = z
     pattern: z.string().max(500).optional(),
     maxFileSizeMb: z.number().int().min(1).max(100).optional(),
     allowedMimeTypes: z.array(z.string().min(1).max(120)).max(20).optional(),
+    uploadFileNameTemplate: z.string().min(1).max(240).optional(),
     tooltipEnabled: z.boolean().optional(),
+    choiceInlineRight: z.boolean().optional(),
+    defaultToday: z.boolean().optional(),
+    infoBackgroundColor: z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/).optional(),
+    repeatMinItems: z.number().int().min(1).max(50).optional(),
+    repeatMaxItems: z.number().int().min(1).max(50).optional(),
+    repeatAddLabel: z.string().min(1).max(80).optional(),
   })
   .refine(
     (value) => {
@@ -49,15 +63,26 @@ export const fieldValidationSchema = z
       if (value.min !== undefined && value.max !== undefined) {
         return value.max >= value.min;
       }
+      if (value.repeatMinItems !== undefined && value.repeatMaxItems !== undefined) {
+        return value.repeatMaxItems >= value.repeatMinItems;
+      }
       return true;
     },
     { message: 'Invalid validation range' }
   );
 
 export const fieldConditionSchema = z.object({
-  fieldKey: z.string().min(1).max(120),
+  fieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH),
   operator: z.enum(['equals', 'not_equals', 'contains', 'is_empty', 'not_empty']),
   value: z.union([z.string(), z.number(), z.boolean()]).optional().nullable(),
+});
+
+const choiceOptionSchema = z.object({
+  label: z.string().min(1).max(200),
+  value: z.string().min(1).max(200).optional(),
+  allowTextInput: z.boolean().optional(),
+  textInputLabel: z.string().max(200).optional().nullable(),
+  textInputPlaceholder: z.string().max(200).optional().nullable(),
 });
 
 const layoutWidthSchema = z.union([
@@ -72,18 +97,18 @@ const layoutWidthSchema = z.union([
 export const formFieldSchema = z.object({
   id: z.string().uuid().optional(),
   type: formFieldTypeSchema,
-  label: z.string().max(200).optional().nullable(),
+  label: z.string().max(MAX_FIELD_LABEL_LENGTH).optional().nullable(),
   key: z
     .string()
     .min(1)
-    .max(120)
+    .max(FORM_FIELD_KEY_MAX_LENGTH)
     .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, 'Field key must start with a letter and use alphanumeric/underscore only')
     .optional(),
   placeholder: z.string().max(500).optional().nullable(),
-  subtext: z.string().max(2000).optional().nullable(),
+  subtext: z.string().max(MAX_FIELD_SUBTEXT_LENGTH).optional().nullable(),
   helpText: z.string().max(2000).optional().nullable(),
   inputType: shortInputTypeSchema.optional().nullable(),
-  options: z.array(z.string().min(1).max(200)).max(100).optional().nullable(),
+  options: z.array(z.union([z.string().min(1).max(200), choiceOptionSchema])).max(MAX_FIELD_OPTIONS).optional().nullable(),
   validation: fieldValidationSchema.optional().nullable(),
   condition: fieldConditionSchema.optional().nullable(),
   isRequired: z.boolean().optional().default(false),
@@ -171,7 +196,7 @@ export const publicSubmissionSchema = z.object({
 });
 
 export const publicUploadSchema = z.object({
-  fieldKey: z.string().min(1).max(120),
+  fieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH),
 });
 
 export type FormStatusInput = z.infer<typeof formStatusSchema>;

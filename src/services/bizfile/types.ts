@@ -21,7 +21,7 @@ export interface ExtractedBizFileData {
     name: string;
     formerName?: string;
     dateOfNameChange?: string;
-    formerNames?: Array<{ name: string; effectiveFrom: string; effectiveTo?: string }>;
+    formerNames?: Array<{ name: string; effectiveFrom?: string; effectiveTo?: string }>;
     entityType: string;
     status: string;
     statusDate?: string;

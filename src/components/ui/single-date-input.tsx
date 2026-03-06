@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { DayPicker } from 'react-day-picker';
+import { DayPicker, type DropdownProps } from 'react-day-picker';
 import { format, parse, isValid } from 'date-fns';
-import { Calendar, AlertCircle } from 'lucide-react';
+import { Calendar, AlertCircle, ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Import react-day-picker styles
@@ -33,6 +33,11 @@ export interface SingleDateInputProps {
   ariaLabel?: string;
 }
 
+const CALENDAR_START_MONTH = new Date(1900, 0, 1);
+const CALENDAR_END_MONTH = new Date(2100, 11, 31);
+const CALENDAR_POPOVER_WIDTH = 320;
+const CALENDAR_POPOVER_HEIGHT = 360;
+
 // Custom styles for react-day-picker v9 - using oak design system colors
 const calendarStyles = `
   .rdp-single {
@@ -52,10 +57,68 @@ const calendarStyles = `
   .rdp-single .rdp-month {
     margin: 0;
   }
+  .rdp-single .rdp-month_caption {
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    margin-bottom: 0.5rem;
+    padding-right: 72px;
+  }
   .rdp-single .rdp-caption_label {
     font-size: 0.875rem;
     font-weight: 500;
+    line-height: 1.25rem;
+    letter-spacing: 0.01em;
     color: var(--text-primary);
+  }
+  .rdp-single .rdp-dropdowns {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .rdp-single .rdp-dropdown_root {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .rdp-single .rdp-dropdown {
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .rdp-single .rdp-dropdown option {
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .rdp-single .rdp-dropdown:focus-visible ~ .rdp-caption_label {
+    outline: none;
+  }
+  .rdp-single .rdp-dropdown_root > .rdp-caption_label {
+    min-height: 2rem;
+    min-width: 5.5rem;
+    padding: 0 0.75rem;
+    justify-content: space-between;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid #d8e3df;
+    border-radius: 8px;
+    background: #f4f7f6;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .rdp-single .rdp-months_dropdown ~ .rdp-caption_label {
+    min-width: 7.25rem;
+  }
+  .rdp-single .rdp-dropdown_root:focus-within > .rdp-caption_label {
+    border-color: #294d44;
+    box-shadow: 0 0 0 2px rgba(41, 77, 68, 0.12);
+  }
+  .rdp-single .rdp-dropdown_root .rdp-chevron {
+    fill: currentColor;
   }
   .rdp-single .rdp-nav {
     display: flex;
@@ -139,6 +202,142 @@ const calendarStyles = `
     outline: 2px solid rgba(41, 77, 68, 0.5) !important;
   }
 `;
+
+function CalendarCaptionDropdown({
+  options,
+  value,
+  onChange,
+  className,
+  disabled,
+  'aria-label': ariaLabel,
+}: DropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const listboxRef = useRef<HTMLDivElement>(null);
+
+  const isMonthDropdown = className?.includes('months_dropdown');
+  const selectedValue = typeof value === 'number' ? value : Number(value);
+  const selectedOption = options?.find((option) => option.value === selectedValue) ?? options?.[0];
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (disabled) {
+      setIsOpen(false);
+    }
+  }, [disabled]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const frameId = requestAnimationFrame(() => {
+      const listbox = listboxRef.current;
+      if (!listbox) return;
+
+      const selectedOptionButton = listbox.querySelector<HTMLButtonElement>('[aria-selected="true"]');
+      if (!selectedOptionButton) return;
+
+      const targetScrollTop = Math.max(
+        0,
+        selectedOptionButton.offsetTop - (listbox.clientHeight - selectedOptionButton.offsetHeight) / 2
+      );
+      listbox.scrollTop = targetScrollTop;
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [isOpen, selectedValue]);
+
+  const handleOptionSelect = useCallback(
+    (nextValue: number) => {
+      onChange?.({
+        target: { value: String(nextValue) },
+      } as React.ChangeEvent<HTMLSelectElement>);
+      setIsOpen(false);
+    },
+    [onChange]
+  );
+
+  return (
+    <div ref={containerRef} className={cn('relative inline-flex', className)}>
+      <button
+        type="button"
+        disabled={disabled}
+        aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={cn(
+          'h-8 inline-flex items-center justify-between gap-2 rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3',
+          'text-sm font-normal text-text-primary transition-colors',
+          'hover:border-[#294D44]/50 focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44]',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+          isMonthDropdown ? 'min-w-[7.25rem]' : 'min-w-[5.5rem]'
+        )}
+      >
+        <span className="truncate">{selectedOption?.label ?? ''}</span>
+        <ChevronDown className={cn('h-3.5 w-3.5 text-text-muted transition-transform', isOpen && 'rotate-180')} />
+      </button>
+
+      {isOpen && (
+        <div
+          className={cn(
+            'absolute left-0 top-[calc(100%+6px)] z-[140] overflow-hidden rounded-xl border border-border-primary bg-background-elevated shadow-elevation-2',
+            isMonthDropdown ? 'w-[11rem]' : 'w-[6.5rem]'
+          )}
+        >
+          <div ref={listboxRef} role="listbox" aria-label={ariaLabel} className="max-h-56 overflow-y-auto py-1">
+            {options?.map((option) => {
+              const isSelected = option.value === selectedValue;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  disabled={option.disabled}
+                  onClick={() => handleOptionSelect(option.value)}
+                  className={cn(
+                    'flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-normal transition-colors',
+                    option.disabled
+                      ? 'cursor-not-allowed text-text-muted/50'
+                      : isSelected
+                        ? 'bg-background-secondary text-oak-primary'
+                        : 'text-text-primary hover:bg-background-secondary'
+                  )}
+                >
+                  <span className="flex-1 truncate">{option.label}</span>
+                  {isSelected && <Check className="h-3.5 w-3.5 flex-shrink-0 text-oak-primary" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Format date for display in input: "11 Jan 2026"
 function formatDisplayDate(date: Date): string {
@@ -278,15 +477,13 @@ export function SingleDateInput({
     const updatePosition = () => {
       if (isOpen && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        const popoverWidth = 300;
-        const popoverHeight = 340;
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
 
         // Calculate horizontal position
         let left = rect.left;
-        if (left + popoverWidth > viewportWidth - 16) {
-          left = rect.right - popoverWidth;
+        if (left + CALENDAR_POPOVER_WIDTH > viewportWidth - 16) {
+          left = rect.right - CALENDAR_POPOVER_WIDTH;
         }
         if (left < 16) {
           left = 16;
@@ -294,8 +491,8 @@ export function SingleDateInput({
 
         // Calculate vertical position
         let top = rect.bottom + 4;
-        if (top + popoverHeight > viewportHeight - 16) {
-          top = rect.top - popoverHeight - 4;
+        if (top + CALENDAR_POPOVER_HEIGHT > viewportHeight - 16) {
+          top = rect.top - CALENDAR_POPOVER_HEIGHT - 4;
           if (top < 16) {
             top = 16;
           }
@@ -430,9 +627,9 @@ export function SingleDateInput({
         ref={containerRef}
         className={cn(
           'h-10 w-full flex items-center rounded-lg border',
-          'bg-background-primary dark:bg-background-secondary border-border-primary',
-          'hover:border-border-secondary transition-colors',
-          'focus-within:ring-2 focus-within:ring-oak-primary/30 focus-within:border-oak-primary',
+          'bg-[#F4F7F6] dark:bg-background-secondary border-[#D8E3DF]',
+          'hover:border-[#294D44]/50 transition-colors',
+          'focus-within:ring-2 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44]',
           disabled && 'opacity-50 cursor-not-allowed',
           error && 'border-status-error hover:border-status-error focus-within:border-status-error focus-within:ring-status-error/30'
         )}
@@ -499,7 +696,7 @@ export function SingleDateInput({
             ref={popoverRef}
             data-single-date-popover
             className={cn(
-              'fixed z-[100] bg-background-elevated rounded-xl border border-border-primary shadow-elevation-2',
+              'fixed z-[100] w-[320px] bg-background-elevated rounded-xl border border-border-primary shadow-elevation-2',
               'animate-fade-in p-3'
             )}
             style={{ top: position.top, left: position.left }}
@@ -511,6 +708,12 @@ export function SingleDateInput({
                 onSelect={handleSelect}
                 month={month}
                 onMonthChange={setMonth}
+                components={{ Dropdown: CalendarCaptionDropdown }}
+                captionLayout="dropdown"
+                navLayout="after"
+                startMonth={CALENDAR_START_MONTH}
+                endMonth={CALENDAR_END_MONTH}
+                reverseYears
                 showOutsideDays
               />
             </div>

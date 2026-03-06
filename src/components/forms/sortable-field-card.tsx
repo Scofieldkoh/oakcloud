@@ -10,6 +10,12 @@ import { FIELD_TYPE_LABEL, WIDTH_CLASS, WIDTH_OPTIONS } from './builder-utils';
 import type { BuilderField } from './builder-utils';
 
 function getFieldTypeLabel(field: BuilderField): string {
+  if (field.type === 'PAGE_BREAK') {
+    if (field.inputType === 'repeat_start') return 'Dynamic section start';
+    if (field.inputType === 'repeat_end') return 'Dynamic section end';
+    return FIELD_TYPE_LABEL[field.type];
+  }
+
   if (field.type !== 'PARAGRAPH') {
     return FIELD_TYPE_LABEL[field.type];
   }
@@ -17,6 +23,34 @@ function getFieldTypeLabel(field: BuilderField): string {
   if (field.inputType === 'info_image') return 'Information / Image';
   if (field.inputType === 'info_url') return 'Information / URL';
   return 'Information / Text block';
+}
+
+function getFieldToneClasses(field: BuilderField): string {
+  if (field.type === 'PAGE_BREAK' && (field.inputType === 'repeat_start' || field.inputType === 'repeat_end')) {
+    return 'border-blue-300 dark:border-blue-700 bg-blue-50/40 dark:bg-blue-900/10';
+  }
+
+  if (field.type === 'PAGE_BREAK') {
+    return 'border-orange-300 dark:border-orange-700 bg-orange-50/40 dark:bg-orange-900/10';
+  }
+
+  if (field.type === 'PARAGRAPH') {
+    return 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/35 dark:bg-emerald-900/10';
+  }
+
+  return 'border-border-primary hover:border-border-secondary';
+}
+
+function getEnabledFieldFlags(field: BuilderField): string[] {
+  const flags: string[] = [];
+
+  if (field.isRequired) flags.push('Required');
+  if (field.isReadOnly) flags.push('Read only');
+  if (field.hideLabel) flags.push('Hide label');
+  if (field.validation?.tooltipEnabled === true) flags.push('Tooltip');
+  if (field.showOnSummary) flags.push('Summary');
+
+  return flags;
 }
 
 export function SortableFieldCard({
@@ -100,6 +134,7 @@ export function SortableFieldCard({
     pointerEvents: isDragging ? ('none' as const) : undefined,
     willChange: 'transform',
   };
+  const enabledFlags = getEnabledFieldFlags(field);
 
   const widthOptionsPanel = (
     <div className="flex items-center gap-1">
@@ -146,9 +181,7 @@ export function SortableFieldCard({
       <div
         className={cn(
           'overflow-visible rounded-lg border border-dashed bg-background-elevated px-3 py-3 transition-colors',
-          field.type === 'PAGE_BREAK'
-            ? 'border-orange-300 dark:border-orange-700 bg-orange-50/40 dark:bg-orange-900/10'
-            : 'border-border-primary hover:border-border-secondary',
+          getFieldToneClasses(field),
           selected && 'ring-1 ring-oak-primary border-oak-primary',
           isDropTarget && 'border-oak-primary/70 bg-oak-primary/5'
         )}
@@ -168,11 +201,8 @@ export function SortableFieldCard({
 
           <button
             type="button"
-            className={cn('flex-1 min-w-0 text-left', field.type === 'PAGE_BREAK' && 'cursor-default')}
-            onClick={() => {
-              if (field.type === 'PAGE_BREAK') return;
-              onSelect(field.clientId);
-            }}
+            className="flex-1 min-w-0 text-left"
+            onClick={() => onSelect(field.clientId)}
           >
             <div className="truncate font-semibold text-sm text-text-primary">
               {field.label || 'Untitled field'}
@@ -181,6 +211,18 @@ export function SortableFieldCard({
               {getFieldTypeLabel(field)}
               {field.key ? ` | ${field.key}` : ''}
             </div>
+            {enabledFlags.length > 0 && (
+              <div className="mt-1 flex flex-wrap items-center gap-1">
+                {enabledFlags.map((flag) => (
+                  <span
+                    key={`${field.clientId}-${flag}`}
+                    className="rounded-full border border-border-primary bg-background-secondary px-1.5 py-0.5 text-2xs font-medium text-text-secondary"
+                  >
+                    {flag}
+                  </span>
+                ))}
+              </div>
+            )}
           </button>
 
           <div ref={actionPopoverRef} className="relative flex items-center gap-1">
@@ -224,19 +266,17 @@ export function SortableFieldCard({
                       >
                         <Copy className="w-4 h-4" />
                       </button>
-                      {field.type !== 'PAGE_BREAK' && (
-                        <button
-                          type="button"
-                          className={actionButtonClass}
-                          onClick={() => {
-                            onSelect(field.clientId);
-                            setShowActionMenu(false);
-                          }}
-                          aria-label="Edit"
-                        >
-                          <SquarePen className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className={actionButtonClass}
+                        onClick={() => {
+                          onSelect(field.clientId);
+                          setShowActionMenu(false);
+                        }}
+                        aria-label="Edit"
+                      >
+                        <SquarePen className="w-4 h-4" />
+                      </button>
                       <button
                         type="button"
                         className={cn(actionButtonClass, 'hover:text-status-error')}
@@ -289,18 +329,16 @@ export function SortableFieldCard({
                     <Copy className="w-4 h-4" />
                   </button>
                 </Tooltip>
-                {field.type !== 'PAGE_BREAK' && (
-                  <Tooltip content="Edit">
-                    <button
-                      type="button"
-                      className={actionButtonClass}
-                      onClick={() => onSelect(field.clientId)}
-                      aria-label="Edit"
-                    >
-                      <SquarePen className="w-4 h-4" />
-                    </button>
-                  </Tooltip>
-                )}
+                <Tooltip content="Edit">
+                  <button
+                    type="button"
+                    className={actionButtonClass}
+                    onClick={() => onSelect(field.clientId)}
+                    aria-label="Edit"
+                  >
+                    <SquarePen className="w-4 h-4" />
+                  </button>
+                </Tooltip>
                 <Tooltip content="Delete">
                   <button
                     type="button"

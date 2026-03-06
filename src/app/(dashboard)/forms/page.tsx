@@ -428,7 +428,7 @@ export default function FormsPage() {
             label="Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="KYC"
+            placeholder="Client Intake Form"
             required
           />
 
@@ -446,7 +446,7 @@ export default function FormsPage() {
             label="Tags"
             value={tagsText}
             onChange={(e) => setTagsText(e.target.value)}
-            placeholder="kyc, onboarding"
+            placeholder="intake, registration"
             hint="Comma-separated"
           />
         </ModalBody>

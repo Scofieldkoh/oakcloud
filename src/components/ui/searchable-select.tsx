@@ -334,12 +334,12 @@ export function SearchableSelect({
         ref={containerRef}
         className={cn(
           'w-full flex items-center gap-2 rounded-lg border',
-          'bg-background-primary border-border-primary',
-          'hover:border-border-secondary focus-within:ring-2 focus-within:ring-oak-primary/30 focus-within:border-oak-primary',
+          'bg-[#F4F7F6] border-[#D8E3DF]',
+          'hover:border-[#294D44]/50 focus-within:ring-2 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44]',
           'transition-colors',
           sizeClasses[size],
           disabled && 'opacity-50 cursor-not-allowed',
-          isOpen && 'ring-2 ring-oak-primary/30 border-oak-primary',
+          isOpen && 'ring-2 ring-[#294D44]/20 border-[#294D44]',
           containerClassName
         )}
       >

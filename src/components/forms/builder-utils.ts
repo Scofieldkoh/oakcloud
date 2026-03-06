@@ -36,7 +36,13 @@ export type ShortInputType =
   | 'info_url'
   | 'info_heading_1'
   | 'info_heading_2'
-  | 'info_heading_3';
+  | 'info_heading_3'
+  | 'repeat_start'
+  | 'repeat_end';
+
+export function isRepeatMarkerInputType(value: string): value is 'repeat_start' | 'repeat_end' {
+  return value === 'repeat_start' || value === 'repeat_end';
+}
 
 export type ValidationConfig = {
   minLength?: number;
@@ -46,7 +52,22 @@ export type ValidationConfig = {
   pattern?: string;
   maxFileSizeMb?: number;
   allowedMimeTypes?: string[];
+  uploadFileNameTemplate?: string;
   tooltipEnabled?: boolean;
+  choiceInlineRight?: boolean;
+  defaultToday?: boolean;
+  infoBackgroundColor?: string;
+  repeatMinItems?: number;
+  repeatMaxItems?: number;
+  repeatAddLabel?: string;
+};
+
+export type ChoiceOptionConfig = {
+  label: string;
+  value: string;
+  allowTextInput?: boolean;
+  textInputLabel?: string | null;
+  textInputPlaceholder?: string | null;
 };
 
 export type ConditionConfig = {
@@ -65,7 +86,7 @@ export interface BuilderField {
   subtext: string;
   helpText: string;
   inputType: ShortInputType;
-  options: string[];
+  options: ChoiceOptionConfig[];
   validation: ValidationConfig | null;
   condition: ConditionConfig | null;
   isRequired: boolean;
@@ -86,7 +107,7 @@ export function newClientId(): string {
 
 export function defaultField(type: FormFieldInput['type'], position: number): BuilderField {
   const label = type === 'PAGE_BREAK' ? 'Page break' : 'Untitled field';
-  const key = type === 'PAGE_BREAK' ? `page_break_${position + 1}` : `field_${position + 1}`;
+  const key = normalizeKey(label);
 
   return {
     clientId: newClientId(),
@@ -98,7 +119,10 @@ export function defaultField(type: FormFieldInput['type'], position: number): Bu
     helpText: '',
     inputType: type === 'PARAGRAPH' ? 'info_text' : 'text',
     options: type === 'SINGLE_CHOICE' || type === 'MULTIPLE_CHOICE' || type === 'DROPDOWN'
-      ? ['Option 1', 'Option 2']
+      ? [
+        { label: 'Option 1', value: 'Option 1' },
+        { label: 'Option 2', value: 'Option 2' },
+      ]
       : [],
     validation: type === 'FILE_UPLOAD' ? { maxFileSizeMb: 50 } : null,
     condition: null,
@@ -112,9 +136,36 @@ export function defaultField(type: FormFieldInput['type'], position: number): Bu
 }
 
 
-function parseFieldOptions(value: unknown): string[] {
+function parseFieldOptions(value: unknown): ChoiceOptionConfig[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === 'string');
+
+  const parsed: ChoiceOptionConfig[] = [];
+  for (const item of value) {
+    if (typeof item === 'string') {
+      const text = item.trim();
+      if (!text) continue;
+      parsed.push({ label: text, value: text });
+      continue;
+    }
+
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+
+    const optionRecord = item as Record<string, unknown>;
+    const label = typeof optionRecord.label === 'string' ? optionRecord.label.trim() : '';
+    const valueText = typeof optionRecord.value === 'string' ? optionRecord.value.trim() : '';
+    const value = valueText || label;
+    if (!label || !value) continue;
+
+    parsed.push({
+      label,
+      value,
+      allowTextInput: optionRecord.allowTextInput === true,
+      textInputLabel: typeof optionRecord.textInputLabel === 'string' ? optionRecord.textInputLabel.trim() || null : null,
+      textInputPlaceholder: typeof optionRecord.textInputPlaceholder === 'string' ? optionRecord.textInputPlaceholder.trim() || null : null,
+    });
+  }
+
+  return parsed;
 }
 
 export function fromServerField(field: {
@@ -172,10 +223,29 @@ export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
     placeholder: field.placeholder || null,
     subtext: field.subtext || null,
     helpText: field.helpText || null,
-    inputType: field.type === 'SHORT_TEXT' || field.type === 'PARAGRAPH' ? field.inputType : null,
-    options: (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE' || field.type === 'DROPDOWN')
-      ? field.options.filter(Boolean)
-      : null,
+    inputType: field.type === 'SHORT_TEXT' || field.type === 'PARAGRAPH'
+      ? field.inputType
+      : (field.type === 'PAGE_BREAK' && isRepeatMarkerInputType(field.inputType) ? field.inputType : null),
+    options: (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE')
+      ? field.options
+        .map((option) => {
+          const label = option.label?.trim();
+          const value = label;
+          if (!label || !value) return null;
+          return {
+            label,
+            value,
+            ...(option.allowTextInput ? { allowTextInput: true } : {}),
+            ...(option.textInputLabel ? { textInputLabel: option.textInputLabel.trim() } : {}),
+            ...(option.textInputPlaceholder ? { textInputPlaceholder: option.textInputPlaceholder.trim() } : {}),
+          };
+        })
+        .filter((option): option is NonNullable<typeof option> => !!option)
+      : (field.type === 'DROPDOWN'
+        ? field.options
+          .map((option) => option.label.trim())
+          .filter(Boolean)
+        : null),
     validation: field.validation,
     condition: field.condition,
     isRequired: field.isRequired,
@@ -193,6 +263,13 @@ export function serializeBuilderState(input: {
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   tags: string[];
   fields: BuilderField[];
+  notificationRecipientEmails?: string[];
+  notificationRecipientText?: string;
+  pdfFileNameTemplate?: string;
+  i18nDefaultLocale?: string;
+  i18nEnabledLocales?: string[];
+  i18nAllowLocaleSwitch?: boolean;
+  i18nTranslations?: unknown;
 }): string {
   return JSON.stringify({
     title: input.title.trim(),
@@ -200,6 +277,13 @@ export function serializeBuilderState(input: {
     slug: input.slug.trim(),
     status: input.status,
     tags: input.tags,
+    notificationRecipientEmails: (input.notificationRecipientEmails || []).map((email) => email.trim().toLowerCase()).filter(Boolean),
+    notificationRecipientText: (input.notificationRecipientText || '').trim(),
+    pdfFileNameTemplate: (input.pdfFileNameTemplate || '').trim(),
+    i18nDefaultLocale: (input.i18nDefaultLocale || '').trim(),
+    i18nEnabledLocales: (input.i18nEnabledLocales || []).map((locale) => locale.trim()).filter(Boolean),
+    i18nAllowLocaleSwitch: input.i18nAllowLocaleSwitch !== false,
+    i18nTranslations: input.i18nTranslations || {},
     fields: input.fields.map((field, idx) => ({
       type: field.type,
       label: field.label,

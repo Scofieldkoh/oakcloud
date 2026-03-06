@@ -1,18 +1,20 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Download, Eye, GripVertical } from 'lucide-react';
+import { ChevronLeft, Download, Eye, GripVertical, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/toast';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useForm, useFormResponses, useUpdateForm, type FormResponsesResult } from '@/hooks/use-forms';
 import {
   RESPONSE_COLUMN_STATUS_ID,
   RESPONSE_COLUMN_SUBMITTED_ID,
   clampResponseColumnWidth,
+  formatChoiceAnswer,
   isSummaryEligibleFieldType,
   normalizeResponseColumnOrder,
   parseFormResponseTableSettings,
@@ -72,6 +74,11 @@ function formatSummaryCellValue(fieldType: string, value: unknown): string {
     return typeof value === 'string' && value.trim().length > 0 ? value : '-';
   }
 
+  if (fieldType === 'SINGLE_CHOICE' || fieldType === 'MULTIPLE_CHOICE') {
+    const choiceText = formatChoiceAnswer(value);
+    return choiceText || '-';
+  }
+
   if (Array.isArray(value)) {
     const text = value.map((item) => String(item)).join(', ').trim();
     return text || '-';
@@ -104,8 +111,20 @@ export default function FormResponsesPage() {
   const columnOrderRef = useRef<string[]>([]);
   const columnWidthsRef = useRef<Record<string, number>>({});
 
-  const { data: form, isLoading: isFormLoading, error: formError } = useForm(formId);
-  const { data, isLoading, error } = useFormResponses(formId, page, PAGE_SIZE);
+  const {
+    data: form,
+    isLoading: isFormLoading,
+    isFetching: isFormFetching,
+    error: formError,
+    refetch: refetchForm,
+  } = useForm(formId);
+  const {
+    data,
+    isLoading,
+    isFetching: isResponsesFetching,
+    error,
+    refetch: refetchResponses,
+  } = useFormResponses(formId, page, PAGE_SIZE);
   const updateForm = useUpdateForm(formId);
 
   useEffect(() => {
@@ -187,6 +206,21 @@ export default function FormResponsesPage() {
       .map((columnId) => columnMap.get(columnId))
       .filter((column): column is SummaryColumnDef => !!column);
   }, [baseColumnIds, columnOrder, columnMap]);
+
+  const isRefreshing = isFormFetching || isResponsesFetching;
+
+  const handleRefresh = useCallback(() => {
+    void Promise.all([refetchForm(), refetchResponses()]);
+  }, [refetchForm, refetchResponses]);
+
+  useKeyboardShortcuts([
+    {
+      key: 'r',
+      ctrl: true,
+      handler: handleRefresh,
+      description: 'Refresh responses',
+    },
+  ]);
 
   async function persistLayout(nextOrder: string[], nextWidths: Record<string, number>) {
     if (!form) return;
@@ -337,6 +371,16 @@ export default function FormResponsesPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<RefreshCw className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />}
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <span className="hidden xl:inline">Refresh (Ctrl+R)</span>
+            <span className="xl:hidden">Refresh</span>
+          </Button>
           <Button variant="secondary" size="sm" onClick={handleOpenPreview}>
             {form.status === 'PUBLISHED' ? 'View' : 'Preview'}
           </Button>

@@ -12,10 +12,21 @@ import {
 } from '@/generated/prisma';
 import { fromBuffer } from 'file-type';
 import { createAuditLog } from '@/lib/audit';
-import { normalizeKey, parseObject, isEmptyValue, evaluateCondition, type PublicFormField, type PublicFormDefinition } from '@/lib/form-utils';
+import {
+  normalizeKey,
+  parseObject,
+  formatChoiceAnswer,
+  isEmptyValue,
+  evaluateCondition,
+  parseFormFileNameSettings,
+  parseFormNotificationSettings,
+  type PublicFormField,
+  type PublicFormDefinition,
+} from '@/lib/form-utils';
 import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
-import { getAppBaseUrl, sendEmail } from '@/lib/email';
+import { getAppBaseUrl, sendEmail, type EmailAttachment } from '@/lib/email';
+import { createLogger } from '@/lib/logger';
 import type { TenantAwareParams } from '@/lib/types';
 import type {
   CreateFormInput,
@@ -76,6 +87,16 @@ const PDF_PAGE_WIDTH = 595.28; // A4 width in points
 const PDF_PAGE_HEIGHT = 841.89; // A4 height in points
 const PDF_MARGIN_X = 42;
 const PDF_MARGIN_Y = 44;
+const MAX_NOTIFICATION_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+const MAX_NOTIFICATION_UPLOAD_ATTACHMENTS = 20;
+const UPLOAD_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const FILE_NAME_TEMPLATE_PATTERN = /\[([a-zA-Z0-9_]+)\]/g;
+const FILE_NAME_INVALID_CHARS_PATTERN = /[<>"/\\|?*\u0000-\u001F]+/g;
+const DATA_IMAGE_URI_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,/i;
+const FILE_NAME_FALLBACK = 'file';
+const FILE_NAME_MAX_LENGTH = 220;
+const DEFAULT_TENANT_TIME_ZONE = 'Asia/Singapore';
+const log = createLogger('form-builder');
 
 function toAnswerRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -102,6 +123,23 @@ function safePdfText(value: string): string {
   return value
     .replace(/\r\n/g, '\n')
     .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '?');
+}
+
+function stripHtmlForPdf(value: string): string {
+  return value
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '- ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function wrapPdfText(
@@ -176,7 +214,8 @@ function formatResponseFieldValue(
         if (link) return linkLabel ? `${linkLabel} (${link})` : link;
         return 'URL block';
       }
-      return field.subtext?.trim() || field.label?.trim() || '-';
+      const textContent = stripHtmlForPdf(field.subtext || '');
+      return textContent || field.label?.trim() || '-';
     }
 
     return '-';
@@ -195,11 +234,8 @@ function formatResponseFieldValue(
     return '-';
   }
 
-  if (field.type === 'MULTIPLE_CHOICE' && Array.isArray(value)) {
-    const text = value
-      .map((item) => String(item))
-      .join(', ')
-      .trim();
+  if (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') {
+    const text = formatChoiceAnswer(value);
     return text || '-';
   }
 
@@ -224,6 +260,88 @@ function formatResponseFieldValue(
 
   const text = String(value).trim();
   return text || '-';
+}
+
+type RepeatSectionPdfConfig = {
+  id: string;
+  minItems: number;
+};
+
+type SubmissionPdfPageItem =
+  | { kind: 'field'; field: FormField }
+  | {
+    kind: 'repeat';
+    sectionId: string;
+    title: string;
+    hint: string | null;
+    fields: FormField[];
+    rowCount: number;
+  };
+
+type SubmissionPdfPage = {
+  items: SubmissionPdfPageItem[];
+};
+
+function isRepeatStartMarker(field: FormField): boolean {
+  return field.type === 'PAGE_BREAK' && field.inputType === 'repeat_start';
+}
+
+function isRepeatEndMarker(field: FormField): boolean {
+  return field.type === 'PAGE_BREAK' && field.inputType === 'repeat_end';
+}
+
+function getRepeatSectionPdfConfig(startField: FormField): RepeatSectionPdfConfig {
+  const validation = parseObject(startField.validation);
+  const minItemsRaw = typeof validation?.repeatMinItems === 'number' ? Math.trunc(validation.repeatMinItems) : 1;
+  const minItems = Math.max(1, Math.min(50, minItemsRaw));
+  return {
+    id: startField.id || startField.key,
+    minItems,
+  };
+}
+
+function hasAnyAnswerValue(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some((item) => hasAnyAnswerValue(item));
+  }
+  return !isEmptyValue(value);
+}
+
+function getRepeatRowValue(value: unknown, rowIndex: number): unknown {
+  if (Array.isArray(value)) {
+    return value[rowIndex];
+  }
+  return rowIndex === 0 ? value : undefined;
+}
+
+function buildRepeatRowAnswers(answers: Record<string, unknown>, rowIndex: number): Record<string, unknown> {
+  const rowAnswers: Record<string, unknown> = {};
+  for (const [answerKey, answerValue] of Object.entries(answers)) {
+    rowAnswers[answerKey] = getRepeatRowValue(answerValue, rowIndex);
+  }
+  return rowAnswers;
+}
+
+function getRepeatSectionRowCount(
+  sectionFields: FormField[],
+  answers: Record<string, unknown>,
+  minItems: number
+): number {
+  let rowCount = 0;
+
+  for (const field of sectionFields) {
+    const value = answers[field.key];
+    if (Array.isArray(value)) {
+      rowCount = Math.max(rowCount, value.length);
+      continue;
+    }
+
+    if (hasAnyAnswerValue(value)) {
+      rowCount = Math.max(rowCount, 1);
+    }
+  }
+
+  return Math.max(minItems, rowCount);
 }
 
 async function buildSubmissionPdfBuffer(input: {
@@ -299,21 +417,68 @@ async function buildSubmissionPdfBuffer(input: {
   drawWrapped(`Respondent: ${input.respondentName || '-'}`, { size: 10, color: [0.35, 0.39, 0.46] });
   drawWrapped(`Email: ${input.respondentEmail || '-'}`, { size: 10, color: [0.35, 0.39, 0.46], spacingAfter: 8 });
 
-  const pages: FormField[][] = [[]];
-  for (const field of input.fields) {
+  const pages: SubmissionPdfPage[] = [{ items: [] }];
+  for (let index = 0; index < input.fields.length; index += 1) {
+    const field = input.fields[index];
+
     if (field.type === 'PAGE_BREAK') {
-      pages.push([]);
+      if (isRepeatStartMarker(field)) {
+        const sectionFields: FormField[] = [];
+        let cursor = index + 1;
+
+        while (cursor < input.fields.length) {
+          const candidate = input.fields[cursor];
+          if (isRepeatEndMarker(candidate)) {
+            break;
+          }
+          if (candidate.type === 'PAGE_BREAK') {
+            cursor -= 1;
+            break;
+          }
+          if (candidate.type !== 'HIDDEN') {
+            sectionFields.push(candidate);
+          }
+          cursor += 1;
+        }
+
+        const sectionConfig = getRepeatSectionPdfConfig(field);
+        const rowCount = getRepeatSectionRowCount(sectionFields, input.answers, sectionConfig.minItems);
+        const hasData = sectionFields.some((sectionField) => hasAnyAnswerValue(input.answers[sectionField.key]));
+        const shouldDisplaySection = evaluateCondition(field.condition, input.answers) || hasData;
+
+        if (shouldDisplaySection && sectionFields.length > 0 && rowCount > 0) {
+          pages[pages.length - 1].items.push({
+            kind: 'repeat',
+            sectionId: sectionConfig.id,
+            title: field.label?.trim() || 'Dynamic section',
+            hint: field.subtext?.trim() || null,
+            fields: sectionFields,
+            rowCount,
+          });
+        }
+
+        index = cursor;
+        continue;
+      }
+
+      if (isRepeatEndMarker(field)) {
+        continue;
+      }
+
+      pages.push({ items: [] });
       continue;
     }
+
     if (field.type === 'HIDDEN') continue;
     if (!evaluateCondition(field.condition, input.answers)) continue;
-    pages[pages.length - 1].push(field);
+
+    pages[pages.length - 1].items.push({ kind: 'field', field });
   }
 
-  const visiblePages = pages.filter((fields) => fields.length > 0);
+  const visiblePages = pages.filter((pageItems) => pageItems.items.length > 0);
 
   for (let pageIndex = 0; pageIndex < visiblePages.length; pageIndex += 1) {
-    const fields = visiblePages[pageIndex];
+    const pageItems = visiblePages[pageIndex];
 
     if (visiblePages.length > 1) {
       drawWrapped(`Page ${pageIndex + 1}`, {
@@ -324,11 +489,55 @@ async function buildSubmissionPdfBuffer(input: {
       });
     }
 
-    for (const field of fields) {
-      const label = field.label?.trim() || field.key;
-      const value = formatResponseFieldValue(field, input.answers[field.key], uploadsById);
-      drawWrapped(label, { size: 10, bold: true, spacingAfter: 1 });
-      drawWrapped(value, { size: 10, indent: 8, spacingAfter: 5, allowEmpty: true });
+    for (const item of pageItems.items) {
+      if (item.kind === 'field') {
+        const label = item.field.label?.trim() || item.field.key;
+        const value = formatResponseFieldValue(item.field, input.answers[item.field.key], uploadsById);
+        drawWrapped(label, { size: 10, bold: true, spacingAfter: 1 });
+        drawWrapped(value, { size: 10, indent: 8, spacingAfter: 5, allowEmpty: true });
+        continue;
+      }
+
+      drawWrapped(item.title, {
+        size: 11,
+        bold: true,
+        color: [0.1, 0.2, 0.36],
+        spacingAfter: 1,
+      });
+
+      if (item.hint) {
+        drawWrapped(item.hint, {
+          size: 9,
+          color: [0.35, 0.39, 0.46],
+          indent: 6,
+          spacingAfter: 2,
+        });
+      }
+
+      for (let rowIndex = 0; rowIndex < item.rowCount; rowIndex += 1) {
+        const rowAnswers = buildRepeatRowAnswers(input.answers, rowIndex);
+        const rowFields = item.fields.filter((field) => evaluateCondition(field.condition, rowAnswers));
+        if (rowFields.length === 0) continue;
+
+        drawWrapped(`Card ${rowIndex + 1}`, {
+          size: 10,
+          bold: true,
+          indent: 6,
+          color: [0.2, 0.25, 0.33],
+          spacingAfter: 1,
+        });
+
+        for (const field of rowFields) {
+          const label = field.label?.trim() || field.key;
+          const rowValue = getRepeatRowValue(input.answers[field.key], rowIndex);
+          const value = formatResponseFieldValue(field, rowValue, uploadsById);
+
+          drawWrapped(label, { size: 9, bold: true, indent: 12, spacingAfter: 1 });
+          drawWrapped(value, { size: 9, indent: 20, spacingAfter: 3, allowEmpty: true });
+        }
+
+        y -= 1;
+      }
     }
   }
 
@@ -338,6 +547,471 @@ async function buildSubmissionPdfBuffer(input: {
 function toPdfFileName(formTitle: string, submissionId: string): string {
   const safeTitle = formTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'form-response';
   return `${safeTitle}-${submissionId.slice(0, 8)}.pdf`;
+}
+
+function normalizeTenantTimeZone(value: unknown): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return DEFAULT_TENANT_TIME_ZONE;
+  }
+
+  const candidate = value.trim();
+  try {
+    Intl.DateTimeFormat('en-US', { timeZone: candidate }).format(new Date());
+    return candidate;
+  } catch {
+    return DEFAULT_TENANT_TIME_ZONE;
+  }
+}
+
+async function getTenantTimeZone(tenantId: string): Promise<string> {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { settings: true },
+  });
+
+  const settings = parseObject(tenant?.settings);
+  return normalizeTenantTimeZone(settings?.timezone);
+}
+
+function toDateStamps(value: Date, timeZone: string): { dateStamp: string; timeStamp: string; datetimeStamp: string } {
+  const resolvedTimeZone = normalizeTenantTimeZone(timeZone);
+  const date = new Date(value);
+
+  try {
+    const prettyParts = new Intl.DateTimeFormat('en-US', {
+      timeZone: resolvedTimeZone,
+      day: 'numeric',
+      month: 'short',
+      year: '2-digit',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).formatToParts(date);
+
+    const partValue = (parts: Intl.DateTimeFormatPart[], partType: Intl.DateTimeFormatPartTypes): string =>
+      parts.find((part) => part.type === partType)?.value || '';
+
+    const day = String(Number(partValue(prettyParts, 'day') || '0'));
+    const monthLong = partValue(prettyParts, 'month');
+    const year2 = partValue(prettyParts, 'year');
+    const hourRaw = partValue(prettyParts, 'hour');
+    const hour = String(Number(hourRaw || '0'));
+    const minute = partValue(prettyParts, 'minute');
+    const dayPeriod = partValue(prettyParts, 'dayPeriod').replace(/\s+/g, '').toUpperCase();
+
+    const dateStamp = `${day} ${monthLong} ${year2}`;
+    const timeStamp = `${hour}.${minute}${dayPeriod}`;
+    const datetimeStamp = `${dateStamp} - ${timeStamp}`;
+
+    return {
+      dateStamp,
+      timeStamp,
+      datetimeStamp,
+    };
+  } catch {
+    const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = String(date.getUTCDate());
+    const month = monthShort[date.getUTCMonth()] || 'Jan';
+    const year2 = String(date.getUTCFullYear()).slice(-2);
+    const hour24 = date.getUTCHours();
+    const hour12 = String((hour24 % 12) || 12);
+    const minute = String(date.getUTCMinutes()).padStart(2, '0');
+    const dayPeriod = hour24 >= 12 ? 'PM' : 'AM';
+    const dateStamp = `${day} ${month} ${year2}`;
+    const timeStamp = `${hour12}.${minute}${dayPeriod}`;
+    return {
+      dateStamp,
+      timeStamp,
+      datetimeStamp: `${dateStamp} - ${timeStamp}`,
+    };
+  }
+}
+
+function normalizeTemplateValue(value: string, maxLength: number = 160): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  return trimmed.slice(0, maxLength);
+}
+
+function toFileNameTemplateValue(value: unknown): string {
+  if (value === null || value === undefined) return '';
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed || DATA_IMAGE_URI_PATTERN.test(trimmed)) return '';
+    return normalizeTemplateValue(trimmed, 240);
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  const choiceText = formatChoiceAnswer(value);
+  if (choiceText) {
+    return normalizeTemplateValue(choiceText, 240);
+  }
+
+  if (Array.isArray(value)) {
+    const text = value
+      .map((item) => toFileNameTemplateValue(item))
+      .filter(Boolean)
+      .join(', ');
+    return normalizeTemplateValue(text, 240);
+  }
+
+  const record = parseObject(value);
+  if (record && typeof record.value === 'string') {
+    return normalizeTemplateValue(record.value, 240);
+  }
+
+  try {
+    return normalizeTemplateValue(JSON.stringify(value), 240);
+  } catch {
+    return '';
+  }
+}
+
+function sanitizeFileNameExtension(value: string): string {
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return '';
+
+  const normalized = trimmed.startsWith('.') ? trimmed : `.${trimmed}`;
+  if (!/^\.[a-z0-9]{1,15}$/.test(normalized)) {
+    return '';
+  }
+
+  return normalized;
+}
+
+function stripTrailingExtension(value: string): string {
+  return value.trim().replace(/\.[a-z0-9]{1,15}$/i, '');
+}
+
+function sanitizeFileNameStem(value: string, fallback: string): string {
+  const safeFallback = normalizeTemplateValue(
+    stripTrailingExtension(fallback)
+      .replace(FILE_NAME_INVALID_CHARS_PATTERN, ' ')
+      .replace(/\s+/g, ' '),
+    180
+  ) || FILE_NAME_FALLBACK;
+
+  const cleaned = normalizeTemplateValue(
+    stripTrailingExtension(value)
+      .replace(FILE_NAME_INVALID_CHARS_PATTERN, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/^[. ]+|[. ]+$/g, ''),
+    180
+  );
+
+  return cleaned || safeFallback;
+}
+
+function splitFileNameParts(fileName: string): { base: string; extension: string } {
+  const trimmed = fileName.trim();
+  const match = trimmed.match(/(\.[a-z0-9]{1,15})$/i);
+
+  if (!match) {
+    return { base: trimmed, extension: '' };
+  }
+
+  return {
+    base: trimmed.slice(0, -match[1].length),
+    extension: sanitizeFileNameExtension(match[1]),
+  };
+}
+
+function composeSafeFileName(stem: string, extension: string, fallbackStem: string): string {
+  const safeExtension = sanitizeFileNameExtension(extension);
+  const safeStem = sanitizeFileNameStem(stem, fallbackStem);
+  const maxStemLength = Math.max(1, FILE_NAME_MAX_LENGTH - safeExtension.length);
+  const boundedStem = safeStem.slice(0, maxStemLength).replace(/[. ]+$/g, '').trim() || FILE_NAME_FALLBACK;
+  return `${boundedStem}${safeExtension}`;
+}
+
+function makeUniqueFileName(candidate: string, used: Set<string>): string {
+  let nextName = candidate;
+  const initialParts = splitFileNameParts(candidate);
+  const base = sanitizeFileNameStem(initialParts.base, FILE_NAME_FALLBACK);
+  const extension = sanitizeFileNameExtension(initialParts.extension);
+  let suffix = 2;
+
+  while (used.has(nextName.toLowerCase())) {
+    const counterSuffix = `-${suffix}`;
+    const maxBaseLength = Math.max(1, FILE_NAME_MAX_LENGTH - extension.length - counterSuffix.length);
+    const nextBase = base.slice(0, maxBaseLength).replace(/[. ]+$/g, '').trim() || FILE_NAME_FALLBACK;
+    nextName = `${nextBase}${counterSuffix}${extension}`;
+    suffix += 1;
+  }
+
+  used.add(nextName.toLowerCase());
+  return nextName;
+}
+
+function buildFileNameTemplateVariables(input: {
+  formTitle: string;
+  formSlug: string;
+  submissionId: string;
+  submittedAt: Date;
+  timeZone: string;
+  answers: Record<string, unknown>;
+  extra?: Record<string, string>;
+}): Record<string, string> {
+  const stamps = toDateStamps(input.submittedAt, input.timeZone);
+  const variables: Record<string, string> = {
+    form_title: normalizeTemplateValue(input.formTitle, 200),
+    form_slug: normalizeTemplateValue(input.formSlug, 120),
+    submission_id: normalizeTemplateValue(input.submissionId, 80),
+    datetime_stamp: stamps.datetimeStamp,
+    date_stamp: stamps.dateStamp,
+    time_stamp: stamps.timeStamp,
+  };
+
+  for (const [answerKey, answerValue] of Object.entries(input.answers)) {
+    if (!answerKey) continue;
+    variables[answerKey.toLowerCase()] = toFileNameTemplateValue(answerValue);
+  }
+
+  for (const [extraKey, extraValue] of Object.entries(input.extra || {})) {
+    if (!extraKey) continue;
+    variables[extraKey.toLowerCase()] = normalizeTemplateValue(extraValue, 200);
+  }
+
+  return variables;
+}
+
+function applyFileNameTemplate(template: string, variables: Record<string, string>): string {
+  return template.replace(FILE_NAME_TEMPLATE_PATTERN, (_match, rawKey: string) => {
+    const key = rawKey.trim().toLowerCase();
+    return variables[key] || '';
+  });
+}
+
+function resolveSubmissionPdfFileName(input: {
+  formTitle: string;
+  formSlug: string;
+  settings: unknown;
+  submissionId: string;
+  submittedAt: Date;
+  timeZone: string;
+  answers: Record<string, unknown>;
+}): string {
+  const fallback = toPdfFileName(input.formTitle, input.submissionId);
+  const fileNameSettings = parseFormFileNameSettings(input.settings);
+
+  if (!fileNameSettings.pdfTemplate) {
+    return fallback;
+  }
+
+  const templateVariables = buildFileNameTemplateVariables({
+    formTitle: input.formTitle,
+    formSlug: input.formSlug,
+    submissionId: input.submissionId,
+    submittedAt: input.submittedAt,
+    timeZone: input.timeZone,
+    answers: input.answers,
+  });
+
+  const rendered = applyFileNameTemplate(fileNameSettings.pdfTemplate, templateVariables);
+  const fallbackParts = splitFileNameParts(fallback);
+  return composeSafeFileName(rendered, '.pdf', fallbackParts.base || 'form-response');
+}
+
+function resolveSubmissionUploadFileNames(input: {
+  formTitle: string;
+  formSlug: string;
+  submissionId: string;
+  submittedAt: Date;
+  timeZone: string;
+  answers: Record<string, unknown>;
+  uploads: Array<Pick<FormUpload, 'id' | 'fieldId' | 'fileName' | 'mimeType'>>;
+  fieldById: Map<string, Pick<FormField, 'key' | 'validation'>>;
+}): Map<string, string> {
+  const usedNames = new Set<string>();
+  const renamedByUploadId = new Map<string, string>();
+
+  for (const upload of input.uploads) {
+    const fieldMeta = upload.fieldId ? input.fieldById.get(upload.fieldId) : null;
+    const validation = parseObject(fieldMeta?.validation);
+    const templateRaw = typeof validation?.uploadFileNameTemplate === 'string'
+      ? validation.uploadFileNameTemplate.trim()
+      : '';
+
+    if (templateRaw.length === 0) {
+      usedNames.add(upload.fileName.toLowerCase());
+    }
+  }
+
+  for (let index = 0; index < input.uploads.length; index += 1) {
+    const upload = input.uploads[index];
+    const fieldMeta = upload.fieldId ? input.fieldById.get(upload.fieldId) : null;
+    const validation = parseObject(fieldMeta?.validation);
+    const uploadTemplate = typeof validation?.uploadFileNameTemplate === 'string'
+      ? validation.uploadFileNameTemplate.trim()
+      : '';
+    if (!uploadTemplate) {
+      continue;
+    }
+
+    const parsedOriginal = splitFileNameParts(upload.fileName);
+    const inferredExtension = sanitizeFileNameExtension(
+      parsedOriginal.extension || StorageKeys.getExtension(upload.fileName, upload.mimeType)
+    );
+    const originalBase = sanitizeFileNameStem(parsedOriginal.base, 'upload');
+    const originalFileName = composeSafeFileName(originalBase, inferredExtension, 'upload');
+    const fieldKey = fieldMeta?.key || '';
+
+    const templateVariables = buildFileNameTemplateVariables({
+      formTitle: input.formTitle,
+      formSlug: input.formSlug,
+      submissionId: input.submissionId,
+      submittedAt: input.submittedAt,
+      timeZone: input.timeZone,
+      answers: input.answers,
+      extra: {
+        field_key: fieldKey,
+        upload_id: upload.id,
+        original_filename: originalFileName,
+        original_basename: originalBase,
+        original_extension: inferredExtension.startsWith('.') ? inferredExtension.slice(1) : inferredExtension,
+        file_index: String(index + 1),
+      },
+    });
+
+    const rendered = applyFileNameTemplate(uploadTemplate, templateVariables);
+    const candidate = composeSafeFileName(rendered, inferredExtension, originalBase || 'upload');
+    const uniqueFileName = makeUniqueFileName(candidate, usedNames);
+    renamedByUploadId.set(upload.id, uniqueFileName);
+  }
+
+  return renamedByUploadId;
+}
+
+async function buildSubmissionNotificationAttachments(input: {
+  pdfFileName: string;
+  pdfBuffer: Buffer;
+  uploads: FormUpload[];
+}): Promise<{ attachments: EmailAttachment[]; omittedUploads: number }> {
+  const attachments: EmailAttachment[] = [
+    {
+      filename: input.pdfFileName,
+      content: input.pdfBuffer,
+      contentType: 'application/pdf',
+    },
+  ];
+
+  let totalBytes = input.pdfBuffer.length;
+  let omittedUploads = 0;
+  const uploadsToAttach = input.uploads.slice(0, MAX_NOTIFICATION_UPLOAD_ATTACHMENTS);
+  omittedUploads += Math.max(0, input.uploads.length - uploadsToAttach.length);
+
+  for (const upload of uploadsToAttach) {
+    if (totalBytes >= MAX_NOTIFICATION_ATTACHMENT_BYTES) {
+      omittedUploads += 1;
+      continue;
+    }
+
+    const expectedSize = Math.max(0, upload.sizeBytes || 0);
+    if (expectedSize > 0 && totalBytes + expectedSize > MAX_NOTIFICATION_ATTACHMENT_BYTES) {
+      omittedUploads += 1;
+      continue;
+    }
+
+    try {
+      const content = await storage.download(upload.storageKey);
+      if (totalBytes + content.length > MAX_NOTIFICATION_ATTACHMENT_BYTES) {
+        omittedUploads += 1;
+        continue;
+      }
+
+      attachments.push({
+        filename: upload.fileName,
+        content,
+        contentType: upload.mimeType || 'application/octet-stream',
+      });
+      totalBytes += content.length;
+    } catch (error) {
+      omittedUploads += 1;
+      log.error('Failed to load upload for form completion email', {
+        formId: upload.formId,
+        uploadId: upload.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  return { attachments, omittedUploads };
+}
+
+async function sendCompletionNotificationEmail(input: {
+  form: Form & { fields: FormField[] };
+  submission: FormSubmission;
+  uploads: FormUpload[];
+  tenantTimeZone: string;
+}): Promise<void> {
+  const notificationSettings = parseFormNotificationSettings(input.form.settings);
+  const recipients = notificationSettings.completionRecipientEmails;
+  if (recipients.length === 0) return;
+
+  try {
+    const answers = toAnswerRecord(input.submission.answers);
+    const pdfBuffer = await buildSubmissionPdfBuffer({
+      formTitle: input.form.title,
+      submittedAt: input.submission.submittedAt,
+      respondentName: input.submission.respondentName,
+      respondentEmail: input.submission.respondentEmail,
+      status: input.submission.status,
+      fields: input.form.fields,
+      answers,
+      uploads: input.uploads,
+    });
+    const pdfFileName = resolveSubmissionPdfFileName({
+      formTitle: input.form.title,
+      formSlug: input.form.slug,
+      settings: input.form.settings,
+      submissionId: input.submission.id,
+      submittedAt: input.submission.submittedAt,
+      timeZone: input.tenantTimeZone,
+      answers,
+    });
+
+    const { attachments, omittedUploads } = await buildSubmissionNotificationAttachments({
+      pdfFileName,
+      pdfBuffer,
+      uploads: input.uploads,
+    });
+
+    const safeFormTitle = input.form.title.replace(/[<>&]/g, (match) => (
+      match === '<' ? '&lt;' : match === '>' ? '&gt;' : '&amp;'
+    ));
+    const submittedAt = new Date(input.submission.submittedAt).toLocaleString('en-SG');
+    const omittedMessage = omittedUploads > 0
+      ? `<p><em>${omittedUploads} uploaded file(s) were not attached due to size or attachment limits.</em></p>`
+      : '';
+    const html = `
+      <p>Hello,</p>
+      <p>A new response has been submitted for <strong>${safeFormTitle}</strong>.</p>
+      <p>Submitted on: ${submittedAt}</p>
+      ${omittedMessage}
+      <p>The response PDF and available uploaded files are attached.</p>
+    `;
+
+    const result = await sendEmail({
+      to: recipients,
+      subject: `New form submission: ${input.form.title}`,
+      html,
+      attachments,
+    });
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to send completion notification');
+    }
+  } catch (error) {
+    log.error('Failed to send form completion notification email', {
+      formId: input.form.id,
+      submissionId: input.submission.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 function toJsonInput(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull {
@@ -910,6 +1584,8 @@ export async function exportFormResponsePdf(
     },
     orderBy: { createdAt: 'asc' },
   });
+  const answers = toAnswerRecord(submission.answers);
+  const tenantTimeZone = await getTenantTimeZone(form.tenantId);
 
   const buffer = await buildSubmissionPdfBuffer({
     formTitle: form.title,
@@ -918,13 +1594,22 @@ export async function exportFormResponsePdf(
     respondentEmail: submission.respondentEmail,
     status: submission.status,
     fields: form.fields,
-    answers: toAnswerRecord(submission.answers),
+    answers,
     uploads,
+  });
+  const fileName = resolveSubmissionPdfFileName({
+    formTitle: form.title,
+    formSlug: form.slug,
+    settings: form.settings,
+    submissionId: submission.id,
+    submittedAt: submission.submittedAt,
+    timeZone: tenantTimeZone,
+    answers,
   });
 
   return {
     buffer,
-    fileName: toPdfFileName(form.title, submission.id),
+    fileName,
   };
 }
 
@@ -1100,10 +1785,115 @@ export async function createPublicSubmission(
   if (!form) {
     throw new Error('Form not found');
   }
+  const tenantTimeZone = await getTenantTimeZone(form.tenantId);
 
   const answers = input.answers as Record<string, unknown>;
+  const uploadIds = [...new Set(input.uploadIds || [])];
+  const uploadIdSet = new Set(uploadIds);
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   for (const field of form.fields) {
+    if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') continue;
+    const validation = parseObject(field.validation);
+    if (validation?.defaultToday !== true) continue;
+
+    const currentValue = answers[field.key];
+    if (Array.isArray(currentValue)) {
+      const nextRows = currentValue.map((rowValue) => (isEmptyValue(rowValue) ? todayIso : rowValue));
+      answers[field.key] = nextRows;
+      continue;
+    }
+
+    if (isEmptyValue(currentValue)) {
+      answers[field.key] = todayIso;
+    }
+  }
+
+  const collectUploadIdsFromAnswer = (value: unknown): string[] => {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed ? [trimmed] : [];
+    }
+
+    if (!Array.isArray(value)) return [];
+
+    const ids: string[] = [];
+    for (const item of value) {
+      ids.push(...collectUploadIdsFromAnswer(item));
+    }
+    return ids;
+  };
+
+  const hasItemValue = (item: unknown): boolean => {
+    if (isEmptyValue(item)) return false;
+    const itemRecord = parseObject(item);
+    if (itemRecord && 'value' in itemRecord) {
+      return typeof itemRecord.value === 'string' && itemRecord.value.trim().length > 0;
+    }
+    return true;
+  };
+
+  const validateRequiredField = (field: FormField): void => {
+    if (!field.isRequired) return;
+
+    const value = answers[field.key];
+
+    if (field.type === 'FILE_UPLOAD') {
+      const referencedUploadIds = collectUploadIdsFromAnswer(value)
+        .filter((id) => UPLOAD_ID_PATTERN.test(id));
+
+      if (referencedUploadIds.length === 0) {
+        throw new Error(`${field.label || field.key} is required`);
+      }
+
+      const hasMissingUpload = referencedUploadIds.some((id) => !uploadIdSet.has(id));
+      if (hasMissingUpload) {
+        throw new Error(`${field.label || field.key} has an invalid upload`);
+      }
+
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      const hasAllValues = value.length > 0 && value.every((item) => hasItemValue(item));
+      if (!hasAllValues) {
+        throw new Error(`${field.label || field.key} is required`);
+      }
+      return;
+    }
+
+    if (!hasItemValue(value)) {
+      throw new Error(`${field.label || field.key} is required`);
+    }
+  };
+
+  for (let index = 0; index < form.fields.length; index += 1) {
+    const field = form.fields[index];
+
+    if (isRepeatStartMarker(field)) {
+      const sectionVisible = evaluateCondition(parseObject(field.condition), answers);
+      let cursor = index + 1;
+
+      while (cursor < form.fields.length && !isRepeatEndMarker(form.fields[cursor])) {
+        const sectionField = form.fields[cursor];
+        if (
+          sectionVisible &&
+          sectionField.type !== 'PAGE_BREAK' &&
+          sectionField.type !== 'PARAGRAPH' &&
+          sectionField.type !== 'HTML' &&
+          sectionField.type !== 'HIDDEN' &&
+          evaluateCondition(parseObject(sectionField.condition), answers)
+        ) {
+          validateRequiredField(sectionField);
+        }
+        cursor += 1;
+      }
+
+      index = cursor;
+      continue;
+    }
+
     if (
       field.type === 'PAGE_BREAK' ||
       field.type === 'PARAGRAPH' ||
@@ -1113,23 +1903,39 @@ export async function createPublicSubmission(
       continue;
     }
 
-    const condition = parseObject(field.condition);
-    const visible = evaluateCondition(condition, answers);
-
-    if (!visible) {
+    if (!evaluateCondition(parseObject(field.condition), answers)) {
       continue;
     }
 
-    if (field.isRequired) {
-      const value = answers[field.key];
-      if (isEmptyValue(value)) {
-        throw new Error(`${field.label || field.key} is required`);
-      }
-    }
+    validateRequiredField(field);
   }
 
   const validKeys = new Set(form.fields.map((f) => f.key));
   const sanitizedAnswers: Record<string, unknown> = {};
+
+  const sanitizeChoiceEntry = (entry: unknown): string | { value: string; detailText?: string } | null => {
+    if (typeof entry === 'string') {
+      const trimmed = entry.trim();
+      if (!trimmed) return null;
+      return trimmed.slice(0, 10_000);
+    }
+
+    const record = parseObject(entry);
+    if (!record) return null;
+    const valueText = typeof record.value === 'string' ? record.value.trim() : '';
+    if (!valueText) return null;
+    const detailTextRaw = typeof record.detailText === 'string' ? record.detailText.trim() : '';
+    const detailText = detailTextRaw ? detailTextRaw.slice(0, 10_000) : '';
+
+    if (!detailText) {
+      return { value: valueText.slice(0, 10_000) };
+    }
+
+    return {
+      value: valueText.slice(0, 10_000),
+      detailText,
+    };
+  };
 
   for (const [key, value] of Object.entries(answers)) {
     if (!validKeys.has(key)) continue;
@@ -1141,27 +1947,57 @@ export async function createPublicSubmission(
       case 'SHORT_TEXT':
       case 'LONG_TEXT':
       case 'DROPDOWN':
-      case 'SINGLE_CHOICE':
         if (typeof value === 'string') {
           sanitizedAnswers[key] = value.slice(0, 10_000);
+        } else if (Array.isArray(value)) {
+          sanitizedAnswers[key] = value
+            .slice(0, 100)
+            .map((item) => (typeof item === 'string' ? item.slice(0, 10_000) : ''));
+        }
+        break;
+      case 'SINGLE_CHOICE':
+        if (Array.isArray(value)) {
+          sanitizedAnswers[key] = value
+            .slice(0, 100)
+            .map((entry) => sanitizeChoiceEntry(entry) ?? '');
+        } else {
+          const singleValue = sanitizeChoiceEntry(value);
+          if (singleValue) {
+            sanitizedAnswers[key] = singleValue;
+          }
         }
         break;
       case 'MULTIPLE_CHOICE':
         if (Array.isArray(value)) {
-          sanitizedAnswers[key] = value
-            .filter((v): v is string => typeof v === 'string')
-            .slice(0, 100)
-            .map((v) => v.slice(0, 10_000));
+          const normalizedMultipleChoice = value.slice(0, 100).map((entry) => {
+            if (Array.isArray(entry)) {
+              return entry
+                .slice(0, 100)
+                .map((candidate) => sanitizeChoiceEntry(candidate))
+                .map((candidate) => candidate ?? '');
+            }
+            return sanitizeChoiceEntry(entry) ?? '';
+          });
+          sanitizedAnswers[key] = normalizedMultipleChoice;
         }
         break;
-      case 'FILE_UPLOAD':
+      case 'FILE_UPLOAD': {
+        const referencedUploadIds = collectUploadIdsFromAnswer(value)
+          .filter((id) => UPLOAD_ID_PATTERN.test(id) && uploadIdSet.has(id))
+          .slice(0, 100);
+
+        if (referencedUploadIds.length > 0) {
+          sanitizedAnswers[key] = referencedUploadIds;
+        }
+        break;
+      }
       case 'SIGNATURE':
         if (typeof value === 'string') {
           sanitizedAnswers[key] = value.slice(0, 500_000);
         } else if (Array.isArray(value)) {
           sanitizedAnswers[key] = value
-            .filter((v): v is string => typeof v === 'string')
-            .slice(0, 20);
+            .slice(0, 100)
+            .map((item) => (typeof item === 'string' ? item.slice(0, 500_000) : ''));
         }
         break;
       case 'HIDDEN':
@@ -1173,21 +2009,29 @@ export async function createPublicSubmission(
         break;
     }
   }
+  const fieldById = new Map(form.fields.map((field) => [field.id, { key: field.key, validation: field.validation }]));
+  const renamedUploadsById = new Map<string, string>();
 
-  const uploadIds = [...new Set(input.uploadIds || [])];
+  const submission = await prisma.$transaction(async (tx) => {
+    let pendingUploads: Array<Pick<FormUpload, 'id' | 'fieldId' | 'fileName' | 'mimeType'>> = [];
 
-  return prisma.$transaction(async (tx) => {
     if (uploadIds.length > 0) {
-      const validUploads = await tx.formUpload.findMany({
+      pendingUploads = await tx.formUpload.findMany({
         where: {
           id: { in: uploadIds },
           formId: form.id,
           submissionId: null,
         },
-        select: { id: true },
+        select: {
+          id: true,
+          fieldId: true,
+          fileName: true,
+          mimeType: true,
+        },
+        orderBy: { createdAt: 'asc' },
       });
 
-      if (validUploads.length !== uploadIds.length) {
+      if (pendingUploads.length !== uploadIds.length) {
         throw new Error('Some uploaded files are invalid or already used');
       }
     }
@@ -1204,10 +2048,10 @@ export async function createPublicSubmission(
       },
     });
 
-    if (uploadIds.length > 0) {
+    if (pendingUploads.length > 0) {
       await tx.formUpload.updateMany({
         where: {
-          id: { in: uploadIds },
+          id: { in: pendingUploads.map((upload) => upload.id) },
           formId: form.id,
           submissionId: null,
         },
@@ -1215,6 +2059,31 @@ export async function createPublicSubmission(
           submissionId: submission.id,
         },
       });
+
+      const resolvedUploadFileNames = resolveSubmissionUploadFileNames({
+        formTitle: form.title,
+        formSlug: form.slug,
+        submissionId: submission.id,
+        submittedAt: submission.submittedAt,
+        timeZone: tenantTimeZone,
+        answers: sanitizedAnswers,
+        uploads: pendingUploads,
+        fieldById,
+      });
+
+      for (const [uploadId, fileName] of resolvedUploadFileNames.entries()) {
+        renamedUploadsById.set(uploadId, fileName);
+      }
+
+      for (const upload of pendingUploads) {
+        const nextFileName = resolvedUploadFileNames.get(upload.id);
+        if (!nextFileName || nextFileName === upload.fileName) continue;
+
+        await tx.formUpload.update({
+          where: { id: upload.id },
+          data: { fileName: nextFileName },
+        });
+      }
     }
 
     await tx.form.update({
@@ -1226,6 +2095,32 @@ export async function createPublicSubmission(
 
     return submission;
   });
+
+  const submissionUploads = await prisma.formUpload.findMany({
+    where: {
+      formId: form.id,
+      submissionId: submission.id,
+      tenantId: form.tenantId,
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+  const emailUploads = submissionUploads.map((upload) => {
+    const renamedFileName = renamedUploadsById.get(upload.id);
+    if (!renamedFileName || renamedFileName === upload.fileName) return upload;
+    return {
+      ...upload,
+      fileName: renamedFileName,
+    };
+  });
+
+  await sendCompletionNotificationEmail({
+    form,
+    submission,
+    uploads: emailUploads,
+    tenantTimeZone,
+  });
+
+  return submission;
 }
 
 async function getPublishedFormSubmissionContext(slug: string, submissionId: string): Promise<{
@@ -1279,6 +2174,8 @@ export async function exportPublicFormResponsePdf(
   submissionId: string
 ): Promise<{ buffer: Buffer; fileName: string }> {
   const { form, submission, uploads } = await getPublishedFormSubmissionContext(slug, submissionId);
+  const answers = toAnswerRecord(submission.answers);
+  const tenantTimeZone = await getTenantTimeZone(form.tenantId);
 
   const buffer = await buildSubmissionPdfBuffer({
     formTitle: form.title,
@@ -1287,13 +2184,22 @@ export async function exportPublicFormResponsePdf(
     respondentEmail: submission.respondentEmail,
     status: submission.status,
     fields: form.fields,
-    answers: toAnswerRecord(submission.answers),
+    answers,
     uploads,
+  });
+  const fileName = resolveSubmissionPdfFileName({
+    formTitle: form.title,
+    formSlug: form.slug,
+    settings: form.settings,
+    submissionId: submission.id,
+    submittedAt: submission.submittedAt,
+    timeZone: tenantTimeZone,
+    answers,
   });
 
   return {
     buffer,
-    fileName: toPdfFileName(form.title, submission.id),
+    fileName,
   };
 }
 
@@ -1386,6 +2292,8 @@ export async function exportFormResponsesCsv(
 
   const safeCell = (value: unknown): string => {
     if (value === null || value === undefined) return '';
+    const choiceText = formatChoiceAnswer(value);
+    if (choiceText) return choiceText;
     if (typeof value === 'string') return value;
     if (Array.isArray(value)) return value.join(', ');
     return String(value);
