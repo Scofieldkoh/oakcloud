@@ -26,6 +26,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 const NAME_HINT_PATTERN = /(full[\s_-]?name|first[\s_-]?name|last[\s_-]?name|name)/i;
 const EMAIL_HINT_PATTERN = /email/i;
 const DATA_URI_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,/i;
+const HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 type UploadStatus = {
   id: string;
@@ -84,6 +85,42 @@ function isValidHttpUrl(value: string | null): value is string {
   } catch {
     return false;
   }
+}
+
+function normalizeHexColor(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().toLowerCase();
+  if (!HEX_COLOR_PATTERN.test(trimmed)) return null;
+
+  if (trimmed.length === 4) {
+    return `#${trimmed[1]}${trimmed[1]}${trimmed[2]}${trimmed[2]}${trimmed[3]}${trimmed[3]}`;
+  }
+
+  return trimmed;
+}
+
+function getInfoBackgroundColor(field: PublicField): string | null {
+  if (field.type !== 'PARAGRAPH') return null;
+  const validation = parseObject(field.validation);
+  return normalizeHexColor(validation?.infoBackgroundColor);
+}
+
+function isDateDefaultTodayEnabled(field: PublicField): boolean {
+  if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return false;
+  const validation = parseObject(field.validation);
+  return validation?.defaultToday === true;
+}
+
+function getLocalTodayIsoDate(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function hasHtmlMarkup(value: string): boolean {
+  return /<\/?[a-z][\s\S]*>/i.test(value);
 }
 
 function isRepeatStartMarker(field: PublicField): boolean {
@@ -201,8 +238,29 @@ function buildRenderGroups(fields: PublicField[]): RenderItem[] {
   }
 
   for (const field of fields) {
-    // Always-null renders — pass through as standalone
-    if (field.type === 'HIDDEN' || field.type === 'PAGE_BREAK') {
+    // Hidden fields are pass-through standalone items.
+    if (field.type === 'HIDDEN') {
+      items.push({ kind: 'standalone', field });
+      continue;
+    }
+
+    // Dynamic section start marker should stay inside the current card flow as a full-width row.
+    if (isRepeatStartMarker(field)) {
+      if (!currentGroup) {
+        currentGroup = { kind: 'group', heading: null, fields: [] };
+      }
+      currentGroup.fields.push(field);
+      continue;
+    }
+
+    // Dynamic section end marker is structural only; skip card grouping.
+    if (isRepeatEndMarker(field)) {
+      continue;
+    }
+
+    // Normal page breaks separate groups/pages.
+    if (field.type === 'PAGE_BREAK') {
+      flushGroup();
       items.push({ kind: 'standalone', field });
       continue;
     }
@@ -272,6 +330,20 @@ export default function PublicFormPage() {
   const [emailFeedback, setEmailFeedback] = useState<string | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
+  const orderedFields = useMemo(() => {
+    if (!form) return [] as PublicField[];
+
+    return form.fields
+      .map((field, index) => ({ field, index }))
+      .sort((a, b) => {
+        const positionA = Number.isFinite(a.field.position) ? a.field.position : a.index;
+        const positionB = Number.isFinite(b.field.position) ? b.field.position : b.index;
+        if (positionA !== positionB) return positionA - positionB;
+        return a.index - b.index;
+      })
+      .map((entry) => entry.field);
+  }, [form]);
+
   useEffect(() => {
     let isCancelled = false;
 
@@ -331,20 +403,76 @@ export default function PublicFormPage() {
     }
 
     const nextCounts: Record<string, number> = {};
-    for (const field of form.fields) {
+    for (const field of orderedFields) {
       if (!isRepeatStartMarker(field)) continue;
       const config = getRepeatSectionConfig(field);
       nextCounts[config.id] = config.minItems;
     }
 
     setRepeatSectionCounts(nextCounts);
-  }, [form]);
+  }, [form, orderedFields]);
+
+  useEffect(() => {
+    if (!form) return;
+
+    const todayIso = getLocalTodayIsoDate();
+
+    setAnswers((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      for (let index = 0; index < orderedFields.length; index += 1) {
+        const field = orderedFields[index];
+
+        if (isRepeatStartMarker(field)) {
+          const sectionConfig = getRepeatSectionConfig(field);
+          const rowCount = repeatSectionCounts[sectionConfig.id] || sectionConfig.minItems;
+          const sectionFields: PublicField[] = [];
+
+          let cursor = index + 1;
+          while (cursor < orderedFields.length && !isRepeatEndMarker(orderedFields[cursor])) {
+            if (orderedFields[cursor].type !== 'PAGE_BREAK') {
+              sectionFields.push(orderedFields[cursor]);
+            }
+            cursor += 1;
+          }
+
+          for (const sectionField of sectionFields) {
+            if (!isDateDefaultTodayEnabled(sectionField)) continue;
+
+            const existingRows = Array.isArray(next[sectionField.key]) ? [...(next[sectionField.key] as unknown[])] : [];
+            for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+              const rowValue = existingRows[rowIndex];
+              if (typeof rowValue === 'string' && rowValue.trim().length > 0) continue;
+              existingRows[rowIndex] = todayIso;
+              changed = true;
+            }
+            next[sectionField.key] = existingRows;
+          }
+
+          index = cursor;
+          continue;
+        }
+
+        if (field.type === 'PAGE_BREAK' || isRepeatEndMarker(field)) continue;
+        if (!isDateDefaultTodayEnabled(field)) continue;
+
+        const existingValue = next[field.key];
+        if (typeof existingValue === 'string' && existingValue.trim().length > 0) continue;
+
+        next[field.key] = todayIso;
+        changed = true;
+      }
+
+      return changed ? next : prev;
+    });
+  }, [form, orderedFields, repeatSectionCounts]);
 
   const pages = useMemo(() => {
     if (!form) return [] as PublicField[][];
 
     const result: PublicField[][] = [[]];
-    for (const field of form.fields) {
+    for (const field of orderedFields) {
       if (field.type === 'PAGE_BREAK' && !isRepeatStartMarker(field) && !isRepeatEndMarker(field)) {
         result.push([]);
       } else {
@@ -353,11 +481,50 @@ export default function PublicFormPage() {
     }
 
     return result.filter((page) => page.length > 0);
-  }, [form]);
+  }, [form, orderedFields]);
 
   const visibleFields = useMemo(() => {
     const pageFields = pages[currentPage] || [];
-    return pageFields.filter((field) => evaluateCondition(field.condition, answers));
+    const nextVisible: PublicField[] = [];
+
+    for (let index = 0; index < pageFields.length; index += 1) {
+      const field = pageFields[index];
+
+      if (isRepeatStartMarker(field)) {
+        const sectionFields: PublicField[] = [];
+        let cursor = index + 1;
+
+        while (cursor < pageFields.length && !isRepeatEndMarker(pageFields[cursor])) {
+          sectionFields.push(pageFields[cursor]);
+          cursor += 1;
+        }
+
+        const endMarker = cursor < pageFields.length ? pageFields[cursor] : null;
+        const sectionVisible = evaluateCondition(field.condition, answers);
+
+        if (sectionVisible) {
+          nextVisible.push(field);
+          for (const sectionField of sectionFields) {
+            if (sectionField.type !== 'PAGE_BREAK') {
+              nextVisible.push(sectionField);
+            }
+          }
+          if (endMarker) {
+            nextVisible.push(endMarker);
+          }
+        }
+
+        index = cursor;
+        continue;
+      }
+
+      if (isRepeatEndMarker(field)) continue;
+      if (evaluateCondition(field.condition, answers)) {
+        nextVisible.push(field);
+      }
+    }
+
+    return nextVisible;
   }, [pages, currentPage, answers]);
 
   // Pre-compute which field IDs belong inside repeat sections (should not render as standalone)
@@ -380,6 +547,64 @@ export default function PublicFormPage() {
     }
     return ids;
   }, [visibleFields]);
+
+  function withDateDefaultAnswers(baseAnswers: Record<string, unknown>): Record<string, unknown> {
+    if (!form) return baseAnswers;
+
+    const todayIso = getLocalTodayIsoDate();
+    const next = { ...baseAnswers };
+    let changed = false;
+
+    for (let index = 0; index < orderedFields.length; index += 1) {
+      const field = orderedFields[index];
+
+      if (isRepeatStartMarker(field)) {
+        const sectionConfig = getRepeatSectionConfig(field);
+        const rowCount = repeatSectionCounts[sectionConfig.id] || sectionConfig.minItems;
+        const sectionFields: PublicField[] = [];
+
+        let cursor = index + 1;
+        while (cursor < orderedFields.length && !isRepeatEndMarker(orderedFields[cursor])) {
+          if (orderedFields[cursor].type !== 'PAGE_BREAK') {
+            sectionFields.push(orderedFields[cursor]);
+          }
+          cursor += 1;
+        }
+
+        for (const sectionField of sectionFields) {
+          if (!isDateDefaultTodayEnabled(sectionField)) continue;
+
+          const existingRows = Array.isArray(next[sectionField.key]) ? [...(next[sectionField.key] as unknown[])] : [];
+          let sectionChanged = false;
+
+          for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+            const rowValue = existingRows[rowIndex];
+            if (typeof rowValue === 'string' && rowValue.trim().length > 0) continue;
+            existingRows[rowIndex] = todayIso;
+            sectionChanged = true;
+          }
+
+          if (sectionChanged) {
+            next[sectionField.key] = existingRows;
+            changed = true;
+          }
+        }
+
+        index = cursor;
+        continue;
+      }
+
+      if (field.type === 'PAGE_BREAK' || isRepeatEndMarker(field)) continue;
+      if (!isDateDefaultTodayEnabled(field)) continue;
+
+      const existingValue = next[field.key];
+      if (typeof existingValue === 'string' && existingValue.trim().length > 0) continue;
+      next[field.key] = todayIso;
+      changed = true;
+    }
+
+    return changed ? next : baseAnswers;
+  }
 
   function setFieldValue(key: string, value: unknown) {
     setAnswers((prev) => ({ ...prev, [key]: value }));
@@ -450,14 +675,44 @@ export default function PublicFormPage() {
     });
   }
 
+  function collectStringValues(value: unknown): string[] {
+    if (typeof value === 'string') return [value];
+    if (!Array.isArray(value)) return [];
+
+    const items: string[] = [];
+    for (const entry of value) {
+      items.push(...collectStringValues(entry));
+    }
+    return items;
+  }
+
+  function hasRequiredValue(field: PublicField, value: unknown): boolean {
+    if (field.type === 'FILE_UPLOAD') {
+      const uploadIds = collectStringValues(value)
+        .map((item) => item.trim())
+        .filter((item) => UUID_PATTERN.test(item));
+      return uploadIds.length > 0;
+    }
+
+    if (field.type === 'SIGNATURE') {
+      if (typeof value !== 'string') return false;
+      const trimmed = value.trim();
+      return trimmed.length > 0 && DATA_URI_PATTERN.test(trimmed);
+    }
+
+    return !isEmptyValue(value);
+  }
+
   function validateCurrentPage(): boolean {
     const nextErrors: Record<string, string> = {};
     const pageFields = pages[currentPage] || [];
+    const effectiveAnswers = withDateDefaultAnswers(answers);
 
     for (let index = 0; index < pageFields.length; index += 1) {
       const field = pageFields[index];
 
       if (isRepeatStartMarker(field)) {
+        const sectionVisible = evaluateCondition(field.condition, effectiveAnswers);
         const sectionConfig = getRepeatSectionConfig(field);
         const sectionFields: PublicField[] = [];
         let cursor = index + 1;
@@ -468,11 +723,14 @@ export default function PublicFormPage() {
           cursor += 1;
         }
         index = cursor;
+        if (!sectionVisible) {
+          continue;
+        }
 
         const repeatCount = repeatSectionCounts[sectionConfig.id] || sectionConfig.minItems;
         for (let rowIndex = 0; rowIndex < repeatCount; rowIndex += 1) {
           const rowAnswers: Record<string, unknown> = {};
-          for (const [answerKey, answerValue] of Object.entries(answers)) {
+          for (const [answerKey, answerValue] of Object.entries(effectiveAnswers)) {
             if (Array.isArray(answerValue)) {
               rowAnswers[answerKey] = answerValue[rowIndex];
             } else {
@@ -482,7 +740,8 @@ export default function PublicFormPage() {
 
           for (const sectionField of sectionFields) {
             if (!evaluateCondition(sectionField.condition, rowAnswers)) continue;
-            const value = getRepeatFieldValue(sectionField.key, rowIndex);
+            const sectionValue = effectiveAnswers[sectionField.key];
+            const value = Array.isArray(sectionValue) ? sectionValue[rowIndex] : undefined;
             const errorKey = getFieldErrorKey(sectionField.key, rowIndex);
 
             if (
@@ -490,7 +749,7 @@ export default function PublicFormPage() {
               sectionField.type !== 'PARAGRAPH' &&
               sectionField.type !== 'HTML' &&
               sectionField.type !== 'HIDDEN' &&
-              isEmptyValue(value)
+              !hasRequiredValue(sectionField, value)
             ) {
               nextErrors[errorKey] = `${sectionField.label || sectionField.key} is required`;
               continue;
@@ -523,11 +782,12 @@ export default function PublicFormPage() {
       }
 
       if (isRepeatEndMarker(field) || field.type === 'PAGE_BREAK') continue;
+      if (!evaluateCondition(field.condition, effectiveAnswers)) continue;
 
-      const value = answers[field.key];
+      const value = effectiveAnswers[field.key];
       const errorKey = getFieldErrorKey(field.key);
 
-      if (field.isRequired && field.type !== 'PARAGRAPH' && field.type !== 'HTML' && field.type !== 'HIDDEN' && isEmptyValue(value)) {
+      if (field.isRequired && field.type !== 'PARAGRAPH' && field.type !== 'HTML' && field.type !== 'HIDDEN' && !hasRequiredValue(field, value)) {
         nextErrors[errorKey] = `${field.label || field.key} is required`;
         continue;
       }
@@ -621,30 +881,31 @@ export default function PublicFormPage() {
 
     setIsSubmitting(true);
     try {
-      const fileUploadKeys = form.fields
+      const answersWithDefaults = withDateDefaultAnswers(answers);
+      const fileUploadKeys = orderedFields
         .filter((field) => field.type === 'FILE_UPLOAD')
         .map((field) => field.key);
 
       const uploadIds = fileUploadKeys
         .flatMap((key) => {
-          const value = answers[key];
+          const value = answersWithDefaults[key];
           if (!Array.isArray(value)) return [];
           return value.flatMap((item) => (Array.isArray(item) ? item : [item]));
         })
         .filter((value): value is string => typeof value === 'string' && UUID_PATTERN.test(value));
 
       const normalizedAnswers = Object.fromEntries(
-        Object.entries(answers).filter(([, value]) => value !== undefined)
+        Object.entries(answersWithDefaults).filter(([, value]) => value !== undefined)
       );
 
-      const shortTextFields = form.fields.filter((field) => field.type === 'SHORT_TEXT');
+      const shortTextFields = orderedFields.filter((field) => field.type === 'SHORT_TEXT');
       const inferredNameField = shortTextFields.find((field) => {
         const hint = `${field.key} ${field.label || ''}`;
         return NAME_HINT_PATTERN.test(hint);
       });
-      const fallbackNameAnswer = answers.full_name ?? answers.name;
+      const fallbackNameAnswer = answersWithDefaults.full_name ?? answersWithDefaults.name;
       const respondentName = normalizeOptionalText(
-        inferredNameField ? answers[inferredNameField.key] : fallbackNameAnswer,
+        inferredNameField ? answersWithDefaults[inferredNameField.key] : fallbackNameAnswer,
         200
       );
 
@@ -652,9 +913,9 @@ export default function PublicFormPage() {
         const hint = `${field.key} ${field.label || ''}`;
         return field.inputType === 'email' || EMAIL_HINT_PATTERN.test(hint);
       });
-      const fallbackEmailAnswer = answers.email_address ?? answers.email;
+      const fallbackEmailAnswer = answersWithDefaults.email_address ?? answersWithDefaults.email;
       const normalizedEmailCandidate = normalizeOptionalText(
-        inferredEmailField ? answers[inferredEmailField.key] : fallbackEmailAnswer,
+        inferredEmailField ? answersWithDefaults[inferredEmailField.key] : fallbackEmailAnswer,
         320
       );
       const respondentEmail = normalizedEmailCandidate && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmailCandidate)
@@ -764,9 +1025,12 @@ export default function PublicFormPage() {
 
   function renderStandaloneField(field: PublicField): React.ReactNode {
     if (field.type === 'HIDDEN') return null;
-    if (field.type === 'PAGE_BREAK') return null;
+    if (isRepeatEndMarker(field)) return null;
+    if (field.type === 'PAGE_BREAK' && !isRepeatStartMarker(field)) return null;
 
     const widthClass = WIDTH_CLASS[field.layoutWidth] || WIDTH_CLASS[100];
+    const infoBackgroundColor = getInfoBackgroundColor(field);
+    const infoBackgroundStyle = infoBackgroundColor ? { backgroundColor: infoBackgroundColor } : undefined;
 
     // Heading blocks
     if (
@@ -783,7 +1047,7 @@ export default function PublicFormPage() {
       const imageUrl = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
       return (
         <div key={field.id} className={widthClass}>
-          <div className="overflow-hidden rounded-lg border border-border-primary bg-background-primary">
+          <div className="overflow-hidden rounded-lg border border-border-primary bg-background-primary" style={infoBackgroundStyle}>
             {imageUrl ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -805,7 +1069,7 @@ export default function PublicFormPage() {
       const href = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
       return (
         <div key={field.id} className={widthClass}>
-          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm">
+          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm" style={infoBackgroundStyle}>
             {href ? (
               <a href={href} target="_blank" rel="noopener noreferrer" className="break-all text-text-primary underline hover:text-text-secondary">
                 {field.subtext || field.label || href}
@@ -820,10 +1084,20 @@ export default function PublicFormPage() {
 
     // info_text (and any other PARAGRAPH fallback)
     if (field.type === 'PARAGRAPH') {
+      const infoText = field.subtext || field.label || '';
+      const richContent = hasHtmlMarkup(infoText);
+
       return (
         <div key={field.id} className={widthClass}>
-          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary whitespace-pre-wrap">
-            {field.subtext || field.label}
+          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary" style={infoBackgroundStyle}>
+            {richContent ? (
+              <div
+                className="form-rich-render text-sm text-text-primary"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(infoText) }}
+              />
+            ) : (
+              <div className="whitespace-pre-wrap">{infoText}</div>
+            )}
           </div>
         </div>
       );
@@ -879,8 +1153,14 @@ export default function PublicFormPage() {
             </div>
 
             <div className="space-y-3">
-              {Array.from({ length: rowCount }).map((_, rowIndex) => (
-                <div key={`${sectionId}-row-${rowIndex}`} className="rounded-lg border border-border-primary/50 bg-background-primary/40 p-3">
+              {Array.from({ length: rowCount }).map((_, rowIndex) => {
+                const rowAnswers: Record<string, unknown> = {};
+                for (const [answerKey, answerValue] of Object.entries(answers)) {
+                  rowAnswers[answerKey] = Array.isArray(answerValue) ? answerValue[rowIndex] : answerValue;
+                }
+
+                return (
+                  <div key={`${sectionId}-row-${rowIndex}`} className="rounded-lg border border-border-primary/50 bg-background-primary/40 p-3">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-xs font-medium text-text-secondary">Card {rowIndex + 1}</span>
                     {rowCount > sectionConfig.minItems && (
@@ -896,6 +1176,8 @@ export default function PublicFormPage() {
 
                   <div className="grid grid-cols-12 gap-3">
                     {sectionFields.map((sectionField) => {
+                      if (!evaluateCondition(sectionField.condition, rowAnswers)) return null;
+
                       const sectionWidthClass = WIDTH_CLASS[sectionField.layoutWidth] || WIDTH_CLASS[100];
                       const sectionValue = getRepeatFieldValue(sectionField.key, rowIndex);
                       const sectionErrorText = fieldErrors[getFieldErrorKey(sectionField.key, rowIndex)];
@@ -909,6 +1191,12 @@ export default function PublicFormPage() {
                       const sectionDescribedBy = [sectionHintId, sectionErrorId].filter(Boolean).join(' ') || undefined;
                       const sectionLabel = sectionField.label || sectionField.key;
                       const sectionUseDateSelector = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'date';
+                      const sectionDefaultDateValue = sectionUseDateSelector && isDateDefaultTodayEnabled(sectionField)
+                        ? getLocalTodayIsoDate()
+                        : '';
+                      const resolvedSectionDateValue = typeof sectionValue === 'string' && sectionValue.trim().length > 0
+                        ? sectionValue
+                        : sectionDefaultDateValue;
 
                       if (sectionField.type === 'HIDDEN') return null;
 
@@ -944,7 +1232,7 @@ export default function PublicFormPage() {
 
                           {sectionUseDateSelector && (
                             <SingleDateInput
-                              value={typeof sectionValue === 'string' ? sectionValue : ''}
+                              value={resolvedSectionDateValue}
                               onChange={(next) => setRepeatFieldValue(sectionField.key, rowIndex, next)}
                               placeholder={sectionField.placeholder || 'dd/mm/yyyy'}
                               disabled={sectionField.isReadOnly}
@@ -1107,7 +1395,8 @@ export default function PublicFormPage() {
                     })}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1120,6 +1409,14 @@ export default function PublicFormPage() {
   function renderCardField(
     field: PublicField
   ): React.ReactNode {
+    if (isRepeatStartMarker(field)) {
+      return renderStandaloneField(field);
+    }
+
+    if (isRepeatEndMarker(field) || field.type === 'PAGE_BREAK' || field.type === 'PARAGRAPH' || field.type === 'HTML' || field.type === 'HIDDEN') {
+      return null;
+    }
+
     const widthClass = WIDTH_CLASS[field.layoutWidth] || WIDTH_CLASS[100];
     const value = answers[field.key];
     const errorText = fieldErrors[getFieldErrorKey(field.key)];
@@ -1135,6 +1432,12 @@ export default function PublicFormPage() {
     const showTooltip = isTooltipEnabled(field);
     const tooltipText = showTooltip ? field.helpText!.trim() : null;
     const uploadStatus = uploadedByFieldKey[field.key];
+    const dateDefaultValue = useDateSelector && isDateDefaultTodayEnabled(field)
+      ? getLocalTodayIsoDate()
+      : '';
+    const resolvedDateValue = typeof value === 'string' && value.trim().length > 0
+      ? value
+      : dateDefaultValue;
 
     return (
       <React.Fragment key={field.id}>
@@ -1202,7 +1505,7 @@ export default function PublicFormPage() {
           {/* DATE */}
           {useDateSelector && (
             <SingleDateInput
-              value={typeof value === 'string' ? value : ''}
+              value={resolvedDateValue}
               onChange={(next) => setFieldValue(field.key, next)}
               placeholder={field.placeholder || 'dd/mm/yyyy'}
               disabled={field.isReadOnly}
@@ -1410,15 +1713,15 @@ export default function PublicFormPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8 flex items-center justify-center">
-        <div className="text-sm text-text-secondary">Loading form...</div>
+      <div className="min-h-screen bg-[#3a6b5f] p-4 sm:p-8 flex items-center justify-center">
+        <div className="text-sm text-white/70">Loading form...</div>
       </div>
     );
   }
 
   if (error || !form) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-[#3a6b5f] p-4 sm:p-8 flex items-center justify-center">
         <div className="max-w-md rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-300">
           {error || 'Form not found'}
         </div>
@@ -1432,7 +1735,7 @@ export default function PublicFormPage() {
       : null;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-[#3a6b5f] p-4 sm:p-8 flex items-center justify-center">
         <div className="w-full max-w-xl rounded-xl bg-white p-6 sm:p-8 shadow-sm">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-6 w-6 text-status-success shrink-0" />
@@ -1496,7 +1799,7 @@ export default function PublicFormPage() {
   const renderItems = buildRenderGroups(visibleFields);
 
   return (
-    <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-gradient-to-br from-slate-50 to-stone-100 p-4 sm:p-8')}>
+    <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-[#3a6b5f] p-4 sm:p-8')}>
       <div className={cn('mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
         {!isEmbed && (
           <div className="mb-6">
@@ -1611,3 +1914,4 @@ export default function PublicFormPage() {
     </div>
   );
 }
+
