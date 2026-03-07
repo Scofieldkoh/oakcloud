@@ -45,6 +45,7 @@ export interface FormListItem extends Form {
 export interface FormDetail extends Form {
   fields: FormField[];
   tenantLogoUrl: string | null;
+  tenantName: string | null;
 }
 
 export interface FormListResult {
@@ -1201,7 +1202,7 @@ export async function getFormById(formId: string, tenantId: string): Promise<For
         orderBy: { position: 'asc' },
       },
       tenant: {
-        select: { logoUrl: true },
+        select: { logoUrl: true, name: true },
       },
     },
   });
@@ -1213,6 +1214,7 @@ export async function getFormById(formId: string, tenantId: string): Promise<For
   return {
     ...form,
     tenantLogoUrl: form.tenant?.logoUrl ?? null,
+    tenantName: form.tenant?.name ?? null,
   };
 }
 
@@ -1674,7 +1676,7 @@ export async function getPublicFormBySlug(slug: string): Promise<PublicFormDefin
         orderBy: { position: 'asc' },
       },
       tenant: {
-        select: { logoUrl: true },
+        select: { logoUrl: true, name: true },
       },
     },
   });
@@ -1696,6 +1698,7 @@ export async function getPublicFormBySlug(slug: string): Promise<PublicFormDefin
     settings: form.settings,
     fields: form.fields,
     tenantLogoUrl: form.tenant?.logoUrl ?? null,
+    tenantName: form.tenant?.name ?? null,
   };
 }
 
