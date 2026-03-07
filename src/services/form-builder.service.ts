@@ -1666,6 +1666,9 @@ export async function getPublicFormBySlug(slug: string): Promise<PublicFormDefin
       fields: {
         orderBy: { position: 'asc' },
       },
+      tenant: {
+        select: { logoUrl: true },
+      },
     },
   });
 
@@ -1685,6 +1688,7 @@ export async function getPublicFormBySlug(slug: string): Promise<PublicFormDefin
     description: form.description,
     settings: form.settings,
     fields: form.fields,
+    tenantLogoUrl: form.tenant?.logoUrl ?? null,
   };
 }
 

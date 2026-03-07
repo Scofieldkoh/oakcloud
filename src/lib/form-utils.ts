@@ -25,6 +25,7 @@ export interface PublicFormDefinition {
   settings?: unknown;
   fields: PublicFormField[];
   status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  tenantLogoUrl: string | null;
 }
 
 export interface ChoiceOption {
