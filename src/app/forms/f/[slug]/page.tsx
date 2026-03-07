@@ -1382,6 +1382,7 @@ export default function PublicFormPage() {
                               type={sectionField.inputType === 'phone' ? 'tel' : sectionField.inputType || 'text'}
                               value={typeof sectionValue === 'string' ? sectionValue : ''}
                               onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
+                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}
                               placeholder={localizedSectionField.placeholder || ''}
                               readOnly={sectionField.isReadOnly}
                               aria-invalid={sectionErrorText ? 'true' : undefined}
@@ -1394,6 +1395,7 @@ export default function PublicFormPage() {
                             <SingleDateInput
                               value={resolvedSectionDateValue}
                               onChange={(next) => setRepeatFieldValue(sectionField.key, rowIndex, next)}
+                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}
                               placeholder={localizedSectionField.placeholder || 'dd/mm/yyyy'}
                               disabled={sectionField.isReadOnly}
                               required={sectionField.isRequired}
@@ -1408,6 +1410,7 @@ export default function PublicFormPage() {
                               id={sectionControlId}
                               value={typeof sectionValue === 'string' ? sectionValue : ''}
                               onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
+                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}
                               placeholder={localizedSectionField.placeholder || ''}
                               readOnly={sectionField.isReadOnly}
                               aria-invalid={sectionErrorText ? 'true' : undefined}
@@ -1421,6 +1424,7 @@ export default function PublicFormPage() {
                               options={sectionDropdownOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
                               value={typeof sectionValue === 'string' ? sectionValue : ''}
                               onChange={(val) => setRepeatFieldValue(sectionField.key, rowIndex, val)}
+                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}
                               placeholder={localizedSectionField.placeholder || 'Select an option'}
                               clearable={false}
                               showKeyboardHints={false}
@@ -1429,7 +1433,7 @@ export default function PublicFormPage() {
                           )}
 
                           {sectionField.type === 'SINGLE_CHOICE' && (
-                            <fieldset className="space-y-1.5">
+                            <fieldset className="space-y-1.5" onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}>
                               {sectionChoiceInlineRight ? (
                                 (() => {
                                   const selectedEntry = parseChoiceAnswerEntry(sectionValue);
@@ -1534,7 +1538,7 @@ export default function PublicFormPage() {
                           )}
 
                           {sectionField.type === 'MULTIPLE_CHOICE' && (
-                            <fieldset className="space-y-1.5">
+                            <fieldset className="space-y-1.5" onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}>
                               {sectionChoiceInlineRight ? (
                                 (() => {
                                   const currentEntries = parseChoiceAnswerEntries(sectionValue);
