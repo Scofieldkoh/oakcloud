@@ -469,6 +469,14 @@ export default function PublicFormPage() {
     return settingsObj.hideLogo !== true;
   }, [form?.tenantLogoUrl, form?.settings]);
 
+  const shouldShowFooter = useMemo(() => {
+    if (!form?.tenantName) return false;
+    const settingsObj = (form.settings && typeof form.settings === 'object' && !Array.isArray(form.settings))
+      ? form.settings as Record<string, unknown>
+      : {};
+    return settingsObj.hideFooter !== true;
+  }, [form?.tenantName, form?.settings]);
+
   const canSwitchLanguage = i18nSettings.allowLocaleSwitch && i18nSettings.enabledLocales.length > 1;
 
   const orderedFields = useMemo(() => {
@@ -529,6 +537,7 @@ export default function PublicFormPage() {
               fields: Array.isArray(data.fields) ? data.fields : [],
               status: data.status,
               tenantLogoUrl: data.tenantLogoUrl ?? null,
+              tenantName: data.tenantName ?? null,
             } as PublicFormDefinition);
           } else {
             setForm(data as PublicFormDefinition);
@@ -2378,7 +2387,7 @@ export default function PublicFormPage() {
                 <img
                   src={form.tenantLogoUrl!}
                   alt="Organization logo"
-                  className="h-8 w-auto max-w-[120px] object-contain rounded-sm flex-shrink-0"
+                  className="h-32 w-auto max-w-[480px] object-contain rounded-sm flex-shrink-0"
                 />
               )}
               <h1 className="text-2xl font-bold text-text-primary">{localizedFormTitle || form.title}</h1>
@@ -2489,6 +2498,11 @@ export default function PublicFormPage() {
             )}
           </div>
         </div>
+      {!isEmbed && shouldShowFooter && (
+        <div className="mt-6 text-center text-sm text-text-tertiary">
+          © {form.tenantName}
+        </div>
+      )}
       </div>
     </div>
   );
