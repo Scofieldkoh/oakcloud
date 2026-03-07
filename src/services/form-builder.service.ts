@@ -44,6 +44,7 @@ export interface FormListItem extends Form {
 
 export interface FormDetail extends Form {
   fields: FormField[];
+  tenantLogoUrl: string | null;
 }
 
 export interface FormListResult {
@@ -1199,6 +1200,9 @@ export async function getFormById(formId: string, tenantId: string): Promise<For
       fields: {
         orderBy: { position: 'asc' },
       },
+      tenant: {
+        select: { logoUrl: true },
+      },
     },
   });
 
@@ -1206,7 +1210,10 @@ export async function getFormById(formId: string, tenantId: string): Promise<For
     return null;
   }
 
-  return form;
+  return {
+    ...form,
+    tenantLogoUrl: form.tenant?.logoUrl ?? null,
+  };
 }
 
 export async function updateForm(

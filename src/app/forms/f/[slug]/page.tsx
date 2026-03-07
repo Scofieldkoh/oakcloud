@@ -528,6 +528,7 @@ export default function PublicFormPage() {
               description: data.description || null,
               fields: Array.isArray(data.fields) ? data.fields : [],
               status: data.status,
+              tenantLogoUrl: data.tenantLogoUrl ?? null,
             } as PublicFormDefinition);
           } else {
             setForm(data as PublicFormDefinition);
