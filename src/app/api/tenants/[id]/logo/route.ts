@@ -1,7 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
+
+const MIME_TYPES: Record<string, string> = {
+  '.jpg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+};
 
 const ALLOWED_TYPES: Record<string, string> = {
   'image/jpeg': '.jpg',
@@ -15,7 +22,39 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function POST(request: Request, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
+  const { id } = await params;
+
+  const tenant = await prisma.tenant.findUnique({
+    where: { id, deletedAt: null },
+    select: { logoUrl: true },
+  });
+  if (!tenant?.logoUrl) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Find the stored file across all supported extensions
+  for (const ext of Object.values(ALLOWED_TYPES)) {
+    const key = StorageKeys.tenantLogo(id, ext);
+    const exists = await storage.exists(key);
+    if (exists) {
+      const buffer = await storage.download(key);
+      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+      return new NextResponse(new Uint8Array(buffer), {
+        status: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Content-Length': buffer.length.toString(),
+          'Cache-Control': 'public, max-age=31536000',
+        },
+      });
+    }
+  }
+
+  return NextResponse.json({ error: 'Not found' }, { status: 404 });
+}
+
+export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     if (!session.isSuperAdmin) {
@@ -65,17 +104,18 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     const key = StorageKeys.tenantLogo(id, extension);
-    const result = await storage.upload(key, buffer, {
+    await storage.upload(key, buffer, {
       contentType: mimeType,
       cacheControl: 'public, max-age=31536000',
     });
 
+    const logoUrl = `/api/tenants/${id}/logo`;
     await prisma.tenant.update({
       where: { id },
-      data: { logoUrl: result.url },
+      data: { logoUrl },
     });
 
-    return NextResponse.json({ logoUrl: result.url });
+    return NextResponse.json({ logoUrl });
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -84,7 +124,7 @@ export async function POST(request: Request, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     if (!session.isSuperAdmin) {
