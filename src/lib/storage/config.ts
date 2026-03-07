@@ -220,6 +220,7 @@ export const StorageKeys = {
         'image/jpg': '.jpg',
         'image/webp': '.webp',
         'image/tiff': '.tiff',
+        'image/svg+xml': '.svg',
       };
       return mimeExtensions[mimeType] || '';
     }

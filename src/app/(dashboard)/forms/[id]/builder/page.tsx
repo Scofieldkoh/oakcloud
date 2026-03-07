@@ -1053,11 +1053,11 @@ export default function FormBuilderPage() {
         translations: remappedI18nTranslations,
       });
 
-      // Persist hideLogo flag
+      // Persist hideLogo — false means show logo (default), true means hide
       const settingsRecord = (nextSettings && typeof nextSettings === 'object' && !Array.isArray(nextSettings))
         ? nextSettings as Record<string, unknown>
         : {};
-      nextSettings = { ...settingsRecord, hideLogo: hideLogo || undefined };
+      nextSettings = { ...settingsRecord, hideLogo: hideLogo === true };
 
       const saved = await updateForm.mutateAsync({
         title: title.trim(),
