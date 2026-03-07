@@ -1046,12 +1046,18 @@ export default function FormBuilderPage() {
       const fileNameSettingsPayload = writeFormFileNameSettings(notificationSettingsPayload, {
         pdfTemplate: pdfFileNameTemplate,
       });
-      const nextSettings = writeFormI18nSettings(fileNameSettingsPayload, {
+      let nextSettings = writeFormI18nSettings(fileNameSettingsPayload, {
         defaultLocale: normalizedDefaultLocale,
         enabledLocales: nextEnabledLocales,
         allowLocaleSwitch: i18nAllowLocaleSwitch,
         translations: remappedI18nTranslations,
       });
+
+      // Persist hideLogo flag
+      const settingsRecord = (nextSettings && typeof nextSettings === 'object' && !Array.isArray(nextSettings))
+        ? nextSettings as Record<string, unknown>
+        : {};
+      nextSettings = { ...settingsRecord, hideLogo: hideLogo || undefined };
 
       const saved = await updateForm.mutateAsync({
         title: title.trim(),
