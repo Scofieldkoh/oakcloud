@@ -270,6 +270,7 @@ export function serializeBuilderState(input: {
   i18nEnabledLocales?: string[];
   i18nAllowLocaleSwitch?: boolean;
   i18nTranslations?: unknown;
+  hideLogo?: boolean;
 }): string {
   return JSON.stringify({
     title: input.title.trim(),
@@ -284,6 +285,7 @@ export function serializeBuilderState(input: {
     i18nEnabledLocales: (input.i18nEnabledLocales || []).map((locale) => locale.trim()).filter(Boolean),
     i18nAllowLocaleSwitch: input.i18nAllowLocaleSwitch !== false,
     i18nTranslations: input.i18nTranslations || {},
+    hideLogo: input.hideLogo === true,
     fields: input.fields.map((field, idx) => ({
       type: field.type,
       label: field.label,
