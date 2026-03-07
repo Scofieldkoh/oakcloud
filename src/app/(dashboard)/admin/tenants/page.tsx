@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/hooks/use-auth';
 import { useTenants, useCreateTenant, useUpdateTenant, type Tenant } from '@/hooks/use-admin';
@@ -99,6 +99,11 @@ export default function TenantsPage() {
   const [deletingTenant, setDeletingTenant] = useState<Tenant | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isDeletingLogo, setIsDeletingLogo] = useState(false);
+  const [editingLogoUrl, setEditingLogoUrl] = useState<string | null>(null);
+
   // Form state for create
   const [formData, setFormData] = useState({
     name: '',
@@ -150,6 +155,7 @@ export default function TenantsPage() {
       maxStorageMb: tenant.maxStorageMb.toString(),
     });
     setEditFormError('');
+    setEditingLogoUrl(tenant.logoUrl ?? null);
   };
 
   // Close edit modal
@@ -166,6 +172,7 @@ export default function TenantsPage() {
       maxStorageMb: '10240',
     });
     setEditFormError('');
+    setEditingLogoUrl(null);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -279,6 +286,53 @@ export default function TenantsPage() {
       showError(err instanceof Error ? err.message : 'Failed to delete tenant');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingTenant) return;
+
+    setIsUploadingLogo(true);
+    try {
+      const data = new FormData();
+      data.append('file', file);
+      const res = await fetch(`/api/tenants/${editingTenant.id}/logo`, {
+        method: 'POST',
+        body: data,
+      });
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || 'Upload failed');
+      }
+      const json = await res.json();
+      setEditingLogoUrl(json.logoUrl);
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      success('Logo uploaded');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to upload logo');
+    } finally {
+      setIsUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  const handleLogoDelete = async () => {
+    if (!editingTenant) return;
+    setIsDeletingLogo(true);
+    try {
+      const res = await fetch(`/api/tenants/${editingTenant.id}/logo`, { method: 'DELETE' });
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || 'Delete failed');
+      }
+      setEditingLogoUrl(null);
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      success('Logo removed');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to remove logo');
+    } finally {
+      setIsDeletingLogo(false);
     }
   };
 
@@ -763,6 +817,52 @@ export default function TenantsPage() {
             )}
 
             <div className="space-y-4">
+              {/* Logo */}
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-secondary">Tenant Logo</label>
+                <div className="flex items-center gap-3">
+                  {editingLogoUrl ? (
+                    <img
+                      src={editingLogoUrl}
+                      alt="Tenant logo"
+                      className="h-10 w-auto max-w-[120px] rounded border border-border-primary object-contain bg-background-secondary p-1"
+                    />
+                  ) : (
+                    <div className="h-10 w-20 rounded border border-dashed border-border-primary bg-background-secondary flex items-center justify-center">
+                      <span className="text-2xs text-text-muted">No logo</span>
+                    </div>
+                  )}
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                    className="hidden"
+                    onChange={handleLogoUpload}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    isLoading={isUploadingLogo}
+                    onClick={() => logoInputRef.current?.click()}
+                  >
+                    {editingLogoUrl ? 'Replace' : 'Upload Logo'}
+                  </Button>
+                  {editingLogoUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      isLoading={isDeletingLogo}
+                      onClick={handleLogoDelete}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                <p className="mt-1 text-2xs text-text-muted">JPEG, PNG, WebP or SVG. Max 2 MB.</p>
+              </div>
+
               <FormInput
                 label="Tenant Name"
                 value={editFormData.name}
