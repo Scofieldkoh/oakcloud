@@ -229,6 +229,7 @@ export default function FormBuilderPage() {
   const [i18nTranslations, setI18nTranslations] = useState<FormI18nSettings['translations']>({});
   const [editingLocale, setEditingLocale] = useState('en');
   const [hideLogo, setHideLogo] = useState(false);
+  const [hideFooter, setHideFooter] = useState(false);
   const [fields, setFields] = useState<BuilderField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
@@ -293,6 +294,7 @@ export default function FormBuilderPage() {
       ? form.settings as Record<string, unknown>
       : {};
     setHideLogo(settingsObj.hideLogo === true);
+    setHideFooter(settingsObj.hideFooter === true);
     setFields(mappedFields);
     setSelectedFieldId(null);
 
@@ -310,6 +312,7 @@ export default function FormBuilderPage() {
       i18nAllowLocaleSwitch: i18nSettings.allowLocaleSwitch,
       i18nTranslations: i18nSettings.translations,
       hideLogo: settingsObj.hideLogo === true,
+      hideFooter: settingsObj.hideFooter === true,
       fields: mappedFields,
     });
   }, [form]);
@@ -442,6 +445,7 @@ export default function FormBuilderPage() {
       i18nAllowLocaleSwitch,
       i18nTranslations,
       hideLogo,
+      hideFooter,
       fields,
     }),
     [
@@ -458,6 +462,7 @@ export default function FormBuilderPage() {
       i18nAllowLocaleSwitch,
       i18nTranslations,
       hideLogo,
+      hideFooter,
       fields,
     ]
   );
@@ -1057,7 +1062,7 @@ export default function FormBuilderPage() {
       const settingsRecord = (nextSettings && typeof nextSettings === 'object' && !Array.isArray(nextSettings))
         ? nextSettings as Record<string, unknown>
         : {};
-      nextSettings = { ...settingsRecord, hideLogo: hideLogo === true };
+      nextSettings = { ...settingsRecord, hideLogo: hideLogo === true, hideFooter: hideFooter === true };
 
       const saved = await updateForm.mutateAsync({
         title: title.trim(),
@@ -1094,6 +1099,7 @@ export default function FormBuilderPage() {
         i18nAllowLocaleSwitch: savedI18nSettings.allowLocaleSwitch,
         i18nTranslations: savedI18nSettings.translations,
         hideLogo,
+        hideFooter,
         fields: correctedFields,
       });
 
@@ -1336,6 +1342,27 @@ export default function FormBuilderPage() {
                   <span
                     className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
                       !hideLogo ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-text-secondary">Show copyright footer</p>
+                  <p className="text-2xs text-text-muted">Display © [Tenant Name] at the bottom of the form</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={!hideFooter}
+                  onClick={() => setHideFooter((v) => !v)}
+                  className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    !hideFooter ? 'bg-oak-primary' : 'bg-border-primary'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      !hideFooter ? 'translate-x-4' : 'translate-x-0'
                     }`}
                   />
                 </button>
