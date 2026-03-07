@@ -1433,7 +1433,7 @@ export default function PublicFormPage() {
                           )}
 
                           {sectionField.type === 'SINGLE_CHOICE' && (
-                            <fieldset className="space-y-1.5" onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}>
+                            <fieldset className="space-y-1.5" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex)); }}>
                               {sectionChoiceInlineRight ? (
                                 (() => {
                                   const selectedEntry = parseChoiceAnswerEntry(sectionValue);
@@ -1538,7 +1538,7 @@ export default function PublicFormPage() {
                           )}
 
                           {sectionField.type === 'MULTIPLE_CHOICE' && (
-                            <fieldset className="space-y-1.5" onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}>
+                            <fieldset className="space-y-1.5" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex)); }}>
                               {sectionChoiceInlineRight ? (
                                 (() => {
                                   const currentEntries = parseChoiceAnswerEntries(sectionValue);
@@ -1910,7 +1910,7 @@ export default function PublicFormPage() {
               aria-labelledby={field.hideLabel ? undefined : labelId}
               aria-describedby={describedBy}
               aria-invalid={errorText ? 'true' : undefined}
-              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key)); }}
             >
               {choiceInlineRight ? (
                 (() => {
@@ -2025,7 +2025,7 @@ export default function PublicFormPage() {
               aria-labelledby={field.hideLabel ? undefined : labelId}
               aria-describedby={describedBy}
               aria-invalid={errorText ? 'true' : undefined}
-              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key)); }}
             >
               {choiceInlineRight ? (
                 (() => {
