@@ -918,6 +918,19 @@ export default function PublicFormPage() {
     return null;
   }
 
+  function handleFieldBlur(field: PublicField, value: unknown, errorKey: string) {
+    const error = validateField(field, value, getLocalizedField(field));
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (error) {
+        next[errorKey] = error;
+      } else {
+        delete next[errorKey];
+      }
+      return next;
+    });
+  }
+
   function validateCurrentPage(): boolean {
     const nextErrors: Record<string, string> = {};
     const pageFields = pages[currentPage] || [];
@@ -1820,6 +1833,7 @@ export default function PublicFormPage() {
               type={field.inputType === 'phone' ? 'tel' : field.inputType || 'text'}
               value={typeof value === 'string' ? value : ''}
               onChange={(e) => setFieldValue(field.key, e.target.value)}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
               placeholder={localizedField.placeholder || ''}
               readOnly={field.isReadOnly}
               required={field.isRequired}
@@ -1854,6 +1868,7 @@ export default function PublicFormPage() {
               id={controlId}
               value={typeof value === 'string' ? value : ''}
               onChange={(e) => setFieldValue(field.key, e.target.value)}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
               placeholder={localizedField.placeholder || ''}
               readOnly={field.isReadOnly}
               required={field.isRequired}
@@ -1889,6 +1904,7 @@ export default function PublicFormPage() {
               aria-labelledby={field.hideLabel ? undefined : labelId}
               aria-describedby={describedBy}
               aria-invalid={errorText ? 'true' : undefined}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
             >
               {choiceInlineRight ? (
                 (() => {
@@ -2003,6 +2019,7 @@ export default function PublicFormPage() {
               aria-labelledby={field.hideLabel ? undefined : labelId}
               aria-describedby={describedBy}
               aria-invalid={errorText ? 'true' : undefined}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
             >
               {choiceInlineRight ? (
                 (() => {
