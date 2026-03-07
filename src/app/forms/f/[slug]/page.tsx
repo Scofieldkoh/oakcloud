@@ -51,6 +51,27 @@ const DEFAULT_UI_LABELS = {
   send: 'Send',
 } as const;
 
+const LOCALE_DISPLAY_NAMES: Record<string, string> = {
+  en: 'English',
+  'zh-CN': '中文（简体）',
+  'zh-TW': '中文（繁體）',
+  ms: 'Melayu',
+  id: 'Indonesia',
+  th: 'ภาษาไทย',
+  vi: 'Tiếng Việt',
+  ja: '日本語',
+  ko: '한국어',
+  fr: 'Français',
+  de: 'Deutsch',
+  es: 'Español',
+  'pt-BR': 'Português (BR)',
+  ar: 'العربية',
+};
+
+function getLocaleDisplayName(locale: string): string {
+  return LOCALE_DISPLAY_NAMES[locale] ?? locale;
+}
+
 type UploadStatus = {
   id: string;
   fileName: string;
@@ -439,6 +460,14 @@ export default function PublicFormPage() {
     () => ({ ...DEFAULT_UI_LABELS, ...(activeLocaleTranslation.ui || {}) }),
     [activeLocaleTranslation.ui]
   );
+
+  const shouldShowLogo = useMemo(() => {
+    if (!form?.tenantLogoUrl) return false;
+    const settingsObj = (form.settings && typeof form.settings === 'object' && !Array.isArray(form.settings))
+      ? form.settings as Record<string, unknown>
+      : {};
+    return settingsObj.hideLogo !== true;
+  }, [form?.tenantLogoUrl, form?.settings]);
 
   const canSwitchLanguage = i18nSettings.allowLocaleSwitch && i18nSettings.enabledLocales.length > 1;
 
@@ -2307,24 +2336,52 @@ export default function PublicFormPage() {
       <div className={cn('mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
         {canSwitchLanguage && (
           <div className="mb-4 flex justify-end">
-            <label className="inline-flex items-center gap-2 text-xs text-text-secondary">
-              <span>{localizedUiLabels.language_label}</span>
-              <select
-                value={activeLocale}
-                onChange={(e) => handleLocaleChange(e.target.value)}
-                className="rounded-lg border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs text-text-primary"
-              >
+            {i18nSettings.enabledLocales.length <= 4 ? (
+              <div className="inline-flex items-center rounded-full border border-[#D8E3DF] bg-white/70 p-0.5 shadow-sm backdrop-blur-sm">
                 {i18nSettings.enabledLocales.map((locale) => (
-                  <option key={locale} value={locale}>{locale}</option>
+                  <button
+                    key={locale}
+                    type="button"
+                    onClick={() => handleLocaleChange(locale)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      activeLocale === locale
+                        ? 'bg-[#294D44] text-white shadow-sm'
+                        : 'text-[#4A6B5F] hover:text-[#294D44]'
+                    }`}
+                  >
+                    {getLocaleDisplayName(locale)}
+                  </button>
                 ))}
-              </select>
-            </label>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#D8E3DF] bg-white/70 px-3 py-1.5 shadow-sm backdrop-blur-sm">
+                <span className="text-xs text-[#4A6B5F]">{localizedUiLabels.language_label}</span>
+                <select
+                  value={activeLocale}
+                  onChange={(e) => handleLocaleChange(e.target.value)}
+                  className="bg-transparent text-xs font-medium text-[#294D44] outline-none cursor-pointer"
+                >
+                  {i18nSettings.enabledLocales.map((locale) => (
+                    <option key={locale} value={locale}>{getLocaleDisplayName(locale)}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         )}
 
         {!isEmbed && (
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-text-primary">{localizedFormTitle || form.title}</h1>
+            <div className="flex items-center gap-3">
+              {shouldShowLogo && (
+                <img
+                  src={form.tenantLogoUrl!}
+                  alt="Organization logo"
+                  className="h-8 w-auto max-w-[120px] object-contain rounded-sm flex-shrink-0"
+                />
+              )}
+              <h1 className="text-2xl font-bold text-text-primary">{localizedFormTitle || form.title}</h1>
+            </div>
             {localizedFormDescription && <p className="mt-2 text-base text-text-secondary leading-relaxed">{localizedFormDescription}</p>}
             {isPreview && (
               <p className="mt-2 text-xs text-text-muted">
