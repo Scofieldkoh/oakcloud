@@ -883,6 +883,40 @@ export default function PublicFormPage() {
     return !isEmptyValue(value);
   }
 
+  function validateField(
+    field: PublicField,
+    value: unknown,
+    localizedField: PublicField
+  ): string | null {
+    const NON_VALIDATABLE = ['PARAGRAPH', 'HTML', 'HIDDEN'];
+    if (NON_VALIDATABLE.includes(field.type)) return null;
+
+    if (field.isRequired && !hasRequiredValue(field, value)) {
+      return `${field.label || field.key} is required`;
+    }
+
+    if (
+      field.type === 'SHORT_TEXT' &&
+      field.inputType === 'email' &&
+      typeof value === 'string' &&
+      value.trim().length > 0 &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+    ) {
+      return `${field.label || field.key} must be a valid email`;
+    }
+
+    if (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') {
+      const detailError = getChoiceDetailValidationError(
+        field.label || field.key,
+        parseChoiceOptions(localizedField.options),
+        value
+      );
+      if (detailError) return detailError;
+    }
+
+    return null;
+  }
+
   function validateCurrentPage(): boolean {
     const nextErrors: Record<string, string> = {};
     const pageFields = pages[currentPage] || [];
@@ -924,37 +958,9 @@ export default function PublicFormPage() {
             const value = Array.isArray(sectionValue) ? sectionValue[rowIndex] : undefined;
             const errorKey = getFieldErrorKey(sectionField.key, rowIndex);
 
-            if (
-              sectionField.isRequired &&
-              sectionField.type !== 'PARAGRAPH' &&
-              sectionField.type !== 'HTML' &&
-              sectionField.type !== 'HIDDEN' &&
-              !hasRequiredValue(sectionField, value)
-            ) {
-              nextErrors[errorKey] = `${sectionField.label || sectionField.key} is required`;
-              continue;
-            }
-
-            if (
-              sectionField.type === 'SHORT_TEXT' &&
-              sectionField.inputType === 'email' &&
-              typeof value === 'string' &&
-              value.trim().length > 0 &&
-              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
-            ) {
-              nextErrors[errorKey] = `${sectionField.label || sectionField.key} must be a valid email`;
-              continue;
-            }
-
-            if (sectionField.type === 'SINGLE_CHOICE' || sectionField.type === 'MULTIPLE_CHOICE') {
-              const detailError = getChoiceDetailValidationError(
-                sectionField.label || sectionField.key,
-                parseChoiceOptions(getLocalizedField(sectionField).options),
-                value
-              );
-              if (detailError) {
-                nextErrors[errorKey] = detailError;
-              }
+            const error = validateField(sectionField, value, getLocalizedField(sectionField));
+            if (error) {
+              nextErrors[errorKey] = error;
             }
           }
         }
@@ -967,31 +973,9 @@ export default function PublicFormPage() {
       const value = effectiveAnswers[field.key];
       const errorKey = getFieldErrorKey(field.key);
 
-      if (field.isRequired && field.type !== 'PARAGRAPH' && field.type !== 'HTML' && field.type !== 'HIDDEN' && !hasRequiredValue(field, value)) {
-        nextErrors[errorKey] = `${field.label || field.key} is required`;
-        continue;
-      }
-
-      if (
-        field.type === 'SHORT_TEXT' &&
-        field.inputType === 'email' &&
-        typeof value === 'string' &&
-        value.trim().length > 0 &&
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
-      ) {
-        nextErrors[errorKey] = `${field.label || field.key} must be a valid email`;
-        continue;
-      }
-
-      if (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') {
-        const detailError = getChoiceDetailValidationError(
-          field.label || field.key,
-          parseChoiceOptions(getLocalizedField(field).options),
-          value
-        );
-        if (detailError) {
-          nextErrors[errorKey] = detailError;
-        }
+      const error = validateField(field, value, getLocalizedField(field));
+      if (error) {
+        nextErrors[errorKey] = error;
       }
     }
 
