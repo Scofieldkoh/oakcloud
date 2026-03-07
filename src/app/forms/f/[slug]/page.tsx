@@ -1858,6 +1858,7 @@ export default function PublicFormPage() {
               required={field.isRequired}
               error={errorText}
               ariaLabel={field.hideLabel ? accessibleLabel : undefined}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
               className="w-full"
             />
           )}
@@ -1893,6 +1894,7 @@ export default function PublicFormPage() {
               clearable={false}
               showKeyboardHints={false}
               containerClassName="h-10"
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
             />
           )}
 

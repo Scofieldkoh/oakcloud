@@ -51,6 +51,8 @@ export interface SearchableSelectProps {
   groupBy?: string;
   /** Additional class name for the input container */
   containerClassName?: string;
+  /** Blur callback — fires when focus leaves the select input */
+  onBlur?: () => void;
 }
 
 export function SearchableSelect({
@@ -68,6 +70,7 @@ export function SearchableSelect({
   loading = false,
   groupBy,
   containerClassName,
+  onBlur,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -357,6 +360,7 @@ export function SearchableSelect({
           value={inputValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
+          onBlur={onBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}

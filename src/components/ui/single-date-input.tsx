@@ -31,6 +31,8 @@ export interface SingleDateInputProps {
   required?: boolean;
   /** Accessible label when visible label is omitted */
   ariaLabel?: string;
+  /** Blur callback */
+  onBlur?: () => void;
 }
 
 const CALENDAR_START_MONTH = new Date(1900, 0, 1);
@@ -434,6 +436,7 @@ export function SingleDateInput({
   hint,
   required,
   ariaLabel,
+  onBlur,
 }: SingleDateInputProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [month, setMonth] = useState<Date>(() => parseISODate(value) || new Date());
@@ -579,6 +582,7 @@ export function SingleDateInput({
 
   const handleInputBlur = useCallback(() => {
     setIsEditing(false);
+    onBlur?.();
 
     // On blur, format the display to the standard format
     if (selectedDate) {
