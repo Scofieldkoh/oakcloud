@@ -55,14 +55,12 @@ export async function POST(request: Request, { params }: RouteParams) {
       );
     }
 
-    // Delete existing logo (any extension) if present
-    if (tenant.logoUrl) {
-      for (const ext of Object.values(ALLOWED_TYPES)) {
-        const oldKey = StorageKeys.tenantLogo(id, ext);
-        const exists = await storage.exists(oldKey);
-        if (exists) {
-          await storage.delete(oldKey);
-        }
+    // Delete any existing logo files (all extensions) before uploading
+    for (const ext of Object.values(ALLOWED_TYPES)) {
+      const oldKey = StorageKeys.tenantLogo(id, ext);
+      const exists = await storage.exists(oldKey);
+      if (exists) {
+        await storage.delete(oldKey);
       }
     }
 
@@ -103,13 +101,11 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
     }
 
-    if (tenant.logoUrl) {
-      for (const ext of Object.values(ALLOWED_TYPES)) {
-        const key = StorageKeys.tenantLogo(id, ext);
-        const exists = await storage.exists(key);
-        if (exists) {
-          await storage.delete(key);
-        }
+    for (const ext of Object.values(ALLOWED_TYPES)) {
+      const key = StorageKeys.tenantLogo(id, ext);
+      const exists = await storage.exists(key);
+      if (exists) {
+        await storage.delete(key);
       }
     }
 
