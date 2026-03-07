@@ -149,6 +149,13 @@ export const StorageKeys = {
   },
 
   /**
+   * Generate storage key for tenant branding logo
+   */
+  tenantLogo(tenantId: string, extension: string): string {
+    return `${tenantId}/branding/logo${extension}`;
+  },
+
+  /**
    * Get prefix for pending documents of a tenant
    */
   pendingPrefix(tenantId: string): string {
