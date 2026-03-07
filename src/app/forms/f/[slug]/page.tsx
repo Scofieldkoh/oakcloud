@@ -306,6 +306,8 @@ type RenderStandalone = {
 
 type RenderItem = RenderGroup | RenderStandalone;
 
+const NON_VALIDATABLE_FIELD_TYPES = new Set(['PARAGRAPH', 'HTML', 'HIDDEN']);
+
 const CARD_ELIGIBLE_TYPES = new Set([
   'SHORT_TEXT',
   'LONG_TEXT',
@@ -888,8 +890,7 @@ export default function PublicFormPage() {
     value: unknown,
     localizedField: PublicField
   ): string | null {
-    const NON_VALIDATABLE = ['PARAGRAPH', 'HTML', 'HIDDEN'];
-    if (NON_VALIDATABLE.includes(field.type)) return null;
+    if (NON_VALIDATABLE_FIELD_TYPES.has(field.type)) return null;
 
     if (field.isRequired && !hasRequiredValue(field, value)) {
       return `${field.label || field.key} is required`;
