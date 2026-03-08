@@ -18,8 +18,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
     const page = Math.max(1, Number(searchParams.get('page') || '1'));
     const limit = Math.min(200, Math.max(1, Number(searchParams.get('limit') || '20')));
+    const draftPage = Math.max(1, Number(searchParams.get('draftPage') || '1'));
+    const draftLimit = Math.min(200, Math.max(1, Number(searchParams.get('draftLimit') || '20')));
 
-    const responses = await getFormResponses(id, tenantId, page, limit);
+    const responses = await getFormResponses(id, tenantId, page, limit, draftPage, draftLimit);
 
     return NextResponse.json(responses);
   } catch (error) {

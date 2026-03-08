@@ -4,6 +4,8 @@ import { FORM_FIELD_KEY_MAX_LENGTH } from '@/lib/form-utils';
 const MAX_FIELD_OPTIONS = 500;
 const MAX_FIELD_LABEL_LENGTH = 1000;
 const MAX_FIELD_SUBTEXT_LENGTH = 10000;
+const DATE_BOUND_PATTERN = /^(?:\d{4}-\d{2}-\d{2}|today)$/;
+const NUMBER_FORMULA_PATTERN = /^(?:(?:>=|<=|>|<|=)\s*)?[\d\s+\-*/().[\]_a-zA-Z]+$/;
 
 export const formStatusSchema = z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']);
 
@@ -43,6 +45,16 @@ export const fieldValidationSchema = z
     maxLength: z.number().int().min(1).max(5000).optional(),
     min: z.number().optional(),
     max: z.number().optional(),
+    equal: z.number().optional(),
+    minFormula: z.string().min(1).max(500).regex(NUMBER_FORMULA_PATTERN).optional(),
+    maxFormula: z.string().min(1).max(500).regex(NUMBER_FORMULA_PATTERN).optional(),
+    equalFormula: z.string().min(1).max(500).regex(NUMBER_FORMULA_PATTERN).optional(),
+    minDate: z.string().regex(DATE_BOUND_PATTERN).optional(),
+    maxDate: z.string().regex(DATE_BOUND_PATTERN).optional(),
+    startsWith: z.string().max(200).optional(),
+    containsText: z.string().max(200).optional(),
+    notContainsText: z.string().max(200).optional(),
+    endsWith: z.string().max(200).optional(),
     pattern: z.string().max(500).optional(),
     maxFileSizeMb: z.number().int().min(1).max(100).optional(),
     allowedMimeTypes: z.array(z.string().min(1).max(120)).max(20).optional(),
@@ -50,7 +62,14 @@ export const fieldValidationSchema = z
     tooltipEnabled: z.boolean().optional(),
     choiceInlineRight: z.boolean().optional(),
     defaultToday: z.boolean().optional(),
+    splitPhoneCountryCode: z.boolean().optional(),
+    phoneDefaultCountryCode: z.string().regex(/^\+\d{1,4}$/).optional(),
     infoBackgroundColor: z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/).optional(),
+    infoPaddingPx: z.number().int().min(0).max(80).optional(),
+    infoPaddingTopPx: z.number().int().min(0).max(80).optional(),
+    infoPaddingRightPx: z.number().int().min(0).max(80).optional(),
+    infoPaddingBottomPx: z.number().int().min(0).max(80).optional(),
+    infoPaddingLeftPx: z.number().int().min(0).max(80).optional(),
     repeatMinItems: z.number().int().min(1).max(50).optional(),
     repeatMaxItems: z.number().int().min(1).max(50).optional(),
     repeatAddLabel: z.string().min(1).max(80).optional(),
@@ -62,6 +81,21 @@ export const fieldValidationSchema = z
       }
       if (value.min !== undefined && value.max !== undefined) {
         return value.max >= value.min;
+      }
+      if (value.minFormula !== undefined && value.minFormula.trim().length === 0) {
+        return false;
+      }
+      if (value.maxFormula !== undefined && value.maxFormula.trim().length === 0) {
+        return false;
+      }
+      if (value.equalFormula !== undefined && value.equalFormula.trim().length === 0) {
+        return false;
+      }
+      if (value.minDate !== undefined && value.maxDate !== undefined) {
+        if (value.minDate === 'today' || value.maxDate === 'today') {
+          return true;
+        }
+        return value.maxDate >= value.minDate;
       }
       if (value.repeatMinItems !== undefined && value.repeatMaxItems !== undefined) {
         return value.repeatMaxItems >= value.repeatMinItems;
@@ -132,6 +166,17 @@ export const formSlugSchema = z
   .max(80, 'URL segment must be at most 80 characters')
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers, and single hyphens only');
 
+export const formDraftCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9]{5}$/, 'Draft code must be exactly 5 alphanumeric characters');
+
+export const formDraftAccessTokenSchema = z
+  .string()
+  .trim()
+  .min(16)
+  .max(255);
+
 export const updateFormSchema = z.object({
   title: z.string().min(1).max(120).optional(),
   description: z.string().max(2000).optional().nullable(),
@@ -186,6 +231,28 @@ export const publicSubmissionSchema = z.object({
     },
     z.array(z.string().uuid()).max(100).optional().default([])
   ),
+  draftCode: formDraftCodeSchema.optional(),
+  accessToken: formDraftAccessTokenSchema.optional(),
+  metadata: z.preprocess(
+    (value) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+      return value;
+    },
+    z.record(z.string(), z.unknown()).optional()
+  ),
+});
+
+export const publicDraftSaveSchema = z.object({
+  answers: z.record(z.string(), z.unknown()),
+  uploadIds: z.preprocess(
+    (value) => {
+      if (!Array.isArray(value)) return value;
+      return value.filter((item): item is string => typeof item === 'string');
+    },
+    z.array(z.string().uuid()).max(100).optional().default([])
+  ),
+  draftCode: formDraftCodeSchema.optional(),
+  accessToken: formDraftAccessTokenSchema.optional(),
   metadata: z.preprocess(
     (value) => {
       if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
@@ -208,3 +275,4 @@ export type SaveFormFieldsInput = z.infer<typeof saveFormFieldsSchema>;
 export type DuplicateFormInput = z.infer<typeof duplicateFormSchema>;
 export type ListFormsQueryInput = z.infer<typeof listFormsQuerySchema>;
 export type PublicSubmissionInput = z.infer<typeof publicSubmissionSchema>;
+export type PublicDraftSaveInput = z.infer<typeof publicDraftSaveSchema>;

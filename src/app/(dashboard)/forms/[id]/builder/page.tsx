@@ -18,7 +18,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove, rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
-import { ChevronLeft, CircleHelp, ClipboardCopy, Copy, Plus, Save, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardCopy, Copy, Plus, Save, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { AIModelSelector } from '@/components/ui/ai-model-selector';
@@ -30,6 +30,7 @@ import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { FieldEditorDrawer } from '@/components/forms/field-editor-drawer';
 import { SortableFieldCard } from '@/components/forms/sortable-field-card';
+import { COUNTRY_PRESET_OPTIONS, NATIONALITY_PRESET_OPTIONS } from '@/lib/constants/form-option-presets';
 import {
   FIELD_TYPE_LABEL,
   defaultField,
@@ -40,15 +41,20 @@ import {
   toPayloadFields,
 } from '@/components/forms/builder-utils';
 import {
+  DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS,
+  MAX_FORM_DRAFT_AUTO_DELETE_DAYS,
+  MIN_FORM_DRAFT_AUTO_DELETE_DAYS,
   RESPONSE_COLUMN_STATUS_ID,
   RESPONSE_COLUMN_SUBMITTED_ID,
   normalizeLocaleCode,
+  parseFormDraftSettings,
   parseFormFileNameSettings,
   parseFormI18nSettings,
   isSummaryEligibleFieldType,
   parseFormNotificationSettings,
   normalizeResponseColumnOrder,
   parseFormResponseTableSettings,
+  writeFormDraftSettings,
   writeFormFileNameSettings,
   writeFormI18nSettings,
   sanitizeResponseColumnWidths,
@@ -59,6 +65,21 @@ import {
   type FormI18nFieldTranslation,
 } from '@/lib/form-utils';
 import type { BuilderField } from '@/components/forms/builder-utils';
+
+function matchesPresetOptionLabels(options: BuilderField['options'], preset: readonly string[]): boolean {
+  return options.length === preset.length && options.every((option, index) => option.label === preset[index]);
+}
+
+function isRuntimeLocalizedPresetField(field: BuilderField): boolean {
+  if (field.type !== 'DROPDOWN' && field.type !== 'SINGLE_CHOICE' && field.type !== 'MULTIPLE_CHOICE') {
+    return false;
+  }
+
+  return (
+    matchesPresetOptionLabels(field.options, COUNTRY_PRESET_OPTIONS)
+    || matchesPresetOptionLabels(field.options, NATIONALITY_PRESET_OPTIONS)
+  );
+}
 
 function resequence(nextFields: BuilderField[]): BuilderField[] {
   return nextFields.map((field, index) => ({ ...field, position: index }));
@@ -145,20 +166,72 @@ const TRANSLATABLE_UI_LABELS: Array<{ key: string; label: string; placeholder: s
   { key: 'continue', label: 'Continue button', placeholder: 'Continue' },
   { key: 'submit', label: 'Submit button', placeholder: 'Submit' },
   { key: 'preview_mode', label: 'Preview mode button', placeholder: 'Preview mode' },
+  { key: 'preview_notice', label: 'Preview notice', placeholder: 'Preview mode. Publish the form to accept uploads and submissions.' },
+  { key: 'page_progress', label: 'Page progress label', placeholder: 'Page {current} of {total}' },
+  { key: 'page_progress_short', label: 'Page progress short label', placeholder: '{current} of {total}' },
   { key: 'upload_file', label: 'Upload file prompt', placeholder: 'Upload a file' },
   { key: 'replace_file', label: 'Replace file prompt', placeholder: 'Replace file' },
   { key: 'upload_drag_hint', label: 'Drag/drop hint', placeholder: 'or drag and drop here' },
   { key: 'upload_select_prompt', label: 'Upload status (idle)', placeholder: 'Select a file to upload' },
   { key: 'uploading', label: 'Upload status (uploading)', placeholder: 'Uploading...' },
   { key: 'upload_success', label: 'Upload status (success)', placeholder: 'File uploaded successfully' },
+  { key: 'upload_failed', label: 'Upload failed message', placeholder: 'Upload failed' },
+  { key: 'uploaded_file_fallback', label: 'Uploaded file fallback label', placeholder: 'Uploaded file' },
+  { key: 'upload_file_for_field', label: 'Upload field aria label', placeholder: 'Upload file for {field}' },
   { key: 'add_row', label: 'Add row button label', placeholder: 'Add row' },
   { key: 'remove_row', label: 'Remove row button label', placeholder: 'Remove row' },
+  { key: 'phone_code_placeholder', label: 'Phone code placeholder', placeholder: 'Code' },
+  { key: 'date_placeholder', label: 'Date placeholder', placeholder: 'dd mmm yyyy' },
+  { key: 'select_option_placeholder', label: 'Select option placeholder', placeholder: 'Select an option' },
+  { key: 'choice_other_placeholder', label: 'Choice detail placeholder', placeholder: 'Please specify' },
+  { key: 'loading_form', label: 'Loading form message', placeholder: 'Loading form...' },
+  { key: 'information_image_alt', label: 'Information image alt text', placeholder: 'Information image' },
+  { key: 'info_image_invalid_url', label: 'Invalid image URL message', placeholder: 'Add a valid image URL in field settings.' },
+  { key: 'info_url_invalid_url', label: 'Invalid URL message', placeholder: 'Add a valid URL in field settings.' },
+  { key: 'organization_logo_alt', label: 'Organization logo alt text', placeholder: 'Organization logo' },
+  { key: 'save_draft', label: 'Save draft button', placeholder: 'Save draft' },
+  { key: 'saving_draft', label: 'Saving draft button', placeholder: 'Saving draft...' },
+  { key: 'resume_draft', label: 'Resume draft button', placeholder: 'Resume draft' },
+  { key: 'resuming_draft', label: 'Resuming draft button', placeholder: 'Resuming...' },
+  { key: 'resume_draft_placeholder', label: 'Resume draft placeholder', placeholder: 'Enter draft ID' },
+  { key: 'draft_validity_notice_singular', label: 'Draft validity notice (singular)', placeholder: 'Drafts stay available for {days} day.' },
+  { key: 'draft_validity_notice_plural', label: 'Draft validity notice (plural)', placeholder: 'Drafts stay available for {days} days.' },
+  { key: 'resume_draft_description_singular', label: 'Resume draft description (singular)', placeholder: 'Drafts stay available for {days} day. Enter your draft ID if you want to continue a saved response.' },
+  { key: 'resume_draft_description_plural', label: 'Resume draft description (plural)', placeholder: 'Drafts stay available for {days} days. Enter your draft ID if you want to continue a saved response.' },
+  { key: 'copy_resume_link', label: 'Copy resume link button', placeholder: 'Copy resume link' },
+  { key: 'draft_saved', label: 'Draft saved message', placeholder: 'Draft saved. Keep this code and resume link to continue later.' },
+  { key: 'draft_saved_title', label: 'Draft saved title', placeholder: 'Draft saved' },
+  { key: 'draft_code_label', label: 'Draft code label', placeholder: 'Draft code' },
+  { key: 'draft_expires_label', label: 'Draft expiry label', placeholder: 'Expires' },
+  { key: 'resume_link_label', label: 'Resume link label', placeholder: 'Resume link' },
+  { key: 'continue_editing', label: 'Continue editing button', placeholder: 'Continue editing' },
+  { key: 'preview_upload_notice', label: 'Preview upload notice', placeholder: 'Preview mode is read-only. Publish the form to accept uploads.' },
+  { key: 'preview_save_draft_notice', label: 'Preview save draft notice', placeholder: 'Preview mode is read-only. Publish the form to save drafts.' },
+  { key: 'draft_save_disabled_notice', label: 'Draft disabled notice', placeholder: 'Draft saving is not enabled for this form.' },
+  { key: 'save_draft_failed', label: 'Save draft failed message', placeholder: 'Failed to save draft' },
+  { key: 'resume_draft_failed', label: 'Resume draft failed message', placeholder: 'Failed to resume draft' },
+  { key: 'resume_link_unavailable', label: 'Resume link unavailable message', placeholder: 'Resume link is unavailable on this browser.' },
+  { key: 'resume_link_copied', label: 'Resume link copied message', placeholder: 'Resume link copied.' },
+  { key: 'resume_link_copy_failed', label: 'Resume link copy failed message', placeholder: 'Failed to copy resume link.' },
   { key: 'response_submitted_title', label: 'Submit success title', placeholder: 'Response submitted' },
   { key: 'response_submitted_description', label: 'Submit success description', placeholder: 'Your response has been recorded.' },
+  { key: 'preview_submit_notice', label: 'Preview submit notice', placeholder: 'Preview mode is read-only. Publish the form to accept submissions.' },
+  { key: 'submission_failed', label: 'Submission failed message', placeholder: 'Submission failed' },
   { key: 'download_pdf', label: 'Download PDF button', placeholder: 'Download PDF' },
   { key: 'download_expired_hint', label: 'Expired download hint', placeholder: 'Download link expired. Submit the form again to generate a new link.' },
   { key: 'email_pdf_copy', label: 'Email PDF section label', placeholder: 'Email a PDF copy' },
+  { key: 'email_pdf_placeholder', label: 'Email PDF placeholder', placeholder: 'name@example.com' },
+  { key: 'email_action_expired', label: 'Email action expired message', placeholder: 'This email action has expired. Please resubmit the form to request a PDF email.' },
+  { key: 'email_invalid', label: 'Invalid email message', placeholder: 'Enter a valid email address' },
   { key: 'send', label: 'Send email button', placeholder: 'Send' },
+  { key: 'email_send_failed', label: 'Send email failed message', placeholder: 'Failed to send email' },
+  { key: 'email_sent_feedback', label: 'Send email success message', placeholder: 'PDF link sent to {email}' },
+  { key: 'validation_required', label: 'Required validation message', placeholder: '{field} is required' },
+  { key: 'validation_email', label: 'Email validation message', placeholder: '{field} must be a valid email' },
+  { key: 'validation_choice_detail', label: 'Choice detail validation message', placeholder: '{field}: please specify for {option}' },
+  { key: 'invalid_value', label: 'Invalid value fallback', placeholder: 'Invalid value' },
+  { key: 'payload_label', label: 'Payload label', placeholder: 'payload' },
+  { key: 'dynamic_section_unsupported_field', label: 'Dynamic section unsupported message', placeholder: 'This field type is not supported inside dynamic sections yet.' },
 ];
 
 function getEmptyLocaleTranslation(): FormI18nLocaleTranslation {
@@ -181,6 +254,45 @@ function withLocaleTranslation(
     fields: { ...(existing.fields || {}) },
     ui: { ...(existing.ui || {}) },
   };
+}
+
+function getTranslatedValueByKey(
+  translation: FormI18nLocaleTranslation,
+  translationKey: string
+): string | undefined {
+  if (translationKey === 'form.title') {
+    return translation.form.title;
+  }
+
+  if (translationKey === 'form.description') {
+    return translation.form.description;
+  }
+
+  if (translationKey.startsWith('ui.')) {
+    const uiKey = translationKey.slice(3);
+    return uiKey ? translation.ui[uiKey] : undefined;
+  }
+
+  const fieldEntryMatch = translationKey.match(/^field\.([a-zA-Z0-9_]+)\.(label|placeholder|subtext|helpText)$/);
+  if (fieldEntryMatch) {
+    const [, fieldKey, fieldProp] = fieldEntryMatch;
+    const fieldTranslation = translation.fields[fieldKey];
+    if (!fieldTranslation) return undefined;
+    if (fieldProp === 'label') return fieldTranslation.label;
+    if (fieldProp === 'placeholder') return fieldTranslation.placeholder;
+    if (fieldProp === 'subtext') return fieldTranslation.subtext;
+    return fieldTranslation.helpText;
+  }
+
+  const optionMatch = translationKey.match(/^field\.([a-zA-Z0-9_]+)\.option\.(\d+)$/);
+  if (optionMatch) {
+    const [, fieldKey, indexText] = optionMatch;
+    const optionIndex = Number.parseInt(indexText, 10);
+    if (Number.isNaN(optionIndex) || optionIndex < 0) return undefined;
+    return translation.fields[fieldKey]?.options?.[optionIndex];
+  }
+
+  return undefined;
 }
 
 function getBuilderFieldTypeLabel(field: BuilderField): string {
@@ -222,6 +334,8 @@ export default function FormBuilderPage() {
   const [status, setStatus] = useState<'DRAFT' | 'PUBLISHED' | 'ARCHIVED'>('DRAFT');
   const [tagsText, setTagsText] = useState('');
   const [notificationRecipientsText, setNotificationRecipientsText] = useState('');
+  const [draftSaveEnabled, setDraftSaveEnabled] = useState(false);
+  const [draftAutoDeleteDays, setDraftAutoDeleteDays] = useState(DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS);
   const [pdfFileNameTemplate, setPdfFileNameTemplate] = useState('');
   const [i18nDefaultLocale, setI18nDefaultLocale] = useState('en');
   const [i18nEnabledLocales, setI18nEnabledLocales] = useState<string[]>(['en']);
@@ -240,7 +354,9 @@ export default function FormBuilderPage() {
   const [showAiTranslateModal, setShowAiTranslateModal] = useState(false);
   const [aiTranslateModel, setAiTranslateModel] = useState('');
   const [aiTranslateInstructions, setAiTranslateInstructions] = useState('');
+  const [aiTranslateFillEmptyOnly, setAiTranslateFillEmptyOnly] = useState(true);
   const [isAiTranslating, setIsAiTranslating] = useState(false);
+  const [expandedTranslationSections, setExpandedTranslationSections] = useState<string[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
   const baselineSnapshot = useRef<string>('');
 
@@ -253,6 +369,7 @@ export default function FormBuilderPage() {
 
     const responseTableSettings = parseFormResponseTableSettings(form.settings);
     const notificationSettings = parseFormNotificationSettings(form.settings);
+    const draftSettings = parseFormDraftSettings(form.settings);
     const fileNameSettings = parseFormFileNameSettings(form.settings);
     const i18nSettings = parseFormI18nSettings(form.settings);
     const summaryFieldKeySet = new Set(responseTableSettings.summaryFieldKeys);
@@ -284,6 +401,8 @@ export default function FormBuilderPage() {
     setStatus(form.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED');
     setTagsText(form.tags.join(', '));
     setNotificationRecipientsText(notificationSettings.completionRecipientEmails.join('\n'));
+    setDraftSaveEnabled(draftSettings.enabled);
+    setDraftAutoDeleteDays(draftSettings.autoDeleteDays);
     setPdfFileNameTemplate(fileNameSettings.pdfTemplate || '');
     setI18nDefaultLocale(i18nSettings.defaultLocale);
     setI18nEnabledLocales(i18nSettings.enabledLocales);
@@ -306,6 +425,8 @@ export default function FormBuilderPage() {
       tags: form.tags,
       notificationRecipientEmails: notificationSettings.completionRecipientEmails,
       notificationRecipientText: notificationSettings.completionRecipientEmails.join('\n'),
+      draftSaveEnabled: draftSettings.enabled,
+      draftAutoDeleteDays: draftSettings.autoDeleteDays,
       pdfFileNameTemplate: fileNameSettings.pdfTemplate || '',
       i18nDefaultLocale: i18nSettings.defaultLocale,
       i18nEnabledLocales: i18nSettings.enabledLocales,
@@ -409,7 +530,11 @@ export default function FormBuilderPage() {
         });
       }
 
-      const supportsOptions = field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE' || field.type === 'DROPDOWN';
+      const supportsOptions = (
+        field.type === 'SINGLE_CHOICE'
+        || field.type === 'MULTIPLE_CHOICE'
+        || field.type === 'DROPDOWN'
+      ) && !isRuntimeLocalizedPresetField(field);
       if (!supportsOptions) continue;
       for (let optionIndex = 0; optionIndex < field.options.length; optionIndex += 1) {
         const option = field.options[optionIndex];
@@ -425,6 +550,81 @@ export default function FormBuilderPage() {
     return items;
   }, [title, description, translatableFields]);
 
+  const aiTranslationTargetItems = useMemo<TranslationSourceItem[]>(() => {
+    if (!aiTranslateFillEmptyOnly) {
+      return aiTranslationSourceItems;
+    }
+
+    return aiTranslationSourceItems.filter((item) => !hasValue(getTranslatedValueByKey(activeLocaleTranslation, item.key)));
+  }, [activeLocaleTranslation, aiTranslateFillEmptyOnly, aiTranslationSourceItems]);
+
+  const translatableUiItems = useMemo(
+    () => TRANSLATABLE_UI_LABELS.filter((item) => hasValue(item.placeholder)),
+    []
+  );
+
+  const translatableFieldGroups = useMemo(() => (
+    translatableFields.flatMap((field) => {
+      if (!hasValue(field.key)) return [];
+
+      const supportsOptions = (
+        field.type === 'SINGLE_CHOICE'
+        || field.type === 'MULTIPLE_CHOICE'
+        || field.type === 'DROPDOWN'
+      ) && !isRuntimeLocalizedPresetField(field);
+      const textEntries = [
+        { key: 'label' as const, label: 'Label', value: field.label || '' },
+        { key: 'placeholder' as const, label: 'Placeholder', value: field.placeholder || '' },
+        { key: 'subtext' as const, label: 'Subtext', value: field.subtext || '' },
+        { key: 'helpText' as const, label: 'Help text', value: field.helpText || '' },
+      ].filter((entry) => hasValue(entry.value));
+
+      const englishOptions = supportsOptions
+        ? field.options
+            .map((option, index) => ({ index, label: option.label || '' }))
+            .filter((option) => hasValue(option.label))
+        : [];
+
+      if (textEntries.length === 0 && englishOptions.length === 0) {
+        return [];
+      }
+
+      return [{
+        field,
+        fieldKey: field.key,
+        textEntries,
+        englishOptions,
+      }];
+    })
+  ), [translatableFields]);
+
+  const availableTranslationSectionIds = useMemo(() => {
+    const ids: string[] = [];
+    if (hasValue(title) || hasValue(description)) ids.push('form-text');
+    if (translatableUiItems.length > 0) ids.push('ui-labels');
+    if (translatableFieldGroups.length > 0) {
+      ids.push('field-translations');
+      ids.push(...translatableFieldGroups.map((group) => `field-${group.field.clientId}`));
+    }
+    return ids;
+  }, [description, title, translatableFieldGroups, translatableUiItems.length]);
+
+  function isTranslationSectionExpanded(sectionId: string): boolean {
+    return expandedTranslationSections.includes(sectionId);
+  }
+
+  function toggleTranslationSection(sectionId: string) {
+    setExpandedTranslationSections((prev) => (
+      prev.includes(sectionId)
+        ? prev.filter((id) => id !== sectionId)
+        : [...prev, sectionId]
+    ));
+  }
+
+  function setAllTranslationSectionsExpanded(expanded: boolean) {
+    setExpandedTranslationSections(expanded ? availableTranslationSectionIds : []);
+  }
+
   useEffect(() => {
     if (editableLocales.includes(editingLocale)) return;
     setEditingLocale(editableLocales[0] || i18nDefaultLocale);
@@ -439,6 +639,8 @@ export default function FormBuilderPage() {
       tags,
       notificationRecipientEmails: notificationEmailParse.emails,
       notificationRecipientText: notificationRecipientsText,
+      draftSaveEnabled,
+      draftAutoDeleteDays,
       pdfFileNameTemplate,
       i18nDefaultLocale,
       i18nEnabledLocales,
@@ -453,12 +655,14 @@ export default function FormBuilderPage() {
       description,
       slug,
       status,
-      tags,
-      notificationEmailParse.emails,
-      notificationRecipientsText,
-      pdfFileNameTemplate,
-      i18nDefaultLocale,
-      i18nEnabledLocales,
+        tags,
+        notificationEmailParse.emails,
+        notificationRecipientsText,
+        draftSaveEnabled,
+        draftAutoDeleteDays,
+        pdfFileNameTemplate,
+        i18nDefaultLocale,
+        i18nEnabledLocales,
       i18nAllowLocaleSwitch,
       i18nTranslations,
       hideLogo,
@@ -772,29 +976,39 @@ export default function FormBuilderPage() {
 
   function applyAiTranslations(
     locale: string,
-    translations: Record<string, string>
+    translations: Record<string, string>,
+    options?: { fillEmptyOnly?: boolean }
   ) {
     updateLocaleTranslation(locale, (current) => {
       const nextForm = { ...(current.form || {}) };
       const nextUi = { ...(current.ui || {}) };
       const nextFields = { ...(current.fields || {}) };
+      const fillEmptyOnly = options?.fillEmptyOnly === true;
+
+      const shouldWriteValue = (existingValue: string | undefined) => (
+        !fillEmptyOnly || !hasValue(existingValue)
+      );
 
       for (const [translationKey, translatedText] of Object.entries(translations)) {
         if (!hasValue(translatedText)) continue;
 
         if (translationKey === 'form.title') {
-          nextForm.title = translatedText;
+          if (shouldWriteValue(nextForm.title)) {
+            nextForm.title = translatedText;
+          }
           continue;
         }
 
         if (translationKey === 'form.description') {
-          nextForm.description = translatedText;
+          if (shouldWriteValue(nextForm.description)) {
+            nextForm.description = translatedText;
+          }
           continue;
         }
 
         if (translationKey.startsWith('ui.')) {
           const uiKey = translationKey.slice(3);
-          if (uiKey) {
+          if (uiKey && shouldWriteValue(nextUi[uiKey])) {
             nextUi[uiKey] = translatedText;
           }
           continue;
@@ -804,10 +1018,10 @@ export default function FormBuilderPage() {
         if (fieldEntryMatch) {
           const [, fieldKey, fieldProp] = fieldEntryMatch;
           const nextFieldTranslation: FormI18nFieldTranslation = { ...(nextFields[fieldKey] || {}) };
-          if (fieldProp === 'label') nextFieldTranslation.label = translatedText;
-          if (fieldProp === 'placeholder') nextFieldTranslation.placeholder = translatedText;
-          if (fieldProp === 'subtext') nextFieldTranslation.subtext = translatedText;
-          if (fieldProp === 'helpText') nextFieldTranslation.helpText = translatedText;
+          if (fieldProp === 'label' && shouldWriteValue(nextFieldTranslation.label)) nextFieldTranslation.label = translatedText;
+          if (fieldProp === 'placeholder' && shouldWriteValue(nextFieldTranslation.placeholder)) nextFieldTranslation.placeholder = translatedText;
+          if (fieldProp === 'subtext' && shouldWriteValue(nextFieldTranslation.subtext)) nextFieldTranslation.subtext = translatedText;
+          if (fieldProp === 'helpText' && shouldWriteValue(nextFieldTranslation.helpText)) nextFieldTranslation.helpText = translatedText;
           nextFields[fieldKey] = nextFieldTranslation;
           continue;
         }
@@ -819,7 +1033,9 @@ export default function FormBuilderPage() {
           if (Number.isNaN(optionIndex) || optionIndex < 0) continue;
           const nextFieldTranslation: FormI18nFieldTranslation = { ...(nextFields[fieldKey] || {}) };
           const nextOptions = [...(nextFieldTranslation.options || [])];
-          nextOptions[optionIndex] = translatedText;
+          if (shouldWriteValue(nextOptions[optionIndex])) {
+            nextOptions[optionIndex] = translatedText;
+          }
           nextFieldTranslation.options = nextOptions;
           nextFields[fieldKey] = nextFieldTranslation;
         }
@@ -868,6 +1084,15 @@ export default function FormBuilderPage() {
       return;
     }
 
+    if (aiTranslationTargetItems.length === 0) {
+      showError(
+        aiTranslateFillEmptyOnly
+          ? 'No empty translated values are available to fill for the active language.'
+          : 'No source text is available to translate.'
+      );
+      return;
+    }
+
     setIsAiTranslating(true);
     try {
       const chunkedItems: TranslationSourceItem[][] = [];
@@ -876,7 +1101,7 @@ export default function FormBuilderPage() {
       let currentChunk: TranslationSourceItem[] = [];
       let currentChunkChars = 0;
 
-      for (const item of aiTranslationSourceItems) {
+      for (const item of aiTranslationTargetItems) {
         const itemChars = item.text.length + item.context.length;
         const shouldStartNewChunk = (
           currentChunk.length > 0
@@ -922,9 +1147,13 @@ export default function FormBuilderPage() {
         Object.assign(mergedTranslations, translations);
       }
 
-      applyAiTranslations(activeEditingLocale, mergedTranslations);
+      applyAiTranslations(activeEditingLocale, mergedTranslations, { fillEmptyOnly: aiTranslateFillEmptyOnly });
       setShowAiTranslateModal(false);
-      success(`AI translated ${Object.keys(mergedTranslations).length} values.`);
+      success(
+        aiTranslateFillEmptyOnly
+          ? `AI filled ${aiTranslationTargetItems.length} empty translated values.`
+          : `AI translated ${aiTranslationTargetItems.length} values.`
+      );
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Failed to translate with AI');
     } finally {
@@ -955,6 +1184,18 @@ export default function FormBuilderPage() {
         showError(`Invalid notification email(s): ${notificationEmailParse.invalidEntries.join(', ')}`);
         return;
       }
+
+      const normalizedDraftAutoDeleteDays = Math.min(
+        MAX_FORM_DRAFT_AUTO_DELETE_DAYS,
+        Math.max(MIN_FORM_DRAFT_AUTO_DELETE_DAYS, Math.trunc(draftAutoDeleteDays || DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS))
+      );
+
+      if (!Number.isFinite(normalizedDraftAutoDeleteDays)) {
+        showError('Draft auto-delete days must be a valid number');
+        return;
+      }
+
+      setDraftAutoDeleteDays(normalizedDraftAutoDeleteDays);
 
       const normalizedEnabledLocales = Array.from(new Set(
         i18nEnabledLocales
@@ -1048,7 +1289,11 @@ export default function FormBuilderPage() {
       const notificationSettingsPayload = writeFormNotificationSettings(responseTableSettingsPayload, {
         completionRecipientEmails: notificationEmailParse.emails,
       });
-      const fileNameSettingsPayload = writeFormFileNameSettings(notificationSettingsPayload, {
+      const draftSettingsPayload = writeFormDraftSettings(notificationSettingsPayload, {
+        enabled: draftSaveEnabled,
+        autoDeleteDays: normalizedDraftAutoDeleteDays,
+      });
+      const fileNameSettingsPayload = writeFormFileNameSettings(draftSettingsPayload, {
         pdfTemplate: pdfFileNameTemplate,
       });
       let nextSettings = writeFormI18nSettings(fileNameSettingsPayload, {
@@ -1076,8 +1321,11 @@ export default function FormBuilderPage() {
       });
 
       setStatus(saved.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED');
+      const savedDraftSettings = parseFormDraftSettings(saved.settings);
       const savedFileNameSettings = parseFormFileNameSettings(saved.settings);
       const savedI18nSettings = parseFormI18nSettings(saved.settings);
+      setDraftSaveEnabled(savedDraftSettings.enabled);
+      setDraftAutoDeleteDays(savedDraftSettings.autoDeleteDays);
       setPdfFileNameTemplate(savedFileNameSettings.pdfTemplate || '');
       setI18nDefaultLocale(savedI18nSettings.defaultLocale);
       setI18nEnabledLocales(savedI18nSettings.enabledLocales);
@@ -1093,6 +1341,8 @@ export default function FormBuilderPage() {
         tags: saved.tags,
         notificationRecipientEmails: notificationEmailParse.emails,
         notificationRecipientText: notificationRecipientsText,
+        draftSaveEnabled: savedDraftSettings.enabled,
+        draftAutoDeleteDays: savedDraftSettings.autoDeleteDays,
         pdfFileNameTemplate: savedFileNameSettings.pdfTemplate || '',
         i18nDefaultLocale: savedI18nSettings.defaultLocale,
         i18nEnabledLocales: savedI18nSettings.enabledLocales,
@@ -1309,6 +1559,50 @@ export default function FormBuilderPage() {
                   </p>
                 )}
               </div>
+              <div className="space-y-3 rounded-lg border border-border-primary bg-background-primary px-3 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-text-secondary">Enable save draft</p>
+                    <p className="text-2xs text-text-muted">Allow respondents to save progress and resume later with a draft code and secure resume link.</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={draftSaveEnabled}
+                    onClick={() => setDraftSaveEnabled((value) => !value)}
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      draftSaveEnabled ? 'bg-oak-primary' : 'bg-border-primary'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        draftSaveEnabled ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">Draft auto-delete (days)</label>
+                  <input
+                    type="number"
+                    min={MIN_FORM_DRAFT_AUTO_DELETE_DAYS}
+                    max={MAX_FORM_DRAFT_AUTO_DELETE_DAYS}
+                    value={draftAutoDeleteDays}
+                    onChange={(e) => {
+                      const nextValue = Number.parseInt(e.target.value, 10);
+                      if (!Number.isFinite(nextValue)) {
+                        setDraftAutoDeleteDays(DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS);
+                        return;
+                      }
+                      setDraftAutoDeleteDays(nextValue);
+                    }}
+                    className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+                  />
+                  <p className="mt-1 text-2xs text-text-muted">
+                    Drafts and their uploaded files are deleted after this many days. Allowed range: {MIN_FORM_DRAFT_AUTO_DELETE_DAYS}-{MAX_FORM_DRAFT_AUTO_DELETE_DAYS}.
+                  </p>
+                </div>
+              </div>
               <FormInput
                 label="PDF filename template"
                 value={pdfFileNameTemplate}
@@ -1488,6 +1782,13 @@ export default function FormBuilderPage() {
                       <p className="mt-0.5 text-2xs text-text-muted">Read-only values from the base form.</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setAllTranslationSectionsExpanded(expandedTranslationSections.length !== availableTranslationSectionIds.length)}
+                        className="rounded-lg border border-border-primary bg-background-primary px-3 py-1.5 text-xs text-text-secondary transition-colors hover:text-text-primary"
+                      >
+                        {expandedTranslationSections.length === availableTranslationSectionIds.length ? 'Collapse all' : 'Expand all'}
+                      </button>
                       {editableLocales.length > 1 ? (
                         <select
                           value={activeEditingLocale}
@@ -1517,62 +1818,78 @@ export default function FormBuilderPage() {
 
                   {(hasValue(title) || hasValue(description)) && (
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold text-text-primary">Form text</p>
-                      {hasValue(title) && (
-                        <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                          <div className="min-w-0 rounded-lg border border-border-primary bg-background-primary px-3 py-2">
-                            <p className="text-2xs font-medium text-text-muted">Form title</p>
-                            <p className="mt-1 break-words text-sm text-text-primary">{title}</p>
-                          </div>
-                          <div className="min-w-0 rounded-lg border border-border-primary bg-background-secondary px-3 py-2">
-                            <p className="text-2xs font-medium text-text-muted">Translated form title</p>
-                            <input
-                              type="text"
-                              value={activeLocaleTranslation.form.title || ''}
-                              onChange={(e) => updateLocaleTranslation(activeEditingLocale, (current) => ({
-                                ...current,
-                                form: {
-                                  ...(current.form || {}),
-                                  title: e.target.value,
-                                },
-                              }))}
-                              className="mt-1 w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
-                              placeholder="Enter translation..."
-                            />
-                          </div>
-                        </div>
-                      )}
-                      {hasValue(description) && (
-                        <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                          <div className="min-w-0 rounded-lg border border-border-primary bg-background-primary px-3 py-2">
-                            <p className="text-2xs font-medium text-text-muted">Form description</p>
-                            <p className="mt-1 whitespace-pre-wrap break-words text-sm text-text-primary">{description}</p>
-                          </div>
-                          <div className="min-w-0 rounded-lg border border-border-primary bg-background-secondary px-3 py-2">
-                            <p className="text-2xs font-medium text-text-muted">Translated form description</p>
-                            <textarea
-                              value={activeLocaleTranslation.form.description || ''}
-                              onChange={(e) => updateLocaleTranslation(activeEditingLocale, (current) => ({
-                                ...current,
-                                form: {
-                                  ...(current.form || {}),
-                                  description: e.target.value,
-                                },
-                              }))}
-                              className="mt-1 w-full min-h-20 bg-transparent text-sm text-text-primary outline-none resize-none placeholder:text-text-muted"
-                              placeholder="Enter translation..."
-                            />
-                          </div>
-                        </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleTranslationSection('form-text')}
+                        className="flex w-full items-center justify-between rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-left"
+                      >
+                        <span className="text-xs font-semibold text-text-primary">Form text</span>
+                        {isTranslationSectionExpanded('form-text') ? <ChevronDown className="h-4 w-4 text-text-muted" /> : <ChevronRight className="h-4 w-4 text-text-muted" />}
+                      </button>
+                      {isTranslationSectionExpanded('form-text') && (
+                        <>
+                          {hasValue(title) && (
+                            <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                              <div className="min-w-0 rounded-lg border border-border-primary bg-background-primary px-3 py-2">
+                                <p className="text-2xs font-medium text-text-muted">Form title</p>
+                                <p className="mt-1 break-words text-sm text-text-primary">{title}</p>
+                              </div>
+                              <div className="min-w-0 rounded-lg border border-border-primary bg-background-secondary px-3 py-2">
+                                <p className="text-2xs font-medium text-text-muted">Translated form title</p>
+                                <input
+                                  type="text"
+                                  value={activeLocaleTranslation.form.title || ''}
+                                  onChange={(e) => updateLocaleTranslation(activeEditingLocale, (current) => ({
+                                    ...current,
+                                    form: {
+                                      ...(current.form || {}),
+                                      title: e.target.value,
+                                    },
+                                  }))}
+                                  className="mt-1 w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
+                                  placeholder="Enter translation..."
+                                />
+                              </div>
+                            </div>
+                          )}
+                          {hasValue(description) && (
+                            <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                              <div className="min-w-0 rounded-lg border border-border-primary bg-background-primary px-3 py-2">
+                                <p className="text-2xs font-medium text-text-muted">Form description</p>
+                                <p className="mt-1 whitespace-pre-wrap break-words text-sm text-text-primary">{description}</p>
+                              </div>
+                              <div className="min-w-0 rounded-lg border border-border-primary bg-background-secondary px-3 py-2">
+                                <p className="text-2xs font-medium text-text-muted">Translated form description</p>
+                                <textarea
+                                  value={activeLocaleTranslation.form.description || ''}
+                                  onChange={(e) => updateLocaleTranslation(activeEditingLocale, (current) => ({
+                                    ...current,
+                                    form: {
+                                      ...(current.form || {}),
+                                      description: e.target.value,
+                                    },
+                                  }))}
+                                  className="mt-1 w-full min-h-20 bg-transparent text-sm text-text-primary outline-none resize-none placeholder:text-text-muted"
+                                  placeholder="Enter translation..."
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
 
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-text-primary">UI labels</p>
-                    {TRANSLATABLE_UI_LABELS
-                      .filter((item) => hasValue(item.placeholder))
-                      .map((item) => (
+                    <button
+                      type="button"
+                      onClick={() => toggleTranslationSection('ui-labels')}
+                      className="flex w-full items-center justify-between rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-left"
+                    >
+                      <span className="text-xs font-semibold text-text-primary">UI labels</span>
+                      {isTranslationSectionExpanded('ui-labels') ? <ChevronDown className="h-4 w-4 text-text-muted" /> : <ChevronRight className="h-4 w-4 text-text-muted" />}
+                    </button>
+                    {isTranslationSectionExpanded('ui-labels') && translatableUiItems.map((item) => (
                         <div key={item.key} className="grid grid-cols-1 gap-2 lg:grid-cols-2">
                           <div className="min-w-0 rounded-lg border border-border-primary bg-background-primary px-3 py-2">
                             <p className="text-2xs font-medium text-text-muted">{item.label}</p>
@@ -1604,102 +1921,106 @@ export default function FormBuilderPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold text-text-primary">Field translations</p>
-                    <p className="text-2xs text-text-muted">
-                      Only fields with existing English values are shown.
-                    </p>
-                    {translatableFields.map((field) => {
-                      if (!hasValue(field.key)) return null;
-                      const fieldKey = field.key;
-                      const fieldTranslation = activeLocaleTranslation.fields[fieldKey] || {};
-                      const optionTranslations = fieldTranslation.options || [];
-                      const supportsOptions = field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE' || field.type === 'DROPDOWN';
-                      const textEntries = [
-                        { key: 'label' as const, label: 'Label', value: field.label || '' },
-                        { key: 'placeholder' as const, label: 'Placeholder', value: field.placeholder || '' },
-                        { key: 'subtext' as const, label: 'Subtext', value: field.subtext || '' },
-                        { key: 'helpText' as const, label: 'Help text', value: field.helpText || '' },
-                      ].filter((entry) => hasValue(entry.value));
-                      const englishOptions = supportsOptions
-                        ? field.options
-                            .map((option, index) => ({ index, label: option.label || '' }))
-                            .filter((option) => hasValue(option.label))
-                        : [];
+                    <button
+                      type="button"
+                      onClick={() => toggleTranslationSection('field-translations')}
+                      className="flex w-full items-center justify-between rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-left"
+                    >
+                      <span className="text-xs font-semibold text-text-primary">Field translations</span>
+                      {isTranslationSectionExpanded('field-translations') ? <ChevronDown className="h-4 w-4 text-text-muted" /> : <ChevronRight className="h-4 w-4 text-text-muted" />}
+                    </button>
+                    {isTranslationSectionExpanded('field-translations') && (
+                      <>
+                        <p className="text-2xs text-text-muted">
+                          Only fields with existing English values are shown.
+                        </p>
+                        {translatableFieldGroups.map(({ field, fieldKey, textEntries, englishOptions }) => {
+                          const fieldTranslation = activeLocaleTranslation.fields[fieldKey] || {};
+                          const optionTranslations = fieldTranslation.options || [];
+                          const fieldDisplayName = hasValue(field.label) ? field.label : fieldKey;
+                          const fieldSectionId = `field-${field.clientId}`;
 
-                      if (textEntries.length === 0 && englishOptions.length === 0) {
-                        return null;
-                      }
+                          return (
+                            <div key={`i18n-${field.clientId}`} className="space-y-2 border-t border-border-primary pt-3">
+                              <button
+                                type="button"
+                                onClick={() => toggleTranslationSection(fieldSectionId)}
+                                className="flex w-full items-center justify-between rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-left"
+                              >
+                                <span className="text-xs font-semibold text-text-primary">
+                                  {fieldDisplayName} <span className="font-mono font-normal text-text-muted">({fieldKey})</span>
+                                </span>
+                                {isTranslationSectionExpanded(fieldSectionId) ? <ChevronDown className="h-4 w-4 text-text-muted" /> : <ChevronRight className="h-4 w-4 text-text-muted" />}
+                              </button>
+                              {isTranslationSectionExpanded(fieldSectionId) && (
+                                <>
+                                  {textEntries.map((entry) => {
+                                    const translatedValue = entry.key === 'label'
+                                      ? (fieldTranslation.label || '')
+                                      : entry.key === 'placeholder'
+                                        ? (fieldTranslation.placeholder || '')
+                                        : entry.key === 'subtext'
+                                          ? (fieldTranslation.subtext || '')
+                                          : (fieldTranslation.helpText || '');
 
-                      const fieldDisplayName = hasValue(field.label) ? field.label : fieldKey;
+                                    return (
+                                      <div key={`${field.clientId}-${entry.key}`} className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                                        <div className="min-w-0 rounded-lg border border-border-primary bg-background-primary px-3 py-2">
+                                          <p className="text-2xs font-medium text-text-muted">{entry.label}</p>
+                                          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-text-primary">{entry.value}</p>
+                                        </div>
+                                        <div className="min-w-0 rounded-lg border border-border-primary bg-background-secondary px-3 py-2">
+                                          <p className="text-2xs font-medium text-text-muted">Translated {entry.label.toLowerCase()}</p>
+                                          <textarea
+                                            value={translatedValue}
+                                            onChange={(e) => updateFieldTranslation(activeEditingLocale, fieldKey, (current) => ({
+                                              ...current,
+                                              [entry.key]: e.target.value,
+                                            }))}
+                                            rows={Math.max(2, translatedValue.split('\n').length)}
+                                            className="mt-1 w-full bg-transparent text-sm text-text-primary outline-none resize-none placeholder:text-text-muted"
+                                            placeholder="Enter translation..."
+                                          />
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
 
-                      return (
-                        <div key={`i18n-${field.clientId}`} className="space-y-2 border-t border-border-primary pt-3">
-                          <p className="text-xs font-semibold text-text-primary">
-                            {fieldDisplayName} <span className="font-mono font-normal text-text-muted">({fieldKey})</span>
-                          </p>
-                          {textEntries.map((entry) => {
-                            const translatedValue = entry.key === 'label'
-                              ? (fieldTranslation.label || '')
-                              : entry.key === 'placeholder'
-                                ? (fieldTranslation.placeholder || '')
-                                : entry.key === 'subtext'
-                                  ? (fieldTranslation.subtext || '')
-                                  : (fieldTranslation.helpText || '');
-
-                            return (
-                              <div key={`${field.clientId}-${entry.key}`} className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                                <div className="min-w-0 rounded-lg border border-border-primary bg-background-primary px-3 py-2">
-                                  <p className="text-2xs font-medium text-text-muted">{entry.label}</p>
-                                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-text-primary">{entry.value}</p>
-                                </div>
-                                <div className="min-w-0 rounded-lg border border-border-primary bg-background-secondary px-3 py-2">
-                                  <p className="text-2xs font-medium text-text-muted">Translated {entry.label.toLowerCase()}</p>
-                                  <textarea
-                                    value={translatedValue}
-                                    onChange={(e) => updateFieldTranslation(activeEditingLocale, fieldKey, (current) => ({
-                                      ...current,
-                                      [entry.key]: e.target.value,
-                                    }))}
-                                    rows={Math.max(2, translatedValue.split('\n').length)}
-                                    className="mt-1 w-full bg-transparent text-sm text-text-primary outline-none resize-none placeholder:text-text-muted"
-                                    placeholder="Enter translation..."
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })}
-
-                          {englishOptions.length > 0 && (
-                            <div className="space-y-2">
-                              <p className="text-2xs font-medium text-text-muted">Options</p>
-                              {englishOptions.map((option) => (
-                                <div key={`${field.clientId}-i18n-option-${option.index}`} className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                                  <div className="min-w-0 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary break-words">
-                                    {option.label}
-                                  </div>
-                                  <div className="min-w-0 rounded-lg border border-border-primary bg-background-secondary px-3 py-2">
-                                    <input
-                                      type="text"
-                                      value={optionTranslations[option.index] || ''}
-                                      onChange={(e) => {
-                                        const nextOptions = [...optionTranslations];
-                                        nextOptions[option.index] = e.target.value;
-                                        updateFieldTranslation(activeEditingLocale, fieldKey, (current) => ({
-                                          ...current,
-                                          options: nextOptions,
-                                        }));
-                                      }}
-                                      className="w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
-                                      placeholder="Enter translation..."
-                                    />
-                                  </div>
-                                </div>
-                              ))}
+                                  {englishOptions.length > 0 && (
+                                    <div className="space-y-2">
+                                      <p className="text-2xs font-medium text-text-muted">Options</p>
+                                      {englishOptions.map((option) => (
+                                        <div key={`${field.clientId}-i18n-option-${option.index}`} className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                                          <div className="min-w-0 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary break-words">
+                                            {option.label}
+                                          </div>
+                                          <div className="min-w-0 rounded-lg border border-border-primary bg-background-secondary px-3 py-2">
+                                            <input
+                                              type="text"
+                                              value={optionTranslations[option.index] || ''}
+                                              onChange={(e) => {
+                                                const nextOptions = [...optionTranslations];
+                                                nextOptions[option.index] = e.target.value;
+                                                updateFieldTranslation(activeEditingLocale, fieldKey, (current) => ({
+                                                  ...current,
+                                                  options: nextOptions,
+                                                }));
+                                              }}
+                                              className="w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
+                                              placeholder="Enter translation..."
+                                            />
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -1812,7 +2133,7 @@ export default function FormBuilderPage() {
       >
         <ModalBody className="space-y-4">
           <p className="text-sm text-text-secondary">
-            The AI will translate and populate <span className="font-medium text-text-primary">{aiTranslationSourceItems.length}</span> values for the active language.
+            The AI will translate and populate <span className="font-medium text-text-primary">{aiTranslationTargetItems.length}</span> {aiTranslateFillEmptyOnly ? 'empty' : ''} values for the active language.
           </p>
           <AIModelSelector
             value={aiTranslateModel}
@@ -1832,6 +2153,18 @@ export default function FormBuilderPage() {
               placeholder="Example: Use simple, conversational phrasing suitable for external clients."
             />
           </div>
+          <label className="inline-flex items-center gap-2 text-sm text-text-secondary">
+            <input
+              type="checkbox"
+              checked={aiTranslateFillEmptyOnly}
+              onChange={(e) => setAiTranslateFillEmptyOnly(e.target.checked)}
+              className="h-4 w-4 rounded border-border-primary bg-background-secondary accent-oak-primary"
+            />
+            Fill empty translated values only
+          </label>
+          <p className="text-2xs text-text-muted">
+            Turn this off to overwrite existing translated values for the active language.
+          </p>
         </ModalBody>
         <ModalFooter>
           <Button
@@ -1848,7 +2181,7 @@ export default function FormBuilderPage() {
             leftIcon={<Sparkles className="w-3.5 h-3.5" />}
             onClick={handleRunAiTranslation}
             isLoading={isAiTranslating}
-            disabled={!aiTranslateModel || aiTranslationSourceItems.length === 0}
+            disabled={!aiTranslateModel || aiTranslationTargetItems.length === 0}
           >
             Translate and Populate
           </Button>

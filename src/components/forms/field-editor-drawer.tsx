@@ -6,6 +6,7 @@ import { FormInput } from '@/components/ui/form-input';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Toggle } from '@/components/ui/toggle';
 import { DROPDOWN_PRESETS } from '@/lib/constants/form-option-presets';
+import { DEFAULT_PHONE_COUNTRY_CODE, PHONE_COUNTRY_CODE_OPTIONS } from '@/lib/constants/phone-country-codes';
 import { isSummaryEligibleFieldType } from '@/lib/form-utils';
 import { cn } from '@/lib/utils';
 import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS, normalizeKey } from './builder-utils';
@@ -34,6 +35,29 @@ function normalizeHexColor(value: string): string | undefined {
   return trimmed;
 }
 
+function normalizeInfoPaddingPx(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const rounded = Math.round(value);
+    return Math.max(0, Math.min(80, rounded));
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsed)) return undefined;
+    return Math.max(0, Math.min(80, parsed));
+  }
+
+  return undefined;
+}
+
+function getDefaultInfoPadding(inputType: ShortInputType): { top: number; right: number; bottom: number; left: number } {
+  if (inputType === 'info_image') {
+    return { top: 0, right: 0, bottom: 0, left: 0 };
+  }
+
+  return { top: 8, right: 12, bottom: 8, left: 12 };
+}
+
 export function FieldEditorDrawer({
   field,
   allFields,
@@ -58,6 +82,16 @@ export function FieldEditorDrawer({
   const canShowOnSummary = isSummaryEligibleFieldType(field.type);
   const selectedDropdownPreset = DROPDOWN_PRESETS.find((preset) => preset.id === dropdownPresetId) || null;
   const normalizedInfoBackgroundColor = normalizeHexColor(field.validation?.infoBackgroundColor || '');
+  const normalizedInfoPaddingTopPx = normalizeInfoPaddingPx(field.validation?.infoPaddingTopPx);
+  const normalizedInfoPaddingRightPx = normalizeInfoPaddingPx(field.validation?.infoPaddingRightPx);
+  const normalizedInfoPaddingBottomPx = normalizeInfoPaddingPx(field.validation?.infoPaddingBottomPx);
+  const normalizedInfoPaddingLeftPx = normalizeInfoPaddingPx(field.validation?.infoPaddingLeftPx);
+  const defaultInfoPadding = getDefaultInfoPadding(
+    INFO_INPUT_TYPES.includes(field.inputType) ? field.inputType : 'info_text'
+  );
+  const phoneDefaultCountryCode = typeof field.validation?.phoneDefaultCountryCode === 'string'
+    ? field.validation.phoneDefaultCountryCode
+    : DEFAULT_PHONE_COUNTRY_CODE;
 
   useEffect(() => {
     const saved = Number(window.localStorage.getItem(FIELD_DRAWER_WIDTH_STORAGE_KEY));
@@ -415,39 +449,112 @@ export function FieldEditorDrawer({
 
                   {!['info_heading_1', 'info_heading_2', 'info_heading_3'].includes(field.inputType) && (
                     <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
-                      <label className="mb-1.5 block text-xs font-medium text-text-secondary">Background color</label>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <input
-                          type="color"
-                          value={normalizedInfoBackgroundColor || '#f8fafc'}
-                          onChange={(e) => onChange({
-                            ...field,
-                            validation: {
-                              ...(field.validation || {}),
-                              infoBackgroundColor: normalizeHexColor(e.target.value),
-                            },
-                          })}
-                          className="h-8 w-10 cursor-pointer rounded border border-border-primary bg-background-primary p-1"
-                          aria-label="Choose information block background color"
-                        />
-                        <div className="rounded border border-border-primary bg-background-primary px-2 py-1 text-xs font-mono text-text-secondary">
-                          {normalizedInfoBackgroundColor || 'Default'}
+                      <div className="space-y-3">
+                        <div>
+                          <label className="mb-1.5 block text-xs font-medium text-text-secondary">Background color</label>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <input
+                              type="color"
+                              value={normalizedInfoBackgroundColor || '#f8fafc'}
+                              onChange={(e) => onChange({
+                                ...field,
+                                validation: {
+                                  ...(field.validation || {}),
+                                  infoBackgroundColor: normalizeHexColor(e.target.value),
+                                },
+                              })}
+                              className="h-8 w-10 cursor-pointer rounded border border-border-primary bg-background-primary p-1"
+                              aria-label="Choose information block background color"
+                            />
+                            <div className="rounded border border-border-primary bg-background-primary px-2 py-1 text-xs font-mono text-text-secondary">
+                              {normalizedInfoBackgroundColor || 'Default'}
+                            </div>
+                            {normalizedInfoBackgroundColor && (
+                              <button
+                                type="button"
+                                className="rounded border border-border-primary px-2 py-1 text-xs text-text-secondary hover:text-text-primary"
+                                onClick={() => onChange({
+                                  ...field,
+                                  validation: {
+                                    ...(field.validation || {}),
+                                    infoBackgroundColor: undefined,
+                                  },
+                                })}
+                              >
+                                Reset
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        {normalizedInfoBackgroundColor && (
-                          <button
-                            type="button"
-                            className="rounded border border-border-primary px-2 py-1 text-xs text-text-secondary hover:text-text-primary"
-                            onClick={() => onChange({
-                              ...field,
-                              validation: {
-                                ...(field.validation || {}),
-                                infoBackgroundColor: undefined,
-                              },
-                            })}
-                          >
-                            Reset
-                          </button>
-                        )}
+
+                        <div>
+                          <div className="mb-1.5 flex items-center justify-between gap-2">
+                            <label className="block text-xs font-medium text-text-secondary">Content padding (px)</label>
+                            {(normalizedInfoPaddingTopPx !== undefined
+                              || normalizedInfoPaddingRightPx !== undefined
+                              || normalizedInfoPaddingBottomPx !== undefined
+                              || normalizedInfoPaddingLeftPx !== undefined) && (
+                              <button
+                                type="button"
+                                className="rounded border border-border-primary px-2 py-1 text-xs text-text-secondary hover:text-text-primary"
+                                onClick={() => onChange({
+                                  ...field,
+                                  validation: {
+                                    ...(field.validation || {}),
+                                    infoPaddingTopPx: undefined,
+                                    infoPaddingRightPx: undefined,
+                                    infoPaddingBottomPx: undefined,
+                                    infoPaddingLeftPx: undefined,
+                                  },
+                                })}
+                              >
+                                Reset
+                              </button>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              { key: 'infoPaddingTopPx', label: 'Top', value: normalizedInfoPaddingTopPx },
+                              { key: 'infoPaddingRightPx', label: 'Right', value: normalizedInfoPaddingRightPx },
+                              { key: 'infoPaddingBottomPx', label: 'Bottom', value: normalizedInfoPaddingBottomPx },
+                              { key: 'infoPaddingLeftPx', label: 'Left', value: normalizedInfoPaddingLeftPx },
+                            ].map((paddingField) => (
+                              <div key={paddingField.key}>
+                                <label className="mb-1 block text-2xs font-medium uppercase tracking-[0.08em] text-text-muted">
+                                  {paddingField.label}
+                                </label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={80}
+                                  step={1}
+                                  value={paddingField.value ?? ''}
+                                  onChange={(e) => onChange({
+                                    ...field,
+                                    validation: {
+                                      ...(field.validation || {}),
+                                      [paddingField.key]: normalizeInfoPaddingPx(e.target.value),
+                                    },
+                                  })}
+                                  className="w-full rounded border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs text-text-primary"
+                                  placeholder={String(
+                                    paddingField.label === 'Top'
+                                      ? defaultInfoPadding.top
+                                      : paddingField.label === 'Right'
+                                        ? defaultInfoPadding.right
+                                        : paddingField.label === 'Bottom'
+                                          ? defaultInfoPadding.bottom
+                                          : defaultInfoPadding.left
+                                  )}
+                                  aria-label={`Set ${paddingField.label.toLowerCase()} padding in pixels`}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          <p className="mt-1 text-2xs text-text-muted">
+                            Override internal padding for this information block. Leave empty for default spacing.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -700,50 +807,312 @@ export function FieldEditorDrawer({
 
           {activeTab === 'validation' && (
             <>
-              {(field.type === 'SHORT_TEXT' || field.type === 'LONG_TEXT') && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <FormInput
-                    label="Min length"
-                    type="number"
-                    value={field.validation?.minLength?.toString() || ''}
-                    onChange={(e) => onChange({
-                      ...field,
-                      validation: {
-                        ...(field.validation || {}),
-                        minLength: e.target.value ? Number(e.target.value) : undefined,
-                      },
-                    })}
-                  />
-                  <FormInput
-                    label="Max length"
-                    type="number"
-                    value={field.validation?.maxLength?.toString() || ''}
-                    onChange={(e) => onChange({
-                      ...field,
-                      validation: {
-                        ...(field.validation || {}),
-                        maxLength: e.target.value ? Number(e.target.value) : undefined,
-                      },
-                    })}
-                  />
+              {((field.type === 'SHORT_TEXT' && field.inputType !== 'date' && field.inputType !== 'number') || field.type === 'LONG_TEXT') && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FormInput
+                      label="Min length"
+                      type="number"
+                      value={field.validation?.minLength?.toString() || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          minLength: e.target.value ? Number(e.target.value) : undefined,
+                        },
+                      })}
+                    />
+                    <FormInput
+                      label="Max length"
+                      type="number"
+                      value={field.validation?.maxLength?.toString() || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          maxLength: e.target.value ? Number(e.target.value) : undefined,
+                        },
+                      })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FormInput
+                      label="Begins with"
+                      value={field.validation?.startsWith || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          startsWith: e.target.value.trim() || undefined,
+                        },
+                      })}
+                    />
+                    <FormInput
+                      label="Ends with"
+                      value={field.validation?.endsWith || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          endsWith: e.target.value.trim() || undefined,
+                        },
+                      })}
+                    />
+                    <FormInput
+                      label="Contains"
+                      value={field.validation?.containsText || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          containsText: e.target.value || undefined,
+                        },
+                      })}
+                    />
+                    <FormInput
+                      label="Does not contain"
+                      value={field.validation?.notContainsText || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          notContainsText: e.target.value || undefined,
+                        },
+                      })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {field.type === 'SHORT_TEXT' && field.inputType === 'number' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FormInput
+                      label="Min amount"
+                      type="number"
+                      value={field.validation?.min?.toString() || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          min: e.target.value ? Number(e.target.value) : undefined,
+                        },
+                      })}
+                    />
+                    <FormInput
+                      label="Max amount"
+                      type="number"
+                      value={field.validation?.max?.toString() || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          max: e.target.value ? Number(e.target.value) : undefined,
+                        },
+                      })}
+                    />
+                    <FormInput
+                      label="Equal to"
+                      type="number"
+                      value={field.validation?.equal?.toString() || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          equal: e.target.value ? Number(e.target.value) : undefined,
+                        },
+                      })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    <FormInput
+                      label="Min formula"
+                      value={field.validation?.minFormula || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          minFormula: e.target.value.trim() || undefined,
+                        },
+                      })}
+                      placeholder=">= [amount1] + [amount2]"
+                    />
+                    <FormInput
+                      label="Max formula"
+                      value={field.validation?.maxFormula || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          maxFormula: e.target.value.trim() || undefined,
+                        },
+                      })}
+                      placeholder="<= [budget] * 1.1"
+                    />
+                    <FormInput
+                      label="Equal formula"
+                      value={field.validation?.equalFormula || ''}
+                      onChange={(e) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          equalFormula: e.target.value.trim() || undefined,
+                        },
+                      })}
+                      placeholder="= [amount1] + [amount2]"
+                    />
+                  </div>
+                  <p className="text-2xs text-text-muted">Use field keys in square brackets. You can enter expressions like `&gt;= [amount1] + [amount2]`, `&lt;= [budget] * 1.1`, or `= [amount1] + [amount2]`.</p>
                 </div>
               )}
 
               {field.type === 'SHORT_TEXT' && field.inputType === 'date' && (
-                <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <FormInput
+                        label="Min date"
+                        value={field.validation?.minDate || ''}
+                        onChange={(e) => onChange({
+                          ...field,
+                          validation: {
+                            ...(field.validation || {}),
+                            minDate: e.target.value.trim() || undefined,
+                          },
+                        })}
+                        placeholder="YYYY-MM-DD or today"
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="rounded border border-border-primary bg-background-primary px-2.5 py-1 text-xs text-text-secondary hover:text-text-primary"
+                          onClick={() => onChange({
+                            ...field,
+                            validation: {
+                              ...(field.validation || {}),
+                              minDate: 'today',
+                            },
+                          })}
+                        >
+                          Use today
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded border border-border-primary bg-background-primary px-2.5 py-1 text-xs text-text-secondary hover:text-text-primary"
+                          onClick={() => onChange({
+                            ...field,
+                            validation: {
+                              ...(field.validation || {}),
+                              minDate: undefined,
+                            },
+                          })}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <FormInput
+                        label="Max date"
+                        value={field.validation?.maxDate || ''}
+                        onChange={(e) => onChange({
+                          ...field,
+                          validation: {
+                            ...(field.validation || {}),
+                            maxDate: e.target.value.trim() || undefined,
+                          },
+                        })}
+                        placeholder="YYYY-MM-DD or today"
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="rounded border border-border-primary bg-background-primary px-2.5 py-1 text-xs text-text-secondary hover:text-text-primary"
+                          onClick={() => onChange({
+                            ...field,
+                            validation: {
+                              ...(field.validation || {}),
+                              maxDate: 'today',
+                            },
+                          })}
+                        >
+                          Use today
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded border border-border-primary bg-background-primary px-2.5 py-1 text-xs text-text-secondary hover:text-text-primary"
+                          onClick={() => onChange({
+                            ...field,
+                            validation: {
+                              ...(field.validation || {}),
+                              maxDate: undefined,
+                            },
+                          })}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-2xs text-text-muted">Use a fixed date like `2026-03-08` or the variable `today`.</p>
+                  <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
+                    <Toggle
+                      checked={field.validation?.defaultToday === true}
+                      onChange={(checked) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          defaultToday: checked ? true : undefined,
+                        },
+                      })}
+                      label="Default to today's date"
+                      description="Pre-fill this date field with today's date for new responses."
+                      size="sm"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {field.type === 'SHORT_TEXT' && field.inputType === 'phone' && (
+                <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
                   <Toggle
-                    checked={field.validation?.defaultToday === true}
+                    checked={field.validation?.splitPhoneCountryCode === true}
                     onChange={(checked) => onChange({
                       ...field,
                       validation: {
                         ...(field.validation || {}),
-                        defaultToday: checked ? true : undefined,
+                        splitPhoneCountryCode: checked ? true : undefined,
+                        phoneDefaultCountryCode: checked
+                          ? (field.validation?.phoneDefaultCountryCode || DEFAULT_PHONE_COUNTRY_CODE)
+                          : field.validation?.phoneDefaultCountryCode,
                       },
                     })}
-                    label="Default to today's date"
-                    description="Pre-fill this date field with today's date for new responses."
+                    label="Split country code"
+                    description="Show a separate country code selector before the phone number input."
                     size="sm"
                   />
+
+                  {field.validation?.splitPhoneCountryCode === true && (
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-text-secondary">Default country code</label>
+                      <select
+                        value={phoneDefaultCountryCode}
+                        onChange={(e) => onChange({
+                          ...field,
+                          validation: {
+                            ...(field.validation || {}),
+                            splitPhoneCountryCode: true,
+                            phoneDefaultCountryCode: e.target.value || DEFAULT_PHONE_COUNTRY_CODE,
+                          },
+                        })}
+                        className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                      >
+                        {PHONE_COUNTRY_CODE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
 

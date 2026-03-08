@@ -1,17 +1,19 @@
 'use client';
 
 import React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Download, Info, Mail, Plus, UploadCloud, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Copy, Download, Info, Mail, Plus, UploadCloud, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { SignaturePad } from '@/components/forms/signature-pad';
 import { Tooltip } from '@/components/ui/tooltip';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import {
   WIDTH_CLASS,
   parseObject,
   parseChoiceOptions,
+  parseFormDraftSettings,
   parseFormI18nSettings,
   isEmptyValue,
   evaluateCondition,
@@ -19,10 +21,18 @@ import {
   type PublicFormDefinition,
 } from '@/lib/form-utils';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { DEFAULT_PHONE_COUNTRY_CODE, PHONE_COUNTRY_CODE_OPTIONS, getPhoneCountryCodeOptions } from '@/lib/constants/phone-country-codes';
+import {
+  COUNTRY_PRESET_OPTIONS,
+  NATIONALITY_PRESET_OPTIONS,
+  getLocalizedCountryPresetOptions,
+  getLocalizedNationalityPresetOptions,
+} from '@/lib/constants/form-option-presets';
 import { cn } from '@/lib/utils';
 import DOMPurify from 'dompurify';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const DRAFT_CODE_PATTERN = /^[A-Za-z0-9]{5}$/;
 const NAME_HINT_PATTERN = /(full[\s_-]?name|first[\s_-]?name|last[\s_-]?name|name)/i;
 const EMAIL_HINT_PATTERN = /email/i;
 const DATA_URI_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,/i;
@@ -35,20 +45,72 @@ const DEFAULT_UI_LABELS = {
   continue: 'Continue',
   submit: 'Submit',
   preview_mode: 'Preview mode',
+  preview_notice: 'Preview mode. Publish the form to accept uploads and submissions.',
+  page_progress: 'Page {current} of {total}',
+  page_progress_short: '{current} of {total}',
   upload_file: 'Upload a file',
   replace_file: 'Replace file',
   upload_drag_hint: 'or drag and drop here',
   upload_select_prompt: 'Select a file to upload',
   uploading: 'Uploading...',
   upload_success: 'File uploaded successfully',
+  upload_failed: 'Upload failed',
+  uploaded_file_fallback: 'Uploaded file',
+  upload_file_for_field: 'Upload file for {field}',
   add_row: 'Add row',
   remove_row: 'Remove row',
+  phone_code_placeholder: 'Code',
+  date_placeholder: 'dd mmm yyyy',
+  select_option_placeholder: 'Select an option',
+  choice_other_placeholder: 'Please specify',
+  loading_form: 'Loading form...',
+  information_image_alt: 'Information image',
+  info_image_invalid_url: 'Add a valid image URL in field settings.',
+  info_url_invalid_url: 'Add a valid URL in field settings.',
+  organization_logo_alt: 'Organization logo',
+  save_draft: 'Save draft',
+  saving_draft: 'Saving draft...',
+  resume_draft: 'Resume draft',
+  resuming_draft: 'Resuming...',
+  resume_draft_placeholder: 'Enter draft ID',
+  draft_validity_notice_singular: 'Drafts stay available for {days} day.',
+  draft_validity_notice_plural: 'Drafts stay available for {days} days.',
+  resume_draft_description_singular: 'Drafts stay available for {days} day. Enter your draft ID if you want to continue a saved response.',
+  resume_draft_description_plural: 'Drafts stay available for {days} days. Enter your draft ID if you want to continue a saved response.',
+  copy_resume_link: 'Copy resume link',
+  draft_saved: 'Draft saved. Keep this code and resume link to continue later.',
+  draft_saved_title: 'Draft saved',
+  draft_code_label: 'Draft code',
+  draft_expires_label: 'Expires',
+  resume_link_label: 'Resume link',
+  continue_editing: 'Continue editing',
+  preview_upload_notice: 'Preview mode is read-only. Publish the form to accept uploads.',
+  preview_save_draft_notice: 'Preview mode is read-only. Publish the form to save drafts.',
+  draft_save_disabled_notice: 'Draft saving is not enabled for this form.',
+  save_draft_failed: 'Failed to save draft',
+  resume_draft_failed: 'Failed to resume draft',
+  resume_link_unavailable: 'Resume link is unavailable on this browser.',
+  resume_link_copied: 'Resume link copied.',
+  resume_link_copy_failed: 'Failed to copy resume link.',
   response_submitted_title: 'Response submitted',
   response_submitted_description: 'Your response has been recorded.',
+  preview_submit_notice: 'Preview mode is read-only. Publish the form to accept submissions.',
+  submission_failed: 'Submission failed',
   download_pdf: 'Download PDF',
   download_expired_hint: 'Download link expired. Submit the form again to generate a new link.',
   email_pdf_copy: 'Email a PDF copy',
+  email_pdf_placeholder: 'name@example.com',
+  email_action_expired: 'This email action has expired. Please resubmit the form to request a PDF email.',
+  email_invalid: 'Enter a valid email address',
   send: 'Send',
+  email_send_failed: 'Failed to send email',
+  email_sent_feedback: 'PDF link sent to {email}',
+  validation_required: '{field} is required',
+  validation_email: '{field} must be a valid email',
+  validation_choice_detail: '{field}: please specify for {option}',
+  invalid_value: 'Invalid value',
+  payload_label: 'payload',
+  dynamic_section_unsupported_field: 'This field type is not supported inside dynamic sections yet.',
 } as const;
 
 const LOCALE_DISPLAY_NAMES: Record<string, string> = {
@@ -72,11 +134,37 @@ function getLocaleDisplayName(locale: string): string {
   return LOCALE_DISPLAY_NAMES[locale] ?? locale;
 }
 
+function interpolateUiLabel(
+  template: string,
+  values?: Record<string, string | number>
+): string {
+  if (!values) return template;
+  return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (_match, key: string) => {
+    if (!(key in values)) return _match;
+    return String(values[key]);
+  });
+}
+
 type UploadStatus = {
   id: string;
   fileName: string;
   mimeType: string;
   sizeBytes: number;
+};
+
+type DraftSession = {
+  draftCode: string;
+  accessToken: string;
+  resumeUrl: string;
+  expiresAt: string;
+  savedAt: string;
+};
+
+type DraftRestorePayload = {
+  draft: DraftSession;
+  answers: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  uploadsByFieldKey: Record<string, UploadStatus>;
 };
 
 type RepeatSectionConfig = {
@@ -91,8 +179,48 @@ type ChoiceAnswerEntry = {
   detailText: string;
 };
 
-function withLocalizedFieldText(field: PublicField, fieldTranslation: Record<string, unknown> | null): PublicField {
-  if (!fieldTranslation) return field;
+function matchesPresetOptions(
+  options: ReturnType<typeof parseChoiceOptions>,
+  preset: readonly string[]
+): boolean {
+  return options.length === preset.length && options.every((option, index) => option.label === preset[index]);
+}
+
+function localizePresetChoiceOptions(
+  options: ReturnType<typeof parseChoiceOptions>,
+  locale: string
+): ReturnType<typeof parseChoiceOptions> {
+  if (locale === 'en') return options;
+
+  if (matchesPresetOptions(options, COUNTRY_PRESET_OPTIONS)) {
+    const localizedOptions = getLocalizedCountryPresetOptions(locale);
+    return options.map((option, index) => ({
+      ...option,
+      label: localizedOptions[index]?.label || option.label,
+    }));
+  }
+
+  if (matchesPresetOptions(options, NATIONALITY_PRESET_OPTIONS)) {
+    const localizedOptions = getLocalizedNationalityPresetOptions(locale);
+    return options.map((option, index) => ({
+      ...option,
+      label: localizedOptions[index]?.label || option.label,
+    }));
+  }
+
+  return options;
+}
+
+function withLocalizedFieldText(field: PublicField, fieldTranslation: Record<string, unknown> | null, locale: string): PublicField {
+  if (!fieldTranslation) {
+    const parsedOptions = parseChoiceOptions(field.options);
+    if (parsedOptions.length === 0) return field;
+
+    return {
+      ...field,
+      options: localizePresetChoiceOptions(parsedOptions, locale),
+    };
+  }
 
   const label = typeof fieldTranslation.label === 'string' && fieldTranslation.label.trim().length > 0
     ? fieldTranslation.label.trim()
@@ -119,6 +247,11 @@ function withLocalizedFieldText(field: PublicField, fieldTranslation: Record<str
         ...option,
         label: optionTranslations[index] || option.label,
       }));
+    }
+  } else {
+    const parsedOptions = parseChoiceOptions(field.options);
+    if (parsedOptions.length > 0) {
+      options = localizePresetChoiceOptions(parsedOptions, locale);
     }
   }
 
@@ -157,6 +290,27 @@ function formatFileSize(sizeBytes: number): string {
   return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function collectUploadIds(value: unknown): string[] {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return UUID_PATTERN.test(trimmed) ? [trimmed] : [];
+  }
+
+  if (!Array.isArray(value)) return [];
+
+  const ids: string[] = [];
+  for (const item of value) {
+    ids.push(...collectUploadIds(item));
+  }
+  return ids;
+}
+
+function formatDraftDateTime(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString();
+}
+
 function isTooltipEnabled(field: PublicField): boolean {
   const validation = parseObject(field.validation);
   return validation?.tooltipEnabled === true && typeof field.helpText === 'string' && field.helpText.trim().length > 0;
@@ -190,24 +344,243 @@ function getInfoBackgroundColor(field: PublicField): string | null {
   return normalizeHexColor(validation?.infoBackgroundColor);
 }
 
+type InfoPadding = {
+  top: number | null;
+  right: number | null;
+  bottom: number | null;
+  left: number | null;
+};
+
+function parseInfoPaddingValue(value: unknown): number | null {
+  const parsed = typeof value === 'number'
+    ? value
+    : (typeof value === 'string' ? Number.parseInt(value, 10) : NaN);
+
+  if (!Number.isFinite(parsed)) return null;
+  const normalized = Math.round(parsed);
+  if (normalized < 0 || normalized > 80) return null;
+  return normalized;
+}
+
+function getInfoPadding(field: PublicField): InfoPadding | null {
+  if (field.type !== 'PARAGRAPH') return null;
+  const validation = parseObject(field.validation);
+  const fallbackPadding = parseInfoPaddingValue(validation?.infoPaddingPx);
+  const top = parseInfoPaddingValue(validation?.infoPaddingTopPx) ?? fallbackPadding;
+  const right = parseInfoPaddingValue(validation?.infoPaddingRightPx) ?? fallbackPadding;
+  const bottom = parseInfoPaddingValue(validation?.infoPaddingBottomPx) ?? fallbackPadding;
+  const left = parseInfoPaddingValue(validation?.infoPaddingLeftPx) ?? fallbackPadding;
+
+  if (top === null && right === null && bottom === null && left === null) return null;
+
+  return { top, right, bottom, left };
+}
+
 function isDateDefaultTodayEnabled(field: PublicField): boolean {
   if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return false;
   const validation = parseObject(field.validation);
   return validation?.defaultToday === true;
 }
 
+function getLocalTodayIsoDate(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+function resolveDateBoundary(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return undefined;
+  if (normalized === 'today') return getLocalTodayIsoDate();
+  return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : undefined;
+}
+
+function getDateValidationRange(field: PublicField): { minDate?: string; maxDate?: string } {
+  if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return {};
+  const validation = parseObject(field.validation);
+  const minDate = resolveDateBoundary(validation?.minDate);
+  const maxDate = resolveDateBoundary(validation?.maxDate);
+
+  return { minDate, maxDate };
+}
+
+function formatValidationDate(value: string): string {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return value;
+
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const monthLabel = months[month - 1];
+  if (!monthLabel) return value;
+
+  return `${day} ${monthLabel} ${year}`;
+}
+
+function formatValidationNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toString();
+}
+
+function quoteValidationText(value: string): string {
+  return `"${value}"`;
+}
+
+function normalizeNumberValue(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const normalized = trimmed.replace(/,/g, '');
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function buildAnswerContext(answersRecord: Record<string, unknown>, rowIndex?: number): Record<string, unknown> {
+  if (rowIndex === undefined) return answersRecord;
+
+  const context: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(answersRecord)) {
+    context[key] = Array.isArray(value) ? value[rowIndex] : value;
+  }
+  return context;
+}
+
+function evaluateNumberFormula(formula: string, answersRecord: Record<string, unknown>): number | null {
+  const normalizedFormula = formula.trim().replace(/^(>=|<=|>|<|=)\s*/, '');
+  const referenced = normalizedFormula.replace(/\[([a-zA-Z][a-zA-Z0-9_]*)\]/g, (_match, fieldKey: string) => {
+    const resolved = normalizeNumberValue(answersRecord[fieldKey]);
+    return resolved === null ? 'NaN' : String(resolved);
+  });
+
+  if (/[^0-9+\-*/().\s]/.test(referenced)) {
+    return null;
+  }
+
+  try {
+    const result = Function(`"use strict"; return (${referenced});`)();
+    return typeof result === 'number' && Number.isFinite(result) ? result : null;
+  } catch {
+    return null;
+  }
+}
+
+function getTextValidationError(field: PublicField, value: string, fieldLabel: string): string | null {
+  const validation = parseObject(field.validation);
+
+  if (typeof validation?.minLength === 'number' && value.length < validation.minLength) {
+    return `${fieldLabel} must be at least ${validation.minLength} character${validation.minLength === 1 ? '' : 's'}.`;
+  }
+  if (typeof validation?.maxLength === 'number' && value.length > validation.maxLength) {
+    return `${fieldLabel} must be at most ${validation.maxLength} character${validation.maxLength === 1 ? '' : 's'}.`;
+  }
+  if (typeof validation?.startsWith === 'string' && validation.startsWith.length > 0 && !value.startsWith(validation.startsWith)) {
+    return `${fieldLabel} must begin with ${quoteValidationText(validation.startsWith)}.`;
+  }
+  if (typeof validation?.containsText === 'string' && validation.containsText.length > 0 && !value.includes(validation.containsText)) {
+    return `${fieldLabel} must contain ${quoteValidationText(validation.containsText)}.`;
+  }
+  if (typeof validation?.notContainsText === 'string' && validation.notContainsText.length > 0 && value.includes(validation.notContainsText)) {
+    return `${fieldLabel} must not contain ${quoteValidationText(validation.notContainsText)}.`;
+  }
+  if (typeof validation?.endsWith === 'string' && validation.endsWith.length > 0 && !value.endsWith(validation.endsWith)) {
+    return `${fieldLabel} must end with ${quoteValidationText(validation.endsWith)}.`;
+  }
+
+  return null;
+}
+
+function getNumberValidationError(
+  field: PublicField,
+  value: unknown,
+  fieldLabel: string,
+  answersRecord: Record<string, unknown>
+): string | null {
+  if (value === null || value === undefined || value === '') return null;
+
+  const numericValue = normalizeNumberValue(value);
+  if (numericValue === null) {
+    return `Enter a valid number for ${fieldLabel}.`;
+  }
+
+  const validation = parseObject(field.validation);
+  if (typeof validation?.min === 'number' && numericValue < validation.min) {
+    return `${fieldLabel} must be at least ${formatValidationNumber(validation.min)}.`;
+  }
+  if (typeof validation?.max === 'number' && numericValue > validation.max) {
+    return `${fieldLabel} must be at most ${formatValidationNumber(validation.max)}.`;
+  }
+  if (typeof validation?.equal === 'number' && numericValue !== validation.equal) {
+    return `${fieldLabel} must equal ${formatValidationNumber(validation.equal)}.`;
+  }
+  if (typeof validation?.minFormula === 'string' && validation.minFormula.trim().length > 0) {
+    const resolved = evaluateNumberFormula(validation.minFormula, answersRecord);
+    if (resolved !== null && numericValue < resolved) {
+      return `${fieldLabel} must be at least ${formatValidationNumber(resolved)}.`;
+    }
+  }
+  if (typeof validation?.maxFormula === 'string' && validation.maxFormula.trim().length > 0) {
+    const resolved = evaluateNumberFormula(validation.maxFormula, answersRecord);
+    if (resolved !== null && numericValue > resolved) {
+      return `${fieldLabel} must be at most ${formatValidationNumber(resolved)}.`;
+    }
+  }
+  if (typeof validation?.equalFormula === 'string' && validation.equalFormula.trim().length > 0) {
+    const resolved = evaluateNumberFormula(validation.equalFormula, answersRecord);
+    if (resolved !== null && numericValue !== resolved) {
+      return `${fieldLabel} must equal ${formatValidationNumber(resolved)}.`;
+    }
+  }
+
+  return null;
+}
+
+function isSplitPhoneCountryCodeEnabled(field: PublicField): boolean {
+  if (field.type !== 'SHORT_TEXT' || field.inputType !== 'phone') return false;
+  const validation = parseObject(field.validation);
+  return validation?.splitPhoneCountryCode === true;
+}
+
+function getPhoneDefaultCountryCode(field: PublicField): string {
+  if (field.type !== 'SHORT_TEXT' || field.inputType !== 'phone') return DEFAULT_PHONE_COUNTRY_CODE;
+  const validation = parseObject(field.validation);
+  const rawValue = typeof validation?.phoneDefaultCountryCode === 'string' ? validation.phoneDefaultCountryCode.trim() : '';
+  const matched = PHONE_COUNTRY_CODE_OPTIONS.find((option) => option.value === rawValue);
+  return matched?.value || DEFAULT_PHONE_COUNTRY_CODE;
+}
+
+function parsePhoneParts(value: unknown, defaultCountryCode: string): { countryCode: string; number: string } {
+  if (typeof value !== 'string') {
+    return { countryCode: defaultCountryCode, number: '' };
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return { countryCode: defaultCountryCode, number: '' };
+  }
+
+  const match = trimmed.match(/^(\+\d{1,4})\s*(.*)$/);
+  if (!match) {
+    return { countryCode: defaultCountryCode, number: trimmed };
+  }
+
+  const matchedCode = PHONE_COUNTRY_CODE_OPTIONS.find((option) => option.value === match[1])?.value || defaultCountryCode;
+  return {
+    countryCode: matchedCode,
+    number: match[2].trim(),
+  };
+}
+
+function buildPhoneValue(countryCode: string, number: string): string {
+  const trimmedNumber = number.trim();
+  if (!trimmedNumber) return '';
+  return `${countryCode} ${trimmedNumber}`;
+}
+
 function isChoiceInlineRightEnabled(field: PublicField): boolean {
   if (field.type !== 'SINGLE_CHOICE' && field.type !== 'MULTIPLE_CHOICE') return false;
   const validation = parseObject(field.validation);
   return validation?.choiceInlineRight === true;
-}
-
-function getLocalTodayIsoDate(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 }
 
 function hasHtmlMarkup(value: string): boolean {
@@ -278,7 +651,8 @@ function parseChoiceAnswerEntries(value: unknown): ChoiceAnswerEntry[] {
 function getChoiceDetailValidationError(
   fieldLabel: string,
   options: ReturnType<typeof parseChoiceOptions>,
-  value: unknown
+  value: unknown,
+  template: string
 ): string | null {
   const entries = parseChoiceAnswerEntries(value);
   if (entries.length === 0) return null;
@@ -287,7 +661,10 @@ function getChoiceDetailValidationError(
     const option = options.find((candidate) => candidate.value === entry.value);
     if (!option?.allowTextInput) continue;
     if (entry.detailText.trim().length > 0) continue;
-    return `${fieldLabel}: please specify for ${option.label}`;
+    return interpolateUiLabel(template, {
+      field: fieldLabel,
+      option: option.label,
+    });
   }
 
   return null;
@@ -405,6 +782,8 @@ export default function PublicFormPage() {
   const searchParams = useSearchParams();
   const slug = params.slug;
   const requestedLocale = searchParams.get('lang');
+  const requestedDraftCode = searchParams.get('draft');
+  const requestedDraftToken = searchParams.get('resume');
   const isEmbed = searchParams.get('embed') === '1';
   const isPreview = searchParams.get('preview') === '1';
   const previewFormId = searchParams.get('formId');
@@ -422,13 +801,26 @@ export default function PublicFormPage() {
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [dragOverUploadFieldKey, setDragOverUploadFieldKey] = useState<string | null>(null);
   const [uploadedByFieldKey, setUploadedByFieldKey] = useState<Record<string, UploadStatus>>({});
+  const [draftSession, setDraftSession] = useState<DraftSession | null>(null);
+  const [pendingDraftRestore, setPendingDraftRestore] = useState<DraftRestorePayload | null>(null);
+  const [resumeDraftCodeInput, setResumeDraftCodeInput] = useState('');
+  const [draftFeedback, setDraftFeedback] = useState<string | null>(null);
+  const [isDraftDetailsModalOpen, setIsDraftDetailsModalOpen] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isResumingDraft, setIsResumingDraft] = useState(false);
   const [repeatSectionCounts, setRepeatSectionCounts] = useState<Record<string, number>>({});
   const [pdfRecipientEmail, setPdfRecipientEmail] = useState('');
   const [emailFeedback, setEmailFeedback] = useState<string | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const formTopRef = useRef<HTMLDivElement | null>(null);
 
   const i18nSettings = useMemo(
     () => parseFormI18nSettings(form?.settings),
+    [form?.settings]
+  );
+
+  const draftSettings = useMemo(
+    () => parseFormDraftSettings(form?.settings),
     [form?.settings]
   );
 
@@ -461,6 +853,26 @@ export default function PublicFormPage() {
   const localizedUiLabels = useMemo(
     () => ({ ...DEFAULT_UI_LABELS, ...(activeLocaleTranslation.ui || {}) }),
     [activeLocaleTranslation.ui]
+  );
+
+  function uiLabel(
+    key: keyof typeof DEFAULT_UI_LABELS,
+    values?: Record<string, string | number>
+  ): string {
+    return interpolateUiLabel(localizedUiLabels[key], values);
+  }
+
+  const draftValidityNotice = draftSettings.autoDeleteDays === 1
+    ? uiLabel('draft_validity_notice_singular', { days: draftSettings.autoDeleteDays })
+    : uiLabel('draft_validity_notice_plural', { days: draftSettings.autoDeleteDays });
+
+  const resumeDraftDescription = draftSettings.autoDeleteDays === 1
+    ? uiLabel('resume_draft_description_singular', { days: draftSettings.autoDeleteDays })
+    : uiLabel('resume_draft_description_plural', { days: draftSettings.autoDeleteDays });
+
+  const localizedPhoneCountryCodeOptions = useMemo(
+    () => getPhoneCountryCodeOptions(activeLocale),
+    [activeLocale]
   );
 
   const shouldShowLogo = useMemo(() => {
@@ -501,14 +913,73 @@ export default function PublicFormPage() {
 
     for (const field of orderedFields) {
       const fieldTranslation = parseObject(localizedFieldTranslations[field.key]);
-      fieldMap.set(field.id, withLocalizedFieldText(field, fieldTranslation));
+      fieldMap.set(field.id, withLocalizedFieldText(field, fieldTranslation, activeLocale));
     }
 
     return fieldMap;
-  }, [orderedFields, activeLocaleTranslation.fields]);
+  }, [orderedFields, activeLocaleTranslation.fields, activeLocale]);
 
   function getLocalizedField(field: PublicField): PublicField {
     return localizedFieldsById.get(field.id) || field;
+  }
+
+  function scrollToFormTop() {
+    formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function replaceDraftQuery(nextDraft: DraftSession | null) {
+    if (typeof window === 'undefined') return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (nextDraft) {
+      params.set('draft', nextDraft.draftCode);
+      params.set('resume', nextDraft.accessToken);
+    } else {
+      params.delete('draft');
+      params.delete('resume');
+    }
+
+    const query = params.toString();
+    const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+    window.history.replaceState(null, '', nextUrl);
+  }
+
+  function applyResolvedDraftPayload(
+    draftData: Record<string, unknown>,
+    fallbackDraftCode: string,
+    fallbackAccessToken?: string,
+    options?: { syncUrl?: boolean; feedback?: string | null }
+  ) {
+    const nextDraft: DraftSession = {
+      draftCode: typeof draftData.draftCode === 'string' ? draftData.draftCode : fallbackDraftCode,
+      accessToken: typeof draftData.accessToken === 'string'
+        ? draftData.accessToken
+        : (fallbackAccessToken || ''),
+      resumeUrl: typeof draftData.resumeUrl === 'string' ? draftData.resumeUrl : '',
+      expiresAt: typeof draftData.expiresAt === 'string' ? draftData.expiresAt : '',
+      savedAt: typeof draftData.savedAt === 'string' ? draftData.savedAt : '',
+    };
+
+    setPendingDraftRestore({
+      draft: nextDraft,
+      answers: draftData.answers && typeof draftData.answers === 'object' && !Array.isArray(draftData.answers)
+        ? draftData.answers as Record<string, unknown>
+        : {},
+      metadata: draftData.metadata && typeof draftData.metadata === 'object' && !Array.isArray(draftData.metadata)
+        ? draftData.metadata as Record<string, unknown>
+        : {},
+      uploadsByFieldKey: draftData.uploadsByFieldKey && typeof draftData.uploadsByFieldKey === 'object' && !Array.isArray(draftData.uploadsByFieldKey)
+        ? draftData.uploadsByFieldKey as Record<string, UploadStatus>
+        : {},
+    });
+    setDraftSession(nextDraft);
+    setResumeDraftCodeInput(nextDraft.draftCode);
+    if (options && 'feedback' in options) {
+      setDraftFeedback(options.feedback ?? null);
+    }
+    if (options?.syncUrl !== false) {
+      replaceDraftQuery(nextDraft);
+    }
   }
 
   useEffect(() => {
@@ -518,6 +989,7 @@ export default function PublicFormPage() {
       try {
         setLoading(true);
         setError(null);
+        setDraftFeedback(null);
         const endpoint = isPreview && previewFormId
           ? `/api/forms/${previewFormId}${previewTenantId ? `?tenantId=${encodeURIComponent(previewTenantId)}` : ''}`
           : `/api/forms/public/${slug}`;
@@ -529,20 +1001,65 @@ export default function PublicFormPage() {
           throw new Error(data.error || 'Failed to load form');
         }
 
+        const resolvedForm = isPreview && previewFormId
+          ? {
+            id: data.id,
+            slug: data.slug || slug,
+            title: data.title,
+            description: data.description || null,
+            fields: Array.isArray(data.fields) ? data.fields : [],
+            status: data.status,
+            settings: data.settings ?? null,
+            tenantLogoUrl: data.tenantLogoUrl ?? null,
+            tenantName: data.tenantName ?? null,
+          } as PublicFormDefinition
+          : data as PublicFormDefinition;
+
         if (!isCancelled) {
-          if (isPreview && previewFormId) {
-            setForm({
-              id: data.id,
-              slug: data.slug || slug,
-              title: data.title,
-              description: data.description || null,
-              fields: Array.isArray(data.fields) ? data.fields : [],
-              status: data.status,
-              tenantLogoUrl: data.tenantLogoUrl ?? null,
-              tenantName: data.tenantName ?? null,
-            } as PublicFormDefinition);
-          } else {
-            setForm(data as PublicFormDefinition);
+          setForm(resolvedForm);
+          setAnswers({});
+          setFieldErrors({});
+          setCurrentPage(0);
+          setUploadedByFieldKey({});
+          setDraftSession(null);
+          setPendingDraftRestore(null);
+          setResumeDraftCodeInput(requestedDraftCode || '');
+        }
+
+        if (
+          !isCancelled &&
+          !isPreview &&
+          requestedDraftCode &&
+          parseFormDraftSettings(resolvedForm.settings).enabled
+        ) {
+          try {
+            const draftResumeQuery = requestedDraftToken
+              ? `?token=${encodeURIComponent(requestedDraftToken)}`
+              : '';
+            const draftResponse = await fetch(
+              `/api/forms/public/${slug}/drafts/${encodeURIComponent(requestedDraftCode)}${draftResumeQuery}`
+            );
+            const draftData = await draftResponse.json();
+
+            if (!draftResponse.ok) {
+              throw new Error(draftData.error || uiLabel('resume_draft_failed'));
+            }
+
+            if (!isCancelled) {
+              applyResolvedDraftPayload(
+                draftData as Record<string, unknown>,
+                requestedDraftCode,
+                requestedDraftToken || undefined,
+                {
+                  syncUrl: true,
+                  feedback: null,
+                }
+              );
+            }
+          } catch (draftError) {
+            if (!isCancelled) {
+              setDraftFeedback(draftError instanceof Error ? draftError.message : uiLabel('resume_draft_failed'));
+            }
           }
         }
       } catch (err) {
@@ -563,7 +1080,7 @@ export default function PublicFormPage() {
     return () => {
       isCancelled = true;
     };
-  }, [slug, isPreview, previewFormId, previewTenantId]);
+  }, [slug, isPreview, previewFormId, previewTenantId, requestedDraftCode, requestedDraftToken]);
 
   useEffect(() => {
     if (!form) {
@@ -580,6 +1097,27 @@ export default function PublicFormPage() {
 
     setRepeatSectionCounts(nextCounts);
   }, [form, orderedFields]);
+
+  useEffect(() => {
+    if (!form || !pendingDraftRestore) return;
+
+    setAnswers(pendingDraftRestore.answers);
+    setUploadedByFieldKey(pendingDraftRestore.uploadsByFieldKey);
+
+    const metadataRepeatCounts = pendingDraftRestore.metadata.repeatSectionCounts;
+    if (metadataRepeatCounts && typeof metadataRepeatCounts === 'object' && !Array.isArray(metadataRepeatCounts)) {
+      setRepeatSectionCounts((prev) => {
+        const next = { ...prev };
+        for (const [key, value] of Object.entries(metadataRepeatCounts)) {
+          if (typeof value !== 'number' || !Number.isFinite(value)) continue;
+          next[key] = Math.max(1, Math.min(50, Math.trunc(value)));
+        }
+        return next;
+      });
+    }
+
+    setPendingDraftRestore(null);
+  }, [form, pendingDraftRestore]);
 
   useEffect(() => {
     if (!form) return;
@@ -888,12 +1426,15 @@ export default function PublicFormPage() {
   function validateField(
     field: PublicField,
     value: unknown,
-    localizedField: PublicField
+    localizedField: PublicField,
+    answersRecord: Record<string, unknown>
   ): string | null {
     if (NON_VALIDATABLE_FIELD_TYPES.has(field.type)) return null;
 
+    const fieldLabel = localizedField.label || field.label || field.key;
+
     if (field.isRequired && !hasRequiredValue(field, value)) {
-      return `${field.label || field.key} is required`;
+      return uiLabel('validation_required', { field: fieldLabel });
     }
 
     if (
@@ -903,14 +1444,46 @@ export default function PublicFormPage() {
       value.trim().length > 0 &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
     ) {
-      return `${field.label || field.key} must be a valid email`;
+      return uiLabel('validation_email', { field: fieldLabel });
+    }
+
+    if (
+      ((field.type === 'SHORT_TEXT' && field.inputType !== 'date' && field.inputType !== 'number') || field.type === 'LONG_TEXT') &&
+      typeof value === 'string' &&
+      value.length > 0
+    ) {
+      const textError = getTextValidationError(field, value, fieldLabel);
+      if (textError) return textError;
+    }
+
+    if (field.type === 'SHORT_TEXT' && field.inputType === 'number') {
+      const numberError = getNumberValidationError(field, value, fieldLabel, answersRecord);
+      if (numberError) return numberError;
+    }
+
+    if (field.type === 'SHORT_TEXT' && field.inputType === 'date' && typeof value === 'string' && value.trim().length > 0) {
+      const { minDate, maxDate } = getDateValidationRange(field);
+      const normalizedValue = value.trim();
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+        return uiLabel('invalid_value');
+      }
+
+      if (minDate && normalizedValue < minDate) {
+        return `${fieldLabel} must be on or after ${formatValidationDate(minDate)}.`;
+      }
+
+      if (maxDate && normalizedValue > maxDate) {
+        return `${fieldLabel} must be on or before ${formatValidationDate(maxDate)}.`;
+      }
     }
 
     if (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') {
       const detailError = getChoiceDetailValidationError(
-        field.label || field.key,
+        fieldLabel,
         parseChoiceOptions(localizedField.options),
-        value
+        value,
+        localizedUiLabels.validation_choice_detail
       );
       if (detailError) return detailError;
     }
@@ -918,8 +1491,8 @@ export default function PublicFormPage() {
     return null;
   }
 
-  function handleFieldBlur(field: PublicField, value: unknown, errorKey: string) {
-    const error = validateField(field, value, getLocalizedField(field));
+  function handleFieldBlur(field: PublicField, value: unknown, errorKey: string, answersRecord: Record<string, unknown>) {
+    const error = validateField(field, value, getLocalizedField(field), answersRecord);
     setFieldErrors((prev) => {
       const next = { ...prev };
       if (error) {
@@ -972,7 +1545,7 @@ export default function PublicFormPage() {
             const value = Array.isArray(sectionValue) ? sectionValue[rowIndex] : undefined;
             const errorKey = getFieldErrorKey(sectionField.key, rowIndex);
 
-            const error = validateField(sectionField, value, getLocalizedField(sectionField));
+            const error = validateField(sectionField, value, getLocalizedField(sectionField), rowAnswers);
             if (error) {
               nextErrors[errorKey] = error;
             }
@@ -987,7 +1560,7 @@ export default function PublicFormPage() {
       const value = effectiveAnswers[field.key];
       const errorKey = getFieldErrorKey(field.key);
 
-      const error = validateField(field, value, getLocalizedField(field));
+      const error = validateField(field, value, getLocalizedField(field), effectiveAnswers);
       if (error) {
         nextErrors[errorKey] = error;
       }
@@ -1001,7 +1574,7 @@ export default function PublicFormPage() {
     if (isPreview) {
       setFieldErrors((prev) => ({
         ...prev,
-        [fieldKey]: 'Preview mode is read-only. Publish the form to accept uploads.',
+        [fieldKey]: uiLabel('preview_upload_notice'),
       }));
       return;
     }
@@ -1019,7 +1592,7 @@ export default function PublicFormPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Upload failed');
+        throw new Error(data.error || uiLabel('upload_failed'));
       }
 
       setFieldValue(fieldKey, [data.id]);
@@ -1027,7 +1600,7 @@ export default function PublicFormPage() {
         ...prev,
         [fieldKey]: {
           id: data.id,
-          fileName: typeof data.fileName === 'string' ? data.fileName : 'Uploaded file',
+          fileName: typeof data.fileName === 'string' ? data.fileName : uiLabel('uploaded_file_fallback'),
           mimeType: typeof data.mimeType === 'string' ? data.mimeType : 'application/octet-stream',
           sizeBytes: typeof data.sizeBytes === 'number' ? data.sizeBytes : 0,
         },
@@ -1035,7 +1608,7 @@ export default function PublicFormPage() {
     } catch (err) {
       setFieldErrors((prev) => ({
         ...prev,
-        [fieldKey]: err instanceof Error ? err.message : 'Upload failed',
+        [fieldKey]: err instanceof Error ? err.message : uiLabel('upload_failed'),
       }));
       setUploadedByFieldKey((prev) => {
         const next = { ...prev };
@@ -1048,11 +1621,121 @@ export default function PublicFormPage() {
     }
   }
 
+  async function saveDraft() {
+    if (!form) return;
+
+    if (isPreview) {
+      setDraftFeedback(uiLabel('preview_save_draft_notice'));
+      return;
+    }
+
+    if (!draftSettings.enabled) {
+      setDraftFeedback(uiLabel('draft_save_disabled_notice'));
+      return;
+    }
+
+    setIsSavingDraft(true);
+    setDraftFeedback(null);
+    try {
+      const answersWithDefaults = withDateDefaultAnswers(answers);
+      const uploadIds = orderedFields
+        .filter((field) => field.type === 'FILE_UPLOAD')
+        .flatMap((field) => collectUploadIds(answersWithDefaults[field.key]));
+
+      const normalizedAnswers = Object.fromEntries(
+        Object.entries(answersWithDefaults).filter(([, value]) => value !== undefined)
+      );
+
+      const response = await fetch(`/api/forms/public/${slug}/drafts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...(draftSession ? {
+            draftCode: draftSession.draftCode,
+            accessToken: draftSession.accessToken,
+          } : {}),
+          answers: normalizedAnswers,
+          uploadIds,
+          metadata: {
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+            locale: activeLocale,
+            repeatSectionCounts,
+          },
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || uiLabel('save_draft_failed'));
+      }
+
+      applyResolvedDraftPayload(
+        data as Record<string, unknown>,
+        draftSession?.draftCode || '',
+        draftSession?.accessToken,
+        {
+          syncUrl: false,
+        }
+      );
+      setDraftFeedback(null);
+      setIsDraftDetailsModalOpen(true);
+    } catch (err) {
+      setDraftFeedback(err instanceof Error ? err.message : uiLabel('save_draft_failed'));
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }
+
+  async function resumeDraftByCode() {
+    if (!form || isPreview) return;
+
+    const trimmedCode = resumeDraftCodeInput.trim();
+    if (!DRAFT_CODE_PATTERN.test(trimmedCode)) {
+      return;
+    }
+
+    setIsResumingDraft(true);
+    setDraftFeedback(null);
+    try {
+      const response = await fetch(`/api/forms/public/${slug}/drafts/${encodeURIComponent(trimmedCode)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || uiLabel('resume_draft_failed'));
+      }
+
+      applyResolvedDraftPayload(data as Record<string, unknown>, trimmedCode, undefined, {
+        syncUrl: true,
+        feedback: null,
+      });
+      setCurrentPage(0);
+      scrollToFormTop();
+    } catch (err) {
+      setDraftFeedback(err instanceof Error ? err.message : uiLabel('resume_draft_failed'));
+    } finally {
+      setIsResumingDraft(false);
+    }
+  }
+
+  async function copyResumeLink() {
+    if (!draftSession?.resumeUrl || typeof navigator === 'undefined' || !navigator.clipboard) {
+      setDraftFeedback(uiLabel('resume_link_unavailable'));
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(draftSession.resumeUrl);
+      setDraftFeedback(uiLabel('resume_link_copied'));
+    } catch {
+      setDraftFeedback(uiLabel('resume_link_copy_failed'));
+    }
+  }
+
   async function submitForm() {
     if (!form) return;
 
     if (isPreview) {
-      setError('Preview mode is read-only. Publish the form to accept submissions.');
+      setError(uiLabel('preview_submit_notice'));
       return;
     }
 
@@ -1105,6 +1788,10 @@ export default function PublicFormPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...(draftSession ? {
+            draftCode: draftSession.draftCode,
+            accessToken: draftSession.accessToken,
+          } : {}),
           ...(respondentName ? { respondentName } : {}),
           ...(respondentEmail ? { respondentEmail } : {}),
           answers: normalizedAnswers,
@@ -1121,25 +1808,28 @@ export default function PublicFormPage() {
         const detailText = Array.isArray(data.details)
           ? data.details
             .map((item: { path?: Array<string | number>; message?: string }) =>
-              `${item.path?.join('.') || 'payload'}: ${item.message || 'Invalid value'}`
+              `${item.path?.join('.') || uiLabel('payload_label')}: ${item.message || uiLabel('invalid_value')}`
             )
             .join('; ')
           : '';
 
         throw new Error(
           detailText
-            ? `${data.error || 'Submission failed'} (${detailText})`
-            : (data.error || 'Submission failed')
+            ? `${data.error || uiLabel('submission_failed')} (${detailText})`
+            : (data.error || uiLabel('submission_failed'))
         );
       }
 
       setSubmissionId(typeof data.id === 'string' ? data.id : null);
+      setDraftSession(null);
+      replaceDraftQuery(null);
+      setDraftFeedback(null);
       setPdfDownloadToken(typeof data.pdfDownloadToken === 'string' ? data.pdfDownloadToken : null);
       setPdfEmailAccessToken(typeof data.pdfEmailAccessToken === 'string' ? data.pdfEmailAccessToken : null);
       setEmailFeedback(null);
       setPdfRecipientEmail(respondentEmail || '');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Submission failed');
+      setError(err instanceof Error ? err.message : uiLabel('submission_failed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -1148,13 +1838,13 @@ export default function PublicFormPage() {
   async function sendSubmissionPdfEmail() {
     if (!submissionId) return;
     if (!pdfEmailAccessToken) {
-      setEmailFeedback('This email action has expired. Please resubmit the form to request a PDF email.');
+      setEmailFeedback(uiLabel('email_action_expired'));
       return;
     }
 
     const normalizedEmail = pdfRecipientEmail.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      setEmailFeedback('Enter a valid email address');
+      setEmailFeedback(uiLabel('email_invalid'));
       return;
     }
 
@@ -1172,12 +1862,12 @@ export default function PublicFormPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to send email');
+        throw new Error(data.error || uiLabel('email_send_failed'));
       }
 
-      setEmailFeedback(`PDF link sent to ${normalizedEmail}`);
+      setEmailFeedback(uiLabel('email_sent_feedback', { email: normalizedEmail }));
     } catch (err) {
-      setEmailFeedback(err instanceof Error ? err.message : 'Failed to send email');
+      setEmailFeedback(err instanceof Error ? err.message : uiLabel('email_send_failed'));
     } finally {
       setIsSendingEmail(false);
     }
@@ -1213,7 +1903,22 @@ export default function PublicFormPage() {
 
     const widthClass = WIDTH_CLASS[localizedField.layoutWidth] || WIDTH_CLASS[100];
     const infoBackgroundColor = getInfoBackgroundColor(localizedField);
-    const infoBackgroundStyle = infoBackgroundColor ? { backgroundColor: infoBackgroundColor } : undefined;
+    const infoPadding = getInfoPadding(localizedField);
+    const infoPaddingTop = infoPadding?.top ?? null;
+    const infoPaddingRight = infoPadding?.right ?? null;
+    const infoPaddingBottom = infoPadding?.bottom ?? null;
+    const infoPaddingLeft = infoPadding?.left ?? null;
+    const infoStyle: React.CSSProperties | undefined = (
+      infoBackgroundColor || infoPadding !== null
+    )
+      ? {
+          ...(infoBackgroundColor ? { backgroundColor: infoBackgroundColor } : {}),
+          ...(infoPaddingTop !== null ? { paddingTop: `${infoPaddingTop}px` } : {}),
+          ...(infoPaddingRight !== null ? { paddingRight: `${infoPaddingRight}px` } : {}),
+          ...(infoPaddingBottom !== null ? { paddingBottom: `${infoPaddingBottom}px` } : {}),
+          ...(infoPaddingLeft !== null ? { paddingLeft: `${infoPaddingLeft}px` } : {}),
+        }
+      : undefined;
 
     // Heading blocks
     if (
@@ -1230,17 +1935,17 @@ export default function PublicFormPage() {
       const imageUrl = isValidHttpUrl(localizedField.placeholder?.trim() || null) ? localizedField.placeholder!.trim() : null;
       return (
         <div key={field.id} className={widthClass}>
-          <div className="overflow-hidden rounded-lg border border-border-primary bg-background-primary" style={infoBackgroundStyle}>
+          <div className="overflow-hidden rounded-lg border border-border-primary bg-background-primary" style={infoStyle}>
             {imageUrl ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imageUrl} alt={localizedField.subtext || localizedField.label || 'Information image'} className="max-h-96 w-full object-contain" />
+                <img src={imageUrl} alt={localizedField.subtext || localizedField.label || uiLabel('information_image_alt')} className="max-h-96 w-full object-contain" />
                 {localizedField.subtext && (
                   <p className="border-t border-border-primary px-3 py-2 text-xs text-text-secondary">{localizedField.subtext}</p>
                 )}
               </>
             ) : (
-              <div className="px-3 py-4 text-sm text-text-secondary">Add a valid image URL in field settings.</div>
+              <div className="px-3 py-4 text-sm text-text-secondary">{uiLabel('info_image_invalid_url')}</div>
             )}
           </div>
         </div>
@@ -1252,13 +1957,13 @@ export default function PublicFormPage() {
       const href = isValidHttpUrl(localizedField.placeholder?.trim() || null) ? localizedField.placeholder!.trim() : null;
       return (
         <div key={field.id} className={widthClass}>
-          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm" style={infoBackgroundStyle}>
+          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm" style={infoStyle}>
             {href ? (
               <a href={href} target="_blank" rel="noopener noreferrer" className="break-all text-text-primary underline hover:text-text-secondary">
                 {localizedField.subtext || localizedField.label || href}
               </a>
             ) : (
-              <span className="text-text-secondary">Add a valid URL in field settings.</span>
+              <span className="text-text-secondary">{uiLabel('info_url_invalid_url')}</span>
             )}
           </div>
         </div>
@@ -1272,7 +1977,7 @@ export default function PublicFormPage() {
 
       return (
         <div key={field.id} className={widthClass}>
-          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary" style={infoBackgroundStyle}>
+          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary" style={infoStyle}>
             {richContent ? (
               <div
                 className="form-rich-render text-sm text-text-primary"
@@ -1350,10 +2055,18 @@ export default function PublicFormPage() {
                       const sectionDescribedBy = [sectionHintId, sectionErrorId].filter(Boolean).join(' ') || undefined;
                       const sectionLabel = localizedSectionField.label || sectionField.key;
                       const sectionUseDateSelector = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'date';
+                      const sectionDateValidationRange = sectionUseDateSelector ? getDateValidationRange(sectionField) : {};
+                      const sectionUseSplitPhoneInput = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'phone' && isSplitPhoneCountryCodeEnabled(sectionField);
                       const sectionChoiceInlineRight = isChoiceInlineRightEnabled(sectionField);
                       const sectionDefaultDateValue = sectionUseDateSelector && isDateDefaultTodayEnabled(sectionField)
                         ? getLocalTodayIsoDate()
                         : '';
+                      const sectionPhoneDefaultCountryCode = sectionUseSplitPhoneInput
+                        ? getPhoneDefaultCountryCode(sectionField)
+                        : DEFAULT_PHONE_COUNTRY_CODE;
+                      const sectionPhoneParts = sectionUseSplitPhoneInput
+                        ? parsePhoneParts(sectionValue, sectionPhoneDefaultCountryCode)
+                        : null;
                       const resolvedSectionDateValue = typeof sectionValue === 'string' && sectionValue.trim().length > 0
                         ? sectionValue
                         : sectionDefaultDateValue;
@@ -1376,13 +2089,13 @@ export default function PublicFormPage() {
                             <p id={sectionHintId} className="mb-2 text-xs text-text-muted">{localizedSectionField.subtext}</p>
                           )}
 
-                          {sectionField.type === 'SHORT_TEXT' && !sectionUseDateSelector && (
+                          {sectionField.type === 'SHORT_TEXT' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && (
                             <input
                               id={sectionControlId}
                               type={sectionField.inputType === 'phone' ? 'tel' : sectionField.inputType || 'text'}
                               value={typeof sectionValue === 'string' ? sectionValue : ''}
                               onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
-                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}
+                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
                               placeholder={localizedSectionField.placeholder || ''}
                               readOnly={sectionField.isReadOnly}
                               aria-invalid={sectionErrorText ? 'true' : undefined}
@@ -1391,16 +2104,53 @@ export default function PublicFormPage() {
                             />
                           )}
 
+                          {sectionUseSplitPhoneInput && sectionPhoneParts && (
+                            <div className="grid grid-cols-[minmax(132px,180px)_minmax(0,1fr)] gap-2">
+                              <SearchableSelect
+                                options={localizedPhoneCountryCodeOptions}
+                                value={sectionPhoneParts.countryCode}
+                                onChange={(nextCountryCode) => setRepeatFieldValue(
+                                  sectionField.key,
+                                  rowIndex,
+                                  buildPhoneValue(nextCountryCode || sectionPhoneDefaultCountryCode, sectionPhoneParts.number)
+                                )}
+                                placeholder={uiLabel('phone_code_placeholder')}
+                                clearable={false}
+                                showKeyboardHints={false}
+                                containerClassName="h-10"
+                                onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                              />
+                              <input
+                                id={sectionControlId}
+                                type="tel"
+                                value={sectionPhoneParts.number}
+                                onChange={(e) => setRepeatFieldValue(
+                                  sectionField.key,
+                                  rowIndex,
+                                  buildPhoneValue(sectionPhoneParts.countryCode, e.target.value)
+                                )}
+                                onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                                placeholder={localizedSectionField.placeholder || ''}
+                                readOnly={sectionField.isReadOnly}
+                                aria-invalid={sectionErrorText ? 'true' : undefined}
+                                aria-describedby={sectionDescribedBy}
+                                className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                              />
+                            </div>
+                          )}
+
                           {sectionUseDateSelector && (
                             <SingleDateInput
                               value={resolvedSectionDateValue}
                               onChange={(next) => setRepeatFieldValue(sectionField.key, rowIndex, next)}
-                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}
-                              placeholder={localizedSectionField.placeholder || 'dd/mm/yyyy'}
+                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                              placeholder={localizedSectionField.placeholder || uiLabel('date_placeholder')}
                               disabled={sectionField.isReadOnly}
                               required={sectionField.isRequired}
                               error={sectionErrorText}
                               ariaLabel={sectionField.hideLabel ? sectionLabel : undefined}
+                              minDate={sectionDateValidationRange.minDate}
+                              maxDate={sectionDateValidationRange.maxDate}
                               className="w-full"
                             />
                           )}
@@ -1410,7 +2160,7 @@ export default function PublicFormPage() {
                               id={sectionControlId}
                               value={typeof sectionValue === 'string' ? sectionValue : ''}
                               onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
-                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}
+                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
                               placeholder={localizedSectionField.placeholder || ''}
                               readOnly={sectionField.isReadOnly}
                               aria-invalid={sectionErrorText ? 'true' : undefined}
@@ -1424,8 +2174,8 @@ export default function PublicFormPage() {
                               options={sectionDropdownOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
                               value={typeof sectionValue === 'string' ? sectionValue : ''}
                               onChange={(val) => setRepeatFieldValue(sectionField.key, rowIndex, val)}
-                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex))}
-                              placeholder={localizedSectionField.placeholder || 'Select an option'}
+                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                              placeholder={localizedSectionField.placeholder || uiLabel('select_option_placeholder')}
                               clearable={false}
                               showKeyboardHints={false}
                               containerClassName="h-10"
@@ -1433,7 +2183,7 @@ export default function PublicFormPage() {
                           )}
 
                           {sectionField.type === 'SINGLE_CHOICE' && (
-                            <fieldset className="space-y-1.5" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex)); }}>
+                            <fieldset className="space-y-1.5" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex)); }}>
                               {sectionChoiceInlineRight ? (
                                 (() => {
                                   const selectedEntry = parseChoiceAnswerEntry(sectionValue);
@@ -1485,7 +2235,7 @@ export default function PublicFormPage() {
                                               rowIndex,
                                               { value: option.value, detailText: e.target.value }
                                             )}
-                                            placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                                            placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
                                             className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
                                           />
                                         );
@@ -1526,7 +2276,7 @@ export default function PublicFormPage() {
                                             rowIndex,
                                             { value: option.value, detailText: e.target.value }
                                           )}
-                                          placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                                          placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
                                           className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
                                         />
                                       )}
@@ -1538,7 +2288,7 @@ export default function PublicFormPage() {
                           )}
 
                           {sectionField.type === 'MULTIPLE_CHOICE' && (
-                            <fieldset className="space-y-1.5" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex)); }}>
+                            <fieldset className="space-y-1.5" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex)); }}>
                               {sectionChoiceInlineRight ? (
                                 (() => {
                                   const currentEntries = parseChoiceAnswerEntries(sectionValue);
@@ -1616,7 +2366,7 @@ export default function PublicFormPage() {
                                                 ))
                                               );
                                             }}
-                                            placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                                            placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
                                             className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
                                           />
                                         );
@@ -1684,7 +2434,7 @@ export default function PublicFormPage() {
                                               ))
                                             );
                                           }}
-                                          placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                                          placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
                                           className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
                                         />
                                       )}
@@ -1697,7 +2447,7 @@ export default function PublicFormPage() {
 
                           {(sectionField.type === 'FILE_UPLOAD' || sectionField.type === 'SIGNATURE') && (
                             <div className="rounded-lg border border-border-primary/60 bg-background-secondary/40 px-3 py-2 text-xs text-text-muted">
-                              This field type is not supported inside dynamic sections yet.
+                              {uiLabel('dynamic_section_unsupported_field')}
                             </div>
                           )}
 
@@ -1777,6 +2527,8 @@ export default function PublicFormPage() {
       ((field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') && !choiceInlineRight) ||
       field.type === 'SIGNATURE';
     const useDateSelector = field.type === 'SHORT_TEXT' && field.inputType === 'date';
+    const dateValidationRange = useDateSelector ? getDateValidationRange(field) : {};
+    const useSplitPhoneInput = field.type === 'SHORT_TEXT' && field.inputType === 'phone' && isSplitPhoneCountryCodeEnabled(field);
     const showTooltip = isTooltipEnabled(localizedField);
     const tooltipText = showTooltip ? localizedField.helpText!.trim() : null;
     const uploadStatus = uploadedByFieldKey[field.key];
@@ -1784,6 +2536,8 @@ export default function PublicFormPage() {
     const dateDefaultValue = useDateSelector && isDateDefaultTodayEnabled(field)
       ? getLocalTodayIsoDate()
       : '';
+    const phoneDefaultCountryCode = useSplitPhoneInput ? getPhoneDefaultCountryCode(field) : DEFAULT_PHONE_COUNTRY_CODE;
+    const phoneParts = useSplitPhoneInput ? parsePhoneParts(value, phoneDefaultCountryCode) : null;
     const resolvedDateValue = typeof value === 'string' && value.trim().length > 0
       ? value
       : dateDefaultValue;
@@ -1831,13 +2585,13 @@ export default function PublicFormPage() {
           {localizedField.subtext && <p id={hintId} className="mb-2 text-sm text-text-secondary">{localizedField.subtext}</p>}
 
           {/* SHORT_TEXT */}
-          {field.type === 'SHORT_TEXT' && !useDateSelector && (
+          {field.type === 'SHORT_TEXT' && !useDateSelector && !useSplitPhoneInput && (
             <input
               id={controlId}
               type={field.inputType === 'phone' ? 'tel' : field.inputType || 'text'}
               value={typeof value === 'string' ? value : ''}
               onChange={(e) => setFieldValue(field.key, e.target.value)}
-              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
               placeholder={localizedField.placeholder || ''}
               readOnly={field.isReadOnly}
               required={field.isRequired}
@@ -1852,17 +2606,55 @@ export default function PublicFormPage() {
             />
           )}
 
+          {useSplitPhoneInput && phoneParts && (
+            <div className="grid grid-cols-[minmax(132px,180px)_minmax(0,1fr)] gap-2">
+              <SearchableSelect
+                options={localizedPhoneCountryCodeOptions}
+                value={phoneParts.countryCode}
+                onChange={(nextCountryCode) => setFieldValue(
+                  field.key,
+                  buildPhoneValue(nextCountryCode || phoneDefaultCountryCode, phoneParts.number)
+                )}
+                placeholder={uiLabel('phone_code_placeholder')}
+                clearable={false}
+                showKeyboardHints={false}
+                containerClassName="h-10"
+                onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
+              />
+              <input
+                id={controlId}
+                type="tel"
+                value={phoneParts.number}
+                onChange={(e) => setFieldValue(field.key, buildPhoneValue(phoneParts.countryCode, e.target.value))}
+                onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
+                placeholder={localizedField.placeholder || ''}
+                readOnly={field.isReadOnly}
+                required={field.isRequired}
+                aria-label={field.hideLabel ? accessibleLabel : undefined}
+                aria-invalid={errorText ? 'true' : undefined}
+                aria-describedby={describedBy}
+                className={cn(
+                  'w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50',
+                  'focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                  field.isReadOnly && 'bg-[#EDE9E5] cursor-not-allowed opacity-70'
+                )}
+              />
+            </div>
+          )}
+
           {/* DATE */}
           {useDateSelector && (
             <SingleDateInput
               value={resolvedDateValue}
               onChange={(next) => setFieldValue(field.key, next)}
-              placeholder={localizedField.placeholder || 'dd/mm/yyyy'}
+              placeholder={localizedField.placeholder || uiLabel('date_placeholder')}
               disabled={field.isReadOnly}
               required={field.isRequired}
               error={errorText}
               ariaLabel={field.hideLabel ? accessibleLabel : undefined}
-              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
+              minDate={dateValidationRange.minDate}
+              maxDate={dateValidationRange.maxDate}
               className="w-full"
             />
           )}
@@ -1873,7 +2665,7 @@ export default function PublicFormPage() {
               id={controlId}
               value={typeof value === 'string' ? value : ''}
               onChange={(e) => setFieldValue(field.key, e.target.value)}
-              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
               placeholder={localizedField.placeholder || ''}
               readOnly={field.isReadOnly}
               required={field.isRequired}
@@ -1894,11 +2686,11 @@ export default function PublicFormPage() {
               options={parseChoiceOptions(localizedField.options).map((opt) => ({ value: opt.value, label: opt.label }))}
               value={typeof value === 'string' ? value : ''}
               onChange={(val) => setFieldValue(field.key, val)}
-              placeholder={localizedField.placeholder || 'Select an option'}
+              placeholder={localizedField.placeholder || uiLabel('select_option_placeholder')}
               clearable={false}
               showKeyboardHints={false}
               containerClassName="h-10"
-              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key))}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
             />
           )}
 
@@ -1910,7 +2702,7 @@ export default function PublicFormPage() {
               aria-labelledby={field.hideLabel ? undefined : labelId}
               aria-describedby={describedBy}
               aria-invalid={errorText ? 'true' : undefined}
-              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key)); }}
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers); }}
             >
               {choiceInlineRight ? (
                 (() => {
@@ -1970,7 +2762,7 @@ export default function PublicFormPage() {
                             type="text"
                             value={selectedEntry?.detailText || ''}
                             onChange={(e) => setFieldValue(field.key, { value: option.value, detailText: e.target.value })}
-                            placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                            placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
                             className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
                           />
                         );
@@ -1989,6 +2781,7 @@ export default function PublicFormPage() {
                         htmlFor={optionId}
                         className={cn(
                           'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150',
+                          'focus-within:ring-2 focus-within:ring-oak-primary/20 focus-within:border-oak-primary',
                           isSelected
                             ? 'border-oak-primary/40 bg-oak-primary/5 text-text-primary'
                             : 'border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60'
@@ -1996,9 +2789,9 @@ export default function PublicFormPage() {
                       >
                         <input id={optionId} type="radio" name={field.key} value={option.value} checked={isSelected}
                           onChange={() => setFieldValue(field.key, option.allowTextInput ? { value: option.value, detailText: selectedEntry?.value === option.value ? selectedEntry.detailText : '' } : option.value)}
-                          className="sr-only"
+                          className="peer sr-only"
                         />
-                        <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-[#F4F7F6] transition-all duration-150', isSelected ? 'border-oak-primary' : 'border-border-primary')}>
+                        <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-[#F4F7F6] transition-all duration-150 peer-focus-visible:border-oak-primary peer-focus-visible:ring-2 peer-focus-visible:ring-oak-primary/20', isSelected ? 'border-oak-primary' : 'border-border-primary')}>
                           {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-oak-primary" />}
                         </span>
                         {option.label}
@@ -2006,7 +2799,7 @@ export default function PublicFormPage() {
                       {option.allowTextInput && isSelected && (
                         <input type="text" value={selectedEntry?.detailText || ''}
                           onChange={(e) => setFieldValue(field.key, { value: option.value, detailText: e.target.value })}
-                          placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                          placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
                           className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
                         />
                       )}
@@ -2025,7 +2818,7 @@ export default function PublicFormPage() {
               aria-labelledby={field.hideLabel ? undefined : labelId}
               aria-describedby={describedBy}
               aria-invalid={errorText ? 'true' : undefined}
-              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key)); }}
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers); }}
             >
               {choiceInlineRight ? (
                 (() => {
@@ -2091,7 +2884,7 @@ export default function PublicFormPage() {
                               const nextEntries = entries.map((en) => (en.value === option.value ? { ...en, detailText: e.target.value } : en));
                               setFieldValue(field.key, nextEntries.map((en) => (en.detailText ? { value: en.value, detailText: en.detailText } : en.value)));
                             }}
-                            placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                            placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
                             className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
                           />
                         );
@@ -2112,6 +2905,7 @@ export default function PublicFormPage() {
                         htmlFor={optionId}
                         className={cn(
                           'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-all duration-150',
+                          'focus-within:ring-2 focus-within:ring-oak-primary/20 focus-within:border-oak-primary',
                           isChecked
                             ? 'border-oak-primary/40 bg-oak-primary/5 text-text-primary'
                             : 'border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60'
@@ -2127,9 +2921,9 @@ export default function PublicFormPage() {
                               setFieldValue(field.key, nextEntries.map((en) => (en.detailText ? { value: en.value, detailText: en.detailText } : en.value)));
                             }
                           }}
-                          className="sr-only"
+                          className="peer sr-only"
                         />
-                        <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-150', isChecked ? 'border-oak-primary bg-oak-primary' : 'border-border-primary bg-[#F4F7F6]')}>
+                        <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-150 peer-focus-visible:border-oak-primary peer-focus-visible:ring-2 peer-focus-visible:ring-oak-primary/20', isChecked ? 'border-oak-primary bg-oak-primary' : 'border-border-primary bg-[#F4F7F6]')}>
                           {isChecked && (
                             <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M2 6l3 3 5-5" />
@@ -2144,7 +2938,7 @@ export default function PublicFormPage() {
                             const nextEntries = entries.map((en) => (en.value === option.value ? { ...en, detailText: e.target.value } : en));
                             setFieldValue(field.key, nextEntries.map((en) => (en.detailText ? { value: en.value, detailText: en.detailText } : en.value)));
                           }}
-                          placeholder={option.textInputPlaceholder || option.textInputLabel || 'Please specify'}
+                          placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
                           className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
                         />
                       )}
@@ -2166,7 +2960,7 @@ export default function PublicFormPage() {
             )}
               role="button"
               tabIndex={0}
-              aria-label={`Upload file for ${accessibleLabel}`}
+              aria-label={uiLabel('upload_file_for_field', { field: accessibleLabel })}
               onClick={() => {
                 const input = document.getElementById(controlId);
                 if (input instanceof HTMLInputElement) {
@@ -2265,7 +3059,7 @@ export default function PublicFormPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8 flex items-center justify-center">
-        <div className="text-sm text-white/70">Loading form...</div>
+        <div className="text-sm text-white/70">{uiLabel('loading_form')}</div>
       </div>
     );
   }
@@ -2324,7 +3118,7 @@ export default function PublicFormPage() {
                   setPdfRecipientEmail(e.target.value);
                   if (emailFeedback) setEmailFeedback(null);
                 }}
-                placeholder="name@example.com"
+                placeholder={uiLabel('email_pdf_placeholder')}
                 className="w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150"
               />
               <Button
@@ -2351,7 +3145,7 @@ export default function PublicFormPage() {
 
   return (
     <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8')}>
-      <div className={cn('mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
+      <div ref={formTopRef} className={cn('mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
         {canSwitchLanguage && (
           <div className="mb-4 flex justify-end">
             {i18nSettings.enabledLocales.length <= 4 ? (
@@ -2394,7 +3188,7 @@ export default function PublicFormPage() {
               {shouldShowLogo && (
                 <img
                   src={form.tenantLogoUrl!}
-                  alt="Organization logo"
+                  alt={uiLabel('organization_logo_alt')}
                   className="h-32 w-auto max-w-[480px] object-contain rounded-sm flex-shrink-0"
                 />
               )}
@@ -2403,7 +3197,7 @@ export default function PublicFormPage() {
             {localizedFormDescription && <p className="mt-2 text-base text-text-secondary leading-relaxed">{localizedFormDescription}</p>}
             {isPreview && (
               <p className="mt-2 text-xs text-text-muted">
-                Preview mode. Publish the form to accept uploads and submissions.
+                {uiLabel('preview_notice')}
               </p>
             )}
             {pages.length <= 1 && <div className="mt-4 h-[3px] w-12 rounded-full bg-oak-primary" />}
@@ -2413,7 +3207,7 @@ export default function PublicFormPage() {
         {pages.length > 1 && (
           <div className="mb-6">
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-text-secondary">Page {currentPage + 1} of {pages.length}</span>
+              <span className="text-xs font-medium text-text-secondary">{uiLabel('page_progress', { current: currentPage + 1, total: pages.length })}</span>
               <span className="text-xs text-text-muted">{Math.round(((currentPage + 1) / pages.length) * 100)}%</span>
             </div>
             <div className="h-[3px] w-full overflow-hidden rounded-full bg-border-primary/40">
@@ -2422,6 +3216,69 @@ export default function PublicFormPage() {
                 style={{ width: `${((currentPage + 1) / pages.length) * 100}%` }}
               />
             </div>
+          </div>
+        )}
+
+        {draftSettings.enabled && !isPreview && currentPage === 0 && (
+          <div className="mb-6 rounded-xl border border-border-primary/50 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-text-primary">{localizedUiLabels.resume_draft}</p>
+                <p className="mt-1 text-xs text-text-secondary">
+                  {resumeDraftDescription}
+                </p>
+              </div>
+              <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+                <input
+                  type="text"
+                  value={resumeDraftCodeInput}
+                  onChange={(e) => {
+                    const nextValue = e.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 5);
+                    setResumeDraftCodeInput(nextValue);
+                    if (draftFeedback) setDraftFeedback(null);
+                  }}
+                  placeholder={localizedUiLabels.resume_draft_placeholder}
+                  className="h-10 w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-0 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150 sm:h-8 sm:min-w-44"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={resumeDraftByCode}
+                  isLoading={isResumingDraft}
+                  disabled={!DRAFT_CODE_PATTERN.test(resumeDraftCodeInput.trim())}
+                >
+                  {isResumingDraft ? localizedUiLabels.resuming_draft : localizedUiLabels.resume_draft}
+                </Button>
+              </div>
+            </div>
+
+            {draftSession && (
+              <div className="mt-4 flex flex-col gap-3 border-t border-border-primary/40 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-secondary">
+                  {draftSession.expiresAt && (
+                    <span>
+                      {localizedUiLabels.draft_expires_label}: <span className="text-text-primary">{formatDraftDateTime(draftSession.expiresAt)}</span>
+                    </span>
+                  )}
+                </div>
+                {draftSession.resumeUrl && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<Copy className="h-4 w-4" />}
+                    onClick={copyResumeLink}
+                  >
+                    {localizedUiLabels.copy_resume_link}
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {draftFeedback && (
+              <p className="mt-3 text-xs text-text-secondary">{draftFeedback}</p>
+            )}
           </div>
         )}
 
@@ -2462,11 +3319,15 @@ export default function PublicFormPage() {
           })}
         </div>
 
-        <div className="mt-8 flex items-center justify-between">
+        <div className="mt-8">
+          <div className="flex items-center justify-between">
           {currentPage > 0 ? (
             <button
               type="button"
-              onClick={() => setCurrentPage((prev) => prev - 1)}
+              onClick={() => {
+                setCurrentPage((prev) => prev - 1);
+                scrollToFormTop();
+              }}
               className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -2477,8 +3338,19 @@ export default function PublicFormPage() {
           <div className="flex items-center gap-3">
             {pages.length > 1 && (
               <span className="text-xs text-text-muted">
-                {currentPage + 1} of {pages.length}
+                {uiLabel('page_progress_short', { current: currentPage + 1, total: pages.length })}
               </span>
+            )}
+            {draftSettings.enabled && !isPreview && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={saveDraft}
+                isLoading={isSavingDraft}
+              >
+                {isSavingDraft ? localizedUiLabels.saving_draft : localizedUiLabels.save_draft}
+              </Button>
             )}
             {currentPage < pages.length - 1 ? (
               <Button
@@ -2488,6 +3360,7 @@ export default function PublicFormPage() {
                 onClick={() => {
                   if (!validateCurrentPage()) return;
                   setCurrentPage((prev) => prev + 1);
+                  scrollToFormTop();
                 }}
               >
                 {localizedUiLabels.continue}
@@ -2506,12 +3379,75 @@ export default function PublicFormPage() {
             )}
           </div>
         </div>
+        </div>
       {!isEmbed && shouldShowFooter && (
         <div className="mt-6 text-center text-sm text-text-tertiary">
           © {form.tenantName}
         </div>
       )}
       </div>
+
+      <Modal
+        isOpen={isDraftDetailsModalOpen && !!draftSession}
+        onClose={() => {
+          setIsDraftDetailsModalOpen(false);
+          setDraftFeedback(null);
+        }}
+        title={uiLabel('draft_saved_title')}
+        description={draftValidityNotice}
+        size="lg"
+      >
+        <ModalBody className="space-y-4">
+          <div className="rounded-lg border border-border-primary/50 bg-background-primary px-4 py-3">
+            <p className="text-xs font-medium text-text-secondary">{localizedUiLabels.draft_code_label}</p>
+            <p className="mt-1 font-mono text-lg text-text-primary">{draftSession?.draftCode}</p>
+          </div>
+
+          <div className="rounded-lg border border-border-primary/50 bg-background-primary px-4 py-3">
+            <p className="text-xs font-medium text-text-secondary">{uiLabel('resume_link_label')}</p>
+            <input
+              type="text"
+              readOnly
+              value={draftSession?.resumeUrl || ''}
+              className="mt-1 w-full rounded-md border border-border-primary/40 bg-background-secondary px-3 py-2 text-sm text-text-primary"
+            />
+          </div>
+
+          <div className="rounded-lg border border-border-primary/50 bg-background-primary px-4 py-3">
+            <p className="text-xs font-medium text-text-secondary">{localizedUiLabels.draft_expires_label}</p>
+            <p className="mt-1 text-sm text-text-primary">
+              {draftSession?.expiresAt ? formatDraftDateTime(draftSession.expiresAt) : '-'}
+            </p>
+          </div>
+
+          {draftFeedback && (
+            <p className="text-xs text-text-secondary">{draftFeedback}</p>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            leftIcon={<Copy className="h-4 w-4" />}
+            onClick={copyResumeLink}
+            disabled={!draftSession?.resumeUrl}
+          >
+            {localizedUiLabels.copy_resume_link}
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setIsDraftDetailsModalOpen(false);
+              setDraftFeedback(null);
+            }}
+          >
+            {uiLabel('continue_editing')}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

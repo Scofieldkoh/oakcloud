@@ -49,6 +49,16 @@ export type ValidationConfig = {
   maxLength?: number;
   min?: number;
   max?: number;
+  equal?: number;
+  minFormula?: string;
+  maxFormula?: string;
+  equalFormula?: string;
+  minDate?: string;
+  maxDate?: string;
+  startsWith?: string;
+  containsText?: string;
+  notContainsText?: string;
+  endsWith?: string;
   pattern?: string;
   maxFileSizeMb?: number;
   allowedMimeTypes?: string[];
@@ -56,7 +66,14 @@ export type ValidationConfig = {
   tooltipEnabled?: boolean;
   choiceInlineRight?: boolean;
   defaultToday?: boolean;
+  splitPhoneCountryCode?: boolean;
+  phoneDefaultCountryCode?: string;
   infoBackgroundColor?: string;
+  infoPaddingPx?: number;
+  infoPaddingTopPx?: number;
+  infoPaddingRightPx?: number;
+  infoPaddingBottomPx?: number;
+  infoPaddingLeftPx?: number;
   repeatMinItems?: number;
   repeatMaxItems?: number;
   repeatAddLabel?: string;
@@ -265,6 +282,8 @@ export function serializeBuilderState(input: {
   fields: BuilderField[];
   notificationRecipientEmails?: string[];
   notificationRecipientText?: string;
+  draftSaveEnabled?: boolean;
+  draftAutoDeleteDays?: number;
   pdfFileNameTemplate?: string;
   i18nDefaultLocale?: string;
   i18nEnabledLocales?: string[];
@@ -281,6 +300,10 @@ export function serializeBuilderState(input: {
     tags: input.tags,
     notificationRecipientEmails: (input.notificationRecipientEmails || []).map((email) => email.trim().toLowerCase()).filter(Boolean),
     notificationRecipientText: (input.notificationRecipientText || '').trim(),
+    draftSaveEnabled: input.draftSaveEnabled === true,
+    draftAutoDeleteDays: typeof input.draftAutoDeleteDays === 'number' && Number.isFinite(input.draftAutoDeleteDays)
+      ? Math.max(1, Math.min(365, Math.trunc(input.draftAutoDeleteDays)))
+      : 14,
     pdfFileNameTemplate: (input.pdfFileNameTemplate || '').trim(),
     i18nDefaultLocale: (input.i18nDefaultLocale || '').trim(),
     i18nEnabledLocales: (input.i18nEnabledLocales || []).map((locale) => locale.trim()).filter(Boolean),

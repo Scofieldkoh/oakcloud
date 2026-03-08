@@ -218,6 +218,15 @@ export interface FormNotificationSettings {
   completionRecipientEmails: string[];
 }
 
+export const DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS = 14;
+export const MIN_FORM_DRAFT_AUTO_DELETE_DAYS = 1;
+export const MAX_FORM_DRAFT_AUTO_DELETE_DAYS = 365;
+
+export interface FormDraftSettings {
+  enabled: boolean;
+  autoDeleteDays: number;
+}
+
 export interface FormFileNameSettings {
   pdfTemplate: string | null;
 }
@@ -273,6 +282,19 @@ function normalizeFileNameTemplate(value: unknown): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
   return trimmed.slice(0, 240);
+}
+
+function normalizeDraftAutoDeleteDays(value: unknown): number {
+  const parsed = typeof value === 'number'
+    ? value
+    : (typeof value === 'string' ? Number.parseInt(value.trim(), 10) : NaN);
+
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS;
+  }
+
+  const rounded = Math.trunc(parsed);
+  return Math.min(MAX_FORM_DRAFT_AUTO_DELETE_DAYS, Math.max(MIN_FORM_DRAFT_AUTO_DELETE_DAYS, rounded));
 }
 
 export function normalizeLocaleCode(value: unknown): string | null {
@@ -496,6 +518,32 @@ export function writeFormNotificationSettings(
   root.notifications = {
     ...existingNotifications,
     completionRecipientEmails: [...notifications.completionRecipientEmails],
+  };
+
+  return root;
+}
+
+export function parseFormDraftSettings(settings: unknown): FormDraftSettings {
+  const root = parseObject(settings);
+  const drafts = parseObject(root?.drafts);
+
+  return {
+    enabled: drafts?.enabled === true,
+    autoDeleteDays: normalizeDraftAutoDeleteDays(drafts?.autoDeleteDays),
+  };
+}
+
+export function writeFormDraftSettings(
+  settings: unknown,
+  draftSettings: FormDraftSettings
+): Record<string, unknown> {
+  const root = parseObject(settings) ? { ...(settings as Record<string, unknown>) } : {};
+  const existingDrafts = parseObject(root.drafts) ? { ...(root.drafts as Record<string, unknown>) } : {};
+
+  root.drafts = {
+    ...existingDrafts,
+    enabled: draftSettings.enabled === true,
+    autoDeleteDays: normalizeDraftAutoDeleteDays(draftSettings.autoDeleteDays),
   };
 
   return root;

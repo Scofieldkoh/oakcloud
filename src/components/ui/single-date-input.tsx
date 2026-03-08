@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { DayPicker, type DropdownProps } from 'react-day-picker';
 import { format, parse, isValid } from 'date-fns';
@@ -33,6 +33,10 @@ export interface SingleDateInputProps {
   ariaLabel?: string;
   /** Blur callback */
   onBlur?: () => void;
+  /** Minimum allowed ISO date (YYYY-MM-DD) */
+  minDate?: string;
+  /** Maximum allowed ISO date (YYYY-MM-DD) */
+  maxDate?: string;
 }
 
 const CALENDAR_START_MONTH = new Date(1900, 0, 1);
@@ -358,6 +362,28 @@ function formatISODate(date: Date): string {
   return format(date, 'yyyy-MM-dd');
 }
 
+function clampDate(date: Date, minDate?: Date, maxDate?: Date): Date {
+  if (minDate && date < minDate) return minDate;
+  if (maxDate && date > maxDate) return maxDate;
+  return date;
+}
+
+function isDateWithinRange(date: Date, minDate?: Date, maxDate?: Date): boolean {
+  if (minDate && date < minDate) return false;
+  if (maxDate && date > maxDate) return false;
+  return true;
+}
+
+function getDateRangeError(date: Date, minDate?: Date, maxDate?: Date): string | null {
+  if (minDate && date < minDate) {
+    return `Enter a date on or after ${formatDisplayDate(minDate)}.`;
+  }
+  if (maxDate && date > maxDate) {
+    return `Enter a date on or before ${formatDisplayDate(maxDate)}.`;
+  }
+  return null;
+}
+
 // Normalize compact date strings like "28sep25" or "28sept25" to "28 Sep 25"
 function normalizeCompactDate(input: string): string {
   // Match patterns like: 28sep25, 28sept25, 28 sep 25, 28 sept 25, 28sep2025
@@ -428,7 +454,7 @@ function parseUserInput(input: string): Date | undefined {
 export function SingleDateInput({
   value = '',
   onChange,
-  placeholder = 'dd/mm/yyyy',
+  placeholder = 'dd mmm yyyy',
   className,
   disabled,
   label,
@@ -437,11 +463,14 @@ export function SingleDateInput({
   required,
   ariaLabel,
   onBlur,
+  minDate,
+  maxDate,
 }: SingleDateInputProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [month, setMonth] = useState<Date>(() => parseISODate(value) || new Date());
   const [inputValue, setInputValue] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -449,7 +478,9 @@ export function SingleDateInput({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [mounted, setMounted] = useState(false);
 
-  const selectedDate = parseISODate(value);
+  const selectedDate = useMemo(() => parseISODate(value), [value]);
+  const minDateValue = useMemo(() => parseISODate(minDate || ''), [minDate]);
+  const maxDateValue = useMemo(() => parseISODate(maxDate || ''), [maxDate]);
 
   // Mount check for portal
   useEffect(() => {
@@ -467,13 +498,26 @@ export function SingleDateInput({
     }
   }, [value, selectedDate, isEditing]);
 
+  useEffect(() => {
+    if (error) {
+      setLocalError(null);
+    }
+  }, [error]);
+
   // Update month when value changes
   useEffect(() => {
     const date = parseISODate(value);
     if (date) {
-      setMonth(date);
+      const nextMonth = clampDate(date, minDateValue, maxDateValue);
+      if (
+        month.getFullYear() !== nextMonth.getFullYear() ||
+        month.getMonth() !== nextMonth.getMonth() ||
+        month.getDate() !== nextMonth.getDate()
+      ) {
+        setMonth(nextMonth);
+      }
     }
-  }, [value]);
+  }, [value, minDateValue, maxDateValue, month]);
 
   // Calculate position with scroll and resize handling
   useEffect(() => {
@@ -551,12 +595,19 @@ export function SingleDateInput({
   const handleSelect = useCallback(
     (date: Date | undefined) => {
       if (date) {
+        if (!isDateWithinRange(date, minDateValue, maxDateValue)) {
+          return;
+        }
+        setIsEditing(false);
+        setInputValue(formatDisplayDate(date));
+        setLocalError(null);
+        setMonth(date);
         onChange(formatISODate(date));
         setIsOpen(false);
         inputRef.current?.focus();
       }
     },
-    [onChange]
+    [maxDateValue, minDateValue, onChange]
   );
 
   const handleInputFocus = useCallback(() => {
@@ -570,14 +621,21 @@ export function SingleDateInput({
 
       // Try to parse as user types - silently update the underlying value
       const parsed = parseUserInput(newValue);
-      if (parsed) {
+      if (parsed && isDateWithinRange(parsed, minDateValue, maxDateValue)) {
+        setLocalError(null);
         onChange(formatISODate(parsed));
         setMonth(parsed);
-      } else if (!newValue.trim()) {
+      } else if (parsed) {
+        setLocalError(getDateRangeError(parsed, minDateValue, maxDateValue));
         onChange('');
+      } else if (!newValue.trim()) {
+        setLocalError(null);
+        onChange('');
+      } else {
+        setLocalError(null);
       }
     },
-    [onChange]
+    [maxDateValue, minDateValue, onChange]
   );
 
   const handleInputBlur = useCallback(() => {
@@ -586,20 +644,26 @@ export function SingleDateInput({
 
     // On blur, format the display to the standard format
     if (selectedDate) {
+      setLocalError(null);
       setInputValue(formatDisplayDate(selectedDate));
     } else if (inputValue.trim()) {
       // Try one more parse attempt
       const parsed = parseUserInput(inputValue);
-      if (parsed) {
+      if (parsed && isDateWithinRange(parsed, minDateValue, maxDateValue)) {
+        setLocalError(null);
         onChange(formatISODate(parsed));
         setInputValue(formatDisplayDate(parsed));
+      } else if (parsed) {
+        setLocalError(getDateRangeError(parsed, minDateValue, maxDateValue));
+        onChange('');
       } else {
-        // Invalid input, clear it
-        setInputValue('');
+        setLocalError('Enter a valid date.');
         onChange('');
       }
+    } else {
+      setLocalError(null);
     }
-  }, [inputValue, onChange, selectedDate]);
+  }, [inputValue, maxDateValue, minDateValue, onBlur, onChange, selectedDate]);
 
   const handleCalendarClick = useCallback(
     (e: React.MouseEvent) => {
@@ -613,6 +677,8 @@ export function SingleDateInput({
   );
 
   const inputId = label?.toLowerCase().replace(/\s+/g, '-');
+
+  const displayError = error || localError;
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
@@ -635,7 +701,7 @@ export function SingleDateInput({
           'hover:border-[#294D44]/50 transition-colors',
           'focus-within:ring-2 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44]',
           disabled && 'opacity-50 cursor-not-allowed',
-          error && 'border-status-error hover:border-status-error focus-within:border-status-error focus-within:ring-status-error/30'
+          displayError && 'border-status-error hover:border-status-error focus-within:border-status-error focus-within:ring-status-error/30'
         )}
       >
         {/* Text input */}
@@ -651,7 +717,7 @@ export function SingleDateInput({
           disabled={disabled}
           autoComplete="off"
           aria-label={ariaLabel}
-          aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
+          aria-describedby={displayError ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           className={cn(
             'flex-1 h-full px-3 bg-transparent text-sm text-text-primary placeholder-text-muted',
             'focus:outline-none',
@@ -678,15 +744,15 @@ export function SingleDateInput({
       </div>
 
       {/* Error message */}
-      {error && (
+      {displayError && (
         <div id={`${inputId}-error`} className="flex items-center gap-1.5 text-xs text-status-error">
           <AlertCircle size={14} className="flex-shrink-0" />
-          {error}
+          {displayError}
         </div>
       )}
 
       {/* Hint text */}
-      {hint && !error && (
+      {hint && !displayError && (
         <div id={`${inputId}-hint`} className="text-xs text-text-muted">
           {hint}
         </div>
@@ -717,6 +783,10 @@ export function SingleDateInput({
                 navLayout="after"
                 startMonth={CALENDAR_START_MONTH}
                 endMonth={CALENDAR_END_MONTH}
+                disabled={[
+                  ...(minDateValue ? [{ before: minDateValue }] : []),
+                  ...(maxDateValue ? [{ after: maxDateValue }] : []),
+                ]}
                 reverseYears
                 showOutsideDays
               />

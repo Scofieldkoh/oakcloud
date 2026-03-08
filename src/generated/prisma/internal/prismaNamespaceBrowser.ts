@@ -112,6 +112,7 @@ export const ModelName = {
   Form: 'Form',
   FormField: 'FormField',
   FormSubmission: 'FormSubmission',
+  FormDraft: 'FormDraft',
   FormUpload: 'FormUpload',
   ClientPortalUser: 'ClientPortalUser',
   ClientRequest: 'ClientRequest',
@@ -1360,10 +1361,28 @@ export const FormSubmissionScalarFieldEnum = {
 export type FormSubmissionScalarFieldEnum = (typeof FormSubmissionScalarFieldEnum)[keyof typeof FormSubmissionScalarFieldEnum]
 
 
+export const FormDraftScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  accessTokenHash: 'accessTokenHash',
+  formId: 'formId',
+  tenantId: 'tenantId',
+  answers: 'answers',
+  metadata: 'metadata',
+  expiresAt: 'expiresAt',
+  lastSavedAt: 'lastSavedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FormDraftScalarFieldEnum = (typeof FormDraftScalarFieldEnum)[keyof typeof FormDraftScalarFieldEnum]
+
+
 export const FormUploadScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   formId: 'formId',
+  draftId: 'draftId',
   submissionId: 'submissionId',
   fieldId: 'fieldId',
   storageKey: 'storageKey',

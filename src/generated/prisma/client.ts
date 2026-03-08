@@ -345,6 +345,11 @@ export type FormField = Prisma.FormFieldModel
  */
 export type FormSubmission = Prisma.FormSubmissionModel
 /**
+ * Model FormDraft
+ * 
+ */
+export type FormDraft = Prisma.FormDraftModel
+/**
  * Model FormUpload
  * 
  */

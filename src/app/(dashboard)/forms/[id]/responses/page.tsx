@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 20;
 type SubmissionItem = FormResponsesResult['submissions'][number];
+type DraftItem = FormResponsesResult['drafts'][number];
 
 type SummaryColumnDef = {
   id: string;
@@ -52,6 +53,12 @@ function toAnswerRecord(value: unknown): Record<string, unknown> {
     return {};
   }
   return value as Record<string, unknown>;
+}
+
+function formatLocaleValue(value: unknown): string {
+  if (typeof value !== 'string') return '-';
+  const trimmed = value.trim();
+  return trimmed || '-';
 }
 
 function defaultFieldColumnWidth(fieldType: string): number {
@@ -104,6 +111,7 @@ export default function FormResponsesPage() {
   const formId = params.id;
 
   const [page, setPage] = useState(1);
+  const [draftPage, setDraftPage] = useState(1);
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
@@ -124,7 +132,7 @@ export default function FormResponsesPage() {
     isFetching: isResponsesFetching,
     error,
     refetch: refetchResponses,
-  } = useFormResponses(formId, page, PAGE_SIZE);
+  } = useFormResponses(formId, page, PAGE_SIZE, draftPage, PAGE_SIZE);
   const updateForm = useUpdateForm(formId);
 
   useEffect(() => {
@@ -357,6 +365,12 @@ export default function FormResponsesPage() {
     return formatSummaryCellValue(column.fieldType || 'SHORT_TEXT', value);
   }
 
+  function renderDraftCell(draft: DraftItem, column: SummaryColumnDef): string {
+    const answers = toAnswerRecord(draft.answers);
+    const value = answers[column.fieldKey || ''];
+    return formatSummaryCellValue(column.fieldType || 'SHORT_TEXT', value);
+  }
+
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -393,7 +407,7 @@ export default function FormResponsesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-lg border border-border-primary bg-background-elevated p-4">
           <div className="text-xs text-text-secondary">Total views</div>
           <div className="mt-1 text-2xl font-semibold text-text-primary">{form.viewsCount}</div>
@@ -405,6 +419,10 @@ export default function FormResponsesPage() {
         <div className="rounded-lg border border-border-primary bg-background-elevated p-4">
           <div className="text-xs text-text-secondary">Conversion rate</div>
           <div className="mt-1 text-2xl font-semibold text-text-primary">{conversionRate}%</div>
+        </div>
+        <div className="rounded-lg border border-border-primary bg-background-elevated p-4">
+          <div className="text-xs text-text-secondary">Active drafts</div>
+          <div className="mt-1 text-2xl font-semibold text-text-primary">{data?.draftTotal ?? 0}</div>
         </div>
       </div>
 
@@ -536,6 +554,81 @@ export default function FormResponsesPage() {
             total={data.total}
             limit={data.limit}
             onPageChange={setPage}
+            showPageSize={false}
+          />
+        )}
+      </div>
+
+      <div className="mt-4 rounded-lg border border-border-primary bg-background-elevated overflow-hidden">
+        <div className="border-b border-border-primary px-4 py-3">
+          <div className="text-sm font-medium text-text-primary">Draft entries</div>
+          <p className="mt-1 text-xs text-text-secondary">
+            Active saved drafts that have not been submitted yet.
+          </p>
+        </div>
+
+        {isLoading && (
+          <div className="space-y-2 p-4">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div key={idx} className="h-12 animate-pulse rounded bg-background-tertiary" />
+            ))}
+          </div>
+        )}
+
+        {!isLoading && data && data.drafts.length === 0 && (
+          <div className="px-4 py-8 text-center text-sm text-text-secondary">No active draft entries.</div>
+        )}
+
+        {!isLoading && data && data.drafts.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] text-sm">
+              <thead className="bg-background-primary">
+                <tr className="text-left text-xs text-text-secondary">
+                  <th className="px-4 py-2 font-medium">Draft ID</th>
+                  <th className="px-4 py-2 font-medium">Last saved</th>
+                  <th className="px-4 py-2 font-medium">Expires</th>
+                  <th className="px-4 py-2 font-medium">Locale</th>
+                  <th className="px-4 py-2 font-medium">Files</th>
+                  {summaryColumns.map((column) => (
+                    <th key={`draft-${column.id}`} className="px-4 py-2 font-medium">
+                      {column.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.drafts.map((draft) => {
+                  const metadata = toAnswerRecord(draft.metadata);
+
+                  return (
+                    <tr key={draft.id} className="border-t border-border-primary text-text-primary">
+                      <td className="px-4 py-3 align-top font-mono text-xs sm:text-sm">{draft.code}</td>
+                      <td className="px-4 py-3 align-top whitespace-nowrap">{formatDate(draft.lastSavedAt)}</td>
+                      <td className="px-4 py-3 align-top whitespace-nowrap">{formatDate(draft.expiresAt)}</td>
+                      <td className="px-4 py-3 align-top">{formatLocaleValue(metadata.locale)}</td>
+                      <td className="px-4 py-3 align-top">{draft.uploadCount}</td>
+                      {summaryColumns.map((column) => (
+                        <td key={`${draft.id}:${column.id}`} className="px-4 py-3 align-top">
+                          <span className="line-clamp-2 break-words">
+                            {renderDraftCell(draft, column)}
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {data && data.draftTotalPages > 1 && (
+          <Pagination
+            page={data.draftPage}
+            totalPages={data.draftTotalPages}
+            total={data.draftTotal}
+            limit={data.draftLimit}
+            onPageChange={setDraftPage}
             showPageSize={false}
           />
         )}

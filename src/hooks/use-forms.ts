@@ -73,9 +73,17 @@ async function fetchFormResponses(
   id: string,
   page: number,
   limit: number,
+  draftPage: number,
+  draftLimit: number,
   tenantId?: string | null
 ): Promise<FormResponsesResult> {
-  const response = await fetch(withTenant(`/api/forms/${id}/responses?page=${page}&limit=${limit}`, tenantId));
+  const searchParams = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    draftPage: String(draftPage),
+    draftLimit: String(draftLimit),
+  });
+  const response = await fetch(withTenant(`/api/forms/${id}/responses?${searchParams.toString()}`, tenantId));
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.error || 'Failed to fetch responses');
@@ -186,8 +194,8 @@ export const formKeys = {
   lists: () => [...formKeys.all, 'list'] as const,
   list: (params: FormListParams, tenantId?: string | null) => [...formKeys.lists(), params, tenantId] as const,
   detail: (id: string, tenantId?: string | null) => [...formKeys.all, 'detail', id, tenantId] as const,
-  responses: (id: string, page: number, limit: number, tenantId?: string | null) =>
-    [...formKeys.all, 'responses', id, page, limit, tenantId] as const,
+  responses: (id: string, page: number, limit: number, draftPage: number, draftLimit: number, tenantId?: string | null) =>
+    [...formKeys.all, 'responses', id, page, limit, draftPage, draftLimit, tenantId] as const,
   responseDetail: (id: string, submissionId: string, tenantId?: string | null) =>
     [...formKeys.all, 'response-detail', id, submissionId, tenantId] as const,
   recentSubmissions: (limit: number, tenantId?: string | null) =>
@@ -226,13 +234,19 @@ export function useForm(id: string | null) {
   });
 }
 
-export function useFormResponses(id: string | null, page: number = 1, limit: number = 20) {
+export function useFormResponses(
+  id: string | null,
+  page: number = 1,
+  limit: number = 20,
+  draftPage: number = 1,
+  draftLimit: number = 20
+) {
   const { data: session } = useSession();
   const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useQuery({
-    queryKey: formKeys.responses(id || '', page, limit, activeTenantId),
-    queryFn: () => fetchFormResponses(id!, page, limit, activeTenantId),
+    queryKey: formKeys.responses(id || '', page, limit, draftPage, draftLimit, activeTenantId),
+    queryFn: () => fetchFormResponses(id!, page, limit, draftPage, draftLimit, activeTenantId),
     enabled: !!id && (session?.isSuperAdmin ? !!activeTenantId : true),
     placeholderData: (previousData) => previousData,
   });

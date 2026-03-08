@@ -445,6 +445,7 @@ export const ModelName = {
   Form: 'Form',
   FormField: 'FormField',
   FormSubmission: 'FormSubmission',
+  FormDraft: 'FormDraft',
   FormUpload: 'FormUpload',
   ClientPortalUser: 'ClientPortalUser',
   ClientRequest: 'ClientRequest',
@@ -493,7 +494,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
+    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -5011,6 +5012,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    FormDraft: {
+      payload: Prisma.$FormDraftPayload<ExtArgs>
+      fields: Prisma.FormDraftFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FormDraftFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormDraftPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FormDraftFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormDraftPayload>
+        }
+        findFirst: {
+          args: Prisma.FormDraftFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormDraftPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FormDraftFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormDraftPayload>
+        }
+        findMany: {
+          args: Prisma.FormDraftFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormDraftPayload>[]
+        }
+        create: {
+          args: Prisma.FormDraftCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormDraftPayload>
+        }
+        createMany: {
+          args: Prisma.FormDraftCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FormDraftCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormDraftPayload>[]
+        }
+        delete: {
+          args: Prisma.FormDraftDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormDraftPayload>
+        }
+        update: {
+          args: Prisma.FormDraftUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormDraftPayload>
+        }
+        deleteMany: {
+          args: Prisma.FormDraftDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FormDraftUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FormDraftUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormDraftPayload>[]
+        }
+        upsert: {
+          args: Prisma.FormDraftUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormDraftPayload>
+        }
+        aggregate: {
+          args: Prisma.FormDraftAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFormDraft>
+        }
+        groupBy: {
+          args: Prisma.FormDraftGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormDraftGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FormDraftCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormDraftCountAggregateOutputType> | number
+        }
+      }
+    }
     FormUpload: {
       payload: Prisma.$FormUploadPayload<ExtArgs>
       fields: Prisma.FormUploadFieldRefs
@@ -8689,10 +8764,28 @@ export const FormSubmissionScalarFieldEnum = {
 export type FormSubmissionScalarFieldEnum = (typeof FormSubmissionScalarFieldEnum)[keyof typeof FormSubmissionScalarFieldEnum]
 
 
+export const FormDraftScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  accessTokenHash: 'accessTokenHash',
+  formId: 'formId',
+  tenantId: 'tenantId',
+  answers: 'answers',
+  metadata: 'metadata',
+  expiresAt: 'expiresAt',
+  lastSavedAt: 'lastSavedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FormDraftScalarFieldEnum = (typeof FormDraftScalarFieldEnum)[keyof typeof FormDraftScalarFieldEnum]
+
+
 export const FormUploadScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   formId: 'formId',
+  draftId: 'draftId',
   submissionId: 'submissionId',
   fieldId: 'fieldId',
   storageKey: 'storageKey',
@@ -10819,6 +10912,7 @@ export type GlobalOmitConfig = {
   form?: Prisma.FormOmit
   formField?: Prisma.FormFieldOmit
   formSubmission?: Prisma.FormSubmissionOmit
+  formDraft?: Prisma.FormDraftOmit
   formUpload?: Prisma.FormUploadOmit
   clientPortalUser?: Prisma.ClientPortalUserOmit
   clientRequest?: Prisma.ClientRequestOmit

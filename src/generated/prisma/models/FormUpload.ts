@@ -38,6 +38,7 @@ export type FormUploadMinAggregateOutputType = {
   id: string | null
   tenantId: string | null
   formId: string | null
+  draftId: string | null
   submissionId: string | null
   fieldId: string | null
   storageKey: string | null
@@ -51,6 +52,7 @@ export type FormUploadMaxAggregateOutputType = {
   id: string | null
   tenantId: string | null
   formId: string | null
+  draftId: string | null
   submissionId: string | null
   fieldId: string | null
   storageKey: string | null
@@ -64,6 +66,7 @@ export type FormUploadCountAggregateOutputType = {
   id: number
   tenantId: number
   formId: number
+  draftId: number
   submissionId: number
   fieldId: number
   storageKey: number
@@ -87,6 +90,7 @@ export type FormUploadMinAggregateInputType = {
   id?: true
   tenantId?: true
   formId?: true
+  draftId?: true
   submissionId?: true
   fieldId?: true
   storageKey?: true
@@ -100,6 +104,7 @@ export type FormUploadMaxAggregateInputType = {
   id?: true
   tenantId?: true
   formId?: true
+  draftId?: true
   submissionId?: true
   fieldId?: true
   storageKey?: true
@@ -113,6 +118,7 @@ export type FormUploadCountAggregateInputType = {
   id?: true
   tenantId?: true
   formId?: true
+  draftId?: true
   submissionId?: true
   fieldId?: true
   storageKey?: true
@@ -213,6 +219,7 @@ export type FormUploadGroupByOutputType = {
   id: string
   tenantId: string
   formId: string
+  draftId: string | null
   submissionId: string | null
   fieldId: string | null
   storageKey: string
@@ -249,6 +256,7 @@ export type FormUploadWhereInput = {
   id?: Prisma.StringFilter<"FormUpload"> | string
   tenantId?: Prisma.StringFilter<"FormUpload"> | string
   formId?: Prisma.StringFilter<"FormUpload"> | string
+  draftId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   submissionId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   fieldId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   storageKey?: Prisma.StringFilter<"FormUpload"> | string
@@ -256,6 +264,7 @@ export type FormUploadWhereInput = {
   mimeType?: Prisma.StringFilter<"FormUpload"> | string
   sizeBytes?: Prisma.IntFilter<"FormUpload"> | number
   createdAt?: Prisma.DateTimeFilter<"FormUpload"> | Date | string
+  draft?: Prisma.XOR<Prisma.FormDraftNullableScalarRelationFilter, Prisma.FormDraftWhereInput> | null
   form?: Prisma.XOR<Prisma.FormScalarRelationFilter, Prisma.FormWhereInput>
   submission?: Prisma.XOR<Prisma.FormSubmissionNullableScalarRelationFilter, Prisma.FormSubmissionWhereInput> | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
@@ -265,6 +274,7 @@ export type FormUploadOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   formId?: Prisma.SortOrder
+  draftId?: Prisma.SortOrderInput | Prisma.SortOrder
   submissionId?: Prisma.SortOrderInput | Prisma.SortOrder
   fieldId?: Prisma.SortOrderInput | Prisma.SortOrder
   storageKey?: Prisma.SortOrder
@@ -272,6 +282,7 @@ export type FormUploadOrderByWithRelationInput = {
   mimeType?: Prisma.SortOrder
   sizeBytes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  draft?: Prisma.FormDraftOrderByWithRelationInput
   form?: Prisma.FormOrderByWithRelationInput
   submission?: Prisma.FormSubmissionOrderByWithRelationInput
   tenant?: Prisma.TenantOrderByWithRelationInput
@@ -284,6 +295,7 @@ export type FormUploadWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.FormUploadWhereInput | Prisma.FormUploadWhereInput[]
   tenantId?: Prisma.StringFilter<"FormUpload"> | string
   formId?: Prisma.StringFilter<"FormUpload"> | string
+  draftId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   submissionId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   fieldId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   storageKey?: Prisma.StringFilter<"FormUpload"> | string
@@ -291,6 +303,7 @@ export type FormUploadWhereUniqueInput = Prisma.AtLeast<{
   mimeType?: Prisma.StringFilter<"FormUpload"> | string
   sizeBytes?: Prisma.IntFilter<"FormUpload"> | number
   createdAt?: Prisma.DateTimeFilter<"FormUpload"> | Date | string
+  draft?: Prisma.XOR<Prisma.FormDraftNullableScalarRelationFilter, Prisma.FormDraftWhereInput> | null
   form?: Prisma.XOR<Prisma.FormScalarRelationFilter, Prisma.FormWhereInput>
   submission?: Prisma.XOR<Prisma.FormSubmissionNullableScalarRelationFilter, Prisma.FormSubmissionWhereInput> | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
@@ -300,6 +313,7 @@ export type FormUploadOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   formId?: Prisma.SortOrder
+  draftId?: Prisma.SortOrderInput | Prisma.SortOrder
   submissionId?: Prisma.SortOrderInput | Prisma.SortOrder
   fieldId?: Prisma.SortOrderInput | Prisma.SortOrder
   storageKey?: Prisma.SortOrder
@@ -321,6 +335,7 @@ export type FormUploadScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"FormUpload"> | string
   tenantId?: Prisma.StringWithAggregatesFilter<"FormUpload"> | string
   formId?: Prisma.StringWithAggregatesFilter<"FormUpload"> | string
+  draftId?: Prisma.StringNullableWithAggregatesFilter<"FormUpload"> | string | null
   submissionId?: Prisma.StringNullableWithAggregatesFilter<"FormUpload"> | string | null
   fieldId?: Prisma.StringNullableWithAggregatesFilter<"FormUpload"> | string | null
   storageKey?: Prisma.StringWithAggregatesFilter<"FormUpload"> | string
@@ -338,6 +353,7 @@ export type FormUploadCreateInput = {
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
+  draft?: Prisma.FormDraftCreateNestedOneWithoutUploadsInput
   form: Prisma.FormCreateNestedOneWithoutUploadsInput
   submission?: Prisma.FormSubmissionCreateNestedOneWithoutUploadsInput
   tenant: Prisma.TenantCreateNestedOneWithoutFormUploadsInput
@@ -347,6 +363,7 @@ export type FormUploadUncheckedCreateInput = {
   id?: string
   tenantId: string
   formId: string
+  draftId?: string | null
   submissionId?: string | null
   fieldId?: string | null
   storageKey: string
@@ -364,6 +381,7 @@ export type FormUploadUpdateInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  draft?: Prisma.FormDraftUpdateOneWithoutUploadsNestedInput
   form?: Prisma.FormUpdateOneRequiredWithoutUploadsNestedInput
   submission?: Prisma.FormSubmissionUpdateOneWithoutUploadsNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutFormUploadsNestedInput
@@ -373,6 +391,7 @@ export type FormUploadUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   formId?: Prisma.StringFieldUpdateOperationsInput | string
+  draftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submissionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -386,6 +405,7 @@ export type FormUploadCreateManyInput = {
   id?: string
   tenantId: string
   formId: string
+  draftId?: string | null
   submissionId?: string | null
   fieldId?: string | null
   storageKey: string
@@ -409,6 +429,7 @@ export type FormUploadUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   formId?: Prisma.StringFieldUpdateOperationsInput | string
+  draftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submissionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -432,6 +453,7 @@ export type FormUploadCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   formId?: Prisma.SortOrder
+  draftId?: Prisma.SortOrder
   submissionId?: Prisma.SortOrder
   fieldId?: Prisma.SortOrder
   storageKey?: Prisma.SortOrder
@@ -449,6 +471,7 @@ export type FormUploadMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   formId?: Prisma.SortOrder
+  draftId?: Prisma.SortOrder
   submissionId?: Prisma.SortOrder
   fieldId?: Prisma.SortOrder
   storageKey?: Prisma.SortOrder
@@ -462,6 +485,7 @@ export type FormUploadMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   formId?: Prisma.SortOrder
+  draftId?: Prisma.SortOrder
   submissionId?: Prisma.SortOrder
   fieldId?: Prisma.SortOrder
   storageKey?: Prisma.SortOrder
@@ -601,6 +625,48 @@ export type FormUploadUncheckedUpdateManyWithoutSubmissionNestedInput = {
   deleteMany?: Prisma.FormUploadScalarWhereInput | Prisma.FormUploadScalarWhereInput[]
 }
 
+export type FormUploadCreateNestedManyWithoutDraftInput = {
+  create?: Prisma.XOR<Prisma.FormUploadCreateWithoutDraftInput, Prisma.FormUploadUncheckedCreateWithoutDraftInput> | Prisma.FormUploadCreateWithoutDraftInput[] | Prisma.FormUploadUncheckedCreateWithoutDraftInput[]
+  connectOrCreate?: Prisma.FormUploadCreateOrConnectWithoutDraftInput | Prisma.FormUploadCreateOrConnectWithoutDraftInput[]
+  createMany?: Prisma.FormUploadCreateManyDraftInputEnvelope
+  connect?: Prisma.FormUploadWhereUniqueInput | Prisma.FormUploadWhereUniqueInput[]
+}
+
+export type FormUploadUncheckedCreateNestedManyWithoutDraftInput = {
+  create?: Prisma.XOR<Prisma.FormUploadCreateWithoutDraftInput, Prisma.FormUploadUncheckedCreateWithoutDraftInput> | Prisma.FormUploadCreateWithoutDraftInput[] | Prisma.FormUploadUncheckedCreateWithoutDraftInput[]
+  connectOrCreate?: Prisma.FormUploadCreateOrConnectWithoutDraftInput | Prisma.FormUploadCreateOrConnectWithoutDraftInput[]
+  createMany?: Prisma.FormUploadCreateManyDraftInputEnvelope
+  connect?: Prisma.FormUploadWhereUniqueInput | Prisma.FormUploadWhereUniqueInput[]
+}
+
+export type FormUploadUpdateManyWithoutDraftNestedInput = {
+  create?: Prisma.XOR<Prisma.FormUploadCreateWithoutDraftInput, Prisma.FormUploadUncheckedCreateWithoutDraftInput> | Prisma.FormUploadCreateWithoutDraftInput[] | Prisma.FormUploadUncheckedCreateWithoutDraftInput[]
+  connectOrCreate?: Prisma.FormUploadCreateOrConnectWithoutDraftInput | Prisma.FormUploadCreateOrConnectWithoutDraftInput[]
+  upsert?: Prisma.FormUploadUpsertWithWhereUniqueWithoutDraftInput | Prisma.FormUploadUpsertWithWhereUniqueWithoutDraftInput[]
+  createMany?: Prisma.FormUploadCreateManyDraftInputEnvelope
+  set?: Prisma.FormUploadWhereUniqueInput | Prisma.FormUploadWhereUniqueInput[]
+  disconnect?: Prisma.FormUploadWhereUniqueInput | Prisma.FormUploadWhereUniqueInput[]
+  delete?: Prisma.FormUploadWhereUniqueInput | Prisma.FormUploadWhereUniqueInput[]
+  connect?: Prisma.FormUploadWhereUniqueInput | Prisma.FormUploadWhereUniqueInput[]
+  update?: Prisma.FormUploadUpdateWithWhereUniqueWithoutDraftInput | Prisma.FormUploadUpdateWithWhereUniqueWithoutDraftInput[]
+  updateMany?: Prisma.FormUploadUpdateManyWithWhereWithoutDraftInput | Prisma.FormUploadUpdateManyWithWhereWithoutDraftInput[]
+  deleteMany?: Prisma.FormUploadScalarWhereInput | Prisma.FormUploadScalarWhereInput[]
+}
+
+export type FormUploadUncheckedUpdateManyWithoutDraftNestedInput = {
+  create?: Prisma.XOR<Prisma.FormUploadCreateWithoutDraftInput, Prisma.FormUploadUncheckedCreateWithoutDraftInput> | Prisma.FormUploadCreateWithoutDraftInput[] | Prisma.FormUploadUncheckedCreateWithoutDraftInput[]
+  connectOrCreate?: Prisma.FormUploadCreateOrConnectWithoutDraftInput | Prisma.FormUploadCreateOrConnectWithoutDraftInput[]
+  upsert?: Prisma.FormUploadUpsertWithWhereUniqueWithoutDraftInput | Prisma.FormUploadUpsertWithWhereUniqueWithoutDraftInput[]
+  createMany?: Prisma.FormUploadCreateManyDraftInputEnvelope
+  set?: Prisma.FormUploadWhereUniqueInput | Prisma.FormUploadWhereUniqueInput[]
+  disconnect?: Prisma.FormUploadWhereUniqueInput | Prisma.FormUploadWhereUniqueInput[]
+  delete?: Prisma.FormUploadWhereUniqueInput | Prisma.FormUploadWhereUniqueInput[]
+  connect?: Prisma.FormUploadWhereUniqueInput | Prisma.FormUploadWhereUniqueInput[]
+  update?: Prisma.FormUploadUpdateWithWhereUniqueWithoutDraftInput | Prisma.FormUploadUpdateWithWhereUniqueWithoutDraftInput[]
+  updateMany?: Prisma.FormUploadUpdateManyWithWhereWithoutDraftInput | Prisma.FormUploadUpdateManyWithWhereWithoutDraftInput[]
+  deleteMany?: Prisma.FormUploadScalarWhereInput | Prisma.FormUploadScalarWhereInput[]
+}
+
 export type FormUploadCreateWithoutTenantInput = {
   id?: string
   fieldId?: string | null
@@ -609,6 +675,7 @@ export type FormUploadCreateWithoutTenantInput = {
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
+  draft?: Prisma.FormDraftCreateNestedOneWithoutUploadsInput
   form: Prisma.FormCreateNestedOneWithoutUploadsInput
   submission?: Prisma.FormSubmissionCreateNestedOneWithoutUploadsInput
 }
@@ -616,6 +683,7 @@ export type FormUploadCreateWithoutTenantInput = {
 export type FormUploadUncheckedCreateWithoutTenantInput = {
   id?: string
   formId: string
+  draftId?: string | null
   submissionId?: string | null
   fieldId?: string | null
   storageKey: string
@@ -658,6 +726,7 @@ export type FormUploadScalarWhereInput = {
   id?: Prisma.StringFilter<"FormUpload"> | string
   tenantId?: Prisma.StringFilter<"FormUpload"> | string
   formId?: Prisma.StringFilter<"FormUpload"> | string
+  draftId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   submissionId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   fieldId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   storageKey?: Prisma.StringFilter<"FormUpload"> | string
@@ -675,6 +744,7 @@ export type FormUploadCreateWithoutFormInput = {
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
+  draft?: Prisma.FormDraftCreateNestedOneWithoutUploadsInput
   submission?: Prisma.FormSubmissionCreateNestedOneWithoutUploadsInput
   tenant: Prisma.TenantCreateNestedOneWithoutFormUploadsInput
 }
@@ -682,6 +752,7 @@ export type FormUploadCreateWithoutFormInput = {
 export type FormUploadUncheckedCreateWithoutFormInput = {
   id?: string
   tenantId: string
+  draftId?: string | null
   submissionId?: string | null
   fieldId?: string | null
   storageKey: string
@@ -725,6 +796,7 @@ export type FormUploadCreateWithoutSubmissionInput = {
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
+  draft?: Prisma.FormDraftCreateNestedOneWithoutUploadsInput
   form: Prisma.FormCreateNestedOneWithoutUploadsInput
   tenant: Prisma.TenantCreateNestedOneWithoutFormUploadsInput
 }
@@ -733,6 +805,7 @@ export type FormUploadUncheckedCreateWithoutSubmissionInput = {
   id?: string
   tenantId: string
   formId: string
+  draftId?: string | null
   fieldId?: string | null
   storageKey: string
   fileName: string
@@ -767,9 +840,62 @@ export type FormUploadUpdateManyWithWhereWithoutSubmissionInput = {
   data: Prisma.XOR<Prisma.FormUploadUpdateManyMutationInput, Prisma.FormUploadUncheckedUpdateManyWithoutSubmissionInput>
 }
 
+export type FormUploadCreateWithoutDraftInput = {
+  id?: string
+  fieldId?: string | null
+  storageKey: string
+  fileName: string
+  mimeType: string
+  sizeBytes: number
+  createdAt?: Date | string
+  form: Prisma.FormCreateNestedOneWithoutUploadsInput
+  submission?: Prisma.FormSubmissionCreateNestedOneWithoutUploadsInput
+  tenant: Prisma.TenantCreateNestedOneWithoutFormUploadsInput
+}
+
+export type FormUploadUncheckedCreateWithoutDraftInput = {
+  id?: string
+  tenantId: string
+  formId: string
+  submissionId?: string | null
+  fieldId?: string | null
+  storageKey: string
+  fileName: string
+  mimeType: string
+  sizeBytes: number
+  createdAt?: Date | string
+}
+
+export type FormUploadCreateOrConnectWithoutDraftInput = {
+  where: Prisma.FormUploadWhereUniqueInput
+  create: Prisma.XOR<Prisma.FormUploadCreateWithoutDraftInput, Prisma.FormUploadUncheckedCreateWithoutDraftInput>
+}
+
+export type FormUploadCreateManyDraftInputEnvelope = {
+  data: Prisma.FormUploadCreateManyDraftInput | Prisma.FormUploadCreateManyDraftInput[]
+  skipDuplicates?: boolean
+}
+
+export type FormUploadUpsertWithWhereUniqueWithoutDraftInput = {
+  where: Prisma.FormUploadWhereUniqueInput
+  update: Prisma.XOR<Prisma.FormUploadUpdateWithoutDraftInput, Prisma.FormUploadUncheckedUpdateWithoutDraftInput>
+  create: Prisma.XOR<Prisma.FormUploadCreateWithoutDraftInput, Prisma.FormUploadUncheckedCreateWithoutDraftInput>
+}
+
+export type FormUploadUpdateWithWhereUniqueWithoutDraftInput = {
+  where: Prisma.FormUploadWhereUniqueInput
+  data: Prisma.XOR<Prisma.FormUploadUpdateWithoutDraftInput, Prisma.FormUploadUncheckedUpdateWithoutDraftInput>
+}
+
+export type FormUploadUpdateManyWithWhereWithoutDraftInput = {
+  where: Prisma.FormUploadScalarWhereInput
+  data: Prisma.XOR<Prisma.FormUploadUpdateManyMutationInput, Prisma.FormUploadUncheckedUpdateManyWithoutDraftInput>
+}
+
 export type FormUploadCreateManyTenantInput = {
   id?: string
   formId: string
+  draftId?: string | null
   submissionId?: string | null
   fieldId?: string | null
   storageKey: string
@@ -787,6 +913,7 @@ export type FormUploadUpdateWithoutTenantInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  draft?: Prisma.FormDraftUpdateOneWithoutUploadsNestedInput
   form?: Prisma.FormUpdateOneRequiredWithoutUploadsNestedInput
   submission?: Prisma.FormSubmissionUpdateOneWithoutUploadsNestedInput
 }
@@ -794,6 +921,7 @@ export type FormUploadUpdateWithoutTenantInput = {
 export type FormUploadUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   formId?: Prisma.StringFieldUpdateOperationsInput | string
+  draftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submissionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -806,6 +934,7 @@ export type FormUploadUncheckedUpdateWithoutTenantInput = {
 export type FormUploadUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   formId?: Prisma.StringFieldUpdateOperationsInput | string
+  draftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submissionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -818,6 +947,7 @@ export type FormUploadUncheckedUpdateManyWithoutTenantInput = {
 export type FormUploadCreateManyFormInput = {
   id?: string
   tenantId: string
+  draftId?: string | null
   submissionId?: string | null
   fieldId?: string | null
   storageKey: string
@@ -835,6 +965,7 @@ export type FormUploadUpdateWithoutFormInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  draft?: Prisma.FormDraftUpdateOneWithoutUploadsNestedInput
   submission?: Prisma.FormSubmissionUpdateOneWithoutUploadsNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutFormUploadsNestedInput
 }
@@ -842,6 +973,7 @@ export type FormUploadUpdateWithoutFormInput = {
 export type FormUploadUncheckedUpdateWithoutFormInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  draftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submissionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -854,6 +986,7 @@ export type FormUploadUncheckedUpdateWithoutFormInput = {
 export type FormUploadUncheckedUpdateManyWithoutFormInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  draftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submissionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -867,6 +1000,7 @@ export type FormUploadCreateManySubmissionInput = {
   id?: string
   tenantId: string
   formId: string
+  draftId?: string | null
   fieldId?: string | null
   storageKey: string
   fileName: string
@@ -883,6 +1017,7 @@ export type FormUploadUpdateWithoutSubmissionInput = {
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  draft?: Prisma.FormDraftUpdateOneWithoutUploadsNestedInput
   form?: Prisma.FormUpdateOneRequiredWithoutUploadsNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutFormUploadsNestedInput
 }
@@ -891,6 +1026,7 @@ export type FormUploadUncheckedUpdateWithoutSubmissionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   formId?: Prisma.StringFieldUpdateOperationsInput | string
+  draftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -903,6 +1039,59 @@ export type FormUploadUncheckedUpdateManyWithoutSubmissionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   formId?: Prisma.StringFieldUpdateOperationsInput | string
+  draftId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type FormUploadCreateManyDraftInput = {
+  id?: string
+  tenantId: string
+  formId: string
+  submissionId?: string | null
+  fieldId?: string | null
+  storageKey: string
+  fileName: string
+  mimeType: string
+  sizeBytes: number
+  createdAt?: Date | string
+}
+
+export type FormUploadUpdateWithoutDraftInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  form?: Prisma.FormUpdateOneRequiredWithoutUploadsNestedInput
+  submission?: Prisma.FormSubmissionUpdateOneWithoutUploadsNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutFormUploadsNestedInput
+}
+
+export type FormUploadUncheckedUpdateWithoutDraftInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  formId?: Prisma.StringFieldUpdateOperationsInput | string
+  submissionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type FormUploadUncheckedUpdateManyWithoutDraftInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  formId?: Prisma.StringFieldUpdateOperationsInput | string
+  submissionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -917,6 +1106,7 @@ export type FormUploadSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   id?: boolean
   tenantId?: boolean
   formId?: boolean
+  draftId?: boolean
   submissionId?: boolean
   fieldId?: boolean
   storageKey?: boolean
@@ -924,6 +1114,7 @@ export type FormUploadSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   mimeType?: boolean
   sizeBytes?: boolean
   createdAt?: boolean
+  draft?: boolean | Prisma.FormUpload$draftArgs<ExtArgs>
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   submission?: boolean | Prisma.FormUpload$submissionArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
@@ -933,6 +1124,7 @@ export type FormUploadSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   id?: boolean
   tenantId?: boolean
   formId?: boolean
+  draftId?: boolean
   submissionId?: boolean
   fieldId?: boolean
   storageKey?: boolean
@@ -940,6 +1132,7 @@ export type FormUploadSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   mimeType?: boolean
   sizeBytes?: boolean
   createdAt?: boolean
+  draft?: boolean | Prisma.FormUpload$draftArgs<ExtArgs>
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   submission?: boolean | Prisma.FormUpload$submissionArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
@@ -949,6 +1142,7 @@ export type FormUploadSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   id?: boolean
   tenantId?: boolean
   formId?: boolean
+  draftId?: boolean
   submissionId?: boolean
   fieldId?: boolean
   storageKey?: boolean
@@ -956,6 +1150,7 @@ export type FormUploadSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   mimeType?: boolean
   sizeBytes?: boolean
   createdAt?: boolean
+  draft?: boolean | Prisma.FormUpload$draftArgs<ExtArgs>
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   submission?: boolean | Prisma.FormUpload$submissionArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
@@ -965,6 +1160,7 @@ export type FormUploadSelectScalar = {
   id?: boolean
   tenantId?: boolean
   formId?: boolean
+  draftId?: boolean
   submissionId?: boolean
   fieldId?: boolean
   storageKey?: boolean
@@ -974,18 +1170,21 @@ export type FormUploadSelectScalar = {
   createdAt?: boolean
 }
 
-export type FormUploadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "formId" | "submissionId" | "fieldId" | "storageKey" | "fileName" | "mimeType" | "sizeBytes" | "createdAt", ExtArgs["result"]["formUpload"]>
+export type FormUploadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "formId" | "draftId" | "submissionId" | "fieldId" | "storageKey" | "fileName" | "mimeType" | "sizeBytes" | "createdAt", ExtArgs["result"]["formUpload"]>
 export type FormUploadInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  draft?: boolean | Prisma.FormUpload$draftArgs<ExtArgs>
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   submission?: boolean | Prisma.FormUpload$submissionArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }
 export type FormUploadIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  draft?: boolean | Prisma.FormUpload$draftArgs<ExtArgs>
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   submission?: boolean | Prisma.FormUpload$submissionArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
 }
 export type FormUploadIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  draft?: boolean | Prisma.FormUpload$draftArgs<ExtArgs>
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   submission?: boolean | Prisma.FormUpload$submissionArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
@@ -994,6 +1193,7 @@ export type FormUploadIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.E
 export type $FormUploadPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "FormUpload"
   objects: {
+    draft: Prisma.$FormDraftPayload<ExtArgs> | null
     form: Prisma.$FormPayload<ExtArgs>
     submission: Prisma.$FormSubmissionPayload<ExtArgs> | null
     tenant: Prisma.$TenantPayload<ExtArgs>
@@ -1002,6 +1202,7 @@ export type $FormUploadPayload<ExtArgs extends runtime.Types.Extensions.Internal
     id: string
     tenantId: string
     formId: string
+    draftId: string | null
     submissionId: string | null
     fieldId: string | null
     storageKey: string
@@ -1403,6 +1604,7 @@ readonly fields: FormUploadFieldRefs;
  */
 export interface Prisma__FormUploadClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  draft<T extends Prisma.FormUpload$draftArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormUpload$draftArgs<ExtArgs>>): Prisma.Prisma__FormDraftClient<runtime.Types.Result.GetResult<Prisma.$FormDraftPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   form<T extends Prisma.FormDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormDefaultArgs<ExtArgs>>): Prisma.Prisma__FormClient<runtime.Types.Result.GetResult<Prisma.$FormPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   submission<T extends Prisma.FormUpload$submissionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormUpload$submissionArgs<ExtArgs>>): Prisma.Prisma__FormSubmissionClient<runtime.Types.Result.GetResult<Prisma.$FormSubmissionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
@@ -1438,6 +1640,7 @@ export interface FormUploadFieldRefs {
   readonly id: Prisma.FieldRef<"FormUpload", 'String'>
   readonly tenantId: Prisma.FieldRef<"FormUpload", 'String'>
   readonly formId: Prisma.FieldRef<"FormUpload", 'String'>
+  readonly draftId: Prisma.FieldRef<"FormUpload", 'String'>
   readonly submissionId: Prisma.FieldRef<"FormUpload", 'String'>
   readonly fieldId: Prisma.FieldRef<"FormUpload", 'String'>
   readonly storageKey: Prisma.FieldRef<"FormUpload", 'String'>
@@ -1838,6 +2041,25 @@ export type FormUploadDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Limit how many FormUploads to delete.
    */
   limit?: number
+}
+
+/**
+ * FormUpload.draft
+ */
+export type FormUpload$draftArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FormDraft
+   */
+  select?: Prisma.FormDraftSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FormDraft
+   */
+  omit?: Prisma.FormDraftOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FormDraftInclude<ExtArgs> | null
+  where?: Prisma.FormDraftWhereInput
 }
 
 /**

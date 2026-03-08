@@ -149,6 +149,18 @@ export const RATE_LIMIT_CONFIGS = {
     maxRequests: 20,
     windowMs: 60 * 1000, // 1 minute
   } as RateLimitConfig,
+
+  /** Public form draft save: 15 per minute per IP+slug */
+  FORM_DRAFT_SAVE: {
+    maxRequests: 15,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
+
+  /** Public form draft resume: 10 per minute per IP+slug */
+  FORM_DRAFT_RESUME: {
+    maxRequests: 10,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
 } as const;
 
 // ============================================================================

@@ -40,6 +40,7 @@ model Tenant {
   documents                          Document[]
   exchangeRates                      ExchangeRate[]
   formFields                         FormField[]
+  formDrafts                         FormDraft[]
   formSubmissions                    FormSubmission[]
   formUploads                        FormUpload[]
   forms                              Form[]
@@ -1565,6 +1566,7 @@ model Form {
   updatedAt        DateTime         @updatedAt @map("updated_at")
   deletedAt        DateTime?        @map("deleted_at")
   fields           FormField[]
+  drafts           FormDraft[]
   submissions      FormSubmission[]
   tenant           Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploads          FormUpload[]
@@ -1625,10 +1627,33 @@ model FormSubmission {
   @@map("form_submissions")
 }
 
+model FormDraft {
+  id              String       @id @default(uuid())
+  code            String       @unique
+  accessTokenHash String       @unique @map("access_token_hash")
+  formId          String       @map("form_id")
+  tenantId        String       @map("tenant_id")
+  answers         Json
+  metadata        Json?
+  expiresAt       DateTime     @map("expires_at")
+  lastSavedAt     DateTime     @default(now()) @map("last_saved_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  form            Form         @relation(fields: [formId], references: [id], onDelete: Cascade)
+  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploads         FormUpload[]
+
+  @@index([formId, expiresAt])
+  @@index([tenantId, expiresAt])
+  @@index([lastSavedAt])
+  @@map("form_drafts")
+}
+
 model FormUpload {
   id           String          @id @default(uuid())
   tenantId     String          @map("tenant_id")
   formId       String          @map("form_id")
+  draftId      String?         @map("draft_id")
   submissionId String?         @map("submission_id")
   fieldId      String?         @map("field_id")
   storageKey   String          @map("storage_key")
@@ -1636,10 +1661,12 @@ model FormUpload {
   mimeType     String          @map("mime_type")
   sizeBytes    Int             @map("size_bytes")
   createdAt    DateTime        @default(now()) @map("created_at")
+  draft        FormDraft?      @relation(fields: [draftId], references: [id], onDelete: Cascade)
   form         Form            @relation(fields: [formId], references: [id], onDelete: Cascade)
   submission   FormSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
   tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@index([draftId])
   @@index([formId, createdAt])
   @@index([submissionId])
   @@index([tenantId, formId])

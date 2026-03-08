@@ -15,6 +15,7 @@ const log = createLogger('cleanup-task');
 
 // Lazy-loaded backup service reference
 let backupServiceInstance: typeof import('@/services/backup.service').backupService | null = null;
+let formBuilderServiceInstance: typeof import('@/services/form-builder.service') | null = null;
 
 /**
  * Get backup service (lazy-loaded to avoid chunking issues in instrumentation context)
@@ -36,6 +37,13 @@ async function getBackupService(): Promise<typeof import('@/services/backup.serv
   return backupServiceInstance;
 }
 
+async function getFormBuilderService(): Promise<typeof import('@/services/form-builder.service')> {
+  if (!formBuilderServiceInstance) {
+    formBuilderServiceInstance = await import('../../../services/form-builder.service');
+  }
+  return formBuilderServiceInstance;
+}
+
 /**
  * Execute cleanup task
  *
@@ -45,12 +53,21 @@ async function executeCleanupTask(): Promise<TaskResult> {
   log.info('Running backup cleanup...');
 
   try {
-    const backupService = await getBackupService();
-    const result = await backupService.runCleanup();
+    const [backupService, formBuilderService] = await Promise.all([
+      getBackupService(),
+      getFormBuilderService(),
+    ]);
+    const [result, deletedExpiredDrafts, deletedOrphanedUploads] = await Promise.all([
+      backupService.runCleanup(),
+      formBuilderService.cleanupExpiredFormDrafts(),
+      formBuilderService.cleanupOrphanedUploads(),
+    ]);
 
     const message = [
       `Stale: ${result.staleBackups.markedFailedCount}/${result.staleBackups.staleCount} marked failed`,
       `Expired: ${result.expiredBackups.deletedCount}/${result.expiredBackups.expiredCount} deleted`,
+      `Form drafts: ${deletedExpiredDrafts} deleted`,
+      `Orphan uploads: ${deletedOrphanedUploads} deleted`,
     ].join('; ');
 
     const hasErrors = result.expiredBackups.failedCount > 0;
@@ -64,6 +81,10 @@ async function executeCleanupTask(): Promise<TaskResult> {
           scanned: result.expiredBackups.scannedCount,
           deleted: result.expiredBackups.deletedCount,
           failed: result.expiredBackups.failedCount,
+        },
+        forms: {
+          deletedExpiredDrafts,
+          deletedOrphanedUploads,
         },
       },
       error: hasErrors ? `${result.expiredBackups.failedCount} cleanup errors` : undefined,

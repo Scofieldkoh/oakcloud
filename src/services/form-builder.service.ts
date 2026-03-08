@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from 'crypto';
+import { createHash, randomBytes, randomInt, randomUUID } from 'crypto';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import {
   FormFieldType,
@@ -6,6 +6,7 @@ import {
   Prisma,
   FormSubmissionStatus,
   type Form,
+  type FormDraft,
   type FormField,
   type FormSubmission,
   type FormUpload,
@@ -18,6 +19,7 @@ import {
   formatChoiceAnswer,
   isEmptyValue,
   evaluateCondition,
+  parseFormDraftSettings,
   parseFormFileNameSettings,
   parseFormNotificationSettings,
   type PublicFormField,
@@ -32,6 +34,7 @@ import type {
   CreateFormInput,
   FormFieldInput,
   ListFormsQueryInput,
+  PublicDraftSaveInput,
   PublicSubmissionInput,
   UpdateFormInput,
 } from '@/lib/validations/form-builder';
@@ -62,7 +65,23 @@ export interface FormResponsesResult {
   page: number;
   limit: number;
   totalPages: number;
+  drafts: FormResponseDraftListItem[];
+  draftTotal: number;
+  draftPage: number;
+  draftLimit: number;
+  draftTotalPages: number;
   chart: Array<{ date: string; responses: number }>;
+}
+
+export interface FormResponseDraftListItem {
+  id: string;
+  code: string;
+  answers: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  expiresAt: Date;
+  lastSavedAt: Date;
+  createdAt: Date;
+  uploadCount: number;
 }
 
 export interface FormResponseDetailResult {
@@ -82,6 +101,27 @@ export interface RecentFormSubmissionItem {
   status: FormSubmissionStatus;
 }
 
+export interface PublicDraftSaveResult {
+  draftCode: string;
+  accessToken: string;
+  resumeUrl: string;
+  expiresAt: Date;
+  savedAt: Date;
+}
+
+export interface PublicDraftUploadStatus {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
+export interface PublicDraftResumeResult extends PublicDraftSaveResult {
+  answers: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  uploadsByFieldKey: Record<string, PublicDraftUploadStatus>;
+}
+
 export type { PublicFormField, PublicFormDefinition };
 
 const MAX_SLUG_ATTEMPTS = 10;
@@ -98,6 +138,10 @@ const DATA_IMAGE_URI_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,/i;
 const FILE_NAME_FALLBACK = 'file';
 const FILE_NAME_MAX_LENGTH = 220;
 const DEFAULT_TENANT_TIME_ZONE = 'Asia/Singapore';
+const DRAFT_CODE_LENGTH = 5;
+const DRAFT_CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const DRAFT_ACCESS_TOKEN_BYTES = 24;
+const MAX_DRAFT_CODE_ATTEMPTS = 20;
 const log = createLogger('form-builder');
 
 function toAnswerRecord(value: unknown): Record<string, unknown> {
@@ -1381,6 +1425,14 @@ export async function duplicateForm(
         createdById: params.userId,
         updatedById: params.userId,
       },
+      include: {
+        tenant: {
+          select: {
+            logoUrl: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (source.fields.length > 0) {
@@ -1412,7 +1464,12 @@ export async function duplicateForm(
       orderBy: { position: 'asc' },
     });
 
-    return { ...form, fields };
+    return {
+      ...form,
+      fields,
+      tenantLogoUrl: form.tenant?.logoUrl ?? null,
+      tenantName: form.tenant?.name ?? null,
+    };
   });
 
   await createAuditLog({
@@ -1471,7 +1528,9 @@ export async function getFormResponses(
   formId: string,
   tenantId: string,
   page: number,
-  limit: number
+  limit: number,
+  draftPage: number = 1,
+  draftLimit: number = 20
 ): Promise<FormResponsesResult> {
   const form = await prisma.form.findFirst({
     where: { id: formId, tenantId, deletedAt: null },
@@ -1482,7 +1541,15 @@ export async function getFormResponses(
     throw new Error('Form not found');
   }
 
-  const [submissions, total, recentSubmissions] = await Promise.all([
+  const activeDraftWhere = {
+    formId,
+    tenantId,
+    expiresAt: {
+      gt: new Date(),
+    },
+  } satisfies Prisma.FormDraftWhereInput;
+
+  const [submissions, total, recentSubmissions, drafts, draftTotal] = await Promise.all([
     prisma.formSubmission.findMany({
       where: { formId },
       orderBy: { submittedAt: 'desc' },
@@ -1498,6 +1565,29 @@ export async function getFormResponses(
         },
       },
       select: { submittedAt: true },
+    }),
+    prisma.formDraft.findMany({
+      where: activeDraftWhere,
+      orderBy: { lastSavedAt: 'desc' },
+      skip: (draftPage - 1) * draftLimit,
+      take: draftLimit,
+      select: {
+        id: true,
+        code: true,
+        answers: true,
+        metadata: true,
+        expiresAt: true,
+        lastSavedAt: true,
+        createdAt: true,
+        _count: {
+          select: {
+            uploads: true,
+          },
+        },
+      },
+    }),
+    prisma.formDraft.count({
+      where: activeDraftWhere,
     }),
   ]);
 
@@ -1522,6 +1612,20 @@ export async function getFormResponses(
     page,
     limit,
     totalPages: Math.ceil(total / limit),
+    drafts: drafts.map((draft) => ({
+      id: draft.id,
+      code: draft.code,
+      answers: toAnswerRecord(draft.answers),
+      metadata: parseObject(draft.metadata) || {},
+      expiresAt: draft.expiresAt,
+      lastSavedAt: draft.lastSavedAt,
+      createdAt: draft.createdAt,
+      uploadCount: draft._count.uploads,
+    })),
+    draftTotal,
+    draftPage,
+    draftLimit,
+    draftTotalPages: Math.ceil(draftTotal / draftLimit),
     chart: Array.from(chartMap.entries()).map(([date, responses]) => ({ date, responses })),
   };
 }
@@ -1702,6 +1806,652 @@ export async function getPublicFormBySlug(slug: string): Promise<PublicFormDefin
   };
 }
 
+function normalizeUploadIds(uploadIds?: string[]): string[] {
+  return [...new Set((uploadIds || []).filter((id) => typeof id === 'string' && UPLOAD_ID_PATTERN.test(id)))];
+}
+
+function collectUploadIdsFromAnswer(value: unknown): string[] {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+
+  if (!Array.isArray(value)) return [];
+
+  const ids: string[] = [];
+  for (const item of value) {
+    ids.push(...collectUploadIdsFromAnswer(item));
+  }
+  return ids;
+}
+
+function hasItemValue(item: unknown): boolean {
+  if (isEmptyValue(item)) return false;
+  const itemRecord = parseObject(item);
+  if (itemRecord && 'value' in itemRecord) {
+    return typeof itemRecord.value === 'string' && itemRecord.value.trim().length > 0;
+  }
+  return true;
+}
+
+function sanitizeChoiceEntry(entry: unknown): string | { value: string; detailText?: string } | null {
+  if (typeof entry === 'string') {
+    const trimmed = entry.trim();
+    if (!trimmed) return null;
+    return trimmed.slice(0, 10_000);
+  }
+
+  const record = parseObject(entry);
+  if (!record) return null;
+  const valueText = typeof record.value === 'string' ? record.value.trim() : '';
+  if (!valueText) return null;
+  const detailTextRaw = typeof record.detailText === 'string' ? record.detailText.trim() : '';
+  const detailText = detailTextRaw ? detailTextRaw.slice(0, 10_000) : '';
+
+  if (!detailText) {
+    return { value: valueText.slice(0, 10_000) };
+  }
+
+  return {
+    value: valueText.slice(0, 10_000),
+    detailText,
+  };
+}
+
+function applyDefaultTodayAnswers(
+  fields: FormField[],
+  inputAnswers: Record<string, unknown>
+): Record<string, unknown> {
+  const answers = { ...inputAnswers };
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  for (const field of fields) {
+    if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') continue;
+    const validation = parseObject(field.validation);
+    if (validation?.defaultToday !== true) continue;
+
+    const currentValue = answers[field.key];
+    if (Array.isArray(currentValue)) {
+      answers[field.key] = currentValue.map((rowValue) => (isEmptyValue(rowValue) ? todayIso : rowValue));
+      continue;
+    }
+
+    if (isEmptyValue(currentValue)) {
+      answers[field.key] = todayIso;
+    }
+  }
+
+  return answers;
+}
+
+function getTodayIsoDate(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+function resolveDateBoundary(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return undefined;
+  if (normalized === 'today') return getTodayIsoDate();
+  return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : undefined;
+}
+
+function getDateValidationRange(field: FormField): { minDate?: string; maxDate?: string } {
+  if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return {};
+  const validation = parseObject(field.validation);
+  const minDate = resolveDateBoundary(validation?.minDate);
+  const maxDate = resolveDateBoundary(validation?.maxDate);
+
+  return { minDate, maxDate };
+}
+
+function formatValidationDate(value: string): string {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return value;
+
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const monthLabel = months[month - 1];
+  if (!monthLabel) return value;
+
+  return `${day} ${monthLabel} ${year}`;
+}
+
+function formatValidationNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toString();
+}
+
+function quoteValidationText(value: string): string {
+  return `"${value}"`;
+}
+
+function normalizeNumberValue(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const normalized = trimmed.replace(/,/g, '');
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function evaluateNumberFormula(formula: string, answersRecord: Record<string, unknown>): number | null {
+  const normalizedFormula = formula.trim().replace(/^(>=|<=|>|<|=)\s*/, '');
+  const referenced = normalizedFormula.replace(/\[([a-zA-Z][a-zA-Z0-9_]*)\]/g, (_match, fieldKey: string) => {
+    const resolved = normalizeNumberValue(answersRecord[fieldKey]);
+    return resolved === null ? 'NaN' : String(resolved);
+  });
+
+  if (/[^0-9+\-*/().\s]/.test(referenced)) {
+    return null;
+  }
+
+  try {
+    const result = Function(`"use strict"; return (${referenced});`)();
+    return typeof result === 'number' && Number.isFinite(result) ? result : null;
+  } catch {
+    return null;
+  }
+}
+
+function getRowAnswerContext(answersRecord: Record<string, unknown>, rowIndex?: number): Record<string, unknown> {
+  if (rowIndex === undefined) return answersRecord;
+
+  const context: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(answersRecord)) {
+    context[key] = Array.isArray(value) ? value[rowIndex] : value;
+  }
+  return context;
+}
+
+function validateDateFieldValue(field: FormField, value: unknown): void {
+  if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return;
+  if (typeof value !== 'string') return;
+
+  const normalizedValue = value.trim();
+  if (!normalizedValue) return;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+    throw new Error(`Enter a valid date for ${field.label || field.key}.`);
+  }
+
+  const { minDate, maxDate } = getDateValidationRange(field);
+  if (minDate && normalizedValue < minDate) {
+    throw new Error(`${field.label || field.key} must be on or after ${formatValidationDate(minDate)}.`);
+  }
+  if (maxDate && normalizedValue > maxDate) {
+    throw new Error(`${field.label || field.key} must be on or before ${formatValidationDate(maxDate)}.`);
+  }
+}
+
+function validateTextFieldValue(field: FormField, value: unknown): void {
+  if (field.type !== 'LONG_TEXT' && (field.type !== 'SHORT_TEXT' || field.inputType === 'date' || field.inputType === 'number')) {
+    return;
+  }
+  if (typeof value !== 'string' || value.length === 0) return;
+
+  const validation = parseObject(field.validation);
+  const text = value;
+
+  if (typeof validation?.minLength === 'number' && text.length < validation.minLength) {
+    throw new Error(`${field.label || field.key} must be at least ${validation.minLength} character${validation.minLength === 1 ? '' : 's'}.`);
+  }
+  if (typeof validation?.maxLength === 'number' && text.length > validation.maxLength) {
+    throw new Error(`${field.label || field.key} must be at most ${validation.maxLength} character${validation.maxLength === 1 ? '' : 's'}.`);
+  }
+  if (typeof validation?.startsWith === 'string' && validation.startsWith.length > 0 && !text.startsWith(validation.startsWith)) {
+    throw new Error(`${field.label || field.key} must begin with ${quoteValidationText(validation.startsWith)}.`);
+  }
+  if (typeof validation?.containsText === 'string' && validation.containsText.length > 0 && !text.includes(validation.containsText)) {
+    throw new Error(`${field.label || field.key} must contain ${quoteValidationText(validation.containsText)}.`);
+  }
+  if (typeof validation?.notContainsText === 'string' && validation.notContainsText.length > 0 && text.includes(validation.notContainsText)) {
+    throw new Error(`${field.label || field.key} must not contain ${quoteValidationText(validation.notContainsText)}.`);
+  }
+  if (typeof validation?.endsWith === 'string' && validation.endsWith.length > 0 && !text.endsWith(validation.endsWith)) {
+    throw new Error(`${field.label || field.key} must end with ${quoteValidationText(validation.endsWith)}.`);
+  }
+}
+
+function validateNumberFieldValue(field: FormField, value: unknown, answersRecord: Record<string, unknown>): void {
+  if (field.type !== 'SHORT_TEXT' || field.inputType !== 'number') return;
+  if (value === null || value === undefined || value === '') return;
+
+  const numericValue = normalizeNumberValue(value);
+  if (numericValue === null) {
+    throw new Error(`Enter a valid number for ${field.label || field.key}.`);
+  }
+
+  const validation = parseObject(field.validation);
+  if (typeof validation?.min === 'number' && numericValue < validation.min) {
+    throw new Error(`${field.label || field.key} must be at least ${formatValidationNumber(validation.min)}.`);
+  }
+  if (typeof validation?.max === 'number' && numericValue > validation.max) {
+    throw new Error(`${field.label || field.key} must be at most ${formatValidationNumber(validation.max)}.`);
+  }
+  if (typeof validation?.equal === 'number' && numericValue !== validation.equal) {
+    throw new Error(`${field.label || field.key} must equal ${formatValidationNumber(validation.equal)}.`);
+  }
+  if (typeof validation?.minFormula === 'string' && validation.minFormula.trim().length > 0) {
+    const resolved = evaluateNumberFormula(validation.minFormula, answersRecord);
+    if (resolved !== null && numericValue < resolved) {
+      throw new Error(`${field.label || field.key} must be at least ${formatValidationNumber(resolved)}.`);
+    }
+  }
+  if (typeof validation?.maxFormula === 'string' && validation.maxFormula.trim().length > 0) {
+    const resolved = evaluateNumberFormula(validation.maxFormula, answersRecord);
+    if (resolved !== null && numericValue > resolved) {
+      throw new Error(`${field.label || field.key} must be at most ${formatValidationNumber(resolved)}.`);
+    }
+  }
+  if (typeof validation?.equalFormula === 'string' && validation.equalFormula.trim().length > 0) {
+    const resolved = evaluateNumberFormula(validation.equalFormula, answersRecord);
+    if (resolved !== null && numericValue !== resolved) {
+      throw new Error(`${field.label || field.key} must equal ${formatValidationNumber(resolved)}.`);
+    }
+  }
+}
+
+function validatePublicAnswerConstraints(fields: FormField[], answers: Record<string, unknown>): void {
+  for (const field of fields) {
+    const value = answers[field.key];
+
+    if (Array.isArray(value)) {
+      for (const [index, item] of value.entries()) {
+        validateDateFieldValue(field, item);
+        validateTextFieldValue(field, item);
+        validateNumberFieldValue(field, item, getRowAnswerContext(answers, index));
+      }
+      continue;
+    }
+
+    validateDateFieldValue(field, value);
+    validateTextFieldValue(field, value);
+    validateNumberFieldValue(field, value, answers);
+  }
+}
+
+function validateRequiredFieldValue(
+  field: FormField,
+  answers: Record<string, unknown>,
+  uploadIdSet: Set<string>
+): void {
+  if (!field.isRequired) return;
+
+  const value = answers[field.key];
+
+  if (field.type === 'FILE_UPLOAD') {
+    const referencedUploadIds = collectUploadIdsFromAnswer(value)
+      .filter((id) => UPLOAD_ID_PATTERN.test(id));
+
+    if (referencedUploadIds.length === 0) {
+      throw new Error(`${field.label || field.key} is required`);
+    }
+
+    const hasMissingUpload = referencedUploadIds.some((id) => !uploadIdSet.has(id));
+    if (hasMissingUpload) {
+      throw new Error(`${field.label || field.key} has an invalid upload`);
+    }
+
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    const hasAllValues = value.length > 0 && value.every((item) => hasItemValue(item));
+    if (!hasAllValues) {
+      throw new Error(`${field.label || field.key} is required`);
+    }
+    return;
+  }
+
+  if (!hasItemValue(value)) {
+    throw new Error(`${field.label || field.key} is required`);
+  }
+}
+
+function validateRequiredPublicAnswers(
+  fields: FormField[],
+  answers: Record<string, unknown>,
+  uploadIdSet: Set<string>
+): void {
+  for (let index = 0; index < fields.length; index += 1) {
+    const field = fields[index];
+
+    if (isRepeatStartMarker(field)) {
+      const sectionVisible = evaluateCondition(parseObject(field.condition), answers);
+      let cursor = index + 1;
+
+      while (cursor < fields.length && !isRepeatEndMarker(fields[cursor])) {
+        const sectionField = fields[cursor];
+        if (
+          sectionVisible &&
+          sectionField.type !== 'PAGE_BREAK' &&
+          sectionField.type !== 'PARAGRAPH' &&
+          sectionField.type !== 'HTML' &&
+          sectionField.type !== 'HIDDEN' &&
+          evaluateCondition(parseObject(sectionField.condition), answers)
+        ) {
+          validateRequiredFieldValue(sectionField, answers, uploadIdSet);
+        }
+        cursor += 1;
+      }
+
+      index = cursor;
+      continue;
+    }
+
+    if (
+      field.type === 'PAGE_BREAK' ||
+      field.type === 'PARAGRAPH' ||
+      field.type === 'HTML' ||
+      field.type === 'HIDDEN'
+    ) {
+      continue;
+    }
+
+    if (!evaluateCondition(parseObject(field.condition), answers)) {
+      continue;
+    }
+
+    validateRequiredFieldValue(field, answers, uploadIdSet);
+  }
+}
+
+function sanitizePublicAnswers(
+  fields: FormField[],
+  answers: Record<string, unknown>,
+  uploadIdSet: Set<string>
+): Record<string, unknown> {
+  const validKeys = new Set(fields.map((field) => field.key));
+  const fieldsByKey = new Map(fields.map((field) => [field.key, field]));
+  const sanitizedAnswers: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(answers)) {
+    if (!validKeys.has(key)) continue;
+
+    const field = fieldsByKey.get(key);
+    if (!field) continue;
+
+    switch (field.type) {
+      case 'SHORT_TEXT':
+      case 'LONG_TEXT':
+      case 'DROPDOWN':
+        if (typeof value === 'string') {
+          sanitizedAnswers[key] = value.slice(0, 10_000);
+        } else if (Array.isArray(value)) {
+          sanitizedAnswers[key] = value
+            .slice(0, 100)
+            .map((item) => (typeof item === 'string' ? item.slice(0, 10_000) : ''));
+        }
+        break;
+      case 'SINGLE_CHOICE':
+        if (Array.isArray(value)) {
+          sanitizedAnswers[key] = value
+            .slice(0, 100)
+            .map((entry) => sanitizeChoiceEntry(entry) ?? '');
+        } else {
+          const singleValue = sanitizeChoiceEntry(value);
+          if (singleValue) {
+            sanitizedAnswers[key] = singleValue;
+          }
+        }
+        break;
+      case 'MULTIPLE_CHOICE':
+        if (Array.isArray(value)) {
+          sanitizedAnswers[key] = value.slice(0, 100).map((entry) => {
+            if (Array.isArray(entry)) {
+              return entry
+                .slice(0, 100)
+                .map((candidate) => sanitizeChoiceEntry(candidate))
+                .map((candidate) => candidate ?? '');
+            }
+            return sanitizeChoiceEntry(entry) ?? '';
+          });
+        }
+        break;
+      case 'FILE_UPLOAD': {
+        const referencedUploadIds = collectUploadIdsFromAnswer(value)
+          .filter((id) => UPLOAD_ID_PATTERN.test(id) && uploadIdSet.has(id))
+          .slice(0, 100);
+
+        if (referencedUploadIds.length > 0) {
+          sanitizedAnswers[key] = referencedUploadIds;
+        }
+        break;
+      }
+      case 'SIGNATURE':
+        if (typeof value === 'string') {
+          sanitizedAnswers[key] = value.slice(0, 500_000);
+        } else if (Array.isArray(value)) {
+          sanitizedAnswers[key] = value
+            .slice(0, 100)
+            .map((item) => (typeof item === 'string' ? item.slice(0, 500_000) : ''));
+        }
+        break;
+      case 'HIDDEN':
+        if (typeof value === 'string') {
+          sanitizedAnswers[key] = value.slice(0, 10_000);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  return sanitizedAnswers;
+}
+
+function normalizeDraftMetadata(metadata: unknown): Record<string, unknown> {
+  const raw = parseObject(metadata);
+  if (!raw) return {};
+
+  const normalized: Record<string, unknown> = {};
+
+  if (typeof raw.locale === 'string' && raw.locale.trim().length > 0) {
+    normalized.locale = raw.locale.trim().slice(0, 32);
+  }
+
+  if (typeof raw.userAgent === 'string' && raw.userAgent.trim().length > 0) {
+    normalized.userAgent = raw.userAgent.trim().slice(0, 500);
+  }
+
+  const repeatSectionCounts = parseObject(raw.repeatSectionCounts);
+  if (repeatSectionCounts) {
+    const nextCounts: Record<string, number> = {};
+    for (const [key, value] of Object.entries(repeatSectionCounts)) {
+      const normalizedKey = key.trim();
+      if (!normalizedKey) continue;
+      if (typeof value !== 'number' || !Number.isFinite(value)) continue;
+      nextCounts[normalizedKey] = Math.max(1, Math.min(50, Math.trunc(value)));
+    }
+    if (Object.keys(nextCounts).length > 0) {
+      normalized.repeatSectionCounts = nextCounts;
+    }
+  }
+
+  return normalized;
+}
+
+function generateDraftCode(): string {
+  let result = '';
+  for (let index = 0; index < DRAFT_CODE_LENGTH; index += 1) {
+    result += DRAFT_CODE_ALPHABET[randomInt(0, DRAFT_CODE_ALPHABET.length)];
+  }
+  return result;
+}
+
+function generateDraftAccessToken(): string {
+  return randomBytes(DRAFT_ACCESS_TOKEN_BYTES).toString('base64url');
+}
+
+function hashDraftAccessToken(accessToken: string): string {
+  return createHash('sha256').update(accessToken).digest('hex');
+}
+
+function buildDraftResumeUrl(slug: string, draftCode: string, accessToken: string): string {
+  const params = new URLSearchParams({
+    draft: draftCode,
+    resume: accessToken,
+  });
+  return `${getAppBaseUrl()}/forms/f/${encodeURIComponent(slug)}?${params.toString()}`;
+}
+
+function isUniqueConstraintError(error: unknown, fieldNames: string[]): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
+    return false;
+  }
+
+  const target = Array.isArray(error.meta?.target) ? error.meta.target : [];
+  return fieldNames.some((fieldName) => target.includes(fieldName));
+}
+
+async function createFormDraftRecord(
+  tx: Prisma.TransactionClient,
+  form: Pick<Form, 'id' | 'tenantId'>,
+  answers: Record<string, unknown>,
+  metadata: Record<string, unknown>,
+  expiresAt: Date,
+  lastSavedAt: Date
+): Promise<{ draft: FormDraft; accessToken: string }> {
+  for (let attempt = 0; attempt < MAX_DRAFT_CODE_ATTEMPTS; attempt += 1) {
+    const code = generateDraftCode();
+    const accessToken = generateDraftAccessToken();
+
+    try {
+      const draft = await tx.formDraft.create({
+        data: {
+          code,
+          accessTokenHash: hashDraftAccessToken(accessToken),
+          formId: form.id,
+          tenantId: form.tenantId,
+          answers: answers as Prisma.InputJsonValue,
+          metadata: toJsonInput(metadata),
+          expiresAt,
+          lastSavedAt,
+        },
+      });
+
+      return { draft, accessToken };
+    } catch (error) {
+      if (isUniqueConstraintError(error, ['code', 'access_token_hash'])) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw new Error('Failed to generate draft code');
+}
+
+async function deleteFormDraftsByIds(draftIds: string[]): Promise<number> {
+  if (draftIds.length === 0) return 0;
+
+  const drafts = await prisma.formDraft.findMany({
+    where: {
+      id: { in: draftIds },
+    },
+    select: {
+      id: true,
+      uploads: {
+        select: {
+          storageKey: true,
+        },
+      },
+    },
+  });
+
+  if (drafts.length === 0) return 0;
+
+  await Promise.allSettled(
+    drafts.flatMap((draft) => draft.uploads.map((upload) => storage.delete(upload.storageKey)))
+  );
+
+  const deleted = await prisma.formDraft.deleteMany({
+    where: {
+      id: { in: drafts.map((draft) => draft.id) },
+    },
+  });
+
+  return deleted.count;
+}
+
+async function loadDraftByCode(input: {
+  formId: string;
+  tenantId: string;
+  draftCode: string;
+}): Promise<FormDraft | null> {
+  const draft = await prisma.formDraft.findFirst({
+    where: {
+      code: input.draftCode,
+      formId: input.formId,
+      tenantId: input.tenantId,
+    },
+  });
+
+  if (!draft) {
+    return null;
+  }
+
+  if (draft.expiresAt.getTime() <= Date.now()) {
+    await deleteFormDraftsByIds([draft.id]);
+    return null;
+  }
+
+  return draft;
+}
+
+async function loadDraftByAccess(input: {
+  formId: string;
+  tenantId: string;
+  draftCode: string;
+  accessToken: string;
+}): Promise<FormDraft | null> {
+  const draft = await loadDraftByCode(input);
+
+  if (!draft) {
+    return null;
+  }
+
+  if (draft.accessTokenHash !== hashDraftAccessToken(input.accessToken)) {
+    return null;
+  }
+
+  return draft;
+}
+
+function buildDraftUploadsByFieldKey(
+  fields: FormField[],
+  answers: Record<string, unknown>,
+  uploads: FormUpload[]
+): Record<string, PublicDraftUploadStatus> {
+  const uploadsById = new Map(uploads.map((upload) => [upload.id, upload]));
+  const result: Record<string, PublicDraftUploadStatus> = {};
+
+  for (const field of fields) {
+    if (field.type !== 'FILE_UPLOAD') continue;
+
+    const uploadId = collectUploadIdsFromAnswer(answers[field.key])
+      .find((candidate) => uploadsById.has(candidate));
+
+    if (!uploadId) continue;
+
+    const upload = uploadsById.get(uploadId);
+    if (!upload) continue;
+
+    result[field.key] = {
+      id: upload.id,
+      fileName: upload.fileName,
+      mimeType: upload.mimeType,
+      sizeBytes: upload.sizeBytes,
+    };
+  }
+
+  return result;
+}
+
 
 export async function createPublicUpload(
   slug: string,
@@ -1779,6 +2529,239 @@ export async function createPublicUpload(
   });
 }
 
+export async function savePublicDraft(
+  slug: string,
+  input: PublicDraftSaveInput
+): Promise<PublicDraftSaveResult> {
+  const form = await prisma.form.findFirst({
+    where: {
+      slug,
+      status: 'PUBLISHED',
+      deletedAt: null,
+    },
+    include: {
+      fields: {
+        orderBy: { position: 'asc' },
+      },
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const draftSettings = parseFormDraftSettings(form.settings);
+  if (!draftSettings.enabled) {
+    throw new Error('Draft saving is not enabled for this form');
+  }
+
+  if ((input.draftCode && !input.accessToken) || (!input.draftCode && input.accessToken)) {
+    throw new Error('Draft access is incomplete');
+  }
+
+  const answers = applyDefaultTodayAnswers(form.fields, toAnswerRecord(input.answers));
+  const uploadIds = normalizeUploadIds(input.uploadIds);
+  const uploadIdSet = new Set(uploadIds);
+  const sanitizedAnswers = sanitizePublicAnswers(form.fields, answers, uploadIdSet);
+  const normalizedMetadata = normalizeDraftMetadata(input.metadata);
+  const expiresAt = new Date(Date.now() + draftSettings.autoDeleteDays * 24 * 60 * 60 * 1000);
+  const savedAt = new Date();
+
+  const existingDraft = input.draftCode && input.accessToken
+    ? await loadDraftByAccess({
+      formId: form.id,
+      tenantId: form.tenantId,
+      draftCode: input.draftCode,
+      accessToken: input.accessToken,
+    })
+    : null;
+
+  if (input.draftCode && input.accessToken && !existingDraft) {
+    throw new Error('Draft not found');
+  }
+
+  const persisted = await prisma.$transaction(async (tx) => {
+    const staleUploads = existingDraft
+      ? await tx.formUpload.findMany({
+        where: {
+          formId: form.id,
+          tenantId: form.tenantId,
+          draftId: existingDraft.id,
+          submissionId: null,
+          ...(uploadIds.length > 0 ? { id: { notIn: uploadIds } } : {}),
+        },
+        select: {
+          id: true,
+          storageKey: true,
+        },
+      })
+      : [];
+
+    const createdDraftResult = existingDraft
+      ? null
+      : await createFormDraftRecord(tx, form, sanitizedAnswers, normalizedMetadata, expiresAt, savedAt);
+
+    const draftRecord = existingDraft
+      ? await tx.formDraft.update({
+        where: { id: existingDraft.id },
+        data: {
+          answers: sanitizedAnswers as Prisma.InputJsonValue,
+          metadata: toJsonInput(normalizedMetadata),
+          expiresAt,
+          lastSavedAt: savedAt,
+        },
+      })
+      : createdDraftResult!.draft;
+
+    const accessToken = existingDraft ? input.accessToken! : createdDraftResult!.accessToken;
+
+    if (uploadIds.length > 0) {
+      const availableUploads = await tx.formUpload.findMany({
+        where: {
+          id: { in: uploadIds },
+          formId: form.id,
+          tenantId: form.tenantId,
+          submissionId: null,
+          ...(existingDraft
+            ? {
+              OR: [
+                { draftId: null },
+                { draftId: existingDraft.id },
+              ],
+            }
+            : { draftId: null }),
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (availableUploads.length !== uploadIds.length) {
+        throw new Error('Some uploaded files are invalid or already used');
+      }
+
+      await tx.formUpload.updateMany({
+        where: {
+          id: { in: uploadIds },
+          formId: form.id,
+          tenantId: form.tenantId,
+          submissionId: null,
+        },
+        data: {
+          draftId: draftRecord.id,
+        },
+      });
+    }
+
+    if (staleUploads.length > 0) {
+      await tx.formUpload.deleteMany({
+        where: {
+          id: { in: staleUploads.map((upload) => upload.id) },
+        },
+      });
+    }
+
+    return {
+      draft: draftRecord,
+      accessToken,
+      staleUploads,
+    };
+  });
+
+  if (persisted.staleUploads.length > 0) {
+    await Promise.allSettled(
+      persisted.staleUploads.map((upload) => storage.delete(upload.storageKey))
+    );
+  }
+
+  return {
+    draftCode: persisted.draft.code,
+    accessToken: persisted.accessToken,
+    resumeUrl: buildDraftResumeUrl(form.slug, persisted.draft.code, persisted.accessToken),
+    expiresAt: persisted.draft.expiresAt,
+    savedAt: savedAt,
+  };
+}
+
+export async function getPublicDraftByCode(
+  slug: string,
+  draftCode: string,
+  accessToken?: string
+): Promise<PublicDraftResumeResult> {
+  const form = await prisma.form.findFirst({
+    where: {
+      slug,
+      status: 'PUBLISHED',
+      deletedAt: null,
+    },
+    include: {
+      fields: {
+        orderBy: { position: 'asc' },
+      },
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const draftSettings = parseFormDraftSettings(form.settings);
+  if (!draftSettings.enabled) {
+    throw new Error('Draft saving is not enabled for this form');
+  }
+
+  const draft = accessToken
+    ? await loadDraftByAccess({
+      formId: form.id,
+      tenantId: form.tenantId,
+      draftCode,
+      accessToken,
+    })
+    : await loadDraftByCode({
+      formId: form.id,
+      tenantId: form.tenantId,
+      draftCode,
+    });
+
+  if (!draft) {
+    throw new Error('Draft not found');
+  }
+
+  const resolvedAccessToken = accessToken || generateDraftAccessToken();
+  if (!accessToken) {
+    await prisma.formDraft.update({
+      where: { id: draft.id },
+      data: {
+        accessTokenHash: hashDraftAccessToken(resolvedAccessToken),
+      },
+    });
+  }
+
+  const uploads = await prisma.formUpload.findMany({
+    where: {
+      formId: form.id,
+      tenantId: form.tenantId,
+      draftId: draft.id,
+      submissionId: null,
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const answers = toAnswerRecord(draft.answers);
+  const metadata = parseObject(draft.metadata) || {};
+
+  return {
+    draftCode: draft.code,
+    accessToken: resolvedAccessToken,
+    resumeUrl: buildDraftResumeUrl(form.slug, draft.code, resolvedAccessToken),
+    expiresAt: draft.expiresAt,
+    savedAt: draft.lastSavedAt,
+    answers,
+    metadata,
+    uploadsByFieldKey: buildDraftUploadsByFieldKey(form.fields, answers, uploads),
+  };
+}
+
 export async function createPublicSubmission(
   slug: string,
   input: PublicSubmissionInput
@@ -1799,234 +2782,37 @@ export async function createPublicSubmission(
   if (!form) {
     throw new Error('Form not found');
   }
+
+  if ((input.draftCode && !input.accessToken) || (!input.draftCode && input.accessToken)) {
+    throw new Error('Draft access is incomplete');
+  }
+
   const tenantTimeZone = await getTenantTimeZone(form.tenantId);
-
-  const answers = input.answers as Record<string, unknown>;
-  const uploadIds = [...new Set(input.uploadIds || [])];
+  const answers = applyDefaultTodayAnswers(form.fields, toAnswerRecord(input.answers));
+  const uploadIds = normalizeUploadIds(input.uploadIds);
   const uploadIdSet = new Set(uploadIds);
-  const now = new Date();
-  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-  for (const field of form.fields) {
-    if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') continue;
-    const validation = parseObject(field.validation);
-    if (validation?.defaultToday !== true) continue;
+  validateRequiredPublicAnswers(form.fields, answers, uploadIdSet);
+  validatePublicAnswerConstraints(form.fields, answers);
 
-    const currentValue = answers[field.key];
-    if (Array.isArray(currentValue)) {
-      const nextRows = currentValue.map((rowValue) => (isEmptyValue(rowValue) ? todayIso : rowValue));
-      answers[field.key] = nextRows;
-      continue;
-    }
-
-    if (isEmptyValue(currentValue)) {
-      answers[field.key] = todayIso;
-    }
-  }
-
-  const collectUploadIdsFromAnswer = (value: unknown): string[] => {
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      return trimmed ? [trimmed] : [];
-    }
-
-    if (!Array.isArray(value)) return [];
-
-    const ids: string[] = [];
-    for (const item of value) {
-      ids.push(...collectUploadIdsFromAnswer(item));
-    }
-    return ids;
-  };
-
-  const hasItemValue = (item: unknown): boolean => {
-    if (isEmptyValue(item)) return false;
-    const itemRecord = parseObject(item);
-    if (itemRecord && 'value' in itemRecord) {
-      return typeof itemRecord.value === 'string' && itemRecord.value.trim().length > 0;
-    }
-    return true;
-  };
-
-  const validateRequiredField = (field: FormField): void => {
-    if (!field.isRequired) return;
-
-    const value = answers[field.key];
-
-    if (field.type === 'FILE_UPLOAD') {
-      const referencedUploadIds = collectUploadIdsFromAnswer(value)
-        .filter((id) => UPLOAD_ID_PATTERN.test(id));
-
-      if (referencedUploadIds.length === 0) {
-        throw new Error(`${field.label || field.key} is required`);
-      }
-
-      const hasMissingUpload = referencedUploadIds.some((id) => !uploadIdSet.has(id));
-      if (hasMissingUpload) {
-        throw new Error(`${field.label || field.key} has an invalid upload`);
-      }
-
-      return;
-    }
-
-    if (Array.isArray(value)) {
-      const hasAllValues = value.length > 0 && value.every((item) => hasItemValue(item));
-      if (!hasAllValues) {
-        throw new Error(`${field.label || field.key} is required`);
-      }
-      return;
-    }
-
-    if (!hasItemValue(value)) {
-      throw new Error(`${field.label || field.key} is required`);
-    }
-  };
-
-  for (let index = 0; index < form.fields.length; index += 1) {
-    const field = form.fields[index];
-
-    if (isRepeatStartMarker(field)) {
-      const sectionVisible = evaluateCondition(parseObject(field.condition), answers);
-      let cursor = index + 1;
-
-      while (cursor < form.fields.length && !isRepeatEndMarker(form.fields[cursor])) {
-        const sectionField = form.fields[cursor];
-        if (
-          sectionVisible &&
-          sectionField.type !== 'PAGE_BREAK' &&
-          sectionField.type !== 'PARAGRAPH' &&
-          sectionField.type !== 'HTML' &&
-          sectionField.type !== 'HIDDEN' &&
-          evaluateCondition(parseObject(sectionField.condition), answers)
-        ) {
-          validateRequiredField(sectionField);
-        }
-        cursor += 1;
-      }
-
-      index = cursor;
-      continue;
-    }
-
-    if (
-      field.type === 'PAGE_BREAK' ||
-      field.type === 'PARAGRAPH' ||
-      field.type === 'HTML' ||
-      field.type === 'HIDDEN'
-    ) {
-      continue;
-    }
-
-    if (!evaluateCondition(parseObject(field.condition), answers)) {
-      continue;
-    }
-
-    validateRequiredField(field);
-  }
-
-  const validKeys = new Set(form.fields.map((f) => f.key));
-  const sanitizedAnswers: Record<string, unknown> = {};
-
-  const sanitizeChoiceEntry = (entry: unknown): string | { value: string; detailText?: string } | null => {
-    if (typeof entry === 'string') {
-      const trimmed = entry.trim();
-      if (!trimmed) return null;
-      return trimmed.slice(0, 10_000);
-    }
-
-    const record = parseObject(entry);
-    if (!record) return null;
-    const valueText = typeof record.value === 'string' ? record.value.trim() : '';
-    if (!valueText) return null;
-    const detailTextRaw = typeof record.detailText === 'string' ? record.detailText.trim() : '';
-    const detailText = detailTextRaw ? detailTextRaw.slice(0, 10_000) : '';
-
-    if (!detailText) {
-      return { value: valueText.slice(0, 10_000) };
-    }
-
-    return {
-      value: valueText.slice(0, 10_000),
-      detailText,
-    };
-  };
-
-  for (const [key, value] of Object.entries(answers)) {
-    if (!validKeys.has(key)) continue;
-
-    const field = form.fields.find((f) => f.key === key);
-    if (!field) continue;
-
-    switch (field.type) {
-      case 'SHORT_TEXT':
-      case 'LONG_TEXT':
-      case 'DROPDOWN':
-        if (typeof value === 'string') {
-          sanitizedAnswers[key] = value.slice(0, 10_000);
-        } else if (Array.isArray(value)) {
-          sanitizedAnswers[key] = value
-            .slice(0, 100)
-            .map((item) => (typeof item === 'string' ? item.slice(0, 10_000) : ''));
-        }
-        break;
-      case 'SINGLE_CHOICE':
-        if (Array.isArray(value)) {
-          sanitizedAnswers[key] = value
-            .slice(0, 100)
-            .map((entry) => sanitizeChoiceEntry(entry) ?? '');
-        } else {
-          const singleValue = sanitizeChoiceEntry(value);
-          if (singleValue) {
-            sanitizedAnswers[key] = singleValue;
-          }
-        }
-        break;
-      case 'MULTIPLE_CHOICE':
-        if (Array.isArray(value)) {
-          const normalizedMultipleChoice = value.slice(0, 100).map((entry) => {
-            if (Array.isArray(entry)) {
-              return entry
-                .slice(0, 100)
-                .map((candidate) => sanitizeChoiceEntry(candidate))
-                .map((candidate) => candidate ?? '');
-            }
-            return sanitizeChoiceEntry(entry) ?? '';
-          });
-          sanitizedAnswers[key] = normalizedMultipleChoice;
-        }
-        break;
-      case 'FILE_UPLOAD': {
-        const referencedUploadIds = collectUploadIdsFromAnswer(value)
-          .filter((id) => UPLOAD_ID_PATTERN.test(id) && uploadIdSet.has(id))
-          .slice(0, 100);
-
-        if (referencedUploadIds.length > 0) {
-          sanitizedAnswers[key] = referencedUploadIds;
-        }
-        break;
-      }
-      case 'SIGNATURE':
-        if (typeof value === 'string') {
-          sanitizedAnswers[key] = value.slice(0, 500_000);
-        } else if (Array.isArray(value)) {
-          sanitizedAnswers[key] = value
-            .slice(0, 100)
-            .map((item) => (typeof item === 'string' ? item.slice(0, 500_000) : ''));
-        }
-        break;
-      case 'HIDDEN':
-        if (typeof value === 'string') {
-          sanitizedAnswers[key] = value.slice(0, 10_000);
-        }
-        break;
-      default:
-        break;
-    }
-  }
+  const sanitizedAnswers = sanitizePublicAnswers(form.fields, answers, uploadIdSet);
   const fieldById = new Map(form.fields.map((field) => [field.id, { key: field.key, validation: field.validation }]));
   const renamedUploadsById = new Map<string, string>();
 
-  const submission = await prisma.$transaction(async (tx) => {
+  const activeDraft = input.draftCode && input.accessToken
+    ? await loadDraftByAccess({
+      formId: form.id,
+      tenantId: form.tenantId,
+      draftCode: input.draftCode,
+      accessToken: input.accessToken,
+    })
+    : null;
+
+  if (input.draftCode && input.accessToken && !activeDraft) {
+    throw new Error('Draft not found');
+  }
+
+  const submissionResult = await prisma.$transaction(async (tx) => {
     let pendingUploads: Array<Pick<FormUpload, 'id' | 'fieldId' | 'fileName' | 'mimeType'>> = [];
 
     if (uploadIds.length > 0) {
@@ -2034,7 +2820,16 @@ export async function createPublicSubmission(
         where: {
           id: { in: uploadIds },
           formId: form.id,
+          tenantId: form.tenantId,
           submissionId: null,
+          ...(activeDraft
+            ? {
+              OR: [
+                { draftId: null },
+                { draftId: activeDraft.id },
+              ],
+            }
+            : { draftId: null }),
         },
         select: {
           id: true,
@@ -2049,6 +2844,21 @@ export async function createPublicSubmission(
         throw new Error('Some uploaded files are invalid or already used');
       }
     }
+
+    const obsoleteDraftUploads = activeDraft
+      ? await tx.formUpload.findMany({
+        where: {
+          formId: form.id,
+          tenantId: form.tenantId,
+          draftId: activeDraft.id,
+          submissionId: null,
+          ...(uploadIds.length > 0 ? { id: { notIn: uploadIds } } : {}),
+        },
+        select: {
+          storageKey: true,
+        },
+      })
+      : [];
 
     const submission = await tx.formSubmission.create({
       data: {
@@ -2067,10 +2877,12 @@ export async function createPublicSubmission(
         where: {
           id: { in: pendingUploads.map((upload) => upload.id) },
           formId: form.id,
+          tenantId: form.tenantId,
           submissionId: null,
         },
         data: {
           submissionId: submission.id,
+          draftId: null,
         },
       });
 
@@ -2107,13 +2919,28 @@ export async function createPublicSubmission(
       },
     });
 
-    return submission;
+    if (activeDraft) {
+      await tx.formDraft.delete({
+        where: { id: activeDraft.id },
+      });
+    }
+
+    return {
+      submission,
+      obsoleteDraftUploads,
+    };
   });
+
+  if (submissionResult.obsoleteDraftUploads.length > 0) {
+    await Promise.allSettled(
+      submissionResult.obsoleteDraftUploads.map((upload) => storage.delete(upload.storageKey))
+    );
+  }
 
   const submissionUploads = await prisma.formUpload.findMany({
     where: {
       formId: form.id,
-      submissionId: submission.id,
+      submissionId: submissionResult.submission.id,
       tenantId: form.tenantId,
     },
     orderBy: { createdAt: 'asc' },
@@ -2129,12 +2956,12 @@ export async function createPublicSubmission(
 
   await sendCompletionNotificationEmail({
     form,
-    submission,
+    submission: submissionResult.submission,
     uploads: emailUploads,
     tenantTimeZone,
   });
 
-  return submission;
+  return submissionResult.submission;
 }
 
 async function getPublishedFormSubmissionContext(slug: string, submissionId: string): Promise<{
@@ -2354,6 +3181,7 @@ export async function cleanupOrphanedUploads(maxAgeHours: number = 24): Promise<
 
   const orphans = await prisma.formUpload.findMany({
     where: {
+      draftId: null,
       submissionId: null,
       createdAt: { lt: cutoff },
     },
@@ -2374,4 +3202,17 @@ export async function cleanupOrphanedUploads(maxAgeHours: number = 24): Promise<
   });
 
   return orphans.length;
+}
+
+export async function cleanupExpiredFormDrafts(): Promise<number> {
+  const expiredDrafts = await prisma.formDraft.findMany({
+    where: {
+      expiresAt: { lt: new Date() },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return deleteFormDraftsByIds(expiredDrafts.map((draft) => draft.id));
 }

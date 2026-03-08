@@ -293,6 +293,7 @@ export type FormWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Form"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Form"> | Date | string | null
   fields?: Prisma.FormFieldListRelationFilter
+  drafts?: Prisma.FormDraftListRelationFilter
   submissions?: Prisma.FormSubmissionListRelationFilter
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   uploads?: Prisma.FormUploadListRelationFilter
@@ -315,6 +316,7 @@ export type FormOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   fields?: Prisma.FormFieldOrderByRelationAggregateInput
+  drafts?: Prisma.FormDraftOrderByRelationAggregateInput
   submissions?: Prisma.FormSubmissionOrderByRelationAggregateInput
   tenant?: Prisma.TenantOrderByWithRelationInput
   uploads?: Prisma.FormUploadOrderByRelationAggregateInput
@@ -340,6 +342,7 @@ export type FormWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"Form"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Form"> | Date | string | null
   fields?: Prisma.FormFieldListRelationFilter
+  drafts?: Prisma.FormDraftListRelationFilter
   submissions?: Prisma.FormSubmissionListRelationFilter
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   uploads?: Prisma.FormUploadListRelationFilter
@@ -405,6 +408,7 @@ export type FormCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fields?: Prisma.FormFieldCreateNestedManyWithoutFormInput
+  drafts?: Prisma.FormDraftCreateNestedManyWithoutFormInput
   submissions?: Prisma.FormSubmissionCreateNestedManyWithoutFormInput
   tenant: Prisma.TenantCreateNestedOneWithoutFormsInput
   uploads?: Prisma.FormUploadCreateNestedManyWithoutFormInput
@@ -427,6 +431,7 @@ export type FormUncheckedCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutFormInput
+  drafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutFormInput
   submissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutFormInput
   uploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutFormInput
 }
@@ -447,6 +452,7 @@ export type FormUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fields?: Prisma.FormFieldUpdateManyWithoutFormNestedInput
+  drafts?: Prisma.FormDraftUpdateManyWithoutFormNestedInput
   submissions?: Prisma.FormSubmissionUpdateManyWithoutFormNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutFormsNestedInput
   uploads?: Prisma.FormUploadUpdateManyWithoutFormNestedInput
@@ -469,6 +475,7 @@ export type FormUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fields?: Prisma.FormFieldUncheckedUpdateManyWithoutFormNestedInput
+  drafts?: Prisma.FormDraftUncheckedUpdateManyWithoutFormNestedInput
   submissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutFormNestedInput
   uploads?: Prisma.FormUploadUncheckedUpdateManyWithoutFormNestedInput
 }
@@ -684,6 +691,20 @@ export type FormUpdateOneRequiredWithoutSubmissionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.FormUpdateToOneWithWhereWithoutSubmissionsInput, Prisma.FormUpdateWithoutSubmissionsInput>, Prisma.FormUncheckedUpdateWithoutSubmissionsInput>
 }
 
+export type FormCreateNestedOneWithoutDraftsInput = {
+  create?: Prisma.XOR<Prisma.FormCreateWithoutDraftsInput, Prisma.FormUncheckedCreateWithoutDraftsInput>
+  connectOrCreate?: Prisma.FormCreateOrConnectWithoutDraftsInput
+  connect?: Prisma.FormWhereUniqueInput
+}
+
+export type FormUpdateOneRequiredWithoutDraftsNestedInput = {
+  create?: Prisma.XOR<Prisma.FormCreateWithoutDraftsInput, Prisma.FormUncheckedCreateWithoutDraftsInput>
+  connectOrCreate?: Prisma.FormCreateOrConnectWithoutDraftsInput
+  upsert?: Prisma.FormUpsertWithoutDraftsInput
+  connect?: Prisma.FormWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.FormUpdateToOneWithWhereWithoutDraftsInput, Prisma.FormUpdateWithoutDraftsInput>, Prisma.FormUncheckedUpdateWithoutDraftsInput>
+}
+
 export type FormCreateNestedOneWithoutUploadsInput = {
   create?: Prisma.XOR<Prisma.FormCreateWithoutUploadsInput, Prisma.FormUncheckedCreateWithoutUploadsInput>
   connectOrCreate?: Prisma.FormCreateOrConnectWithoutUploadsInput
@@ -714,6 +735,7 @@ export type FormCreateWithoutTenantInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fields?: Prisma.FormFieldCreateNestedManyWithoutFormInput
+  drafts?: Prisma.FormDraftCreateNestedManyWithoutFormInput
   submissions?: Prisma.FormSubmissionCreateNestedManyWithoutFormInput
   uploads?: Prisma.FormUploadCreateNestedManyWithoutFormInput
 }
@@ -734,6 +756,7 @@ export type FormUncheckedCreateWithoutTenantInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutFormInput
+  drafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutFormInput
   submissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutFormInput
   uploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutFormInput
 }
@@ -800,6 +823,7 @@ export type FormCreateWithoutFieldsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  drafts?: Prisma.FormDraftCreateNestedManyWithoutFormInput
   submissions?: Prisma.FormSubmissionCreateNestedManyWithoutFormInput
   tenant: Prisma.TenantCreateNestedOneWithoutFormsInput
   uploads?: Prisma.FormUploadCreateNestedManyWithoutFormInput
@@ -821,6 +845,7 @@ export type FormUncheckedCreateWithoutFieldsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  drafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutFormInput
   submissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutFormInput
   uploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutFormInput
 }
@@ -856,6 +881,7 @@ export type FormUpdateWithoutFieldsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  drafts?: Prisma.FormDraftUpdateManyWithoutFormNestedInput
   submissions?: Prisma.FormSubmissionUpdateManyWithoutFormNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutFormsNestedInput
   uploads?: Prisma.FormUploadUpdateManyWithoutFormNestedInput
@@ -877,6 +903,7 @@ export type FormUncheckedUpdateWithoutFieldsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  drafts?: Prisma.FormDraftUncheckedUpdateManyWithoutFormNestedInput
   submissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutFormNestedInput
   uploads?: Prisma.FormUploadUncheckedUpdateManyWithoutFormNestedInput
 }
@@ -897,6 +924,7 @@ export type FormCreateWithoutSubmissionsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fields?: Prisma.FormFieldCreateNestedManyWithoutFormInput
+  drafts?: Prisma.FormDraftCreateNestedManyWithoutFormInput
   tenant: Prisma.TenantCreateNestedOneWithoutFormsInput
   uploads?: Prisma.FormUploadCreateNestedManyWithoutFormInput
 }
@@ -918,6 +946,7 @@ export type FormUncheckedCreateWithoutSubmissionsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutFormInput
+  drafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutFormInput
   uploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutFormInput
 }
 
@@ -953,6 +982,7 @@ export type FormUpdateWithoutSubmissionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fields?: Prisma.FormFieldUpdateManyWithoutFormNestedInput
+  drafts?: Prisma.FormDraftUpdateManyWithoutFormNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutFormsNestedInput
   uploads?: Prisma.FormUploadUpdateManyWithoutFormNestedInput
 }
@@ -974,6 +1004,107 @@ export type FormUncheckedUpdateWithoutSubmissionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fields?: Prisma.FormFieldUncheckedUpdateManyWithoutFormNestedInput
+  drafts?: Prisma.FormDraftUncheckedUpdateManyWithoutFormNestedInput
+  uploads?: Prisma.FormUploadUncheckedUpdateManyWithoutFormNestedInput
+}
+
+export type FormCreateWithoutDraftsInput = {
+  id?: string
+  title: string
+  description?: string | null
+  slug: string
+  status?: $Enums.FormStatus
+  tags?: Prisma.FormCreatetagsInput | string[]
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  viewsCount?: number
+  submissionsCount?: number
+  createdById?: string | null
+  updatedById?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  fields?: Prisma.FormFieldCreateNestedManyWithoutFormInput
+  submissions?: Prisma.FormSubmissionCreateNestedManyWithoutFormInput
+  tenant: Prisma.TenantCreateNestedOneWithoutFormsInput
+  uploads?: Prisma.FormUploadCreateNestedManyWithoutFormInput
+}
+
+export type FormUncheckedCreateWithoutDraftsInput = {
+  id?: string
+  tenantId: string
+  title: string
+  description?: string | null
+  slug: string
+  status?: $Enums.FormStatus
+  tags?: Prisma.FormCreatetagsInput | string[]
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  viewsCount?: number
+  submissionsCount?: number
+  createdById?: string | null
+  updatedById?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  fields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutFormInput
+  submissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutFormInput
+  uploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutFormInput
+}
+
+export type FormCreateOrConnectWithoutDraftsInput = {
+  where: Prisma.FormWhereUniqueInput
+  create: Prisma.XOR<Prisma.FormCreateWithoutDraftsInput, Prisma.FormUncheckedCreateWithoutDraftsInput>
+}
+
+export type FormUpsertWithoutDraftsInput = {
+  update: Prisma.XOR<Prisma.FormUpdateWithoutDraftsInput, Prisma.FormUncheckedUpdateWithoutDraftsInput>
+  create: Prisma.XOR<Prisma.FormCreateWithoutDraftsInput, Prisma.FormUncheckedCreateWithoutDraftsInput>
+  where?: Prisma.FormWhereInput
+}
+
+export type FormUpdateToOneWithWhereWithoutDraftsInput = {
+  where?: Prisma.FormWhereInput
+  data: Prisma.XOR<Prisma.FormUpdateWithoutDraftsInput, Prisma.FormUncheckedUpdateWithoutDraftsInput>
+}
+
+export type FormUpdateWithoutDraftsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumFormStatusFieldUpdateOperationsInput | $Enums.FormStatus
+  tags?: Prisma.FormUpdatetagsInput | string[]
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  viewsCount?: Prisma.IntFieldUpdateOperationsInput | number
+  submissionsCount?: Prisma.IntFieldUpdateOperationsInput | number
+  createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fields?: Prisma.FormFieldUpdateManyWithoutFormNestedInput
+  submissions?: Prisma.FormSubmissionUpdateManyWithoutFormNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutFormsNestedInput
+  uploads?: Prisma.FormUploadUpdateManyWithoutFormNestedInput
+}
+
+export type FormUncheckedUpdateWithoutDraftsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumFormStatusFieldUpdateOperationsInput | $Enums.FormStatus
+  tags?: Prisma.FormUpdatetagsInput | string[]
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  viewsCount?: Prisma.IntFieldUpdateOperationsInput | number
+  submissionsCount?: Prisma.IntFieldUpdateOperationsInput | number
+  createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fields?: Prisma.FormFieldUncheckedUpdateManyWithoutFormNestedInput
+  submissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutFormNestedInput
   uploads?: Prisma.FormUploadUncheckedUpdateManyWithoutFormNestedInput
 }
 
@@ -993,6 +1124,7 @@ export type FormCreateWithoutUploadsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fields?: Prisma.FormFieldCreateNestedManyWithoutFormInput
+  drafts?: Prisma.FormDraftCreateNestedManyWithoutFormInput
   submissions?: Prisma.FormSubmissionCreateNestedManyWithoutFormInput
   tenant: Prisma.TenantCreateNestedOneWithoutFormsInput
 }
@@ -1014,6 +1146,7 @@ export type FormUncheckedCreateWithoutUploadsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutFormInput
+  drafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutFormInput
   submissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutFormInput
 }
 
@@ -1049,6 +1182,7 @@ export type FormUpdateWithoutUploadsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fields?: Prisma.FormFieldUpdateManyWithoutFormNestedInput
+  drafts?: Prisma.FormDraftUpdateManyWithoutFormNestedInput
   submissions?: Prisma.FormSubmissionUpdateManyWithoutFormNestedInput
   tenant?: Prisma.TenantUpdateOneRequiredWithoutFormsNestedInput
 }
@@ -1070,6 +1204,7 @@ export type FormUncheckedUpdateWithoutUploadsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fields?: Prisma.FormFieldUncheckedUpdateManyWithoutFormNestedInput
+  drafts?: Prisma.FormDraftUncheckedUpdateManyWithoutFormNestedInput
   submissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutFormNestedInput
 }
 
@@ -1106,6 +1241,7 @@ export type FormUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fields?: Prisma.FormFieldUpdateManyWithoutFormNestedInput
+  drafts?: Prisma.FormDraftUpdateManyWithoutFormNestedInput
   submissions?: Prisma.FormSubmissionUpdateManyWithoutFormNestedInput
   uploads?: Prisma.FormUploadUpdateManyWithoutFormNestedInput
 }
@@ -1126,6 +1262,7 @@ export type FormUncheckedUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fields?: Prisma.FormFieldUncheckedUpdateManyWithoutFormNestedInput
+  drafts?: Prisma.FormDraftUncheckedUpdateManyWithoutFormNestedInput
   submissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutFormNestedInput
   uploads?: Prisma.FormUploadUncheckedUpdateManyWithoutFormNestedInput
 }
@@ -1154,12 +1291,14 @@ export type FormUncheckedUpdateManyWithoutTenantInput = {
 
 export type FormCountOutputType = {
   fields: number
+  drafts: number
   submissions: number
   uploads: number
 }
 
 export type FormCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   fields?: boolean | FormCountOutputTypeCountFieldsArgs
+  drafts?: boolean | FormCountOutputTypeCountDraftsArgs
   submissions?: boolean | FormCountOutputTypeCountSubmissionsArgs
   uploads?: boolean | FormCountOutputTypeCountUploadsArgs
 }
@@ -1179,6 +1318,13 @@ export type FormCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
  */
 export type FormCountOutputTypeCountFieldsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.FormFieldWhereInput
+}
+
+/**
+ * FormCountOutputType without action
+ */
+export type FormCountOutputTypeCountDraftsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FormDraftWhereInput
 }
 
 /**
@@ -1213,6 +1359,7 @@ export type FormSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   updatedAt?: boolean
   deletedAt?: boolean
   fields?: boolean | Prisma.Form$fieldsArgs<ExtArgs>
+  drafts?: boolean | Prisma.Form$draftsArgs<ExtArgs>
   submissions?: boolean | Prisma.Form$submissionsArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   uploads?: boolean | Prisma.Form$uploadsArgs<ExtArgs>
@@ -1278,6 +1425,7 @@ export type FormSelectScalar = {
 export type FormOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "title" | "description" | "slug" | "status" | "tags" | "settings" | "viewsCount" | "submissionsCount" | "createdById" | "updatedById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["form"]>
 export type FormInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   fields?: boolean | Prisma.Form$fieldsArgs<ExtArgs>
+  drafts?: boolean | Prisma.Form$draftsArgs<ExtArgs>
   submissions?: boolean | Prisma.Form$submissionsArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   uploads?: boolean | Prisma.Form$uploadsArgs<ExtArgs>
@@ -1294,6 +1442,7 @@ export type $FormPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "Form"
   objects: {
     fields: Prisma.$FormFieldPayload<ExtArgs>[]
+    drafts: Prisma.$FormDraftPayload<ExtArgs>[]
     submissions: Prisma.$FormSubmissionPayload<ExtArgs>[]
     tenant: Prisma.$TenantPayload<ExtArgs>
     uploads: Prisma.$FormUploadPayload<ExtArgs>[]
@@ -1709,6 +1858,7 @@ readonly fields: FormFieldRefs;
 export interface Prisma__FormClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   fields<T extends Prisma.Form$fieldsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Form$fieldsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormFieldPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  drafts<T extends Prisma.Form$draftsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Form$draftsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormDraftPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   submissions<T extends Prisma.Form$submissionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Form$submissionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormSubmissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   uploads<T extends Prisma.Form$uploadsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Form$uploadsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormUploadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -2173,6 +2323,30 @@ export type Form$fieldsArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   distinct?: Prisma.FormFieldScalarFieldEnum | Prisma.FormFieldScalarFieldEnum[]
+}
+
+/**
+ * Form.drafts
+ */
+export type Form$draftsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FormDraft
+   */
+  select?: Prisma.FormDraftSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FormDraft
+   */
+  omit?: Prisma.FormDraftOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FormDraftInclude<ExtArgs> | null
+  where?: Prisma.FormDraftWhereInput
+  orderBy?: Prisma.FormDraftOrderByWithRelationInput | Prisma.FormDraftOrderByWithRelationInput[]
+  cursor?: Prisma.FormDraftWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FormDraftScalarFieldEnum | Prisma.FormDraftScalarFieldEnum[]
 }
 
 /**
