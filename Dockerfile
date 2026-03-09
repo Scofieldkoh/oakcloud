@@ -2,8 +2,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies for native modules
-RUN apk add --no-cache libc6-compat
+# Install dependencies for native modules and Chromium for PDF generation
+RUN apk add --no-cache libc6-compat chromium
+ENV CHROME_PATH=/usr/bin/chromium-browser
 
 # Copy package files
 COPY package.json package-lock.json* ./
