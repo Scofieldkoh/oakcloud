@@ -90,6 +90,16 @@ export interface FormResponseDetailResult {
   uploads: FormUpload[];
 }
 
+export interface DeleteFormResponseResult {
+  id: string;
+  deletedUploadCount: number;
+}
+
+export interface DeleteFormResponseUploadResult {
+  id: string;
+  submissionId: string;
+}
+
 export interface RecentFormSubmissionItem {
   id: string;
   formId: string;
@@ -164,6 +174,86 @@ function toUploadIds(value: unknown): string[] {
     .filter((item): item is string => typeof item === 'string')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function removeUploadIdFromAnswerValue(value: unknown, uploadId: string): unknown {
+  if (typeof value === 'string') {
+    return value.trim() === uploadId ? undefined : value;
+  }
+
+  if (!Array.isArray(value)) {
+    return value;
+  }
+
+  const nextValue: unknown[] = [];
+
+  for (const item of value) {
+    if (Array.isArray(item)) {
+      const updatedNested = removeUploadIdFromAnswerValue(item, uploadId);
+      nextValue.push(Array.isArray(updatedNested) ? updatedNested : []);
+      continue;
+    }
+
+    const updatedItem = removeUploadIdFromAnswerValue(item, uploadId);
+    if (updatedItem !== undefined) {
+      nextValue.push(updatedItem);
+    }
+  }
+
+  return nextValue;
+}
+
+function removeUploadFromAnswerRecord(
+  answers: Record<string, unknown>,
+  uploadId: string,
+  fieldKey?: string
+): Record<string, unknown> {
+  const nextAnswers = { ...answers };
+  const updateKey = (key: string): boolean => {
+    if (!(key in nextAnswers)) return false;
+
+    const value = nextAnswers[key];
+    if (!collectUploadIdsFromAnswer(value).includes(uploadId)) return false;
+
+    const updatedValue = removeUploadIdFromAnswerValue(value, uploadId);
+    nextAnswers[key] = updatedValue === undefined ? [] : updatedValue;
+    return true;
+  };
+
+  const removedFromFieldKey = fieldKey ? updateKey(fieldKey) : false;
+
+  if (!removedFromFieldKey) {
+    for (const key of Object.keys(nextAnswers)) {
+      updateKey(key);
+    }
+  }
+
+  return nextAnswers;
+}
+
+async function deleteStoredUploads(
+  uploads: Array<Pick<FormUpload, 'id' | 'storageKey'>>,
+  context: { formId: string; submissionId?: string }
+): Promise<void> {
+  if (uploads.length === 0) return;
+
+  const results = await Promise.allSettled(
+    uploads.map((upload) => storage.delete(upload.storageKey))
+  );
+
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') return;
+
+    const upload = uploads[index];
+    if (!upload) return;
+
+    log.error('Failed to delete form upload from storage', {
+      formId: context.formId,
+      submissionId: context.submissionId,
+      uploadId: upload.id,
+      error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+    });
+  });
 }
 
 function safePdfText(value: string): string {
@@ -393,6 +483,7 @@ function getRepeatSectionRowCount(
 
 async function buildSubmissionPdfBuffer(input: {
   formTitle: string;
+  formDescription?: string | null;
   submittedAt: Date;
   respondentName: string | null;
   respondentEmail: string | null;
@@ -400,6 +491,9 @@ async function buildSubmissionPdfBuffer(input: {
   fields: FormField[];
   answers: Record<string, unknown>;
   uploads: FormUpload[];
+  tenantLogoUrl?: string | null;
+  tenantName?: string | null;
+  formSettings?: unknown;
 }): Promise<Buffer> {
   const pdf = await PDFDocument.create();
   const regularFont = await pdf.embedFont(StandardFonts.Helvetica);
@@ -1658,6 +1752,208 @@ export async function getFormResponseById(
   });
 
   return { submission, uploads };
+}
+
+export async function deleteFormResponse(
+  formId: string,
+  submissionId: string,
+  params: TenantAwareParams,
+  reason?: string
+): Promise<DeleteFormResponseResult> {
+  const form = await prisma.form.findFirst({
+    where: {
+      id: formId,
+      tenantId: params.tenantId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      title: true,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const submission = await prisma.formSubmission.findFirst({
+    where: {
+      id: submissionId,
+      formId,
+      tenantId: params.tenantId,
+    },
+    select: {
+      id: true,
+      respondentName: true,
+      respondentEmail: true,
+    },
+  });
+
+  if (!submission) {
+    throw new Error('Submission not found');
+  }
+
+  const uploads = await prisma.formUpload.findMany({
+    where: {
+      formId,
+      submissionId,
+      tenantId: params.tenantId,
+    },
+    select: {
+      id: true,
+      storageKey: true,
+    },
+  });
+
+  await prisma.$transaction(async (tx) => {
+    if (uploads.length > 0) {
+      await tx.formUpload.deleteMany({
+        where: {
+          id: { in: uploads.map((upload) => upload.id) },
+        },
+      });
+    }
+
+    await tx.formSubmission.delete({
+      where: { id: submission.id },
+    });
+
+    await tx.form.update({
+      where: { id: form.id },
+      data: {
+        submissionsCount: { decrement: 1 },
+      },
+    });
+  });
+
+  await deleteStoredUploads(uploads, { formId, submissionId });
+
+  await createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    action: 'DELETE',
+    entityType: 'FormSubmission',
+    entityId: submission.id,
+    entityName: submission.respondentName || submission.respondentEmail || submission.id,
+    summary: `Deleted response ${submission.id} from "${form.title}"`,
+    reason,
+    changeSource: 'MANUAL',
+  });
+
+  return {
+    id: submission.id,
+    deletedUploadCount: uploads.length,
+  };
+}
+
+export async function deleteFormResponseUpload(
+  formId: string,
+  submissionId: string,
+  uploadId: string,
+  params: TenantAwareParams,
+  reason?: string
+): Promise<DeleteFormResponseUploadResult> {
+  const form = await prisma.form.findFirst({
+    where: {
+      id: formId,
+      tenantId: params.tenantId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      title: true,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const submission = await prisma.formSubmission.findFirst({
+    where: {
+      id: submissionId,
+      formId,
+      tenantId: params.tenantId,
+    },
+    select: {
+      id: true,
+      answers: true,
+    },
+  });
+
+  if (!submission) {
+    throw new Error('Submission not found');
+  }
+
+  const upload = await prisma.formUpload.findFirst({
+    where: {
+      id: uploadId,
+      formId,
+      submissionId,
+      tenantId: params.tenantId,
+    },
+    select: {
+      id: true,
+      fieldId: true,
+      storageKey: true,
+      fileName: true,
+    },
+  });
+
+  if (!upload) {
+    throw new Error('Upload not found');
+  }
+
+  const field = upload.fieldId
+    ? await prisma.formField.findFirst({
+      where: {
+        id: upload.fieldId,
+        formId,
+        tenantId: params.tenantId,
+      },
+      select: {
+        key: true,
+      },
+    })
+    : null;
+
+  const nextAnswers = removeUploadFromAnswerRecord(
+    toAnswerRecord(submission.answers),
+    upload.id,
+    field?.key
+  );
+
+  await prisma.$transaction(async (tx) => {
+    await tx.formSubmission.update({
+      where: { id: submission.id },
+      data: {
+        answers: nextAnswers as Prisma.InputJsonValue,
+      },
+    });
+
+    await tx.formUpload.delete({
+      where: { id: upload.id },
+    });
+  });
+
+  await deleteStoredUploads([{ id: upload.id, storageKey: upload.storageKey }], { formId, submissionId });
+
+  await createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    action: 'DELETE',
+    entityType: 'FormUpload',
+    entityId: upload.id,
+    entityName: upload.fileName,
+    summary: `Deleted attachment "${upload.fileName}" from response ${submission.id} for "${form.title}"`,
+    reason,
+    changeSource: 'MANUAL',
+  });
+
+  return {
+    id: upload.id,
+    submissionId: submission.id,
+  };
 }
 
 export async function exportFormResponsePdf(
