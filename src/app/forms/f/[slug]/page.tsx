@@ -848,6 +848,7 @@ export default function PublicFormPage() {
   const [draftSession, setDraftSession] = useState<DraftSession | null>(null);
   const [pendingDraftRestore, setPendingDraftRestore] = useState<DraftRestorePayload | null>(null);
   const [resumeDraftCodeInput, setResumeDraftCodeInput] = useState('');
+  const [draftError, setDraftError] = useState<string | null>(null);
   const [draftFeedback, setDraftFeedback] = useState<string | null>(null);
   const [isDraftDetailsModalOpen, setIsDraftDetailsModalOpen] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -1718,6 +1719,7 @@ export default function PublicFormPage() {
 
     setIsSavingDraft(true);
     setDraftFeedback(null);
+    setDraftError(null);
     try {
       const answersWithDefaults = withDateDefaultAnswers(answers);
       const uploadIds = orderedFields
@@ -1762,7 +1764,7 @@ export default function PublicFormPage() {
       setDraftFeedback(null);
       setIsDraftDetailsModalOpen(true);
     } catch (err) {
-      setDraftFeedback(err instanceof Error ? err.message : uiLabel('save_draft_failed'));
+      setDraftError(err instanceof Error ? err.message : uiLabel('save_draft_failed'));
     } finally {
       setIsSavingDraft(false);
     }
@@ -1778,6 +1780,7 @@ export default function PublicFormPage() {
 
     setIsResumingDraft(true);
     setDraftFeedback(null);
+    setDraftError(null);
     try {
       const response = await fetch(`/api/forms/public/${slug}/drafts/${encodeURIComponent(trimmedCode)}`);
       const data = await response.json();
@@ -1793,7 +1796,7 @@ export default function PublicFormPage() {
       setCurrentPage(0);
       scrollToFormTop();
     } catch (err) {
-      setDraftFeedback(err instanceof Error ? err.message : uiLabel('resume_draft_failed'));
+      setDraftError(err instanceof Error ? err.message : uiLabel('resume_draft_failed'));
     } finally {
       setIsResumingDraft(false);
     }
@@ -1801,7 +1804,7 @@ export default function PublicFormPage() {
 
   async function copyResumeLink() {
     if (!draftSession?.resumeUrl || typeof navigator === 'undefined' || !navigator.clipboard) {
-      setDraftFeedback(uiLabel('resume_link_unavailable'));
+      setDraftError(uiLabel('resume_link_unavailable'));
       return;
     }
 
@@ -1809,7 +1812,7 @@ export default function PublicFormPage() {
       await navigator.clipboard.writeText(draftSession.resumeUrl);
       setDraftFeedback(uiLabel('resume_link_copied'));
     } catch {
-      setDraftFeedback(uiLabel('resume_link_copy_failed'));
+      setDraftError(uiLabel('resume_link_copy_failed'));
     }
   }
 
