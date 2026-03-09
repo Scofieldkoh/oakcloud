@@ -916,6 +916,7 @@ async function sendCompletionNotificationEmail(input: {
     });
     const pdfBuffer = await buildSubmissionPdfBuffer({
       formTitle: input.form.title,
+      formDescription: input.form.description,
       submittedAt: input.submission.submittedAt,
       respondentName: input.submission.respondentName,
       respondentEmail: input.submission.respondentEmail,
@@ -1824,6 +1825,7 @@ export async function exportFormResponsePdf(
 
   const buffer = await buildSubmissionPdfBuffer({
     formTitle: form.title,
+    formDescription: form.description,
     submittedAt: submission.submittedAt,
     respondentName: submission.respondentName,
     respondentEmail: submission.respondentEmail,
@@ -3143,6 +3145,7 @@ export async function exportPublicFormResponsePdf(
 
   const buffer = await buildSubmissionPdfBuffer({
     formTitle: form.title,
+    formDescription: form.description,
     submittedAt: submission.submittedAt,
     respondentName: submission.respondentName,
     respondentEmail: submission.respondentEmail,
