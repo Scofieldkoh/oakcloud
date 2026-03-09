@@ -3,7 +3,7 @@
 import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Copy, Download, Info, Mail, Plus, UploadCloud, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronDown, Copy, Download, Info, Mail, Plus, UploadCloud, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { SignaturePad } from '@/components/forms/signature-pad';
@@ -3595,57 +3595,113 @@ export default function PublicFormPage() {
         isOpen={isDraftDetailsModalOpen && !!draftSession}
         onClose={() => {
           setIsDraftDetailsModalOpen(false);
-          setDraftFeedback(null);
+          setDraftError(null);
         }}
         title={uiLabel('draft_saved_title')}
         description={draftValidityNotice}
         size="lg"
       >
         <ModalBody className="space-y-4">
-          <div className="rounded-lg border border-border-primary/50 bg-background-primary px-4 py-3">
+          {/* Draft code */}
+          <div className="rounded-xl border border-oak-primary/20 bg-oak-primary/[0.08] px-4 py-3">
             <p className="text-xs font-medium text-text-secondary">{localizedUiLabels.draft_code_label}</p>
-            <p className="mt-1 font-mono text-lg text-text-primary">{draftSession?.draftCode}</p>
-          </div>
-
-          <div className="rounded-lg border border-border-primary/50 bg-background-primary px-4 py-3">
-            <p className="text-xs font-medium text-text-secondary">{uiLabel('resume_link_label')}</p>
-            <input
-              type="text"
-              readOnly
-              value={draftSession?.resumeUrl || ''}
-              className="mt-1 w-full rounded-md border border-border-primary/40 bg-background-secondary px-3 py-2 text-sm text-text-primary"
-            />
-          </div>
-
-          <div className="rounded-lg border border-border-primary/50 bg-background-primary px-4 py-3">
-            <p className="text-xs font-medium text-text-secondary">{localizedUiLabels.draft_expires_label}</p>
-            <p className="mt-1 text-sm text-text-primary">
-              {draftSession?.expiresAt ? formatDraftDateTime(draftSession.expiresAt) : '-'}
+            <p className="mt-1 font-mono text-2xl font-bold tracking-widest text-oak-primary select-all">
+              {draftSession?.draftCode}
             </p>
           </div>
 
-          {draftFeedback && (
-            <p className="text-xs text-text-secondary">{draftFeedback}</p>
+          {/* Resume URL with inline copy */}
+          <div className="rounded-lg border border-border-primary/50 bg-background-primary px-4 py-3">
+            <p className="text-xs font-medium text-text-secondary mb-1.5">{uiLabel('resume_link_label')}</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value={draftSession?.resumeUrl || ''}
+                className="min-w-0 flex-1 rounded-md border border-border-primary/40 bg-background-secondary px-3 py-2 text-sm text-text-primary focus:outline-none"
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+              <button
+                type="button"
+                onClick={copyResumeLink}
+                title={localizedUiLabels.copy_resume_link}
+                className="flex items-center justify-center h-9 w-9 shrink-0 rounded-md border border-border-primary/50 bg-white text-text-secondary hover:text-text-primary hover:border-border-primary transition-colors duration-150"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+            </div>
+            {draftSession?.expiresAt && (
+              <p className="mt-1.5 text-xs text-text-muted">
+                {localizedUiLabels.draft_expires_label}: {formatDraftDateTime(draftSession.expiresAt)}
+              </p>
+            )}
+            {draftFeedback && (
+              <p className="mt-1.5 text-xs text-text-secondary">{draftFeedback}</p>
+            )}
+          </div>
+
+          {/* Send to email — collapsible */}
+          {!draftEmailSent ? (
+            <div className="rounded-lg border border-border-primary/50 bg-background-primary overflow-hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDraftEmailExpanded((prev) => !prev);
+                  setDraftEmailFeedback(null);
+                  setDraftEmailError(null);
+                }}
+                className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors duration-150"
+              >
+                {localizedUiLabels.send_draft_to_email}
+                <ChevronDown className={cn('h-4 w-4 transition-transform duration-200', isDraftEmailExpanded && 'rotate-180')} />
+              </button>
+              {isDraftEmailExpanded && (
+                <div className="border-t border-border-primary/40 px-4 pb-4 pt-3">
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="email"
+                      value={draftEmailInput}
+                      onChange={(e) => {
+                        setDraftEmailInput(e.target.value);
+                        if (draftEmailError) setDraftEmailError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') sendDraftEmail();
+                      }}
+                      placeholder={localizedUiLabels.draft_email_placeholder}
+                      className="h-9 w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={sendDraftEmail}
+                      isLoading={isDraftEmailSending}
+                    >
+                      {localizedUiLabels.send}
+                    </Button>
+                  </div>
+                  {draftEmailError && (
+                    <p className="mt-2 text-xs text-status-error">{draftEmailError}</p>
+                  )}
+                  {draftEmailFeedback && (
+                    <p className="mt-2 text-xs text-text-secondary">{draftEmailFeedback}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-text-secondary px-1">{draftEmailFeedback}</p>
           )}
         </ModalBody>
         <ModalFooter>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            leftIcon={<Copy className="h-4 w-4" />}
-            onClick={copyResumeLink}
-            disabled={!draftSession?.resumeUrl}
-          >
-            {localizedUiLabels.copy_resume_link}
-          </Button>
           <Button
             type="button"
             variant="primary"
             size="sm"
             onClick={() => {
               setIsDraftDetailsModalOpen(false);
-              setDraftFeedback(null);
+              setDraftError(null);
             }}
           >
             {uiLabel('continue_editing')}
