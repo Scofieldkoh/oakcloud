@@ -273,6 +273,7 @@ function buildSubmissionPdfHtml(input: {
   tenantLogoUrl?: string | null;
   tenantName?: string | null;
   formSettings?: unknown;
+  timeZone?: string;
 }): { contentHtml: string; footerHtml: string } {
   const settings = parseObject(input.formSettings);
   const hideLogo = settings?.hideLogo === true;
@@ -287,6 +288,7 @@ function buildSubmissionPdfHtml(input: {
   const footerText = !hideFooter && input.tenantName ? `\u00a9 ${input.tenantName}` : null;
 
   const submittedAt = new Date(input.submittedAt).toLocaleString('en-SG', {
+    timeZone: input.timeZone ?? 'Asia/Singapore',
     year: 'numeric', month: 'short', day: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
@@ -346,12 +348,14 @@ function buildSubmissionPdfHtml(input: {
     const field = input.fields[i];
 
     if (field.type === 'PAGE_BREAK') {
-      if (field.inputType === 'repeat_start') {
+      if (isRepeatStartMarker(field)) {
         const sectionFields: FormField[] = [];
         let cursor = i + 1;
         while (cursor < input.fields.length) {
           const candidate = input.fields[cursor];
-          if (candidate.type === 'PAGE_BREAK' && candidate.inputType === 'repeat_end') break;
+          if (isRepeatEndMarker(candidate)) break;
+          // Back up so the outer for-loop's i++ lands back on this PAGE_BREAK,
+          // which will then be processed as a regular page-break (continue) on the next iteration.
           if (candidate.type === 'PAGE_BREAK') { cursor -= 1; break; }
           if (candidate.type !== 'HIDDEN') sectionFields.push(candidate);
           cursor++;
@@ -489,12 +493,13 @@ async function buildSubmissionPdfBuffer(input: {
   tenantLogoUrl?: string | null;
   tenantName?: string | null;
   formSettings?: unknown;
+  timeZone?: string;
 }): Promise<Buffer> {
   const { contentHtml, footerHtml } = buildSubmissionPdfHtml(input);
   return generatePDF(contentHtml, {
     format: 'A4',
     orientation: 'portrait',
-    margins: { top: 0, right: 0, bottom: footerHtml !== '<div></div>' ? 28 : 0, left: 0 },
+    margins: { top: 0, right: 0, bottom: 0, left: 0 }, // footer space is handled by Puppeteer's footerTemplate
     headerHtml: '<div></div>',
     footerHtml,
   });
@@ -927,6 +932,7 @@ async function sendCompletionNotificationEmail(input: {
       tenantLogoUrl: tenant?.logoUrl ?? null,
       tenantName: tenant?.name ?? null,
       formSettings: input.form.settings,
+      timeZone: input.tenantTimeZone,
     });
     const pdfFileName = resolveSubmissionPdfFileName({
       formTitle: input.form.title,
@@ -1836,6 +1842,7 @@ export async function exportFormResponsePdf(
     tenantLogoUrl: form.tenant?.logoUrl ?? null,
     tenantName: form.tenant?.name ?? null,
     formSettings: form.settings,
+    timeZone: tenantTimeZone,
   });
   const fileName = resolveSubmissionPdfFileName({
     formTitle: form.title,
@@ -3156,6 +3163,7 @@ export async function exportPublicFormResponsePdf(
     tenantLogoUrl: form.tenant?.logoUrl ?? null,
     tenantName: form.tenant?.name ?? null,
     formSettings: form.settings,
+    timeZone: tenantTimeZone,
   });
   const fileName = resolveSubmissionPdfFileName({
     formTitle: form.title,
