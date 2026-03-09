@@ -910,6 +910,10 @@ async function sendCompletionNotificationEmail(input: {
 
   try {
     const answers = toAnswerRecord(input.submission.answers);
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: input.form.tenantId },
+      select: { logoUrl: true, name: true },
+    });
     const pdfBuffer = await buildSubmissionPdfBuffer({
       formTitle: input.form.title,
       submittedAt: input.submission.submittedAt,
@@ -919,6 +923,9 @@ async function sendCompletionNotificationEmail(input: {
       fields: input.form.fields,
       answers,
       uploads: input.uploads,
+      tenantLogoUrl: tenant?.logoUrl ?? null,
+      tenantName: tenant?.name ?? null,
+      formSettings: input.form.settings,
     });
     const pdfFileName = resolveSubmissionPdfFileName({
       formTitle: input.form.title,
@@ -1782,6 +1789,9 @@ export async function exportFormResponsePdf(
       fields: {
         orderBy: { position: 'asc' },
       },
+      tenant: {
+        select: { logoUrl: true, name: true },
+      },
     },
   });
 
@@ -1821,6 +1831,9 @@ export async function exportFormResponsePdf(
     fields: form.fields,
     answers,
     uploads,
+    tenantLogoUrl: form.tenant?.logoUrl ?? null,
+    tenantName: form.tenant?.name ?? null,
+    formSettings: form.settings,
   });
   const fileName = resolveSubmissionPdfFileName({
     formTitle: form.title,
@@ -3075,11 +3088,7 @@ export async function createPublicSubmission(
   return submissionResult.submission;
 }
 
-async function getPublishedFormSubmissionContext(slug: string, submissionId: string): Promise<{
-  form: Form & { fields: FormField[] };
-  submission: FormSubmission;
-  uploads: FormUpload[];
-}> {
+async function getPublishedFormSubmissionContext(slug: string, submissionId: string) {
   const form = await prisma.form.findFirst({
     where: {
       slug,
@@ -3089,6 +3098,9 @@ async function getPublishedFormSubmissionContext(slug: string, submissionId: str
     include: {
       fields: {
         orderBy: { position: 'asc' },
+      },
+      tenant: {
+        select: { logoUrl: true, name: true },
       },
     },
   });
@@ -3138,6 +3150,9 @@ export async function exportPublicFormResponsePdf(
     fields: form.fields,
     answers,
     uploads,
+    tenantLogoUrl: form.tenant?.logoUrl ?? null,
+    tenantName: form.tenant?.name ?? null,
+    formSettings: form.settings,
   });
   const fileName = resolveSubmissionPdfFileName({
     formTitle: form.title,
