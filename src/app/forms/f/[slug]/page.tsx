@@ -3382,7 +3382,41 @@ export default function PublicFormPage() {
               </div>
             ) : (
               // --- ACTIVE STATE (Task 6) ---
-              null
+              <div className="mb-6 rounded-xl border border-oak-primary/30 bg-oak-primary/5 px-4 py-3 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-oak-primary" />
+                    <div className="min-w-0">
+                      <span className="text-sm font-semibold text-text-primary">{localizedUiLabels.draft_active}</span>
+                      {draftBannerFeedback ? (
+                        <p className="text-xs text-oak-primary mt-0.5">{draftBannerFeedback}</p>
+                      ) : draftSession.expiresAt ? (
+                        <p className="text-xs text-text-secondary mt-0.5">
+                          {localizedUiLabels.draft_expires_label}: {formatDraftDateTime(draftSession.expiresAt)}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {draftSession.resumeUrl && (
+                      <button
+                        type="button"
+                        onClick={copyResumeLink}
+                        title={localizedUiLabels.copy_resume_link}
+                        className="flex items-center justify-center h-8 w-8 rounded-lg border border-border-primary/50 bg-white text-text-secondary hover:text-text-primary hover:border-border-primary transition-colors duration-150"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {draftError && (
+                  <p className="mt-2 text-xs text-status-error">{draftError}</p>
+                )}
+                {draftFeedback && !draftBannerFeedback && (
+                  <p className="mt-2 text-xs text-text-secondary">{draftFeedback}</p>
+                )}
+              </div>
             )}
           </>
         )}
