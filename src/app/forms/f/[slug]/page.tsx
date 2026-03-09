@@ -850,6 +850,7 @@ export default function PublicFormPage() {
   const [resumeDraftCodeInput, setResumeDraftCodeInput] = useState('');
   const [draftError, setDraftError] = useState<string | null>(null);
   const [draftFeedback, setDraftFeedback] = useState<string | null>(null);
+  const [draftBannerFeedback, setDraftBannerFeedback] = useState<string | null>(null);
   const [isFirstDraftSave, setIsFirstDraftSave] = useState(true);
   const [isDraftDetailsModalOpen, setIsDraftDetailsModalOpen] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -1019,6 +1020,7 @@ export default function PublicFormPage() {
     setDraftSession(nextDraft);
     setResumeDraftCodeInput(nextDraft.draftCode);
     if (options && 'feedback' in options) {
+      setDraftError(null);
       setDraftFeedback(options.feedback ?? null);
     }
     if (options?.syncUrl !== false) {
