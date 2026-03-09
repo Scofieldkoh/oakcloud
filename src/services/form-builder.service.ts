@@ -119,7 +119,7 @@ export interface PublicDraftUploadStatus {
 export interface PublicDraftResumeResult extends PublicDraftSaveResult {
   answers: Record<string, unknown>;
   metadata: Record<string, unknown>;
-  uploadsByFieldKey: Record<string, PublicDraftUploadStatus>;
+  uploadsByFieldKey: Record<string, PublicDraftUploadStatus[]>;
 }
 
 export type { PublicFormField, PublicFormDefinition };
@@ -2426,27 +2426,26 @@ function buildDraftUploadsByFieldKey(
   fields: FormField[],
   answers: Record<string, unknown>,
   uploads: FormUpload[]
-): Record<string, PublicDraftUploadStatus> {
+): Record<string, PublicDraftUploadStatus[]> {
   const uploadsById = new Map(uploads.map((upload) => [upload.id, upload]));
-  const result: Record<string, PublicDraftUploadStatus> = {};
+  const result: Record<string, PublicDraftUploadStatus[]> = {};
 
   for (const field of fields) {
     if (field.type !== 'FILE_UPLOAD') continue;
 
-    const uploadId = collectUploadIdsFromAnswer(answers[field.key])
-      .find((candidate) => uploadsById.has(candidate));
+    const fieldUploads = collectUploadIdsFromAnswer(answers[field.key])
+      .map((candidate) => uploadsById.get(candidate))
+      .filter((upload): upload is FormUpload => !!upload)
+      .map((upload) => ({
+        id: upload.id,
+        fileName: upload.fileName,
+        mimeType: upload.mimeType,
+        sizeBytes: upload.sizeBytes,
+      }));
 
-    if (!uploadId) continue;
+    if (fieldUploads.length === 0) continue;
 
-    const upload = uploadsById.get(uploadId);
-    if (!upload) continue;
-
-    result[field.key] = {
-      id: upload.id,
-      fileName: upload.fileName,
-      mimeType: upload.mimeType,
-      sizeBytes: upload.sizeBytes,
-    };
+    result[field.key] = fieldUploads;
   }
 
   return result;
@@ -3074,6 +3073,40 @@ export async function emailPublicFormResponsePdfLink(
     html,
   });
 
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to send email');
+  }
+}
+
+export async function emailPublicFormDraft(
+  slug: string,
+  draftCode: string,
+  recipientEmail: string,
+  resumeUrl: string
+): Promise<void> {
+  const form = await prisma.form.findFirst({
+    where: { slug, deletedAt: null },
+    select: { title: true },
+  });
+
+  if (!form) throw new Error('Form not found');
+
+  const email = recipientEmail.trim().toLowerCase();
+  const safeFormTitle = form.title.replace(/[<>&]/g, (m) =>
+    m === '<' ? '&lt;' : m === '>' ? '&gt;' : '&amp;'
+  );
+
+  const subject = `Your draft for: ${form.title}`;
+  const html = `
+    <p>Hello,</p>
+    <p>Here are your draft details for <strong>${safeFormTitle}</strong>.</p>
+    <p><strong>Draft code:</strong> ${draftCode}</p>
+    <p><strong>Resume link:</strong> <a href="${resumeUrl}">${resumeUrl}</a></p>
+    <p>Use the code or link to continue filling out your form.</p>
+    <p>If you did not request this email, you can ignore it.</p>
+  `;
+
+  const result = await sendEmail({ to: email, subject, html });
   if (!result.success) {
     throw new Error(result.error || 'Failed to send email');
   }
