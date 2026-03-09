@@ -3336,66 +3336,55 @@ export default function PublicFormPage() {
         )}
 
         {draftSettings.enabled && !isPreview && currentPage === 0 && (
-          <div className="mb-6 rounded-xl border border-border-primary/50 bg-white p-4 shadow-sm">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-text-primary">{localizedUiLabels.resume_draft}</p>
-                <p className="mt-1 text-xs text-text-secondary">
-                  {resumeDraftDescription}
-                </p>
-              </div>
-              <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-                <input
-                  type="text"
-                  value={resumeDraftCodeInput}
-                  onChange={(e) => {
-                    const nextValue = e.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 5);
-                    setResumeDraftCodeInput(nextValue);
-                    if (draftFeedback) setDraftFeedback(null);
-                  }}
-                  placeholder={localizedUiLabels.resume_draft_placeholder}
-                  className="h-10 w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-0 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150 sm:h-8 sm:min-w-44"
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={resumeDraftByCode}
-                  isLoading={isResumingDraft}
-                  disabled={!DRAFT_CODE_PATTERN.test(resumeDraftCodeInput.trim())}
-                >
-                  {isResumingDraft ? localizedUiLabels.resuming_draft : localizedUiLabels.resume_draft}
-                </Button>
-              </div>
-            </div>
-
-            {draftSession && (
-              <div className="mt-4 flex flex-col gap-3 border-t border-border-primary/40 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-secondary">
-                  {draftSession.expiresAt && (
-                    <span>
-                      {localizedUiLabels.draft_expires_label}: <span className="text-text-primary">{formatDraftDateTime(draftSession.expiresAt)}</span>
-                    </span>
-                  )}
+          <>
+            {!draftSession ? (
+              // --- IDLE STATE ---
+              <div className="mb-6 rounded-xl border border-border-primary/50 bg-white p-4 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-text-primary">{localizedUiLabels.resume_draft}</p>
+                    <p className="mt-0.5 text-xs text-text-secondary leading-relaxed">
+                      {resumeDraftDescription}
+                    </p>
+                  </div>
+                  <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row lg:w-auto">
+                    <input
+                      type="text"
+                      value={resumeDraftCodeInput}
+                      onChange={(e) => {
+                        const nextValue = e.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 5);
+                        setResumeDraftCodeInput(nextValue);
+                        if (draftError) setDraftError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && DRAFT_CODE_PATTERN.test(resumeDraftCodeInput.trim())) {
+                          resumeDraftByCode();
+                        }
+                      }}
+                      placeholder={localizedUiLabels.resume_draft_placeholder}
+                      className="h-10 w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-0 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150 sm:h-9 sm:min-w-44"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={resumeDraftByCode}
+                      isLoading={isResumingDraft}
+                      disabled={!DRAFT_CODE_PATTERN.test(resumeDraftCodeInput.trim())}
+                    >
+                      {isResumingDraft ? localizedUiLabels.resuming_draft : localizedUiLabels.resume_draft}
+                    </Button>
+                  </div>
                 </div>
-                {draftSession.resumeUrl && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    leftIcon={<Copy className="h-4 w-4" />}
-                    onClick={copyResumeLink}
-                  >
-                    {localizedUiLabels.copy_resume_link}
-                  </Button>
+                {draftError && (
+                  <p className="mt-2.5 text-xs text-status-error">{draftError}</p>
                 )}
               </div>
+            ) : (
+              // --- ACTIVE STATE (Task 6) ---
+              null
             )}
-
-            {draftFeedback && (
-              <p className="mt-3 text-xs text-text-secondary">{draftFeedback}</p>
-            )}
-          </div>
+          </>
         )}
 
         <div className={cn('flex flex-col gap-4', !isEmbed && 'mt-4')}>
