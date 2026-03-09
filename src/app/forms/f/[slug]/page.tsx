@@ -850,6 +850,7 @@ export default function PublicFormPage() {
   const [resumeDraftCodeInput, setResumeDraftCodeInput] = useState('');
   const [draftError, setDraftError] = useState<string | null>(null);
   const [draftFeedback, setDraftFeedback] = useState<string | null>(null);
+  const [isFirstDraftSave, setIsFirstDraftSave] = useState(true);
   const [isDraftDetailsModalOpen, setIsDraftDetailsModalOpen] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isResumingDraft, setIsResumingDraft] = useState(false);
@@ -1761,8 +1762,14 @@ export default function PublicFormPage() {
           syncUrl: false,
         }
       );
-      setDraftFeedback(null);
-      setIsDraftDetailsModalOpen(true);
+      setDraftError(null);
+      if (isFirstDraftSave) {
+        setIsDraftDetailsModalOpen(true);
+        setIsFirstDraftSave(false);
+      } else {
+        setDraftBannerFeedback(uiLabel('draft_updated'));
+        setTimeout(() => setDraftBannerFeedback(null), 3000);
+      }
     } catch (err) {
       setDraftError(err instanceof Error ? err.message : uiLabel('save_draft_failed'));
     } finally {
