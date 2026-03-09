@@ -321,7 +321,7 @@ export async function exportToPDF(params: ExportPDFParams): Promise<PDFResult> {
 /**
  * Generate PDF using Puppeteer
  */
-async function generatePDF(
+export async function generatePDF(
   html: string,
   options: {
     format: 'A4' | 'Letter';
@@ -382,7 +382,7 @@ async function generatePDF(
 /**
  * Find Chrome executable path
  */
-async function findChromePath(): Promise<string> {
+export async function findChromePath(): Promise<string> {
   // Check environment variable first
   if (process.env.CHROME_PATH) {
     return process.env.CHROME_PATH;
