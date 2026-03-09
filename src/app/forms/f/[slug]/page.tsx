@@ -101,7 +101,7 @@ const DEFAULT_UI_LABELS = {
   draft_active: 'Draft active',
   update_draft: 'Update draft',
   updating_draft: 'Updating...',
-  draft_updated: 'Draft updated',
+  draft_updated: 'Updated',
   send_draft_to_email: 'Send to my email',
   draft_email_sent: 'Sent to {email}',
   draft_email_failed: 'Failed to send',
@@ -3446,9 +3446,7 @@ export default function PublicFormPage() {
             ) : (
               // --- ACTIVE STATE ---
               <div className="mb-6 rounded-xl border border-oak-primary/30 bg-oak-primary/5 px-4 py-2.5">
-                {draftBannerFeedback ? (
-                  <p className="text-xs text-oak-primary">{draftBannerFeedback}</p>
-                ) : draftSession.expiresAt ? (
+                {draftSession.expiresAt ? (
                   <p className="text-xs text-text-secondary">
                     {localizedUiLabels.draft_expires_label}: {formatDraftDateTime(draftSession.expiresAt)}
                   </p>
@@ -3530,7 +3528,7 @@ export default function PublicFormPage() {
               >
                 {isSavingDraft
                   ? (draftSession ? localizedUiLabels.updating_draft : localizedUiLabels.saving_draft)
-                  : (draftSession ? localizedUiLabels.update_draft : localizedUiLabels.save_draft)}
+                  : (draftBannerFeedback && draftSession ? localizedUiLabels.draft_updated : draftSession ? localizedUiLabels.update_draft : localizedUiLabels.save_draft)}
               </Button>
             )}
             {currentPage < pages.length - 1 ? (
