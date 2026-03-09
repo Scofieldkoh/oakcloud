@@ -555,3 +555,81 @@ export function notificationEmail(params: NotificationEmailParams): { subject: s
     }),
   };
 }
+
+// ============================================================================
+// Form Draft Email
+// ============================================================================
+
+export interface FormDraftEmailParams {
+  formTitle: string;
+  draftCode: string;
+  resumeUrl: string;
+}
+
+export function formDraftEmail(params: FormDraftEmailParams): { subject: string; html: string } {
+  const { formTitle, draftCode, resumeUrl } = params;
+
+  const safeFormTitle = formTitle.replace(/[<>&"]/g, (m) =>
+    m === '<' ? '&lt;' : m === '>' ? '&gt;' : m === '&' ? '&amp;' : '&quot;'
+  );
+  const safeDraftCode = draftCode.replace(/[<>&"]/g, (m) =>
+    m === '<' ? '&lt;' : m === '>' ? '&gt;' : m === '&' ? '&amp;' : '&quot;'
+  );
+  const safeResumeUrl = resumeUrl.replace(/[<>&"]/g, (m) =>
+    m === '<' ? '&lt;' : m === '>' ? '&gt;' : m === '&' ? '&amp;' : '&quot;'
+  );
+
+  const content = `
+    <p style="margin: 0 0 12px 0;">
+      <span style="display: inline-block; padding: 6px 12px; border-radius: 999px; border: 1px solid #c2ddd4; background-color: #e7f2ee; color: #1a5549; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">Form draft</span>
+    </p>
+
+    <h2 style="margin: 0 0 14px 0; color: #17222d; font-size: 24px; font-weight: 700; line-height: 1.3; font-family: 'Trebuchet MS', 'Avenir Next', 'Segoe UI', sans-serif;">
+      Your draft has been saved
+    </h2>
+
+    <p style="margin: 0 0 22px 0; color: #2a3540; line-height: 1.7;">
+      Here are the details to continue your response for <strong>${safeFormTitle}</strong>.
+    </p>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px 0; border-collapse: separate; border: 1px solid #c8e3d8; border-radius: 8px; background-color: #f2faf7;">
+      <tr>
+        <td style="padding: 18px;">
+          <p style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #17222d;">Your draft details</p>
+
+          <p style="margin: 0 0 6px 0; font-size: 11px; color: #4d5d68; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">Draft code</p>
+          <p style="margin: 0 0 14px 0; font-size: 22px; font-weight: 700; color: #1a4f43; font-family: 'SF Mono', Monaco, 'Courier New', monospace; background-color: #ffffff; border: 1px solid #d5e5df; border-radius: 6px; padding: 10px 14px; letter-spacing: 0.15em;">
+            ${safeDraftCode}
+          </p>
+
+          <p style="margin: 0 0 6px 0; font-size: 11px; color: #4d5d68; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">Resume link</p>
+          <p style="margin: 0; font-size: 13px; color: #1b2732; background-color: #ffffff; border: 1px solid #d5e5df; border-radius: 6px; padding: 10px 14px; word-break: break-all; line-height: 1.5;">
+            <a href="${safeResumeUrl}" style="color: #1a5a4c; text-decoration: none;">${safeResumeUrl}</a>
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <table role="presentation" align="center" cellspacing="0" cellpadding="0" style="margin: 0 auto 24px auto;">
+      <tr>
+        <td align="center" style="border-radius: 8px; background-color: #1a4f43; border: 1px solid #143a32;">
+          <a href="${safeResumeUrl}" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 700; color: #ffffff; text-decoration: none; font-family: 'Trebuchet MS', 'Avenir Next', 'Segoe UI', sans-serif;">Continue filling form</a>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin: 0; color: #5b6672; font-size: 13px; line-height: 1.6;">
+      Keep this email safe — you'll need the draft code or link to continue your response.
+    </p>
+  `;
+
+  return {
+    subject: `Your draft for: ${formTitle}`,
+    html: baseTemplate({
+      title: 'Form Draft Saved',
+      preheader: `Your draft code is ${draftCode}. Use it to continue filling out ${formTitle}.`,
+      content,
+      footerText: `You received this email because you requested a copy of your form draft.`,
+    }),
+  };
+}

@@ -28,6 +28,7 @@ import {
 import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
 import { getAppBaseUrl, sendEmail, type EmailAttachment } from '@/lib/email';
+import { formDraftEmail } from '@/lib/email-templates';
 import { createLogger } from '@/lib/logger';
 import type { TenantAwareParams } from '@/lib/types';
 import type {
@@ -3103,25 +3104,11 @@ export async function emailPublicFormDraft(
   const resumeUrl = buildDraftResumeUrl(form.slug, draft.code, accessToken);
 
   const email = recipientEmail.trim().toLowerCase();
-  const safeFormTitle = form.title.replace(/[<>&"]/g, (m) =>
-    m === '<' ? '&lt;' : m === '>' ? '&gt;' : m === '&' ? '&amp;' : '&quot;'
-  );
-  const safeDraftCode = draftCode.replace(/[<>&"]/g, (m) =>
-    m === '<' ? '&lt;' : m === '>' ? '&gt;' : m === '&' ? '&amp;' : '&quot;'
-  );
-  const safeResumeUrl = resumeUrl.replace(/[<>&"]/g, (m) =>
-    m === '<' ? '&lt;' : m === '>' ? '&gt;' : m === '&' ? '&amp;' : '&quot;'
-  );
-
-  const subject = `Your draft for: ${form.title}`;
-  const html = `
-    <p>Hello,</p>
-    <p>Here are your draft details for <strong>${safeFormTitle}</strong>.</p>
-    <p><strong>Draft code:</strong> ${safeDraftCode}</p>
-    <p><strong>Resume link:</strong> <a href="${safeResumeUrl}">${safeResumeUrl}</a></p>
-    <p>Use the code or link to continue filling out your form.</p>
-    <p>If you did not request this email, you can ignore it.</p>
-  `;
+  const { subject, html } = formDraftEmail({
+    formTitle: form.title,
+    draftCode,
+    resumeUrl,
+  });
 
   const result = await sendEmail({ to: email, subject, html });
   if (!result.success) {
