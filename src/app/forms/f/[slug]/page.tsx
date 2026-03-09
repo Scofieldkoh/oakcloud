@@ -1037,6 +1037,7 @@ export default function PublicFormPage() {
       uploadsByFieldKey: normalizeDraftUploadsByFieldKey(draftData.uploadsByFieldKey),
     });
     setDraftSession(nextDraft);
+    setIsFirstDraftSave(false);
     setResumeDraftCodeInput(nextDraft.draftCode);
     if (options && 'feedback' in options) {
       setDraftError(null);
@@ -1121,9 +1122,9 @@ export default function PublicFormPage() {
                 }
               );
             }
-          } catch (draftError) {
+          } catch (err) {
             if (!isCancelled) {
-              setDraftFeedback(draftError instanceof Error ? draftError.message : uiLabel('resume_draft_failed'));
+              setDraftFeedback(err instanceof Error ? err.message : uiLabel('resume_draft_failed'));
             }
           }
         }
@@ -1855,7 +1856,6 @@ export default function PublicFormPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: normalizedEmail,
-            resumeUrl: draftSession.resumeUrl,
             accessToken: draftSession.accessToken,
           }),
         }

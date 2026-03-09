@@ -3082,26 +3082,43 @@ export async function emailPublicFormDraft(
   slug: string,
   draftCode: string,
   recipientEmail: string,
-  resumeUrl: string
+  accessToken: string
 ): Promise<void> {
   const form = await prisma.form.findFirst({
-    where: { slug, deletedAt: null },
-    select: { title: true },
+    where: { slug, status: 'PUBLISHED', deletedAt: null },
+    select: { id: true, tenantId: true, title: true, slug: true },
   });
 
   if (!form) throw new Error('Form not found');
 
+  const draft = await loadDraftByAccess({
+    formId: form.id,
+    tenantId: form.tenantId,
+    draftCode,
+    accessToken,
+  });
+
+  if (!draft) throw new Error('Draft not found');
+
+  const resumeUrl = buildDraftResumeUrl(form.slug, draft.code, accessToken);
+
   const email = recipientEmail.trim().toLowerCase();
-  const safeFormTitle = form.title.replace(/[<>&]/g, (m) =>
-    m === '<' ? '&lt;' : m === '>' ? '&gt;' : '&amp;'
+  const safeFormTitle = form.title.replace(/[<>&"]/g, (m) =>
+    m === '<' ? '&lt;' : m === '>' ? '&gt;' : m === '&' ? '&amp;' : '&quot;'
+  );
+  const safeDraftCode = draftCode.replace(/[<>&"]/g, (m) =>
+    m === '<' ? '&lt;' : m === '>' ? '&gt;' : m === '&' ? '&amp;' : '&quot;'
+  );
+  const safeResumeUrl = resumeUrl.replace(/[<>&"]/g, (m) =>
+    m === '<' ? '&lt;' : m === '>' ? '&gt;' : m === '&' ? '&amp;' : '&quot;'
   );
 
   const subject = `Your draft for: ${form.title}`;
   const html = `
     <p>Hello,</p>
     <p>Here are your draft details for <strong>${safeFormTitle}</strong>.</p>
-    <p><strong>Draft code:</strong> ${draftCode}</p>
-    <p><strong>Resume link:</strong> <a href="${resumeUrl}">${resumeUrl}</a></p>
+    <p><strong>Draft code:</strong> ${safeDraftCode}</p>
+    <p><strong>Resume link:</strong> <a href="${safeResumeUrl}">${safeResumeUrl}</a></p>
     <p>Use the code or link to continue filling out your form.</p>
     <p>If you did not request this email, you can ignore it.</p>
   `;

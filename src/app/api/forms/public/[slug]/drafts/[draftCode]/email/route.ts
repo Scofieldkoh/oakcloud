@@ -5,7 +5,6 @@ import { emailPublicFormDraft } from '@/services/form-builder.service';
 
 const emailPayloadSchema = z.object({
   email: z.string().email().max(320),
-  resumeUrl: z.string().url().max(2048),
   accessToken: z.string().min(1),
 });
 
@@ -29,7 +28,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     const body = await request.json();
     const payload = emailPayloadSchema.parse(body);
 
-    await emailPublicFormDraft(slug, draftCode, payload.email, payload.resumeUrl);
+    await emailPublicFormDraft(slug, draftCode, payload.email, payload.accessToken);
 
     return NextResponse.json({ success: true });
   } catch (error) {
