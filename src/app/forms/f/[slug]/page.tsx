@@ -3488,7 +3488,9 @@ export default function PublicFormPage() {
                 onClick={saveDraft}
                 isLoading={isSavingDraft}
               >
-                {isSavingDraft ? localizedUiLabels.saving_draft : localizedUiLabels.save_draft}
+                {isSavingDraft
+                  ? (draftSession ? localizedUiLabels.updating_draft : localizedUiLabels.saving_draft)
+                  : (draftSession ? localizedUiLabels.update_draft : localizedUiLabels.save_draft)}
               </Button>
             )}
             {currentPage < pages.length - 1 ? (
