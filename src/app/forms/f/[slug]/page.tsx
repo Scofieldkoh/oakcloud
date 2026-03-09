@@ -49,14 +49,20 @@ const DEFAULT_UI_LABELS = {
   page_progress: 'Page {current} of {total}',
   page_progress_short: '{current} of {total}',
   upload_file: 'Upload a file',
+  upload_files: 'Upload files',
   replace_file: 'Replace file',
+  add_more_files: 'Add more files',
   upload_drag_hint: 'or drag and drop here',
   upload_select_prompt: 'Select a file to upload',
+  upload_select_multiple_prompt: 'Select one or more files to upload',
   uploading: 'Uploading...',
   upload_success: 'File uploaded successfully',
+  upload_success_plural: 'Files uploaded successfully',
   upload_failed: 'Upload failed',
   uploaded_file_fallback: 'Uploaded file',
   upload_file_for_field: 'Upload file for {field}',
+  upload_files_for_field: 'Upload files for {field}',
+  remove_file: 'Remove file',
   add_row: 'Add row',
   remove_row: 'Remove row',
   phone_code_placeholder: 'Code',
@@ -92,6 +98,14 @@ const DEFAULT_UI_LABELS = {
   resume_link_unavailable: 'Resume link is unavailable on this browser.',
   resume_link_copied: 'Resume link copied.',
   resume_link_copy_failed: 'Failed to copy resume link.',
+  draft_active: 'Draft active',
+  update_draft: 'Update draft',
+  updating_draft: 'Updating...',
+  draft_updated: 'Draft updated',
+  send_draft_to_email: 'Send to my email',
+  draft_email_sent: 'Sent to {email}',
+  draft_email_failed: 'Failed to send',
+  draft_email_placeholder: 'name@example.com',
   response_submitted_title: 'Response submitted',
   response_submitted_description: 'Your response has been recorded.',
   preview_submit_notice: 'Preview mode is read-only. Publish the form to accept submissions.',
@@ -164,7 +178,7 @@ type DraftRestorePayload = {
   draft: DraftSession;
   answers: Record<string, unknown>;
   metadata: Record<string, unknown>;
-  uploadsByFieldKey: Record<string, UploadStatus>;
+  uploadsByFieldKey: Record<string, UploadStatus[]>;
 };
 
 type RepeatSectionConfig = {
@@ -309,6 +323,36 @@ function formatDraftDateTime(value: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleString();
+}
+
+function isMultipleFileUploadEnabled(field: PublicField): boolean {
+  if (field.type !== 'FILE_UPLOAD') return false;
+  const validation = parseObject(field.validation);
+  return validation?.allowMultipleFiles === true;
+}
+
+function normalizeDraftUploadsByFieldKey(value: unknown): Record<string, UploadStatus[]> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+
+  const result: Record<string, UploadStatus[]> = {};
+  for (const [fieldKey, rawUploads] of Object.entries(value)) {
+    const rawList = Array.isArray(rawUploads) ? rawUploads : [rawUploads];
+    const uploads = rawList
+      .filter((item): item is UploadStatus => !!item && typeof item === 'object' && !Array.isArray(item))
+      .map((item) => ({
+        id: typeof item.id === 'string' ? item.id : '',
+        fileName: typeof item.fileName === 'string' ? item.fileName : 'Uploaded file',
+        mimeType: typeof item.mimeType === 'string' ? item.mimeType : 'application/octet-stream',
+        sizeBytes: typeof item.sizeBytes === 'number' ? item.sizeBytes : 0,
+      }))
+      .filter((item) => item.id.length > 0);
+
+    if (uploads.length > 0) {
+      result[fieldKey] = uploads;
+    }
+  }
+
+  return result;
 }
 
 function isTooltipEnabled(field: PublicField): boolean {
@@ -800,7 +844,7 @@ export default function PublicFormPage() {
   const [pdfEmailAccessToken, setPdfEmailAccessToken] = useState<string | null>(null);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [dragOverUploadFieldKey, setDragOverUploadFieldKey] = useState<string | null>(null);
-  const [uploadedByFieldKey, setUploadedByFieldKey] = useState<Record<string, UploadStatus>>({});
+  const [uploadedByFieldKey, setUploadedByFieldKey] = useState<Record<string, UploadStatus[]>>({});
   const [draftSession, setDraftSession] = useState<DraftSession | null>(null);
   const [pendingDraftRestore, setPendingDraftRestore] = useState<DraftRestorePayload | null>(null);
   const [resumeDraftCodeInput, setResumeDraftCodeInput] = useState('');
@@ -968,9 +1012,7 @@ export default function PublicFormPage() {
       metadata: draftData.metadata && typeof draftData.metadata === 'object' && !Array.isArray(draftData.metadata)
         ? draftData.metadata as Record<string, unknown>
         : {},
-      uploadsByFieldKey: draftData.uploadsByFieldKey && typeof draftData.uploadsByFieldKey === 'object' && !Array.isArray(draftData.uploadsByFieldKey)
-        ? draftData.uploadsByFieldKey as Record<string, UploadStatus>
-        : {},
+      uploadsByFieldKey: normalizeDraftUploadsByFieldKey(draftData.uploadsByFieldKey),
     });
     setDraftSession(nextDraft);
     setResumeDraftCodeInput(nextDraft.draftCode);
@@ -1570,7 +1612,11 @@ export default function PublicFormPage() {
     return Object.keys(nextErrors).length === 0;
   }
 
-  async function uploadFile(fieldKey: string, file: File) {
+  async function uploadFiles(field: PublicField, files: File[]) {
+    const fieldKey = field.key;
+    const allowMultipleFiles = isMultipleFileUploadEnabled(field);
+    if (files.length === 0) return;
+
     if (isPreview) {
       setFieldErrors((prev) => ({
         ...prev,
@@ -1581,44 +1627,80 @@ export default function PublicFormPage() {
 
     setUploadingField(fieldKey);
     try {
-      const formData = new FormData();
-      formData.append('fieldKey', fieldKey);
-      formData.append('file', file);
+      const uploadedStatuses: UploadStatus[] = [];
 
-      const response = await fetch(`/api/forms/public/${slug}/uploads`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('fieldKey', fieldKey);
+        formData.append('file', file);
 
-      if (!response.ok) {
-        throw new Error(data.error || uiLabel('upload_failed'));
-      }
+        const response = await fetch(`/api/forms/public/${slug}/uploads`, {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await response.json();
 
-      setFieldValue(fieldKey, [data.id]);
-      setUploadedByFieldKey((prev) => ({
-        ...prev,
-        [fieldKey]: {
+        if (!response.ok) {
+          throw new Error(data.error || uiLabel('upload_failed'));
+        }
+
+        uploadedStatuses.push({
           id: data.id,
           fileName: typeof data.fileName === 'string' ? data.fileName : uiLabel('uploaded_file_fallback'),
           mimeType: typeof data.mimeType === 'string' ? data.mimeType : 'application/octet-stream',
           sizeBytes: typeof data.sizeBytes === 'number' ? data.sizeBytes : 0,
-        },
-      }));
+        });
+      }
+
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[fieldKey];
+        return next;
+      });
+      const existingIds = allowMultipleFiles ? collectUploadIds(answers[fieldKey]) : [];
+      setFieldValue(
+        fieldKey,
+        allowMultipleFiles
+          ? [...existingIds, ...uploadedStatuses.map((status) => status.id)]
+          : uploadedStatuses.slice(-1).map((status) => status.id)
+      );
+      setUploadedByFieldKey((prev) => {
+        const existing = allowMultipleFiles ? (prev[fieldKey] || []) : [];
+        return {
+          ...prev,
+          [fieldKey]: allowMultipleFiles
+            ? [...existing, ...uploadedStatuses]
+            : uploadedStatuses.slice(-1),
+        };
+      });
     } catch (err) {
       setFieldErrors((prev) => ({
         ...prev,
         [fieldKey]: err instanceof Error ? err.message : uiLabel('upload_failed'),
       }));
-      setUploadedByFieldKey((prev) => {
-        const next = { ...prev };
-        delete next[fieldKey];
-        return next;
-      });
     } finally {
       setUploadingField(null);
       setDragOverUploadFieldKey((prev) => (prev === fieldKey ? null : prev));
     }
+  }
+
+  function removeUploadedFile(fieldKey: string, uploadId: string) {
+    setFieldValue(fieldKey, collectUploadIds(answers[fieldKey]).filter((candidate) => candidate !== uploadId));
+    setUploadedByFieldKey((prev) => {
+      const next = { ...prev };
+      const remaining = (next[fieldKey] || []).filter((upload) => upload.id !== uploadId);
+      if (remaining.length > 0) {
+        next[fieldKey] = remaining;
+      } else {
+        delete next[fieldKey];
+      }
+      return next;
+    });
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[fieldKey];
+      return next;
+    });
   }
 
   async function saveDraft() {
@@ -2531,7 +2613,8 @@ export default function PublicFormPage() {
     const useSplitPhoneInput = field.type === 'SHORT_TEXT' && field.inputType === 'phone' && isSplitPhoneCountryCodeEnabled(field);
     const showTooltip = isTooltipEnabled(localizedField);
     const tooltipText = showTooltip ? localizedField.helpText!.trim() : null;
-    const uploadStatus = uploadedByFieldKey[field.key];
+    const allowMultipleFiles = field.type === 'FILE_UPLOAD' && isMultipleFileUploadEnabled(field);
+    const uploadStatuses = uploadedByFieldKey[field.key] || [];
     const isUploadDragOver = dragOverUploadFieldKey === field.key;
     const dateDefaultValue = useDateSelector && isDateDefaultTodayEnabled(field)
       ? getLocalTodayIsoDate()
@@ -2956,11 +3039,11 @@ export default function PublicFormPage() {
               'cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#294D44]/20',
               isUploadDragOver
                 ? 'border-oak-primary bg-oak-primary/5'
-                : (uploadStatus ? 'border-status-success/40' : 'border-border-primary/60 hover:border-oak-primary/40')
+                : (uploadStatuses.length > 0 ? 'border-status-success/40' : 'border-border-primary/60 hover:border-oak-primary/40')
             )}
               role="button"
               tabIndex={0}
-              aria-label={uiLabel('upload_file_for_field', { field: accessibleLabel })}
+              aria-label={uiLabel(allowMultipleFiles ? 'upload_files_for_field' : 'upload_file_for_field', { field: accessibleLabel })}
               onClick={() => {
                 const input = document.getElementById(controlId);
                 if (input instanceof HTMLInputElement) {
@@ -2992,25 +3075,28 @@ export default function PublicFormPage() {
                 if (!dragTypes.includes('Files')) return;
                 e.preventDefault();
                 setDragOverUploadFieldKey((prev) => (prev === field.key ? null : prev));
-                const file = e.dataTransfer.files?.[0];
-                if (file) {
-                  void uploadFile(field.key, file);
+                const files = Array.from(e.dataTransfer.files || []);
+                if (files.length > 0) {
+                  void uploadFiles(field, allowMultipleFiles ? files : files.slice(0, 1));
                 }
               }}
             >
               <UploadCloud className="mx-auto mb-2 h-8 w-8 text-text-muted" />
               <p className="text-sm text-text-primary underline">
-                {uploadStatus ? localizedUiLabels.replace_file : localizedUiLabels.upload_file}
+                {uploadStatuses.length > 0
+                  ? (allowMultipleFiles ? localizedUiLabels.add_more_files : localizedUiLabels.replace_file)
+                  : (allowMultipleFiles ? localizedUiLabels.upload_files : localizedUiLabels.upload_file)}
               </p>
               <p className="mt-1 text-xs text-text-secondary">{localizedUiLabels.upload_drag_hint}</p>
               <input id={controlId} type="file" className="sr-only"
+                multiple={allowMultipleFiles}
                 aria-label={field.hideLabel ? accessibleLabel : undefined}
                 aria-invalid={errorText ? 'true' : undefined}
                 aria-describedby={describedBy}
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    void uploadFile(field.key, file);
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) {
+                    void uploadFiles(field, allowMultipleFiles ? files : files.slice(0, 1));
                   }
                   e.currentTarget.value = '';
                 }}
@@ -3018,19 +3104,35 @@ export default function PublicFormPage() {
               <p className="mt-1 text-xs text-text-muted">
                 {uploadingField === field.key
                   ? localizedUiLabels.uploading
-                  : uploadStatus
-                    ? localizedUiLabels.upload_success
-                    : localizedUiLabels.upload_select_prompt}
+                  : uploadStatuses.length > 0
+                    ? (uploadStatuses.length > 1 ? localizedUiLabels.upload_success_plural : localizedUiLabels.upload_success)
+                    : (allowMultipleFiles ? localizedUiLabels.upload_select_multiple_prompt : localizedUiLabels.upload_select_prompt)}
               </p>
-              {uploadStatus && (
-                <div className="mt-3 rounded-md border border-status-success/30 bg-status-success/5 px-2.5 py-2 text-left">
-                  <div className="flex items-start gap-2 text-sm text-text-primary">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-status-success" />
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{uploadStatus.fileName}</p>
-                      <p className="text-xs text-text-secondary">{formatFileSize(uploadStatus.sizeBytes)}</p>
+              {uploadStatuses.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {uploadStatuses.map((upload) => (
+                    <div key={upload.id} className="rounded-md border border-status-success/30 bg-status-success/5 px-2.5 py-2 text-left">
+                      <div className="flex items-start gap-2 text-sm text-text-primary">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 text-status-success" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium">{upload.fileName}</p>
+                          <p className="text-xs text-text-secondary">{formatFileSize(upload.sizeBytes)}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            removeUploadedFile(field.key, upload.id);
+                          }}
+                          className="rounded border border-border-primary bg-background-primary px-2 py-1 text-xs text-text-secondary hover:text-text-primary"
+                          aria-label={`${localizedUiLabels.remove_file}: ${upload.fileName}`}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -3059,7 +3161,9 @@ export default function PublicFormPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8 flex items-center justify-center">
-        <div className="text-sm text-white/70">{uiLabel('loading_form')}</div>
+        <div className="rounded-xl border border-border-primary/50 bg-white/90 px-4 py-3 text-sm font-medium text-text-primary shadow-sm">
+          {uiLabel('loading_form')}
+        </div>
       </div>
     );
   }
