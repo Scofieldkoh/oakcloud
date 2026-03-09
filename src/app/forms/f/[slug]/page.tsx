@@ -855,6 +855,12 @@ export default function PublicFormPage() {
   const [isDraftDetailsModalOpen, setIsDraftDetailsModalOpen] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isResumingDraft, setIsResumingDraft] = useState(false);
+  const [isDraftEmailExpanded, setIsDraftEmailExpanded] = useState(false);
+  const [draftEmailInput, setDraftEmailInput] = useState('');
+  const [isDraftEmailSending, setIsDraftEmailSending] = useState(false);
+  const [draftEmailFeedback, setDraftEmailFeedback] = useState<string | null>(null);
+  const [draftEmailError, setDraftEmailError] = useState<string | null>(null);
+  const [draftEmailSent, setDraftEmailSent] = useState(false);
   const [repeatSectionCounts, setRepeatSectionCounts] = useState<Record<string, number>>({});
   const [pdfRecipientEmail, setPdfRecipientEmail] = useState('');
   const [emailFeedback, setEmailFeedback] = useState<string | null>(null);
@@ -953,6 +959,19 @@ export default function PublicFormPage() {
       })
       .map((entry) => entry.field);
   }, [form]);
+
+  const detectedEmailFromForm = useMemo(() => {
+    if (!orderedFields) return '';
+    for (const field of orderedFields) {
+      if (EMAIL_HINT_PATTERN.test(field.key) || EMAIL_HINT_PATTERN.test(field.label ?? '')) {
+        const val = answers[field.key];
+        if (typeof val === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())) {
+          return val.trim();
+        }
+      }
+    }
+    return '';
+  }, [orderedFields, answers]);
 
   const localizedFieldsById = useMemo(() => {
     const fieldMap = new Map<string, PublicField>();
@@ -1766,6 +1785,11 @@ export default function PublicFormPage() {
       );
       setDraftError(null);
       if (isFirstDraftSave) {
+        setDraftEmailInput(detectedEmailFromForm);
+        setDraftEmailSent(false);
+        setDraftEmailFeedback(null);
+        setDraftEmailError(null);
+        setIsDraftEmailExpanded(false);
         setIsDraftDetailsModalOpen(true);
         setIsFirstDraftSave(false);
       } else {
@@ -1808,6 +1832,45 @@ export default function PublicFormPage() {
       setDraftError(err instanceof Error ? err.message : uiLabel('resume_draft_failed'));
     } finally {
       setIsResumingDraft(false);
+    }
+  }
+
+  async function sendDraftEmail() {
+    if (!draftSession) return;
+
+    const normalizedEmail = draftEmailInput.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setDraftEmailError(uiLabel('email_invalid'));
+      return;
+    }
+
+    setIsDraftEmailSending(true);
+    setDraftEmailFeedback(null);
+    setDraftEmailError(null);
+    try {
+      const response = await fetch(
+        `/api/forms/public/${slug}/drafts/${encodeURIComponent(draftSession.draftCode)}/email`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: normalizedEmail,
+            resumeUrl: draftSession.resumeUrl,
+            accessToken: draftSession.accessToken,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || uiLabel('draft_email_failed'));
+      }
+      setDraftEmailFeedback(uiLabel('draft_email_sent', { email: normalizedEmail }));
+      setDraftEmailSent(true);
+      setTimeout(() => setIsDraftEmailExpanded(false), 1500);
+    } catch (err) {
+      setDraftEmailError(err instanceof Error ? err.message : uiLabel('draft_email_failed'));
+    } finally {
+      setIsDraftEmailSending(false);
     }
   }
 
