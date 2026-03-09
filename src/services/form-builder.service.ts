@@ -481,6 +481,222 @@ function getRepeatSectionRowCount(
   return Math.max(minItems, rowCount);
 }
 
+function buildSubmissionPdfHtml(input: {
+  formTitle: string;
+  formDescription?: string | null;
+  submittedAt: Date;
+  respondentName: string | null;
+  respondentEmail: string | null;
+  status: FormSubmissionStatus;
+  fields: FormField[];
+  answers: Record<string, unknown>;
+  uploads: FormUpload[];
+  tenantLogoUrl?: string | null;
+  tenantName?: string | null;
+  formSettings?: unknown;
+}): { contentHtml: string; footerHtml: string } {
+  const settings = parseObject(input.formSettings);
+  const hideLogo = settings?.hideLogo === true;
+  const hideFooter = settings?.hideFooter === true;
+
+  const uploadsById = new Map(input.uploads.map((u) => [u.id, u]));
+
+  const appBase = getAppBaseUrl();
+  const logoUrl = !hideLogo && input.tenantLogoUrl
+    ? (input.tenantLogoUrl.startsWith('http') ? input.tenantLogoUrl : `${appBase}${input.tenantLogoUrl}`)
+    : null;
+  const footerText = !hideFooter && input.tenantName ? `\u00a9 ${input.tenantName}` : null;
+
+  const submittedAt = new Date(input.submittedAt).toLocaleString('en-SG', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+
+  function esc(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderFieldValue(field: FormField, value: unknown): string {
+    if (field.type === 'SIGNATURE') {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return `<img src="${esc(value)}" alt="Signature" style="max-height:80px;max-width:240px;object-fit:contain;display:block;" />`;
+      }
+      return `<span class="empty">\u2014</span>`;
+    }
+    if (field.type === 'FILE_UPLOAD') {
+      const ids = toUploadIds(value);
+      if (ids.length === 0) return `<span class="empty">\u2014</span>`;
+      return ids.map((id) => `<div class="file-name">${esc(uploadsById.get(id)?.fileName || id)}</div>`).join('');
+    }
+    if (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE' || field.type === 'DROPDOWN') {
+      const text = formatChoiceAnswer(value);
+      return text ? esc(text) : `<span class="empty">\u2014</span>`;
+    }
+    if (value === null || value === undefined || value === '') {
+      return `<span class="empty">\u2014</span>`;
+    }
+    if (Array.isArray(value)) {
+      const text = value.map((item) => String(item)).join(', ').trim();
+      return text ? esc(text) : `<span class="empty">\u2014</span>`;
+    }
+    const text = String(value).trim();
+    return text ? `<span style="white-space:pre-wrap">${esc(text)}</span>` : `<span class="empty">\u2014</span>`;
+  }
+
+  function renderField(field: FormField, value: unknown): string {
+    if (field.type === 'PARAGRAPH' || field.type === 'HTML' || field.type === 'HIDDEN') return '';
+    const label = esc(field.label?.trim() || field.key);
+    return `
+      <div class="field">
+        <div class="field-label">${label}</div>
+        <div class="field-value">${renderFieldValue(field, value)}</div>
+      </div>`;
+  }
+
+  type PdfItem =
+    | { kind: 'field'; field: FormField }
+    | { kind: 'repeat'; title: string; hint: string | null; fields: FormField[]; rowCount: number };
+
+  const items: PdfItem[] = [];
+
+  for (let i = 0; i < input.fields.length; i++) {
+    const field = input.fields[i];
+
+    if (field.type === 'PAGE_BREAK') {
+      if (field.inputType === 'repeat_start') {
+        const sectionFields: FormField[] = [];
+        let cursor = i + 1;
+        while (cursor < input.fields.length) {
+          const candidate = input.fields[cursor];
+          if (candidate.type === 'PAGE_BREAK' && candidate.inputType === 'repeat_end') break;
+          if (candidate.type === 'PAGE_BREAK') { cursor -= 1; break; }
+          if (candidate.type !== 'HIDDEN') sectionFields.push(candidate);
+          cursor++;
+        }
+        const validation = parseObject(field.validation);
+        const minItemsRaw = typeof validation?.repeatMinItems === 'number' ? Math.trunc(validation.repeatMinItems) : 1;
+        const minItems = Math.max(1, Math.min(50, minItemsRaw));
+        let rowCount = 0;
+        for (const sf of sectionFields) {
+          const v = input.answers[sf.key];
+          if (Array.isArray(v)) rowCount = Math.max(rowCount, v.length);
+          else if (!isEmptyValue(v)) rowCount = Math.max(rowCount, 1);
+        }
+        rowCount = Math.max(minItems, rowCount);
+        const hasData = sectionFields.some((sf) => {
+          const v = input.answers[sf.key];
+          return Array.isArray(v) ? v.some((item) => !isEmptyValue(item)) : !isEmptyValue(v);
+        });
+        if ((evaluateCondition(field.condition, input.answers) || hasData) && sectionFields.length > 0 && rowCount > 0) {
+          items.push({ kind: 'repeat', title: field.label?.trim() || 'Section', hint: field.subtext?.trim() || null, fields: sectionFields, rowCount });
+        }
+        i = cursor;
+        continue;
+      }
+      continue; // repeat_end and regular page breaks — skip (render flat)
+    }
+
+    if (field.type === 'HIDDEN') continue;
+    if (!evaluateCondition(field.condition, input.answers)) continue;
+    items.push({ kind: 'field', field });
+  }
+
+  const fieldsHtml = items.map((item) => {
+    if (item.kind === 'field') {
+      return renderField(item.field, input.answers[item.field.key]);
+    }
+    const rowsHtml = Array.from({ length: item.rowCount }, (_, rowIndex) => {
+      const rowAnswers: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(input.answers)) {
+        rowAnswers[k] = Array.isArray(v) ? v[rowIndex] : (rowIndex === 0 ? v : undefined);
+      }
+      const rowFields = item.fields.filter(
+        (f) => f.type !== 'HIDDEN' && evaluateCondition(f.condition, rowAnswers)
+      );
+      if (rowFields.length === 0) return '';
+      return `
+        <div class="repeat-card">
+          <div class="repeat-card-label">Entry ${rowIndex + 1}</div>
+          <div class="repeat-card-fields">${rowFields.map((f) => renderField(f, rowAnswers[f.key])).join('')}</div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="repeat-section">
+        <div class="repeat-title">${esc(item.title)}</div>
+        ${item.hint ? `<div class="repeat-hint">${esc(item.hint)}</div>` : ''}
+        ${rowsHtml}
+      </div>`;
+  }).join('');
+
+  const contentHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    font-size: 13px; line-height: 1.5; color: #111827; background: #fff;
+    padding: 48px 52px 32px;
+  }
+  .header { margin-bottom: 24px; }
+  .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
+  .logo { max-height: 48px; max-width: 160px; object-fit: contain; }
+  .form-title { font-size: 22px; font-weight: 700; color: #111827; }
+  .form-description { font-size: 13px; color: #6b7280; margin-top: 4px; }
+  .accent-bar { height: 3px; width: 40px; background: #4f46e5; border-radius: 9999px; margin-top: 12px; }
+  .meta {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px;
+    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 28px; font-size: 12px;
+  }
+  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; font-weight: 600; margin-bottom: 2px; }
+  .meta-value { color: #374151; font-weight: 500; }
+  .field { margin-bottom: 16px; page-break-inside: avoid; }
+  .field-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .field-value { font-size: 13px; color: #111827; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; min-height: 36px; }
+  .empty { color: #d1d5db; }
+  .file-name { color: #374151; }
+  .repeat-section { margin-bottom: 20px; }
+  .repeat-title { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 4px; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }
+  .repeat-hint { font-size: 12px; color: #9ca3af; margin-bottom: 10px; }
+  .repeat-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; margin-bottom: 10px; background: #fff; page-break-inside: avoid; }
+  .repeat-card-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; margin-bottom: 10px; }
+  .repeat-card-fields .field { margin-bottom: 10px; }
+  .repeat-card-fields .field:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-top">
+      ${logoUrl ? `<img class="logo" src="${esc(logoUrl)}" alt="Logo" />` : ''}
+      <h1 class="form-title">${esc(input.formTitle || 'Form Response')}</h1>
+    </div>
+    ${input.formDescription ? `<p class="form-description">${esc(input.formDescription)}</p>` : ''}
+    <div class="accent-bar"></div>
+  </div>
+  <div class="meta">
+    <div class="meta-item"><div class="meta-label">Submitted</div><div class="meta-value">${esc(submittedAt)}</div></div>
+    <div class="meta-item"><div class="meta-label">Status</div><div class="meta-value">${esc(String(input.status))}</div></div>
+    <div class="meta-item"><div class="meta-label">Respondent</div><div class="meta-value">${esc(input.respondentName || '\u2014')}</div></div>
+    <div class="meta-item"><div class="meta-label">Email</div><div class="meta-value">${esc(input.respondentEmail || '\u2014')}</div></div>
+  </div>
+  ${fieldsHtml}
+</body>
+</html>`;
+
+  const footerHtml = footerText
+    ? `<div style="font-size:9px;color:#9ca3af;text-align:center;width:100%;padding:0 40px;font-family:sans-serif;">${esc(footerText)}</div>`
+    : '<div></div>';
+
+  return { contentHtml, footerHtml };
+}
+
 async function buildSubmissionPdfBuffer(input: {
   formTitle: string;
   formDescription?: string | null;
