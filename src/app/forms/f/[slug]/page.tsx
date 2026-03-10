@@ -854,7 +854,6 @@ export default function PublicFormPage() {
   const [isFirstDraftSave, setIsFirstDraftSave] = useState(true);
   const [isDraftDetailsModalOpen, setIsDraftDetailsModalOpen] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
-  const [isResumingDraft, setIsResumingDraft] = useState(false);
   const [isDraftEmailExpanded, setIsDraftEmailExpanded] = useState(false);
   const [draftEmailInput, setDraftEmailInput] = useState('');
   const [isDraftEmailSending, setIsDraftEmailSending] = useState(false);
@@ -1804,37 +1803,6 @@ export default function PublicFormPage() {
     }
   }
 
-  async function resumeDraftByCode() {
-    if (!form || isPreview) return;
-
-    const trimmedCode = resumeDraftCodeInput.trim();
-    if (!DRAFT_CODE_PATTERN.test(trimmedCode)) {
-      return;
-    }
-
-    setIsResumingDraft(true);
-    setDraftFeedback(null);
-    setDraftError(null);
-    try {
-      const response = await fetch(`/api/forms/public/${slug}/drafts/${encodeURIComponent(trimmedCode)}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || uiLabel('resume_draft_failed'));
-      }
-
-      applyResolvedDraftPayload(data as Record<string, unknown>, trimmedCode, undefined, {
-        syncUrl: true,
-        feedback: null,
-      });
-      setCurrentPage(0);
-      scrollToFormTop();
-    } catch (err) {
-      setDraftError(err instanceof Error ? err.message : uiLabel('resume_draft_failed'));
-    } finally {
-      setIsResumingDraft(false);
-    }
-  }
 
   async function sendDraftEmail() {
     if (!draftSession) return;
@@ -3403,45 +3371,12 @@ export default function PublicFormPage() {
             {!draftSession ? (
               // --- IDLE STATE ---
               <div className="mb-6 rounded-xl border border-border-primary/50 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-text-primary">{localizedUiLabels.resume_draft}</p>
-                    <p className="mt-0.5 text-xs text-text-secondary leading-relaxed">
-                      {resumeDraftDescription}
-                    </p>
-                  </div>
-                  <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row lg:w-auto">
-                    <input
-                      type="text"
-                      value={resumeDraftCodeInput}
-                      onChange={(e) => {
-                        const nextValue = e.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 5);
-                        setResumeDraftCodeInput(nextValue);
-                        if (draftError) setDraftError(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && DRAFT_CODE_PATTERN.test(resumeDraftCodeInput.trim())) {
-                          resumeDraftByCode();
-                        }
-                      }}
-                      placeholder={localizedUiLabels.resume_draft_placeholder}
-                      className="h-10 w-full rounded-lg border border-border-primary/60 bg-background-primary px-3.5 py-0 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150 sm:h-9 sm:min-w-44"
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={resumeDraftByCode}
-                      isLoading={isResumingDraft}
-                      disabled={!DRAFT_CODE_PATTERN.test(resumeDraftCodeInput.trim())}
-                    >
-                      {isResumingDraft ? localizedUiLabels.resuming_draft : localizedUiLabels.resume_draft}
-                    </Button>
-                  </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-text-primary">{localizedUiLabels.resume_draft}</p>
+                  <p className="mt-0.5 text-xs text-text-secondary leading-relaxed">
+                    {resumeDraftDescription}
+                  </p>
                 </div>
-                {draftError && (
-                  <p className="mt-2.5 text-xs text-status-error">{draftError}</p>
-                )}
               </div>
             ) : (
               // --- ACTIVE STATE ---

@@ -20,7 +20,11 @@ export async function GET(request: Request, { params }: RouteParams) {
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
-    const draft = await getPublicDraftByCode(slug, draftCode, accessToken || undefined);
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Access token is required to resume a draft' }, { status: 401 });
+    }
+
+    const draft = await getPublicDraftByCode(slug, draftCode, accessToken);
 
     return NextResponse.json(draft);
   } catch (error) {

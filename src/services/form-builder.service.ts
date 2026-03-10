@@ -3864,7 +3864,7 @@ export async function savePublicDraft(
 export async function getPublicDraftByCode(
   slug: string,
   draftCode: string,
-  accessToken?: string
+  accessToken: string
 ): Promise<PublicDraftResumeResult> {
   const form = await prisma.form.findFirst({
     where: {
@@ -3888,31 +3888,15 @@ export async function getPublicDraftByCode(
     throw new Error('Draft saving is not enabled for this form');
   }
 
-  const draft = accessToken
-    ? await loadDraftByAccess({
-      formId: form.id,
-      tenantId: form.tenantId,
-      draftCode,
-      accessToken,
-    })
-    : await loadDraftByCode({
-      formId: form.id,
-      tenantId: form.tenantId,
-      draftCode,
-    });
+  const draft = await loadDraftByAccess({
+    formId: form.id,
+    tenantId: form.tenantId,
+    draftCode,
+    accessToken,
+  });
 
   if (!draft) {
     throw new Error('Draft not found');
-  }
-
-  const resolvedAccessToken = accessToken || generateDraftAccessToken();
-  if (!accessToken) {
-    await prisma.formDraft.update({
-      where: { id: draft.id },
-      data: {
-        accessTokenHash: hashDraftAccessToken(resolvedAccessToken),
-      },
-    });
   }
 
   const uploads = await prisma.formUpload.findMany({
@@ -3930,8 +3914,8 @@ export async function getPublicDraftByCode(
 
   return {
     draftCode: draft.code,
-    accessToken: resolvedAccessToken,
-    resumeUrl: buildDraftResumeUrl(form.slug, draft.code, resolvedAccessToken),
+    accessToken,
+    resumeUrl: buildDraftResumeUrl(form.slug, draft.code, accessToken),
     expiresAt: draft.expiresAt,
     savedAt: draft.lastSavedAt,
     answers,
