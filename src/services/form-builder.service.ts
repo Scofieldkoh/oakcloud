@@ -62,7 +62,7 @@ export interface FormListResult {
 }
 
 export interface FormResponsesResult {
-  submissions: FormSubmission[];
+  submissions: FormResponseSubmissionListItem[];
   total: number;
   page: number;
   limit: number;
@@ -75,6 +75,19 @@ export interface FormResponsesResult {
   chart: Array<{ date: string; responses: number }>;
 }
 
+export interface FormResponseAttachmentListItem {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: Date;
+}
+
+export interface FormResponseSubmissionListItem extends FormSubmission {
+  uploadCount: number;
+  attachments: FormResponseAttachmentListItem[];
+}
+
 export interface FormResponseDraftListItem {
   id: string;
   code: string;
@@ -84,6 +97,7 @@ export interface FormResponseDraftListItem {
   lastSavedAt: Date;
   createdAt: Date;
   uploadCount: number;
+  attachments: FormResponseAttachmentListItem[];
 }
 
 export interface FormResponseDetailResult {
@@ -343,7 +357,11 @@ function buildSubmissionPdfHtml(input: {
     if (field.type === 'FILE_UPLOAD') {
       const ids = toUploadIds(value);
       if (ids.length === 0) return `<span class="empty">\u2014</span>`;
-      return ids.map((id) => `<div class="file-name">${esc(uploadsById.get(id)?.fileName || id)}</div>`).join('');
+      return ids.map((id) => {
+        const upload = uploadsById.get(id);
+        const name = upload?.originalFileName || upload?.fileName || id;
+        return `<div class="file-name">${esc(name)}</div>`;
+      }).join('');
     }
     if (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE' || field.type === 'DROPDOWN') {
       const text = formatChoiceAnswer(value);
@@ -461,7 +479,7 @@ function buildSubmissionPdfHtml(input: {
 <meta charset="UTF-8" />
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  @page { size: A4 portrait; margin: 48px 52px 48px; }
+  @page { size: A4 portrait; margin: 48px 52px 72px; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
     font-size: 13px; line-height: 1.5; color: #111827; background: #fff;
@@ -501,7 +519,7 @@ function buildSubmissionPdfHtml(input: {
   }
   .field-label-inline { font-size: 13px; color: #111827; font-weight: 500; flex: 1 1 0; min-width: 0; word-break: break-word; }
   .choice-options-right { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; flex-shrink: 0; max-width: 55%; }
-  .choice-option { font-size: 11px; padding: 2px 9px; border-radius: 9999px; border: 1px solid #d1d5db; color: #6b7280; background: #fff; white-space: nowrap; }
+  .choice-option { font-size: 11px; padding: 2px 9px; border-radius: 9999px; border: 1px solid #d1d5db; color: #6b7280; background: #fff; white-space: normal; word-break: break-word; }
   .choice-option-selected { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; font-weight: 600; }
   /* --- Misc --- */
   .empty { color: #d1d5db; }
@@ -1569,6 +1587,77 @@ export async function getFormResponses(
     }),
   ]);
 
+  const submissionIds = submissions.map((submission) => submission.id);
+  const draftIds = drafts.map((draft) => draft.id);
+
+  const [submissionUploads, draftUploads] = await Promise.all([
+    submissionIds.length > 0
+      ? prisma.formUpload.findMany({
+        where: {
+          formId,
+          tenantId,
+          submissionId: { in: submissionIds },
+        },
+        select: {
+          id: true,
+          submissionId: true,
+          fileName: true,
+          mimeType: true,
+          sizeBytes: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      })
+      : Promise.resolve([]),
+    draftIds.length > 0
+      ? prisma.formUpload.findMany({
+        where: {
+          formId,
+          tenantId,
+          draftId: { in: draftIds },
+          submissionId: null,
+        },
+        select: {
+          id: true,
+          draftId: true,
+          fileName: true,
+          mimeType: true,
+          sizeBytes: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      })
+      : Promise.resolve([]),
+  ]);
+
+  const submissionAttachmentsById = new Map<string, FormResponseAttachmentListItem[]>();
+  for (const upload of submissionUploads) {
+    if (!upload.submissionId) continue;
+    const list = submissionAttachmentsById.get(upload.submissionId) ?? [];
+    list.push({
+      id: upload.id,
+      fileName: upload.fileName,
+      mimeType: upload.mimeType,
+      sizeBytes: upload.sizeBytes,
+      createdAt: upload.createdAt,
+    });
+    submissionAttachmentsById.set(upload.submissionId, list);
+  }
+
+  const draftAttachmentsById = new Map<string, FormResponseAttachmentListItem[]>();
+  for (const upload of draftUploads) {
+    if (!upload.draftId) continue;
+    const list = draftAttachmentsById.get(upload.draftId) ?? [];
+    list.push({
+      id: upload.id,
+      fileName: upload.fileName,
+      mimeType: upload.mimeType,
+      sizeBytes: upload.sizeBytes,
+      createdAt: upload.createdAt,
+    });
+    draftAttachmentsById.set(upload.draftId, list);
+  }
+
   const today = new Date();
   const chartMap = new Map<string, number>();
 
@@ -1585,7 +1674,14 @@ export async function getFormResponses(
   }
 
   return {
-    submissions,
+    submissions: submissions.map((submission) => {
+      const attachments = submissionAttachmentsById.get(submission.id) ?? [];
+      return {
+        ...submission,
+        uploadCount: attachments.length,
+        attachments,
+      };
+    }),
     total,
     page,
     limit,
@@ -1599,6 +1695,7 @@ export async function getFormResponses(
       lastSavedAt: draft.lastSavedAt,
       createdAt: draft.createdAt,
       uploadCount: draft._count.uploads,
+      attachments: draftAttachmentsById.get(draft.id) ?? [],
     })),
     draftTotal,
     draftPage,
@@ -2770,6 +2867,7 @@ export async function createPublicUpload(
       fieldId: field.id,
       storageKey,
       fileName: file.name,
+      originalFileName: file.name,
       mimeType: actualMime,
       sizeBytes: file.size,
     },

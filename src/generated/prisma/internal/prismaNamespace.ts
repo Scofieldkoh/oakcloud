@@ -8790,6 +8790,7 @@ export const FormUploadScalarFieldEnum = {
   fieldId: 'fieldId',
   storageKey: 'storageKey',
   fileName: 'fileName',
+  originalFileName: 'originalFileName',
   mimeType: 'mimeType',
   sizeBytes: 'sizeBytes',
   createdAt: 'createdAt'

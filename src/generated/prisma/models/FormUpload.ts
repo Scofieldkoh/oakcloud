@@ -43,6 +43,7 @@ export type FormUploadMinAggregateOutputType = {
   fieldId: string | null
   storageKey: string | null
   fileName: string | null
+  originalFileName: string | null
   mimeType: string | null
   sizeBytes: number | null
   createdAt: Date | null
@@ -57,6 +58,7 @@ export type FormUploadMaxAggregateOutputType = {
   fieldId: string | null
   storageKey: string | null
   fileName: string | null
+  originalFileName: string | null
   mimeType: string | null
   sizeBytes: number | null
   createdAt: Date | null
@@ -71,6 +73,7 @@ export type FormUploadCountAggregateOutputType = {
   fieldId: number
   storageKey: number
   fileName: number
+  originalFileName: number
   mimeType: number
   sizeBytes: number
   createdAt: number
@@ -95,6 +98,7 @@ export type FormUploadMinAggregateInputType = {
   fieldId?: true
   storageKey?: true
   fileName?: true
+  originalFileName?: true
   mimeType?: true
   sizeBytes?: true
   createdAt?: true
@@ -109,6 +113,7 @@ export type FormUploadMaxAggregateInputType = {
   fieldId?: true
   storageKey?: true
   fileName?: true
+  originalFileName?: true
   mimeType?: true
   sizeBytes?: true
   createdAt?: true
@@ -123,6 +128,7 @@ export type FormUploadCountAggregateInputType = {
   fieldId?: true
   storageKey?: true
   fileName?: true
+  originalFileName?: true
   mimeType?: true
   sizeBytes?: true
   createdAt?: true
@@ -224,6 +230,7 @@ export type FormUploadGroupByOutputType = {
   fieldId: string | null
   storageKey: string
   fileName: string
+  originalFileName: string | null
   mimeType: string
   sizeBytes: number
   createdAt: Date
@@ -261,6 +268,7 @@ export type FormUploadWhereInput = {
   fieldId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   storageKey?: Prisma.StringFilter<"FormUpload"> | string
   fileName?: Prisma.StringFilter<"FormUpload"> | string
+  originalFileName?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   mimeType?: Prisma.StringFilter<"FormUpload"> | string
   sizeBytes?: Prisma.IntFilter<"FormUpload"> | number
   createdAt?: Prisma.DateTimeFilter<"FormUpload"> | Date | string
@@ -279,6 +287,7 @@ export type FormUploadOrderByWithRelationInput = {
   fieldId?: Prisma.SortOrderInput | Prisma.SortOrder
   storageKey?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
+  originalFileName?: Prisma.SortOrderInput | Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   sizeBytes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -300,6 +309,7 @@ export type FormUploadWhereUniqueInput = Prisma.AtLeast<{
   fieldId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   storageKey?: Prisma.StringFilter<"FormUpload"> | string
   fileName?: Prisma.StringFilter<"FormUpload"> | string
+  originalFileName?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   mimeType?: Prisma.StringFilter<"FormUpload"> | string
   sizeBytes?: Prisma.IntFilter<"FormUpload"> | number
   createdAt?: Prisma.DateTimeFilter<"FormUpload"> | Date | string
@@ -318,6 +328,7 @@ export type FormUploadOrderByWithAggregationInput = {
   fieldId?: Prisma.SortOrderInput | Prisma.SortOrder
   storageKey?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
+  originalFileName?: Prisma.SortOrderInput | Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   sizeBytes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -340,6 +351,7 @@ export type FormUploadScalarWhereWithAggregatesInput = {
   fieldId?: Prisma.StringNullableWithAggregatesFilter<"FormUpload"> | string | null
   storageKey?: Prisma.StringWithAggregatesFilter<"FormUpload"> | string
   fileName?: Prisma.StringWithAggregatesFilter<"FormUpload"> | string
+  originalFileName?: Prisma.StringNullableWithAggregatesFilter<"FormUpload"> | string | null
   mimeType?: Prisma.StringWithAggregatesFilter<"FormUpload"> | string
   sizeBytes?: Prisma.IntWithAggregatesFilter<"FormUpload"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"FormUpload"> | Date | string
@@ -350,6 +362,7 @@ export type FormUploadCreateInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -368,6 +381,7 @@ export type FormUploadUncheckedCreateInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -378,6 +392,7 @@ export type FormUploadUpdateInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -396,6 +411,7 @@ export type FormUploadUncheckedUpdateInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -410,6 +426,7 @@ export type FormUploadCreateManyInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -420,6 +437,7 @@ export type FormUploadUpdateManyMutationInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -434,6 +452,7 @@ export type FormUploadUncheckedUpdateManyInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -458,6 +477,7 @@ export type FormUploadCountOrderByAggregateInput = {
   fieldId?: Prisma.SortOrder
   storageKey?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
+  originalFileName?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   sizeBytes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -476,6 +496,7 @@ export type FormUploadMaxOrderByAggregateInput = {
   fieldId?: Prisma.SortOrder
   storageKey?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
+  originalFileName?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   sizeBytes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -490,6 +511,7 @@ export type FormUploadMinOrderByAggregateInput = {
   fieldId?: Prisma.SortOrder
   storageKey?: Prisma.SortOrder
   fileName?: Prisma.SortOrder
+  originalFileName?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   sizeBytes?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -672,6 +694,7 @@ export type FormUploadCreateWithoutTenantInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -688,6 +711,7 @@ export type FormUploadUncheckedCreateWithoutTenantInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -731,6 +755,7 @@ export type FormUploadScalarWhereInput = {
   fieldId?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   storageKey?: Prisma.StringFilter<"FormUpload"> | string
   fileName?: Prisma.StringFilter<"FormUpload"> | string
+  originalFileName?: Prisma.StringNullableFilter<"FormUpload"> | string | null
   mimeType?: Prisma.StringFilter<"FormUpload"> | string
   sizeBytes?: Prisma.IntFilter<"FormUpload"> | number
   createdAt?: Prisma.DateTimeFilter<"FormUpload"> | Date | string
@@ -741,6 +766,7 @@ export type FormUploadCreateWithoutFormInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -757,6 +783,7 @@ export type FormUploadUncheckedCreateWithoutFormInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -793,6 +820,7 @@ export type FormUploadCreateWithoutSubmissionInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -809,6 +837,7 @@ export type FormUploadUncheckedCreateWithoutSubmissionInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -845,6 +874,7 @@ export type FormUploadCreateWithoutDraftInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -861,6 +891,7 @@ export type FormUploadUncheckedCreateWithoutDraftInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -900,6 +931,7 @@ export type FormUploadCreateManyTenantInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -910,6 +942,7 @@ export type FormUploadUpdateWithoutTenantInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -926,6 +959,7 @@ export type FormUploadUncheckedUpdateWithoutTenantInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -939,6 +973,7 @@ export type FormUploadUncheckedUpdateManyWithoutTenantInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -952,6 +987,7 @@ export type FormUploadCreateManyFormInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -962,6 +998,7 @@ export type FormUploadUpdateWithoutFormInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -978,6 +1015,7 @@ export type FormUploadUncheckedUpdateWithoutFormInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -991,6 +1029,7 @@ export type FormUploadUncheckedUpdateManyWithoutFormInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1004,6 +1043,7 @@ export type FormUploadCreateManySubmissionInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -1014,6 +1054,7 @@ export type FormUploadUpdateWithoutSubmissionInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1030,6 +1071,7 @@ export type FormUploadUncheckedUpdateWithoutSubmissionInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1043,6 +1085,7 @@ export type FormUploadUncheckedUpdateManyWithoutSubmissionInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1056,6 +1099,7 @@ export type FormUploadCreateManyDraftInput = {
   fieldId?: string | null
   storageKey: string
   fileName: string
+  originalFileName?: string | null
   mimeType: string
   sizeBytes: number
   createdAt?: Date | string
@@ -1066,6 +1110,7 @@ export type FormUploadUpdateWithoutDraftInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1082,6 +1127,7 @@ export type FormUploadUncheckedUpdateWithoutDraftInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1095,6 +1141,7 @@ export type FormUploadUncheckedUpdateManyWithoutDraftInput = {
   fieldId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   sizeBytes?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1111,6 +1158,7 @@ export type FormUploadSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   fieldId?: boolean
   storageKey?: boolean
   fileName?: boolean
+  originalFileName?: boolean
   mimeType?: boolean
   sizeBytes?: boolean
   createdAt?: boolean
@@ -1129,6 +1177,7 @@ export type FormUploadSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   fieldId?: boolean
   storageKey?: boolean
   fileName?: boolean
+  originalFileName?: boolean
   mimeType?: boolean
   sizeBytes?: boolean
   createdAt?: boolean
@@ -1147,6 +1196,7 @@ export type FormUploadSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   fieldId?: boolean
   storageKey?: boolean
   fileName?: boolean
+  originalFileName?: boolean
   mimeType?: boolean
   sizeBytes?: boolean
   createdAt?: boolean
@@ -1165,12 +1215,13 @@ export type FormUploadSelectScalar = {
   fieldId?: boolean
   storageKey?: boolean
   fileName?: boolean
+  originalFileName?: boolean
   mimeType?: boolean
   sizeBytes?: boolean
   createdAt?: boolean
 }
 
-export type FormUploadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "formId" | "draftId" | "submissionId" | "fieldId" | "storageKey" | "fileName" | "mimeType" | "sizeBytes" | "createdAt", ExtArgs["result"]["formUpload"]>
+export type FormUploadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "formId" | "draftId" | "submissionId" | "fieldId" | "storageKey" | "fileName" | "originalFileName" | "mimeType" | "sizeBytes" | "createdAt", ExtArgs["result"]["formUpload"]>
 export type FormUploadInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   draft?: boolean | Prisma.FormUpload$draftArgs<ExtArgs>
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
@@ -1207,6 +1258,7 @@ export type $FormUploadPayload<ExtArgs extends runtime.Types.Extensions.Internal
     fieldId: string | null
     storageKey: string
     fileName: string
+    originalFileName: string | null
     mimeType: string
     sizeBytes: number
     createdAt: Date
@@ -1645,6 +1697,7 @@ export interface FormUploadFieldRefs {
   readonly fieldId: Prisma.FieldRef<"FormUpload", 'String'>
   readonly storageKey: Prisma.FieldRef<"FormUpload", 'String'>
   readonly fileName: Prisma.FieldRef<"FormUpload", 'String'>
+  readonly originalFileName: Prisma.FieldRef<"FormUpload", 'String'>
   readonly mimeType: Prisma.FieldRef<"FormUpload", 'String'>
   readonly sizeBytes: Prisma.FieldRef<"FormUpload", 'Int'>
   readonly createdAt: Prisma.FieldRef<"FormUpload", 'DateTime'>
