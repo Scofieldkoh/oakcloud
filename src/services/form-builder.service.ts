@@ -40,6 +40,7 @@ import { createLogger } from '@/lib/logger';
 import { generateFormSubmissionAiReview } from '@/services/form-ai.service';
 import type { TenantAwareParams } from '@/lib/types';
 import { getDefaultModelId } from '@/lib/ai/models';
+import { evaluateArithmeticExpression } from '@/lib/safe-math';
 import type {
   CreateFormInput,
   FormFieldInput,
@@ -3020,16 +3021,7 @@ function evaluateNumberFormula(formula: string, answersRecord: Record<string, un
     return resolved === null ? 'NaN' : String(resolved);
   });
 
-  if (/[^0-9+\-*/().\s]/.test(referenced)) {
-    return null;
-  }
-
-  try {
-    const result = Function(`"use strict"; return (${referenced});`)();
-    return typeof result === 'number' && Number.isFinite(result) ? result : null;
-  } catch {
-    return null;
-  }
+  return evaluateArithmeticExpression(referenced);
 }
 
 function getRowAnswerContext(answersRecord: Record<string, unknown>, rowIndex?: number): Record<string, unknown> {
