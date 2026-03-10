@@ -485,24 +485,18 @@ function buildSubmissionPdfHtml(input: {
     font-size: 13px; line-height: 1.5; color: #111827; background: #fff;
   }
   /* --- First-page header --- */
-  .header { margin-bottom: 16px; }
+  .header { margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb; }
   .header-top { display: flex; align-items: flex-start; gap: 12px; }
   .logo { max-height: 56px; max-width: 180px; object-fit: contain; flex-shrink: 0; }
-  .form-title { font-size: 20px; font-weight: 700; color: #111827; line-height: 1.3; margin-top: 2px; }
-  .form-description { font-size: 12px; color: #6b7280; margin-top: 3px; }
+  .header-text { display: flex; flex-direction: column; }
+  .form-title { font-size: 20px; font-weight: 700; color: #111827; line-height: 1.3; }
+  .form-submitted { font-size: 12px; color: #6b7280; margin-top: 3px; }
+  .form-description { font-size: 12px; color: #6b7280; margin-top: 2px; }
   /* --- Fixed footer (renders on every page via CSS position:fixed in print) --- */
   .page-footer {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    font-size: 9px; color: #9ca3af; text-align: center; padding: 10px 40px;
+    position: fixed; bottom: 16px; left: 0; right: 0;
+    font-size: 9px; color: #9ca3af; text-align: center; padding: 0 40px;
   }
-  /* --- Meta bar --- */
-  .meta {
-    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;
-    padding: 8px 14px; margin-bottom: 20px; font-size: 12px;
-  }
-  .meta-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; font-weight: 600; margin-bottom: 1px; }
-  .meta-value { color: #374151; font-weight: 500; word-break: break-word; font-size: 12px; }
-  .meta-subtext { font-size: 10px; color: #9ca3af; margin-top: 1px; }
   /* --- Fields grid (12 columns) --- */
   .fields-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px 16px; }
   .field { page-break-inside: avoid; min-width: 0; }
@@ -536,14 +530,12 @@ function buildSubmissionPdfHtml(input: {
   <div class="header">
     <div class="header-top">
       ${logoUrl ? `<img class="logo" src="${esc(logoUrl)}" alt="Logo" />` : ''}
-      <h1 class="form-title">${esc(input.formTitle || 'Form Response')}</h1>
+      <div class="header-text">
+        <h1 class="form-title">${esc(input.formTitle || 'Form Response')}</h1>
+        <div class="form-submitted">Submitted: ${esc(submittedAt)} (${esc(input.timeZone ?? 'Asia/Singapore')})</div>
+        ${input.formDescription ? `<p class="form-description">${esc(input.formDescription)}</p>` : ''}
+      </div>
     </div>
-    ${input.formDescription ? `<p class="form-description">${esc(input.formDescription)}</p>` : ''}
-  </div>
-  <div class="meta">
-    <div class="meta-label">Submitted</div>
-    <div class="meta-value">${esc(submittedAt)}</div>
-    <div class="meta-subtext">Form Submission &middot; ${esc(input.timeZone ?? 'Asia/Singapore')}</div>
   </div>
   <div class="fields-grid">${fieldsHtml}</div>
   ${footerText ? `<div class="page-footer">${esc(footerText)}</div>` : ''}
@@ -3558,6 +3550,23 @@ export async function getSubmissionUploadById(
       id: uploadId,
       formId,
       submissionId,
+      tenantId,
+    },
+  });
+}
+
+export async function getDraftUploadById(
+  formId: string,
+  draftId: string,
+  uploadId: string,
+  tenantId: string
+): Promise<FormUpload | null> {
+  return prisma.formUpload.findFirst({
+    where: {
+      id: uploadId,
+      formId,
+      draftId,
+      submissionId: null,
       tenantId,
     },
   });
