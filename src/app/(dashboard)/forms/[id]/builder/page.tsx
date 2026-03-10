@@ -1647,48 +1647,87 @@ export default function FormBuilderPage() {
 
           {activeTab === 'settings' && (
             <>
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-text-secondary">Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED')}
-                  className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
-                >
-                  <option value="DRAFT">Draft</option>
-                  <option value="PUBLISHED">Published</option>
-                  <option value="ARCHIVED">Archived</option>
-                </select>
-              </div>
-              <FormInput label="Tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="intake, registration" />
-              <FormInput
-                label="Custom URL segment"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value.toLowerCase())}
-                onBlur={(e) => setSlug(normalizeSlugSegment(e.target.value))}
-                placeholder="client-intake-form"
-                hint="Use lowercase letters, numbers, and hyphens."
-              />
-              <div className="text-2xs text-text-muted">
-                Public URL: <span className="font-mono text-text-secondary">{publicUrlPreview}</span>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-text-secondary">Completion notification emails</label>
-                <textarea
-                  value={notificationRecipientsText}
-                  onChange={(e) => setNotificationRecipientsText(e.target.value)}
-                  className="w-full min-h-24 rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
-                  placeholder={'ops@example.com\nowner@example.com'}
+              {/* Publishing */}
+              <SettingsSection
+                icon={<Globe className="w-3.5 h-3.5" />}
+                title="Publishing"
+                summary={`${status.charAt(0) + status.slice(1).toLowerCase()} · ${slug || 'no slug'}`}
+                defaultOpen
+              >
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED')}
+                    className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+                  >
+                    <option value="DRAFT">Draft</option>
+                    <option value="PUBLISHED">Published</option>
+                    <option value="ARCHIVED">Archived</option>
+                  </select>
+                </div>
+                <FormInput label="Tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="intake, registration" />
+                <FormInput
+                  label="Custom URL segment"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value.toLowerCase())}
+                  onBlur={(e) => setSlug(normalizeSlugSegment(e.target.value))}
+                  placeholder="client-intake-form"
+                  hint="Use lowercase letters, numbers, and hyphens."
                 />
-                <p className="mt-1 text-2xs text-text-muted">
-                  One email per line (or comma-separated). Each recipient gets a completion email with response PDF and uploaded files.
+                <div className="text-2xs text-text-muted">
+                  Public URL: <span className="font-mono text-text-secondary">{publicUrlPreview}</span>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">Description</label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full min-h-24 rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+                    placeholder="Describe this form"
+                  />
+                </div>
+                <p className="text-2xs text-text-muted inline-flex items-center gap-1">
+                  <CircleHelp className="w-3 h-3" />
+                  Publish to make this form available at public URL and embed code.
                 </p>
-                {notificationEmailParse.invalidEntries.length > 0 && (
-                  <p className="mt-1 text-2xs text-status-error">
-                    Invalid emails: {notificationEmailParse.invalidEntries.join(', ')}
+              </SettingsSection>
+
+              {/* Notifications */}
+              <SettingsSection
+                icon={<Bell className="w-3.5 h-3.5" />}
+                title="Notifications"
+                summary={(() => {
+                  const count = notificationEmailParse.emails.length;
+                  return count === 0 ? 'No recipients' : `${count} recipient${count === 1 ? '' : 's'}`;
+                })()}
+                defaultOpen
+              >
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">Completion notification emails</label>
+                  <textarea
+                    value={notificationRecipientsText}
+                    onChange={(e) => setNotificationRecipientsText(e.target.value)}
+                    className="w-full min-h-24 rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+                    placeholder={'ops@example.com\nowner@example.com'}
+                  />
+                  <p className="mt-1 text-2xs text-text-muted">
+                    One email per line (or comma-separated). Each recipient gets a completion email with response PDF and uploaded files.
                   </p>
-                )}
-              </div>
-              <div className="space-y-3 rounded-lg border border-border-primary bg-background-primary px-3 py-3">
+                  {notificationEmailParse.invalidEntries.length > 0 && (
+                    <p className="mt-1 text-2xs text-status-error">
+                      Invalid emails: {notificationEmailParse.invalidEntries.join(', ')}
+                    </p>
+                  )}
+                </div>
+              </SettingsSection>
+
+              {/* Respondent */}
+              <SettingsSection
+                icon={<Users className="w-3.5 h-3.5" />}
+                title="Respondent"
+                summary={draftSaveEnabled ? `Save draft enabled · ${draftAutoDeleteDays} days` : 'Save draft off'}
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-medium text-text-secondary">Enable save draft</p>
@@ -1710,29 +1749,37 @@ export default function FormBuilderPage() {
                     />
                   </button>
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">Draft auto-delete (days)</label>
-                  <input
-                    type="number"
-                    min={MIN_FORM_DRAFT_AUTO_DELETE_DAYS}
-                    max={MAX_FORM_DRAFT_AUTO_DELETE_DAYS}
-                    value={draftAutoDeleteDays}
-                    onChange={(e) => {
-                      const nextValue = Number.parseInt(e.target.value, 10);
-                      if (!Number.isFinite(nextValue)) {
-                        setDraftAutoDeleteDays(DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS);
-                        return;
-                      }
-                      setDraftAutoDeleteDays(nextValue);
-                    }}
-                    className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
-                  />
-                  <p className="mt-1 text-2xs text-text-muted">
-                    Drafts and their uploaded files are deleted after this many days. Allowed range: {MIN_FORM_DRAFT_AUTO_DELETE_DAYS}-{MAX_FORM_DRAFT_AUTO_DELETE_DAYS}.
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-3 rounded-lg border border-border-primary bg-background-primary px-3 py-3">
+                {draftSaveEnabled && (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Draft auto-delete (days)</label>
+                    <input
+                      type="number"
+                      min={MIN_FORM_DRAFT_AUTO_DELETE_DAYS}
+                      max={MAX_FORM_DRAFT_AUTO_DELETE_DAYS}
+                      value={draftAutoDeleteDays}
+                      onChange={(e) => {
+                        const nextValue = Number.parseInt(e.target.value, 10);
+                        if (!Number.isFinite(nextValue)) {
+                          setDraftAutoDeleteDays(DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS);
+                          return;
+                        }
+                        setDraftAutoDeleteDays(nextValue);
+                      }}
+                      className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+                    />
+                    <p className="mt-1 text-2xs text-text-muted">
+                      Drafts and their uploaded files are deleted after this many days. Allowed range: {MIN_FORM_DRAFT_AUTO_DELETE_DAYS}-{MAX_FORM_DRAFT_AUTO_DELETE_DAYS}.
+                    </p>
+                  </div>
+                )}
+              </SettingsSection>
+
+              {/* AI Review */}
+              <SettingsSection
+                icon={<Sparkles className="w-3.5 h-3.5" />}
+                title="AI Review"
+                summary={aiParsingEnabled ? (aiParsingCustomContext ? 'Enabled · Custom context set' : 'Enabled') : 'Disabled'}
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-medium text-text-secondary">Enable AI parsing</p>
@@ -1779,69 +1826,68 @@ export default function FormBuilderPage() {
                     </p>
                   </div>
                 )}
-              </div>
-              <FormInput
-                label="PDF filename template"
-                value={pdfFileNameTemplate}
-                onChange={(e) => setPdfFileNameTemplate(e.target.value)}
-                placeholder="Form response - [full_name] - [datetime_stamp]"
-                hint="Use [field_key] plus standard variables: [datetime_stamp], [date_stamp], [time_stamp], [submission_id], [form_title], [form_slug]. [datetime_stamp] uses the tenant timezone (for example: 6 Mar 26 - 9.51PM)."
-              />
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-text-secondary">Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full min-h-24 rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
-                  placeholder="Describe this form"
+              </SettingsSection>
+
+              {/* Appearance & PDF */}
+              <SettingsSection
+                icon={<Paintbrush className="w-3.5 h-3.5" />}
+                title="Appearance & PDF"
+                summary={[
+                  !hideLogo && 'Logo',
+                  !hideFooter && 'Footer',
+                  pdfFileNameTemplate && 'PDF template',
+                ].filter(Boolean).join(' · ') || 'Default appearance'}
+              >
+                <FormInput
+                  label="PDF filename template"
+                  value={pdfFileNameTemplate}
+                  onChange={(e) => setPdfFileNameTemplate(e.target.value)}
+                  placeholder="Form response - [full_name] - [datetime_stamp]"
+                  hint="Use [field_key] plus standard variables: [datetime_stamp], [date_stamp], [time_stamp], [submission_id], [form_title], [form_slug]. [datetime_stamp] uses the tenant timezone (for example: 6 Mar 26 - 9.51PM)."
                 />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-text-secondary">Show tenant logo</p>
-                  <p className="text-2xs text-text-muted">Display your organization logo beside the form title.</p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={!hideLogo}
-                  onClick={() => setHideLogo((v) => !v)}
-                  className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    !hideLogo ? 'bg-oak-primary' : 'bg-border-primary'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      !hideLogo ? 'translate-x-4' : 'translate-x-0'
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-text-secondary">Show tenant logo</p>
+                    <p className="text-2xs text-text-muted">Display your organization logo beside the form title.</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={!hideLogo}
+                    onClick={() => setHideLogo((v) => !v)}
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      !hideLogo ? 'bg-oak-primary' : 'bg-border-primary'
                     }`}
-                  />
-                </button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-text-secondary">Show copyright footer</p>
-                  <p className="text-2xs text-text-muted">Display © [Tenant Name] at the bottom of the form</p>
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        !hideLogo ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={!hideFooter}
-                  onClick={() => setHideFooter((v) => !v)}
-                  className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    !hideFooter ? 'bg-oak-primary' : 'bg-border-primary'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      !hideFooter ? 'translate-x-4' : 'translate-x-0'
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-text-secondary">Show copyright footer</p>
+                    <p className="text-2xs text-text-muted">Display © [Tenant Name] at the bottom of the form</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={!hideFooter}
+                    onClick={() => setHideFooter((v) => !v)}
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      !hideFooter ? 'bg-oak-primary' : 'bg-border-primary'
                     }`}
-                  />
-                </button>
-              </div>
-              <p className="text-2xs text-text-muted inline-flex items-center gap-1">
-                <CircleHelp className="w-3 h-3" />
-                Publish to make this form available at public URL and embed code.
-              </p>
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        !hideFooter ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </SettingsSection>
             </>
           )}
 
