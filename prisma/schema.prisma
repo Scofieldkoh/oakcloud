@@ -1616,10 +1616,11 @@ model FormSubmission {
   respondentEmail String?              @map("respondent_email")
   answers         Json
   metadata        Json?
-  aiReviewStatus  String?              @map("ai_review_status")
-  submittedAt     DateTime             @default(now()) @map("submitted_at")
-  createdAt       DateTime             @default(now()) @map("created_at")
-  updatedAt       DateTime             @updatedAt @map("updated_at")
+  aiReviewStatus         String?  @map("ai_review_status")
+  hasUnresolvedAiWarning Boolean  @default(false) @map("has_unresolved_ai_warning")
+  submittedAt            DateTime @default(now()) @map("submitted_at")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
   form            Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
   tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploads         FormUpload[]
@@ -1627,6 +1628,7 @@ model FormSubmission {
   @@index([formId, submittedAt])
   @@index([tenantId, submittedAt])
   @@index([aiReviewStatus], map: "idx_form_submissions_ai_review_status")
+  @@index([tenantId, hasUnresolvedAiWarning], map: "idx_form_submissions_unresolved_warning")
   @@map("form_submissions")
 }
 

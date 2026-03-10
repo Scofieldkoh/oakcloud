@@ -2417,6 +2417,7 @@ export async function processQueuedFormSubmissionAiReviews(input?: {
       data: {
         metadata: toJsonInput(finalMetadata),
         aiReviewStatus: finalReview.status,
+        hasUnresolvedAiWarning: finalReview.status === 'completed' && !!finalReview.reviewRequired,
       },
     });
 
@@ -2488,6 +2489,7 @@ export async function resolveFormSubmissionAiWarning(
     where: { id: submission.id },
     data: {
       metadata: toJsonInput(metadataWithAiReview),
+      hasUnresolvedAiWarning: false,
     },
   });
 
@@ -2905,16 +2907,19 @@ export async function listFormsWithWarnings(
   tenantId: string,
   limit: number = 8
 ): Promise<FormWarningListItem[]> {
-  const scanLimit = Math.max(limit * 25, 200);
-
+  // Use the indexed hasUnresolvedAiWarning column to avoid a full table scan
   const submissions = await prisma.formSubmission.findMany({
     where: {
       tenantId,
+      hasUnresolvedAiWarning: true,
       form: {
         deletedAt: null,
       },
     },
-    include: {
+    select: {
+      id: true,
+      formId: true,
+      submittedAt: true,
       form: {
         select: {
           id: true,
@@ -2924,27 +2929,12 @@ export async function listFormsWithWarnings(
         },
       },
     },
-    orderBy: {
-      submittedAt: 'desc',
-    },
-    take: scanLimit,
+    orderBy: { submittedAt: 'desc' },
   });
 
   const warningsByForm = new Map<string, FormWarningListItem>();
 
   for (const submission of submissions) {
-    const aiReview = parseFormSubmissionAiReview(submission.metadata);
-    if (!aiReview || aiReview.status !== 'completed' || !aiReview.reviewRequired) {
-      continue;
-    }
-
-    const hasUnresolvedWarning = !aiReview.warningSignature
-      || aiReview.resolvedWarningSignature !== aiReview.warningSignature;
-
-    if (!hasUnresolvedWarning) {
-      continue;
-    }
-
     const existing = warningsByForm.get(submission.formId);
     if (existing) {
       existing.warningCount += 1;

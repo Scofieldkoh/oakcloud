@@ -8758,6 +8758,7 @@ export const FormSubmissionScalarFieldEnum = {
   answers: 'answers',
   metadata: 'metadata',
   aiReviewStatus: 'aiReviewStatus',
+  hasUnresolvedAiWarning: 'hasUnresolvedAiWarning',
   submittedAt: 'submittedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

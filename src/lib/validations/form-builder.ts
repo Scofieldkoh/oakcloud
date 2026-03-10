@@ -184,7 +184,10 @@ export const updateFormSchema = z.object({
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
   status: formStatusSchema.optional(),
   slug: formSlugSchema.optional(),
-  settings: z.record(z.unknown()).optional().nullable(),
+  settings: z.record(z.unknown()).optional().nullable().refine(
+    (val) => val == null || JSON.stringify(val).length <= 50_000,
+    { message: 'Settings payload must not exceed 50KB' }
+  ),
 });
 
 export const saveFormFieldsSchema = z.object({

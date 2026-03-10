@@ -32,6 +32,7 @@ export type FormSubmissionMinAggregateOutputType = {
   respondentName: string | null
   respondentEmail: string | null
   aiReviewStatus: string | null
+  hasUnresolvedAiWarning: boolean | null
   submittedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -45,6 +46,7 @@ export type FormSubmissionMaxAggregateOutputType = {
   respondentName: string | null
   respondentEmail: string | null
   aiReviewStatus: string | null
+  hasUnresolvedAiWarning: boolean | null
   submittedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -60,6 +62,7 @@ export type FormSubmissionCountAggregateOutputType = {
   answers: number
   metadata: number
   aiReviewStatus: number
+  hasUnresolvedAiWarning: number
   submittedAt: number
   createdAt: number
   updatedAt: number
@@ -75,6 +78,7 @@ export type FormSubmissionMinAggregateInputType = {
   respondentName?: true
   respondentEmail?: true
   aiReviewStatus?: true
+  hasUnresolvedAiWarning?: true
   submittedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -88,6 +92,7 @@ export type FormSubmissionMaxAggregateInputType = {
   respondentName?: true
   respondentEmail?: true
   aiReviewStatus?: true
+  hasUnresolvedAiWarning?: true
   submittedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -103,6 +108,7 @@ export type FormSubmissionCountAggregateInputType = {
   answers?: true
   metadata?: true
   aiReviewStatus?: true
+  hasUnresolvedAiWarning?: true
   submittedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -191,6 +197,7 @@ export type FormSubmissionGroupByOutputType = {
   answers: runtime.JsonValue
   metadata: runtime.JsonValue | null
   aiReviewStatus: string | null
+  hasUnresolvedAiWarning: boolean
   submittedAt: Date
   createdAt: Date
   updatedAt: Date
@@ -227,6 +234,7 @@ export type FormSubmissionWhereInput = {
   answers?: Prisma.JsonFilter<"FormSubmission">
   metadata?: Prisma.JsonNullableFilter<"FormSubmission">
   aiReviewStatus?: Prisma.StringNullableFilter<"FormSubmission"> | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFilter<"FormSubmission"> | boolean
   submittedAt?: Prisma.DateTimeFilter<"FormSubmission"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"FormSubmission"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FormSubmission"> | Date | string
@@ -245,6 +253,7 @@ export type FormSubmissionOrderByWithRelationInput = {
   answers?: Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   aiReviewStatus?: Prisma.SortOrderInput | Prisma.SortOrder
+  hasUnresolvedAiWarning?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -266,6 +275,7 @@ export type FormSubmissionWhereUniqueInput = Prisma.AtLeast<{
   answers?: Prisma.JsonFilter<"FormSubmission">
   metadata?: Prisma.JsonNullableFilter<"FormSubmission">
   aiReviewStatus?: Prisma.StringNullableFilter<"FormSubmission"> | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFilter<"FormSubmission"> | boolean
   submittedAt?: Prisma.DateTimeFilter<"FormSubmission"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"FormSubmission"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FormSubmission"> | Date | string
@@ -284,6 +294,7 @@ export type FormSubmissionOrderByWithAggregationInput = {
   answers?: Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   aiReviewStatus?: Prisma.SortOrderInput | Prisma.SortOrder
+  hasUnresolvedAiWarning?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -305,6 +316,7 @@ export type FormSubmissionScalarWhereWithAggregatesInput = {
   answers?: Prisma.JsonWithAggregatesFilter<"FormSubmission">
   metadata?: Prisma.JsonNullableWithAggregatesFilter<"FormSubmission">
   aiReviewStatus?: Prisma.StringNullableWithAggregatesFilter<"FormSubmission"> | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolWithAggregatesFilter<"FormSubmission"> | boolean
   submittedAt?: Prisma.DateTimeWithAggregatesFilter<"FormSubmission"> | Date | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"FormSubmission"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"FormSubmission"> | Date | string
@@ -318,6 +330,7 @@ export type FormSubmissionCreateInput = {
   answers: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: string | null
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -336,6 +349,7 @@ export type FormSubmissionUncheckedCreateInput = {
   answers: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: string | null
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -350,6 +364,7 @@ export type FormSubmissionUpdateInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -368,6 +383,7 @@ export type FormSubmissionUncheckedUpdateInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -384,6 +400,7 @@ export type FormSubmissionCreateManyInput = {
   answers: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: string | null
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -397,6 +414,7 @@ export type FormSubmissionUpdateManyMutationInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -412,6 +430,7 @@ export type FormSubmissionUncheckedUpdateManyInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -437,6 +456,7 @@ export type FormSubmissionCountOrderByAggregateInput = {
   answers?: Prisma.SortOrder
   metadata?: Prisma.SortOrder
   aiReviewStatus?: Prisma.SortOrder
+  hasUnresolvedAiWarning?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -450,6 +470,7 @@ export type FormSubmissionMaxOrderByAggregateInput = {
   respondentName?: Prisma.SortOrder
   respondentEmail?: Prisma.SortOrder
   aiReviewStatus?: Prisma.SortOrder
+  hasUnresolvedAiWarning?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -463,6 +484,7 @@ export type FormSubmissionMinOrderByAggregateInput = {
   respondentName?: Prisma.SortOrder
   respondentEmail?: Prisma.SortOrder
   aiReviewStatus?: Prisma.SortOrder
+  hasUnresolvedAiWarning?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -585,6 +607,7 @@ export type FormSubmissionCreateWithoutTenantInput = {
   answers: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: string | null
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -601,6 +624,7 @@ export type FormSubmissionUncheckedCreateWithoutTenantInput = {
   answers: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: string | null
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -646,6 +670,7 @@ export type FormSubmissionScalarWhereInput = {
   answers?: Prisma.JsonFilter<"FormSubmission">
   metadata?: Prisma.JsonNullableFilter<"FormSubmission">
   aiReviewStatus?: Prisma.StringNullableFilter<"FormSubmission"> | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFilter<"FormSubmission"> | boolean
   submittedAt?: Prisma.DateTimeFilter<"FormSubmission"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"FormSubmission"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FormSubmission"> | Date | string
@@ -659,6 +684,7 @@ export type FormSubmissionCreateWithoutFormInput = {
   answers: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: string | null
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -675,6 +701,7 @@ export type FormSubmissionUncheckedCreateWithoutFormInput = {
   answers: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: string | null
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -715,6 +742,7 @@ export type FormSubmissionCreateWithoutUploadsInput = {
   answers: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: string | null
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -732,6 +760,7 @@ export type FormSubmissionUncheckedCreateWithoutUploadsInput = {
   answers: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: string | null
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -761,6 +790,7 @@ export type FormSubmissionUpdateWithoutUploadsInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -778,6 +808,7 @@ export type FormSubmissionUncheckedUpdateWithoutUploadsInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -792,6 +823,7 @@ export type FormSubmissionCreateManyTenantInput = {
   answers: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: string | null
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -805,6 +837,7 @@ export type FormSubmissionUpdateWithoutTenantInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -821,6 +854,7 @@ export type FormSubmissionUncheckedUpdateWithoutTenantInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -836,6 +870,7 @@ export type FormSubmissionUncheckedUpdateManyWithoutTenantInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -850,6 +885,7 @@ export type FormSubmissionCreateManyFormInput = {
   answers: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: string | null
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -863,6 +899,7 @@ export type FormSubmissionUpdateWithoutFormInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -879,6 +916,7 @@ export type FormSubmissionUncheckedUpdateWithoutFormInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -894,6 +932,7 @@ export type FormSubmissionUncheckedUpdateManyWithoutFormInput = {
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   aiReviewStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  hasUnresolvedAiWarning?: Prisma.BoolFieldUpdateOperationsInput | boolean
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -940,6 +979,7 @@ export type FormSubmissionSelect<ExtArgs extends runtime.Types.Extensions.Intern
   answers?: boolean
   metadata?: boolean
   aiReviewStatus?: boolean
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -959,6 +999,7 @@ export type FormSubmissionSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   answers?: boolean
   metadata?: boolean
   aiReviewStatus?: boolean
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -976,6 +1017,7 @@ export type FormSubmissionSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   answers?: boolean
   metadata?: boolean
   aiReviewStatus?: boolean
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -993,12 +1035,13 @@ export type FormSubmissionSelectScalar = {
   answers?: boolean
   metadata?: boolean
   aiReviewStatus?: boolean
+  hasUnresolvedAiWarning?: boolean
   submittedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type FormSubmissionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "formId" | "tenantId" | "status" | "respondentName" | "respondentEmail" | "answers" | "metadata" | "aiReviewStatus" | "submittedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["formSubmission"]>
+export type FormSubmissionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "formId" | "tenantId" | "status" | "respondentName" | "respondentEmail" | "answers" | "metadata" | "aiReviewStatus" | "hasUnresolvedAiWarning" | "submittedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["formSubmission"]>
 export type FormSubmissionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
@@ -1031,6 +1074,7 @@ export type $FormSubmissionPayload<ExtArgs extends runtime.Types.Extensions.Inte
     answers: runtime.JsonValue
     metadata: runtime.JsonValue | null
     aiReviewStatus: string | null
+    hasUnresolvedAiWarning: boolean
     submittedAt: Date
     createdAt: Date
     updatedAt: Date
@@ -1469,6 +1513,7 @@ export interface FormSubmissionFieldRefs {
   readonly answers: Prisma.FieldRef<"FormSubmission", 'Json'>
   readonly metadata: Prisma.FieldRef<"FormSubmission", 'Json'>
   readonly aiReviewStatus: Prisma.FieldRef<"FormSubmission", 'String'>
+  readonly hasUnresolvedAiWarning: Prisma.FieldRef<"FormSubmission", 'Boolean'>
   readonly submittedAt: Prisma.FieldRef<"FormSubmission", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"FormSubmission", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"FormSubmission", 'DateTime'>

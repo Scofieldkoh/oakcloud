@@ -13,3 +13,9 @@ ALTER TABLE "form_submissions" ADD COLUMN "updated_at" TIMESTAMP(3) NOT NULL DEF
 
 -- Add composite index on form_uploads(formId, submissionId) for faster join queries
 CREATE INDEX "form_uploads_form_id_submission_id_idx" ON "form_uploads"("form_id", "submission_id");
+
+-- FORM-PERF-002: Add hasUnresolvedAiWarning column for efficient dashboard warning queries
+ALTER TABLE "form_submissions" ADD COLUMN "has_unresolved_ai_warning" BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Index for warning dashboard queries (tenant + unresolved filter)
+CREATE INDEX "idx_form_submissions_unresolved_warning" ON "form_submissions"("tenant_id", "has_unresolved_ai_warning");
