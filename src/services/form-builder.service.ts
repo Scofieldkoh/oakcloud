@@ -279,7 +279,7 @@ function buildSubmissionPdfHtml(input: {
   tenantName?: string | null;
   formSettings?: unknown;
   timeZone?: string;
-}): { contentHtml: string; footerHtml: string } {
+}): { contentHtml: string; headerHtml: string; footerHtml: string } {
   const settings = parseObject(input.formSettings);
   const hideLogo = settings?.hideLogo === true;
   const hideFooter = settings?.hideFooter === true;
@@ -455,41 +455,64 @@ function buildSubmissionPdfHtml(input: {
       </div>`;
   }).join('');
 
+  // Header HTML for Puppeteer's repeating headerTemplate (shown on every page).
+  // Must be self-contained with inline styles — Puppeteer renders it in an isolated context.
+  const repeatingHeaderHtml = `
+    <div style="width:100%;padding:10px 52px 8px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:14px;font-family:sans-serif;background:#fff;">
+      ${logoUrl ? `<img src="${esc(logoUrl)}" alt="Logo" style="max-height:32px;max-width:120px;object-fit:contain;" />` : ''}
+      <span style="font-size:13px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(input.formTitle || 'Form Response')}</span>
+    </div>`;
+
   const contentHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  @page { size: A4 portrait; margin: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
     font-size: 13px; line-height: 1.5; color: #111827; background: #fff;
-    padding: 48px 52px 32px;
+    /* top: space for Puppeteer header (~60px); bottom: space for footer + clean margin */
+    padding: 68px 52px 72px;
   }
-  .header { margin-bottom: 24px; }
+  /* --- First-page header (not repeated) --- */
+  .header { margin-bottom: 20px; }
   .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
   .logo { max-height: 48px; max-width: 160px; object-fit: contain; }
   .form-title { font-size: 22px; font-weight: 700; color: #111827; }
   .form-description { font-size: 13px; color: #6b7280; margin-top: 4px; }
   .accent-bar { height: 3px; width: 40px; background: #4f46e5; border-radius: 9999px; margin-top: 12px; }
+  /* --- Meta grid --- */
   .meta {
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px;
     background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
-    padding: 12px 16px; margin-bottom: 28px; font-size: 12px;
+    padding: 12px 16px; margin-bottom: 24px; font-size: 12px;
   }
   .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; font-weight: 600; margin-bottom: 2px; }
-  .meta-value { color: #374151; font-weight: 500; }
-  .fields-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px 16px; margin-bottom: 8px; }
-  .field { page-break-inside: avoid; }
+  .meta-value { color: #374151; font-weight: 500; word-break: break-word; }
+  /* --- Fields grid (12 columns) --- */
+  .fields-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px 16px; }
+  .field { page-break-inside: avoid; min-width: 0; }
   .field-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-  .field-value { font-size: 13px; color: #111827; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; min-height: 36px; }
-  .field-inline-right { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; min-height: 36px; }
-  .field-label-inline { font-size: 13px; color: #111827; font-weight: 500; flex-shrink: 0; }
-  .choice-options-right { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
-  .choice-option { font-size: 12px; padding: 3px 10px; border-radius: 9999px; border: 1px solid #d1d5db; color: #6b7280; background: #fff; }
+  .field-value {
+    font-size: 13px; color: #111827; background: #f9fafb; border: 1px solid #e5e7eb;
+    border-radius: 6px; padding: 8px 12px; min-height: 36px;
+    word-break: break-word; overflow-wrap: break-word; white-space: pre-wrap;
+  }
+  /* --- choiceInlineRight --- */
+  .field-inline-right {
+    display: flex; align-items: flex-start; gap: 12px; background: #f9fafb;
+    border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; min-height: 36px;
+  }
+  .field-label-inline { font-size: 13px; color: #111827; font-weight: 500; flex: 1 1 0; min-width: 0; word-break: break-word; }
+  .choice-options-right { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; flex-shrink: 0; max-width: 55%; }
+  .choice-option { font-size: 11px; padding: 2px 9px; border-radius: 9999px; border: 1px solid #d1d5db; color: #6b7280; background: #fff; white-space: nowrap; }
   .choice-option-selected { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; font-weight: 600; }
+  /* --- Misc --- */
   .empty { color: #d1d5db; }
-  .file-name { color: #374151; }
+  .file-name { color: #374151; word-break: break-all; }
+  /* --- Repeat sections (full-width within grid) --- */
   .repeat-section { margin-bottom: 20px; grid-column: span 12; }
   .repeat-title { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 4px; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }
   .repeat-hint { font-size: 12px; color: #9ca3af; margin-bottom: 10px; }
@@ -520,7 +543,7 @@ function buildSubmissionPdfHtml(input: {
     ? `<div style="font-size:9px;color:#9ca3af;text-align:center;width:100%;padding:0 40px;font-family:sans-serif;">${esc(footerText)}</div>`
     : '<div></div>';
 
-  return { contentHtml, footerHtml };
+  return { contentHtml, headerHtml: repeatingHeaderHtml, footerHtml };
 }
 
 async function buildSubmissionPdfBuffer(input: {
@@ -538,12 +561,12 @@ async function buildSubmissionPdfBuffer(input: {
   formSettings?: unknown;
   timeZone?: string;
 }): Promise<Buffer> {
-  const { contentHtml, footerHtml } = buildSubmissionPdfHtml(input);
+  const { contentHtml, headerHtml, footerHtml } = buildSubmissionPdfHtml(input);
   return generatePDF(contentHtml, {
     format: 'A4',
     orientation: 'portrait',
-    margins: { top: 0, right: 0, bottom: 0, left: 0 }, // footer space is handled by Puppeteer's footerTemplate
-    headerHtml: '<div></div>',
+    margins: { top: 0, right: 0, bottom: 0, left: 0 },
+    headerHtml,
     footerHtml,
   });
 }
