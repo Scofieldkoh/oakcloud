@@ -958,6 +958,29 @@ export function parseOptions(value: unknown): string[] {
   return parseChoiceOptions(value).map((option) => option.label);
 }
 
+export function toAnswerRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+  return value as Record<string, unknown>;
+}
+
+export function toUploadIds(value: unknown): string[] {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+
+  if (!Array.isArray(value)) return [];
+
+  const ids: string[] = [];
+  for (const item of value) {
+    ids.push(...toUploadIds(item));
+  }
+
+  return ids;
+}
+
 export function isEmptyValue(value: unknown): boolean {
   if (value === null || value === undefined) return true;
   if (typeof value === 'string') return value.trim().length === 0;

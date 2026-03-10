@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { resolveTenantId, createErrorResponse } from '@/lib/api-helpers';
+import { resolveTenantId, createErrorResponse, buildContentDispositionHeader } from '@/lib/api-helpers';
 import { storage } from '@/lib/storage';
 import { deleteFormResponseUpload, getSubmissionUploadById } from '@/services/form-builder.service';
 
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       status: 200,
       headers: {
         'Content-Type': upload.mimeType,
-        'Content-Disposition': `${disposition}; filename="${upload.fileName.replace(/"/g, '')}"`,
+        'Content-Disposition': buildContentDispositionHeader(disposition, upload.fileName),
         'Content-Length': String(content.length),
       },
     });

@@ -1616,14 +1616,20 @@ model FormSubmission {
   respondentEmail String?              @map("respondent_email")
   answers         Json
   metadata        Json?
-  submittedAt     DateTime             @default(now()) @map("submitted_at")
-  createdAt       DateTime             @default(now()) @map("created_at")
+  aiReviewStatus         String?  @map("ai_review_status")
+  hasUnresolvedAiWarning Boolean  @default(false) @map("has_unresolved_ai_warning")
+  submittedAt            DateTime @default(now()) @map("submitted_at")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  deletedAt              DateTime? @map("deleted_at")
   form            Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
   tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploads         FormUpload[]
 
   @@index([formId, submittedAt])
   @@index([tenantId, submittedAt])
+  @@index([aiReviewStatus], map: "idx_form_submissions_ai_review_status")
+  @@index([tenantId, hasUnresolvedAiWarning], map: "idx_form_submissions_unresolved_warning")
   @@map("form_submissions")
 }
 
@@ -1669,6 +1675,7 @@ model FormUpload {
 
   @@index([draftId])
   @@index([formId, createdAt])
+  @@index([formId, submissionId])
   @@index([submissionId])
   @@index([tenantId, formId])
   @@map("form_uploads")

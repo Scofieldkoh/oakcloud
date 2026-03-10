@@ -1,11 +1,23 @@
 import { z } from 'zod';
 import { FORM_FIELD_KEY_MAX_LENGTH } from '@/lib/form-utils';
+import { evaluateArithmeticExpression } from '@/lib/safe-math';
 
 const MAX_FIELD_OPTIONS = 500;
 const MAX_FIELD_LABEL_LENGTH = 1000;
 const MAX_FIELD_SUBTEXT_LENGTH = 10000;
 const DATE_BOUND_PATTERN = /^(?:\d{4}-\d{2}-\d{2}|today)$/;
-const NUMBER_FORMULA_PATTERN = /^(?:(?:>=|<=|>|<|=)\s*)?[\d\s+\-*/().[\]_a-zA-Z]+$/;
+
+// Field key references like [fieldName] or [field_name_123] — valid identifier characters
+const FIELD_KEY_REF_PATTERN = /\[[a-zA-Z][a-zA-Z0-9_]{0,119}\]/g;
+
+function isValidFormulaExpression(formula: string): boolean {
+  // Strip optional comparison prefix (>=, <=, >, <, =)
+  const withoutPrefix = formula.replace(/^(?:>=|<=|>|<|=)\s*/, '');
+  // Replace all [fieldKey] references with 1 (a valid numeric literal)
+  const resolved = withoutPrefix.replace(FIELD_KEY_REF_PATTERN, '1');
+  // The resolved expression must parse as valid arithmetic
+  return evaluateArithmeticExpression(resolved) !== null;
+}
 
 export const formStatusSchema = z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']);
 
@@ -46,9 +58,9 @@ export const fieldValidationSchema = z
     min: z.number().optional(),
     max: z.number().optional(),
     equal: z.number().optional(),
-    minFormula: z.string().min(1).max(500).regex(NUMBER_FORMULA_PATTERN).optional(),
-    maxFormula: z.string().min(1).max(500).regex(NUMBER_FORMULA_PATTERN).optional(),
-    equalFormula: z.string().min(1).max(500).regex(NUMBER_FORMULA_PATTERN).optional(),
+    minFormula: z.string().min(1).max(500).refine(isValidFormulaExpression, { message: 'Invalid formula expression' }).optional(),
+    maxFormula: z.string().min(1).max(500).refine(isValidFormulaExpression, { message: 'Invalid formula expression' }).optional(),
+    equalFormula: z.string().min(1).max(500).refine(isValidFormulaExpression, { message: 'Invalid formula expression' }).optional(),
     minDate: z.string().regex(DATE_BOUND_PATTERN).optional(),
     maxDate: z.string().regex(DATE_BOUND_PATTERN).optional(),
     startsWith: z.string().max(200).optional(),
@@ -75,36 +87,37 @@ export const fieldValidationSchema = z
     repeatMaxItems: z.number().int().min(1).max(50).optional(),
     repeatAddLabel: z.string().min(1).max(80).optional(),
   })
-  .refine(
-    (value) => {
-      if (value.minLength !== undefined && value.maxLength !== undefined) {
-        return value.maxLength >= value.minLength;
+  .superRefine((value, ctx) => {
+    if (value.minLength !== undefined && value.maxLength !== undefined) {
+      if (value.maxLength < value.minLength) {
+        ctx.addIssue({ code: 'custom', message: 'maxLength must be >= minLength', path: ['maxLength'] });
       }
-      if (value.min !== undefined && value.max !== undefined) {
-        return value.max >= value.min;
+    }
+    if (value.min !== undefined && value.max !== undefined) {
+      if (value.max < value.min) {
+        ctx.addIssue({ code: 'custom', message: 'max must be >= min', path: ['max'] });
       }
-      if (value.minFormula !== undefined && value.minFormula.trim().length === 0) {
-        return false;
+    }
+    if (value.minFormula !== undefined && value.minFormula.trim().length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'minFormula must not be empty', path: ['minFormula'] });
+    }
+    if (value.maxFormula !== undefined && value.maxFormula.trim().length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'maxFormula must not be empty', path: ['maxFormula'] });
+    }
+    if (value.equalFormula !== undefined && value.equalFormula.trim().length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'equalFormula must not be empty', path: ['equalFormula'] });
+    }
+    if (value.minDate !== undefined && value.maxDate !== undefined) {
+      if (value.minDate !== 'today' && value.maxDate !== 'today' && value.maxDate < value.minDate) {
+        ctx.addIssue({ code: 'custom', message: 'maxDate must be >= minDate', path: ['maxDate'] });
       }
-      if (value.maxFormula !== undefined && value.maxFormula.trim().length === 0) {
-        return false;
+    }
+    if (value.repeatMinItems !== undefined && value.repeatMaxItems !== undefined) {
+      if (value.repeatMaxItems < value.repeatMinItems) {
+        ctx.addIssue({ code: 'custom', message: 'repeatMaxItems must be >= repeatMinItems', path: ['repeatMaxItems'] });
       }
-      if (value.equalFormula !== undefined && value.equalFormula.trim().length === 0) {
-        return false;
-      }
-      if (value.minDate !== undefined && value.maxDate !== undefined) {
-        if (value.minDate === 'today' || value.maxDate === 'today') {
-          return true;
-        }
-        return value.maxDate >= value.minDate;
-      }
-      if (value.repeatMinItems !== undefined && value.repeatMaxItems !== undefined) {
-        return value.repeatMaxItems >= value.repeatMinItems;
-      }
-      return true;
-    },
-    { message: 'Invalid validation range' }
-  );
+    }
+  });
 
 export const fieldConditionSchema = z.object({
   fieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH),
@@ -184,7 +197,10 @@ export const updateFormSchema = z.object({
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
   status: formStatusSchema.optional(),
   slug: formSlugSchema.optional(),
-  settings: z.record(z.unknown()).optional().nullable(),
+  settings: z.record(z.unknown()).optional().nullable().refine(
+    (val) => val == null || JSON.stringify(val).length <= 50_000,
+    { message: 'Settings payload must not exceed 50KB' }
+  ),
 });
 
 export const saveFormFieldsSchema = z.object({

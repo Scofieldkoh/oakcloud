@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { resolveTenantId, createErrorResponse } from '@/lib/api-helpers';
+import { resolveTenantId, createErrorResponse, buildContentDispositionHeader } from '@/lib/api-helpers';
 import { exportFormResponsesCsv } from '@/services/form-builder.service';
 
 interface RouteParams {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       status: 200,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Content-Disposition': buildContentDispositionHeader('attachment', fileName),
       },
     });
   } catch (error) {

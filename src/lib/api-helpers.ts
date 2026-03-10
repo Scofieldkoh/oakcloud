@@ -167,6 +167,40 @@ export function createSuccessResponse<T>(
 }
 
 // ============================================================================
+// HTTP Header Helpers
+// ============================================================================
+
+/**
+ * Build a safe Content-Disposition header value.
+ *
+ * Strips control characters and uses RFC 5987 encoding for non-ASCII filenames
+ * so the value is safe against header injection and displays correctly.
+ *
+ * @example
+ * buildContentDispositionHeader('attachment', 'report.pdf')
+ * // → 'attachment; filename="report.pdf"'
+ *
+ * buildContentDispositionHeader('inline', '报告.pdf')
+ * // → "inline; filename=\".pdf\"; filename*=UTF-8''%E6%8A%A5%E5%91%8A.pdf"
+ */
+export function buildContentDispositionHeader(
+  disposition: 'attachment' | 'inline',
+  fileName: string
+): string {
+  // Strip control characters (0x00–0x1F), backslashes and double-quotes
+  const safe = fileName.replace(/[\x00-\x1f\\"/]/g, '');
+
+  const hasNonAscii = /[^\x20-\x7E]/.test(safe);
+  if (!hasNonAscii) {
+    return `${disposition}; filename="${safe}"`;
+  }
+
+  // RFC 5987: use percent-encoding for non-ASCII, keep ASCII fallback
+  const encoded = encodeURIComponent(safe);
+  return `${disposition}; filename="${safe.replace(/[^\x20-\x7E]/g, '_')}"; filename*=UTF-8''${encoded}`;
+}
+
+// ============================================================================
 // Validation Helpers
 // ============================================================================
 

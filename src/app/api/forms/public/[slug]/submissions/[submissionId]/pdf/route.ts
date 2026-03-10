@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyPublicFormResponseToken } from '@/lib/form-response-token';
 import { checkRateLimit, getClientIp, getRateLimitKey, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { exportPublicFormResponsePdf } from '@/services/form-builder.service';
+import { buildContentDispositionHeader } from '@/lib/api-helpers';
 
 interface RouteParams {
   params: Promise<{
@@ -41,7 +42,7 @@ export async function GET(request: Request, { params }: RouteParams) {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${fileName.replace(/"/g, '')}"`,
+        'Content-Disposition': buildContentDispositionHeader('attachment', fileName),
       },
     });
   } catch (error) {
