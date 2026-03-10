@@ -485,24 +485,24 @@ function buildSubmissionPdfHtml(input: {
     font-size: 13px; line-height: 1.5; color: #111827; background: #fff;
   }
   /* --- First-page header --- */
-  .header { margin-bottom: 20px; }
-  .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
-  .logo { max-height: 96px; max-width: 320px; object-fit: contain; }
-  .form-title { font-size: 22px; font-weight: 700; color: #111827; }
-  .form-description { font-size: 13px; color: #6b7280; margin-top: 4px; }
+  .header { margin-bottom: 16px; }
+  .header-top { display: flex; align-items: flex-start; gap: 12px; }
+  .logo { max-height: 56px; max-width: 180px; object-fit: contain; flex-shrink: 0; }
+  .form-title { font-size: 20px; font-weight: 700; color: #111827; line-height: 1.3; margin-top: 2px; }
+  .form-description { font-size: 12px; color: #6b7280; margin-top: 3px; }
   /* --- Fixed footer (renders on every page via CSS position:fixed in print) --- */
   .page-footer {
     position: fixed; bottom: 0; left: 0; right: 0;
     font-size: 9px; color: #9ca3af; text-align: center; padding: 10px 40px;
   }
-  /* --- Meta grid --- */
+  /* --- Meta bar --- */
   .meta {
-    display: flex; gap: 32px;
-    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
-    padding: 12px 16px; margin-bottom: 24px; font-size: 12px;
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;
+    padding: 8px 14px; margin-bottom: 20px; font-size: 12px;
   }
-  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; font-weight: 600; margin-bottom: 2px; }
-  .meta-value { color: #374151; font-weight: 500; word-break: break-word; }
+  .meta-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; font-weight: 600; margin-bottom: 1px; }
+  .meta-value { color: #374151; font-weight: 500; word-break: break-word; font-size: 12px; }
+  .meta-subtext { font-size: 10px; color: #9ca3af; margin-top: 1px; }
   /* --- Fields grid (12 columns) --- */
   .fields-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px 16px; }
   .field { page-break-inside: avoid; min-width: 0; }
@@ -541,8 +541,9 @@ function buildSubmissionPdfHtml(input: {
     ${input.formDescription ? `<p class="form-description">${esc(input.formDescription)}</p>` : ''}
   </div>
   <div class="meta">
-    <div class="meta-item"><div class="meta-label">Submitted</div><div class="meta-value">${esc(submittedAt)}</div></div>
-    <div class="meta-item"><div class="meta-label">Status</div><div class="meta-value">${esc(String(input.status))}</div></div>
+    <div class="meta-label">Submitted</div>
+    <div class="meta-value">${esc(submittedAt)}</div>
+    <div class="meta-subtext">Form Submission &middot; ${esc(input.timeZone ?? 'Asia/Singapore')}</div>
   </div>
   <div class="fields-grid">${fieldsHtml}</div>
   ${footerText ? `<div class="page-footer">${esc(footerText)}</div>` : ''}
