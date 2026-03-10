@@ -17,6 +17,7 @@ import {
   normalizeKey,
   parseObject,
   formatChoiceAnswer,
+  parseChoiceOptions,
   isEmptyValue,
   evaluateCondition,
   parseFormDraftSettings,
@@ -98,6 +99,10 @@ export interface DeleteFormResponseResult {
 export interface DeleteFormResponseUploadResult {
   id: string;
   submissionId: string;
+}
+
+export interface DeleteFormDraftResult {
+  id: string;
 }
 
 export interface RecentFormSubmissionItem {
@@ -301,6 +306,33 @@ function buildSubmissionPdfHtml(input: {
       .replace(/"/g, '&quot;');
   }
 
+  // Map layoutWidth (25/33/50/66/75/100) to CSS grid column span out of 12
+  function colSpan(layoutWidth: number | null | undefined): number {
+    const map: Record<number, number> = { 25: 3, 33: 4, 50: 6, 66: 8, 75: 9, 100: 12 };
+    return map[layoutWidth ?? 100] ?? 12;
+  }
+
+  function isChoiceInlineRight(field: FormField): boolean {
+    const validation = parseObject(field.validation);
+    return validation?.choiceInlineRight === true;
+  }
+
+  function renderChoiceInlineRight(field: FormField, value: unknown): string {
+    const label = esc(field.label?.trim() || field.key);
+    const options = parseChoiceOptions(field.options);
+    const selectedText = formatChoiceAnswer(value);
+    const optionsHtml = options.map((opt) => {
+      const isSelected = formatChoiceAnswer(value) !== null &&
+        (opt.value === (typeof value === 'string' ? value : (parseObject(value) as { value?: string } | null)?.value));
+      return `<span class="choice-option${isSelected ? ' choice-option-selected' : ''}">${esc(opt.label)}</span>`;
+    }).join('');
+    return `
+      <div class="field-inline-right">
+        <span class="field-label-inline">${label}</span>
+        <span class="choice-options-right">${optionsHtml || (selectedText ? `<span class="choice-option choice-option-selected">${esc(selectedText)}</span>` : `<span class="empty">\u2014</span>`)}</span>
+      </div>`;
+  }
+
   function renderFieldValue(field: FormField, value: unknown): string {
     if (field.type === 'SIGNATURE') {
       if (typeof value === 'string' && value.trim().length > 0) {
@@ -330,9 +362,16 @@ function buildSubmissionPdfHtml(input: {
 
   function renderField(field: FormField, value: unknown): string {
     if (field.type === 'PARAGRAPH' || field.type === 'HTML' || field.type === 'HIDDEN') return '';
+    const span = colSpan(field.layoutWidth);
+
+    // choiceInlineRight: label on left, selected option pills on right
+    if ((field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') && isChoiceInlineRight(field)) {
+      return `<div class="field" style="grid-column: span ${span};">${renderChoiceInlineRight(field, value)}</div>`;
+    }
+
     const label = esc(field.label?.trim() || field.key);
     return `
-      <div class="field">
+      <div class="field" style="grid-column: span ${span};">
         <div class="field-label">${label}</div>
         <div class="field-value">${renderFieldValue(field, value)}</div>
       </div>`;
@@ -404,7 +443,7 @@ function buildSubmissionPdfHtml(input: {
       return `
         <div class="repeat-card">
           <div class="repeat-card-label">Entry ${rowIndex + 1}</div>
-          <div class="repeat-card-fields">${rowFields.map((f) => renderField(f, rowAnswers[f.key])).join('')}</div>
+          <div class="repeat-card-fields fields-grid">${rowFields.map((f) => renderField(f, rowAnswers[f.key])).join('')}</div>
         </div>`;
     }).join('');
 
@@ -440,18 +479,22 @@ function buildSubmissionPdfHtml(input: {
   }
   .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; font-weight: 600; margin-bottom: 2px; }
   .meta-value { color: #374151; font-weight: 500; }
-  .field { margin-bottom: 16px; page-break-inside: avoid; }
+  .fields-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px 16px; margin-bottom: 8px; }
+  .field { page-break-inside: avoid; }
   .field-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
   .field-value { font-size: 13px; color: #111827; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; min-height: 36px; }
+  .field-inline-right { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; min-height: 36px; }
+  .field-label-inline { font-size: 13px; color: #111827; font-weight: 500; flex-shrink: 0; }
+  .choice-options-right { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  .choice-option { font-size: 12px; padding: 3px 10px; border-radius: 9999px; border: 1px solid #d1d5db; color: #6b7280; background: #fff; }
+  .choice-option-selected { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; font-weight: 600; }
   .empty { color: #d1d5db; }
   .file-name { color: #374151; }
-  .repeat-section { margin-bottom: 20px; }
+  .repeat-section { margin-bottom: 20px; grid-column: span 12; }
   .repeat-title { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 4px; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }
   .repeat-hint { font-size: 12px; color: #9ca3af; margin-bottom: 10px; }
   .repeat-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; margin-bottom: 10px; background: #fff; page-break-inside: avoid; }
   .repeat-card-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; margin-bottom: 10px; }
-  .repeat-card-fields .field { margin-bottom: 10px; }
-  .repeat-card-fields .field:last-child { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -469,7 +512,7 @@ function buildSubmissionPdfHtml(input: {
     <div class="meta-item"><div class="meta-label">Respondent</div><div class="meta-value">${esc(input.respondentName || '\u2014')}</div></div>
     <div class="meta-item"><div class="meta-label">Email</div><div class="meta-value">${esc(input.respondentEmail || '\u2014')}</div></div>
   </div>
-  ${fieldsHtml}
+  <div class="fields-grid">${fieldsHtml}</div>
 </body>
 </html>`;
 
@@ -1782,6 +1825,66 @@ export async function deleteFormResponseUpload(
   return {
     id: upload.id,
     submissionId: submission.id,
+  };
+}
+
+export async function deleteFormDraft(
+  formId: string,
+  draftId: string,
+  params: TenantAwareParams,
+  reason?: string
+): Promise<DeleteFormDraftResult> {
+  const form = await prisma.form.findFirst({
+    where: {
+      id: formId,
+      tenantId: params.tenantId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      title: true,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const draft = await prisma.formDraft.findFirst({
+    where: {
+      id: draftId,
+      formId,
+      tenantId: params.tenantId,
+    },
+    select: {
+      id: true,
+      code: true,
+    },
+  });
+
+  if (!draft) {
+    throw new Error('Draft not found');
+  }
+
+  const deletedCount = await deleteFormDraftsByIds([draft.id]);
+  if (deletedCount === 0) {
+    throw new Error('Draft not found');
+  }
+
+  await createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    action: 'DELETE',
+    entityType: 'FormDraft',
+    entityId: draft.id,
+    entityName: draft.code,
+    summary: `Deleted draft ${draft.code} from "${form.title}"`,
+    reason,
+    changeSource: 'MANUAL',
+  });
+
+  return {
+    id: draft.id,
   };
 }
 
