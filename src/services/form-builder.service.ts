@@ -2271,6 +2271,7 @@ async function queueFormSubmissionAiReviewInternal(input: {
     where: { id: submissionWithForm.id },
     data: {
       metadata: toJsonInput(metadataWithAiReview),
+      aiReviewStatus: queuedReview.status,
     },
   });
 
@@ -2333,10 +2334,7 @@ export async function processQueuedFormSubmissionAiReviews(input?: {
   const queuedSubmissions = await prisma.formSubmission.findMany({
     where: {
       ...(input?.submissionIds?.length ? { id: { in: input.submissionIds } } : {}),
-      metadata: {
-        path: ['aiReview', 'status'],
-        equals: 'queued',
-      },
+      aiReviewStatus: 'queued',
       form: {
         deletedAt: null,
         settings: {
@@ -2378,13 +2376,11 @@ export async function processQueuedFormSubmissionAiReviews(input?: {
     const claimResult = await prisma.formSubmission.updateMany({
       where: {
         id: submission.id,
-        metadata: {
-          path: ['aiReview', 'status'],
-          equals: 'queued',
-        },
+        aiReviewStatus: 'queued',
       },
       data: {
         metadata: toJsonInput(processingMetadata),
+        aiReviewStatus: processingReview.status,
       },
     });
 
@@ -2420,6 +2416,7 @@ export async function processQueuedFormSubmissionAiReviews(input?: {
       where: { id: submission.id },
       data: {
         metadata: toJsonInput(finalMetadata),
+        aiReviewStatus: finalReview.status,
       },
     });
 

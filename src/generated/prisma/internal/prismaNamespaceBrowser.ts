@@ -1354,8 +1354,10 @@ export const FormSubmissionScalarFieldEnum = {
   respondentEmail: 'respondentEmail',
   answers: 'answers',
   metadata: 'metadata',
+  aiReviewStatus: 'aiReviewStatus',
   submittedAt: 'submittedAt',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type FormSubmissionScalarFieldEnum = (typeof FormSubmissionScalarFieldEnum)[keyof typeof FormSubmissionScalarFieldEnum]
