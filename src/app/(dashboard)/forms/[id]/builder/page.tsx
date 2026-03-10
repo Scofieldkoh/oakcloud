@@ -1697,10 +1697,9 @@ export default function FormBuilderPage() {
               <SettingsSection
                 icon={<Bell className="w-3.5 h-3.5" />}
                 title="Notifications"
-                summary={(() => {
-                  const count = notificationEmailParse.emails.length;
-                  return count === 0 ? 'No recipients' : `${count} recipient${count === 1 ? '' : 's'}`;
-                })()}
+                summary={notificationEmailParse.emails.length === 0
+                  ? 'No recipients'
+                  : `${notificationEmailParse.emails.length} recipient${notificationEmailParse.emails.length === 1 ? '' : 's'}`}
                 defaultOpen
               >
                 <div>
@@ -1833,10 +1832,10 @@ export default function FormBuilderPage() {
                 icon={<Paintbrush className="w-3.5 h-3.5" />}
                 title="Appearance & PDF"
                 summary={[
-                  !hideLogo && 'Logo',
-                  !hideFooter && 'Footer',
-                  pdfFileNameTemplate && 'PDF template',
-                ].filter(Boolean).join(' · ') || 'Default appearance'}
+                  ...(!hideLogo ? ['Logo'] : []),
+                  ...(!hideFooter ? ['Footer'] : []),
+                  ...(pdfFileNameTemplate ? ['PDF template'] : []),
+                ].join(' · ') || 'Default appearance'}
               >
                 <FormInput
                   label="PDF filename template"
