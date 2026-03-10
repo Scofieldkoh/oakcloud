@@ -18,7 +18,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove, rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
-import { ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardCopy, Copy, Plus, Save, Sparkles } from 'lucide-react';
+import { Bell, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardCopy, Copy, Globe, Paintbrush, Plus, Save, Sparkles, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { AIModelSelector } from '@/components/ui/ai-model-selector';
@@ -48,6 +48,7 @@ import {
   RESPONSE_COLUMN_SUBMITTED_ID,
   normalizeLocaleCode,
   parseFormDraftSettings,
+  parseFormAiSettings,
   parseFormFileNameSettings,
   parseFormI18nSettings,
   isSummaryEligibleFieldType,
@@ -55,6 +56,7 @@ import {
   normalizeResponseColumnOrder,
   parseFormResponseTableSettings,
   writeFormDraftSettings,
+  writeFormAiSettings,
   writeFormFileNameSettings,
   writeFormI18nSettings,
   sanitizeResponseColumnWidths,
@@ -170,14 +172,20 @@ const TRANSLATABLE_UI_LABELS: Array<{ key: string; label: string; placeholder: s
   { key: 'page_progress', label: 'Page progress label', placeholder: 'Page {current} of {total}' },
   { key: 'page_progress_short', label: 'Page progress short label', placeholder: '{current} of {total}' },
   { key: 'upload_file', label: 'Upload file prompt', placeholder: 'Upload a file' },
+  { key: 'upload_files', label: 'Upload files prompt', placeholder: 'Upload files' },
   { key: 'replace_file', label: 'Replace file prompt', placeholder: 'Replace file' },
+  { key: 'add_more_files', label: 'Add more files prompt', placeholder: 'Add more files' },
   { key: 'upload_drag_hint', label: 'Drag/drop hint', placeholder: 'or drag and drop here' },
   { key: 'upload_select_prompt', label: 'Upload status (idle)', placeholder: 'Select a file to upload' },
+  { key: 'upload_select_multiple_prompt', label: 'Upload status (idle, multiple)', placeholder: 'Select one or more files to upload' },
   { key: 'uploading', label: 'Upload status (uploading)', placeholder: 'Uploading...' },
   { key: 'upload_success', label: 'Upload status (success)', placeholder: 'File uploaded successfully' },
+  { key: 'upload_success_plural', label: 'Upload status (success, multiple)', placeholder: 'Files uploaded successfully' },
   { key: 'upload_failed', label: 'Upload failed message', placeholder: 'Upload failed' },
   { key: 'uploaded_file_fallback', label: 'Uploaded file fallback label', placeholder: 'Uploaded file' },
   { key: 'upload_file_for_field', label: 'Upload field aria label', placeholder: 'Upload file for {field}' },
+  { key: 'upload_files_for_field', label: 'Upload field aria label (multiple)', placeholder: 'Upload files for {field}' },
+  { key: 'remove_file', label: 'Remove file button', placeholder: 'Remove file' },
   { key: 'add_row', label: 'Add row button label', placeholder: 'Add row' },
   { key: 'remove_row', label: 'Remove row button label', placeholder: 'Remove row' },
   { key: 'phone_code_placeholder', label: 'Phone code placeholder', placeholder: 'Code' },
@@ -196,8 +204,8 @@ const TRANSLATABLE_UI_LABELS: Array<{ key: string; label: string; placeholder: s
   { key: 'resume_draft_placeholder', label: 'Resume draft placeholder', placeholder: 'Enter draft ID' },
   { key: 'draft_validity_notice_singular', label: 'Draft validity notice (singular)', placeholder: 'Drafts stay available for {days} day.' },
   { key: 'draft_validity_notice_plural', label: 'Draft validity notice (plural)', placeholder: 'Drafts stay available for {days} days.' },
-  { key: 'resume_draft_description_singular', label: 'Resume draft description (singular)', placeholder: 'Drafts stay available for {days} day. Enter your draft ID if you want to continue a saved response.' },
-  { key: 'resume_draft_description_plural', label: 'Resume draft description (plural)', placeholder: 'Drafts stay available for {days} days. Enter your draft ID if you want to continue a saved response.' },
+  { key: 'resume_draft_description_singular', label: 'Resume draft description (singular)', placeholder: 'Enter your draft ID if you want to continue a saved response.' },
+  { key: 'resume_draft_description_plural', label: 'Resume draft description (plural)', placeholder: 'Enter your draft ID if you want to continue a saved response.' },
   { key: 'copy_resume_link', label: 'Copy resume link button', placeholder: 'Copy resume link' },
   { key: 'draft_saved', label: 'Draft saved message', placeholder: 'Draft saved. Keep this code and resume link to continue later.' },
   { key: 'draft_saved_title', label: 'Draft saved title', placeholder: 'Draft saved' },
@@ -311,6 +319,47 @@ function getBuilderFieldTypeLabel(field: BuilderField): string {
   return 'Information / Text block';
 }
 
+function SettingsSection({
+  icon,
+  title,
+  summary,
+  defaultOpen = false,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  summary: React.ReactNode;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="rounded-lg border border-border-primary bg-background-primary">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-start gap-2 px-3 py-2.5 text-left"
+      >
+        <span className="mt-0.5 shrink-0 text-text-muted">{icon}</span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-xs font-semibold text-text-primary">{title}</span>
+          {!open && (
+            <span className="block text-2xs text-text-muted truncate">{summary}</span>
+          )}
+        </span>
+        <ChevronDown
+          className={`mt-0.5 w-3.5 h-3.5 shrink-0 text-text-muted transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {open && (
+        <div className="space-y-3 border-t border-border-primary px-3 pb-3 pt-3">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 type BuilderTab = 'form' | 'language' | 'settings';
 
 type TranslationSourceItem = {
@@ -336,6 +385,8 @@ export default function FormBuilderPage() {
   const [notificationRecipientsText, setNotificationRecipientsText] = useState('');
   const [draftSaveEnabled, setDraftSaveEnabled] = useState(false);
   const [draftAutoDeleteDays, setDraftAutoDeleteDays] = useState(DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS);
+  const [aiParsingEnabled, setAiParsingEnabled] = useState(false);
+  const [aiParsingCustomContext, setAiParsingCustomContext] = useState('');
   const [pdfFileNameTemplate, setPdfFileNameTemplate] = useState('');
   const [i18nDefaultLocale, setI18nDefaultLocale] = useState('en');
   const [i18nEnabledLocales, setI18nEnabledLocales] = useState<string[]>(['en']);
@@ -356,6 +407,10 @@ export default function FormBuilderPage() {
   const [aiTranslateInstructions, setAiTranslateInstructions] = useState('');
   const [aiTranslateFillEmptyOnly, setAiTranslateFillEmptyOnly] = useState(true);
   const [isAiTranslating, setIsAiTranslating] = useState(false);
+  const [showAiAssistModal, setShowAiAssistModal] = useState(false);
+  const [aiAssistSourceText, setAiAssistSourceText] = useState('');
+  const [aiAssistGeneratedContext, setAiAssistGeneratedContext] = useState('');
+  const [isGeneratingAiAssistContext, setIsGeneratingAiAssistContext] = useState(false);
   const [expandedTranslationSections, setExpandedTranslationSections] = useState<string[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
   const baselineSnapshot = useRef<string>('');
@@ -370,6 +425,7 @@ export default function FormBuilderPage() {
     const responseTableSettings = parseFormResponseTableSettings(form.settings);
     const notificationSettings = parseFormNotificationSettings(form.settings);
     const draftSettings = parseFormDraftSettings(form.settings);
+    const aiSettings = parseFormAiSettings(form.settings);
     const fileNameSettings = parseFormFileNameSettings(form.settings);
     const i18nSettings = parseFormI18nSettings(form.settings);
     const summaryFieldKeySet = new Set(responseTableSettings.summaryFieldKeys);
@@ -403,6 +459,8 @@ export default function FormBuilderPage() {
     setNotificationRecipientsText(notificationSettings.completionRecipientEmails.join('\n'));
     setDraftSaveEnabled(draftSettings.enabled);
     setDraftAutoDeleteDays(draftSettings.autoDeleteDays);
+    setAiParsingEnabled(aiSettings.enabled);
+    setAiParsingCustomContext(aiSettings.customContext || '');
     setPdfFileNameTemplate(fileNameSettings.pdfTemplate || '');
     setI18nDefaultLocale(i18nSettings.defaultLocale);
     setI18nEnabledLocales(i18nSettings.enabledLocales);
@@ -427,6 +485,8 @@ export default function FormBuilderPage() {
       notificationRecipientText: notificationSettings.completionRecipientEmails.join('\n'),
       draftSaveEnabled: draftSettings.enabled,
       draftAutoDeleteDays: draftSettings.autoDeleteDays,
+      aiParsingEnabled: aiSettings.enabled,
+      aiParsingCustomContext: aiSettings.customContext || '',
       pdfFileNameTemplate: fileNameSettings.pdfTemplate || '',
       i18nDefaultLocale: i18nSettings.defaultLocale,
       i18nEnabledLocales: i18nSettings.enabledLocales,
@@ -641,6 +701,8 @@ export default function FormBuilderPage() {
       notificationRecipientText: notificationRecipientsText,
       draftSaveEnabled,
       draftAutoDeleteDays,
+      aiParsingEnabled,
+      aiParsingCustomContext,
       pdfFileNameTemplate,
       i18nDefaultLocale,
       i18nEnabledLocales,
@@ -660,6 +722,8 @@ export default function FormBuilderPage() {
         notificationRecipientsText,
         draftSaveEnabled,
         draftAutoDeleteDays,
+        aiParsingEnabled,
+        aiParsingCustomContext,
         pdfFileNameTemplate,
         i18nDefaultLocale,
         i18nEnabledLocales,
@@ -1066,6 +1130,12 @@ export default function FormBuilderPage() {
     return `${body.error}: ${fieldErrors.slice(0, 3).join(' | ')}`;
   }
 
+  function openAiAssistModal() {
+    setAiAssistSourceText(aiParsingCustomContext);
+    setAiAssistGeneratedContext('');
+    setShowAiAssistModal(true);
+  }
+
   async function handleRunAiTranslation() {
     if (!form) return;
 
@@ -1159,6 +1229,55 @@ export default function FormBuilderPage() {
     } finally {
       setIsAiTranslating(false);
     }
+  }
+
+  async function handleGenerateAiAssistContext() {
+    if (!form) return;
+
+    if (!aiAssistSourceText.trim()) {
+      showError('Enter rough notes or instructions first.');
+      return;
+    }
+
+    setIsGeneratingAiAssistContext(true);
+    try {
+      const response = await fetch(`/api/forms/${form.id}/ai-context-assist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId: form.tenantId,
+          notes: aiAssistSourceText,
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(toApiErrorMessage(payload, 'Failed to generate AI custom context'));
+      }
+
+      const customContext = typeof payload?.customContext === 'string' ? payload.customContext.trim() : '';
+      if (!customContext) {
+        throw new Error('AI response did not include a usable custom context');
+      }
+
+      setAiAssistGeneratedContext(customContext);
+      success('AI draft generated');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to generate AI custom context');
+    } finally {
+      setIsGeneratingAiAssistContext(false);
+    }
+  }
+
+  function handleUseAiAssistContext() {
+    if (!aiAssistGeneratedContext.trim()) {
+      showError('Generate a draft first.');
+      return;
+    }
+
+    setAiParsingCustomContext(aiAssistGeneratedContext.trim());
+    setShowAiAssistModal(false);
+    success('Custom context updated');
   }
 
   function selectField(clientId: string) {
@@ -1293,9 +1412,13 @@ export default function FormBuilderPage() {
         enabled: draftSaveEnabled,
         autoDeleteDays: normalizedDraftAutoDeleteDays,
       });
-      const fileNameSettingsPayload = writeFormFileNameSettings(draftSettingsPayload, {
-        pdfTemplate: pdfFileNameTemplate,
-      });
+        const aiSettingsPayload = writeFormAiSettings(draftSettingsPayload, {
+          enabled: aiParsingEnabled,
+          customContext: aiParsingCustomContext,
+        });
+        const fileNameSettingsPayload = writeFormFileNameSettings(aiSettingsPayload, {
+          pdfTemplate: pdfFileNameTemplate,
+        });
       let nextSettings = writeFormI18nSettings(fileNameSettingsPayload, {
         defaultLocale: normalizedDefaultLocale,
         enabledLocales: nextEnabledLocales,
@@ -1322,10 +1445,13 @@ export default function FormBuilderPage() {
 
       setStatus(saved.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED');
       const savedDraftSettings = parseFormDraftSettings(saved.settings);
+      const savedAiSettings = parseFormAiSettings(saved.settings);
       const savedFileNameSettings = parseFormFileNameSettings(saved.settings);
       const savedI18nSettings = parseFormI18nSettings(saved.settings);
       setDraftSaveEnabled(savedDraftSettings.enabled);
       setDraftAutoDeleteDays(savedDraftSettings.autoDeleteDays);
+      setAiParsingEnabled(savedAiSettings.enabled);
+      setAiParsingCustomContext(savedAiSettings.customContext || '');
       setPdfFileNameTemplate(savedFileNameSettings.pdfTemplate || '');
       setI18nDefaultLocale(savedI18nSettings.defaultLocale);
       setI18nEnabledLocales(savedI18nSettings.enabledLocales);
@@ -1343,6 +1469,8 @@ export default function FormBuilderPage() {
         notificationRecipientText: notificationRecipientsText,
         draftSaveEnabled: savedDraftSettings.enabled,
         draftAutoDeleteDays: savedDraftSettings.autoDeleteDays,
+        aiParsingEnabled: savedAiSettings.enabled,
+        aiParsingCustomContext: savedAiSettings.customContext || '',
         pdfFileNameTemplate: savedFileNameSettings.pdfTemplate || '',
         i18nDefaultLocale: savedI18nSettings.defaultLocale,
         i18nEnabledLocales: savedI18nSettings.enabledLocales,
@@ -1602,6 +1730,54 @@ export default function FormBuilderPage() {
                     Drafts and their uploaded files are deleted after this many days. Allowed range: {MIN_FORM_DRAFT_AUTO_DELETE_DAYS}-{MAX_FORM_DRAFT_AUTO_DELETE_DAYS}.
                   </p>
                 </div>
+              </div>
+              <div className="space-y-3 rounded-lg border border-border-primary bg-background-primary px-3 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-text-secondary">Enable AI parsing</p>
+                    <p className="text-2xs text-text-muted">Run an internal AI review on each completed response using the default AI model from the server environment.</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={aiParsingEnabled}
+                    onClick={() => setAiParsingEnabled((value) => !value)}
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      aiParsingEnabled ? 'bg-oak-primary' : 'bg-border-primary'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        aiParsingEnabled ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+                {aiParsingEnabled && (
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between gap-3">
+                      <label className="block text-xs font-medium text-text-secondary">Custom context</label>
+                      <Button
+                        variant="secondary"
+                        size="xs"
+                        leftIcon={<Sparkles className="w-3.5 h-3.5" />}
+                        onClick={openAiAssistModal}
+                      >
+                        AI assist
+                      </Button>
+                    </div>
+                    <textarea
+                      value={aiParsingCustomContext}
+                      onChange={(e) => setAiParsingCustomContext(e.target.value)}
+                      rows={5}
+                      className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+                      placeholder="Example: Verify the declared identity details against the uploaded identification documents and flag any mismatches, PEP declarations, or unusual risk indicators."
+                    />
+                    <p className="mt-1 text-2xs text-text-muted">
+                      Internal only. This is used for staff review and is never shown on the public form.
+                    </p>
+                  </div>
+                )}
               </div>
               <FormInput
                 label="PDF filename template"
@@ -2184,6 +2360,79 @@ export default function FormBuilderPage() {
             disabled={!aiTranslateModel || aiTranslationTargetItems.length === 0}
           >
             Translate and Populate
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        isOpen={showAiAssistModal}
+        onClose={() => {
+          if (isGeneratingAiAssistContext) return;
+          setShowAiAssistModal(false);
+        }}
+        title="AI Assist for Custom Context"
+        description="Paste rough notes and convert them into the structured custom-context format used for form AI review."
+        size="2xl"
+      >
+        <ModalBody className="space-y-4">
+          <p className="text-sm text-text-secondary">
+            The default server AI model will rewrite your notes into a cleaner prompt for the form&apos;s internal AI review. You can review and edit the result before applying it.
+          </p>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Raw notes or instructions</label>
+            <textarea
+              value={aiAssistSourceText}
+              onChange={(e) => setAiAssistSourceText(e.target.value)}
+              rows={7}
+              className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+              placeholder="Example: Review this as a Singapore CSP KYC/CDD form. Cross-check names, ID numbers, DOB, address, beneficial ownership, nominee arrangements, PEP declarations, and whether any supporting document is missing or expired."
+            />
+            <p className="mt-1 text-2xs text-text-muted">
+              Include rough requirements, jurisdiction, risk checks, or document checks. The generated draft will preserve these and rewrite them into the recommended structure.
+            </p>
+          </div>
+          <div>
+            <div className="mb-1.5 flex items-center justify-between gap-3">
+              <label className="block text-xs font-medium text-text-secondary">Generated custom context</label>
+              {aiAssistGeneratedContext && (
+                <span className="text-2xs text-text-muted">Editable before applying</span>
+              )}
+            </div>
+            <textarea
+              value={aiAssistGeneratedContext}
+              onChange={(e) => setAiAssistGeneratedContext(e.target.value)}
+              rows={12}
+              className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+              placeholder="Generate a draft to preview it here."
+            />
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowAiAssistModal(false)}
+            disabled={isGeneratingAiAssistContext}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Sparkles className="w-3.5 h-3.5" />}
+            onClick={handleGenerateAiAssistContext}
+            isLoading={isGeneratingAiAssistContext}
+            disabled={!aiAssistSourceText.trim()}
+          >
+            {aiAssistGeneratedContext ? 'Regenerate draft' : 'Generate draft'}
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleUseAiAssistContext}
+            disabled={!aiAssistGeneratedContext.trim() || isGeneratingAiAssistContext}
+          >
+            Use result
           </Button>
         </ModalFooter>
       </Modal>
