@@ -485,8 +485,8 @@ function buildSubmissionPdfHtml(input: {
   .accent-bar { height: 3px; width: 40px; background: #4f46e5; border-radius: 9999px; margin-top: 12px; }
   /* --- Meta grid --- */
   .meta {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px;
-    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+    display: flex; gap: 32px;
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
     padding: 12px 16px; margin-bottom: 24px; font-size: 12px;
   }
   .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; font-weight: 600; margin-bottom: 2px; }
@@ -532,8 +532,6 @@ function buildSubmissionPdfHtml(input: {
   <div class="meta">
     <div class="meta-item"><div class="meta-label">Submitted</div><div class="meta-value">${esc(submittedAt)}</div></div>
     <div class="meta-item"><div class="meta-label">Status</div><div class="meta-value">${esc(String(input.status))}</div></div>
-    <div class="meta-item"><div class="meta-label">Respondent</div><div class="meta-value">${esc(input.respondentName || '\u2014')}</div></div>
-    <div class="meta-item"><div class="meta-label">Email</div><div class="meta-value">${esc(input.respondentEmail || '\u2014')}</div></div>
   </div>
   <div class="fields-grid">${fieldsHtml}</div>
 </body>
