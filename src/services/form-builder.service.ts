@@ -279,7 +279,7 @@ function buildSubmissionPdfHtml(input: {
   tenantName?: string | null;
   formSettings?: unknown;
   timeZone?: string;
-}): { contentHtml: string; headerHtml: string; footerHtml: string } {
+}): { contentHtml: string; footerHtml: string } {
   const settings = parseObject(input.formSettings);
   const hideLogo = settings?.hideLogo === true;
   const hideFooter = settings?.hideFooter === true;
@@ -455,34 +455,28 @@ function buildSubmissionPdfHtml(input: {
       </div>`;
   }).join('');
 
-  // Header HTML for Puppeteer's repeating headerTemplate (shown on every page).
-  // Must be self-contained with inline styles — Puppeteer renders it in an isolated context.
-  const repeatingHeaderHtml = `
-    <div style="width:100%;padding:10px 52px 8px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:14px;font-family:sans-serif;background:#fff;">
-      ${logoUrl ? `<img src="${esc(logoUrl)}" alt="Logo" style="max-height:32px;max-width:120px;object-fit:contain;" />` : ''}
-      <span style="font-size:13px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(input.formTitle || 'Form Response')}</span>
-    </div>`;
-
   const contentHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  @page { size: A4 portrait; margin: 0; }
+  @page { size: A4 portrait; margin: 48px 52px 48px; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
     font-size: 13px; line-height: 1.5; color: #111827; background: #fff;
-    /* top: space for Puppeteer header (~60px); bottom: space for footer + clean margin */
-    padding: 68px 52px 72px;
   }
-  /* --- First-page header (not repeated) --- */
+  /* --- First-page header --- */
   .header { margin-bottom: 20px; }
   .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
   .logo { max-height: 96px; max-width: 320px; object-fit: contain; }
   .form-title { font-size: 22px; font-weight: 700; color: #111827; }
   .form-description { font-size: 13px; color: #6b7280; margin-top: 4px; }
-  .accent-bar { display: none; }
+  /* --- Fixed footer (renders on every page via CSS position:fixed in print) --- */
+  .page-footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    font-size: 9px; color: #9ca3af; text-align: center; padding: 10px 40px;
+  }
   /* --- Meta grid --- */
   .meta {
     display: flex; gap: 32px;
@@ -527,21 +521,17 @@ function buildSubmissionPdfHtml(input: {
       <h1 class="form-title">${esc(input.formTitle || 'Form Response')}</h1>
     </div>
     ${input.formDescription ? `<p class="form-description">${esc(input.formDescription)}</p>` : ''}
-    <div class="accent-bar"></div>
   </div>
   <div class="meta">
     <div class="meta-item"><div class="meta-label">Submitted</div><div class="meta-value">${esc(submittedAt)}</div></div>
     <div class="meta-item"><div class="meta-label">Status</div><div class="meta-value">${esc(String(input.status))}</div></div>
   </div>
   <div class="fields-grid">${fieldsHtml}</div>
+  ${footerText ? `<div class="page-footer">${esc(footerText)}</div>` : ''}
 </body>
 </html>`;
 
-  const footerHtml = footerText
-    ? `<div style="font-size:9px;color:#9ca3af;text-align:center;width:100%;padding:0 40px;font-family:sans-serif;">${esc(footerText)}</div>`
-    : '<div></div>';
-
-  return { contentHtml, headerHtml: repeatingHeaderHtml, footerHtml };
+  return { contentHtml, footerHtml: '<div></div>' };
 }
 
 async function buildSubmissionPdfBuffer(input: {
@@ -559,12 +549,12 @@ async function buildSubmissionPdfBuffer(input: {
   formSettings?: unknown;
   timeZone?: string;
 }): Promise<Buffer> {
-  const { contentHtml, headerHtml, footerHtml } = buildSubmissionPdfHtml(input);
+  const { contentHtml, footerHtml } = buildSubmissionPdfHtml(input);
   return generatePDF(contentHtml, {
     format: 'A4',
     orientation: 'portrait',
     margins: { top: 0, right: 0, bottom: 0, left: 0 },
-    headerHtml,
+    headerHtml: '<div></div>',
     footerHtml,
   });
 }
