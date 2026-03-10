@@ -1,11 +1,23 @@
 import { z } from 'zod';
 import { FORM_FIELD_KEY_MAX_LENGTH } from '@/lib/form-utils';
+import { evaluateArithmeticExpression } from '@/lib/safe-math';
 
 const MAX_FIELD_OPTIONS = 500;
 const MAX_FIELD_LABEL_LENGTH = 1000;
 const MAX_FIELD_SUBTEXT_LENGTH = 10000;
 const DATE_BOUND_PATTERN = /^(?:\d{4}-\d{2}-\d{2}|today)$/;
-const NUMBER_FORMULA_PATTERN = /^(?:(?:>=|<=|>|<|=)\s*)?[\d\s+\-*/().[\]_a-zA-Z]+$/;
+
+// Field key references like [fieldName] or [field_name_123] — valid identifier characters
+const FIELD_KEY_REF_PATTERN = /\[[a-zA-Z][a-zA-Z0-9_]{0,119}\]/g;
+
+function isValidFormulaExpression(formula: string): boolean {
+  // Strip optional comparison prefix (>=, <=, >, <, =)
+  const withoutPrefix = formula.replace(/^(?:>=|<=|>|<|=)\s*/, '');
+  // Replace all [fieldKey] references with 1 (a valid numeric literal)
+  const resolved = withoutPrefix.replace(FIELD_KEY_REF_PATTERN, '1');
+  // The resolved expression must parse as valid arithmetic
+  return evaluateArithmeticExpression(resolved) !== null;
+}
 
 export const formStatusSchema = z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']);
 
@@ -46,9 +58,9 @@ export const fieldValidationSchema = z
     min: z.number().optional(),
     max: z.number().optional(),
     equal: z.number().optional(),
-    minFormula: z.string().min(1).max(500).regex(NUMBER_FORMULA_PATTERN).optional(),
-    maxFormula: z.string().min(1).max(500).regex(NUMBER_FORMULA_PATTERN).optional(),
-    equalFormula: z.string().min(1).max(500).regex(NUMBER_FORMULA_PATTERN).optional(),
+    minFormula: z.string().min(1).max(500).refine(isValidFormulaExpression, { message: 'Invalid formula expression' }).optional(),
+    maxFormula: z.string().min(1).max(500).refine(isValidFormulaExpression, { message: 'Invalid formula expression' }).optional(),
+    equalFormula: z.string().min(1).max(500).refine(isValidFormulaExpression, { message: 'Invalid formula expression' }).optional(),
     minDate: z.string().regex(DATE_BOUND_PATTERN).optional(),
     maxDate: z.string().regex(DATE_BOUND_PATTERN).optional(),
     startsWith: z.string().max(200).optional(),

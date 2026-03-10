@@ -54,6 +54,7 @@
 
 import { scheduler } from './scheduler';
 import { backupTask, cleanupTask, exchangeRateSyncTask, formAiReviewTask, formCountReconciliationTask } from './tasks';
+import { startViewCountFlush, stopViewCountFlush } from '@/lib/view-count-buffer';
 
 /**
  * Initialize the scheduler with all registered tasks
@@ -70,6 +71,9 @@ export async function initializeScheduler(): Promise<void> {
 
   // Initialize and start the scheduler
   await scheduler.initialize();
+
+  // Start buffered view count flushing
+  startViewCountFlush();
 }
 
 /**
@@ -77,8 +81,9 @@ export async function initializeScheduler(): Promise<void> {
  *
  * Call this for graceful shutdown
  */
-export function stopScheduler(): void {
+export async function stopScheduler(): Promise<void> {
   scheduler.stop();
+  await stopViewCountFlush();
 }
 
 /**

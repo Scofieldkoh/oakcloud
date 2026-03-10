@@ -43,6 +43,7 @@ import { generateFormSubmissionAiReview } from '@/services/form-ai.service';
 import type { TenantAwareParams } from '@/lib/types';
 import { getDefaultModelId } from '@/lib/ai/models';
 import { evaluateArithmeticExpression } from '@/lib/safe-math';
+import { incrementViewCount } from '@/lib/view-count-buffer';
 import type {
   CreateFormInput,
   FormFieldInput,
@@ -1825,7 +1826,7 @@ export async function getFormResponses(
   // Max rows to scan in memory for filtered/custom-sorted queries (prevents OOM on large forms)
   const IN_MEMORY_SCAN_LIMIT = 5000;
 
-  const submissionBaseWhere = { formId, tenantId } satisfies Prisma.FormSubmissionWhereInput;
+  const submissionBaseWhere = { formId, tenantId, deletedAt: null } satisfies Prisma.FormSubmissionWhereInput;
   const submissionInclude = { _count: { select: { uploads: true } } } as const;
 
   // Fast path: no filters and sorting by submit date — use DB-level pagination
@@ -2125,6 +2126,7 @@ export async function getFormResponseById(
       id: submissionId,
       formId,
       tenantId,
+      deletedAt: null,
     },
   });
 
@@ -2219,6 +2221,7 @@ async function queueFormSubmissionAiReviewInternal(input: {
       id: input.submissionId,
       formId: input.formId,
       tenantId: input.tenantId,
+      deletedAt: null,
     },
     include: {
       form: {
@@ -2316,6 +2319,7 @@ export async function processQueuedFormSubmissionAiReviews(input?: {
     where: {
       ...(input?.submissionIds?.length ? { id: { in: input.submissionIds } } : {}),
       aiReviewStatus: 'queued',
+      deletedAt: null,
       form: {
         deletedAt: null,
         settings: {
@@ -2440,6 +2444,7 @@ export async function resolveFormSubmissionAiWarning(
       id: submissionId,
       formId,
       tenantId: params.tenantId,
+      deletedAt: null,
     },
   });
 
@@ -2532,6 +2537,7 @@ export async function deleteFormResponse(
       id: submissionId,
       formId,
       tenantId: params.tenantId,
+      deletedAt: null,
     },
     select: {
       id: true,
@@ -2565,8 +2571,9 @@ export async function deleteFormResponse(
       });
     }
 
-    await tx.formSubmission.delete({
+    await tx.formSubmission.update({
       where: { id: submission.id },
+      data: { deletedAt: new Date() },
     });
 
     await tx.form.update({
@@ -2625,6 +2632,7 @@ export async function deleteFormResponseUpload(
       id: submissionId,
       formId,
       tenantId: params.tenantId,
+      deletedAt: null,
     },
     select: {
       id: true,
@@ -2793,6 +2801,7 @@ export async function exportFormResponsePdf(
       id: submissionId,
       formId,
       tenantId,
+      deletedAt: null,
     },
   });
 
@@ -2851,6 +2860,7 @@ export async function listRecentFormSubmissions(
   const submissions = await prisma.formSubmission.findMany({
     where: {
       tenantId,
+      deletedAt: null,
       form: {
         deletedAt: null,
       },
@@ -2893,6 +2903,7 @@ export async function listFormsWithWarnings(
     where: {
       tenantId,
       hasUnresolvedAiWarning: true,
+      deletedAt: null,
       form: {
         deletedAt: null,
       },
@@ -2957,10 +2968,7 @@ export async function getPublicFormBySlug(slug: string): Promise<PublicFormDefin
     return null;
   }
 
-  await prisma.form.update({
-    where: { id: form.id },
-    data: { viewsCount: { increment: 1 } },
-  });
+  incrementViewCount(form.id);
 
   return {
     id: form.id,
@@ -4161,6 +4169,7 @@ async function getPublishedFormSubmissionContext(slug: string, submissionId: str
       id: submissionId,
       formId: form.id,
       tenantId: form.tenantId,
+      deletedAt: null,
     },
   });
 
@@ -4301,6 +4310,7 @@ export async function getSubmissionUploads(
       id: submissionId,
       formId,
       tenantId,
+      deletedAt: null,
     },
     select: { id: true },
   });
@@ -4331,7 +4341,7 @@ export async function exportFormResponsesCsv(
   if (!form) throw new Error('Form not found');
 
   const submissions = await prisma.formSubmission.findMany({
-    where: { formId, tenantId },
+    where: { formId, tenantId, deletedAt: null },
     orderBy: { submittedAt: 'desc' },
   });
 
