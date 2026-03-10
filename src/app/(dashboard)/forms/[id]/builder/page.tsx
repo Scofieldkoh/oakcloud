@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -326,11 +326,11 @@ function SettingsSection({
   defaultOpen = false,
   children,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
-  summary: React.ReactNode;
+  summary: ReactNode;
   defaultOpen?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -338,6 +338,7 @@ function SettingsSection({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
         className="flex w-full items-start gap-2 px-3 py-2.5 text-left"
       >
         <span className="mt-0.5 shrink-0 text-text-muted">{icon}</span>
