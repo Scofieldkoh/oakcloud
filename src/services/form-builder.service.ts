@@ -479,10 +479,10 @@ function buildSubmissionPdfHtml(input: {
   /* --- First-page header (not repeated) --- */
   .header { margin-bottom: 20px; }
   .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
-  .logo { max-height: 48px; max-width: 160px; object-fit: contain; }
+  .logo { max-height: 96px; max-width: 320px; object-fit: contain; }
   .form-title { font-size: 22px; font-weight: 700; color: #111827; }
   .form-description { font-size: 13px; color: #6b7280; margin-top: 4px; }
-  .accent-bar { height: 3px; width: 40px; background: #4f46e5; border-radius: 9999px; margin-top: 12px; }
+  .accent-bar { display: none; }
   /* --- Meta grid --- */
   .meta {
     display: flex; gap: 32px;
