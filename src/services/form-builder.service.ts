@@ -479,7 +479,7 @@ function buildSubmissionPdfHtml(input: {
 <meta charset="UTF-8" />
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  @page { size: A4 portrait; margin: 48px 52px 72px; }
+  @page { size: A4 portrait; margin: 48px 52px 40px; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
     font-size: 13px; line-height: 1.5; color: #111827; background: #fff;
@@ -492,11 +492,6 @@ function buildSubmissionPdfHtml(input: {
   .form-title { font-size: 20px; font-weight: 700; color: #111827; line-height: 1.3; }
   .form-submitted { font-size: 12px; color: #6b7280; margin-top: 3px; }
   .form-description { font-size: 12px; color: #6b7280; margin-top: 2px; }
-  /* --- Fixed footer (renders on every page via CSS position:fixed in print) --- */
-  .page-footer {
-    position: fixed; bottom: 16px; left: 0; right: 0;
-    font-size: 9px; color: #9ca3af; text-align: center; padding: 0 40px;
-  }
   /* --- Fields grid (12 columns) --- */
   .fields-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px 16px; }
   .field { page-break-inside: avoid; min-width: 0; }
@@ -538,11 +533,16 @@ function buildSubmissionPdfHtml(input: {
     </div>
   </div>
   <div class="fields-grid">${fieldsHtml}</div>
-  ${footerText ? `<div class="page-footer">${esc(footerText)}</div>` : ''}
 </body>
 </html>`;
 
-  return { contentHtml, footerHtml: '<div></div>' };
+  // Puppeteer footerTemplate renders in the page margin area — never overlaps content.
+  // font-size must be set explicitly; Puppeteer resets it to 0 in header/footer context.
+  const footerHtml = footerText
+    ? `<div style="width:100%;font-family:sans-serif;font-size:9px;color:#9ca3af;text-align:center;padding:0 40px;">${esc(footerText)}</div>`
+    : '<div></div>';
+
+  return { contentHtml, footerHtml };
 }
 
 async function buildSubmissionPdfBuffer(input: {
