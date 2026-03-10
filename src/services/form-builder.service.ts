@@ -2509,6 +2509,19 @@ export async function resolveFormSubmissionAiWarning(
   };
 }
 
+export async function reconcileFormSubmissionCounts(): Promise<{ reconciled: number }> {
+  const result = await prisma.$executeRaw`
+    UPDATE forms
+    SET submissions_count = (
+      SELECT COUNT(*)::int
+      FROM form_submissions
+      WHERE form_submissions.form_id = forms.id
+    )
+    WHERE deleted_at IS NULL
+  `;
+  return { reconciled: result };
+}
+
 export async function deleteFormResponse(
   formId: string,
   submissionId: string,
@@ -3399,11 +3412,11 @@ function sanitizePublicAnswers(
       }
       case 'SIGNATURE':
         if (typeof value === 'string') {
-          sanitizedAnswers[key] = value.slice(0, 500_000);
+          sanitizedAnswers[key] = value.slice(0, 100_000);
         } else if (Array.isArray(value)) {
           sanitizedAnswers[key] = value
             .slice(0, 100)
-            .map((item) => (typeof item === 'string' ? item.slice(0, 500_000) : ''));
+            .map((item) => (typeof item === 'string' ? item.slice(0, 100_000) : ''));
         }
         break;
       case 'HIDDEN':
@@ -3414,6 +3427,11 @@ function sanitizePublicAnswers(
       default:
         break;
     }
+  }
+
+  const totalSize = JSON.stringify(sanitizedAnswers).length;
+  if (totalSize > 5_000_000) {
+    throw new Error('Submission answers payload is too large. Please reduce the size of your responses.');
   }
 
   return sanitizedAnswers;

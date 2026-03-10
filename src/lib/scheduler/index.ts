@@ -53,7 +53,7 @@
  */
 
 import { scheduler } from './scheduler';
-import { backupTask, cleanupTask, exchangeRateSyncTask, formAiReviewTask } from './tasks';
+import { backupTask, cleanupTask, exchangeRateSyncTask, formAiReviewTask, formCountReconciliationTask } from './tasks';
 
 /**
  * Initialize the scheduler with all registered tasks
@@ -66,6 +66,7 @@ export async function initializeScheduler(): Promise<void> {
   scheduler.registerTask(cleanupTask);
   scheduler.registerTask(exchangeRateSyncTask);
   scheduler.registerTask(formAiReviewTask);
+  scheduler.registerTask(formCountReconciliationTask);
 
   // Initialize and start the scheduler
   await scheduler.initialize();
