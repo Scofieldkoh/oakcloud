@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { resolveTenantId, createErrorResponse } from '@/lib/api-helpers';
+import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
 import { storage } from '@/lib/storage';
-import { deleteFormResponseUpload, getSubmissionUploadById } from '@/services/form-builder.service';
+import { getDraftUploadById } from '@/services/form-builder.service';
 
 interface RouteParams {
   params: Promise<{
     id: string;
-    submissionId: string;
+    draftId: string;
     uploadId: string;
   }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id, submissionId, uploadId } = await params;
+    const { id, draftId, uploadId } = await params;
     const session = await requireAuth();
     await requirePermission(session, 'document', 'read');
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
     const disposition = searchParams.get('disposition') === 'inline' ? 'inline' : 'attachment';
 
-    const upload = await getSubmissionUploadById(id, submissionId, uploadId, tenantId);
+    const upload = await getDraftUploadById(id, draftId, uploadId, tenantId);
     if (!upload) {
       return NextResponse.json({ error: 'Upload not found' }, { status: 404 });
     }
@@ -38,33 +38,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         'Content-Length': String(content.length),
       },
     });
-  } catch (error) {
-    return createErrorResponse(error);
-  }
-}
-
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  try {
-    const { id, submissionId, uploadId } = await params;
-    const session = await requireAuth();
-    await requirePermission(session, 'document', 'delete');
-
-    const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
-    const reason = searchParams.get('reason') || undefined;
-
-    const result = await deleteFormResponseUpload(
-      id,
-      submissionId,
-      uploadId,
-      {
-        tenantId,
-        userId: session.id,
-      },
-      reason
-    );
-
-    return NextResponse.json(result);
   } catch (error) {
     return createErrorResponse(error);
   }

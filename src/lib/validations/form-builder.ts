@@ -57,6 +57,7 @@ export const fieldValidationSchema = z
     endsWith: z.string().max(200).optional(),
     pattern: z.string().max(500).optional(),
     maxFileSizeMb: z.number().int().min(1).max(100).optional(),
+    allowMultipleFiles: z.boolean().optional(),
     allowedMimeTypes: z.array(z.string().min(1).max(120)).max(20).optional(),
     uploadFileNameTemplate: z.string().min(1).max(240).optional(),
     tooltipEnabled: z.boolean().optional(),

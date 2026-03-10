@@ -6,11 +6,16 @@ import { useSession } from '@/hooks/use-auth';
 import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import type { CreateFormInput, FormFieldInput, UpdateFormInput } from '@/lib/validations/form-builder';
 import type {
+  DeleteFormDraftResult,
+  DeleteFormResponseResult,
+  DeleteFormResponseUploadResult,
   FormListItem,
   FormListResult,
   FormDetail,
   FormResponsesResult,
   FormResponseDetailResult,
+  FormDraftDetailResult,
+  FormWarningListItem,
   RecentFormSubmissionItem,
 } from '@/services/form-builder.service';
 
@@ -21,6 +26,10 @@ export type RecentFormSubmission = Omit<RecentFormSubmissionItem, 'submittedAt' 
   status: string;
 };
 
+export type FormWarningSummary = Omit<FormWarningListItem, 'latestSubmittedAt'> & {
+  latestSubmittedAt: string;
+};
+
 export interface FormListParams {
   query?: string;
   status?: FormStatus;
@@ -28,6 +37,16 @@ export interface FormListParams {
   limit?: number;
   sortBy?: 'createdAt' | 'updatedAt' | 'title';
   sortOrder?: 'asc' | 'desc';
+}
+
+export interface FormResponsesParams {
+  page?: number;
+  limit?: number;
+  draftPage?: number;
+  draftLimit?: number;
+  submissionSortBy?: string;
+  submissionSortOrder?: 'asc' | 'desc';
+  submissionFilters?: Record<string, string>;
 }
 
 function withTenant(path: string, tenantId?: string | null): string {
@@ -71,18 +90,20 @@ async function fetchForm(id: string, tenantId?: string | null): Promise<FormDeta
 
 async function fetchFormResponses(
   id: string,
-  page: number,
-  limit: number,
-  draftPage: number,
-  draftLimit: number,
+  params: FormResponsesParams,
   tenantId?: string | null
 ): Promise<FormResponsesResult> {
   const searchParams = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-    draftPage: String(draftPage),
-    draftLimit: String(draftLimit),
+    page: String(params.page ?? 1),
+    limit: String(params.limit ?? 20),
+    draftPage: String(params.draftPage ?? 1),
+    draftLimit: String(params.draftLimit ?? 20),
   });
+  if (params.submissionSortBy) searchParams.set('submissionSortBy', params.submissionSortBy);
+  if (params.submissionSortOrder) searchParams.set('submissionSortOrder', params.submissionSortOrder);
+  if (params.submissionFilters && Object.keys(params.submissionFilters).length > 0) {
+    searchParams.set('submissionFilters', JSON.stringify(params.submissionFilters));
+  }
   const response = await fetch(withTenant(`/api/forms/${id}/responses?${searchParams.toString()}`, tenantId));
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -106,6 +127,90 @@ async function fetchFormResponse(
   return response.json();
 }
 
+async function fetchFormDraft(
+  id: string,
+  draftId: string,
+  tenantId?: string | null
+): Promise<FormDraftDetailResult> {
+  const response = await fetch(withTenant(`/api/forms/${id}/drafts/${draftId}`, tenantId));
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch draft');
+  }
+
+  return response.json();
+}
+
+async function deleteFormResponseRequest(
+  id: string,
+  submissionId: string,
+  tenantId?: string | null,
+  reason?: string
+): Promise<DeleteFormResponseResult> {
+  const params = new URLSearchParams();
+  if (tenantId) params.set('tenantId', tenantId);
+  if (reason) params.set('reason', reason);
+
+  const response = await fetch(`/api/forms/${id}/responses/${submissionId}${params.toString() ? `?${params.toString()}` : ''}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to delete response');
+  }
+
+  return response.json();
+}
+
+async function deleteFormResponseUploadRequest(
+  id: string,
+  submissionId: string,
+  uploadId: string,
+  tenantId?: string | null,
+  reason?: string
+): Promise<DeleteFormResponseUploadResult> {
+  const params = new URLSearchParams();
+  if (tenantId) params.set('tenantId', tenantId);
+  if (reason) params.set('reason', reason);
+
+  const response = await fetch(
+    `/api/forms/${id}/responses/${submissionId}/uploads/${uploadId}${params.toString() ? `?${params.toString()}` : ''}`,
+    {
+      method: 'DELETE',
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to delete attachment');
+  }
+
+  return response.json();
+}
+
+async function deleteFormDraftRequest(
+  id: string,
+  draftId: string,
+  tenantId?: string | null,
+  reason?: string
+): Promise<DeleteFormDraftResult> {
+  const params = new URLSearchParams();
+  if (tenantId) params.set('tenantId', tenantId);
+  if (reason) params.set('reason', reason);
+
+  const response = await fetch(`/api/forms/${id}/drafts/${draftId}${params.toString() ? `?${params.toString()}` : ''}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to delete draft');
+  }
+
+  return response.json();
+}
+
 async function fetchRecentFormSubmissions(
   limit: number,
   tenantId?: string | null
@@ -118,6 +223,20 @@ async function fetchRecentFormSubmissions(
 
   const data = await response.json();
   return Array.isArray(data.submissions) ? data.submissions : [];
+}
+
+async function fetchFormsWithWarnings(
+  limit: number,
+  tenantId?: string | null
+): Promise<FormWarningSummary[]> {
+  const response = await fetch(withTenant(`/api/forms/warnings?limit=${limit}`, tenantId));
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch forms with warnings');
+  }
+
+  const data = await response.json();
+  return Array.isArray(data.forms) ? data.forms : [];
 }
 
 async function createFormRequest(data: CreateFormInput & { tenantId?: string | null }): Promise<Form> {
@@ -194,12 +313,16 @@ export const formKeys = {
   lists: () => [...formKeys.all, 'list'] as const,
   list: (params: FormListParams, tenantId?: string | null) => [...formKeys.lists(), params, tenantId] as const,
   detail: (id: string, tenantId?: string | null) => [...formKeys.all, 'detail', id, tenantId] as const,
-  responses: (id: string, page: number, limit: number, draftPage: number, draftLimit: number, tenantId?: string | null) =>
-    [...formKeys.all, 'responses', id, page, limit, draftPage, draftLimit, tenantId] as const,
+  responses: (id: string, params: FormResponsesParams, tenantId?: string | null) =>
+    [...formKeys.all, 'responses', id, params, tenantId] as const,
   responseDetail: (id: string, submissionId: string, tenantId?: string | null) =>
     [...formKeys.all, 'response-detail', id, submissionId, tenantId] as const,
+  draftDetail: (id: string, draftId: string, tenantId?: string | null) =>
+    [...formKeys.all, 'draft-detail', id, draftId, tenantId] as const,
   recentSubmissions: (limit: number, tenantId?: string | null) =>
     [...formKeys.all, 'recent-submissions', limit, tenantId] as const,
+  warnings: (limit: number, tenantId?: string | null) =>
+    [...formKeys.all, 'warnings', limit, tenantId] as const,
 };
 
 export function useForms(params: FormListParams = {}) {
@@ -236,17 +359,24 @@ export function useForm(id: string | null) {
 
 export function useFormResponses(
   id: string | null,
-  page: number = 1,
-  limit: number = 20,
-  draftPage: number = 1,
-  draftLimit: number = 20
+  params: FormResponsesParams = {}
 ) {
   const { data: session } = useSession();
   const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
 
+  const normalizedParams: FormResponsesParams = {
+    page: params.page ?? 1,
+    limit: params.limit ?? 20,
+    draftPage: params.draftPage ?? 1,
+    draftLimit: params.draftLimit ?? 20,
+    submissionSortBy: params.submissionSortBy,
+    submissionSortOrder: params.submissionSortOrder ?? 'desc',
+    submissionFilters: params.submissionFilters,
+  };
+
   return useQuery({
-    queryKey: formKeys.responses(id || '', page, limit, draftPage, draftLimit, activeTenantId),
-    queryFn: () => fetchFormResponses(id!, page, limit, draftPage, draftLimit, activeTenantId),
+    queryKey: formKeys.responses(id || '', normalizedParams, activeTenantId),
+    queryFn: () => fetchFormResponses(id!, normalizedParams, activeTenantId),
     enabled: !!id && (session?.isSuperAdmin ? !!activeTenantId : true),
     placeholderData: (previousData) => previousData,
   });
@@ -263,6 +393,17 @@ export function useFormResponse(id: string | null, submissionId: string | null) 
   });
 }
 
+export function useFormDraft(id: string | null, draftId: string | null) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useQuery({
+    queryKey: formKeys.draftDetail(id || '', draftId || '', activeTenantId),
+    queryFn: () => fetchFormDraft(id!, draftId!, activeTenantId),
+    enabled: !!id && !!draftId && (session?.isSuperAdmin ? !!activeTenantId : true),
+  });
+}
+
 export function useRecentFormSubmissions(limit: number = 8) {
   const { data: session } = useSession();
   const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
@@ -270,6 +411,18 @@ export function useRecentFormSubmissions(limit: number = 8) {
   return useQuery({
     queryKey: formKeys.recentSubmissions(limit, activeTenantId),
     queryFn: () => fetchRecentFormSubmissions(limit, activeTenantId),
+    enabled: session?.isSuperAdmin ? !!activeTenantId : true,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+export function useFormsWithWarnings(limit: number = 8) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useQuery({
+    queryKey: formKeys.warnings(limit, activeTenantId),
+    queryFn: () => fetchFormsWithWarnings(limit, activeTenantId),
     enabled: session?.isSuperAdmin ? !!activeTenantId : true,
     placeholderData: (previousData) => previousData,
   });
@@ -330,6 +483,51 @@ export function useDeleteForm() {
 
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) => deleteFormRequest(id, activeTenantId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formKeys.all });
+    },
+  });
+}
+
+export function useDeleteFormResponse(id: string) {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useMutation({
+    mutationFn: ({ submissionId, reason }: { submissionId: string; reason?: string }) =>
+      deleteFormResponseRequest(id, submissionId, activeTenantId, reason),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: formKeys.all });
+      queryClient.removeQueries({
+        queryKey: formKeys.responseDetail(id, variables.submissionId, activeTenantId),
+      });
+    },
+  });
+}
+
+export function useDeleteFormResponseUpload(id: string, submissionId: string) {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useMutation({
+    mutationFn: ({ uploadId, reason }: { uploadId: string; reason?: string }) =>
+      deleteFormResponseUploadRequest(id, submissionId, uploadId, activeTenantId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formKeys.all });
+    },
+  });
+}
+
+export function useDeleteFormDraft(id: string) {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useMutation({
+    mutationFn: ({ draftId, reason }: { draftId: string; reason?: string }) =>
+      deleteFormDraftRequest(id, draftId, activeTenantId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: formKeys.all });
     },

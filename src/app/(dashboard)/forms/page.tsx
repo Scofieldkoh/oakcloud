@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
+  AlertTriangle,
   CalendarClock,
   ClipboardCopy,
   Copy,
@@ -27,6 +28,7 @@ import {
   useDeleteForm,
   useDuplicateForm,
   useForms,
+  useFormsWithWarnings,
   useRecentFormSubmissions,
 } from '@/hooks/use-forms';
 import type { FormStatus } from '@/generated/prisma';
@@ -76,6 +78,11 @@ export default function FormsPage() {
     isLoading: isRecentLoading,
     error: recentError,
   } = useRecentFormSubmissions(8);
+  const {
+    data: warningForms,
+    isLoading: isWarningLoading,
+    error: warningError,
+  } = useFormsWithWarnings(8);
 
   const createForm = useCreateForm();
   const duplicateForm = useDuplicateForm();
@@ -366,6 +373,60 @@ export default function FormsPage() {
           />
         </div>
       )}
+
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold text-text-primary">Forms with warnings</h2>
+        <div className="mt-3 rounded-lg border border-border-primary bg-background-elevated">
+          {isWarningLoading && (
+            <div className="space-y-2 p-4">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <div key={idx} className="h-12 animate-pulse rounded bg-background-tertiary" />
+              ))}
+            </div>
+          )}
+
+          {!isWarningLoading && warningError && (
+            <div className="px-4 py-3 text-sm text-red-700 dark:text-red-300">
+              {warningError instanceof Error ? warningError.message : 'Failed to load forms with warnings'}
+            </div>
+          )}
+
+          {!isWarningLoading && !warningError && (warningForms?.length || 0) === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-text-secondary">
+              No forms with active warnings.
+            </div>
+          )}
+
+          {!isWarningLoading && !warningError && (warningForms?.length || 0) > 0 && (
+            <div className="divide-y divide-border-primary">
+              {warningForms?.map((form) => (
+                <button
+                  key={form.formId}
+                  type="button"
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-background-primary"
+                  onClick={() => router.push(`/forms/${form.formId}/responses/${form.latestSubmissionId}`)}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-status-warning" aria-hidden="true" />
+                      <div className="truncate text-sm font-medium text-text-primary">{form.formTitle}</div>
+                      <span className="rounded bg-status-warning/10 px-2 py-0.5 text-2xs font-medium text-status-warning">
+                        {form.warningCount} warning{form.warningCount > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 truncate text-xs text-text-secondary">
+                      Latest flagged submission {formatRelativeTime(form.latestSubmittedAt)}
+                    </div>
+                  </div>
+                  <div className="ml-4 whitespace-nowrap text-xs text-text-muted">
+                    Review
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="mt-8">
         <h2 className="text-lg font-semibold text-text-primary">Most recently completed</h2>

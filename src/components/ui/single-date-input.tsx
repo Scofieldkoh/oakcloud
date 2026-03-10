@@ -466,6 +466,7 @@ export function SingleDateInput({
   minDate,
   maxDate,
 }: SingleDateInputProps) {
+  const [committedValue, setCommittedValue] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
   const [month, setMonth] = useState<Date>(() => parseISODate(value) || new Date());
   const [inputValue, setInputValue] = useState('');
@@ -475,12 +476,17 @@ export function SingleDateInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const suppressBlurRef = useRef(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [mounted, setMounted] = useState(false);
 
-  const selectedDate = useMemo(() => parseISODate(value), [value]);
+  const selectedDate = useMemo(() => parseISODate(committedValue), [committedValue]);
   const minDateValue = useMemo(() => parseISODate(minDate || ''), [minDate]);
   const maxDateValue = useMemo(() => parseISODate(maxDate || ''), [maxDate]);
+
+  useEffect(() => {
+    setCommittedValue(value);
+  }, [value]);
 
   // Mount check for portal
   useEffect(() => {
@@ -496,7 +502,7 @@ export function SingleDateInput({
         setInputValue('');
       }
     }
-  }, [value, selectedDate, isEditing]);
+  }, [committedValue, selectedDate, isEditing]);
 
   useEffect(() => {
     if (error) {
@@ -506,18 +512,17 @@ export function SingleDateInput({
 
   // Update month when value changes
   useEffect(() => {
-    const date = parseISODate(value);
-    if (date) {
-      const nextMonth = clampDate(date, minDateValue, maxDateValue);
-      if (
-        month.getFullYear() !== nextMonth.getFullYear() ||
-        month.getMonth() !== nextMonth.getMonth() ||
-        month.getDate() !== nextMonth.getDate()
-      ) {
-        setMonth(nextMonth);
-      }
+    if (selectedDate) {
+      const nextMonth = clampDate(selectedDate, minDateValue, maxDateValue);
+      setMonth((prevMonth) => (
+        prevMonth.getFullYear() === nextMonth.getFullYear() &&
+        prevMonth.getMonth() === nextMonth.getMonth() &&
+        prevMonth.getDate() === nextMonth.getDate()
+          ? prevMonth
+          : nextMonth
+      ));
     }
-  }, [value, minDateValue, maxDateValue, month]);
+  }, [selectedDate, minDateValue, maxDateValue]);
 
   // Calculate position with scroll and resize handling
   useEffect(() => {
@@ -602,7 +607,9 @@ export function SingleDateInput({
         setInputValue(formatDisplayDate(date));
         setLocalError(null);
         setMonth(date);
-        onChange(formatISODate(date));
+        const isoValue = formatISODate(date);
+        setCommittedValue(isoValue);
+        onChange(isoValue);
         setIsOpen(false);
         inputRef.current?.focus();
       }
@@ -623,13 +630,17 @@ export function SingleDateInput({
       const parsed = parseUserInput(newValue);
       if (parsed && isDateWithinRange(parsed, minDateValue, maxDateValue)) {
         setLocalError(null);
-        onChange(formatISODate(parsed));
+        const isoValue = formatISODate(parsed);
+        setCommittedValue(isoValue);
+        onChange(isoValue);
         setMonth(parsed);
       } else if (parsed) {
         setLocalError(getDateRangeError(parsed, minDateValue, maxDateValue));
+        setCommittedValue('');
         onChange('');
       } else if (!newValue.trim()) {
         setLocalError(null);
+        setCommittedValue('');
         onChange('');
       } else {
         setLocalError(null);
@@ -639,6 +650,11 @@ export function SingleDateInput({
   );
 
   const handleInputBlur = useCallback(() => {
+    if (suppressBlurRef.current) {
+      suppressBlurRef.current = false;
+      return;
+    }
+
     setIsEditing(false);
     onBlur?.();
 
@@ -651,13 +667,17 @@ export function SingleDateInput({
       const parsed = parseUserInput(inputValue);
       if (parsed && isDateWithinRange(parsed, minDateValue, maxDateValue)) {
         setLocalError(null);
-        onChange(formatISODate(parsed));
+        const isoValue = formatISODate(parsed);
+        setCommittedValue(isoValue);
+        onChange(isoValue);
         setInputValue(formatDisplayDate(parsed));
       } else if (parsed) {
         setLocalError(getDateRangeError(parsed, minDateValue, maxDateValue));
+        setCommittedValue('');
         onChange('');
       } else {
         setLocalError('Enter a valid date.');
+        setCommittedValue('');
         onChange('');
       }
     } else {
@@ -728,6 +748,9 @@ export function SingleDateInput({
         {/* Calendar button */}
         <button
           type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+          }}
           onClick={handleCalendarClick}
           disabled={disabled}
           className={cn(
@@ -764,6 +787,9 @@ export function SingleDateInput({
         createPortal(
           <div
             ref={popoverRef}
+            onMouseDown={() => {
+              suppressBlurRef.current = true;
+            }}
             data-single-date-popover
             className={cn(
               'fixed z-[100] w-[320px] bg-background-elevated rounded-xl border border-border-primary shadow-elevation-2',

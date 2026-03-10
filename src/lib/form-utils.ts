@@ -227,8 +227,54 @@ export interface FormDraftSettings {
   autoDeleteDays: number;
 }
 
+export interface FormAiSettings {
+  enabled: boolean;
+  customContext: string | null;
+}
+
 export interface FormFileNameSettings {
   pdfTemplate: string | null;
+}
+
+export interface FormSubmissionAiReviewSectionEntry {
+  label: string;
+  value: string;
+}
+
+export interface FormSubmissionAiReviewSection {
+  title: string;
+  type: 'text' | 'bullet_list' | 'key_value';
+  content: string | null;
+  items: string[];
+  entries: FormSubmissionAiReviewSectionEntry[];
+}
+
+export interface FormSubmissionAiReview {
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  reviewRequired: boolean;
+  severity: 'low' | 'medium' | 'high' | null;
+  summary: string | null;
+  tags: string[];
+  sections: FormSubmissionAiReviewSection[];
+  model: string | null;
+  warningSignature: string | null;
+  resolvedWarningSignature: string | null;
+  resolvedAt: string | null;
+  resolvedByUserId: string | null;
+  resolvedReason: string | null;
+  queuedAt: string | null;
+  startedAt: string | null;
+  processedAt: string | null;
+  attachmentCount: number;
+  unsupportedAttachmentNames: string[];
+  omittedAttachmentNames: string[];
+  error: string | null;
+  emailNotificationPending: boolean;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
 }
 
 export interface FormI18nFieldTranslation {
@@ -295,6 +341,126 @@ function normalizeDraftAutoDeleteDays(value: unknown): number {
 
   const rounded = Math.trunc(parsed);
   return Math.min(MAX_FORM_DRAFT_AUTO_DELETE_DAYS, Math.max(MIN_FORM_DRAFT_AUTO_DELETE_DAYS, rounded));
+}
+
+function normalizeAiCustomContext(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, 10_000);
+}
+
+function normalizeAiReviewStringList(value: unknown, maxItems: number, maxItemLength: number): string[] {
+  if (!Array.isArray(value)) return [];
+
+  const items: string[] = [];
+  for (const entry of value) {
+    if (typeof entry !== 'string') continue;
+    const trimmed = entry.trim();
+    if (!trimmed) continue;
+    items.push(trimmed.slice(0, maxItemLength));
+    if (items.length >= maxItems) break;
+  }
+
+  return items;
+}
+
+function normalizeAiReviewSeverity(value: unknown): 'low' | 'medium' | 'high' | null {
+  return value === 'low' || value === 'medium' || value === 'high' ? value : null;
+}
+
+function normalizeAiReviewSectionEntries(value: unknown): FormSubmissionAiReviewSectionEntry[] {
+  if (!Array.isArray(value)) return [];
+
+  const entries: FormSubmissionAiReviewSectionEntry[] = [];
+  for (const entry of value) {
+    const rawEntry = parseObject(entry);
+    if (!rawEntry) continue;
+
+    const label = typeof rawEntry.label === 'string'
+      ? rawEntry.label.trim().slice(0, 120)
+      : '';
+    const entryValue = typeof rawEntry.value === 'string'
+      ? rawEntry.value.trim().slice(0, 1000)
+      : '';
+
+    if (!label || !entryValue) continue;
+
+    entries.push({
+      label,
+      value: entryValue,
+    });
+
+    if (entries.length >= 20) break;
+  }
+
+  return entries;
+}
+
+function normalizeAiReviewSections(value: unknown): FormSubmissionAiReviewSection[] {
+  if (!Array.isArray(value)) return [];
+
+  const sections: FormSubmissionAiReviewSection[] = [];
+  for (const section of value) {
+    const rawSection = parseObject(section);
+    if (!rawSection) continue;
+
+    const title = typeof rawSection.title === 'string'
+      ? rawSection.title.trim().slice(0, 120)
+      : '';
+    const type = rawSection.type === 'text' || rawSection.type === 'bullet_list' || rawSection.type === 'key_value'
+      ? rawSection.type
+      : null;
+
+    if (!title || !type) continue;
+
+    const content = typeof rawSection.content === 'string'
+      ? rawSection.content.trim().slice(0, 4000) || null
+      : null;
+    const items = normalizeAiReviewStringList(rawSection.items, 20, 500);
+    const entries = normalizeAiReviewSectionEntries(rawSection.entries);
+
+    if (type === 'text' && !content) continue;
+    if (type === 'bullet_list' && items.length === 0) continue;
+    if (type === 'key_value' && entries.length === 0) continue;
+
+    sections.push({
+      title,
+      type,
+      content: type === 'text' ? content : null,
+      items: type === 'bullet_list' ? items : [],
+      entries: type === 'key_value' ? entries : [],
+    });
+
+    if (sections.length >= 8) break;
+  }
+
+  return sections;
+}
+
+function normalizeAiReviewUsage(value: unknown): FormSubmissionAiReview['usage'] | undefined {
+  const usage = parseObject(value);
+  if (!usage) return undefined;
+
+  const inputTokens = typeof usage.inputTokens === 'number' && Number.isFinite(usage.inputTokens)
+    ? Math.max(0, Math.trunc(usage.inputTokens))
+    : null;
+  const outputTokens = typeof usage.outputTokens === 'number' && Number.isFinite(usage.outputTokens)
+    ? Math.max(0, Math.trunc(usage.outputTokens))
+    : null;
+  const totalTokens = typeof usage.totalTokens === 'number' && Number.isFinite(usage.totalTokens)
+    ? Math.max(0, Math.trunc(usage.totalTokens))
+    : null;
+
+  if (inputTokens === null || outputTokens === null || totalTokens === null) {
+    return undefined;
+  }
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+  };
 }
 
 export function normalizeLocaleCode(value: unknown): string | null {
@@ -549,6 +715,43 @@ export function writeFormDraftSettings(
   return root;
 }
 
+export function parseFormAiSettings(settings: unknown): FormAiSettings {
+  const root = parseObject(settings);
+  const aiParsing = parseObject(root?.aiParsing);
+
+  return {
+    enabled: aiParsing?.enabled === true,
+    customContext: normalizeAiCustomContext(aiParsing?.customContext),
+  };
+}
+
+export function writeFormAiSettings(
+  settings: unknown,
+  aiSettings: FormAiSettings
+): Record<string, unknown> {
+  const root = parseObject(settings) ? { ...(settings as Record<string, unknown>) } : {};
+  const existingAi = parseObject(root.aiParsing) ? { ...(root.aiParsing as Record<string, unknown>) } : {};
+  const nextAi = {
+    ...existingAi,
+    enabled: aiSettings.enabled === true,
+  } as Record<string, unknown>;
+
+  const nextCustomContext = normalizeAiCustomContext(aiSettings.customContext);
+  if (nextCustomContext) {
+    nextAi.customContext = nextCustomContext;
+  } else {
+    delete nextAi.customContext;
+  }
+
+  if (nextAi.enabled === true || 'customContext' in nextAi) {
+    root.aiParsing = nextAi;
+  } else {
+    delete root.aiParsing;
+  }
+
+  return root;
+}
+
 export function parseFormFileNameSettings(settings: unknown): FormFileNameSettings {
   const root = parseObject(settings);
   const fileNaming = parseObject(root?.fileNaming);
@@ -645,6 +848,110 @@ export function writeFormI18nSettings(
   };
 
   return root;
+}
+
+export function buildPublicFormSettings(settings: unknown): Record<string, unknown> | null {
+  let nextSettings: Record<string, unknown> = {};
+
+  nextSettings = writeFormDraftSettings(nextSettings, parseFormDraftSettings(settings));
+  nextSettings = writeFormI18nSettings(nextSettings, parseFormI18nSettings(settings));
+
+  const root = parseObject(settings);
+  nextSettings.hideLogo = root?.hideLogo === true;
+  nextSettings.hideFooter = root?.hideFooter === true;
+
+  return Object.keys(nextSettings).length > 0 ? nextSettings : null;
+}
+
+export function parseFormSubmissionAiReview(metadata: unknown): FormSubmissionAiReview | null {
+  const root = parseObject(metadata);
+  const review = parseObject(root?.aiReview);
+  if (!review) return null;
+
+  const usesLegacyReviewShape = (
+    ('riskLevel' in review || 'warnings' in review || 'recommendedActions' in review)
+    && !('severity' in review || 'tags' in review || 'sections' in review)
+  );
+  if (usesLegacyReviewShape) {
+    return null;
+  }
+
+  const status = review.status === 'queued'
+    ? 'queued'
+    : review.status === 'processing'
+      ? 'processing'
+      : review.status === 'failed'
+        ? 'failed'
+        : review.status === 'completed'
+          ? 'completed'
+          : null;
+  if (!status) return null;
+
+  const summary = typeof review.summary === 'string'
+    ? review.summary.trim().slice(0, 4000) || null
+    : null;
+  const model = typeof review.model === 'string' ? review.model.trim().slice(0, 120) || null : null;
+  const warningSignature = typeof review.warningSignature === 'string'
+    ? review.warningSignature.trim().slice(0, 128) || null
+    : null;
+  const resolvedWarningSignature = typeof review.resolvedWarningSignature === 'string'
+    ? review.resolvedWarningSignature.trim().slice(0, 128) || null
+    : null;
+  const resolvedAt = typeof review.resolvedAt === 'string' ? review.resolvedAt.trim() || null : null;
+  const resolvedByUserId = typeof review.resolvedByUserId === 'string'
+    ? review.resolvedByUserId.trim().slice(0, 120) || null
+    : null;
+  const resolvedReason = typeof review.resolvedReason === 'string'
+    ? review.resolvedReason.trim().slice(0, 2000) || null
+    : null;
+  const queuedAt = typeof review.queuedAt === 'string' ? review.queuedAt.trim() || null : null;
+  const startedAt = typeof review.startedAt === 'string' ? review.startedAt.trim() || null : null;
+  const processedAt = typeof review.processedAt === 'string' ? review.processedAt.trim() || null : null;
+  const error = typeof review.error === 'string' ? review.error.trim().slice(0, 1000) || null : null;
+  const attachmentCount = typeof review.attachmentCount === 'number' && Number.isFinite(review.attachmentCount)
+    ? Math.max(0, Math.trunc(review.attachmentCount))
+    : 0;
+  const tags = normalizeAiReviewStringList(review.tags, 12, 120);
+  const sections = normalizeAiReviewSections(review.sections);
+  const unsupportedAttachmentNames = normalizeAiReviewStringList(review.unsupportedAttachmentNames, 20, 240);
+  const omittedAttachmentNames = normalizeAiReviewStringList(review.omittedAttachmentNames, 20, 240);
+  const usage = normalizeAiReviewUsage(review.usage);
+
+  return {
+    status,
+    reviewRequired: review.reviewRequired === true,
+    severity: normalizeAiReviewSeverity(review.severity),
+    summary,
+    tags,
+    sections,
+    model,
+    warningSignature,
+    resolvedWarningSignature,
+    resolvedAt,
+    resolvedByUserId,
+    resolvedReason,
+    queuedAt,
+    startedAt,
+    processedAt,
+    attachmentCount,
+    unsupportedAttachmentNames,
+    omittedAttachmentNames,
+    error,
+    emailNotificationPending: review.emailNotificationPending === true,
+    ...(usage ? { usage } : {}),
+  };
+}
+
+export function hasUnresolvedFormSubmissionAiWarning(review: FormSubmissionAiReview | null): boolean {
+  if (!review || review.status !== 'completed' || !review.reviewRequired) {
+    return false;
+  }
+
+  if (!review.warningSignature) {
+    return true;
+  }
+
+  return review.resolvedWarningSignature !== review.warningSignature;
 }
 
 export function parseOptions(value: unknown): string[] {

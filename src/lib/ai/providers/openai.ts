@@ -38,6 +38,96 @@ export function isOpenAIConfigured(): boolean {
   return !!process.env.OPENAI_API_KEY;
 }
 
+function extractOpenAIMessageContent(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  message: any
+): string | null {
+  if (!message) return null;
+
+  if (typeof message.content === 'string') {
+    const trimmed = message.content.trim();
+    return trimmed || null;
+  }
+
+  if (Array.isArray(message.content)) {
+    const textParts = message.content
+      .map((part: unknown) => {
+        if (!part || typeof part !== 'object') return '';
+        const contentPart = part as Record<string, unknown>;
+        if (contentPart.type === 'text' && typeof contentPart.text === 'string') {
+          return contentPart.text;
+        }
+        return '';
+      })
+      .filter(Boolean);
+
+    const combinedText = textParts.join('\n').trim();
+    if (combinedText) {
+      return combinedText;
+    }
+
+    const refusalParts = message.content
+      .map((part: unknown) => {
+        if (!part || typeof part !== 'object') return '';
+        const contentPart = part as Record<string, unknown>;
+        if (contentPart.type === 'refusal' && typeof contentPart.refusal === 'string') {
+          return contentPart.refusal;
+        }
+        return '';
+      })
+      .filter(Boolean);
+
+    const refusalText = refusalParts.join('\n').trim();
+    if (refusalText) {
+      throw new Error(`OpenAI refused the request: ${refusalText.slice(0, 1000)}`);
+    }
+  }
+
+  if (typeof message.refusal === 'string' && message.refusal.trim()) {
+    throw new Error(`OpenAI refused the request: ${message.refusal.trim().slice(0, 1000)}`);
+  }
+
+  return null;
+}
+
+function describeOpenAIMessage(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  message: any
+): string {
+  if (!message) {
+    return 'message=null';
+  }
+
+  const details: string[] = [];
+
+  if (typeof message.content === 'string') {
+    details.push(`content=string(${message.content.length})`);
+  } else if (Array.isArray(message.content)) {
+    const partTypes = message.content
+      .map((part: unknown) => {
+        if (!part || typeof part !== 'object') return 'unknown';
+        const contentPart = part as Record<string, unknown>;
+        return typeof contentPart.type === 'string' ? contentPart.type : 'unknown';
+      })
+      .join(',');
+    details.push(`content=array[${partTypes || 'empty'}]`);
+  } else if (message.content === null) {
+    details.push('content=null');
+  } else {
+    details.push(`content=${typeof message.content}`);
+  }
+
+  if (typeof message.refusal === 'string' && message.refusal.trim()) {
+    details.push(`refusal=${message.refusal.trim().slice(0, 200)}`);
+  }
+
+  if (Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+    details.push(`tool_calls=${message.tool_calls.length}`);
+  }
+
+  return details.join('; ');
+}
+
 
 /**
  * Call OpenAI API (supports vision)
@@ -112,7 +202,7 @@ export async function callOpenAI(
   const requestOptions: any = {
     model: modelConfig.providerModelId,
     messages,
-    max_tokens: options.maxTokens,
+    max_completion_tokens: options.maxTokens,
     ...(options.jsonMode && { response_format: { type: 'json_object' } }),
   };
 
@@ -123,10 +213,12 @@ export async function callOpenAI(
   }
 
   const response = await openai.chat.completions.create(requestOptions);
-
-  const content = response.choices[0]?.message?.content;
+  const choice = response.choices[0];
+  const content = extractOpenAIMessageContent(choice?.message);
   if (!content) {
-    throw new Error('No response from OpenAI');
+    const finishReason = typeof choice?.finish_reason === 'string' ? choice.finish_reason : 'unknown';
+    const messageDetails = describeOpenAIMessage(choice?.message);
+    throw new Error(`No usable response content from OpenAI (finish_reason=${finishReason}; ${messageDetails})`);
   }
 
   return {
@@ -140,6 +232,6 @@ export async function callOpenAI(
           totalTokens: response.usage.total_tokens,
         }
       : undefined,
-    finishReason: response.choices[0]?.finish_reason ?? undefined,
+    finishReason: choice?.finish_reason ?? undefined,
   };
 }

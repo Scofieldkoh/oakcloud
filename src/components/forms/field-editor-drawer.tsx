@@ -1130,6 +1130,21 @@ export function FieldEditorDrawer({
                       },
                     })}
                   />
+                  <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
+                    <Toggle
+                      checked={field.validation?.allowMultipleFiles === true}
+                      onChange={(checked) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          allowMultipleFiles: checked ? true : undefined,
+                        },
+                      })}
+                      label="Allow multiple files"
+                      description="Users can upload more than one file for this field and remove files before submitting."
+                      size="sm"
+                    />
+                  </div>
                   <FormInput
                     label="Attachment filename template"
                     value={field.validation?.uploadFileNameTemplate || ''}

@@ -294,6 +294,12 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
   const resolved = await resolveConnector(options.tenantId, 'AI_PROVIDER', connectorProvider);
 
   if (resolved) {
+    if (debugContext) {
+      debugContext.connectorSource = resolved.source;
+      debugContext.connectorId = resolved.connector.id;
+      debugContext.connectorName = resolved.connector.name;
+    }
+
     // Credentials are already decrypted by resolveConnector
     const credentials = resolved.connector.credentials as Record<string, unknown>;
 
@@ -383,6 +389,11 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
   }
 
   // No connector found, fall back to environment variables
+  if (debugContext) {
+    debugContext.connectorSource = 'env';
+    debugContext.connectorId = null;
+    debugContext.connectorName = null;
+  }
   const providerStatus = getProviderStatus(provider);
   if (!providerStatus.configured) {
     throw new Error(

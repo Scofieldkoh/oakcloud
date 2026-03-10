@@ -49,6 +49,36 @@ export function isOpenRouterConfigured(): boolean {
   return !!process.env.OPENROUTER_API_KEY;
 }
 
+function extractOpenRouterMessageContent(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  message: any
+): string | null {
+  if (!message) return null;
+
+  if (typeof message.content === 'string') {
+    const trimmed = message.content.trim();
+    return trimmed || null;
+  }
+
+  if (Array.isArray(message.content)) {
+    const textParts = message.content
+      .map((part: unknown) => {
+        if (!part || typeof part !== 'object') return '';
+        const contentPart = part as Record<string, unknown>;
+        if (contentPart.type === 'text' && typeof contentPart.text === 'string') {
+          return contentPart.text;
+        }
+        return '';
+      })
+      .filter(Boolean);
+
+    const combinedText = textParts.join('\n').trim();
+    return combinedText || null;
+  }
+
+  return null;
+}
+
 /**
  * Call OpenRouter API (supports vision)
  * @param options - Request options
@@ -130,9 +160,9 @@ export async function callOpenRouter(
     throw err;
   }
 
-  const content = response.choices[0]?.message?.content;
+  const content = extractOpenRouterMessageContent(response.choices[0]?.message);
   if (!content) {
-    throw new Error('No response from OpenRouter');
+    throw new Error('No usable response content from OpenRouter');
   }
 
   return {

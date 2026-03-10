@@ -62,6 +62,9 @@ export interface AIDebugContext {
   provider: string;
   tenantId?: string | null;
   userId?: string | null;
+  connectorSource?: 'tenant' | 'system' | 'env';
+  connectorId?: string | null;
+  connectorName?: string | null;
   startTime: number;
   coaAccountCount?: number;
   logLines: string[];
@@ -217,6 +220,9 @@ export function logAIResponse(
     );
     lines.push(`| Estimated Cost | $${cost.toFixed(4)} |`);
   }
+  if (context.connectorSource) lines.push(`| Connector Source | ${context.connectorSource} |`);
+  if (context.connectorId) lines.push(`| Connector ID | ${context.connectorId} |`);
+  if (context.connectorName) lines.push(`| Connector Name | ${context.connectorName} |`);
   lines.push('');
 
   if (shouldLogResponses() && response.content) {
@@ -280,6 +286,9 @@ export function logAIError(context: AIDebugContext | null, error: Error): void {
     lines.push(`| Operation | ${context.operation} |`);
     lines.push(`| Model | ${context.model} |`);
     lines.push(`| Provider | ${context.provider} |`);
+    if (context.connectorSource) lines.push(`| Connector Source | ${context.connectorSource} |`);
+    if (context.connectorId) lines.push(`| Connector ID | ${context.connectorId} |`);
+    if (context.connectorName) lines.push(`| Connector Name | ${context.connectorName} |`);
     lines.push('');
   }
 

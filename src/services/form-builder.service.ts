@@ -14,15 +14,21 @@ import {
 import { fromBuffer } from 'file-type';
 import { createAuditLog } from '@/lib/audit';
 import {
+  RESPONSE_COLUMN_STATUS_ID,
+  RESPONSE_COLUMN_SUBMITTED_ID,
+  buildPublicFormSettings,
   normalizeKey,
   parseObject,
   formatChoiceAnswer,
   parseChoiceOptions,
   isEmptyValue,
   evaluateCondition,
+  parseFormAiSettings,
   parseFormDraftSettings,
   parseFormFileNameSettings,
   parseFormNotificationSettings,
+  parseFormSubmissionAiReview,
+  type FormSubmissionAiReview,
   type PublicFormField,
   type PublicFormDefinition,
 } from '@/lib/form-utils';
@@ -31,7 +37,9 @@ import { storage, StorageKeys } from '@/lib/storage';
 import { getAppBaseUrl, sendEmail, type EmailAttachment } from '@/lib/email';
 import { formDraftEmail } from '@/lib/email-templates';
 import { createLogger } from '@/lib/logger';
+import { generateFormSubmissionAiReview } from '@/services/form-ai.service';
 import type { TenantAwareParams } from '@/lib/types';
+import { getDefaultModelId } from '@/lib/ai/models';
 import type {
   CreateFormInput,
   FormFieldInput,
@@ -105,6 +113,11 @@ export interface FormResponseDetailResult {
   uploads: FormUpload[];
 }
 
+export interface FormDraftDetailResult {
+  draft: FormResponseDraftListItem;
+  uploads: FormUpload[];
+}
+
 export interface DeleteFormResponseResult {
   id: string;
   deletedUploadCount: number;
@@ -119,6 +132,23 @@ export interface DeleteFormDraftResult {
   id: string;
 }
 
+export interface QueueFormSubmissionAiReviewResult {
+  id: string;
+  aiReview: FormSubmissionAiReview;
+}
+
+export interface ProcessQueuedFormSubmissionAiReviewsResult {
+  processed: number;
+  completed: number;
+  failed: number;
+  skipped: number;
+}
+
+export interface ResolveFormSubmissionAiWarningResult {
+  id: string;
+  aiReview: FormSubmissionAiReview;
+}
+
 export interface RecentFormSubmissionItem {
   id: string;
   formId: string;
@@ -129,6 +159,22 @@ export interface RecentFormSubmissionItem {
   respondentName: string | null;
   respondentEmail: string | null;
   status: FormSubmissionStatus;
+}
+
+export interface FormWarningListItem {
+  formId: string;
+  formTitle: string;
+  formSlug: string;
+  formStatus: FormStatus;
+  latestSubmissionId: string;
+  latestSubmittedAt: Date;
+  warningCount: number;
+}
+
+export interface FormResponsesQueryInput {
+  submissionSortBy?: string;
+  submissionSortOrder?: 'asc' | 'desc';
+  submissionFilters?: Record<string, string>;
 }
 
 export interface PublicDraftSaveResult {
@@ -168,13 +214,132 @@ const DRAFT_CODE_LENGTH = 5;
 const DRAFT_CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 const DRAFT_ACCESS_TOKEN_BYTES = 24;
 const MAX_DRAFT_CODE_ATTEMPTS = 20;
+const RESPONSE_ATTACHMENTS_COLUMN_ID = '__submission_attachments';
 const log = createLogger('form-builder');
+
+function escapeHtml(value: string): string {
+  return value.replace(/[<>&]/g, (match) => (
+    match === '<' ? '&lt;' : match === '>' ? '&gt;' : '&amp;'
+  ));
+}
 
 function toAnswerRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return {};
   }
   return value as Record<string, unknown>;
+}
+
+function formatResponseCellValue(fieldType: FormFieldType | string, value: unknown): string {
+  if (value === null || value === undefined) return '-';
+
+  if (fieldType === 'SIGNATURE') {
+    return typeof value === 'string' && value.trim().length > 0 ? 'Signed' : '-';
+  }
+
+  if (fieldType === 'FILE_UPLOAD') {
+    if (Array.isArray(value)) {
+      return value.length > 0 ? `${value.length} file${value.length > 1 ? 's' : ''}` : '-';
+    }
+    return typeof value === 'string' && value.trim().length > 0 ? value : '-';
+  }
+
+  if (fieldType === 'SINGLE_CHOICE' || fieldType === 'MULTIPLE_CHOICE') {
+    const choiceText = formatChoiceAnswer(value);
+    return choiceText || '-';
+  }
+
+  if (Array.isArray(value)) {
+    const text = value.map((item) => String(item)).join(', ').trim();
+    return text || '-';
+  }
+
+  if (typeof value === 'object') {
+    try {
+      const text = JSON.stringify(value);
+      return text.length > 0 ? text : '-';
+    } catch {
+      return '-';
+    }
+  }
+
+  const text = String(value).trim();
+  return text || '-';
+}
+
+function getSubmissionStatusText(submission: Pick<FormSubmission, 'status' | 'metadata'>): string {
+  const aiReview = parseFormSubmissionAiReview(submission.metadata);
+  const tokens: string[] = [submission.status];
+
+  if (aiReview?.status === 'queued' || aiReview?.status === 'processing') {
+    tokens.push('review pending');
+  }
+
+  if (aiReview && aiReview.status === 'completed' && aiReview.reviewRequired) {
+    if (!aiReview.warningSignature || aiReview.resolvedWarningSignature !== aiReview.warningSignature) {
+      tokens.push('warning review required');
+    }
+  }
+
+  return tokens.join(' ');
+}
+
+function getSubmissionColumnFilterText(
+  submission: FormSubmission & { _count: { uploads: number } },
+  fieldTypeByKey: Map<string, FormFieldType>,
+  columnId: string
+): string {
+  if (columnId === RESPONSE_COLUMN_SUBMITTED_ID) {
+    return `${submission.submittedAt.toISOString()} ${submission.submittedAt.toLocaleString('en-SG')}`.toLowerCase();
+  }
+
+  if (columnId === RESPONSE_COLUMN_STATUS_ID) {
+    return getSubmissionStatusText(submission).toLowerCase();
+  }
+
+  if (columnId === RESPONSE_ATTACHMENTS_COLUMN_ID) {
+    return `${submission._count.uploads} file${submission._count.uploads === 1 ? '' : 's'}`.toLowerCase();
+  }
+
+  const fieldType = fieldTypeByKey.get(columnId);
+  if (!fieldType) {
+    return '';
+  }
+
+  const answers = toAnswerRecord(submission.answers);
+  return formatResponseCellValue(fieldType, answers[columnId]).toLowerCase();
+}
+
+function compareSubmissionRows(
+  left: FormSubmission & { _count: { uploads: number } },
+  right: FormSubmission & { _count: { uploads: number } },
+  fieldTypeByKey: Map<string, FormFieldType>,
+  sortBy: string,
+  sortOrder: 'asc' | 'desc'
+): number {
+  const direction = sortOrder === 'asc' ? 1 : -1;
+
+  if (sortBy === RESPONSE_COLUMN_SUBMITTED_ID) {
+    return (left.submittedAt.getTime() - right.submittedAt.getTime()) * direction;
+  }
+
+  if (sortBy === RESPONSE_ATTACHMENTS_COLUMN_ID) {
+    return (left._count.uploads - right._count.uploads) * direction;
+  }
+
+  const leftValue = sortBy === RESPONSE_COLUMN_STATUS_ID
+    ? getSubmissionStatusText(left)
+    : getSubmissionColumnFilterText(left, fieldTypeByKey, sortBy);
+  const rightValue = sortBy === RESPONSE_COLUMN_STATUS_ID
+    ? getSubmissionStatusText(right)
+    : getSubmissionColumnFilterText(right, fieldTypeByKey, sortBy);
+
+  const comparison = leftValue.localeCompare(rightValue, undefined, { numeric: true, sensitivity: 'base' });
+  if (comparison !== 0) {
+    return comparison * direction;
+  }
+
+  return right.submittedAt.getTime() - left.submittedAt.getTime();
 }
 
 function toUploadIds(value: unknown): string[] {
@@ -980,6 +1145,10 @@ async function sendCompletionNotificationEmail(input: {
 
   try {
     const answers = toAnswerRecord(input.submission.answers);
+    const aiSettings = parseFormAiSettings(input.form.settings);
+    const aiReview = parseFormSubmissionAiReview(input.submission.metadata);
+    const aiReviewRequired = aiReview?.status === 'completed' && aiReview.reviewRequired;
+    const aiReviewFailed = aiSettings.enabled && aiReview?.status === 'failed';
     const tenant = await prisma.tenant.findUnique({
       where: { id: input.form.tenantId },
       select: { logoUrl: true, name: true },
@@ -1015,24 +1184,71 @@ async function sendCompletionNotificationEmail(input: {
       uploads: input.uploads,
     });
 
-    const safeFormTitle = input.form.title.replace(/[<>&]/g, (match) => (
-      match === '<' ? '&lt;' : match === '>' ? '&gt;' : '&amp;'
-    ));
+    const safeFormTitle = escapeHtml(input.form.title);
     const submittedAt = new Date(input.submission.submittedAt).toLocaleString('en-SG');
+    const responseUrl = `${getAppBaseUrl()}/forms/${encodeURIComponent(input.form.id)}/responses/${encodeURIComponent(input.submission.id)}`;
+    const safeResponseUrl = responseUrl.replace(/"/g, '&quot;');
     const omittedMessage = omittedUploads > 0
       ? `<p><em>${omittedUploads} uploaded file(s) were not attached due to size or attachment limits.</em></p>`
       : '';
+    const aiReviewSectionsHtml = aiReview
+      ? aiReview.sections.map((section) => {
+        if (section.type === 'text' && section.content) {
+          return `
+            <div style="margin-top:10px;">
+              <p style="margin:0 0 6px;font-weight:600;color:#78350f;">${escapeHtml(section.title)}</p>
+              <p style="margin:0;color:#78350f;">${escapeHtml(section.content)}</p>
+            </div>
+          `;
+        }
+
+        if (section.type === 'bullet_list' && section.items.length > 0) {
+          return `
+            <div style="margin-top:10px;">
+              <p style="margin:0 0 6px;font-weight:600;color:#78350f;">${escapeHtml(section.title)}</p>
+              <ul style="margin:0;padding-left:18px;color:#78350f;">${section.items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
+            </div>
+          `;
+        }
+
+        if (section.type === 'key_value' && section.entries.length > 0) {
+          return `
+            <div style="margin-top:10px;">
+              <p style="margin:0 0 6px;font-weight:600;color:#78350f;">${escapeHtml(section.title)}</p>
+              <ul style="margin:0;padding-left:18px;color:#78350f;">${section.entries.map((entry) => `<li><strong>${escapeHtml(entry.label)}:</strong> ${escapeHtml(entry.value)}</li>`).join('')}</ul>
+            </div>
+          `;
+        }
+
+        return '';
+      }).join('')
+      : '';
+    const aiReviewHtml = aiReviewRequired
+      ? `
+        <div style="margin:16px 0;padding:12px 14px;border:1px solid #f59e0b;border-radius:10px;background:#fffbeb;">
+          <p style="margin:0 0 8px;font-weight:600;color:#92400e;">AI review flagged this submission for follow-up.</p>
+          ${aiReview?.severity ? `<p style="margin:0 0 8px;color:#78350f;"><strong>Severity:</strong> ${escapeHtml(aiReview.severity.toUpperCase())}</p>` : ''}
+          ${aiReview?.summary ? `<p style="margin:0 0 8px;color:#78350f;">${escapeHtml(aiReview.summary)}</p>` : ''}
+          ${aiReview && aiReview.tags.length > 0 ? `<p style="margin:0 0 8px;color:#78350f;"><strong>Tags:</strong> ${aiReview.tags.map((tag) => escapeHtml(tag)).join(', ')}</p>` : ''}
+          ${aiReviewSectionsHtml}
+        </div>
+      `
+      : aiReviewFailed
+        ? '<p><em>AI review did not complete before the internal notification was sent.</em></p>'
+        : '';
     const html = `
       <p>Hello,</p>
       <p>A new response has been submitted for <strong>${safeFormTitle}</strong>.</p>
       <p>Submitted on: ${submittedAt}</p>
+      <p><a href="${safeResponseUrl}">Open completed response</a></p>
+      ${aiReviewHtml}
       ${omittedMessage}
       <p>The response PDF and available uploaded files are attached.</p>
     `;
 
     const result = await sendEmail({
       to: recipients,
-      subject: `New form submission: ${input.form.title}`,
+      subject: `${aiReviewRequired ? '[AI Review Required] ' : ''}New form submission: ${input.form.title}`,
       html,
       attachments,
     });
@@ -1054,6 +1270,68 @@ function toJsonInput(value: unknown): Prisma.InputJsonValue | typeof Prisma.Json
     return Prisma.JsonNull;
   }
   return value as Prisma.InputJsonValue;
+}
+
+function withSubmissionAiReview(
+  metadata: unknown,
+  aiReview: FormSubmissionAiReview | null
+): Record<string, unknown> | null {
+  const nextMetadata = parseObject(metadata) ? { ...(metadata as Record<string, unknown>) } : {};
+
+  if (aiReview) {
+    nextMetadata.aiReview = aiReview as unknown as Prisma.InputJsonValue;
+  }
+
+  return Object.keys(nextMetadata).length > 0 ? nextMetadata : null;
+}
+
+function buildQueuedSubmissionAiReview(input?: {
+  existingReview?: FormSubmissionAiReview | null;
+  emailNotificationPending?: boolean;
+  requestedByUserId?: string | null;
+}): FormSubmissionAiReview & { requestedByUserId?: string | null } {
+  const now = new Date().toISOString();
+  const existing = input?.existingReview ?? null;
+
+  return {
+    status: 'queued',
+    reviewRequired: false,
+    severity: null,
+    summary: null,
+    tags: [],
+    sections: [],
+    model: existing?.model || getDefaultModelId(),
+    warningSignature: null,
+    resolvedWarningSignature: existing?.resolvedWarningSignature ?? null,
+    resolvedAt: existing?.resolvedAt ?? null,
+    resolvedByUserId: existing?.resolvedByUserId ?? null,
+    resolvedReason: existing?.resolvedReason ?? null,
+    queuedAt: now,
+    startedAt: null,
+    processedAt: null,
+    attachmentCount: 0,
+    unsupportedAttachmentNames: [],
+    omittedAttachmentNames: [],
+    error: null,
+    emailNotificationPending: input?.emailNotificationPending === true,
+    ...(input?.requestedByUserId ? { requestedByUserId: input.requestedByUserId } : {}),
+  };
+}
+
+function buildProcessingSubmissionAiReview(existingReview: FormSubmissionAiReview): FormSubmissionAiReview {
+  return {
+    ...existingReview,
+    status: 'processing',
+    startedAt: new Date().toISOString(),
+    processedAt: null,
+    error: null,
+    tags: [],
+    sections: [],
+    summary: null,
+    severity: null,
+    reviewRequired: false,
+    warningSignature: existingReview.warningSignature,
+  };
 }
 
 
@@ -1519,11 +1797,20 @@ export async function getFormResponses(
   page: number,
   limit: number,
   draftPage: number = 1,
-  draftLimit: number = 20
+  draftLimit: number = 20,
+  query: FormResponsesQueryInput = {}
 ): Promise<FormResponsesResult> {
   const form = await prisma.form.findFirst({
     where: { id: formId, tenantId, deletedAt: null },
-    select: { id: true },
+    select: {
+      id: true,
+      fields: {
+        select: {
+          key: true,
+          type: true,
+        },
+      },
+    },
   });
 
   if (!form) {
@@ -1538,17 +1825,24 @@ export async function getFormResponses(
     },
   } satisfies Prisma.FormDraftWhereInput;
 
-  const [submissions, total, recentSubmissions, drafts, draftTotal] = await Promise.all([
-    prisma.formSubmission.findMany({
-      where: { formId },
-      orderBy: { submittedAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.formSubmission.count({ where: { formId } }),
+  const [allSubmissions, recentSubmissions, drafts, draftTotal] = await Promise.all([
     prisma.formSubmission.findMany({
       where: {
         formId,
+        tenantId,
+      },
+      include: {
+        _count: {
+          select: {
+            uploads: true,
+          },
+        },
+      },
+    }),
+    prisma.formSubmission.findMany({
+      where: {
+        formId,
+        tenantId,
         submittedAt: {
           gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
         },
@@ -1580,7 +1874,35 @@ export async function getFormResponses(
     }),
   ]);
 
-  const submissionIds = submissions.map((submission) => submission.id);
+  const fieldTypeByKey = new Map(form.fields.map((field) => [field.key, field.type]));
+  const validSubmissionColumnIds = new Set<string>([
+    RESPONSE_COLUMN_SUBMITTED_ID,
+    RESPONSE_COLUMN_STATUS_ID,
+    RESPONSE_ATTACHMENTS_COLUMN_ID,
+    ...form.fields.map((field) => field.key),
+  ]);
+  const submissionSortBy = query.submissionSortBy && validSubmissionColumnIds.has(query.submissionSortBy)
+    ? query.submissionSortBy
+    : RESPONSE_COLUMN_SUBMITTED_ID;
+  const submissionSortOrder = query.submissionSortOrder === 'asc' ? 'asc' : 'desc';
+  const normalizedSubmissionFilters = Object.entries(query.submissionFilters || {})
+    .map(([columnId, value]) => [columnId, value.trim().toLowerCase()] as const)
+    .filter(([columnId, value]) => validSubmissionColumnIds.has(columnId) && value.length > 0);
+
+  const filteredSubmissions = normalizedSubmissionFilters.length === 0
+    ? [...allSubmissions]
+    : allSubmissions.filter((submission) => normalizedSubmissionFilters.every(([columnId, value]) => (
+      getSubmissionColumnFilterText(submission, fieldTypeByKey, columnId).includes(value)
+    )));
+
+  filteredSubmissions.sort((left, right) => (
+    compareSubmissionRows(left, right, fieldTypeByKey, submissionSortBy, submissionSortOrder)
+  ));
+
+  const total = filteredSubmissions.length;
+  const paginatedSubmissions = filteredSubmissions.slice((page - 1) * limit, page * limit);
+
+  const submissionIds = paginatedSubmissions.map((submission) => submission.id);
   const draftIds = drafts.map((draft) => draft.id);
 
   const [submissionUploads, draftUploads] = await Promise.all([
@@ -1667,11 +1989,12 @@ export async function getFormResponses(
   }
 
   return {
-    submissions: submissions.map((submission) => {
+    submissions: paginatedSubmissions.map((submission) => {
       const attachments = submissionAttachmentsById.get(submission.id) ?? [];
+      const { _count, ...submissionData } = submission;
       return {
-        ...submission,
-        uploadCount: attachments.length,
+        ...submissionData,
+        uploadCount: _count.uploads,
         attachments,
       };
     }),
@@ -1725,6 +2048,355 @@ export async function getFormResponseById(
   });
 
   return { submission, uploads };
+}
+
+export async function getFormDraftById(
+  formId: string,
+  draftId: string,
+  tenantId: string
+): Promise<FormDraftDetailResult> {
+  const draft = await prisma.formDraft.findFirst({
+    where: {
+      id: draftId,
+      formId,
+      tenantId,
+    },
+    select: {
+      id: true,
+      code: true,
+      answers: true,
+      metadata: true,
+      expiresAt: true,
+      lastSavedAt: true,
+      createdAt: true,
+      _count: {
+        select: {
+          uploads: true,
+        },
+      },
+    },
+  });
+
+  if (!draft) {
+    throw new Error('Draft not found');
+  }
+
+  const uploads = await prisma.formUpload.findMany({
+    where: {
+      formId,
+      draftId,
+      submissionId: null,
+      tenantId,
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return {
+    draft: {
+      id: draft.id,
+      code: draft.code,
+      answers: toAnswerRecord(draft.answers),
+      metadata: parseObject(draft.metadata) || {},
+      expiresAt: draft.expiresAt,
+      lastSavedAt: draft.lastSavedAt,
+      createdAt: draft.createdAt,
+      uploadCount: draft._count.uploads,
+      attachments: uploads.map((upload) => ({
+        id: upload.id,
+        fileName: upload.fileName,
+        mimeType: upload.mimeType,
+        sizeBytes: upload.sizeBytes,
+        createdAt: upload.createdAt,
+      })),
+    },
+    uploads,
+  };
+}
+
+async function queueFormSubmissionAiReviewInternal(input: {
+  formId: string;
+  submissionId: string;
+  tenantId: string;
+  requestedByUserId?: string | null;
+  emailNotificationPending: boolean;
+}): Promise<QueueFormSubmissionAiReviewResult> {
+  const submissionWithForm = await prisma.formSubmission.findFirst({
+    where: {
+      id: input.submissionId,
+      formId: input.formId,
+      tenantId: input.tenantId,
+    },
+    include: {
+      form: {
+        select: {
+          id: true,
+          title: true,
+          settings: true,
+        },
+      },
+    },
+  });
+
+  if (!submissionWithForm) {
+    throw new Error('Submission not found');
+  }
+
+  const aiSettings = parseFormAiSettings(submissionWithForm.form.settings);
+  if (!aiSettings.enabled) {
+    throw new Error('AI parsing is not enabled for this form');
+  }
+
+  const existingReview = parseFormSubmissionAiReview(submissionWithForm.metadata);
+  const queuedReview = buildQueuedSubmissionAiReview({
+    existingReview,
+    emailNotificationPending: input.emailNotificationPending,
+    requestedByUserId: input.requestedByUserId,
+  });
+  const metadataWithAiReview = withSubmissionAiReview(submissionWithForm.metadata, queuedReview);
+
+  await prisma.formSubmission.update({
+    where: { id: submissionWithForm.id },
+    data: {
+      metadata: toJsonInput(metadataWithAiReview),
+    },
+  });
+
+  return {
+    id: submissionWithForm.id,
+    aiReview: queuedReview,
+  };
+}
+
+async function triggerQueuedFormAiReviewProcessing(submissionIds: string[]): Promise<void> {
+  if (submissionIds.length === 0) return;
+
+  void processQueuedFormSubmissionAiReviews({
+    submissionIds,
+    limit: submissionIds.length,
+  }).catch((error) => {
+    log.error('Failed to trigger queued form AI review processing', {
+      submissionIds,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  });
+}
+
+export async function queueFormSubmissionAiReview(
+  formId: string,
+  submissionId: string,
+  params: TenantAwareParams,
+  reason?: string
+): Promise<QueueFormSubmissionAiReviewResult> {
+  const result = await queueFormSubmissionAiReviewInternal({
+    formId,
+    submissionId,
+    tenantId: params.tenantId,
+    requestedByUserId: params.userId,
+    emailNotificationPending: false,
+  });
+
+  await createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    action: 'UPDATE',
+    entityType: 'FormSubmission',
+    entityId: submissionId,
+    entityName: submissionId,
+    summary: `Queued AI review for form response ${submissionId}`,
+    reason,
+    changeSource: 'MANUAL',
+  });
+
+  await triggerQueuedFormAiReviewProcessing([submissionId]);
+
+  return result;
+}
+
+export async function processQueuedFormSubmissionAiReviews(input?: {
+  limit?: number;
+  submissionIds?: string[];
+}): Promise<ProcessQueuedFormSubmissionAiReviewsResult> {
+  const limit = Math.max(1, Math.min(input?.limit ?? 10, 50));
+  const queuedSubmissions = await prisma.formSubmission.findMany({
+    where: {
+      ...(input?.submissionIds?.length ? { id: { in: input.submissionIds } } : {}),
+      metadata: {
+        path: ['aiReview', 'status'],
+        equals: 'queued',
+      },
+      form: {
+        deletedAt: null,
+        settings: {
+          path: ['aiParsing', 'enabled'],
+          equals: true,
+        },
+      },
+    },
+    include: {
+      form: {
+        include: {
+          fields: {
+            orderBy: { position: 'asc' },
+          },
+        },
+      },
+      uploads: {
+        orderBy: { createdAt: 'asc' },
+      },
+    },
+    orderBy: { submittedAt: 'asc' },
+    take: limit,
+  });
+
+  let processed = 0;
+  let completed = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  for (const submission of queuedSubmissions) {
+    const currentReview = parseFormSubmissionAiReview(submission.metadata);
+    if (!currentReview || currentReview.status !== 'queued') {
+      skipped += 1;
+      continue;
+    }
+
+    const processingReview = buildProcessingSubmissionAiReview(currentReview);
+    const processingMetadata = withSubmissionAiReview(submission.metadata, processingReview);
+    const claimResult = await prisma.formSubmission.updateMany({
+      where: {
+        id: submission.id,
+        metadata: {
+          path: ['aiReview', 'status'],
+          equals: 'queued',
+        },
+      },
+      data: {
+        metadata: toJsonInput(processingMetadata),
+      },
+    });
+
+    if (claimResult.count === 0) {
+      skipped += 1;
+      continue;
+    }
+
+    processed += 1;
+
+    const processingSubmission: FormSubmission = {
+      ...submission,
+      metadata: processingMetadata as Prisma.JsonObject,
+    };
+    const aiReview = await generateFormSubmissionAiReview({
+      form: submission.form,
+      submission: processingSubmission,
+      uploads: submission.uploads,
+    });
+
+    if (!aiReview) {
+      skipped += 1;
+      continue;
+    }
+
+    const finalReview: FormSubmissionAiReview = {
+      ...aiReview,
+      emailNotificationPending: false,
+    };
+    const finalMetadata = withSubmissionAiReview(processingSubmission.metadata, finalReview);
+
+    await prisma.formSubmission.update({
+      where: { id: submission.id },
+      data: {
+        metadata: toJsonInput(finalMetadata),
+      },
+    });
+
+    if (currentReview.emailNotificationPending) {
+      await sendCompletionNotificationEmail({
+        form: submission.form,
+        submission: {
+          ...processingSubmission,
+          metadata: finalMetadata as Prisma.JsonObject,
+        },
+        uploads: submission.uploads,
+        tenantTimeZone: await getTenantTimeZone(submission.form.tenantId),
+      });
+    }
+
+    if (finalReview.status === 'completed') {
+      completed += 1;
+    } else {
+      failed += 1;
+    }
+  }
+
+  return {
+    processed,
+    completed,
+    failed,
+    skipped,
+  };
+}
+
+export async function resolveFormSubmissionAiWarning(
+  formId: string,
+  submissionId: string,
+  params: TenantAwareParams,
+  reason?: string
+): Promise<ResolveFormSubmissionAiWarningResult> {
+  const submission = await prisma.formSubmission.findFirst({
+    where: {
+      id: submissionId,
+      formId,
+      tenantId: params.tenantId,
+    },
+  });
+
+  if (!submission) {
+    throw new Error('Submission not found');
+  }
+
+  const aiReview = parseFormSubmissionAiReview(submission.metadata);
+  if (!aiReview || aiReview.status !== 'completed' || !aiReview.reviewRequired) {
+    throw new Error('No active AI warning to resolve');
+  }
+
+  const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
+  if (!trimmedReason) {
+    throw new Error('Resolution reason is required');
+  }
+
+  const resolvedReview: FormSubmissionAiReview = {
+    ...aiReview,
+    resolvedWarningSignature: aiReview.warningSignature,
+    resolvedAt: new Date().toISOString(),
+    resolvedByUserId: params.userId,
+    resolvedReason: trimmedReason.slice(0, 2000),
+  };
+  const metadataWithAiReview = withSubmissionAiReview(submission.metadata, resolvedReview);
+
+  await prisma.formSubmission.update({
+    where: { id: submission.id },
+    data: {
+      metadata: toJsonInput(metadataWithAiReview),
+    },
+  });
+
+  await createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    action: 'UPDATE',
+    entityType: 'FormSubmission',
+    entityId: submission.id,
+    entityName: submission.respondentName || submission.respondentEmail || submission.id,
+    summary: `Resolved AI warning for response ${submission.id}`,
+    reason: trimmedReason,
+    changeSource: 'MANUAL',
+  });
+
+  return {
+    id: submission.id,
+    aiReview: resolvedReview,
+  };
 }
 
 export async function deleteFormResponse(
@@ -2106,6 +2778,70 @@ export async function listRecentFormSubmissions(
   }));
 }
 
+export async function listFormsWithWarnings(
+  tenantId: string,
+  limit: number = 8
+): Promise<FormWarningListItem[]> {
+  const scanLimit = Math.max(limit * 25, 200);
+
+  const submissions = await prisma.formSubmission.findMany({
+    where: {
+      tenantId,
+      form: {
+        deletedAt: null,
+      },
+    },
+    include: {
+      form: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          status: true,
+        },
+      },
+    },
+    orderBy: {
+      submittedAt: 'desc',
+    },
+    take: scanLimit,
+  });
+
+  const warningsByForm = new Map<string, FormWarningListItem>();
+
+  for (const submission of submissions) {
+    const aiReview = parseFormSubmissionAiReview(submission.metadata);
+    if (!aiReview || aiReview.status !== 'completed' || !aiReview.reviewRequired) {
+      continue;
+    }
+
+    const hasUnresolvedWarning = !aiReview.warningSignature
+      || aiReview.resolvedWarningSignature !== aiReview.warningSignature;
+
+    if (!hasUnresolvedWarning) {
+      continue;
+    }
+
+    const existing = warningsByForm.get(submission.formId);
+    if (existing) {
+      existing.warningCount += 1;
+      continue;
+    }
+
+    warningsByForm.set(submission.formId, {
+      formId: submission.formId,
+      formTitle: submission.form.title,
+      formSlug: submission.form.slug,
+      formStatus: submission.form.status,
+      latestSubmissionId: submission.id,
+      latestSubmittedAt: submission.submittedAt,
+      warningCount: 1,
+    });
+  }
+
+  return Array.from(warningsByForm.values()).slice(0, limit);
+}
+
 export async function getPublicFormBySlug(slug: string): Promise<PublicFormDefinition | null> {
   const form = await prisma.form.findFirst({
     where: {
@@ -2137,7 +2873,7 @@ export async function getPublicFormBySlug(slug: string): Promise<PublicFormDefin
     slug: form.slug,
     title: form.title,
     description: form.description,
-    settings: form.settings,
+    settings: buildPublicFormSettings(form.settings),
     fields: form.fields,
     tenantLogoUrl: form.tenant?.logoUrl ?? null,
     tenantName: form.tenant?.name ?? null,
@@ -3291,6 +4027,29 @@ export async function createPublicSubmission(
       fileName: renamedFileName,
     };
   });
+  const aiSettings = parseFormAiSettings(form.settings);
+
+  if (aiSettings.enabled) {
+    const queuedReviewResult = await queueFormSubmissionAiReviewInternal({
+      formId: form.id,
+      submissionId: submissionResult.submission.id,
+      tenantId: form.tenantId,
+      emailNotificationPending: true,
+    });
+
+    const queuedMetadata = withSubmissionAiReview(
+      submissionResult.submission.metadata,
+      queuedReviewResult.aiReview
+    );
+    const queuedSubmission: FormSubmission = {
+      ...submissionResult.submission,
+      metadata: queuedMetadata as Prisma.JsonObject,
+    };
+
+    await triggerQueuedFormAiReviewProcessing([submissionResult.submission.id]);
+
+    return queuedSubmission;
+  }
 
   await sendCompletionNotificationEmail({
     form,

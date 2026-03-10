@@ -61,6 +61,7 @@ export type ValidationConfig = {
   endsWith?: string;
   pattern?: string;
   maxFileSizeMb?: number;
+  allowMultipleFiles?: boolean;
   allowedMimeTypes?: string[];
   uploadFileNameTemplate?: string;
   tooltipEnabled?: boolean;
@@ -291,6 +292,8 @@ export function serializeBuilderState(input: {
   i18nTranslations?: unknown;
   hideLogo?: boolean;
   hideFooter?: boolean;
+  aiParsingEnabled?: boolean;
+  aiParsingCustomContext?: string;
 }): string {
   return JSON.stringify({
     title: input.title.trim(),
@@ -311,6 +314,8 @@ export function serializeBuilderState(input: {
     i18nTranslations: input.i18nTranslations || {},
     hideLogo: input.hideLogo === true,
     hideFooter: input.hideFooter === true,
+    aiParsingEnabled: input.aiParsingEnabled === true,
+    aiParsingCustomContext: (input.aiParsingCustomContext || '').trim(),
     fields: input.fields.map((field, idx) => ({
       type: field.type,
       label: field.label,

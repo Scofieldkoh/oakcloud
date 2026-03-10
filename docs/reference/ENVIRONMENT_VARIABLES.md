@@ -208,6 +208,8 @@ openssl rand -hex 32
 | `SCHEDULER_BACKUP_CRON` | `0,15,30,45 * * * *` | Backup check frequency |
 | `SCHEDULER_CLEANUP_ENABLED` | `true` | Enable cleanup task |
 | `SCHEDULER_CLEANUP_CRON` | `0 2 * * *` | Cleanup schedule (daily 2 AM) |
+| `SCHEDULER_FORM_AI_REVIEW_ENABLED` | `true` | Enable queued form AI review processing |
+| `SCHEDULER_FORM_AI_REVIEW_CRON` | `*/2 * * * *` | Form AI review queue polling interval |
 
 ### Backup Settings
 
