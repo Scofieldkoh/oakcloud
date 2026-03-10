@@ -1826,27 +1826,160 @@ export async function getFormResponses(
     },
   } satisfies Prisma.FormDraftWhereInput;
 
+  const fieldTypeByKey = new Map(form.fields.map((field) => [field.key, field.type]));
+  const validSubmissionColumnIds = new Set<string>([
+    RESPONSE_COLUMN_SUBMITTED_ID,
+    RESPONSE_COLUMN_STATUS_ID,
+    RESPONSE_ATTACHMENTS_COLUMN_ID,
+    ...form.fields.map((field) => field.key),
+  ]);
+  const submissionSortBy = query.submissionSortBy && validSubmissionColumnIds.has(query.submissionSortBy)
+    ? query.submissionSortBy
+    : RESPONSE_COLUMN_SUBMITTED_ID;
+  const submissionSortOrder = query.submissionSortOrder === 'asc' ? 'asc' : 'desc';
+  const normalizedSubmissionFilters = Object.entries(query.submissionFilters || {})
+    .map(([columnId, value]) => [columnId, value.trim().toLowerCase()] as const)
+    .filter(([columnId, value]) => validSubmissionColumnIds.has(columnId) && value.length > 0);
+
+  // Max rows to scan in memory for filtered/custom-sorted queries (prevents OOM on large forms)
+  const IN_MEMORY_SCAN_LIMIT = 5000;
+
+  const submissionBaseWhere = { formId, tenantId } satisfies Prisma.FormSubmissionWhereInput;
+  const submissionInclude = { _count: { select: { uploads: true } } } as const;
+
+  // Fast path: no filters and sorting by submit date — use DB-level pagination
+  const useDbPagination = normalizedSubmissionFilters.length === 0
+    && submissionSortBy === RESPONSE_COLUMN_SUBMITTED_ID;
+
+  let paginatedSubmissions: (FormSubmission & { _count: { uploads: number } })[];
+  let total: number;
+
+  if (useDbPagination) {
+    const [pagedRows, submissionCount, recentSubmissions, drafts, draftTotal] = await Promise.all([
+      prisma.formSubmission.findMany({
+        where: submissionBaseWhere,
+        include: submissionInclude,
+        orderBy: { submittedAt: submissionSortOrder },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.formSubmission.count({ where: submissionBaseWhere }),
+      prisma.formSubmission.findMany({
+        where: {
+          ...submissionBaseWhere,
+          submittedAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
+        },
+        select: { submittedAt: true },
+      }),
+      prisma.formDraft.findMany({
+        where: activeDraftWhere,
+        orderBy: { lastSavedAt: 'desc' },
+        skip: (draftPage - 1) * draftLimit,
+        take: draftLimit,
+        select: {
+          id: true,
+          code: true,
+          answers: true,
+          metadata: true,
+          expiresAt: true,
+          lastSavedAt: true,
+          createdAt: true,
+          _count: { select: { uploads: true } },
+        },
+      }),
+      prisma.formDraft.count({ where: activeDraftWhere }),
+    ]);
+
+    paginatedSubmissions = pagedRows;
+    total = submissionCount;
+
+    const submissionIds = paginatedSubmissions.map((s) => s.id);
+    const draftIds = drafts.map((d) => d.id);
+
+    const [submissionUploads, draftUploads] = await Promise.all([
+      submissionIds.length > 0
+        ? prisma.formUpload.findMany({
+          where: { formId, tenantId, submissionId: { in: submissionIds } },
+          select: { id: true, submissionId: true, fileName: true, mimeType: true, sizeBytes: true, createdAt: true },
+          orderBy: { createdAt: 'asc' },
+        })
+        : Promise.resolve([]),
+      draftIds.length > 0
+        ? prisma.formUpload.findMany({
+          where: { formId, tenantId, draftId: { in: draftIds }, submissionId: null },
+          select: { id: true, draftId: true, fileName: true, mimeType: true, sizeBytes: true, createdAt: true },
+          orderBy: { createdAt: 'asc' },
+        })
+        : Promise.resolve([]),
+    ]);
+
+    const submissionAttachmentsById = new Map<string, FormResponseAttachmentListItem[]>();
+    for (const upload of submissionUploads) {
+      if (!upload.submissionId) continue;
+      const list = submissionAttachmentsById.get(upload.submissionId) ?? [];
+      list.push({ id: upload.id, fileName: upload.fileName, mimeType: upload.mimeType, sizeBytes: upload.sizeBytes, createdAt: upload.createdAt });
+      submissionAttachmentsById.set(upload.submissionId, list);
+    }
+
+    const draftAttachmentsById = new Map<string, FormResponseAttachmentListItem[]>();
+    for (const upload of draftUploads) {
+      if (!upload.draftId) continue;
+      const list = draftAttachmentsById.get(upload.draftId) ?? [];
+      list.push({ id: upload.id, fileName: upload.fileName, mimeType: upload.mimeType, sizeBytes: upload.sizeBytes, createdAt: upload.createdAt });
+      draftAttachmentsById.set(upload.draftId, list);
+    }
+
+    const today = new Date();
+    const chartMap = new Map<string, number>();
+    for (let i = 13; i >= 0; i -= 1) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      chartMap.set(date.toISOString().slice(0, 10), 0);
+    }
+    for (const row of recentSubmissions) {
+      const key = row.submittedAt.toISOString().slice(0, 10);
+      chartMap.set(key, (chartMap.get(key) ?? 0) + 1);
+    }
+
+    return {
+      submissions: paginatedSubmissions.map((submission) => {
+        const { _count, ...submissionData } = submission;
+        return { ...submissionData, uploadCount: _count.uploads, attachments: submissionAttachmentsById.get(submission.id) ?? [] };
+      }),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      drafts: drafts.map((draft) => ({
+        id: draft.id,
+        code: draft.code,
+        answers: toAnswerRecord(draft.answers),
+        metadata: parseObject(draft.metadata) || {},
+        expiresAt: draft.expiresAt,
+        lastSavedAt: draft.lastSavedAt,
+        createdAt: draft.createdAt,
+        uploadCount: draft._count.uploads,
+        attachments: draftAttachmentsById.get(draft.id) ?? [],
+      })),
+      draftTotal,
+      draftPage,
+      draftLimit,
+      draftTotalPages: Math.ceil(draftTotal / draftLimit),
+      chart: Array.from(chartMap.entries()).map(([date, responses]) => ({ date, responses })),
+    };
+  }
+
+  // Slow path: filtered or custom-sorted — load in memory with a scan limit
   const [allSubmissions, recentSubmissions, drafts, draftTotal] = await Promise.all([
     prisma.formSubmission.findMany({
-      where: {
-        formId,
-        tenantId,
-      },
-      include: {
-        _count: {
-          select: {
-            uploads: true,
-          },
-        },
-      },
+      where: submissionBaseWhere,
+      include: submissionInclude,
+      take: IN_MEMORY_SCAN_LIMIT,
     }),
     prisma.formSubmission.findMany({
       where: {
-        formId,
-        tenantId,
-        submittedAt: {
-          gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-        },
+        ...submissionBaseWhere,
+        submittedAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
       },
       select: { submittedAt: true },
     }),
@@ -1863,32 +1996,11 @@ export async function getFormResponses(
         expiresAt: true,
         lastSavedAt: true,
         createdAt: true,
-        _count: {
-          select: {
-            uploads: true,
-          },
-        },
+        _count: { select: { uploads: true } },
       },
     }),
-    prisma.formDraft.count({
-      where: activeDraftWhere,
-    }),
+    prisma.formDraft.count({ where: activeDraftWhere }),
   ]);
-
-  const fieldTypeByKey = new Map(form.fields.map((field) => [field.key, field.type]));
-  const validSubmissionColumnIds = new Set<string>([
-    RESPONSE_COLUMN_SUBMITTED_ID,
-    RESPONSE_COLUMN_STATUS_ID,
-    RESPONSE_ATTACHMENTS_COLUMN_ID,
-    ...form.fields.map((field) => field.key),
-  ]);
-  const submissionSortBy = query.submissionSortBy && validSubmissionColumnIds.has(query.submissionSortBy)
-    ? query.submissionSortBy
-    : RESPONSE_COLUMN_SUBMITTED_ID;
-  const submissionSortOrder = query.submissionSortOrder === 'asc' ? 'asc' : 'desc';
-  const normalizedSubmissionFilters = Object.entries(query.submissionFilters || {})
-    .map(([columnId, value]) => [columnId, value.trim().toLowerCase()] as const)
-    .filter(([columnId, value]) => validSubmissionColumnIds.has(columnId) && value.length > 0);
 
   const filteredSubmissions = normalizedSubmissionFilters.length === 0
     ? [...allSubmissions]
@@ -1900,8 +2012,8 @@ export async function getFormResponses(
     compareSubmissionRows(left, right, fieldTypeByKey, submissionSortBy, submissionSortOrder)
   ));
 
-  const total = filteredSubmissions.length;
-  const paginatedSubmissions = filteredSubmissions.slice((page - 1) * limit, page * limit);
+  total = filteredSubmissions.length;
+  paginatedSubmissions = filteredSubmissions.slice((page - 1) * limit, page * limit);
 
   const submissionIds = paginatedSubmissions.map((submission) => submission.id);
   const draftIds = drafts.map((draft) => draft.id);
