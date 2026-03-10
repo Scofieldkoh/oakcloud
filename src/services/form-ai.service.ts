@@ -10,6 +10,8 @@ import {
   parseFormAiSettings,
   parseFormSubmissionAiReview,
   parseObject,
+  toAnswerRecord,
+  toUploadIds,
   type FormSubmissionAiReview,
   type FormSubmissionAiReviewSection,
 } from '@/lib/form-utils';
@@ -197,29 +199,6 @@ function normalizeAttachmentCheckItems(
   }
 
   return normalizedItems;
-}
-
-function toAnswerRecord(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return {};
-  }
-  return value as Record<string, unknown>;
-}
-
-function toUploadIds(value: unknown): string[] {
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    return trimmed ? [trimmed] : [];
-  }
-
-  if (!Array.isArray(value)) return [];
-
-  const ids: string[] = [];
-  for (const item of value) {
-    ids.push(...toUploadIds(item));
-  }
-
-  return ids;
 }
 
 function normalizePrimitiveValue(value: unknown): unknown {

@@ -75,36 +75,37 @@ export const fieldValidationSchema = z
     repeatMaxItems: z.number().int().min(1).max(50).optional(),
     repeatAddLabel: z.string().min(1).max(80).optional(),
   })
-  .refine(
-    (value) => {
-      if (value.minLength !== undefined && value.maxLength !== undefined) {
-        return value.maxLength >= value.minLength;
+  .superRefine((value, ctx) => {
+    if (value.minLength !== undefined && value.maxLength !== undefined) {
+      if (value.maxLength < value.minLength) {
+        ctx.addIssue({ code: 'custom', message: 'maxLength must be >= minLength', path: ['maxLength'] });
       }
-      if (value.min !== undefined && value.max !== undefined) {
-        return value.max >= value.min;
+    }
+    if (value.min !== undefined && value.max !== undefined) {
+      if (value.max < value.min) {
+        ctx.addIssue({ code: 'custom', message: 'max must be >= min', path: ['max'] });
       }
-      if (value.minFormula !== undefined && value.minFormula.trim().length === 0) {
-        return false;
+    }
+    if (value.minFormula !== undefined && value.minFormula.trim().length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'minFormula must not be empty', path: ['minFormula'] });
+    }
+    if (value.maxFormula !== undefined && value.maxFormula.trim().length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'maxFormula must not be empty', path: ['maxFormula'] });
+    }
+    if (value.equalFormula !== undefined && value.equalFormula.trim().length === 0) {
+      ctx.addIssue({ code: 'custom', message: 'equalFormula must not be empty', path: ['equalFormula'] });
+    }
+    if (value.minDate !== undefined && value.maxDate !== undefined) {
+      if (value.minDate !== 'today' && value.maxDate !== 'today' && value.maxDate < value.minDate) {
+        ctx.addIssue({ code: 'custom', message: 'maxDate must be >= minDate', path: ['maxDate'] });
       }
-      if (value.maxFormula !== undefined && value.maxFormula.trim().length === 0) {
-        return false;
+    }
+    if (value.repeatMinItems !== undefined && value.repeatMaxItems !== undefined) {
+      if (value.repeatMaxItems < value.repeatMinItems) {
+        ctx.addIssue({ code: 'custom', message: 'repeatMaxItems must be >= repeatMinItems', path: ['repeatMaxItems'] });
       }
-      if (value.equalFormula !== undefined && value.equalFormula.trim().length === 0) {
-        return false;
-      }
-      if (value.minDate !== undefined && value.maxDate !== undefined) {
-        if (value.minDate === 'today' || value.maxDate === 'today') {
-          return true;
-        }
-        return value.maxDate >= value.minDate;
-      }
-      if (value.repeatMinItems !== undefined && value.repeatMaxItems !== undefined) {
-        return value.repeatMaxItems >= value.repeatMinItems;
-      }
-      return true;
-    },
-    { message: 'Invalid validation range' }
-  );
+    }
+  });
 
 export const fieldConditionSchema = z.object({
   fieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH),

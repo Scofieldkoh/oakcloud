@@ -313,6 +313,8 @@ export const formKeys = {
   lists: () => [...formKeys.all, 'list'] as const,
   list: (params: FormListParams, tenantId?: string | null) => [...formKeys.lists(), params, tenantId] as const,
   detail: (id: string, tenantId?: string | null) => [...formKeys.all, 'detail', id, tenantId] as const,
+  // Scoped prefix for all response/draft queries belonging to a form
+  allResponsesForForm: (id: string) => [...formKeys.all, 'responses', id] as const,
   responses: (id: string, params: FormResponsesParams, tenantId?: string | null) =>
     [...formKeys.all, 'responses', id, params, tenantId] as const,
   responseDetail: (id: string, submissionId: string, tenantId?: string | null) =>
@@ -440,7 +442,7 @@ export function useCreateForm() {
         tenantId: activeTenantId,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: formKeys.all });
+      queryClient.invalidateQueries({ queryKey: formKeys.lists() });
     },
   });
 }
@@ -457,7 +459,7 @@ export function useUpdateForm(id: string) {
         tenantId: activeTenantId,
       }),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: formKeys.all });
+      queryClient.invalidateQueries({ queryKey: formKeys.lists() });
       queryClient.setQueryData(formKeys.detail(id, activeTenantId), data);
     },
   });
@@ -471,7 +473,7 @@ export function useDuplicateForm() {
   return useMutation({
     mutationFn: ({ id, title }: { id: string; title?: string }) => duplicateFormRequest(id, title, activeTenantId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: formKeys.all });
+      queryClient.invalidateQueries({ queryKey: formKeys.lists() });
     },
   });
 }
@@ -484,7 +486,8 @@ export function useDeleteForm() {
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) => deleteFormRequest(id, activeTenantId, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: formKeys.all });
+      queryClient.invalidateQueries({ queryKey: formKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: formKeys.all.concat(['recent-submissions'] as never[]) });
     },
   });
 }
@@ -498,7 +501,8 @@ export function useDeleteFormResponse(id: string) {
     mutationFn: ({ submissionId, reason }: { submissionId: string; reason?: string }) =>
       deleteFormResponseRequest(id, submissionId, activeTenantId, reason),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: formKeys.all });
+      queryClient.invalidateQueries({ queryKey: formKeys.allResponsesForForm(id) });
+      queryClient.invalidateQueries({ queryKey: formKeys.detail(id, activeTenantId) });
       queryClient.removeQueries({
         queryKey: formKeys.responseDetail(id, variables.submissionId, activeTenantId),
       });
@@ -515,7 +519,8 @@ export function useDeleteFormResponseUpload(id: string, submissionId: string) {
     mutationFn: ({ uploadId, reason }: { uploadId: string; reason?: string }) =>
       deleteFormResponseUploadRequest(id, submissionId, uploadId, activeTenantId, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: formKeys.all });
+      queryClient.invalidateQueries({ queryKey: formKeys.responseDetail(id, submissionId, activeTenantId) });
+      queryClient.invalidateQueries({ queryKey: formKeys.allResponsesForForm(id) });
     },
   });
 }
@@ -529,7 +534,7 @@ export function useDeleteFormDraft(id: string) {
     mutationFn: ({ draftId, reason }: { draftId: string; reason?: string }) =>
       deleteFormDraftRequest(id, draftId, activeTenantId, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: formKeys.all });
+      queryClient.invalidateQueries({ queryKey: formKeys.allResponsesForForm(id) });
     },
   });
 }

@@ -28,6 +28,8 @@ import {
   parseFormFileNameSettings,
   parseFormNotificationSettings,
   parseFormSubmissionAiReview,
+  toAnswerRecord,
+  toUploadIds,
   type FormSubmissionAiReview,
   type PublicFormField,
   type PublicFormDefinition,
@@ -224,13 +226,6 @@ function escapeHtml(value: string): string {
   ));
 }
 
-function toAnswerRecord(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return {};
-  }
-  return value as Record<string, unknown>;
-}
-
 function formatResponseCellValue(fieldType: FormFieldType | string, value: unknown): string {
   if (value === null || value === undefined) return '-';
 
@@ -341,20 +336,6 @@ function compareSubmissionRows(
   }
 
   return right.submittedAt.getTime() - left.submittedAt.getTime();
-}
-
-function toUploadIds(value: unknown): string[] {
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    return trimmed ? [trimmed] : [];
-  }
-
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .filter((item): item is string => typeof item === 'string')
-    .map((item) => item.trim())
-    .filter(Boolean);
 }
 
 function removeUploadIdFromAnswerValue(value: unknown, uploadId: string): unknown {
