@@ -1,6 +1,6 @@
 # API Reference
 
-> **Last Updated**: 2025-01-12
+> **Last Updated**: 2026-03-11
 > **Audience**: Developers
 
 This document provides a comprehensive reference for all API endpoints in the Oakcloud application.
@@ -31,20 +31,22 @@ Most endpoints require authentication via JWT token stored in an `auth-token` ht
 1. [Authentication](#authentication-endpoints)
 2. [Tenants](#tenant-endpoints)
 3. [Companies](#company-endpoints)
-4. [Contacts](#contact-endpoints)
-5. [Documents (Uploaded)](#uploaded-document-endpoints)
-6. [Processing Documents](#processing-document-endpoints)
-7. [Document Tags](#document-tags-endpoints)
-8. [Document Templates](#document-template-endpoints)
-9. [Template Partials](#template-partial-endpoints)
-10. [Generated Documents](#generated-document-endpoints)
-11. [Document Sharing](#document-sharing-endpoints)
-12. [Connectors (AI)](#connector-endpoints)
-13. [AI Features](#ai-endpoints)
-14. [Audit Logs](#audit-log-endpoints)
-15. [Exchange Rates](#exchange-rate-endpoints)
-16. [Admin](#admin-endpoints)
-17. [Workflow](#workflow-endpoints)
+4. [Forms](#forms-endpoints)
+5. [Workflow](#workflow-endpoints)
+6. [Contacts](#contact-endpoints)
+7. [Documents (Uploaded)](#uploaded-document-endpoints)
+8. [Processing Documents](#processing-document-endpoints)
+9. [Document Templates](#document-template-endpoints)
+10. [Template Partials](#template-partial-endpoints)
+11. [Generated Documents](#generated-document-endpoints)
+12. [Document Sharing](#document-sharing-endpoints)
+13. [Connectors (AI)](#connector-endpoints)
+14. [AI Features](#ai-endpoints)
+15. [Audit Logs](#audit-log-endpoints)
+16. [Exchange Rates](#exchange-rate-endpoints)
+17. [Admin](#admin-endpoints)
+18. [User Preferences](#user-preference-endpoints)
+19. [Document Tags](#document-tags-endpoints)
 
 ---
 
@@ -456,6 +458,481 @@ Delete a note.
 
 ### POST /api/companies/bulk
 Bulk operations on companies.
+
+---
+
+## Forms Endpoints
+
+Forms admin routes reuse the existing `document:*` permission surface. Public form routes are unauthenticated, slug-scoped, rate-limited, and token-guarded where required.
+
+### GET /api/forms
+List forms for the active tenant.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `query` | string | Optional title search |
+| `status` | `DRAFT \| PUBLISHED \| ARCHIVED` | Optional status filter |
+| `page` | number | Default `1` |
+| `limit` | number | Default `20`, max `100` |
+| `sortBy` | `createdAt \| updatedAt \| title` | Default `updatedAt` |
+| `sortOrder` | `asc \| desc` | Default `desc` |
+| `tenantId` | string | Optional SUPER_ADMIN tenant scope |
+
+**Response:** `200 OK`
+
+```json
+{
+  "forms": [
+    {
+      "id": "uuid",
+      "title": "Client Intake Form",
+      "slug": "6f4a1f6f7e51f3d0",
+      "status": "PUBLISHED",
+      "fieldCount": 14,
+      "responseCount": 37,
+      "conversionRate": 52.9
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 1
+}
+```
+
+---
+
+### POST /api/forms
+Create a blank form draft.
+
+**Auth:** Authenticated with `document:create`
+
+**Request Body:**
+
+```json
+{
+  "title": "Client Intake Form",
+  "description": "Optional description",
+  "tags": ["intake", "client"],
+  "status": "DRAFT",
+  "tenantId": "uuid (optional for SUPER_ADMIN)"
+}
+```
+
+**Response:** `201 Created`
+
+---
+
+### GET /api/forms/[id]
+Get a form detail payload including fields and tenant branding data.
+
+**Auth:** Authenticated with `document:read`
+
+---
+
+### PATCH /api/forms/[id]
+Update form metadata, settings, and/or fields.
+
+**Auth:** Authenticated with `document:update`
+
+**Request Body Notes:**
+
+- Metadata keys supported: `title`, `description`, `status`, `tags`, `slug`, `settings`
+- Field updates are sent as `fields: FormFieldInput[]`
+- `reason` is optional and is recorded in audit logs
+
+---
+
+### DELETE /api/forms/[id]
+Archive a form.
+
+**Auth:** Authenticated with `document:delete`
+
+**Query Parameters:**
+
+- `tenantId` (optional)
+- `reason` (optional)
+
+---
+
+### POST /api/forms/[id]/duplicate
+Duplicate an existing form.
+
+**Auth:** Authenticated with `document:create`
+
+**Request Body:**
+
+```json
+{
+  "title": "Optional duplicate title",
+  "tenantId": "uuid (optional for SUPER_ADMIN)"
+}
+```
+
+**Response:** `201 Created`
+
+---
+
+### GET /api/forms/recent-submissions
+Get the most recent completed submissions across the active tenant.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+- `limit` (number, default `8`)
+- `tenantId` (optional)
+
+---
+
+### GET /api/forms/warnings
+Get forms that currently have unresolved AI review warnings.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+- `limit` (number, default `8`)
+- `tenantId` (optional)
+
+---
+
+### GET /api/forms/[id]/responses
+Get paginated submissions, drafts, and chart data for one form.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `page` | number | Submission page, default `1` |
+| `limit` | number | Submission page size, default `20`, max `200` |
+| `draftPage` | number | Draft page, default `1` |
+| `draftLimit` | number | Draft page size, default `20`, max `200` |
+| `submissionSortBy` | string | Optional summary/status/submitted sort key |
+| `submissionSortOrder` | `asc \| desc` | Default `desc` |
+| `submissionFilters` | JSON string | Optional per-column submission filters |
+| `tenantId` | string | Optional SUPER_ADMIN tenant scope |
+
+---
+
+### GET /api/forms/[id]/responses/[submissionId]
+Get one submission and its uploads.
+
+**Auth:** Authenticated with `document:read`
+
+---
+
+### DELETE /api/forms/[id]/responses/[submissionId]
+Delete one submission and its linked uploads.
+
+**Auth:** Authenticated with `document:delete`
+
+**Query Parameters:**
+
+- `tenantId` (optional)
+- `reason` (optional)
+
+---
+
+### GET /api/forms/[id]/responses/[submissionId]/uploads/[uploadId]
+Download or inline-preview a submission upload.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+- `tenantId` (optional)
+- `disposition` (`attachment` or `inline`, default `attachment`)
+
+---
+
+### DELETE /api/forms/[id]/responses/[submissionId]/uploads/[uploadId]
+Delete a single submission upload.
+
+**Auth:** Authenticated with `document:delete`
+
+---
+
+### GET /api/forms/[id]/responses/export
+Export all form responses as CSV.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+- `tenantId` (optional)
+
+---
+
+### GET /api/forms/[id]/responses/[submissionId]/export/pdf
+Export an internal PDF copy of a submission.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+- `tenantId` (optional)
+
+---
+
+### POST /api/forms/[id]/responses/[submissionId]/ai-review
+Queue a submission for internal AI review.
+
+**Auth:** Authenticated with `document:update`
+
+**Request Body:**
+
+```json
+{
+  "tenantId": "uuid (optional for SUPER_ADMIN)",
+  "reason": "Manual AI review rerun"
+}
+```
+
+---
+
+### POST /api/forms/[id]/responses/[submissionId]/ai-review/resolve
+Resolve the latest unresolved AI warning on a submission.
+
+**Auth:** Authenticated with `document:update`
+
+**Request Body:**
+
+```json
+{
+  "tenantId": "uuid (optional for SUPER_ADMIN)",
+  "reason": "Reviewed by compliance"
+}
+```
+
+---
+
+### POST /api/forms/[id]/responses/[submissionId]/ai-review/attachment-check
+Run an attachment-only AI diagnostic using the same attachment pipeline as full review.
+
+**Auth:** Authenticated with `document:update`
+
+---
+
+### GET /api/forms/[id]/drafts/[draftId]
+Get a saved draft entry and its uploads.
+
+**Auth:** Authenticated with `document:read`
+
+---
+
+### DELETE /api/forms/[id]/drafts/[draftId]
+Delete a saved draft entry.
+
+**Auth:** Authenticated with `document:delete`
+
+---
+
+### GET /api/forms/[id]/drafts/[draftId]/uploads/[uploadId]
+Download or inline-preview a draft upload.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+- `tenantId` (optional)
+- `disposition` (`attachment` or `inline`, default `attachment`)
+
+---
+
+### POST /api/forms/[id]/ai-context-assist
+Turn rough notes into a structured custom context for Forms AI review.
+
+**Auth:** Authenticated with `document:update`
+
+---
+
+### POST /api/forms/[id]/translations/ai
+Generate translated form text for a locale.
+
+**Auth:** Authenticated with `document:update`
+
+---
+
+### POST /api/forms/cleanup-uploads
+Delete orphaned form uploads and expired drafts.
+
+**Auth:** SUPER_ADMIN only
+
+**Request Body:**
+
+```json
+{
+  "maxAgeHours": 24
+}
+```
+
+---
+
+### GET /api/forms/public/[slug]
+Get the published public form definition.
+
+**Auth:** Public
+
+**Response Notes:**
+
+- Returns public field definitions, branding (`tenantLogoUrl`, `tenantName`), and filtered settings used by the public runtime.
+- Public form views are rate-limited with `FORM_VIEW`.
+
+---
+
+### POST /api/forms/public/[slug]/uploads
+Upload a file for a public form field.
+
+**Auth:** Public
+
+**Request:** `multipart/form-data`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file` | File | File content |
+| `fieldKey` | string | Form field key |
+
+**Response:** `201 Created`
+
+```json
+{
+  "id": "uuid",
+  "fieldId": "uuid",
+  "fileName": "passport.pdf",
+  "mimeType": "application/pdf",
+  "sizeBytes": 48213
+}
+```
+
+---
+
+### POST /api/forms/public/[slug]/drafts
+Create or update a public draft save.
+
+**Auth:** Public
+
+**Request Body:**
+
+```json
+{
+  "answers": {},
+  "uploadIds": ["uuid"],
+  "draftCode": "Ab123",
+  "accessToken": "optional existing token",
+  "metadata": {
+    "locale": "en"
+  }
+}
+```
+
+**Response:** `201 Created`
+
+```json
+{
+  "draftCode": "Ab123",
+  "accessToken": "token",
+  "resumeUrl": "https://app/forms/f/form-slug?draft=Ab123&resume=token",
+  "expiresAt": "2026-03-25T12:00:00.000Z",
+  "savedAt": "2026-03-11T12:00:00.000Z"
+}
+```
+
+---
+
+### GET /api/forms/public/[slug]/drafts/[draftCode]
+Resume a public draft.
+
+**Auth:** Public
+
+**Query Parameters:**
+
+- `token` (required) - draft access token
+
+---
+
+### POST /api/forms/public/[slug]/drafts/[draftCode]/email
+Email a public draft resume link.
+
+**Auth:** Public
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "accessToken": "draft access token"
+}
+```
+
+---
+
+### POST /api/forms/public/[slug]/submit
+Submit a public form response.
+
+**Auth:** Public
+
+**Request Body:**
+
+```json
+{
+  "respondentName": "Jane Doe",
+  "respondentEmail": "jane@example.com",
+  "answers": {},
+  "uploadIds": ["uuid"],
+  "draftCode": "Ab123",
+  "accessToken": "optional draft token",
+  "metadata": {
+    "locale": "en"
+  }
+}
+```
+
+**Response:** `201 Created`
+
+```json
+{
+  "id": "uuid",
+  "submittedAt": "2026-03-11T12:34:56.000Z",
+  "pdfDownloadToken": "jwt",
+  "pdfDownloadTokenTtlSeconds": 1800,
+  "pdfEmailAccessToken": "jwt",
+  "pdfEmailAccessTokenTtlSeconds": 1800
+}
+```
+
+---
+
+### GET /api/forms/public/[slug]/submissions/[submissionId]/pdf
+Download the public response PDF.
+
+**Auth:** Public
+
+**Query Parameters:**
+
+- `token` (required) - signed download token
+
+---
+
+### POST /api/forms/public/[slug]/submissions/[submissionId]/email
+Email a tokenized public response PDF link.
+
+**Auth:** Public
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "accessToken": "pdf email access token"
+}
+```
 
 ---
 
@@ -1493,7 +1970,7 @@ Remove a tag from a processing document.
 
 ---
 
-*Last updated: December 2024*
+*Last updated: 2026-03-11*
 
 ---
 
@@ -1503,3 +1980,4 @@ Remove a tag from a processing document.
 - Added single document export endpoint with linked documents option
 - Added sorting parameters (`sortBy`, `sortOrder`) to Users endpoint
 - Added Exchange Rates endpoints with sorting support
+- Added Forms endpoints covering builder CRUD, public runtime, drafts, exports, uploads, and AI review routes

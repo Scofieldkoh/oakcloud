@@ -8,16 +8,16 @@
  * and flushed in a single bulk operation every FLUSH_INTERVAL_MS milliseconds.
  *
  * The buffer is intentionally process-local. In a multi-instance deployment,
- * each instance maintains its own buffer and flushes independently — counts
+ * each instance maintains its own buffer and flushes independently - counts
  * may lag by up to FLUSH_INTERVAL_MS but will converge.
  */
 
-import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
+import { prisma } from '@/lib/prisma';
 
 const log = createLogger('view-count-buffer');
 
-const FLUSH_INTERVAL_MS = 30_000; // 30 seconds
+const FLUSH_INTERVAL_MS = 30_000;
 
 const buffer = new Map<string, number>();
 let flushTimer: ReturnType<typeof setInterval> | null = null;
@@ -44,8 +44,8 @@ async function flush(): Promise<void> {
       )
     );
   } catch (error) {
-    log.error({ error }, 'Failed to flush view counts — requeueing');
-    // Requeue unwritten counts so they are not lost
+    log.error('Failed to flush view counts; requeueing', error);
+
     for (const [formId, count] of snapshot.entries()) {
       buffer.set(formId, (buffer.get(formId) ?? 0) + count);
     }
@@ -56,10 +56,11 @@ async function flush(): Promise<void> {
 
 export function startViewCountFlush(): void {
   if (flushTimer) return;
+
   flushTimer = setInterval(() => {
     void flush();
   }, FLUSH_INTERVAL_MS);
-  // Allow the process to exit even if the timer is active
+
   if (flushTimer.unref) flushTimer.unref();
 }
 
@@ -68,5 +69,6 @@ export function stopViewCountFlush(): Promise<void> {
     clearInterval(flushTimer);
     flushTimer = null;
   }
+
   return flush();
 }

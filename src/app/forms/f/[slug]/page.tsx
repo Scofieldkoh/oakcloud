@@ -32,7 +32,6 @@ import { cn } from '@/lib/utils';
 import DOMPurify from 'dompurify';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const DRAFT_CODE_PATTERN = /^[A-Za-z0-9]{5}$/;
 const NAME_HINT_PATTERN = /(full[\s_-]?name|first[\s_-]?name|last[\s_-]?name|name)/i;
 const EMAIL_HINT_PATTERN = /email/i;
 const DATA_URI_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,/i;
@@ -76,17 +75,10 @@ const DEFAULT_UI_LABELS = {
   organization_logo_alt: 'Organization logo',
   save_draft: 'Save draft',
   saving_draft: 'Saving draft...',
-  resume_draft: 'Resume draft',
-  resuming_draft: 'Resuming...',
-  resume_draft_placeholder: 'Enter draft ID',
   draft_validity_notice_singular: 'Drafts stay available for {days} day.',
   draft_validity_notice_plural: 'Drafts stay available for {days} days.',
-  resume_draft_description_singular: 'Enter your draft ID if you want to continue a saved response.',
-  resume_draft_description_plural: 'Enter your draft ID if you want to continue a saved response.',
   copy_resume_link: 'Copy resume link',
-  draft_saved: 'Draft saved. Keep this code and resume link to continue later.',
   draft_saved_title: 'Draft saved',
-  draft_code_label: 'Draft code',
   draft_expires_label: 'Expires',
   resume_link_label: 'Resume link',
   continue_editing: 'Continue editing',
@@ -847,7 +839,6 @@ export default function PublicFormPage() {
   const [uploadedByFieldKey, setUploadedByFieldKey] = useState<Record<string, UploadStatus[]>>({});
   const [draftSession, setDraftSession] = useState<DraftSession | null>(null);
   const [pendingDraftRestore, setPendingDraftRestore] = useState<DraftRestorePayload | null>(null);
-  const [resumeDraftCodeInput, setResumeDraftCodeInput] = useState('');
   const [draftError, setDraftError] = useState<string | null>(null);
   const [draftFeedback, setDraftFeedback] = useState<string | null>(null);
   const [draftBannerFeedback, setDraftBannerFeedback] = useState<string | null>(null);
@@ -917,10 +908,6 @@ export default function PublicFormPage() {
   const draftValidityNotice = draftSettings.autoDeleteDays === 1
     ? uiLabel('draft_validity_notice_singular', { days: draftSettings.autoDeleteDays })
     : uiLabel('draft_validity_notice_plural', { days: draftSettings.autoDeleteDays });
-
-  const resumeDraftDescription = draftSettings.autoDeleteDays === 1
-    ? uiLabel('resume_draft_description_singular', { days: draftSettings.autoDeleteDays })
-    : uiLabel('resume_draft_description_plural', { days: draftSettings.autoDeleteDays });
 
   const localizedPhoneCountryCodeOptions = useMemo(
     () => getPhoneCountryCodeOptions(activeLocale),
@@ -1037,7 +1024,6 @@ export default function PublicFormPage() {
     }
     setDraftSession(nextDraft);
     setIsFirstDraftSave(false);
-    setResumeDraftCodeInput(nextDraft.draftCode);
     if (options && 'feedback' in options) {
       setDraftError(null);
       setDraftFeedback(options.feedback ?? null);
@@ -1088,7 +1074,6 @@ export default function PublicFormPage() {
           setUploadedByFieldKey({});
           setDraftSession(null);
           setPendingDraftRestore(null);
-          setResumeDraftCodeInput(requestedDraftCode || '');
         }
 
         if (
@@ -3366,34 +3351,6 @@ export default function PublicFormPage() {
           </div>
         )}
 
-        {draftSettings.enabled && !isPreview && currentPage === 0 && (
-          <>
-            {!draftSession ? (
-              // --- IDLE STATE ---
-              <div className="mb-6 rounded-xl border border-border-primary/50 bg-white p-4 shadow-sm">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-text-primary">{localizedUiLabels.resume_draft}</p>
-                  <p className="mt-0.5 text-xs text-text-secondary leading-relaxed">
-                    {resumeDraftDescription}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              // --- ACTIVE STATE ---
-              <div className="mb-6 rounded-xl border border-oak-primary/30 bg-oak-primary/5 px-4 py-2.5">
-                {draftSession.expiresAt ? (
-                  <p className="text-xs text-text-secondary">
-                    {localizedUiLabels.draft_expires_label}: {formatDraftDateTime(draftSession.expiresAt)}
-                  </p>
-                ) : null}
-                {draftError && (
-                  <p className="mt-1 text-xs text-status-error">{draftError}</p>
-                )}
-              </div>
-            )}
-          </>
-        )}
-
         <div className={cn('flex flex-col gap-4', !isEmbed && 'mt-4')}>
           {renderItems.map((item, itemIndex) => {
             if (item.kind === 'standalone') {
@@ -3431,7 +3388,7 @@ export default function PublicFormPage() {
           })}
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-2">
           <div className="flex items-center justify-between">
           {currentPage > 0 ? (
             <button
@@ -3492,6 +3449,11 @@ export default function PublicFormPage() {
               </Button>
             )}
           </div>
+          {draftSettings.enabled && !isPreview && !isDraftDetailsModalOpen && (draftError || draftFeedback) && (
+            <p className={cn('text-xs', draftError ? 'text-status-error' : 'text-text-secondary')}>
+              {draftError || draftFeedback}
+            </p>
+          )}
         </div>
         </div>
       {!isEmbed && shouldShowFooter && (
@@ -3506,20 +3468,13 @@ export default function PublicFormPage() {
         onClose={() => {
           setIsDraftDetailsModalOpen(false);
           setDraftError(null);
+          setDraftFeedback(null);
         }}
         title={uiLabel('draft_saved_title')}
         description={draftValidityNotice}
         size="lg"
       >
         <ModalBody className="space-y-4">
-          {/* Draft code */}
-          <div className="rounded-xl border border-oak-primary/20 bg-oak-primary/[0.08] px-4 py-3">
-            <p className="text-xs font-medium text-text-secondary">{localizedUiLabels.draft_code_label}</p>
-            <p className="mt-1 font-mono text-2xl font-bold tracking-widest text-oak-primary select-all">
-              {draftSession?.draftCode}
-            </p>
-          </div>
-
           {/* Resume URL with inline copy */}
           <div className="rounded-lg border border-border-primary/50 bg-background-primary px-4 py-3">
             <p className="text-xs font-medium text-text-secondary mb-1.5">{uiLabel('resume_link_label')}</p>
@@ -3544,6 +3499,9 @@ export default function PublicFormPage() {
               <p className="mt-1.5 text-xs text-text-muted">
                 {localizedUiLabels.draft_expires_label}: {formatDraftDateTime(draftSession.expiresAt)}
               </p>
+            )}
+            {draftError && (
+              <p className="mt-1.5 text-xs text-status-error">{draftError}</p>
             )}
             {draftFeedback && (
               <p className="mt-1.5 text-xs text-text-secondary">{draftFeedback}</p>

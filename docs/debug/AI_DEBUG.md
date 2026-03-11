@@ -497,3 +497,242 @@ To clear this log file, you can:
 
 ---
 
+## AI Request - 2026-03-11T02:48:42.747Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gpt-5-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 21639ms |
+| Input Tokens | 5028 |
+| Output Tokens | 1786 |
+| Total Tokens | 6814 |
+| Estimated Cost | $0.0086 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1366 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202544980W",
+    "name": "TW COLLECTIVE (LTD.)",
+    "entityType": "PUBLIC_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2025-10-08",
+    "incorporationDate": "2025-10-08",
+    "registrationDate": "2025-10-08"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "59112",
+      "description": "PRODUCTION OF ADVERTISEMENTS, CORPORATE VIDEOS AND EVENT VIDEOS"
+    }
+  },
+  "registeredAddress": {
+    "block": "3",
+    "streetName": "Lengkong Enam",
+    "postalCode": "417574",
+    "effectiveFrom": "2025-10-08"
+  },
+  "officers": [
+    {
+      "name": "Joshua Poh Ren Zhong",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S9017297B",
+      "nationality": "Singapore",
+      "address": "3 Lengkong Enam, Singapore 417574",
+      "appointmentDate": "2025-10-08",
+      "cessationDate": null
+    },
+    {
+      "name": "Kwok Li Yu, Michelle (Guo Liyu)",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8540676J",
+      "nationality": "Singapore",
+      "address": "5000L Marine Parade Road, #21-52, Lagoon View, Singapore 449293",
+      "appointmentDate": "2025-10-08",
+      "cessationDate": null
+    }
+  ],
+  "homeCurrency": "SGD",
+  "documentMetadata": {
+    "receiptNo": "ACRA260108001155",
+    "receiptDate": "2026-01-08"
+  }
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-03-11T04:14:08.648Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | bizfile_extraction |
+| Model | gpt-5-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 46388ms |
+| Input Tokens | 8261 |
+| Output Tokens | 2527 |
+| Total Tokens | 10788 |
+| Estimated Cost | $0.0133 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (3258 chars)</summary>
+
+```json
+{
+  "entityDetails": {
+    "uen": "202339225K",
+    "name": "THE ROYAL ELEMENTZ PTE. LTD.",
+    "formerName": null,
+    "dateOfNameChange": null,
+    "formerNames": [],
+    "entityType": "EXEMPTED_PRIVATE_LIMITED",
+    "status": "LIVE",
+    "statusDate": "2023-09-29",
+    "incorporationDate": "2023-09-29",
+    "registrationDate": "2023-09-29"
+  },
+  "ssicActivities": {
+    "primary": {
+      "code": "47731",
+      "description": "RETAIL SALE OF JEWELLERY MADE FROM PRECIOUS METALS AND STONES"
+    },
+    "secondary": {
+      "code": "47761",
+      "description": "RETAIL SALE OF JOSS PAPER AND OTHER CEREMONIAL PRODUCTS"
+    }
+  },
+  "registeredAddress": {
+    "block": "71",
+    "streetName": "Lorong 23 Geylang",
+    "level": "05",
+    "unit": "04",
+    "buildingName": "WORK + STORE (71G)",
+    "postalCode": "388386",
+    "effectiveFrom": "2023-11-28"
+  },
+  "paidUpCapital": {
+    "amount": 100000,
+    "currency": "SGD"
+  },
+  "issuedCapital": {
+    "amount": 100000,
+    "currency": "SGD"
+  },
+  "shareCapital": [
+    {
+      "shareClass": "ORDINARY",
+      "currency": "SGD",
+      "numberOfShares": 100000,
+      "parValue": null,
+      "totalValue": 100000,
+      "isPaidUp": true,
+      "isTreasury": false
+    }
+  ],
+  "shareholders": [
+    {
+      "name": "NEO JIE LIN, REGINA",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8536641F",
+      "nationality": "Singapore",
+      "placeOfOrigin": null,
+      "address": "6 Upper Serangoon Crescent #04-12 RIVERSAILS SINGAPORE 534033",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 70000,
+      "percentageHeld": 70,
+      "currency": "SGD"
+    },
+    {
+      "name": "YONG WEI SIONG",
+      "type": "INDIVIDUAL",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8805507A",
+      "nationality": "Singapore",
+      "placeOfOrigin": null,
+      "address": "509 Hougang Avenue 10 #01-129 BEDOK RESERVOIR-PUNGGOL VALE SINGAPORE 530509",
+      "shareClass": "ORDINARY",
+      "numberOfShares": 30000,
+      "percentageHeld": 30,
+      "currency": "SGD"
+    }
+  ],
+  "officers": [
+    {
+      "name": "YONG WEI SIONG",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8805507A",
+      "nationality": "Singapore",
+      "address": "509 Hougang Avenue 10 #01-129 BEDOK RESERVOIR-PUNGGOL VALE SINGAPORE 530509",
+      "appointmentDate": "2023-09-29",
+      "cessationDate": null
+    },
+    {
+      "name": "NEO JIE LIN, REGINA",
+      "role": "DIRECTOR",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8536641F",
+      "nationality": "Singapore",
+      "address": "6 Upper Serangoon Crescent #04-12 RIVERSAILS SINGAPORE 534033",
+      "appointmentDate": "2023-09-29",
+      "cessationDate": null
+    },
+    {
+      "name": "SOH KIAN HWA",
+      "role": "SECRETARY",
+      "identificationType": "NRIC",
+      "identificationNumber": "S8009494I",
+      "nationality": "Singapore",
+      "address": "140 Paya Lebar Road #06-12 AZ @ PAYA LEBAR SINGAPORE 409015",
+      "appointmentDate": "2023-11-23",
+      "cessationDate": null
+    }
+  ],
+  "homeCurrency": "SGD",
+  "documentMetadata": {
+    "receiptNo": "ACRA231130163743",
+    "receiptDate": "2023-11-30"
+  }
+}
+```
+</details>
+
+---
+

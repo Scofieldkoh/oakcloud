@@ -562,17 +562,13 @@ export function notificationEmail(params: NotificationEmailParams): { subject: s
 
 export interface FormDraftEmailParams {
   formTitle: string;
-  draftCode: string;
   resumeUrl: string;
 }
 
 export function formDraftEmail(params: FormDraftEmailParams): { subject: string; html: string } {
-  const { formTitle, draftCode, resumeUrl } = params;
+  const { formTitle, resumeUrl } = params;
 
   const safeFormTitle = formTitle.replace(/[<>&"]/g, (m) =>
-    m === '<' ? '&lt;' : m === '>' ? '&gt;' : m === '&' ? '&amp;' : '&quot;'
-  );
-  const safeDraftCode = draftCode.replace(/[<>&"]/g, (m) =>
     m === '<' ? '&lt;' : m === '>' ? '&gt;' : m === '&' ? '&amp;' : '&quot;'
   );
   const safeResumeUrl = resumeUrl.replace(/[<>&"]/g, (m) =>
@@ -589,19 +585,13 @@ export function formDraftEmail(params: FormDraftEmailParams): { subject: string;
     </h2>
 
     <p style="margin: 0 0 22px 0; color: #2a3540; line-height: 1.7;">
-      Here are the details to continue your response for <strong>${safeFormTitle}</strong>.
+      Use the secure resume link below to continue your response for <strong>${safeFormTitle}</strong>.
     </p>
 
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px 0; border-collapse: separate; border: 1px solid #c8e3d8; border-radius: 8px; background-color: #f2faf7;">
       <tr>
         <td style="padding: 18px;">
-          <p style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #17222d;">Your draft details</p>
-
-          <p style="margin: 0 0 6px 0; font-size: 11px; color: #4d5d68; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">Draft code</p>
-          <p style="margin: 0 0 14px 0; font-size: 22px; font-weight: 700; color: #1a4f43; font-family: 'SF Mono', Monaco, 'Courier New', monospace; background-color: #ffffff; border: 1px solid #d5e5df; border-radius: 6px; padding: 10px 14px; letter-spacing: 0.15em;">
-            ${safeDraftCode}
-          </p>
-
+          <p style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #17222d;">Your secure resume link</p>
           <p style="margin: 0 0 6px 0; font-size: 11px; color: #4d5d68; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">Resume link</p>
           <p style="margin: 0; font-size: 13px; color: #1b2732; background-color: #ffffff; border: 1px solid #d5e5df; border-radius: 6px; padding: 10px 14px; word-break: break-all; line-height: 1.5;">
             <a href="${safeResumeUrl}" style="color: #1a5a4c; text-decoration: none;">${safeResumeUrl}</a>
@@ -619,7 +609,7 @@ export function formDraftEmail(params: FormDraftEmailParams): { subject: string;
     </table>
 
     <p style="margin: 0; color: #5b6672; font-size: 13px; line-height: 1.6;">
-      Keep this email safe — you'll need the draft code or link to continue your response.
+      Keep this email safe. You'll need the secure link to continue your response.
     </p>
   `;
 
@@ -627,7 +617,7 @@ export function formDraftEmail(params: FormDraftEmailParams): { subject: string;
     subject: `Your draft for: ${formTitle}`,
     html: baseTemplate({
       title: 'Form Draft Saved',
-      preheader: `Your draft code is ${draftCode}. Use it to continue filling out ${formTitle}.`,
+      preheader: `Use this secure link to continue filling out ${formTitle}.`,
       content,
       footerText: `You received this email because you requested a copy of your form draft.`,
     }),

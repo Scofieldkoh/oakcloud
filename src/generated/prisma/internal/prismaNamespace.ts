@@ -8761,7 +8761,8 @@ export const FormSubmissionScalarFieldEnum = {
   hasUnresolvedAiWarning: 'hasUnresolvedAiWarning',
   submittedAt: 'submittedAt',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
 } as const
 
 export type FormSubmissionScalarFieldEnum = (typeof FormSubmissionScalarFieldEnum)[keyof typeof FormSubmissionScalarFieldEnum]

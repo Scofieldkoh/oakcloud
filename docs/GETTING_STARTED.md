@@ -1,174 +1,168 @@
 # Getting Started
 
-> **Last Updated**: 2025-01-12
+> **Last Updated**: 2026-03-11
 > **Audience**: Developers
 
 This guide walks you through setting up Oakcloud for local development.
 
 ## Related Documents
 
-- [Architecture](./ARCHITECTURE.md) - System design and tech stack
+- [Architecture](./ARCHITECTURE.md) - System design and runtime layout
 - [Environment Variables](./reference/ENVIRONMENT_VARIABLES.md) - Configuration options
-
----
 
 ## Prerequisites
 
-- **Node.js** 20+ (LTS recommended)
-- **Docker & Docker Compose** (for PostgreSQL, Redis, MinIO)
-- **npm** (or pnpm/yarn)
-
----
+- Node.js 20+
+- Docker Desktop or Docker Engine with Compose support
+- npm
 
 ## Quick Start
 
 ```bash
 # 1. Install dependencies
-cd oakcloud
 npm install
 
 # 2. Copy environment file
 cp .env.example .env
-# Edit .env with your configuration
 
-# 3. Start Docker containers
-npm run docker:up
+# 3. Start PostgreSQL + MinIO
+npm run docker:db:up
 
-# 4. Initialize database
-npm run db:generate   # Generate Prisma client
-npm run db:push       # Push schema to database
-npm run db:seed       # Seed with sample data
+# 4. Generate Prisma client and initialize the database
+npm run db:generate
+npm run db:push
+npm run db:seed
 
-# 5. Start development server
+# 5. Start the local Next.js dev server
 npm run dev
 ```
 
-**Access the application:**
-- Frontend: http://localhost:3000
-- Database Studio: `npm run db:studio`
-- MinIO Console: http://localhost:9001
+If you are using the bundled MinIO service from `oakcloud_db.yml`, update your local `.env` after copying it so the S3 settings match that stack before starting the app:
 
----
+```env
+S3_ENDPOINT="http://localhost:9000"
+S3_ACCESS_KEY="oakcloud"
+S3_SECRET_KEY="Preparefortrouble!"
+S3_BUCKET="oakcloud"
+```
 
-## Docker Setup
+**Access**
 
-Running `npm run docker:up` creates:
+- Frontend: `http://localhost:3000`
+- Prisma Studio: `npm run db:studio`
+- MinIO API: `http://localhost:9000`
+- MinIO Console: `http://localhost:9001`
+
+**Default Login**
+
+- Super Admin: `admin@oaktreesolutions.com.sg` / `Preparefortrouble!`
+
+## Local Data Services
+
+`npm run docker:db:up` starts the local data stack from [`oakcloud_db.yml`](../oakcloud_db.yml):
 
 | Service | Port | Description |
 |---------|------|-------------|
-| PostgreSQL | 5433 | Database (avoids conflict with local PG on 5432) |
-| Redis | 6379 | Cache/sessions (optional) |
-| MinIO S3 API | 9000 | Object storage |
-| MinIO Console | 9001 | Storage web UI |
+| PostgreSQL | `5433` | Primary development database |
+| MinIO S3 API | `9000` | Object storage API |
+| MinIO Console | `9001` | Object storage UI |
 
-**MinIO Credentials**: `oakcloud` / `oakcloud_minio_secret`
+**MinIO Console Credentials**
 
-### Stop Containers
+- Username: `oakcloud`
+- Password: `Preparefortrouble!`
+
+To stop the data stack:
+
+```bash
+npm run docker:db:down
+```
+
+## Optional Containerized App Stack
+
+`npm run docker:up` starts the containerized app stack from [`docker-compose.yml`](../docker-compose.yml):
+
+| Service | Port | Description |
+|---------|------|-------------|
+| App | `3000` | Next.js app in Docker |
+| Redis | `6379` | Optional cache / support service |
+| Cloudflared | - | Optional tunnel container |
+
+Use this when you want the app itself running in Docker. Do not run it alongside `npm run dev` unless you intentionally want the Dockerized app bound to port `3000`.
+
+To stop it:
 
 ```bash
 npm run docker:down
 ```
 
----
+## Environment Notes
 
-## Local PostgreSQL (Alternative)
-
-If you prefer a local PostgreSQL installation instead of Docker:
-
-1. **Connect as superuser:**
-```bash
-psql -U postgres
-```
-
-2. **Create database and user:**
-```sql
-CREATE USER oakcloud WITH PASSWORD 'oakcloud_password';
-CREATE DATABASE oakcloud OWNER oakcloud;
-GRANT ALL PRIVILEGES ON DATABASE oakcloud TO oakcloud;
-\c oakcloud
-GRANT ALL ON SCHEMA public TO oakcloud;
-```
-
-3. **Update `.env`** to use port 5433:
-```
-DATABASE_URL="postgresql://oakcloud:oakcloud_password@localhost:5433/oakcloud?schema=public"
-```
-
----
+- `DATABASE_URL` should point at `localhost:5433` when you use the bundled PostgreSQL container.
+- `S3_ENDPOINT` should point at `http://localhost:9000` when you use the bundled MinIO container.
+- `MAX_FILE_SIZE` applies to document uploads and public form uploads.
+- Email configuration is optional in development, but required for password reset emails, form draft emails, and public form PDF email delivery.
 
 ## Database Commands
 
 | Command | Description |
 |---------|-------------|
 | `npm run db:generate` | Generate Prisma client |
-| `npm run db:push` | Push schema to database (creates tables) |
-| `npm run db:migrate` | Create a migration |
-| `npm run db:seed` | Seed with sample data |
+| `npm run db:push` | Push schema to the database |
+| `npm run db:migrate` | Create and run a development migration |
+| `npm run db:seed` | Seed local sample data |
 | `npm run db:studio` | Open Prisma Studio |
 
-> **Note**: The seed script is idempotent and can be run multiple times safely.
-
----
-
-## Default Credentials
-
-After seeding, login with:
-
-| Role | Email | Password |
-|------|-------|----------|
-| Super Admin | `admin@oaktreesolutions.com.sg` | `Preparefortrouble!` |
-
-> **Security**: Change this password in production!
-
-The minimal seed creates only the SUPER_ADMIN user. Use this account to create tenants, users, and companies through the Admin dashboard.
-
----
+The seed script is idempotent and can be run multiple times safely.
 
 ## Development Commands
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start dev server with Turbopack |
+| `npm run dev` | Start the local dev server |
 | `npm run build` | Production build |
 | `npm run lint` | Run ESLint |
-| `npm run test:run` | Run tests |
+| `npm run test:run` | Run the test suite once |
 | `npm run test:coverage` | Run tests with coverage |
-
----
 
 ## Common Issues
 
-### Port 5433 already in use
-If you have another PostgreSQL instance running:
-```bash
-# Stop the Docker containers
-npm run docker:down
+### Port `3000` already in use
 
-# Check what's using the port
-netstat -ano | findstr :5433  # Windows
-lsof -i :5433                 # macOS/Linux
+You probably have the containerized app stack running. Stop it with:
+
+```bash
+npm run docker:down
 ```
 
-### Prisma client errors
-Regenerate the Prisma client:
+### Port `5433` already in use
+
+Another PostgreSQL instance is bound to that port.
+
+```bash
+npm run docker:db:down
+```
+
+Then either free the port or point `DATABASE_URL` at a different database instance.
+
+### Storage or upload errors
+
+1. Confirm MinIO is running on `http://localhost:9000`.
+2. Confirm your local `.env` matches the MinIO credentials used by `oakcloud_db.yml`.
+3. Check `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, and `S3_BUCKET`.
+
+### Prisma client or schema mismatch
+
+Regenerate the client and re-push the schema:
+
 ```bash
 npm run db:generate
+npm run db:push
 ```
-
-### Database connection issues
-1. Ensure Docker containers are running: `docker ps`
-2. Check `.env` has correct `DATABASE_URL`
-3. Verify PostgreSQL is accepting connections
-
-### Storage/upload errors
-1. Ensure MinIO is running: http://localhost:9001
-2. Check `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` in `.env`
-
----
 
 ## Next Steps
 
-1. **Create a tenant**: Admin > Tenants > Add Tenant
-2. **Complete setup wizard**: Configure the tenant and create admin user
-3. **Create companies**: Navigate to Companies > Add Company
-4. **Explore features**: Document generation, processing, exchange rates
+1. Create or select a tenant.
+2. Create users and companies.
+3. Explore the Forms module at `/forms`.
+4. Explore document generation, document processing, workflow, and exchange rates.

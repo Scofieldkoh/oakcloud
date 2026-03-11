@@ -1,272 +1,210 @@
 # Architecture
 
-> **Last Updated**: 2025-01-12
+> **Last Updated**: 2026-03-11
 > **Audience**: Developers
 
-System architecture and design overview for Oakcloud.
+System architecture and runtime design overview for Oakcloud.
 
 ## Related Documents
 
-- [Getting Started](./GETTING_STARTED.md) - Setup and installation
-- [Database Schema](./reference/DATABASE_SCHEMA.md) - Tables and relationships
-- [Service Patterns](./guides/SERVICE_PATTERNS.md) - Backend patterns
-
----
+- [Getting Started](./GETTING_STARTED.md) - Local setup and first run
+- [Database Schema](./reference/DATABASE_SCHEMA.md) - Tables, relationships, and enums
+- [Service Patterns](./guides/SERVICE_PATTERNS.md) - Backend implementation patterns
 
 ## Overview
 
-Oakcloud is a local-first, modular practice management system for accounting firms. Built with:
+Oakcloud is a multi-tenant Next.js application for accounting practice operations. It combines internal dashboards, authenticated API routes, public document and form flows, and an in-process task scheduler.
 
-- **Modularity**: Each feature is a separate module
-- **Local-first**: All data stays on your infrastructure
-- **Clean Design**: Linear.app-inspired theme with light/dark mode
-- **Efficiency**: Fast UI with optimized database queries
+Core design principles:
 
----
+- **Tenant isolation** across the app, API, and database
+- **Service-oriented business logic** under `src/services/`
+- **Public and internal workflows** in the same codebase, with explicit auth and rate-limit boundaries
+- **Local-first infrastructure** for development with PostgreSQL and MinIO
 
 ## Tech Stack
 
 ### Frontend
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Next.js | 15.x | React framework with App Router + Turbopack |
-| React | 19.x | UI library |
-| TypeScript | 5.7+ | Type-safe JavaScript |
-| Tailwind CSS | 3.4+ | Utility-first styling |
-| Chakra UI | 3.x | Component library |
-| Zustand | 5.x | Global state management |
-| TanStack Query | 5.x | Server state & caching |
-| React Hook Form | 7.x | Form handling |
-| Zod | 3.x | Schema validation |
-| Lucide React | 0.474+ | Icon library |
+| Technology | Purpose |
+|------------|---------|
+| Next.js 15 App Router | Routing, server rendering, API routes |
+| React 19 | UI layer |
+| TypeScript | Type safety |
+| Tailwind CSS | Styling |
+| Chakra UI | Shared component primitives |
+| TanStack Query | Server-state fetching and invalidation |
+| Zustand | Lightweight local app state |
+| React Hook Form + Zod | Form state and validation |
 
 ### Backend
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Node.js | 20 LTS | Runtime environment |
-| PostgreSQL | 16 | Primary database |
-| Prisma | 7.x | ORM with driver adapters |
-| Next.js API Routes | 15.x | Backend API |
-| JWT (jose) | 6.x | Authentication |
-| @noble/hashes | 2.x | Cryptography (Argon2id, BLAKE3) |
-| Nodemailer | 6.x | Email sending (SMTP) |
-| OpenAI | 4.x | AI extraction - GPT (lazy loaded) |
-| Anthropic | 0.x | AI extraction - Claude (lazy loaded) |
-| Google Generative AI | 0.x | AI extraction - Gemini (lazy loaded) |
+| Technology | Purpose |
+|------------|---------|
+| Node.js 20 | Runtime |
+| Prisma 7 | Database access |
+| PostgreSQL 16 | Primary relational database |
+| `jose` | JWT-based auth/session tokens |
+| `@noble/hashes` | Password hashing and crypto helpers |
+| Nodemailer / Graph | Email delivery |
+| OpenAI / Anthropic / Google AI / OpenRouter | AI-backed features |
 
-### Infrastructure
+### Documents And Forms
 
 | Technology | Purpose |
 |------------|---------|
-| Docker Compose | Container orchestration |
-| PostgreSQL | Database container (port 5433) |
-| Redis | Cache/sessions (optional, port 6379) |
-| MinIO | S3-compatible object storage (ports 9000/9001) |
+| TipTap | Rich text editing |
+| pdf-lib | Existing document export paths |
+| Puppeteer | Form response PDF rendering |
+| MinIO / S3 | Uploaded file storage |
 
----
+### Runtime Services
 
-## Directory Structure
+| Service | Purpose |
+|---------|---------|
+| In-process scheduler | Backup, cleanup, exchange-rate sync, form AI review, form count reconciliation |
+| In-memory rate limiter | Public endpoint throttling |
+| In-memory view counter buffer | Batches form view count writes every 30 seconds |
 
-```
+## High-Level Layout
+
+```text
 src/
-├── app/                    # Next.js App Router
-│   ├── (dashboard)/        # Protected routes with AuthGuard
-│   ├── api/                # API routes
-│   └── login/              # Public login page
-├── components/
-│   ├── ui/                 # Reusable UI components
-│   └── [feature]/          # Feature-specific components
-├── generated/
-│   └── prisma/             # Generated Prisma client
-├── hooks/                  # React hooks
-├── lib/                    # Core utilities
-│   ├── prisma.ts           # Database client
-│   ├── storage/            # Object storage abstraction
-│   ├── auth.ts             # JWT & session management
-│   ├── audit.ts            # Audit logging
-│   ├── rbac.ts             # Role-based access control
-│   ├── tenant.ts           # Multi-tenancy utilities
-│   └── validations/        # Zod schemas
-├── services/               # Business logic layer
-└── stores/                 # Zustand state
+|-- app/
+|   |-- (dashboard)/           # Authenticated UI routes
+|   |   |-- forms/             # Forms list, builder, responses, draft detail
+|   |-- api/                   # Authenticated and public API routes
+|   |   |-- forms/             # Forms admin + public endpoints
+|   |-- forms/f/[slug]/        # Public form runtime
+|-- components/
+|   |-- forms/                 # Builder and form-specific UI pieces
+|   |-- ui/                    # Reusable shared components
+|-- hooks/                     # Query and auth hooks
+|-- lib/
+|   |-- auth.ts                # Session and JWT helpers
+|   |-- form-utils.ts          # Shared forms types, settings, helpers
+|   |-- rate-limit.ts          # Public endpoint throttling
+|   |-- scheduler/             # Background task framework
+|   |-- storage/               # Object storage abstraction
+|   |-- validations/           # Zod schemas
+|-- services/
+|   |-- form-crud.service.ts
+|   |-- form-submission.service.ts
+|   |-- form-draft.service.ts
+|   |-- form-pdf.service.ts
+|   |-- form-ai.task.service.ts
+|   |-- ...other domain services
 ```
 
----
+## Multi-Tenancy And Permissions
 
-## Multi-Tenancy Architecture
+- Tenant-scoped entities are keyed by `tenantId`.
+- `SUPER_ADMIN` users can switch tenants in the UI and pass `tenantId` to admin endpoints where supported.
+- Forms currently reuse the existing `document:*` permission surface for CRUD, response review, exports, and AI review actions.
+- Public form endpoints do not require auth, but are protected with slug scoping, token checks for PDF delivery, and IP-based rate limits.
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         SUPER_ADMIN                                  │
-│                    (Cross-tenant access)                             │
-└─────────────────────────────────────────────────────────────────────┘
-                                │
-           ┌────────────────────┼────────────────────┐
-           ▼                    ▼                    ▼
-┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
-│    Tenant A     │   │    Tenant B     │   │    Tenant C     │
-│  ┌───────────┐  │   │  ┌───────────┐  │   │  ┌───────────┐  │
-│  │TENANT_ADMIN│  │   │  │TENANT_ADMIN│  │   │  │TENANT_ADMIN│  │
-│  └───────────┘  │   │  └───────────┘  │   │  └───────────┘  │
-│       │         │   │       │         │   │       │         │
-│  ┌────┴────┐    │   │  ┌────┴────┐    │   │  ┌────┴────┐    │
-│  │Companies│    │   │  │Companies│    │   │  │Companies│    │
-│  │Users    │    │   │  │Users    │    │   │  │Users    │    │
-│  │Contacts │    │   │  │Contacts │    │   │  │Contacts │    │
-│  │Documents│    │   │  │Documents│    │   │  │Documents│    │
-│  └─────────┘    │   │  └─────────┘    │   │  └─────────┘    │
-└─────────────────┘   └─────────────────┘   └─────────────────┘
-```
+## Request Flow
 
-### Key Features
+### Authenticated Dashboard Flow
 
-1. **Data Isolation**: All queries automatically scoped to user's tenant
-2. **Tenant-aware Auth**: Session includes tenant context
-3. **RBAC**: Fine-grained role-based access control
-4. **Tenant Suspension**: Suspended tenants prevent user login
-5. **Audit Trail**: All actions tracked with tenant context
-6. **SUPER_ADMIN Cross-Tenant**: Centralized tenant selector in sidebar
+1. A dashboard page or hook calls an authenticated API route under `src/app/api/`.
+2. The route calls `requireAuth()` and, where applicable, `requirePermission()`.
+3. The route resolves tenant scope via `resolveTenantId(...)`.
+4. The route delegates business logic to `src/services/...`.
+5. Services read and write through Prisma and, when needed, storage/email/AI helpers.
 
-### Tenant Limits
+### Public Form Flow
 
-| Limit | Default | Description |
-|-------|---------|-------------|
-| maxUsers | 50 | Maximum users per tenant |
-| maxCompanies | 100 | Maximum companies per tenant |
-| maxStorageMb | 10240 | Storage quota in MB (10GB) |
+1. The public page loads at `/forms/f/[slug]`.
+2. It fetches `/api/forms/public/[slug]` to load the published form definition.
+3. Uploads are sent to `/api/forms/public/[slug]/uploads`.
+4. Draft saves and resumes go through `/api/forms/public/[slug]/drafts...`.
+5. Submission goes through `/api/forms/public/[slug]/submit`.
+6. The success state may expose token-guarded PDF download and email actions.
 
----
+## Forms Module Architecture
 
-## Core Entity Relationships
+The Forms module is split into focused services:
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                           COMPANY MODULE                              │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  ┌──────────┐     ┌────────────────┐     ┌──────────────┐           │
-│  │  Company │────▶│ CompanyAddress │     │ CompanyOfficer│           │
-│  └──────────┘     └────────────────┘     └──────────────┘           │
-│       │                                         │                    │
-│       │           ┌─────────────────┐          │                    │
-│       ├──────────▶│CompanyShareholder│◀────────┤                    │
-│       │           └─────────────────┘          │                    │
-│       │                                         ▼                    │
-│       │           ┌──────────────┐        ┌─────────┐               │
-│       ├──────────▶│ CompanyCharge │       │ Contact │               │
-│       │           └──────────────┘        └─────────┘               │
-│       │                                                              │
-│       │           ┌──────────────┐     ┌───────────┐                │
-│       └──────────▶│   Document   │────▶│  AuditLog │                │
-│                   └──────────────┘     └───────────┘                │
-│                                                                       │
-└──────────────────────────────────────────────────────────────────────┘
-```
+- `form-crud.service.ts`: form creation, listing, duplication, updates, soft delete, and field persistence
+- `form-submission.service.ts`: public definition loading, public uploads, submissions, response listing/detail, CSV export, attachment download/delete
+- `form-draft.service.ts`: save/resume/email draft flows and draft cleanup
+- `form-pdf.service.ts`: HTML rendering, PDF generation, and filename templating
+- `form-ai.task.service.ts`: queued AI review processing, warning resolution, and warning summaries
 
----
+### Forms Routes
 
-## User Roles
+Authenticated dashboard routes:
 
-| System Role | Scope | Description |
-|-------------|-------|-------------|
-| `SUPER_ADMIN` | System-wide | Full access to all tenants |
-| `TENANT_ADMIN` | Tenant | Manage tenant settings, users, roles |
-| `COMPANY_ADMIN` | Company | Manage assigned company |
-| `COMPANY_USER` | Company | View-only access |
-| Custom roles | Configurable | Fine-grained permissions |
+- `/forms`
+- `/forms/[id]/builder`
+- `/forms/[id]/responses`
+- `/forms/[id]/responses/[submissionId]`
+- `/forms/[id]/responses/drafts/[draftId]`
 
----
+Public runtime route:
 
-## Key Patterns
+- `/forms/f/[slug]`
 
-### Authentication Flow
+### Form Settings Model
 
-1. User submits credentials to `/api/auth/login`
-2. Server validates and creates JWT token
-3. Token stored in `auth-token` httpOnly cookie (7 days)
-4. Session retrieved via `getSession()` from `@/lib/auth`
+Most builder configuration beyond title, slug, tags, and status lives in `Form.settings`:
 
-### Service Layer Pattern
+- Response table configuration (`summaryFieldKeys`, column order, widths)
+- Completion notification recipients
+- Draft enablement and retention window
+- Internal AI review settings and custom context
+- Response PDF filename template
+- I18n defaults, enabled locales, and translations
+- Branding toggles such as `hideLogo` and `hideFooter`
 
-```typescript
-// All services accept TenantAwareParams
-export async function createCompany(
-  data: CreateCompanyInput,
-  params: TenantAwareParams  // { tenantId, userId }
-): Promise<Company> {
-  // Business logic with tenant isolation
-}
-```
+### Public Form Security And Delivery
 
-### Audit Logging Pattern
+- `FORM_VIEW`, `FORM_SUBMIT`, `FORM_UPLOAD`, `FORM_DRAFT_SAVE`, and `FORM_DRAFT_RESUME` rate limits are enforced in memory per IP and slug.
+- Public draft resumption requires both a draft code and an access token.
+- Public PDF delivery uses signed tokens with separate scopes for direct download and email-request authorization.
+- Uploaded files are stored under `{tenantId}/forms/{formId}/uploads/{uploadId}{ext}`.
 
-```typescript
-import { createAuditContext, logUpdate } from '@/lib/audit';
+### Background Processing
 
-const ctx = await createAuditContext({ tenantId, userId, changeSource: 'MANUAL' });
-await logUpdate(ctx, 'Company', id, companyName, changes);
-```
+The scheduler registers these form-related tasks:
 
-### Permission Checking
+- `form-ai-review`: processes queued submission AI reviews
+- `form-count-reconciliation`: corrects denormalized `submissions_count`
+- `cleanup`: also removes expired form drafts and orphaned uploads
 
-```typescript
-import { hasPermission, requirePermission } from '@/lib/rbac';
-
-// Check permission
-const canEdit = await hasPermission(userId, 'company', 'update', companyId);
-
-// Require permission (throws if denied)
-await requirePermission(session, 'company', 'update', companyId);
-```
-
----
+Form view counts are buffered in-process and flushed to the database every 30 seconds to reduce write contention on public forms.
 
 ## Storage Architecture
 
-Documents are stored in S3-compatible object storage (MinIO in development):
+Oakcloud uses the shared storage abstraction for documents and forms.
 
-```
-{tenantId}/
-├── companies/{companyId}/
-│   └── documents/{docId}/
-│       ├── original.pdf
-│       └── extracted.json
-└── pending/{docId}/
-    └── original.{ext}
+Examples:
+
+```text
+{tenantId}/companies/{companyId}/documents/{docId}/...
+{tenantId}/forms/{formId}/uploads/{uploadId}.{ext}
 ```
 
-**Environment Variables:**
-- `STORAGE_PROVIDER=s3`
-- `S3_ENDPOINT` - MinIO/S3 endpoint
-- `S3_BUCKET` - Bucket name
-- `S3_ACCESS_KEY` / `S3_SECRET_KEY` - Credentials
-- `S3_ENCRYPTION=AES256` - Server-side encryption
+MinIO is used in local development; S3-compatible providers can be used in production.
 
----
+## Implemented Modules
 
-## Module List
+| Module | Notes |
+|--------|-------|
+| Companies | Core company data, BizFile ingestion, compliance metadata |
+| Contacts | Individual and corporate contacts |
+| Document Generation | Templates, sharing, comments, exports |
+| Document Processing | Extraction, revisions, duplicate detection |
+| Forms | Builder, public forms, drafts, attachments, PDF export, AI review |
+| Workflow (Preview) | Project and task workspace |
+| Exchange Rates | MAS sync and overrides |
+| Chart Of Accounts | Hierarchical accounts and external code mapping |
 
-### Implemented
+## Planned Modules
 
-| Module | Description |
-|--------|-------------|
-| Company Management | Companies, BizFile uploads, compliance |
-| Contact Management | Individual/corporate contacts |
-| Authentication | JWT-based auth with RBAC |
-| Multi-Tenancy | Tenant isolation with limits |
-| Audit Logging | Activity tracking |
-| User Management | Users, invitations, assignments |
-| Document Generation | Templates, PDF export, sharing |
-| Document Processing | AI extraction, revisions |
-| Exchange Rates | MAS API integration |
-| Chart of Accounts | Hierarchical accounts |
-
-### Planned
-
-| Module | Description |
-|--------|-------------|
-| Bank Reconciliation | Transaction matching |
-| Client Portal | Client access |
-| Accounting Integration | Xero, QuickBooks connectors |
+| Module | Notes |
+|--------|-------|
+| Bank Reconciliation | Transaction matching and review |
+| Client Portal | Client-facing access and requests |
+| Accounting Integration | Xero, QuickBooks, MYOB |

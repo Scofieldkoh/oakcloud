@@ -703,7 +703,6 @@ export async function emailPublicFormDraft(
   const email = recipientEmail.trim().toLowerCase();
   const { subject, html } = formDraftEmail({
     formTitle: form.title,
-    draftCode,
     resumeUrl,
   });
 
@@ -725,4 +724,3 @@ export async function cleanupExpiredFormDrafts(): Promise<number> {
 
   return deleteFormDraftsByIds(expiredDrafts.map((draft) => draft.id));
 }
-

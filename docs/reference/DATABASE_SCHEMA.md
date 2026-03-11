@@ -1,6 +1,6 @@
 # Oakcloud Database Schema
 
-> **Last Updated**: 2025-01-15
+> **Last Updated**: 2026-03-11
 > **Audience**: Developers
 
 This document provides a detailed reference for the Oakcloud database schema.
@@ -22,6 +22,11 @@ Oakcloud implements a multi-tenant architecture where data is isolated by tenant
 - **DeadlineTemplates** - `tenantId` (optional, null for system templates)
 - **Deadlines** - `tenantId` (required)
 - **Documents** - `tenantId` (required)
+- **Forms** - `tenantId` (required)
+- **FormFields** - `tenantId` (required)
+- **FormSubmissions** - `tenantId` (required)
+- **FormDrafts** - `tenantId` (required)
+- **FormUploads** - `tenantId` (required)
 - **AuditLogs** - `tenantId` (optional, for system-level events)
 - **Roles** - `tenantId` (optional, null for global SUPER_ADMIN role)
 
@@ -1561,6 +1566,175 @@ Auto-save storage for document editing.
 
 ---
 
+### forms
+
+Top-level form definitions for the Forms module.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants |
+| title | VARCHAR | No | Form title |
+| description | TEXT | Yes | Public/internal description |
+| slug | VARCHAR | No | Public slug (unique) |
+| status | ENUM | No | `DRAFT`, `PUBLISHED`, `ARCHIVED` |
+| tags | TEXT[] | No | Freeform tags |
+| settings | JSONB | Yes | Builder settings payload |
+| views_count | INT | No | Denormalized public view counter |
+| submissions_count | INT | No | Denormalized completed submission counter |
+| created_by_id | UUID | Yes | FK to users |
+| updated_by_id | UUID | Yes | FK to users |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Notes:**
+
+- `settings` stores response-table configuration, notification recipients, draft settings, AI settings, PDF filename template, i18n configuration, and branding toggles such as `hideLogo` and `hideFooter`.
+- Public forms are served only when `status = PUBLISHED` and `deleted_at IS NULL`.
+
+**Indexes:**
+
+- `forms_tenant_id_status_deleted_at_idx` on (tenant_id, status, deleted_at)
+- `forms_tenant_id_created_at_idx` on (tenant_id, created_at)
+- `forms_slug_key` UNIQUE on slug
+- `forms_slug_idx` on slug
+
+---
+
+### form_fields
+
+Field definitions belonging to a form.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| form_id | UUID | No | FK to forms |
+| tenant_id | UUID | No | FK to tenants |
+| type | ENUM | No | Field type (`SHORT_TEXT`, `FILE_UPLOAD`, `PAGE_BREAK`, etc.) |
+| label | VARCHAR | Yes | Field label |
+| field_key | VARCHAR | No | Stable answer key unique within a form |
+| placeholder | VARCHAR | Yes | Placeholder text |
+| subtext | TEXT | Yes | Supporting text shown under the field |
+| help_text | TEXT | Yes | Optional help / tooltip content |
+| input_type | VARCHAR | Yes | Subtype such as `email`, `date`, `info_image`, `repeat_start` |
+| options | JSONB | Yes | Choice options for select/radio/checkbox fields |
+| validation | JSONB | Yes | Validation settings, upload settings, repeat config, info-block config |
+| condition | JSONB | Yes | Conditional visibility rule |
+| is_required | BOOLEAN | No | Required flag |
+| hide_label | BOOLEAN | No | Hide visible label in the renderer |
+| is_read_only | BOOLEAN | No | Read-only field flag |
+| layout_width | INT | No | Grid width token (`25`, `33`, `50`, `66`, `75`, `100`) |
+| position | INT | No | Order within the form |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Indexes:**
+
+- `form_fields_form_id_field_key_key` UNIQUE on (form_id, field_key)
+- `form_fields_form_id_position_idx` on (form_id, position)
+- `form_fields_tenant_id_form_id_idx` on (tenant_id, form_id)
+
+---
+
+### form_submissions
+
+Completed or flagged form responses.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| form_id | UUID | No | FK to forms |
+| tenant_id | UUID | No | FK to tenants |
+| status | ENUM | No | `COMPLETED`, `PARTIAL`, `SPAM` |
+| respondent_name | VARCHAR | Yes | Optional captured respondent name |
+| respondent_email | VARCHAR | Yes | Optional captured respondent email |
+| answers | JSONB | No | Submitted answer payload keyed by field key |
+| metadata | JSONB | Yes | Submission metadata, including AI review payload when present |
+| ai_review_status | VARCHAR | Yes | Queue / processing status mirror for internal review |
+| has_unresolved_ai_warning | BOOLEAN | No | Fast filter for unresolved AI warning state |
+| submitted_at | TIMESTAMP | No | Submission timestamp |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+**Indexes:**
+
+- `form_submissions_form_id_submitted_at_idx` on (form_id, submitted_at)
+- `form_submissions_tenant_id_submitted_at_idx` on (tenant_id, submitted_at)
+- `idx_form_submissions_ai_review_status` on (ai_review_status)
+- `idx_form_submissions_unresolved_warning` on (tenant_id, has_unresolved_ai_warning)
+- `idx_form_submissions_deleted_at` partial index on (deleted_at) where `deleted_at IS NULL`
+
+---
+
+### form_drafts
+
+Saved in-progress public form responses.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| code | VARCHAR | No | Short public draft code |
+| access_token_hash | VARCHAR | No | SHA-256 hash of the draft access token |
+| form_id | UUID | No | FK to forms |
+| tenant_id | UUID | No | FK to tenants |
+| answers | JSONB | No | Saved answer payload |
+| metadata | JSONB | Yes | Draft metadata such as locale and repeat-section counts |
+| expires_at | TIMESTAMP | No | Expiry timestamp |
+| last_saved_at | TIMESTAMP | No | Last save time |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+
+**Notes:**
+
+- Public resume requires both `code` and the unhashed access token.
+- Expired drafts are cleaned up by the general cleanup task.
+
+**Indexes:**
+
+- `form_drafts_code_key` UNIQUE on code
+- `form_drafts_access_token_hash_key` UNIQUE on access_token_hash
+- `form_drafts_form_id_expires_at_idx` on (form_id, expires_at)
+- `form_drafts_tenant_id_expires_at_idx` on (tenant_id, expires_at)
+- `form_drafts_last_saved_at_idx` on (last_saved_at)
+
+---
+
+### form_uploads
+
+Files uploaded during public form save or submission flows.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants |
+| form_id | UUID | No | FK to forms |
+| draft_id | UUID | Yes | FK to form_drafts |
+| submission_id | UUID | Yes | FK to form_submissions |
+| field_id | UUID | Yes | FK to form_fields |
+| storage_key | VARCHAR | No | Object storage key |
+| file_name | VARCHAR | No | Stored or rendered file name |
+| original_file_name | VARCHAR | Yes | Original client-side file name |
+| mime_type | VARCHAR | No | MIME type |
+| size_bytes | INT | No | File size in bytes |
+| created_at | TIMESTAMP | No | Record creation time |
+
+**Notes:**
+
+- Uploads are stored under `{tenantId}/forms/{formId}/uploads/{uploadId}{ext}`.
+- Draft uploads can later be linked to a submission when the form is submitted.
+
+**Indexes:**
+
+- `form_uploads_draft_id_idx` on (draft_id)
+- `form_uploads_form_id_created_at_idx` on (form_id, created_at)
+- `form_uploads_form_id_submission_id_idx` on (form_id, submission_id)
+- `form_uploads_submission_id_idx` on (submission_id)
+- `form_uploads_tenant_id_form_id_idx` on (tenant_id, form_id)
+
+---
+
 ### template_partials
 
 Reusable template blocks (Phase 7 feature).
@@ -1604,6 +1778,37 @@ Chat history for AI assistant (Phase 7 feature).
 - `ai_conversations_context_type_context_id_idx` on (context_type, context_id)
 
 ---
+
+## Forms Module Enums
+
+### FormStatus
+```sql
+DRAFT           -- Builder draft, not public
+PUBLISHED       -- Public form is available
+ARCHIVED        -- No longer active
+```
+
+### FormFieldType
+```sql
+SHORT_TEXT
+LONG_TEXT
+SINGLE_CHOICE
+MULTIPLE_CHOICE
+DROPDOWN
+FILE_UPLOAD
+SIGNATURE
+PARAGRAPH
+HTML
+PAGE_BREAK
+HIDDEN
+```
+
+### FormSubmissionStatus
+```sql
+COMPLETED
+PARTIAL
+SPAM
+```
 
 ## Document Generation Module Enums
 

@@ -1,135 +1,141 @@
 # Oakcloud - Practice Management System
 
-> **Last Updated**: 2026-02-21
+> **Last Updated**: 2026-03-11
 
-A modular internal management system designed for accounting practices. Clean, efficient, and runs completely locally.
+Oakcloud is a modular practice management system for accounting firms. It is local-first, multi-tenant, and now includes a full Forms module for internal builders and public submissions.
 
 ## Documentation
 
-📚 **[Documentation Index](./INDEX.md)** - Start here for navigation to all docs
+Start with [Documentation Index](./INDEX.md) for the current docs map.
 
 ### Quick Links
-- [Getting Started](./GETTING_STARTED.md) - Installation and setup
-- [Architecture](./ARCHITECTURE.md) - System design overview
-- [TODO / Roadmap](./TODO.md) - Issues and planned features
+
+- [Getting Started](./GETTING_STARTED.md) - Local setup and first run
+- [Architecture](./ARCHITECTURE.md) - Runtime design, modules, and service layout
+- [TODO / Roadmap](./TODO.md) - Known issues and planned work
 
 ### Guides
-- [RBAC Guideline](./guides/RBAC_GUIDELINE.md) - Authentication and permissions
+
+- [RBAC Guideline](./guides/RBAC_GUIDELINE.md) - Roles, permissions, multi-tenancy
 - [Design Guideline](./guides/DESIGN_GUIDELINE.md) - UI components and styling
-- [Keyboard Shortcuts](./guides/KEYBOARD_SHORTCUTS.md) - Standard shortcut mappings across modules
-- [Service Patterns](./guides/SERVICE_PATTERNS.md) - Service layer conventions
+- [Keyboard Shortcuts](./guides/KEYBOARD_SHORTCUTS.md) - Shared shortcut patterns
+- [Service Patterns](./guides/SERVICE_PATTERNS.md) - Service-layer conventions
 - [Audit Logging](./guides/AUDIT_LOGGING.md) - Activity tracking
 
 ### Reference
-- [Database Schema](./reference/DATABASE_SCHEMA.md) - All tables and relationships
-- [API Reference](./reference/API_REFERENCE.md) - REST API endpoints
-- [Environment Variables](./reference/ENVIRONMENT_VARIABLES.md) - Configuration options
 
-### Feature Specifications
-- [Document Generation](./features/document-generation/) - Templates, PDF export, sharing
-- [Document Processing](./features/document-processing/) - AI extraction, revisions
+- [Database Schema](./reference/DATABASE_SCHEMA.md) - Tables, relationships, indexes, enums
+- [API Reference](./reference/API_REFERENCE.md) - Authenticated and public API routes
+- [Environment Variables](./reference/ENVIRONMENT_VARIABLES.md) - Runtime configuration
 
-### Debug
-- [AI Debug](./debug/AI_DEBUG.md) - AI extraction debugging
+### Feature And Rollout Docs
 
----
+- [AI Helpbot Specification](./features/ai-helpbot/SPECIFICATION.md) - Current feature specification under `docs/features/`
+- [Forms Improvements](./plans/2026-03-04-forms-improvements.md) - Main Forms rollout plan
+- [Form Submission PDF Redesign](./plans/2026-03-09-form-submission-pdf-redesign.md) - Public and internal response PDF export
+- [Resume Draft UI Implementation](./plans/2026-03-09-resume-draft-ui-implementation.md) - Draft save and resume flow
+- [Forms Implementation Review](./plans/2026-03-10-forms-implementation-review.md) - Post-implementation review and hardening notes
 
 ## Overview
 
-Oakcloud is a local-first, modular system for managing accounting practice operations:
+Oakcloud is built around a few core principles:
 
-- **Modularity**: Each feature is a separate module
-- **Local-first**: All data stays on your infrastructure
-- **Clean Design**: Linear.app-inspired theme with light/dark mode
-- **Efficiency**: Fast, responsive UI with optimized queries
+- **Modular**: Business capabilities are split into focused modules and services
+- **Local-first**: Your data stays on your infrastructure
+- **Multi-tenant**: Tenant scoping is enforced across app, API, and data layers
+- **Operational**: The app includes document workflows, forms, AI-assisted processing, and auditability
 
----
+## Implemented Modules
 
-## Modules
-
-### Implemented ✅
 | Module | Description |
 |--------|-------------|
 | Company Management | Companies, BizFile uploads, compliance tracking |
 | Contact Management | Individual and corporate contacts |
-| Authentication | JWT-based with role-based access |
-| Multi-Tenancy | Full tenant isolation with limits |
-| Audit Logging | Activity tracking with request context |
-| RBAC & Permissions | Fine-grained role-based access control |
-| User Management | Accounts, invitations, multi-company assignments |
-| Password Management | Reset flow, force change on first login |
-| Data Purge | Permanent deletion (SUPER_ADMIN) |
-| Backup & Restore | Per-tenant backup (SUPER_ADMIN) |
-| Email Notifications | SMTP-based transactional emails |
+| Authentication | JWT-based auth with tenant-aware sessions |
+| Multi-Tenancy | Tenant isolation with limits and SUPER_ADMIN scoping |
+| Audit Logging | Activity tracking with reasons and change sources |
+| RBAC And Permissions | Fine-grained access control |
+| User Management | Accounts, invitations, assignments |
+| Password Management | Reset flow and forced password changes |
+| Data Purge | Permanent deletion for SUPER_ADMIN workflows |
+| Backup And Restore | Per-tenant backups |
+| Email Notifications | Graph API or SMTP delivery |
 | Connectors Hub | External service integrations |
 | Document Generation | Templates, PDF export, sharing, comments |
 | Document Processing | AI-powered ingestion, extraction, revisions |
-| Exchange Rates | MAS API integration, manual overrides |
-| Chart of Accounts | Hierarchical accounts, platform mapping |
-| Workflow (Preview) | Project list and project detail task workspace with editable groupings, quick actions, automations, task document attachments, and API-backed live data |
+| Forms | Builder, public links, drafts, uploads, PDF export, response review, AI review |
+| Exchange Rates | MAS API integration and manual overrides |
+| Chart Of Accounts | Hierarchical accounts and external mapping |
+| Workflow (Preview) | Project list and project detail workspace with live API-backed data |
 
-### Planned 🔜
+## Planned Modules
+
 | Module | Description |
 |--------|-------------|
-| Bank Reconciliation | Transaction matching, multi-currency |
-| Client Portal | Client access, document requests |
+| Bank Reconciliation | Transaction matching and multi-currency support |
+| Client Portal | Client access and document requests |
 | Accounting Integration | Xero, QuickBooks, MYOB connectors |
 | Module Marketplace | Browse and install modules |
-| SuperAdmin Dashboard | System administration |
+| SuperAdmin Dashboard | System administration workflows |
 
----
-
-## Quick Start
+## Local Development Quick Start
 
 ```bash
 # 1. Install dependencies
 npm install
 
-# 2. Set up environment
+# 2. Copy environment file
 cp .env.example .env
 
-# 3. Start data services (PostgreSQL, MinIO) — persists in ./docker-data/
+# 3. Start PostgreSQL + MinIO
 npm run docker:db:up
 
-# 4. Start app services (Redis, etc.)
-npm run docker:up
+# 4. Generate client, push schema, and seed
+npm run db:generate
+npm run db:push
+npm run db:seed
 
-# 5. Initialize database
-npm run db:generate && npm run db:push && npm run db:seed
-
-# 6. Start development server
+# 5. Start the local Next.js dev server
 npm run dev
 ```
 
-**Access:**
-- Frontend: http://localhost:3000
-- MinIO Console: http://localhost:9001 (`oakcloud` / `Preparefortrouble!`)
+If you use the bundled MinIO stack from `oakcloud_db.yml`, set these values in your local `.env` before starting the app:
 
-**Default Login:**
+```env
+S3_ENDPOINT="http://localhost:9000"
+S3_ACCESS_KEY="oakcloud"
+S3_SECRET_KEY="Preparefortrouble!"
+S3_BUCKET="oakcloud"
+```
+
+**Access**
+
+- Frontend: `http://localhost:3000`
+- MinIO API: `http://localhost:9000`
+- MinIO Console: `http://localhost:9001`
+
+**Default Login**
+
 - Super Admin: `admin@oaktreesolutions.com.sg` / `Preparefortrouble!`
 
-> See [Getting Started](./GETTING_STARTED.md) for detailed instructions.
+**Local MinIO Console Login**
 
----
+- Username: `oakcloud`
+- Password: `Preparefortrouble!`
+
+`npm run docker:up` starts the containerized app stack from `docker-compose.yml` and is optional for local development. Do not run it at the same time as `npm run dev` unless you intentionally want the app running in Docker on port `3000`.
 
 ## Tech Stack
 
 | Layer | Technologies |
 |-------|--------------|
-| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS, Chakra UI 3 |
+| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS, Chakra UI |
 | State | Zustand, TanStack Query, React Hook Form |
 | Backend | Node.js 20, PostgreSQL 16, Prisma 7 |
-| Auth | JWT (jose), Argon2id (@noble/hashes) |
-| AI | OpenAI, Anthropic, Google Generative AI |
-| Storage | MinIO (S3-compatible), AWS SDK |
-| Infra | Docker Compose, Redis |
+| Auth | JWT (`jose`), Argon2id (`@noble/hashes`) |
+| AI | OpenAI, Anthropic, Google AI, OpenRouter |
+| Storage | MinIO / S3-compatible object storage |
+| Documents | TipTap, pdf-lib, Puppeteer |
+| Infra | Docker Compose, optional Redis, in-process scheduler |
 
-> See [Architecture](./ARCHITECTURE.md) for detailed breakdown.
-
----
-
-## Version History
-
-### Latest: v0.12.02
-
-See [TODO.md](./TODO.md) for current issues and planned features.
+Current package version: `0.1.0` (from [`package.json`](../package.json)).

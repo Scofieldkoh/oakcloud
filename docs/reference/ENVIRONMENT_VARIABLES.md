@@ -1,16 +1,14 @@
 # Environment Variables
 
-> **Last Updated**: 2025-01-12
-> **Audience**: Developers, Administrators
+> **Last Updated**: 2026-03-11
+> **Audience**: Developers, administrators
 
-Configuration options for the Oakcloud application.
+Configuration options for Oakcloud.
 
 ## Related Documents
 
-- [Getting Started](../GETTING_STARTED.md) - Installation and setup
-- [Architecture](../ARCHITECTURE.md) - System design overview
-
----
+- [Getting Started](../GETTING_STARTED.md) - Local setup and first run
+- [Architecture](../ARCHITECTURE.md) - Runtime design overview
 
 ## Quick Reference
 
@@ -18,236 +16,193 @@ Configuration options for the Oakcloud application.
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `JWT_SECRET` | Yes | Secret for JWT signing |
-| `ENCRYPTION_KEY` | Yes | 32+ char key for data encryption |
-| `OPENAI_API_KEY` | No | OpenAI API key for AI features |
-
----
+| `ENCRYPTION_KEY` | Yes | 32+ character key for application encryption |
+| `DEFAULT_AI_MODEL` | No | Default model used by AI-backed features |
+| `FORM_RESPONSE_TOKEN_SECRET` | No | Secret for signed public form PDF tokens; falls back to `JWT_SECRET` if omitted |
 
 ## Database
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DATABASE_URL` | - | PostgreSQL connection string |
-| `DATABASE_SSL` | `true` (prod) | Enable SSL for database connections |
+| `DATABASE_SSL` | `true` in production | Enable SSL for database connections unless explicitly disabled |
 
-**Example:**
-```
+Example:
+
+```env
 DATABASE_URL="postgresql://oakcloud:oakcloud_password@localhost:5433/oakcloud?schema=public"
 ```
-
-For production with SSL (auto-enabled in production):
-```
-DATABASE_URL="postgresql://user:pass@host:5432/db"
-# SSL is enabled automatically in production
-# Set DATABASE_SSL=false to disable if using local DB in production
-```
-
----
 
 ## Authentication
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `JWT_SECRET` | - | Secret key for JWT signing (required) |
-| `JWT_EXPIRES_IN` | `7d` | Token expiration time |
+| `JWT_SECRET` | - | Secret used for JWT signing |
+| `JWT_EXPIRES_IN` | `7d` | Auth token lifetime |
 
-**Security**: Use a long random string for `JWT_SECRET`. Generate with:
-```bash
-openssl rand -base64 48
-```
-
----
+Use a long random value for `JWT_SECRET`.
 
 ## AI Providers
 
-Configure at least one provider for AI-powered features (BizFile extraction, document processing).
+These variables power AI-backed document processing, AI Helpbot flows, and Forms AI review / translation / context assist.
 
 | Variable | Description |
 |----------|-------------|
-| `OPENAI_API_KEY` | OpenAI API key (GPT models) |
-| `ANTHROPIC_API_KEY` | Anthropic API key (Claude models) |
-| `GOOGLE_AI_API_KEY` | Google AI API key (Gemini models) |
-| `DEFAULT_AI_MODEL` | Default model to use (optional) |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `ANTHROPIC_API_KEY` | Anthropic API key |
+| `GOOGLE_AI_API_KEY` | Google AI / Gemini API key |
+| `OPENROUTER_API_KEY` | OpenRouter API key |
+| `OPENROUTER_SITE_URL` | Referrer sent to OpenRouter |
+| `OPENROUTER_APP_NAME` | App title sent to OpenRouter |
+| `DEFAULT_AI_MODEL` | Default AI model ID |
 
-**Available Models:**
-- `gpt-5.2`, `gpt-4.1` (OpenAI)
-- `claude-opus-4.5`, `claude-sonnet-4.5` (Anthropic)
-- `gemini-3.1`, `gemini-3-flash` (Google)
+Common configured model IDs in the codebase include:
 
----
+- `gpt-5.2`
+- `gpt-4.1`
+- `claude-opus-4.5`
+- `claude-sonnet-4.5`
+- `gemini-3.1`
+- `gemini-3-flash`
 
 ## Application
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `NEXT_PUBLIC_APP_URL` | `https://service.oakcloud.app` | Public URL of the application |
-| `EMAIL_APP_URL` | `https://service.oakcloud.app` | Optional override for links generated in email templates |
-| `NODE_ENV` | `development` | Environment (`development` or `production`) |
-| `MAX_FILE_SIZE` | `10485760` | Max upload size in bytes (10MB) |
+| `NEXT_PUBLIC_APP_URL` | `https://service.oakcloud.app` | Public application base URL |
+| `EMAIL_APP_URL` | `NEXT_PUBLIC_APP_URL` when omitted | Override base URL used inside email templates |
+| `NODE_ENV` | `development` | Runtime mode |
+| `MAX_FILE_SIZE` | `10485760` | Max upload size in bytes for standard document and public form uploads |
+| `LOG_LEVEL` | `debug` in dev, `info` in prod | Logger verbosity |
 
----
+## Public Forms
 
-## Logging
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LOG_LEVEL` | `debug` (dev) / `info` (prod) | Logging verbosity |
-
-**Log Levels** (in order of verbosity):
-| Level | Description |
-|-------|-------------|
-| `silent` | No logging |
-| `error` | Only errors |
-| `warn` | Errors + warnings |
-| `info` | Standard logging (production default) |
-| `debug` | Include debug messages (development default) |
-| `trace` | Most verbose, includes SQL queries |
-
----
-
-## Storage (S3/MinIO)
+These variables control public form PDF token signing and download/email token lifetimes.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `STORAGE_PROVIDER` | `s3` | Storage provider (`s3` or `local`) |
-| `STORAGE_LOCAL_PATH` | `./uploads` | Local storage path (when provider=local) |
-| `S3_ENDPOINT` | - | S3/MinIO endpoint URL |
-| `S3_REGION` | `us-east-1` | S3 region |
+| `FORM_RESPONSE_TOKEN_SECRET` | Falls back to `SHARE_VERIFICATION_SECRET`, then `JWT_SECRET` | Secret for signed public form PDF tokens |
+| `FORM_RESPONSE_SUBMIT_DOWNLOAD_TOKEN_TTL_SECONDS` | `1800` | Initial PDF download token lifetime after public submission |
+| `FORM_RESPONSE_SUBMIT_EMAIL_REQUEST_TOKEN_TTL_SECONDS` | `1800` | Lifetime of the token that authorizes requesting a PDF email after submission |
+| `FORM_RESPONSE_EMAIL_LINK_TOKEN_TTL_SECONDS` | `604800` | Lifetime of the download token embedded in the emailed PDF link |
+
+Notes:
+
+- In production, `FORM_RESPONSE_TOKEN_SECRET` (or a secure fallback secret) must be at least 32 characters.
+- Public form draft resume uses per-draft access tokens stored in the database and does not use these env vars.
+
+## Storage
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `STORAGE_PROVIDER` | `s3` | Storage backend (`s3` or `local`) |
+| `STORAGE_LOCAL_PATH` | `./uploads` | Local storage path when `STORAGE_PROVIDER=local` |
+| `S3_ENDPOINT` | - | S3 or MinIO endpoint |
+| `S3_REGION` | `us-east-1` | Region |
 | `S3_BUCKET` | - | Bucket name |
 | `S3_ACCESS_KEY` | - | Access key |
 | `S3_SECRET_KEY` | - | Secret key |
-| `S3_FORCE_PATH_STYLE` | `true` | Use path-style URLs (required for MinIO) |
+| `S3_FORCE_PATH_STYLE` | `true` | Required for MinIO and other path-style endpoints |
 | `S3_USE_SSL` | `false` | Use HTTPS |
-| `S3_ENCRYPTION` | `AES256` | Server-side encryption |
-| `S3_KMS_KEY_ID` | - | KMS key ID (when encryption=aws:kms) |
+| `S3_ENCRYPTION` | `AES256` | Server-side encryption mode (`AES256`, `aws:kms`, `none`) |
+| `S3_KMS_KEY_ID` | - | Required when `S3_ENCRYPTION=aws:kms` |
 
-**MinIO Development Setup:**
-```
+Bundled local MinIO setup (`oakcloud_db.yml`):
+
+```env
 S3_ENDPOINT="http://localhost:9000"
 S3_BUCKET="oakcloud"
 S3_ACCESS_KEY="oakcloud"
-S3_SECRET_KEY="oakcloud_minio_secret"
+S3_SECRET_KEY="Preparefortrouble!"
 S3_FORCE_PATH_STYLE="true"
 S3_USE_SSL="false"
 ```
 
-**AWS S3 Production Setup:**
-```
-S3_ENDPOINT="https://s3.amazonaws.com"
-S3_FORCE_PATH_STYLE="false"
-S3_USE_SSL="true"
-S3_ENCRYPTION="AES256"
-```
-
----
-
 ## Email
 
-### Microsoft Graph API (Recommended for M365)
+Email is used for password reset, invitations, draft resume emails, and public form PDF delivery.
+
+### Microsoft Graph
 
 | Variable | Description |
 |----------|-------------|
-| `AZURE_TENANT_ID` | Azure AD tenant ID |
+| `AZURE_TENANT_ID` | Azure tenant ID |
 | `AZURE_CLIENT_ID` | App registration client ID |
 | `AZURE_CLIENT_SECRET` | App registration secret |
 | `EMAIL_FROM_ADDRESS` | Sender email address |
 | `EMAIL_FROM_NAME` | Sender display name |
 
-### SMTP (Fallback)
+### SMTP
 
 | Variable | Description |
 |----------|-------------|
-| `SMTP_HOST` | SMTP server hostname |
-| `SMTP_PORT` | SMTP port (usually 587) |
-| `SMTP_SECURE` | Use TLS (`true`/`false`) |
+| `SMTP_HOST` | SMTP hostname |
+| `SMTP_PORT` | SMTP port |
+| `SMTP_SECURE` | Use TLS (`true` / `false`) |
 | `SMTP_USER` | SMTP username |
 | `SMTP_PASSWORD` | SMTP password |
-
-**Common SMTP Examples:**
-
-Gmail:
-```
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-```
-
-Amazon SES:
-```
-SMTP_HOST="email-smtp.us-east-1.amazonaws.com"
-SMTP_PORT="587"
-```
-
-SendGrid:
-```
-SMTP_HOST="smtp.sendgrid.net"
-SMTP_PORT="587"
-SMTP_USER="apikey"
-```
-
----
 
 ## Encryption
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ENCRYPTION_KEY` | - | 32+ char key for encrypting sensitive data |
+| `ENCRYPTION_KEY` | - | 32+ character key used for encrypting sensitive application data |
 
-**Required** for encrypting API keys and credentials. Generate with:
+Generate a value with:
+
 ```bash
 openssl rand -hex 32
 ```
 
----
-
 ## Task Scheduler
 
+The in-process scheduler is started by the app and can be configured per task.
+
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SCHEDULER_ENABLED` | `true` | Enable built-in task scheduler |
-| `SCHEDULER_BACKUP_ENABLED` | `true` | Enable backup task |
-| `SCHEDULER_BACKUP_CRON` | `0,15,30,45 * * * *` | Backup check frequency |
-| `SCHEDULER_CLEANUP_ENABLED` | `true` | Enable cleanup task |
-| `SCHEDULER_CLEANUP_CRON` | `0 2 * * *` | Cleanup schedule (daily 2 AM) |
+| `SCHEDULER_ENABLED` | `true` | Master switch for the scheduler |
+| `SCHEDULER_BACKUP_ENABLED` | `true` | Enable backup processing |
+| `SCHEDULER_BACKUP_CRON` | `0,15,30,45 * * * *` | Backup polling cadence |
+| `SCHEDULER_CLEANUP_ENABLED` | `true` | Enable cleanup processing |
+| `SCHEDULER_CLEANUP_CRON` | `0 2 * * *` | Cleanup schedule |
 | `SCHEDULER_FORM_AI_REVIEW_ENABLED` | `true` | Enable queued form AI review processing |
-| `SCHEDULER_FORM_AI_REVIEW_CRON` | `*/2 * * * *` | Form AI review queue polling interval |
+| `SCHEDULER_FORM_AI_REVIEW_CRON` | `*/2 * * * *` | Form AI review polling interval |
+| `SCHEDULER_FORM_COUNT_RECONCILIATION_ENABLED` | `false` unless set | Enable form submission count reconciliation |
+| `SCHEDULER_FORM_COUNT_RECONCILIATION_CRON` | `0 3 * * 0` | Reconciliation schedule |
 
-### Backup Settings
+Backup-related settings:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BACKUP_DEFAULT_RETENTION_DAYS` | `30` | Days to keep backups |
-| `BACKUP_DEFAULT_MAX_BACKUPS` | `10` | Max scheduled backups per tenant |
-| `BACKUP_STALE_THRESHOLD_MINUTES` | `60` | Mark in-progress as failed after |
+| `BACKUP_DEFAULT_RETENTION_DAYS` | `30` | Default retention period |
+| `BACKUP_DEFAULT_MAX_BACKUPS` | `10` | Default max scheduled backups per tenant |
+| `BACKUP_STALE_THRESHOLD_MINUTES` | `60` | Threshold for marking an in-progress backup as stale |
 
----
+Optional external cron auth:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CRON_SECRET` | - | Shared secret for externally triggered cron endpoints when used |
+
+## Tunnel / Docker
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CLOUDFLARE_TUNNEL_TOKEN` | - | Token used by the optional `cloudflared` container in `docker-compose.yml` |
 
 ## AI Debug
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `AI_DEBUG` | `false` | Enable AI debug logging |
-| `AI_DEBUG_LOG_PROMPTS` | `true` | Include prompts in logs |
-| `AI_DEBUG_LOG_RESPONSES` | `true` | Include responses in logs |
-| `AI_DEBUG_LOG_IMAGES` | `false` | Include image metadata |
-
-See [AI Debug Guide](../debug/AI_DEBUG.md) for details.
-
----
+| `AI_DEBUG_LOG_PROMPTS` | `true` | Include prompts in debug logs |
+| `AI_DEBUG_LOG_RESPONSES` | `true` | Include responses in debug logs |
+| `AI_DEBUG_LOG_IMAGES` | `false` | Include image metadata in debug logs |
 
 ## Production Checklist
 
-1. **Security**
-   - `NODE_ENV="production"`
-   - Strong `JWT_SECRET` (48+ chars)
-   - Strong `ENCRYPTION_KEY` (32+ chars)
-
-2. **Storage**
-   - `S3_USE_SSL="true"`
-   - `S3_ENCRYPTION="AES256"`
-   - `S3_FORCE_PATH_STYLE="false"` (for AWS)
-
-3. **Database**
-   - Use SSL: `?sslmode=require`
-
-4. **Logging**
-   - `LOG_LEVEL="info"` (not debug/trace)
+1. Set `NODE_ENV="production"`.
+2. Use strong values for `JWT_SECRET`, `FORM_RESPONSE_TOKEN_SECRET`, and `ENCRYPTION_KEY`.
+3. Enable secure storage settings (`S3_USE_SSL="true"`, `S3_ENCRYPTION="AES256"` or `aws:kms`).
+4. Use a production database connection string and keep `DATABASE_SSL` enabled unless you have a reason not to.
+5. Configure email before relying on invitation, reset, or Forms email flows.

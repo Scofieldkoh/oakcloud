@@ -1,90 +1,64 @@
 # Oakcloud Documentation
 
-> **Last Updated**: 2026-02-05
-> Central navigation for all Oakcloud documentation.
-
----
+> **Last Updated**: 2026-03-11
+> Central navigation for the current Oakcloud documentation set.
 
 ## Quick Start
 
 | Document | Description |
 |----------|-------------|
-| [Getting Started](./GETTING_STARTED.md) | Installation, setup, and first run |
-| [Architecture](./ARCHITECTURE.md) | System design and tech stack |
-| [README](./README.md) | Project overview and module list |
-
----
+| [Getting Started](./GETTING_STARTED.md) | Local setup, data services, and first run |
+| [Architecture](./ARCHITECTURE.md) | Runtime design, modules, and service layout |
+| [README](./README.md) | Project overview and implemented modules |
 
 ## Guides
-
-Development guidelines and best practices.
 
 | Guide | Description |
 |-------|-------------|
 | [RBAC Guideline](./guides/RBAC_GUIDELINE.md) | Authentication, roles, permissions, multi-tenancy |
 | [Design Guideline](./guides/DESIGN_GUIDELINE.md) | UI components, styling, responsive patterns |
-| [Keyboard Shortcuts](./guides/KEYBOARD_SHORTCUTS.md) | Standard shortcut mappings across modules |
-| [Service Patterns](./guides/SERVICE_PATTERNS.md) | Service layer architecture and conventions |
+| [Keyboard Shortcuts](./guides/KEYBOARD_SHORTCUTS.md) | Shared shortcut mappings across modules |
+| [Service Patterns](./guides/SERVICE_PATTERNS.md) | Service-layer architecture and conventions |
+| [Staging & Deployment](./guides/STAGING_DEPLOYMENT.md) | Two-environment workflow for self-hosted Docker deployments |
 | [Audit Logging](./guides/AUDIT_LOGGING.md) | Activity tracking and change logging |
-
----
 
 ## Reference
 
-Technical reference documentation.
-
 | Reference | Description |
 |-----------|-------------|
-| [Database Schema](./reference/DATABASE_SCHEMA.md) | All tables, relationships, and indexes |
-| [API Reference](./reference/API_REFERENCE.md) | REST API endpoints with examples |
-| [Environment Variables](./reference/ENVIRONMENT_VARIABLES.md) | Configuration options |
-
----
+| [Database Schema](./reference/DATABASE_SCHEMA.md) | Tables, relationships, indexes, enums |
+| [API Reference](./reference/API_REFERENCE.md) | Authenticated and public API routes |
+| [Environment Variables](./reference/ENVIRONMENT_VARIABLES.md) | Runtime and deployment configuration |
 
 ## Feature Specifications
 
-Detailed design documents for major features.
+| Document | Description |
+|----------|-------------|
+| [AI Helpbot Specification](./features/ai-helpbot/SPECIFICATION.md) | Current feature specification under `docs/features/` |
 
-### Document Generation
-Templates, PDF export, sharing, and workflow integration.
+## Forms Rollout Docs
+
+The Forms module does not yet have a single stable spec file under `docs/features/`. The current implementation history lives in these rollout docs:
 
 | Document | Description |
 |----------|-------------|
-| [Overview](./features/document-generation/OVERVIEW.md) | Goals, architecture, key capabilities |
-| [Schema](./features/document-generation/SCHEMA.md) | Database tables and relationships |
-| [API](./features/document-generation/API.md) | API endpoints |
-| [UI](./features/document-generation/UI.md) | UI components and patterns |
-| [Implementation](./features/document-generation/IMPLEMENTATION.md) | Phases and implementation notes |
-
-### Document Processing
-AI-powered ingestion, extraction, revisions, and duplicate detection.
-
-| Document | Description |
-|----------|-------------|
-| [Overview](./features/document-processing/OVERVIEW.md) | Goals, definitions, multi-tenancy |
-| [Schema](./features/document-processing/SCHEMA.md) | Database tables and relationships |
-| [API](./features/document-processing/API.md) | API endpoints |
-| [UI](./features/document-processing/UI.md) | UI components and patterns |
-| [Extraction](./features/document-processing/EXTRACTION.md) | AI extraction and classification |
-| [Appendices](./features/document-processing/APPENDICES.md) | Error codes, state diagrams, validation |
-
----
+| [Forms Improvements](./plans/2026-03-04-forms-improvements.md) | Main implementation plan for the Forms module |
+| [Form Submission PDF Redesign](./plans/2026-03-09-form-submission-pdf-redesign.md) | HTML-to-PDF export for form responses |
+| [Resume Draft UI Implementation](./plans/2026-03-09-resume-draft-ui-implementation.md) | Public draft resume and email flow |
+| [Forms Implementation Review](./plans/2026-03-10-forms-implementation-review.md) | Security, performance, and logic review |
 
 ## Other
 
 | Document | Description |
 |----------|-------------|
-| [TODO / Roadmap](./TODO.md) | Known issues and planned features |
-| [AI Debug](./debug/AI_DEBUG.md) | AI extraction debugging guide |
-
----
+| [TODO / Roadmap](./TODO.md) | Known issues, roadmap, and completed work |
+| [AI Debug](./debug/AI_DEBUG.md) | AI debugging guide, including form review traces |
 
 ## For AI Assistants
 
-When working with this codebase:
+When working in this repo:
 
-1. **Start here** - Use this index to find relevant documentation
-2. **RBAC first** - Check [RBAC Guideline](./guides/RBAC_GUIDELINE.md) for permission patterns
-3. **Design compliance** - Follow [Design Guideline](./guides/DESIGN_GUIDELINE.md) for UI work
-4. **Service patterns** - Use [Service Patterns](./guides/SERVICE_PATTERNS.md) for backend logic
-5. **Check TODO** - Review [TODO.md](./TODO.md) for known issues before implementing
+1. Start with this index.
+2. Check [RBAC Guideline](./guides/RBAC_GUIDELINE.md) before changing protected routes or permissions.
+3. Use [Service Patterns](./guides/SERVICE_PATTERNS.md) for backend work and [Design Guideline](./guides/DESIGN_GUIDELINE.md) for UI changes.
+4. Use the Forms rollout docs above for historical implementation context until a dedicated Forms feature spec exists.
