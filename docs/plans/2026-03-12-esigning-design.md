@@ -841,7 +841,7 @@ The existing `signature-pad.tsx` needs enhancement:
 | `react-pdf` (wraps pdf.js) | Client-side PDF rendering for preparation and signing views |
 | `pdf-lib` (existing) | Server-side signed PDF assembly, signature embedding, certificate ID stamping |
 | Signature pad upgrades | Draw/type/upload signature capture |
-| Google Fonts (Dancing Script, Pinyon Script, Caveat) | Typed signature rendering |
+| Self-hosted handwriting fonts (Dancing Script, Pinyon Script, Caveat) | Typed signature rendering (no external CDN dependency) |
 
 ---
 
