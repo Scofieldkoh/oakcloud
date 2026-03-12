@@ -16,6 +16,10 @@ A standalone e-signing module for Oakcloud, enabling accounting firms to send do
 - **Coordinate-based field positioning** — percentage-based coordinates stored in DB, decoupled from rendering
 - **Per-document certificates** — Dropbox Sign-style visual timeline appended to each signed PDF
 - **Certificate ID watermark** — stamped on every page of every document
+- **Field definition/value split** — placement schema (immutable after send) separate from signer-entered values
+- **Session-based signing tokens** — link token exchanged for short-lived JWT session; raw tokens never stored
+- **Document hash chain** — SHA-256 hashes of original and signed PDFs stored for tamper verification
+- **DB-backed completion queue** — uses existing Oakcloud status-column queue pattern, not a separate job system
 
 ---
 
@@ -44,6 +48,9 @@ The top-level transaction entity.
 | voidedAt | DateTime? | When voided |
 | voidReason | Text? | Why it was voided |
 | pdfGenerationStatus | Enum? | PENDING, PROCESSING, COMPLETED, FAILED (null while not yet completed) |
+| pdfGenerationAttempts | Int | Retry count for failed generation (default 0) |
+| pdfGenerationError | Text? | Error details on failure |
+| consentVersion | String | Version of consent/disclosure text used (e.g., `1.0`) |
 | metadata | JSONB | Extensible data |
 | createdAt | DateTime | Created timestamp |
 | updatedAt | DateTime | Last modified |
@@ -59,19 +66,23 @@ The top-level transaction entity.
 | fileName | String | Original file name |
 | storagePath | String | MinIO/S3 path to original PDF |
 | signedStoragePath | String? | Path to final signed PDF (populated after completion) |
+| originalHash | String | SHA-256 hash of original uploaded PDF |
+| signedHash | String? | SHA-256 hash of final signed PDF (populated after completion) |
 | pageCount | Int | Number of pages |
 | sortOrder | Int | Display order within envelope |
 | fileSize | Int | File size in bytes |
 | createdAt | DateTime | Created timestamp |
 | updatedAt | DateTime | Last modified |
 
-### 1.3 DocumentField
+### 1.3 DocumentFieldDefinition
+
+Immutable field placement schema — defines where fields go on the document. Locked after the envelope is sent. This separation from values enables template reuse in future phases and ensures the evidence record of what was asked of the signer is independent of what they entered.
 
 | Field | Type | Purpose |
 |-------|------|---------|
 | id | UUID | Primary key |
-| tenantId | UUID | Multi-tenancy (denormalized for direct query filtering) |
-| envelopeId | UUID | FK to Envelope (denormalized for direct envelope-level queries) |
+| tenantId | UUID | Multi-tenancy (denormalized) |
+| envelopeId | UUID | FK to Envelope (denormalized for direct queries) |
 | documentId | UUID | FK to EnvelopeDocument |
 | recipientId | UUID | FK to EnvelopeRecipient (who fills this field) |
 | type | Enum | SIGNATURE, INITIALS, DATE_SIGNED, NAME, TEXT, CHECKBOX, COMPANY, TITLE |
@@ -83,8 +94,6 @@ The top-level transaction entity.
 | required | Boolean | Must be filled before signing |
 | label | String? | Optional label shown to signer |
 | placeholder | String? | Placeholder text for text fields |
-| value | Text? | Filled value (signature stored as storage path or data URL) |
-| filledAt | DateTime? | When this field was filled |
 | sortOrder | Int | Tab order for guided signing navigation |
 | createdAt | DateTime | Created timestamp |
 | updatedAt | DateTime | Last modified |
@@ -98,8 +107,31 @@ The top-level transaction entity.
 - Each SIGNER recipient must have at least one SIGNATURE or INITIALS field
 - Minimum field dimensions: 2% width, 1% height
 - `pageNumber` must be between 1 and the document's `pageCount`
+- No two fields may overlap (bounding-box intersection check, warning-only — sender can dismiss)
 
-### 1.4 EnvelopeRecipient
+### 1.4 DocumentFieldValue
+
+Mutable signer-entered data — one row per field definition per signing event.
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| id | UUID | Primary key |
+| tenantId | UUID | Multi-tenancy (denormalized) |
+| fieldDefinitionId | UUID | FK to DocumentFieldDefinition |
+| recipientId | UUID | FK to EnvelopeRecipient (who filled it) |
+| value | Text? | Filled value (text, date string, "true"/"false" for checkbox) |
+| signatureStoragePath | String? | For SIGNATURE/INITIALS: path to stored signature image |
+| filledAt | DateTime? | When this field was filled |
+| createdAt | DateTime | Created timestamp |
+| updatedAt | DateTime | Last modified |
+
+**Why the split matters:**
+- Field definitions are immutable after send — the evidence record of what was requested cannot be altered
+- Values can be partially saved (auto-save during signing) without modifying the definition
+- Corrections (name/email changes) don't affect field placements
+- Template reuse in future phases: copy definitions, create fresh value rows per signing instance
+
+### 1.5 EnvelopeRecipient
 
 | Field | Type | Purpose |
 |-------|------|---------|
@@ -110,10 +142,13 @@ The top-level transaction entity.
 | name | String | Recipient name |
 | email | String | Recipient email |
 | signingOrder | Int? | Position in sequence (null = parallel with others at same position) |
-| status | Enum | PENDING, SENT, VIEWED, SIGNED, DECLINED |
+| status | Enum | QUEUED, NOTIFIED, VIEWED, SIGNED, DECLINED |
 | accessMode | Enum | EMAIL_LINK, EMAIL_WITH_CODE, MANUAL_LINK |
-| accessToken | String | Unique token for signing URL (crypto random, 64 chars) |
+| accessTokenHash | String | SHA-256 hash of the access token (raw token never stored) |
 | accessCode | String? | Hashed PIN for this recipient (required when accessMode = EMAIL_WITH_CODE) |
+| consentedAt | DateTime? | When signer accepted the e-signature consent disclosure |
+| consentIp | String? | IP at consent time |
+| consentUserAgent | String? | Browser at consent time |
 | signedAt | DateTime? | When they completed signing |
 | viewedAt | DateTime? | First view timestamp |
 | declinedAt | DateTime? | When declined |
@@ -125,9 +160,23 @@ The top-level transaction entity.
 | createdAt | DateTime | Created timestamp |
 | updatedAt | DateTime | Last modified |
 
-**Access mode and code are per-recipient** — the envelope-level `accessMode` serves as the default when adding recipients, but each recipient stores their own `accessMode` and `accessCode`. This allows mixed access modes within a single envelope (e.g., one signer via email link, another via access code).
+**Access mode and code are per-recipient** — the UI provides a default access mode when adding recipients, but each recipient stores their own `accessMode` and `accessCode`. This allows mixed access modes within a single envelope.
 
-### 1.5 EnvelopeEvent (Audit Trail)
+**Recipient status semantics:**
+
+| Status | Meaning |
+|--------|---------|
+| QUEUED | Waiting for a prior signing group to complete (sequential/mixed only) |
+| NOTIFIED | Email sent (or manual link generated); awaiting signer action |
+| VIEWED | Signer has loaded the signing page |
+| SIGNED | Signer has completed all required fields and clicked Finish |
+| DECLINED | Signer declined to sign |
+
+For CC recipients: status stays QUEUED until envelope completes, then transitions directly to NOTIFIED when the completion email is sent.
+
+**Duplicate signers**: The same email address cannot appear twice as separate SIGNER recipients on the same envelope. Validated at send time. (A signer and a CC with the same email is allowed.)
+
+### 1.6 EnvelopeEvent (Audit Trail)
 
 | Field | Type | Purpose |
 |-------|------|---------|
@@ -135,21 +184,21 @@ The top-level transaction entity.
 | tenantId | UUID | Multi-tenancy (denormalized for direct query filtering) |
 | envelopeId | UUID | FK to Envelope |
 | recipientId | UUID? | FK to EnvelopeRecipient (null for sender actions) |
-| action | Enum | CREATED, SENT, VIEWED, SIGNED, DECLINED, VOIDED, CORRECTED, COMPLETED, REMINDER_SENT, EXPIRED |
+| action | Enum | CREATED, SENT, VIEWED, CONSENTED, SIGNED, DECLINED, VOIDED, CORRECTED, COMPLETED, REMINDER_SENT, EXPIRED, PDF_GENERATION_FAILED |
 | ipAddress | String? | Actor's IP |
 | userAgent | String? | Actor's browser |
-| metadata | JSONB | Additional context (correction details, decline reason, etc.) |
+| metadata | JSONB | Additional context (correction details, decline reason, consent version, etc.) |
 | createdAt | DateTime | When event occurred |
 
 **Dual audit logging**: `EnvelopeEvent` records the signer-facing timeline (appears on certificates). Sender-side operations (create, send, void, delete, correct) additionally write to the existing `AuditLog` system via `createAuditLog()` for RBAC-auditable admin logs.
 
-### 1.6 Envelope Lifecycle State Machine
+### 1.7 Envelope Lifecycle State Machine
 
 **Valid transitions:**
 
 | From | To | Trigger |
 |------|----|---------|
-| DRAFT | SENT | Sender clicks Send |
+| DRAFT | SENT | Sender clicks Send (after pre-send validation passes) |
 | DRAFT | *(deleted)* | Sender deletes draft |
 | SENT | IN_PROGRESS | First signer views or signs |
 | SENT | VOIDED | Sender voids |
@@ -162,33 +211,35 @@ The top-level transaction entity.
 Terminal states: **COMPLETED**, **DECLINED**, **VOIDED**, **EXPIRED**
 
 - **DRAFT**: Created, documents uploaded, fields placed, not yet sent
-- **SENT**: All recipients notified, awaiting first action
+- **SENT**: All recipients notified (or queued for sequential), awaiting first action
 - **IN_PROGRESS**: At least one signer has viewed or signed
-- **COMPLETED**: All signers signed; certificates generated; signed PDFs stored
+- **COMPLETED**: All signers signed; signed PDFs generated (or queued for generation)
 - **DECLINED**: A signer declined (stops the entire envelope)
 - **VOIDED**: Sender cancelled the envelope
 - **EXPIRED**: Past expiration date with incomplete signatures
 
-### 1.7 Signing Order Rules
+### 1.8 Signing Order Rules
 
 | Envelope `signingOrder` | Recipient `signingOrder` field | Behavior |
 |-------------------------|-------------------------------|----------|
-| PARALLEL | Ignored | All signers receive the envelope simultaneously |
-| SEQUENTIAL | Must be unique integers (1, 2, 3...) | Each signer must complete before the next is notified |
-| MIXED | Integer groups (1, 1, 2, 3, 3...) | Same number = parallel group; groups proceed sequentially |
+| PARALLEL | Ignored | All signers receive the envelope simultaneously; all start as NOTIFIED |
+| SEQUENTIAL | Must be unique integers (1, 2, 3...) | Each signer must complete before the next is notified; later signers start as QUEUED |
+| MIXED | Integer groups (1, 1, 2, 3, 3...) | Same number = parallel group; groups proceed sequentially; later groups start as QUEUED |
 
-The notification service determines whom to notify next: for SEQUENTIAL/MIXED, after a signer completes, check if all recipients at the current `signingOrder` value have signed, then notify the next group.
+The notification service determines whom to notify next: for SEQUENTIAL/MIXED, after a signer completes, check if all recipients at the current `signingOrder` value have signed, then transition the next group from QUEUED → NOTIFIED and send emails.
 
-### 1.8 Concurrency Control
+**Sequential group UI for sender**: The envelope detail view shows groups visually: "Group 1 (current) — Ray Client ✓, Sarah Director ●" / "Group 2 (waiting) — Admin CC". The "current" label indicates which group is actively signing.
+
+### 1.9 Concurrency Control
 
 With parallel signing, multiple signers may complete simultaneously. The completion flow must be safe:
 
 - **Atomic status transition**: The `complete` endpoint uses `UPDATE Envelope SET status = 'COMPLETED' WHERE id = ? AND status = 'IN_PROGRESS'` and checks affected rows. If 0 rows affected, the transition was already handled by another concurrent request.
 - **Prisma transaction**: The complete endpoint wraps field value saves + recipient status update + envelope status check in a single `prisma.$transaction()`.
 - **Idempotent completion**: If a signer's `complete` request arrives after the envelope is already COMPLETED, return success (their fields were already saved) without re-triggering PDF generation or emails.
-- **Background PDF generation**: The completion trigger immediately marks the envelope COMPLETED and returns a success response. PDF generation, emailing, and auto-filing are queued as a background task to avoid request timeouts. A `pdfGenerationStatus` field (PENDING, PROCESSING, COMPLETED, FAILED) on the Envelope tracks progress.
+- **DB-backed completion queue**: PDF generation uses the same status-column queue pattern as `form-ai.task.service.ts` — the `pdfGenerationStatus` field acts as the claim marker. The scheduler picks up PENDING envelopes, transitions to PROCESSING, and processes them. This works with the existing in-process scheduler without requiring new infrastructure.
 
-### 1.9 Certificate ID Format
+### 1.10 Certificate ID Format
 
 ```
 OAK-ES-20260310-8F3A2B4D-C7E1
@@ -199,6 +250,19 @@ OAK-ES-20260310-8F3A2B4D-C7E1
 - `8-char hex` — random (~4.3 billion combinations per day)
 - `4-char hex` — additional random entropy (total 48 bits randomness per day)
 - **Unique constraint** on `certificateId` in the database; retry with new random on collision
+
+### 1.11 Document Limits
+
+| Limit | Value | Rationale |
+|-------|-------|-----------|
+| Max file size per document | 25 MB | Practical upload limit |
+| Max pages per document | 100 | Client-side rendering performance |
+| Max total pages per envelope | 200 | Combined rendering + PDF assembly performance |
+| Max total envelope size | 100 MB | Storage + email attachment constraints |
+| Max documents per envelope | 20 | UX manageability |
+| Max recipients per envelope | 20 | UX manageability |
+
+Validated at upload time (per-document) and at send time (envelope totals).
 
 ---
 
@@ -213,9 +277,9 @@ Three-step flow:
 - Drag-and-drop zone + file picker for PDF uploads
 - Document list with reorder (drag handles), thumbnail preview, remove button
 - Supported formats: PDF only (Phase 1)
-- Max file size: 25 MB per file, no envelope size limit
-- **Upload validation**: check magic bytes (PDF header), parse with pdf-lib to extract page count, reject encrypted/password-protected PDFs, reject PDFs that fail to parse
+- **Upload validation**: check magic bytes (PDF header), parse with pdf-lib to extract page count, reject encrypted/password-protected PDFs, reject PDFs that fail to parse, enforce per-document size and page limits
 - Recipient form: name, email, type (Signer / CC)
+- **Duplicate email blocking**: same email cannot be added twice as SIGNER; UI shows inline error
 - Signing order toggle: Parallel (default) / Sequential / Mixed
 - For sequential/mixed: drag-to-reorder or number assignment; same number = parallel group
 - Each signer auto-assigned a distinct color (used in field placement UI)
@@ -261,6 +325,8 @@ Full-width layout with three zones:
 - Fields show recipient color, type icon, and label
 - Click field to select (shows resize handles for resizable types)
 - Drag to reposition
+- Multi-select: Shift+click or draw selection box → bulk move, bulk delete, alignment tools (align left/right/top/bottom, distribute evenly)
+- Copy/paste: Ctrl+C/V for selected fields (pastes at offset position)
 - Multi-document: tab bar to switch between documents
 - Zoom: 50%, 75%, 100% (default), 125%, 150%, Fit Width
 - Lazy page rendering: only visible pages + 1 buffer page
@@ -302,30 +368,98 @@ All field positions stored as percentages relative to page dimensions:
 
 - Summary: document list, recipient list with field count per signer
 - Preview button: renders document as signer would see it (per-recipient preview)
+- **Signed artifact preview**: shows what the final signed PDF will look like — watermark position, certificate page layout (rendered with placeholder data)
 - Envelope settings: expiration days, reminder frequency, reminder start delay, expiry warning days
 - Auto-file toggle with company selector (optional)
 - **Send** button (or **Get Link** for manual link mode)
+
+**Pre-send blocking validations:**
+
+| Check | Error |
+|-------|-------|
+| Every SIGNER has at least one SIGNATURE or INITIALS field | "Signer [name] has no signature fields assigned" |
+| Every SIGNER has at least one field of any type | "Signer [name] has no fields assigned" |
+| No recipients without email | "Recipient [name] is missing an email address" |
+| No duplicate signer emails | "[email] appears as a signer more than once" |
+| Sequential order has no gaps | "Signing order has a gap: group 1, 3 (missing 2)" |
+| All documents have at least one field | "Document [name] has no fields — remove it or add fields" |
+| Envelope is within limits | "Envelope exceeds [limit] — reduce documents or pages" |
+| Access code set for EMAIL_WITH_CODE recipients | "[name] requires an access code" |
 
 ---
 
 ## 3. Signing Experience (Public Signer View)
 
-### 3.1 Entry Flow
+### 3.1 Token & Session Model
+
+The link token in the email/URL is **not stored directly** on the recipient row. Instead:
+
+1. On send, a crypto-random 64-char token is generated
+2. `accessTokenHash` = SHA-256(token) is stored on `EnvelopeRecipient`
+3. The raw token is included in the email link / manual link URL
+4. On first load (`GET /api/esigning/sign/[token]`):
+   - Hash the incoming token, look up the recipient by `accessTokenHash`
+   - If `accessMode = EMAIL_WITH_CODE`, require code verification first
+   - Issue a short-lived **signing session JWT** (30 min TTL, renewable on activity) using the same `jose` library and pattern as `form-response-token.ts`
+   - JWT payload: `{ recipientId, envelopeId, scope: 'esigning_session' }`
+5. All subsequent signing API calls use the JWT in an HttpOnly cookie or Authorization header — not the link token
+6. Download endpoints for signed PDFs use separate short-lived JWTs (15 min TTL, scope: `esigning_download`)
+
+**Benefits**: The link token is a one-time use entry point. Even if logged in browser history, referrers, or forwarded to someone, the actual signing session is JWT-scoped and short-lived. The raw token is never stored server-side.
+
+### 3.2 Entry Flow
 
 ```
 Email link / manual link clicked
+  → Token exchange (hash lookup → issue session JWT)
   → Access gate (if applicable)
-      → EMAIL_LINK: no gate, direct access
-      → EMAIL_WITH_CODE: "Enter your access code" input screen
+      → EMAIL_LINK: no gate, session issued immediately
+      → EMAIL_WITH_CODE: "Enter your access code" → then session issued
       → MANUAL_LINK: no gate (code optional per recipient)
-  → Consent screen
-      → "I agree to use electronic records and signatures"
-      → Shows: sender name, tenant name, envelope title, document list
-      → [Continue] button
+  → Consent & disclosure screen
   → Signing view
 ```
 
-### 3.2 Signing View Layout
+### 3.3 Consent & Disclosure Screen
+
+Before signing, the signer must affirmatively consent to electronic records and signatures:
+
+```
+┌───────────────────────────────────────────────┐
+│  Electronic Signature Disclosure               │
+│                                                │
+│  [Sender Name] from [Tenant Name] has sent     │
+│  you the following documents for electronic     │
+│  signature:                                    │
+│                                                │
+│  • Individual Declaration Form.pdf              │
+│  • Engagement Letter.pdf                        │
+│                                                │
+│  By clicking "I Agree", you consent to:         │
+│  • Using electronic records and signatures      │
+│  • The collection of your name, email, IP       │
+│    address, and browser information for          │
+│    audit and verification purposes              │
+│  • Receiving the signed documents by email      │
+│                                                │
+│  You may decline to sign at any time.           │
+│  View full disclosure [link]                    │
+│                                                │
+│  ☐ I agree to use electronic records and        │
+│    signatures for this transaction               │
+│                                                │
+│              [Continue]                         │
+└───────────────────────────────────────────────┘
+```
+
+On "Continue":
+- `consentedAt`, `consentIp`, `consentUserAgent` recorded on the recipient
+- `CONSENTED` event logged to `EnvelopeEvent` with `metadata: { consentVersion: "1.0" }`
+- The consent version string is stored on the envelope and in event metadata so that if the disclosure text changes, the version at time of consent is preserved
+
+**Privacy disclosure**: IP addresses, browser information, and signature images will appear on the completion certificate. This is stated explicitly in the consent screen so signers are informed before proceeding.
+
+### 3.4 Signing View Layout
 
 **Desktop:**
 
@@ -346,7 +480,7 @@ Email link / manual link clicked
 └────────────────────────────────────────────────────────┘
 ```
 
-### 3.3 "Post-It" Bookmark Navigation
+### 3.5 "Post-It" Bookmark Navigation
 
 Inspired by DocuSign's "Sign Here" tab — a physical post-it metaphor:
 
@@ -360,9 +494,11 @@ Inspired by DocuSign's "Sign Here" tab — a physical post-it metaphor:
 - Field completion order follows `sortOrder` set by sender during preparation
 - When all required fields completed: post-it transforms into a **"Finish"** tab
 
-**Mobile**: same post-it concept, slightly smaller; tapping scrolls + zooms to center the target field on screen.
+**Keyboard accessibility**: Tab/Shift+Tab cycles through fields in `sortOrder`. Enter activates the current field. Each field has an `aria-label` describing the action (e.g., "Signature field 1 of 3, required"). Screen readers announce the post-it label.
 
-### 3.4 Field States During Signing
+**Mobile**: same post-it concept, slightly smaller; tapping scrolls + zooms to center the target field on screen. The post-it also serves as a floating action button (bottom-right) when the active field is not in view.
+
+### 3.6 Field States During Signing
 
 | State | Visual |
 |-------|--------|
@@ -371,7 +507,7 @@ Inspired by DocuSign's "Sign Here" tab — a physical post-it metaphor:
 | Active / focused | Solid border, elevated shadow |
 | Filled | Content shown, subtle checkmark badge, border fades to muted |
 
-### 3.5 Signature Capture Modal
+### 3.7 Signature Capture Modal
 
 Opens when signer clicks a Signature or Initials field:
 
@@ -404,7 +540,7 @@ Three input methods:
 
 After first adoption, signature is cached for the session — subsequent Signature fields auto-fill with one click.
 
-### 3.6 Completion Flow
+### 3.8 Completion Flow
 
 ```
 All required fields filled
@@ -412,20 +548,20 @@ All required fields filled
   → Signer clicks Finish
   → Confirmation: "You've signed [document names]. A copy will be sent to your email."
   → Options: [Download] [Close]
-  → If sequential: next signer notified
+  → If sequential: next signer group notified
   → If all signers done: envelope → COMPLETED
 ```
 
-### 3.7 "Other Options" Menu
+### 3.9 "Other Options" Menu
 
 | Option | Action |
 |--------|--------|
-| Finish Later | Saves progress; signer returns via same link |
+| Finish Later | Saves progress; signer returns via same link (new session issued) |
 | Decline to Sign | Reason modal → envelope status → DECLINED; sender notified |
 | Download Original | Download unsigned PDFs for review |
 | Session Information | Signer name, email, envelope ID |
 
-### 3.8 Mobile Signing
+### 3.10 Mobile Signing
 
 - Full-width document view, no side panels
 - Post-it bookmark as floating action button (bottom-right) with arrow icon
@@ -434,7 +570,7 @@ All required fields filled
 - Native mobile keyboards for text inputs
 - Landscape orientation prompt for signature drawing
 
-### 3.9 Error States
+### 3.11 Error States
 
 | Scenario | What the signer sees |
 |----------|---------------------|
@@ -445,6 +581,7 @@ All required fields filled
 | Network error on field save | Auto-retry with exponential backoff (3 attempts), then "Changes could not be saved" banner with manual retry |
 | Access code lockout | "Too many attempts. Please try again in 15 minutes." |
 | Already completed | "You have already signed this envelope." with download link |
+| Session JWT expired | "Your session has expired." with "Resume Signing" button (re-exchanges link token for new session) |
 
 ---
 
@@ -458,23 +595,44 @@ When the last signer clicks Finish:
    - Envelope status → `COMPLETED`, `completedAt` set
    - `pdfGenerationStatus` → `PENDING`
    - Return success to the signer immediately
-2. **Asynchronous** (background task, queued immediately):
-   - `pdfGenerationStatus` → `PROCESSING`
+2. **Asynchronous** (DB-backed queue, processed by scheduler):
+   - Scheduler picks up envelopes with `pdfGenerationStatus = PENDING`
+   - Transitions to `PROCESSING` (atomic claim via `UPDATE ... WHERE pdfGenerationStatus = 'PENDING'`)
    - **Signed PDF generation** per document:
      - Load original PDF via pdf-lib
      - Validate PDF integrity before processing
      - Embed all field values (signatures as images, text as overlays, checkboxes as check marks, dates as text)
-     - Stamp certificate ID on bottom-right of every page
-     - Append completion certificate as final page(s)
+     - Add footer strip to each page for certificate ID watermark (see 4.3)
+     - Append completion certificate page(s) — rendered via existing HTML-to-PDF path (`document-export.service.ts`)
+     - Compute SHA-256 hash of the signed PDF → store in `EnvelopeDocument.signedHash`
      - Save to `{tenantId}/esigning/{envelopeId}/signed/{documentId}.pdf`
    - Email signed PDFs to all parties (signers + CC + sender)
    - Auto-file to company folder if enabled
-   - `pdfGenerationStatus` → `COMPLETED` (or `FAILED` with error details in metadata)
-   - On failure: retry up to 3 times, then mark FAILED and notify sender
+   - `pdfGenerationStatus` → `COMPLETED`
+   - On failure: increment `pdfGenerationAttempts`, retry up to 3 times, then mark `FAILED` with error in `pdfGenerationError`, log `PDF_GENERATION_FAILED` event, notify sender
 
-### 4.2 Certificate Page Design (Dropbox Sign-Inspired)
+### 4.2 PDF Generation Failure UX
 
-Each document gets its own certificate appended. Visual, clean, timeline-based:
+**For senders** when `pdfGenerationStatus = FAILED`:
+- Envelope detail view shows a warning banner: "Document processing failed. [Retry] [Contact Support]"
+- Retry button resets `pdfGenerationStatus` to `PENDING` and `pdfGenerationAttempts` to 0
+- Sender receives an email: "Document processing failed for [Envelope Title]. You can retry from the dashboard."
+
+**For signers**: The signing experience is unaffected — they see the normal "completed" confirmation. If they try to download signed PDFs before generation completes, they see "Your signed documents are being prepared. You'll receive them by email shortly."
+
+### 4.3 Per-Page Certificate ID Watermark
+
+Every page of every document gets a watermark. Since arbitrary PDFs may not have safe bottom margins, the watermark is applied by **adding a narrow footer strip** (12pt height) to the bottom of each page during final assembly, rather than hoping for margin space:
+
+- pdf-lib increases each page's MediaBox height by 12pt
+- The watermark text is rendered in this added strip
+- Format: `OAK-ES-20260310-8F3A2B4D-C7E1 │ Page 1 of 3`
+- Style: light gray (#a0a5b0), 7pt font
+- This guarantees no content overlap regardless of the original PDF's margins
+
+### 4.4 Certificate Page Design (Dropbox Sign-Inspired)
+
+Each document gets its own certificate appended. Visual, clean, timeline-based. Rendered using the existing HTML-to-PDF pipeline (`document-export.service.ts`) rather than hand-drawing with pdf-lib.
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -486,8 +644,11 @@ Each document gets its own certificate appended. Visual, clean, timeline-based:
 │                                                     │
 │  Envelope Title:    Q1 Tax Declaration Package      │
 │  Document:          Individual Declaration Form.pdf │
+│  Document Hash:     sha256:a1b2c3d4...              │
 │  Envelope ID:       env_8f3a2b...                   │
 │  Status:            ● Completed                     │
+│                                                     │
+│  Verify: https://app.oakcloud.sg/verify/OAK-ES-... │
 │                                                     │
 │  ─── Timeline ───────────────────────────────────── │
 │                                                     │
@@ -497,6 +658,10 @@ Each document gets its own certificate appended. Visual, clean, timeline-based:
 │   │                                                 │
 │   ● Sent for Signing                                │
 │   │  Mar 10, 2026  2:31 PM SGT                     │
+│   │                                                 │
+│   ● Consent given by Ray Client                     │
+│   │  Mar 10, 2026  3:14 PM SGT                     │
+│   │  IP: 203.0.113.42                              │
 │   │                                                 │
 │   ● Viewed by Ray Client                            │
 │   │  Mar 10, 2026  3:15 PM SGT                     │
@@ -524,23 +689,25 @@ Each document gets its own certificate appended. Visual, clean, timeline-based:
 │  This document was signed electronically via       │
 │  Oakcloud E-Signing.                               │
 │  Certificate ID: OAK-ES-20260310-8F3A2B4D-C7E1    │
+│  Document hash (SHA-256): a1b2c3d4e5f6...          │
+│  Verify at: https://app.oakcloud.sg/verify/OAK-.. │
 │  Powered by Oakcloud.                              │
 └─────────────────────────────────────────────────────┘
 ```
 
-### 4.3 Per-Page Certificate ID Watermark
+### 4.5 Verification Endpoint
 
-Every page of every document:
+A public endpoint that allows anyone with a certificate ID to verify document integrity:
 
-```
-                          OAK-ES-20260310-8F3A2B4D-C7E1 │ Page 1 of 3
-```
+`GET /verify/[certificateId]` → public page showing:
+- Envelope title, status, completion date
+- Per-document: file name, original hash, signed hash
+- Signer names and signed timestamps (emails redacted to `r***@client.com`)
+- **Upload and verify**: user can upload a PDF → system computes SHA-256 and checks against stored `signedHash`. Shows "Match — this document has not been tampered with" or "Mismatch — this document may have been altered."
 
-- Position: bottom-right corner, 8px from edges
-- Style: light gray (#a0a5b0), ~8pt font, semi-transparent
-- Does not overlap existing content (positioned in margin area)
+This is not a cryptographic digital signature (deferred to future phase) but provides a server-verifiable proof chain.
 
-### 4.4 Download Options
+### 4.6 Download Options
 
 | Option | Description |
 |--------|-------------|
@@ -563,7 +730,7 @@ New sidebar item: **E-Signing** → `/esigning`
 | Tab | Shows |
 |-----|-------|
 | All | Everything |
-| Action Required | Drafts, declined envelopes needing attention |
+| Needs My Attention | Drafts, declined, failed processing |
 | Waiting for Others | Sent / In Progress |
 | Completed | All completed |
 | Voided / Expired | Cancelled or timed-out |
@@ -573,8 +740,8 @@ New sidebar item: **E-Signing** → `/esigning`
 | Column | Content |
 |--------|---------|
 | Title | Envelope title (click → detail) |
-| Status | Badge with semantic colors |
-| Recipients | Signer names with status icons |
+| Status | Badge with semantic colors (+ "Processing Failed" badge for pdfGenerationStatus = FAILED) |
+| Recipients | Signer names with status icons (✓ signed, ● current, ◻ queued, ✗ declined) |
 | Documents | Count + first document name |
 | Created | Relative timestamp |
 | Last Activity | Most recent event |
@@ -593,17 +760,22 @@ New sidebar item: **E-Signing** → `/esigning`
 ├──────────┬──────────────────────────────────────────────┤
 │Recipients│  Documents                                   │
 │          │  Document cards with page count, field count, │
-│ Per-     │  [Preview] and [Download] buttons            │
-│ signer   │                                              │
-│ status   │  Activity Timeline                           │
-│ with     │  Chronological event list                    │
-│ actions  │                                              │
+│ Group 1  │  [Preview] and [Download] buttons            │
+│ (current)│                                              │
+│ ✓ Ray    │  Activity Timeline                           │
+│ ● Sarah  │  Chronological event list                    │
+│          │                                              │
+│ Group 2  │                                              │
+│ (waiting)│                                              │
+│ ◻ Admin  │                                              │
 └──────────┴──────────────────────────────────────────────┘
 ```
 
-**Correct action** (per recipient): modal to edit name/email on in-progress envelopes. Invalidates old access token, generates new one, resends.
+**Correct action** (per recipient): modal to edit name and/or email only. **Cannot** change documents, field placements, or signing order after send. Invalidates old access token hash, generates new token, resends.
 
-**Completed detail** additionally shows: download options, auto-filed location link, certificate ID.
+**Completed detail** additionally shows: download options, auto-filed location link, certificate ID, document hashes.
+
+**Failed processing** shows: warning banner with [Retry] button and error details.
 
 ---
 
@@ -644,7 +816,7 @@ New resource `esigning` added to the RBAC system, using existing action conventi
 │       └── {recipientId}_initials.png
 ```
 
-- Original PDFs preserved immutably
+- Original PDFs preserved immutably (never modified)
 - Signed PDFs generated at completion
 - Signature images stored per recipient per envelope (not reused across envelopes)
 - Auto-filed copies are actual copies to `{tenantId}/companies/{companyId}/documents/...`
@@ -675,20 +847,20 @@ This request expires on [expiry date].
 
 ### 8.2 CC Notification
 
-**To:** CC recipients (on send)
+**To:** CC recipients (when envelope is **completed**, not on initial send — CC recipients only receive the final signed documents)
 
 ```
-Subject: [Sender Name] sent "[Envelope Title]" — you're copied
+Subject: Completed: "[Envelope Title]" — you're copied
 
-[Sender Name] has sent documents for signing. You've been
+All parties have signed the following documents. You've been
 included as a copy recipient.
 
-You'll receive the signed documents once all parties have signed.
+[Download Documents]
 ```
 
 ### 8.3 Completion
 
-**To:** All parties (sender, signers, CC)
+**To:** All signers + sender
 
 ```
 Subject: Completed: "[Envelope Title]"
@@ -732,6 +904,20 @@ Expires: [expiry date]
 [View Envelope]
 ```
 
+### 8.6 PDF Generation Failed
+
+**To:** Sender
+
+```
+Subject: Processing failed: "[Envelope Title]"
+
+Document processing failed for your completed envelope.
+All signatures were captured successfully — only the final
+PDF generation needs to be retried.
+
+[Retry from Dashboard]
+```
+
 ---
 
 ## 9. Signature Pad Component Upgrades
@@ -767,13 +953,14 @@ The existing `signature-pad.tsx` needs enhancement:
 | POST | `/api/esigning/envelopes/[id]/documents` | Upload document |
 | DELETE | `/api/esigning/envelopes/[id]/documents/[docId]` | Remove document |
 | PATCH | `/api/esigning/envelopes/[id]/documents/[docId]` | Reorder document |
-| PUT | `/api/esigning/envelopes/[id]/fields` | Save all fields (bulk upsert) |
+| PUT | `/api/esigning/envelopes/[id]/fields` | Save all field definitions (bulk upsert) |
 | POST | `/api/esigning/envelopes/[id]/recipients` | Add recipient |
-| PATCH | `/api/esigning/envelopes/[id]/recipients/[recipientId]` | Update / correct recipient |
+| PATCH | `/api/esigning/envelopes/[id]/recipients/[recipientId]` | Update / correct recipient (name/email only after send) |
 | DELETE | `/api/esigning/envelopes/[id]/recipients/[recipientId]` | Remove recipient |
-| POST | `/api/esigning/envelopes/[id]/send` | Send envelope |
+| POST | `/api/esigning/envelopes/[id]/send` | Send envelope (runs pre-send validations) |
 | POST | `/api/esigning/envelopes/[id]/void` | Void envelope |
 | POST | `/api/esigning/envelopes/[id]/resend/[recipientId]` | Resend to recipient |
+| POST | `/api/esigning/envelopes/[id]/retry-processing` | Retry failed PDF generation |
 | GET | `/api/esigning/envelopes/[id]/download` | Download signed PDFs |
 | GET | `/api/esigning/envelopes/[id]/events` | Get audit trail |
 
@@ -781,26 +968,33 @@ The existing `signature-pad.tsx` needs enhancement:
 
 | Method | Route | Purpose |
 |--------|-------|---------|
-| GET | `/api/esigning/sign/[token]` | Load signing session |
-| POST | `/api/esigning/sign/[token]/verify` | Verify access code |
-| POST | `/api/esigning/sign/[token]/view` | Record "viewed" event |
-| PUT | `/api/esigning/sign/[token]/fields` | Save field values (auto-save) |
-| POST | `/api/esigning/sign/[token]/complete` | Signer clicks Finish |
-| POST | `/api/esigning/sign/[token]/decline` | Signer declines |
-| GET | `/api/esigning/sign/[token]/download` | Download original PDFs |
+| POST | `/api/esigning/sign/[token]` | Exchange link token for signing session JWT |
+| POST | `/api/esigning/sign/session/verify` | Verify access code (requires session JWT) |
+| POST | `/api/esigning/sign/session/consent` | Record consent (requires session JWT) |
+| GET | `/api/esigning/sign/session/load` | Load envelope data for signing (requires session JWT) |
+| POST | `/api/esigning/sign/session/view` | Record "viewed" event |
+| PUT | `/api/esigning/sign/session/fields` | Save field values (auto-save) |
+| POST | `/api/esigning/sign/session/complete` | Signer clicks Finish |
+| POST | `/api/esigning/sign/session/decline` | Signer declines |
+| GET | `/api/esigning/sign/session/download` | Download original PDFs |
 
-### 10.3 Public Route Security
+### 10.3 Public Verification
 
-**Token security:**
-- Token: `accessToken` from EnvelopeRecipient (crypto random, 64 chars, unguessable)
-- Tokens are invalidated when the envelope reaches a terminal state (COMPLETED, VOIDED, DECLINED, EXPIRED)
-- Access tokens must never be logged in server request logs (strip from log output)
-- Download endpoints for signed PDFs use short-lived signed URLs (15 min expiry) rather than the persistent access token
-- Token validated against envelope status (can't sign voided/expired/completed envelopes)
-- Access code verification required before any other action for EMAIL_WITH_CODE recipients
-- Field saves are idempotent
+| Method | Route | Purpose |
+|--------|-------|---------|
+| GET | `/api/esigning/verify/[certificateId]` | Get certificate verification data |
+| POST | `/api/esigning/verify/[certificateId]/check` | Upload PDF and verify hash match |
 
-**Rate limits** (added to `src/lib/rate-limit.ts`):
+### 10.4 Public Route Security
+
+**Token & session security:**
+- Link token: crypto random 64 chars, only the SHA-256 hash stored in DB
+- Session JWT: 30 min TTL, issued via `jose` (same pattern as `form-response-token.ts`), HttpOnly cookie
+- Download JWTs: 15 min TTL, separate scope
+- Tokens invalidated when envelope reaches terminal state
+- Access tokens must never be logged in server request logs
+
+**Rate limits** (added to `src/lib/rate-limit.ts`, using existing in-memory rate limiter — adequate for single-instance deployment):
 
 | Config | Limit | Purpose |
 |--------|-------|---------|
@@ -810,6 +1004,9 @@ The existing `signature-pad.tsx` needs enhancement:
 | `ESIGNING_SIGN_COMPLETE` | 5 req/min per IP | Completing signing |
 | `ESIGNING_SIGN_DECLINE` | 5 req/min per IP | Declining |
 | `ESIGNING_SIGN_DOWNLOAD` | 10 req/min per IP | Downloading documents |
+| `ESIGNING_VERIFY` | 20 req/min per IP | Certificate verification |
+
+**Infrastructure note**: The existing in-memory rate limiter and in-process cron scheduler are sufficient for Phase 1 (single-instance deployment). If Oakcloud moves to multi-instance deployment, rate limiting would need Redis (the code already has a comment about this) and the scheduler would need leader election or a dedicated worker process. This is not an e-signing-specific concern.
 
 ---
 
@@ -818,41 +1015,70 @@ The existing `signature-pad.tsx` needs enhancement:
 | Service | Responsibility |
 |---------|---------------|
 | `esigning-envelope.service.ts` | CRUD, status transitions, validation, sending, voiding, correction |
-| `esigning-field.service.ts` | Field placement CRUD, coordinate validation, bulk upsert |
-| `esigning-signing.service.ts` | Public signing: load session, verify access, save fields, complete, decline |
-| `esigning-pdf.service.ts` | Signed PDF assembly: embed signatures/fields, stamp certificate IDs, generate certificate pages |
-| `esigning-notification.service.ts` | All email dispatch: signing requests, completions, declines, reminders, expiry warnings |
-| `esigning-certificate.service.ts` | Certificate ID generation, certificate page HTML/PDF rendering |
+| `esigning-field.service.ts` | Field definition CRUD, coordinate validation, bulk upsert; field value saves |
+| `esigning-signing.service.ts` | Public signing: token exchange, session management, consent, field saves, complete, decline |
+| `esigning-pdf.service.ts` | Signed PDF assembly: embed field values, footer strip + watermark, hash computation |
+| `esigning-certificate.service.ts` | Certificate ID generation, certificate page HTML rendering (via `document-export.service.ts` HTML-to-PDF pipeline), verification logic |
+| `esigning-notification.service.ts` | All email dispatch: signing requests, completions, declines, reminders, expiry warnings, failures |
 
 ### Background Tasks (Scheduler)
 
 | Task | Schedule | Purpose |
 |------|----------|---------|
+| `esigning-pdf-generation` | Every 30 seconds | Pick up envelopes with `pdfGenerationStatus = PENDING`, claim and process (same pattern as `form-ai-review`) |
 | `esigning-expiry-check` | Hourly | Transition expired envelopes, notify sender |
 | `esigning-reminders` | Daily | Send auto-reminders to pending signers per envelope settings |
 | `esigning-cleanup` | Daily | Remove orphaned uploads from deleted draft envelopes |
 
 ---
 
-## 12. Technical Stack Additions
+## 12. Compliance Baseline
+
+Phase 1 targets basic electronic signature validity under:
+
+**Singapore Electronic Transactions Act (ETA)**:
+- Electronic signatures are valid unless specifically excluded (e.g., wills, powers of attorney)
+- The consent screen, audit trail, and certificate provide the required evidence of intent to sign
+- IP and timestamp logging satisfies the "reliable method" requirement for identifying the signatory
+
+**U.S. E-SIGN Act / UETA**:
+- Requires: intent to sign, consent to electronic records, association of signature with record, record retention
+- Consent screen captures affirmative consent with version tracking
+- Signature images are embedded in the document and linked to specific fields
+- Signed PDFs with audit certificates provide the record retention requirement
+- The consent disclosure includes the right to withdraw (decline to sign)
+
+**What Phase 1 does NOT provide** (deferred to future phases):
+- Qualified electronic signatures (QES) or advanced electronic signatures (AdES)
+- Cryptographic digital signatures (P12/PFX certificate-based)
+- Compliance with regulations that require specific signature standards (e.g., EU eIDAS qualified)
+
+The consent text version is tracked so that if disclosure language changes, existing signed documents retain their original consent context.
+
+---
+
+## 13. Technical Stack Additions
 
 | Library | Purpose |
 |---------|---------|
 | `react-pdf` (wraps pdf.js) | Client-side PDF rendering for preparation and signing views |
-| `pdf-lib` (existing) | Server-side signed PDF assembly, signature embedding, certificate ID stamping |
+| `pdf-lib` (existing) | Server-side signed PDF assembly, signature embedding, watermark stamping |
+| `document-export.service.ts` (existing) | HTML-to-PDF pipeline reused for certificate page rendering |
+| `form-response-token.ts` pattern (existing) | JWT session tokens for signing sessions and downloads |
 | Signature pad upgrades | Draw/type/upload signature capture |
 | Self-hosted handwriting fonts (Dancing Script, Pinyon Script, Caveat) | Typed signature rendering (no external CDN dependency) |
 
 ---
 
-## 13. Future Phases (Out of Scope)
+## 14. Future Phases (Out of Scope)
 
 Designed for but not implemented in Phase 1:
 
-- **Templates**: Save envelope configurations (recipients, field placements) for reuse
+- **Templates**: Save envelope configurations (recipients, field placements) for reuse — the field definition/value split enables this cleanly
 - **Agreement management**: Track signed agreements, renewal dates, compliance status
 - **Bulk/batch sending**: Send same document to many recipients
 - **Additional field types**: Dropdowns, radio buttons, attachments, formulae
 - **Digital certificates**: P12/PFX-based tamper-evident PDF signing via @signpdf/signpdf
 - **Anchor text placement**: Auto-detect "Sign Here" text and suggest field positions
 - **Reassign**: Signer forwards signing responsibility to someone else
+- **Distributed infrastructure**: Redis rate limiting, dedicated worker processes, leader election for scheduler
