@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   ZoomIn,
   ZoomOut,
@@ -97,6 +97,10 @@ interface DocumentPageViewerProps {
   documentStatus?: 'DRAFT' | 'APPROVED' | 'SUPERSEDED';
   /** Callback when pages are modified (append/reorder) */
   onPagesChanged?: () => void;
+  /** Called when a highlight rect is clicked. Makes highlight rects interactive (pointer-events-auto). */
+  onHighlightClick?: (index: number, highlight: BoundingBox) => void;
+  /** Renders custom React content inside each highlight's foreignObject. Receives the highlight, its pixel rect, and index. */
+  renderHighlightContent?: (highlight: BoundingBox, pixelRect: { x: number; y: number; width: number; height: number }, index: number) => React.ReactNode;
 }
 
 // =============================================================================
@@ -309,6 +313,8 @@ export function DocumentPageViewer({
   className,
   documentStatus,
   onPagesChanged,
+  onHighlightClick,
+  renderHighlightContent,
 }: DocumentPageViewerProps) {
   // Stable references
   const stableHighlights = highlights ?? EMPTY_HIGHLIGHTS;
@@ -993,17 +999,30 @@ export function DocumentPageViewer({
                       const color = highlight.color || '#93C5FD';
 
                       return (
-                        <rect
-                          key={idx}
-                          x={x}
-                          y={y}
-                          width={w}
-                          height={h}
-                          fill={`${color}30`}
-                          stroke={color}
-                          strokeWidth="1.5"
-                          rx="4"
-                        />
+                        <g key={idx}>
+                          <rect
+                            x={x}
+                            y={y}
+                            width={w}
+                            height={h}
+                            fill={`${color}30`}
+                            stroke={color}
+                            strokeWidth="1.5"
+                            rx="4"
+                            {...(onHighlightClick
+                              ? {
+                                  onClick: () => onHighlightClick(idx, highlight),
+                                  style: { cursor: 'pointer' },
+                                  pointerEvents: 'auto' as const,
+                                }
+                              : {})}
+                          />
+                          {renderHighlightContent && (
+                            <foreignObject x={x} y={y} width={w} height={h}>
+                              {renderHighlightContent(highlight, { x, y, width: w, height: h }, idx)}
+                            </foreignObject>
+                          )}
+                        </g>
                       );
                     })}
                   </svg>

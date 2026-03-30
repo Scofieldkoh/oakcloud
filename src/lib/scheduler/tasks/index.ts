@@ -7,6 +7,7 @@
 
 export { backupTask } from './backup.task';
 export { cleanupTask } from './cleanup.task';
+export { esigningPdfGenerationTask } from './esigning-pdf-generation.task';
 export { exchangeRateSyncTask } from './exchange-rate-sync.task';
 export { formAiReviewTask } from './form-ai-review.task';
 export { formCountReconciliationTask } from './form-count-reconciliation.task';

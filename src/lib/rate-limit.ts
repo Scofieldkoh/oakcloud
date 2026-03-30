@@ -161,6 +161,50 @@ export const RATE_LIMIT_CONFIGS = {
     maxRequests: 10,
     windowMs: 60 * 1000, // 1 minute
   } as RateLimitConfig,
+
+  /** Public e-signing session load / token exchange */
+  ESIGNING_SIGN_LOAD: {
+    maxRequests: 30,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
+
+  /** Public e-signing access-code verification */
+  ESIGNING_SIGN_VERIFY: {
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    lockoutThreshold: 5,
+    lockoutDurationMs: 15 * 60 * 1000,
+  } as RateLimitConfig,
+
+  /** Public e-signing autosave */
+  ESIGNING_SIGN_SAVE: {
+    maxRequests: 20,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
+
+  /** Public e-signing completion */
+  ESIGNING_SIGN_COMPLETE: {
+    maxRequests: 5,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
+
+  /** Public e-signing decline */
+  ESIGNING_SIGN_DECLINE: {
+    maxRequests: 5,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
+
+  /** Public e-signing downloads */
+  ESIGNING_SIGN_DOWNLOAD: {
+    maxRequests: 10,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
+
+  /** Public certificate verification */
+  ESIGNING_VERIFY: {
+    maxRequests: 20,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
 } as const;
 
 // ============================================================================

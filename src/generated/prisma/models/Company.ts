@@ -557,6 +557,7 @@ export type CompanyWhereInput = {
   contactDetails?: Prisma.ContactDetailListRelationFilter
   documentTags?: Prisma.DocumentTagListRelationFilter
   documents?: Prisma.DocumentListRelationFilter
+  esigningEnvelopes?: Prisma.EsigningEnvelopeListRelationFilter
   generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
   noteTabs?: Prisma.NoteTabListRelationFilter
   shareCapital?: Prisma.ShareCapitalListRelationFilter
@@ -628,6 +629,7 @@ export type CompanyOrderByWithRelationInput = {
   contactDetails?: Prisma.ContactDetailOrderByRelationAggregateInput
   documentTags?: Prisma.DocumentTagOrderByRelationAggregateInput
   documents?: Prisma.DocumentOrderByRelationAggregateInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeOrderByRelationAggregateInput
   generatedDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
   noteTabs?: Prisma.NoteTabOrderByRelationAggregateInput
   shareCapital?: Prisma.ShareCapitalOrderByRelationAggregateInput
@@ -703,6 +705,7 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   contactDetails?: Prisma.ContactDetailListRelationFilter
   documentTags?: Prisma.DocumentTagListRelationFilter
   documents?: Prisma.DocumentListRelationFilter
+  esigningEnvelopes?: Prisma.EsigningEnvelopeListRelationFilter
   generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
   noteTabs?: Prisma.NoteTabListRelationFilter
   shareCapital?: Prisma.ShareCapitalListRelationFilter
@@ -875,6 +878,7 @@ export type CompanyCreateInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -945,6 +949,7 @@ export type CompanyUncheckedCreateInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -1015,6 +1020,7 @@ export type CompanyUpdateInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -1085,6 +1091,7 @@ export type CompanyUncheckedUpdateInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -1694,6 +1701,22 @@ export type CompanyUpdateOneWithoutGeneratedDocumentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutGeneratedDocumentsInput, Prisma.CompanyUpdateWithoutGeneratedDocumentsInput>, Prisma.CompanyUncheckedUpdateWithoutGeneratedDocumentsInput>
 }
 
+export type CompanyCreateNestedOneWithoutEsigningEnvelopesInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutEsigningEnvelopesInput, Prisma.CompanyUncheckedCreateWithoutEsigningEnvelopesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutEsigningEnvelopesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneWithoutEsigningEnvelopesNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutEsigningEnvelopesInput, Prisma.CompanyUncheckedCreateWithoutEsigningEnvelopesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutEsigningEnvelopesInput
+  upsert?: Prisma.CompanyUpsertWithoutEsigningEnvelopesInput
+  disconnect?: Prisma.CompanyWhereInput | boolean
+  delete?: Prisma.CompanyWhereInput | boolean
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutEsigningEnvelopesInput, Prisma.CompanyUpdateWithoutEsigningEnvelopesInput>, Prisma.CompanyUncheckedUpdateWithoutEsigningEnvelopesInput>
+}
+
 export type CompanyCreateNestedOneWithoutDocumentTagsInput = {
   create?: Prisma.XOR<Prisma.CompanyCreateWithoutDocumentTagsInput, Prisma.CompanyUncheckedCreateWithoutDocumentTagsInput>
   connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutDocumentTagsInput
@@ -1880,6 +1903,7 @@ export type CompanyCreateWithoutTenantInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -1949,6 +1973,7 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -2095,6 +2120,7 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -2164,6 +2190,7 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -2249,6 +2276,7 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -2318,6 +2346,7 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -2387,6 +2416,7 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -2456,6 +2486,7 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -2541,6 +2572,7 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -2610,6 +2642,7 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -2678,6 +2711,7 @@ export type CompanyCreateWithoutFormerNamesInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -2747,6 +2781,7 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -2832,6 +2867,7 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -2901,6 +2937,7 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -2970,6 +3007,7 @@ export type CompanyCreateWithoutAddressesInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -3039,6 +3077,7 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -3124,6 +3163,7 @@ export type CompanyUpdateWithoutAddressesInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -3193,6 +3233,7 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -3262,6 +3303,7 @@ export type CompanyCreateWithoutContactsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -3331,6 +3373,7 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -3416,6 +3459,7 @@ export type CompanyUpdateWithoutContactsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -3485,6 +3529,7 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -3554,6 +3599,7 @@ export type CompanyCreateWithoutContactDetailsInput = {
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -3623,6 +3669,7 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -3708,6 +3755,7 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -3777,6 +3825,7 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -3846,6 +3895,7 @@ export type CompanyCreateWithoutOfficersInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -3915,6 +3965,7 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -4000,6 +4051,7 @@ export type CompanyUpdateWithoutOfficersInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -4069,6 +4121,7 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -4139,6 +4192,7 @@ export type CompanyCreateWithoutShareCapitalInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
@@ -4208,6 +4262,7 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
@@ -4293,6 +4348,7 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
@@ -4362,6 +4418,7 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
@@ -4430,6 +4487,7 @@ export type CompanyCreateWithoutShareholdersInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -4499,6 +4557,7 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -4584,6 +4643,7 @@ export type CompanyUpdateWithoutShareholdersInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -4653,6 +4713,7 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -4722,6 +4783,7 @@ export type CompanyCreateWithoutChargesInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -4791,6 +4853,7 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -4876,6 +4939,7 @@ export type CompanyUpdateWithoutChargesInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -4945,6 +5009,7 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -5014,6 +5079,7 @@ export type CompanyCreateWithoutDocumentsInput = {
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -5083,6 +5149,7 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -5168,6 +5235,7 @@ export type CompanyUpdateWithoutDocumentsInput = {
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -5237,6 +5305,7 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -5306,6 +5375,7 @@ export type CompanyCreateWithoutAuditLogsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -5375,6 +5445,7 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -5460,6 +5531,7 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -5529,6 +5601,7 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -5599,6 +5672,7 @@ export type CompanyCreateWithoutNoteTabsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
@@ -5668,6 +5742,7 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
@@ -5753,6 +5828,7 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
@@ -5822,6 +5898,7 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
@@ -5891,6 +5968,7 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
@@ -5960,6 +6038,7 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
@@ -6045,6 +6124,7 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
@@ -6114,6 +6194,303 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyCreateWithoutEsigningEnvelopesInput = {
+  id?: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+}
+
+export type CompanyCreateOrConnectWithoutEsigningEnvelopesInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutEsigningEnvelopesInput, Prisma.CompanyUncheckedCreateWithoutEsigningEnvelopesInput>
+}
+
+export type CompanyUpsertWithoutEsigningEnvelopesInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutEsigningEnvelopesInput, Prisma.CompanyUncheckedUpdateWithoutEsigningEnvelopesInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutEsigningEnvelopesInput, Prisma.CompanyUncheckedCreateWithoutEsigningEnvelopesInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutEsigningEnvelopesInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutEsigningEnvelopesInput, Prisma.CompanyUncheckedUpdateWithoutEsigningEnvelopesInput>
+}
+
+export type CompanyUpdateWithoutEsigningEnvelopesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
+  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
+  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
+  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
+  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
@@ -6182,6 +6559,7 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -6251,6 +6629,7 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -6336,6 +6715,7 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -6405,6 +6785,7 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -6474,6 +6855,7 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -6543,6 +6925,7 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -6628,6 +7011,7 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -6697,6 +7081,7 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -6766,6 +7151,7 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -6835,6 +7221,7 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -6920,6 +7307,7 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -6989,6 +7377,7 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -7059,6 +7448,7 @@ export type CompanyCreateWithoutWorkflow_client_group_membersInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -7128,6 +7518,7 @@ export type CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -7213,6 +7604,7 @@ export type CompanyUpdateWithoutWorkflow_client_group_membersInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -7282,6 +7674,7 @@ export type CompanyUncheckedUpdateWithoutWorkflow_client_group_membersInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -7351,6 +7744,7 @@ export type CompanyCreateWithoutWorkflow_engagementsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -7420,6 +7814,7 @@ export type CompanyUncheckedCreateWithoutWorkflow_engagementsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -7505,6 +7900,7 @@ export type CompanyUpdateWithoutWorkflow_engagementsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -7574,6 +7970,7 @@ export type CompanyUncheckedUpdateWithoutWorkflow_engagementsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -7643,6 +8040,7 @@ export type CompanyCreateWithoutWorkflow_instancesInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -7712,6 +8110,7 @@ export type CompanyUncheckedCreateWithoutWorkflow_instancesInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -7797,6 +8196,7 @@ export type CompanyUpdateWithoutWorkflow_instancesInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -7866,6 +8266,7 @@ export type CompanyUncheckedUpdateWithoutWorkflow_instancesInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -7935,6 +8336,7 @@ export type CompanyCreateWithoutWorkflow_project_instancesInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -8004,6 +8406,7 @@ export type CompanyUncheckedCreateWithoutWorkflow_project_instancesInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -8089,6 +8492,7 @@ export type CompanyUpdateWithoutWorkflow_project_instancesInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -8158,6 +8562,7 @@ export type CompanyUncheckedUpdateWithoutWorkflow_project_instancesInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -8227,6 +8632,7 @@ export type CompanyCreateWithoutWorkflow_project_settingsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -8296,6 +8702,7 @@ export type CompanyUncheckedCreateWithoutWorkflow_project_settingsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -8381,6 +8788,7 @@ export type CompanyUpdateWithoutWorkflow_project_settingsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -8450,6 +8858,7 @@ export type CompanyUncheckedUpdateWithoutWorkflow_project_settingsInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -8519,6 +8928,7 @@ export type CompanyCreateWithoutWorkflow_scheduled_instances_queueInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
@@ -8588,6 +8998,7 @@ export type CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
   documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
@@ -8673,6 +9084,7 @@ export type CompanyUpdateWithoutWorkflow_scheduled_instances_queueInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -8742,6 +9154,7 @@ export type CompanyUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -8856,6 +9269,7 @@ export type CompanyUpdateWithoutTenantInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
@@ -8925,6 +9339,7 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
   documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
@@ -9002,6 +9417,7 @@ export type CompanyCountOutputType = {
   contactDetails: number
   documentTags: number
   documents: number
+  esigningEnvelopes: number
   generatedDocuments: number
   noteTabs: number
   shareCapital: number
@@ -9027,6 +9443,7 @@ export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   contactDetails?: boolean | CompanyCountOutputTypeCountContactDetailsArgs
   documentTags?: boolean | CompanyCountOutputTypeCountDocumentTagsArgs
   documents?: boolean | CompanyCountOutputTypeCountDocumentsArgs
+  esigningEnvelopes?: boolean | CompanyCountOutputTypeCountEsigningEnvelopesArgs
   generatedDocuments?: boolean | CompanyCountOutputTypeCountGeneratedDocumentsArgs
   noteTabs?: boolean | CompanyCountOutputTypeCountNoteTabsArgs
   shareCapital?: boolean | CompanyCountOutputTypeCountShareCapitalArgs
@@ -9131,6 +9548,13 @@ export type CompanyCountOutputTypeCountDocumentTagsArgs<ExtArgs extends runtime.
  */
 export type CompanyCountOutputTypeCountDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.DocumentWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountEsigningEnvelopesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EsigningEnvelopeWhereInput
 }
 
 /**
@@ -9262,6 +9686,7 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   contactDetails?: boolean | Prisma.Company$contactDetailsArgs<ExtArgs>
   documentTags?: boolean | Prisma.Company$documentTagsArgs<ExtArgs>
   documents?: boolean | Prisma.Company$documentsArgs<ExtArgs>
+  esigningEnvelopes?: boolean | Prisma.Company$esigningEnvelopesArgs<ExtArgs>
   generatedDocuments?: boolean | Prisma.Company$generatedDocumentsArgs<ExtArgs>
   noteTabs?: boolean | Prisma.Company$noteTabsArgs<ExtArgs>
   shareCapital?: boolean | Prisma.Company$shareCapitalArgs<ExtArgs>
@@ -9434,6 +9859,7 @@ export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   contactDetails?: boolean | Prisma.Company$contactDetailsArgs<ExtArgs>
   documentTags?: boolean | Prisma.Company$documentTagsArgs<ExtArgs>
   documents?: boolean | Prisma.Company$documentsArgs<ExtArgs>
+  esigningEnvelopes?: boolean | Prisma.Company$esigningEnvelopesArgs<ExtArgs>
   generatedDocuments?: boolean | Prisma.Company$generatedDocumentsArgs<ExtArgs>
   noteTabs?: boolean | Prisma.Company$noteTabsArgs<ExtArgs>
   shareCapital?: boolean | Prisma.Company$shareCapitalArgs<ExtArgs>
@@ -9470,6 +9896,7 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     contactDetails: Prisma.$ContactDetailPayload<ExtArgs>[]
     documentTags: Prisma.$DocumentTagPayload<ExtArgs>[]
     documents: Prisma.$DocumentPayload<ExtArgs>[]
+    esigningEnvelopes: Prisma.$EsigningEnvelopePayload<ExtArgs>[]
     generatedDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
     noteTabs: Prisma.$NoteTabPayload<ExtArgs>[]
     shareCapital: Prisma.$ShareCapitalPayload<ExtArgs>[]
@@ -9934,6 +10361,7 @@ export interface Prisma__CompanyClient<T, Null = never, ExtArgs extends runtime.
   contactDetails<T extends Prisma.Company$contactDetailsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$contactDetailsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactDetailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   documentTags<T extends Prisma.Company$documentTagsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$documentTagsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentTagPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   documents<T extends Prisma.Company$documentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  esigningEnvelopes<T extends Prisma.Company$esigningEnvelopesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$esigningEnvelopesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningEnvelopePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   generatedDocuments<T extends Prisma.Company$generatedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$generatedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   noteTabs<T extends Prisma.Company$noteTabsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$noteTabsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NoteTabPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   shareCapital<T extends Prisma.Company$shareCapitalArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$shareCapitalArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShareCapitalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -10699,6 +11127,30 @@ export type Company$documentsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.DocumentScalarFieldEnum | Prisma.DocumentScalarFieldEnum[]
+}
+
+/**
+ * Company.esigningEnvelopes
+ */
+export type Company$esigningEnvelopesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EsigningEnvelope
+   */
+  select?: Prisma.EsigningEnvelopeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EsigningEnvelope
+   */
+  omit?: Prisma.EsigningEnvelopeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EsigningEnvelopeInclude<ExtArgs> | null
+  where?: Prisma.EsigningEnvelopeWhereInput
+  orderBy?: Prisma.EsigningEnvelopeOrderByWithRelationInput | Prisma.EsigningEnvelopeOrderByWithRelationInput[]
+  cursor?: Prisma.EsigningEnvelopeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EsigningEnvelopeScalarFieldEnum | Prisma.EsigningEnvelopeScalarFieldEnum[]
 }
 
 /**

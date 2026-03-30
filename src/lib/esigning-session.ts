@@ -1,0 +1,253 @@
+import { randomBytes } from 'crypto';
+import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+import { cookies } from 'next/headers';
+import { getAppBaseUrl } from '@/lib/email';
+import { hashSha256 } from '@/lib/encryption';
+
+const TOKEN_ISSUER = 'oakcloud-esigning';
+const TOKEN_AUDIENCE = 'esigning';
+const MIN_SECRET_LENGTH = 32;
+
+export const ESIGNING_SESSION_COOKIE = 'esigning_session';
+export const ESIGNING_CHALLENGE_COOKIE = 'esigning_challenge';
+
+const DEFAULT_SIGNING_SESSION_TTL_SECONDS = 30 * 60;
+const DEFAULT_SIGNING_CHALLENGE_TTL_SECONDS = 5 * 60;
+const DEFAULT_SIGNING_DOWNLOAD_TTL_SECONDS = 15 * 60;
+
+export type EsigningTokenScope =
+  | 'esigning_challenge'
+  | 'esigning_session'
+  | 'esigning_download';
+
+export interface EsigningTokenClaims extends JWTPayload {
+  recipientId: string;
+  envelopeId: string;
+  sessionVersion: number;
+  scope: EsigningTokenScope;
+}
+
+function getEsigningTokenSecret(): Uint8Array {
+  const secret =
+    process.env.ESIGNING_SESSION_SECRET ||
+    process.env.FORM_RESPONSE_TOKEN_SECRET ||
+    process.env.JWT_SECRET;
+
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('ESIGNING_SESSION_SECRET (or fallback secret) is required in production');
+    }
+
+    return new TextEncoder().encode('development-esigning-session-secret-only');
+  }
+
+  if (secret.length < MIN_SECRET_LENGTH) {
+    throw new Error(`ESIGNING session secret must be at least ${MIN_SECRET_LENGTH} characters long`);
+  }
+
+  return new TextEncoder().encode(secret);
+}
+
+function parseTtlSeconds(value: string | undefined, fallbackSeconds: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallbackSeconds;
+  }
+
+  return Math.max(30, Math.floor(parsed));
+}
+
+export function getEsigningSessionTtlSeconds(): number {
+  return parseTtlSeconds(
+    process.env.ESIGNING_SESSION_TTL_SECONDS,
+    DEFAULT_SIGNING_SESSION_TTL_SECONDS
+  );
+}
+
+export function getEsigningChallengeTtlSeconds(): number {
+  return parseTtlSeconds(
+    process.env.ESIGNING_CHALLENGE_TTL_SECONDS,
+    DEFAULT_SIGNING_CHALLENGE_TTL_SECONDS
+  );
+}
+
+export function getEsigningDownloadTtlSeconds(): number {
+  return parseTtlSeconds(
+    process.env.ESIGNING_DOWNLOAD_TTL_SECONDS,
+    DEFAULT_SIGNING_DOWNLOAD_TTL_SECONDS
+  );
+}
+
+const ESIGNING_TOKEN_SECRET = getEsigningTokenSecret();
+
+function buildCookieOptions(maxAge: number) {
+  return {
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge,
+  };
+}
+
+export function createEsigningAccessToken(): string {
+  return randomBytes(32).toString('base64url');
+}
+
+export function hashEsigningAccessToken(token: string): string {
+  return hashSha256(token);
+}
+
+export async function createEsigningScopedToken(input: {
+  recipientId: string;
+  envelopeId: string;
+  sessionVersion: number;
+  scope: EsigningTokenScope;
+  expiresInSeconds: number;
+}): Promise<string> {
+  const ttlSeconds = Math.max(30, Math.floor(input.expiresInSeconds));
+
+  return new SignJWT({
+    recipientId: input.recipientId,
+    envelopeId: input.envelopeId,
+    sessionVersion: input.sessionVersion,
+    scope: input.scope,
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuer(TOKEN_ISSUER)
+    .setAudience(TOKEN_AUDIENCE)
+    .setIssuedAt()
+    .setExpirationTime(`${ttlSeconds} seconds`)
+    .sign(ESIGNING_TOKEN_SECRET);
+}
+
+export async function verifyEsigningScopedToken(
+  token: string,
+  expectedScope: EsigningTokenScope
+): Promise<EsigningTokenClaims | null> {
+  try {
+    const { payload } = await jwtVerify(token, ESIGNING_TOKEN_SECRET, {
+      issuer: TOKEN_ISSUER,
+      audience: TOKEN_AUDIENCE,
+    });
+
+    if (payload.scope !== expectedScope) {
+      return null;
+    }
+
+    return payload as EsigningTokenClaims;
+  } catch {
+    return null;
+  }
+}
+
+export async function setEsigningSessionCookie(input: {
+  recipientId: string;
+  envelopeId: string;
+  sessionVersion: number;
+}): Promise<string> {
+  const token = await createEsigningScopedToken({
+    ...input,
+    scope: 'esigning_session',
+    expiresInSeconds: getEsigningSessionTtlSeconds(),
+  });
+
+  const cookieStore = await cookies();
+  cookieStore.set(
+    ESIGNING_SESSION_COOKIE,
+    token,
+    buildCookieOptions(getEsigningSessionTtlSeconds())
+  );
+
+  return token;
+}
+
+export async function clearEsigningSessionCookie(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(ESIGNING_SESSION_COOKIE);
+}
+
+export async function getEsigningSessionClaims(): Promise<EsigningTokenClaims | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ESIGNING_SESSION_COOKIE)?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  return verifyEsigningScopedToken(token, 'esigning_session');
+}
+
+export async function setEsigningChallengeCookie(input: {
+  recipientId: string;
+  envelopeId: string;
+  sessionVersion: number;
+}): Promise<string> {
+  const token = await createEsigningScopedToken({
+    ...input,
+    scope: 'esigning_challenge',
+    expiresInSeconds: getEsigningChallengeTtlSeconds(),
+  });
+
+  const cookieStore = await cookies();
+  cookieStore.set(
+    ESIGNING_CHALLENGE_COOKIE,
+    token,
+    buildCookieOptions(getEsigningChallengeTtlSeconds())
+  );
+
+  return token;
+}
+
+export async function clearEsigningChallengeCookie(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(ESIGNING_CHALLENGE_COOKIE);
+}
+
+export async function getEsigningChallengeClaims(): Promise<EsigningTokenClaims | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ESIGNING_CHALLENGE_COOKIE)?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  return verifyEsigningScopedToken(token, 'esigning_challenge');
+}
+
+export async function createEsigningDownloadToken(input: {
+  recipientId: string;
+  envelopeId: string;
+  sessionVersion: number;
+}): Promise<string> {
+  return createEsigningScopedToken({
+    ...input,
+    scope: 'esigning_download',
+    expiresInSeconds: getEsigningDownloadTtlSeconds(),
+  });
+}
+
+export function buildEsigningSigningUrl(token: string): string {
+  return `${getAppBaseUrl()}/esigning/sign/${token}`;
+}
+
+export function buildEsigningVerificationUrl(certificateId: string): string {
+  return `${getAppBaseUrl()}/verify/${encodeURIComponent(certificateId)}`;
+}
+
+export function isSameOriginRequest(request: Request): boolean {
+  const origin = request.headers.get('origin') || request.headers.get('referer');
+  if (!origin) {
+    return true;
+  }
+
+  const baseUrl = getAppBaseUrl();
+
+  try {
+    const originUrl = new URL(origin);
+    const appUrl = new URL(baseUrl);
+    return originUrl.origin === appUrl.origin;
+  } catch {
+    return false;
+  }
+}

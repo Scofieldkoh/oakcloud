@@ -656,6 +656,98 @@ export const FormSubmissionStatus = {
 export type FormSubmissionStatus = (typeof FormSubmissionStatus)[keyof typeof FormSubmissionStatus]
 
 
+export const EsigningEnvelopeStatus = {
+  DRAFT: 'DRAFT',
+  SENT: 'SENT',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  VOIDED: 'VOIDED',
+  DECLINED: 'DECLINED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type EsigningEnvelopeStatus = (typeof EsigningEnvelopeStatus)[keyof typeof EsigningEnvelopeStatus]
+
+
+export const EsigningSigningOrder = {
+  PARALLEL: 'PARALLEL',
+  SEQUENTIAL: 'SEQUENTIAL',
+  MIXED: 'MIXED'
+} as const
+
+export type EsigningSigningOrder = (typeof EsigningSigningOrder)[keyof typeof EsigningSigningOrder]
+
+
+export const EsigningPdfGenerationStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+} as const
+
+export type EsigningPdfGenerationStatus = (typeof EsigningPdfGenerationStatus)[keyof typeof EsigningPdfGenerationStatus]
+
+
+export const EsigningRecipientType = {
+  SIGNER: 'SIGNER',
+  CC: 'CC'
+} as const
+
+export type EsigningRecipientType = (typeof EsigningRecipientType)[keyof typeof EsigningRecipientType]
+
+
+export const EsigningRecipientStatus = {
+  QUEUED: 'QUEUED',
+  NOTIFIED: 'NOTIFIED',
+  VIEWED: 'VIEWED',
+  SIGNED: 'SIGNED',
+  DECLINED: 'DECLINED'
+} as const
+
+export type EsigningRecipientStatus = (typeof EsigningRecipientStatus)[keyof typeof EsigningRecipientStatus]
+
+
+export const EsigningRecipientAccessMode = {
+  EMAIL_LINK: 'EMAIL_LINK',
+  EMAIL_WITH_CODE: 'EMAIL_WITH_CODE',
+  MANUAL_LINK: 'MANUAL_LINK'
+} as const
+
+export type EsigningRecipientAccessMode = (typeof EsigningRecipientAccessMode)[keyof typeof EsigningRecipientAccessMode]
+
+
+export const EsigningFieldType = {
+  SIGNATURE: 'SIGNATURE',
+  INITIALS: 'INITIALS',
+  DATE_SIGNED: 'DATE_SIGNED',
+  NAME: 'NAME',
+  TEXT: 'TEXT',
+  CHECKBOX: 'CHECKBOX',
+  COMPANY: 'COMPANY',
+  TITLE: 'TITLE'
+} as const
+
+export type EsigningFieldType = (typeof EsigningFieldType)[keyof typeof EsigningFieldType]
+
+
+export const EsigningEnvelopeEventAction = {
+  CREATED: 'CREATED',
+  SENT: 'SENT',
+  VIEWED: 'VIEWED',
+  CONSENTED: 'CONSENTED',
+  SIGNED: 'SIGNED',
+  DECLINED: 'DECLINED',
+  VOIDED: 'VOIDED',
+  CORRECTED: 'CORRECTED',
+  COMPLETED: 'COMPLETED',
+  REMINDER_SENT: 'REMINDER_SENT',
+  EXPIRED: 'EXPIRED',
+  PDF_GENERATION_FAILED: 'PDF_GENERATION_FAILED'
+} as const
+
+export type EsigningEnvelopeEventAction = (typeof EsigningEnvelopeEventAction)[keyof typeof EsigningEnvelopeEventAction]
+
+
 export const ClientRequestStatus = {
   REQUEST_PENDING: 'REQUEST_PENDING',
   REQUEST_IN_PROGRESS: 'REQUEST_IN_PROGRESS',

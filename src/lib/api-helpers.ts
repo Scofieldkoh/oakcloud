@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { Prisma } from '@/generated/prisma';
 import type { SessionUser } from './auth';
 import { prisma } from './prisma';
 import { HTTP_STATUS } from './constants/application';
@@ -125,6 +126,17 @@ export function createErrorResponse(
   error: unknown,
   defaultMessage: string = 'Internal server error'
 ): NextResponse {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === 'P2021' || error.code === 'P2022') {
+      return NextResponse.json(
+        {
+          error: 'Database schema is out of date. Apply the latest Prisma schema updates for e-signing.',
+        },
+        { status: HTTP_STATUS.SERVER_ERROR }
+      );
+    }
+  }
+
   if (error instanceof Error) {
     const message = error.message;
 

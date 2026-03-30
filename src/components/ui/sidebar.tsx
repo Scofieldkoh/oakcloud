@@ -34,6 +34,7 @@ import {
   LayoutTemplate,
   Mail,
   ClipboardList,
+  PenSquare,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
@@ -80,6 +81,7 @@ const workflowNavGroup: NavGroup = {
 const secondaryNavigation: NavItem[] = [
   { name: 'Document Processing', href: '/processing', icon: ScanText },
   { name: 'Document Generation', href: '/generated-documents', icon: FileText },
+  { name: 'E-Signing', href: '/esigning', icon: PenSquare },
   { name: 'Forms', href: '/forms', icon: ClipboardList },
   { name: 'Shared Documents', href: '/shared-documents', icon: Share2 },
   { name: 'Communication', href: '/communication', icon: Mail, adminOnly: true },
