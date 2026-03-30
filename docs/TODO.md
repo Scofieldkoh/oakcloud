@@ -6,7 +6,7 @@ This document tracks known issues, planned features, and completed work for Oakc
 
 ## Development Guidelines
 
-This web app is still under active development but contains live and actual data. Backward compatibility can be traded off for cleaner architecture when appropriate, but always seek developer's clearance before doing so.
+This web app is still under active development, all datas are dummy. Backward compatibility are not required.
 
 Key principles:
 

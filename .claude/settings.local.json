@@ -50,7 +50,8 @@
       "mcp__playwright__browser_run_code",
       "mcp__playwright__browser_resize",
       "WebFetch(domain:developers.openai.com)",
-      "WebFetch(domain:openrouter.ai)"
+      "WebFetch(domain:openrouter.ai)",
+      "WebFetch(domain:deepwiki.com)"
     ],
     "deny": [],
     "ask": []

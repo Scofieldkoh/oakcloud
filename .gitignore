@@ -60,3 +60,4 @@ docker-data/
 # Ralph (deprecated)
 ralph-claude
 .worktrees/
+.claude/worktrees/
