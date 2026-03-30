@@ -3,15 +3,43 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Circle, Clock, FilePenLine, FileSignature, Minus, Plus, Search, XCircle } from 'lucide-react';
+import {
+  CheckCircle2,
+  Circle,
+  Clock,
+  Copy,
+  Download,
+  ExternalLink,
+  FilePenLine,
+  FileSignature,
+  Minus,
+  MoreHorizontal,
+  Plus,
+  RefreshCw,
+  Search,
+  Send,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Alert } from '@/components/ui/alert';
 import { Pagination } from '@/components/companies/pagination';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { Dropdown, DropdownItem, DropdownMenu, DropdownSeparator, DropdownTrigger } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useCreateEsigningEnvelope, useEsigningEnvelopes } from '@/hooks/use-esigning';
-import type { EsigningEnvelopeListItem } from '@/types/esigning';
+import {
+  useCreateEsigningEnvelope,
+  useDeleteEsigningEnvelope,
+  useDuplicateEsigningEnvelope,
+  useEsigningEnvelopes,
+  useResendEsigningEnvelope,
+  useRetryEsigningEnvelopeProcessing,
+  useVoidEsigningEnvelope,
+} from '@/hooks/use-esigning';
+import type { EsigningEnvelopeListItem, EsigningManualLinkDto } from '@/types/esigning';
 import {
   EnvelopeStatusBadge,
   ESIGNING_SIGNING_ORDER_LABELS,
@@ -19,7 +47,14 @@ import {
 } from '@/components/esigning/esigning-shared';
 import { cn } from '@/lib/utils';
 
-type StatusFilter = 'DRAFT' | 'SENT' | 'IN_PROGRESS' | 'COMPLETED' | 'VOIDED' | 'DECLINED' | 'EXPIRED';
+type StatusFilter =
+  | 'DRAFT'
+  | 'SENT'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'VOIDED'
+  | 'DECLINED'
+  | 'EXPIRED';
 
 type TabKey = 'all' | 'attention' | 'waiting' | 'completed' | 'voided';
 
@@ -31,7 +66,6 @@ const TAB_LABELS: Record<TabKey, string> = {
   voided: 'Voided / Expired',
 };
 
-// Maps tab key → one or more StatusFilter values for filtering
 const TAB_STATUSES: Record<TabKey, StatusFilter[]> = {
   all: [],
   attention: ['DRAFT', 'DECLINED'],
@@ -39,6 +73,119 @@ const TAB_STATUSES: Record<TabKey, StatusFilter[]> = {
   completed: ['COMPLETED'],
   voided: ['VOIDED', 'EXPIRED'],
 };
+
+interface EnvelopeActionsDropdownProps {
+  envelope: EsigningEnvelopeListItem;
+  onDuplicate: (envelopeId: string) => void;
+  onResend: (envelope: EsigningEnvelopeListItem) => void;
+  onDelete: (envelope: EsigningEnvelopeListItem) => void;
+  onVoid: (envelope: EsigningEnvelopeListItem) => void;
+  onRetryPdf: (envelopeId: string) => void;
+  onDownload: (envelopeId: string, variant: 'combined' | 'certificates') => void;
+}
+
+function EnvelopeActionsDropdown({
+  envelope,
+  onDuplicate,
+  onResend,
+  onDelete,
+  onVoid,
+  onRetryPdf,
+  onDownload,
+}: EnvelopeActionsDropdownProps) {
+  const hasActions =
+    envelope.canDuplicate ||
+    envelope.canResend ||
+    envelope.canDelete ||
+    envelope.canVoid ||
+    envelope.canRetryPdf ||
+    envelope.status === 'COMPLETED';
+
+  if (!hasActions) {
+    return null;
+  }
+
+  return (
+    <Dropdown>
+      <DropdownTrigger asChild aria-label={`Actions for ${envelope.title}`}>
+        <button className="rounded-lg p-2 text-text-tertiary transition-colors hover:bg-background-tertiary hover:text-text-primary">
+          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </DropdownTrigger>
+      <DropdownMenu>
+        <Link href={`/esigning/${envelope.id}`}>
+          <DropdownItem icon={<ExternalLink className="h-4 w-4" />}>Open envelope</DropdownItem>
+        </Link>
+
+        {envelope.status === 'COMPLETED' ? (
+          <>
+            <DropdownItem
+              icon={<Download className="h-4 w-4" />}
+              onClick={() => onDownload(envelope.id, 'combined')}
+            >
+              Download all
+            </DropdownItem>
+            <DropdownItem
+              icon={<Download className="h-4 w-4" />}
+              onClick={() => onDownload(envelope.id, 'certificates')}
+            >
+              Certificates only
+            </DropdownItem>
+          </>
+        ) : null}
+
+        {envelope.canResend ? (
+          <DropdownItem
+            icon={<Send className="h-4 w-4" />}
+            onClick={() => onResend(envelope)}
+          >
+            Resend active requests
+          </DropdownItem>
+        ) : null}
+
+        {envelope.canDuplicate ? (
+          <DropdownItem
+            icon={<Copy className="h-4 w-4" />}
+            onClick={() => onDuplicate(envelope.id)}
+          >
+            Duplicate
+          </DropdownItem>
+        ) : null}
+
+        {envelope.canRetryPdf ? (
+          <DropdownItem
+            icon={<RefreshCw className="h-4 w-4" />}
+            onClick={() => onRetryPdf(envelope.id)}
+          >
+            Retry PDF generation
+          </DropdownItem>
+        ) : null}
+
+        {envelope.canVoid || envelope.canDelete ? <DropdownSeparator /> : null}
+
+        {envelope.canVoid ? (
+          <DropdownItem
+            destructive
+            icon={<XCircle className="h-4 w-4" />}
+            onClick={() => onVoid(envelope)}
+          >
+            Void envelope
+          </DropdownItem>
+        ) : null}
+
+        {envelope.canDelete ? (
+          <DropdownItem
+            destructive
+            icon={<Trash2 className="h-4 w-4" />}
+            onClick={() => onDelete(envelope)}
+          >
+            Delete draft
+          </DropdownItem>
+        ) : null}
+      </DropdownMenu>
+    </Dropdown>
+  );
+}
 
 export function EsigningListPage() {
   const router = useRouter();
@@ -50,6 +197,11 @@ export function EsigningListPage() {
   const [limit, setLimit] = useState(20);
   const [isStarting, setIsStarting] = useState(false);
   const [isDraggingOnHero, setIsDraggingOnHero] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<EsigningEnvelopeListItem | null>(null);
+  const [voidTarget, setVoidTarget] = useState<EsigningEnvelopeListItem | null>(null);
+  const [retryTargetId, setRetryTargetId] = useState<string | null>(null);
+  const [manualLinks, setManualLinks] = useState<EsigningManualLinkDto[]>([]);
+  const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
 
   const activeStatuses = TAB_STATUSES[activeTab];
   const envelopesQuery = useEsigningEnvelopes({
@@ -59,10 +211,15 @@ export function EsigningListPage() {
     limit,
   });
   const createEnvelope = useCreateEsigningEnvelope();
+  const deleteEnvelope = useDeleteEsigningEnvelope();
+  const duplicateEnvelope = useDuplicateEsigningEnvelope();
+  const resendEnvelope = useResendEsigningEnvelope();
+  const voidEnvelope = useVoidEsigningEnvelope(voidTarget?.id ?? '');
+  const retryProcessing = useRetryEsigningEnvelopeProcessing(retryTargetId ?? '');
 
   const envelopes = useMemo(
     () => (envelopesQuery.data?.envelopes ?? []) as EsigningEnvelopeListItem[],
-    [envelopesQuery.data?.envelopes],
+    [envelopesQuery.data?.envelopes]
   );
 
   const statusCounts = useMemo(
@@ -91,18 +248,22 @@ export function EsigningListPage() {
       completed: statusCounts.COMPLETED,
       voided: statusCounts.VOIDED + statusCounts.EXPIRED,
     }),
-    [statusCounts],
+    [statusCounts]
   );
 
   const totalResults = envelopesQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalResults / limit));
 
   async function handleStart(file?: File) {
-    if (isStarting) return;
+    if (isStarting) {
+      return;
+    }
+
     try {
       setIsStarting(true);
       const title = file ? file.name.replace(/\.pdf$/i, '') : 'New Envelope';
       const envelope = await createEnvelope.mutateAsync({ title, signingOrder: 'PARALLEL' });
+
       if (file) {
         const formData = new FormData();
         formData.set('file', file);
@@ -111,10 +272,54 @@ export function EsigningListPage() {
           body: formData,
         });
       }
+
       router.push(`/esigning/${envelope.id}`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create envelope');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to create envelope');
       setIsStarting(false);
+    }
+  }
+
+  async function handleDuplicateEnvelope(envelopeId: string) {
+    try {
+      const duplicated = await duplicateEnvelope.mutateAsync(envelopeId);
+      toast.success('Envelope duplicated');
+      router.push(`/esigning/${duplicated.id}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate envelope');
+    }
+  }
+
+  async function handleRetryPdf(envelopeId: string) {
+    try {
+      setRetryTargetId(envelopeId);
+      await retryProcessing.mutateAsync();
+      toast.success('PDF generation queued again');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to retry PDF generation');
+    } finally {
+      setRetryTargetId(null);
+    }
+  }
+
+  function handleDownload(envelopeId: string, variant: 'combined' | 'certificates') {
+    const queryParams = new URLSearchParams({ variant });
+    window.open(`/api/esigning/envelopes/${envelopeId}/download?${queryParams.toString()}`, '_blank', 'noreferrer');
+  }
+
+  async function handleResendEnvelope(envelope: EsigningEnvelopeListItem) {
+    try {
+      const result = await resendEnvelope.mutateAsync(envelope.id);
+      if (result.manualLinks.length > 0) {
+        setManualLinks(result.manualLinks);
+        setIsLinksModalOpen(true);
+      }
+
+      const signerLabel =
+        envelope.resendableRecipientCount === 1 ? '1 signer' : `${envelope.resendableRecipientCount} signers`;
+      toast.success(`Resent active signing request to ${signerLabel}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to resend active signing requests');
     }
   }
 
@@ -150,19 +355,24 @@ export function EsigningListPage() {
 
         {can.createEsigning ? (
           <section
-            onDragOver={(e) => { e.preventDefault(); setIsDraggingOnHero(true); }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setIsDraggingOnHero(true);
+            }}
             onDragLeave={() => setIsDraggingOnHero(false)}
-            onDrop={(e) => {
-              e.preventDefault();
+            onDrop={(event) => {
+              event.preventDefault();
               setIsDraggingOnHero(false);
-              const file = e.dataTransfer.files[0];
-              if (file?.type === 'application/pdf') void handleStart(file);
+              const file = event.dataTransfer.files[0];
+              if (file?.type === 'application/pdf') {
+                void handleStart(file);
+              }
             }}
             className={cn(
               'flex flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed p-10 text-center transition-colors',
               isDraggingOnHero
                 ? 'border-oak-primary bg-oak-primary/5'
-                : 'border-border-primary bg-background-secondary hover:border-oak-primary/40 hover:bg-background-secondary/80',
+                : 'border-border-primary bg-background-secondary hover:border-oak-primary/40 hover:bg-background-secondary/80'
             )}
           >
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-oak-primary/10 text-oak-primary">
@@ -184,7 +394,6 @@ export function EsigningListPage() {
           </section>
         ) : null}
 
-        {/* Filter tabs */}
         <section className="rounded-3xl border border-border-primary bg-background-secondary shadow-sm">
           <div className="flex flex-wrap gap-0 border-b border-border-primary px-4">
             {(Object.keys(TAB_LABELS) as TabKey[]).map((tab) => (
@@ -196,7 +405,7 @@ export function EsigningListPage() {
                   'relative flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors',
                   activeTab === tab
                     ? 'text-oak-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-oak-primary'
-                    : 'text-text-secondary hover:text-text-primary',
+                    : 'text-text-secondary hover:text-text-primary'
                 )}
               >
                 {TAB_LABELS[tab]}
@@ -205,7 +414,7 @@ export function EsigningListPage() {
                     'rounded-full px-1.5 py-0.5 text-xs font-semibold',
                     activeTab === tab
                       ? 'bg-oak-primary/10 text-oak-primary'
-                      : 'bg-background-tertiary text-text-muted',
+                      : 'bg-background-tertiary text-text-muted'
                   )}
                 >
                   {tabCounts[tab]}
@@ -215,7 +424,7 @@ export function EsigningListPage() {
           </div>
           <div className="p-4">
             <FormInput
-              placeholder="Search envelopes, senders, or recipients…"
+              placeholder="Search envelopes, senders, or recipients..."
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               leftIcon={<Search className="h-4 w-4" />}
@@ -231,45 +440,59 @@ export function EsigningListPage() {
 
         <section className="grid gap-4">
           {envelopes.map((envelope) => (
-            <Link
+            <article
               key={envelope.id}
-              href={`/esigning/${envelope.id}`}
-              className="group rounded-3xl border border-border-primary bg-background-secondary p-5 shadow-sm transition-colors hover:border-oak-primary/40"
+              className="rounded-3xl border border-border-primary bg-background-secondary p-5 shadow-sm transition-colors hover:border-oak-primary/40"
             >
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <EnvelopeStatusBadge status={envelope.status} />
-                    <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
-                      {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
-                    </span>
-                    <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
-                      {envelope.documentCount} docs
-                    </span>
-                    <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
-                      {envelope.signerCount} signers
-                    </span>
-                  </div>
-                  <div>
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-2xl bg-oak-primary/10 p-3 text-oak-primary">
-                        <FilePenLine className="h-5 w-5" />
+              <div className="flex items-start justify-between gap-4">
+                <Link href={`/esigning/${envelope.id}`} className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <EnvelopeStatusBadge status={envelope.status} />
+                        <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
+                          {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
+                        </span>
+                        <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
+                          {envelope.documentCount} docs
+                        </span>
+                        <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
+                          {envelope.signerCount} signers
+                        </span>
                       </div>
-                      <div>
-                        <h2 className="text-lg font-semibold text-text-primary">{envelope.title}</h2>
-                        <p className="mt-1 text-sm text-text-secondary">
-                          {envelope.companyName ?? 'No linked company'} • Created by {envelope.createdByName}
-                        </p>
+
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-2xl bg-oak-primary/10 p-3 text-oak-primary">
+                          <FilePenLine className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <h2 className="truncate text-lg font-semibold text-text-primary">
+                            {envelope.title}
+                          </h2>
+                          <p className="mt-1 truncate text-sm text-text-secondary">
+                            {envelope.companyName ?? 'No linked company'} · Created by {envelope.createdByName}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className="grid gap-1 text-sm text-text-secondary lg:text-right">
-                  <div>Updated {formatEsigningDateTime(envelope.updatedAt)}</div>
-                  <div>Created {formatEsigningDateTime(envelope.createdAt)}</div>
-                  <div>Certificate {envelope.certificateId}</div>
-                </div>
+                    <div className="grid gap-1 text-sm text-text-secondary lg:text-right">
+                      <div>Updated {formatEsigningDateTime(envelope.updatedAt)}</div>
+                      <div>Created {formatEsigningDateTime(envelope.createdAt)}</div>
+                      <div>Certificate {envelope.certificateId}</div>
+                    </div>
+                  </div>
+                </Link>
+
+                <EnvelopeActionsDropdown
+                  envelope={envelope}
+                  onDuplicate={handleDuplicateEnvelope}
+                  onResend={(target) => void handleResendEnvelope(target)}
+                  onDelete={setDeleteTarget}
+                  onVoid={setVoidTarget}
+                  onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
+                  onDownload={handleDownload}
+                />
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
@@ -284,6 +507,7 @@ export function EsigningListPage() {
                           : recipient.type === 'CC'
                             ? Minus
                             : Circle;
+
                   const iconColor =
                     recipient.status === 'SIGNED'
                       ? 'text-green-500'
@@ -292,6 +516,7 @@ export function EsigningListPage() {
                         : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
                           ? 'text-blue-500'
                           : 'text-text-muted';
+
                   return (
                     <span
                       key={recipient.id}
@@ -302,27 +527,28 @@ export function EsigningListPage() {
                     </span>
                   );
                 })}
+
                 {envelope.recipientCount > 4 ? (
                   <span className="inline-flex items-center rounded-full border border-border-primary bg-background-primary px-3 py-1 text-xs text-text-secondary">
                     +{envelope.recipientCount - 4} more
                   </span>
                 ) : null}
               </div>
-              {/* Last activity */}
+
               <div className="mt-3 text-xs text-text-muted">
                 {envelope.status === 'DRAFT'
                   ? `Draft · ${envelope.documentCount} doc${envelope.documentCount === 1 ? '' : 's'} · ${envelope.signerCount} signer${envelope.signerCount === 1 ? '' : 's'}`
                   : envelope.status === 'COMPLETED'
                     ? `Completed ${envelope.completedAt ? formatEsigningDateTime(envelope.completedAt) : ''}`
                     : envelope.status === 'DECLINED'
-                      ? 'Declined — action required'
+                      ? 'Declined - action required'
                       : envelope.status === 'VOIDED'
                         ? 'Voided'
                         : envelope.status === 'EXPIRED'
                           ? 'Expired'
                           : `Updated ${formatEsigningDateTime(envelope.updatedAt)}`}
               </div>
-            </Link>
+            </article>
           ))}
 
           {envelopesQuery.isLoading ? (
@@ -346,7 +572,9 @@ export function EsigningListPage() {
               </p>
               {can.createEsigning ? (
                 <div className="mt-5">
-                  <Button isLoading={isStarting} onClick={() => void handleStart()}>Create your first envelope</Button>
+                  <Button isLoading={isStarting} onClick={() => void handleStart()}>
+                    Create your first envelope
+                  </Button>
                 </div>
               ) : null}
             </div>
@@ -369,6 +597,103 @@ export function EsigningListPage() {
           </section>
         ) : null}
       </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) {
+            return;
+          }
+
+          try {
+            await deleteEnvelope.mutateAsync(deleteTarget.id);
+            toast.success('Draft deleted');
+            setDeleteTarget(null);
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to delete draft');
+          }
+        }}
+        title="Delete draft envelope?"
+        description={
+          deleteTarget
+            ? `This permanently removes "${deleteTarget.title}" and its uploaded source files.`
+            : undefined
+        }
+        confirmLabel="Delete draft"
+        isLoading={deleteEnvelope.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(voidTarget)}
+        onClose={() => setVoidTarget(null)}
+        onConfirm={async (reason) => {
+          if (!voidTarget) {
+            return;
+          }
+
+          try {
+            await voidEnvelope.mutateAsync(reason ?? null);
+            toast.success('Envelope voided');
+            setVoidTarget(null);
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to void envelope');
+          }
+        }}
+        title="Void envelope?"
+        description={
+          voidTarget
+            ? `Signers will lose access to "${voidTarget.title}" immediately.`
+            : undefined
+        }
+        confirmLabel="Void envelope"
+        requireReason
+        reasonLabel="Void reason"
+        reasonPlaceholder="Explain why the envelope is being cancelled"
+        reasonMinLength={3}
+        isLoading={voidEnvelope.isPending}
+      />
+
+      <Modal
+        isOpen={isLinksModalOpen}
+        onClose={() => setIsLinksModalOpen(false)}
+        title="Manual signing links"
+        size="xl"
+      >
+        <ModalBody className="space-y-3">
+          <Alert variant="info">
+            Share these links securely with recipients whose access mode uses manual delivery.
+          </Alert>
+          {manualLinks.map((link) => (
+            <div
+              key={link.recipientId}
+              className="rounded-2xl border border-border-primary bg-background-primary p-4"
+            >
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0">
+                  <div className="font-medium text-text-primary">{link.recipientName}</div>
+                  <div className="text-sm text-text-secondary">{link.recipientEmail}</div>
+                  <div className="mt-2 break-all text-xs text-text-muted">{link.signingUrl}</div>
+                </div>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    void navigator.clipboard
+                      .writeText(link.signingUrl)
+                      .then(() => toast.success('Manual link copied'))
+                      .catch(() => toast.error('Clipboard access failed'))
+                  }
+                >
+                  Copy
+                </Button>
+              </div>
+            </div>
+          ))}
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={() => setIsLinksModalOpen(false)}>Done</Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

@@ -84,6 +84,8 @@ interface DocumentPageViewerProps {
   pdfUrl?: string;
   initialPage?: number;
   initialRotation?: number;
+  zoomLevel?: number;
+  onZoomLevelChange?: (zoomLevel: number) => void;
   highlights?: BoundingBox[];
   fieldValues?: FieldValue[];
   onPageChange?: (pageNumber: number) => void;
@@ -101,6 +103,8 @@ interface DocumentPageViewerProps {
   onHighlightClick?: (index: number, highlight: BoundingBox) => void;
   /** Renders custom React content inside each highlight's foreignObject. Receives the highlight, its pixel rect, and index. */
   renderHighlightContent?: (highlight: BoundingBox, pixelRect: { x: number; y: number; width: number; height: number }, index: number) => React.ReactNode;
+  /** Optional retry handler when using a direct pdfUrl prop and loading fails. */
+  onRetry?: () => void;
 }
 
 // =============================================================================
@@ -111,6 +115,7 @@ const ZOOM_LEVELS = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 const DEFAULT_ZOOM_INDEX = 6; // 150%
 const MOBILE_DEFAULT_ZOOM_INDEX = 4; // 100%
 const PINCH_ZOOM_STEP_PX = 40; // Pinch distance (px) required to move one zoom level
+export const DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS = [...ZOOM_LEVELS] as const;
 
 // Fixed padding for bounding boxes (normalized 0-1 coordinates)
 const BBOX_HORIZONTAL_PADDING = 0.008;
@@ -124,6 +129,14 @@ function getTouchDistance(touchA: Touch, touchB: Touch): number {
   const deltaX = touchA.clientX - touchB.clientX;
   const deltaY = touchA.clientY - touchB.clientY;
   return Math.hypot(deltaX, deltaY);
+}
+
+function getClosestZoomIndex(zoomLevel: number): number {
+  return ZOOM_LEVELS.reduce((closestIndex, candidateZoom, candidateIndex) => {
+    const currentDistance = Math.abs(candidateZoom - zoomLevel);
+    const closestDistance = Math.abs(ZOOM_LEVELS[closestIndex] - zoomLevel);
+    return currentDistance < closestDistance ? candidateIndex : closestIndex;
+  }, DEFAULT_ZOOM_INDEX);
 }
 
 // =============================================================================
@@ -302,6 +315,8 @@ export function DocumentPageViewer({
   pdfUrl: pdfUrlProp,
   initialPage = 1,
   initialRotation = 0,
+  zoomLevel,
+  onZoomLevelChange,
   highlights,
   fieldValues,
   onPageChange,
@@ -315,6 +330,7 @@ export function DocumentPageViewer({
   onPagesChanged,
   onHighlightClick,
   renderHighlightContent,
+  onRetry,
 }: DocumentPageViewerProps) {
   // Stable references
   const stableHighlights = highlights ?? EMPTY_HIGHLIGHTS;
@@ -331,7 +347,7 @@ export function DocumentPageViewer({
   const isMobile = useIsMobile();
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [pageCount, setPageCount] = useState(0);
-  const [zoomIndex, setZoomIndex] = useState(DEFAULT_ZOOM_INDEX);
+  const [zoomIndexInternal, setZoomIndexInternal] = useState(DEFAULT_ZOOM_INDEX);
   const [rotation, setRotation] = useState(initialRotation); // 0, 90, 180, 270 degrees
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPdfLoading, setIsPdfLoading] = useState(true);
@@ -342,8 +358,25 @@ export function DocumentPageViewer({
   const [showHighlightsInternal, setShowHighlightsInternal] = useState(true);
   const [showThumbnails, setShowThumbnails] = useState(true);
 
+  const isZoomControlled = typeof zoomLevel === 'number';
+  const zoomIndex = isZoomControlled ? getClosestZoomIndex(zoomLevel) : zoomIndexInternal;
   const showHighlights = showHighlightsProp ?? showHighlightsInternal;
   const zoom = ZOOM_LEVELS[zoomIndex];
+  const thumbnailPages = useMemo<PageInfo[]>(() => {
+    if (data?.pages?.length) {
+      return data.pages;
+    }
+
+    if (!skipDataFetch || pageCount === 0) {
+      return [];
+    }
+
+    return Array.from({ length: pageCount }, (_, index) => ({
+      id: `pdf-page-${index + 1}`,
+      pageNumber: index + 1,
+      imageUrl: '',
+    }));
+  }, [data?.pages, pageCount, skipDataFetch]);
 
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -358,6 +391,26 @@ export function DocumentPageViewer({
   // ==========================================================================
   // Handlers
   // ==========================================================================
+
+  const setResolvedZoomIndex = useCallback(
+    (nextZoomIndexOrUpdater: number | ((current: number) => number)) => {
+      const currentZoomIndex = isZoomControlled
+        ? getClosestZoomIndex(zoomLevel ?? ZOOM_LEVELS[DEFAULT_ZOOM_INDEX])
+        : zoomIndexInternal;
+      const nextZoomIndexRaw =
+        typeof nextZoomIndexOrUpdater === 'function'
+          ? nextZoomIndexOrUpdater(currentZoomIndex)
+          : nextZoomIndexOrUpdater;
+      const nextZoomIndex = Math.min(ZOOM_LEVELS.length - 1, Math.max(0, nextZoomIndexRaw));
+
+      if (!isZoomControlled) {
+        setZoomIndexInternal(nextZoomIndex);
+      }
+
+      onZoomLevelChange?.(ZOOM_LEVELS[nextZoomIndex]);
+    },
+    [isZoomControlled, onZoomLevelChange, zoomIndexInternal, zoomLevel]
+  );
 
   const handleToggleHighlights = useCallback(() => {
     const newValue = !showHighlights;
@@ -377,12 +430,12 @@ export function DocumentPageViewer({
   }, [pageCount]);
 
   const handleZoomIn = useCallback(() => {
-    setZoomIndex((prev) => Math.min(ZOOM_LEVELS.length - 1, prev + 1));
-  }, []);
+    setResolvedZoomIndex((prev) => prev + 1);
+  }, [setResolvedZoomIndex]);
 
   const handleZoomOut = useCallback(() => {
-    setZoomIndex((prev) => Math.max(0, prev - 1));
-  }, []);
+    setResolvedZoomIndex((prev) => prev - 1);
+  }, [setResolvedZoomIndex]);
 
   const handleRotateCW = useCallback(() => {
     setRotation((prev) => {
@@ -488,9 +541,9 @@ export function DocumentPageViewer({
 
   // On mobile, default initial zoom to 100% instead of 150%.
   useEffect(() => {
-    if (!isMobile) return;
-    setZoomIndex((prev) => (prev === DEFAULT_ZOOM_INDEX ? MOBILE_DEFAULT_ZOOM_INDEX : prev));
-  }, [isMobile]);
+    if (!isMobile || isZoomControlled) return;
+    setResolvedZoomIndex((prev) => (prev === DEFAULT_ZOOM_INDEX ? MOBILE_DEFAULT_ZOOM_INDEX : prev));
+  }, [isMobile, isZoomControlled, setResolvedZoomIndex]);
 
   // Load PDF when URL is available
   useEffect(() => {
@@ -714,7 +767,7 @@ export function DocumentPageViewer({
         Math.min(ZOOM_LEVELS.length - 1, pinchStartZoomIndexRef.current + zoomDelta)
       );
 
-      setZoomIndex((prev) => (prev === nextZoomIndex ? prev : nextZoomIndex));
+      setResolvedZoomIndex((prev) => (prev === nextZoomIndex ? prev : nextZoomIndex));
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
@@ -741,7 +794,7 @@ export function DocumentPageViewer({
       container.removeEventListener('touchend', handleTouchEnd);
       container.removeEventListener('touchcancel', handleTouchCancel);
     };
-  }, [isMobile]);
+  }, [isMobile, setResolvedZoomIndex]);
 
   // ==========================================================================
   // Computed values
@@ -765,11 +818,18 @@ export function DocumentPageViewer({
       <div className={cn('flex flex-col items-center justify-center h-96 bg-background-secondary rounded-lg', className)}>
         <FileText className="w-12 h-12 text-text-muted mb-4" />
         <p className="text-text-secondary mb-4">Failed to load document</p>
-        {!skipDataFetch && (
-          <button onClick={() => refetch()} className="btn-secondary btn-sm">
-            Retry
-          </button>
-        )}
+        <button
+          onClick={() => {
+            if (skipDataFetch) {
+              onRetry?.();
+              return;
+            }
+            void refetch();
+          }}
+          className="btn-secondary btn-sm"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -924,15 +984,15 @@ export function DocumentPageViewer({
       {/* PDF viewer with optional thumbnail sidebar */}
       <div className="flex-1 flex overflow-hidden">
         {/* Page thumbnail sidebar */}
-        {showThumbnails && data?.pages && data.pages.length > 0 && (
+        {showThumbnails && thumbnailPages.length > 0 && (
           <PageThumbnailSidebar
-            pages={data.pages}
+            pages={thumbnailPages}
             currentPage={currentPage}
             onPageSelect={setCurrentPage}
-            pdfUrl={data.isPdf && effectivePdfUrl ? effectivePdfUrl : undefined}
+            pdfUrl={effectivePdfUrl ?? undefined}
             documentId={documentId}
             documentStatus={documentStatus}
-            isPdf={data.isPdf}
+            isPdf={data?.isPdf ?? true}
             onPagesChanged={onPagesChanged}
           />
         )}

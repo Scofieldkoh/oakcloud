@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { EsigningFieldType } from '@/generated/prisma';
 import type { EsigningEnvelopeDocumentDto, EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { EsigningFieldDefinitionInput } from '@/lib/validations/esigning';
+import { ESIGNING_LIMITS } from '@/lib/validations/esigning';
 import { DocumentPageViewer } from '@/components/processing/document-page-viewer';
 import { buildFieldHighlights, ESIGNING_FIELD_TYPE_LABELS } from '@/components/esigning/esigning-shared';
 import { cn } from '@/lib/utils';
@@ -12,15 +13,59 @@ export interface PlacedField extends EsigningFieldDefinitionInput {
   localId: string;
 }
 
+type ResizeHandle = 'nw' | 'ne' | 'se' | 'sw';
+
+interface CanvasBounds {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+interface CanvasGuides {
+  vertical: number[];
+  horizontal: number[];
+}
+
+interface FieldChangeOptions {
+  recordHistory?: boolean;
+  historySnapshot?: PlacedField[];
+}
+
+type CanvasInteraction =
+  | {
+      kind: 'drag';
+      fieldId: string;
+      startClientX: number;
+      startClientY: number;
+      fieldSnapshot: PlacedField;
+      selectedFieldIds: string[];
+      selectionSnapshots: PlacedField[];
+      allFieldsSnapshot: PlacedField[];
+    }
+  | {
+      kind: 'resize';
+      fieldId: string;
+      handle: ResizeHandle;
+      startClientX: number;
+      startClientY: number;
+      fieldSnapshot: PlacedField;
+      allFieldsSnapshot: PlacedField[];
+    };
+
+const SNAP_THRESHOLD = 0.01;
+const NUDGE_STEP = 0.005;
+const LARGE_NUDGE_STEP = 0.02;
+
 const DEFAULT_FIELD_SIZES: Record<EsigningFieldType, { w: number; h: number }> = {
-  SIGNATURE:   { w: 0.24, h: 0.08 },
-  INITIALS:    { w: 0.12, h: 0.06 },
+  SIGNATURE: { w: 0.24, h: 0.08 },
+  INITIALS: { w: 0.12, h: 0.06 },
   DATE_SIGNED: { w: 0.18, h: 0.04 },
-  NAME:        { w: 0.20, h: 0.04 },
-  TEXT:        { w: 0.20, h: 0.04 },
-  COMPANY:     { w: 0.20, h: 0.04 },
-  TITLE:       { w: 0.20, h: 0.04 },
-  CHECKBOX:    { w: 0.03, h: 0.03 },
+  NAME: { w: 0.2, h: 0.04 },
+  TEXT: { w: 0.2, h: 0.04 },
+  COMPANY: { w: 0.2, h: 0.04 },
+  TITLE: { w: 0.2, h: 0.04 },
+  CHECKBOX: { w: 0.03, h: 0.03 },
 };
 
 interface EsigningFieldCanvasProps {
@@ -28,7 +73,7 @@ interface EsigningFieldCanvasProps {
   selectedDocumentId: string;
   onDocumentChange: (documentId: string) => void;
   fields: PlacedField[];
-  onFieldsChange: (fields: PlacedField[]) => void;
+  onFieldsChange: (fields: PlacedField[], options?: FieldChangeOptions) => void;
   selectedFieldId: string | null;
   onFieldSelect: (fieldId: string | null) => void;
   placementType: EsigningFieldType | null;
@@ -36,63 +81,290 @@ interface EsigningFieldCanvasProps {
   recipients: EsigningEnvelopeRecipientDto[];
   viewerPage: number;
   onPageChange: (page: number) => void;
+  zoomLevel?: number;
+  onZoomLevelChange?: (zoomLevel: number) => void;
   canEdit: boolean;
 }
 
 interface PlacedFieldChipProps {
   field: PlacedField;
-  containerWidth: number;
-  containerHeight: number;
+  canvasWidth: number;
+  canvasHeight: number;
   isSelected: boolean;
+  hasOverlap: boolean;
+  canEdit: boolean;
   recipients: EsigningEnvelopeRecipientDto[];
-  onSelect: () => void;
+  onSelect: (event: React.MouseEvent<HTMLDivElement>) => void;
   onDelete: () => void;
-  onUpdate: (updates: Partial<PlacedField>) => void;
+  onBeginDrag: (event: React.PointerEvent<HTMLDivElement>) => void;
+  onBeginResize: (event: React.PointerEvent<HTMLButtonElement>, handle: ResizeHandle) => void;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function normalizeFieldPosition(field: PlacedField): PlacedField {
+  const widthPercent = clamp(field.widthPercent, ESIGNING_LIMITS.MIN_FIELD_WIDTH, 1);
+  const heightPercent = clamp(field.heightPercent, ESIGNING_LIMITS.MIN_FIELD_HEIGHT, 1);
+  const xPercent = clamp(field.xPercent, 0, 1 - widthPercent);
+  const yPercent = clamp(field.yPercent, 0, 1 - heightPercent);
+
+  return {
+    ...field,
+    xPercent,
+    yPercent,
+    widthPercent,
+    heightPercent,
+  };
+}
+
+function areFieldCollectionsEqual(left: PlacedField[], right: PlacedField[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((field, index) => {
+    const other = right[index];
+    if (!other) {
+      return false;
+    }
+
+    return (
+      field.localId === other.localId &&
+      field.documentId === other.documentId &&
+      field.recipientId === other.recipientId &&
+      field.type === other.type &&
+      field.pageNumber === other.pageNumber &&
+      field.xPercent === other.xPercent &&
+      field.yPercent === other.yPercent &&
+      field.widthPercent === other.widthPercent &&
+      field.heightPercent === other.heightPercent &&
+      field.required === other.required &&
+      field.label === other.label &&
+      field.placeholder === other.placeholder &&
+      field.sortOrder === other.sortOrder
+    );
+  });
+}
+
+function fieldsOverlap(left: PlacedField, right: PlacedField): boolean {
+  if (left.localId === right.localId) {
+    return false;
+  }
+  if (left.documentId !== right.documentId || left.pageNumber !== right.pageNumber) {
+    return false;
+  }
+
+  const leftRight = left.xPercent + left.widthPercent;
+  const rightRight = right.xPercent + right.widthPercent;
+  const leftBottom = left.yPercent + left.heightPercent;
+  const rightBottom = right.yPercent + right.heightPercent;
+
+  return !(
+    leftRight <= right.xPercent ||
+    rightRight <= left.xPercent ||
+    leftBottom <= right.yPercent ||
+    rightBottom <= left.yPercent
+  );
+}
+
+export function detectFieldOverlaps(fields: PlacedField[]): Map<string, string[]> {
+  const overlapMap = new Map<string, Set<string>>();
+
+  for (let i = 0; i < fields.length; i += 1) {
+    for (let j = i + 1; j < fields.length; j += 1) {
+      const left = fields[i];
+      const right = fields[j];
+      if (!fieldsOverlap(left, right)) {
+        continue;
+      }
+
+      const leftSet = overlapMap.get(left.localId) ?? new Set<string>();
+      leftSet.add(right.localId);
+      overlapMap.set(left.localId, leftSet);
+
+      const rightSet = overlapMap.get(right.localId) ?? new Set<string>();
+      rightSet.add(left.localId);
+      overlapMap.set(right.localId, rightSet);
+    }
+  }
+
+  return new Map(
+    [...overlapMap.entries()].map(([fieldId, overlaps]) => [fieldId, [...overlaps].sort()])
+  );
+}
+
+function snapFieldToGuides(input: {
+  field: PlacedField;
+  otherFields: PlacedField[];
+}): { field: PlacedField; guides: CanvasGuides } {
+  const candidatesX = [0, 0.5, 1];
+  const candidatesY = [0, 0.5, 1];
+
+  input.otherFields.forEach((field) => {
+    candidatesX.push(field.xPercent, field.xPercent + field.widthPercent / 2, field.xPercent + field.widthPercent);
+    candidatesY.push(field.yPercent, field.yPercent + field.heightPercent / 2, field.yPercent + field.heightPercent);
+  });
+
+  const fieldAnchorsX = [
+    { anchor: 'left', value: input.field.xPercent },
+    { anchor: 'center', value: input.field.xPercent + input.field.widthPercent / 2 },
+    { anchor: 'right', value: input.field.xPercent + input.field.widthPercent },
+  ] as const;
+  const fieldAnchorsY = [
+    { anchor: 'top', value: input.field.yPercent },
+    { anchor: 'middle', value: input.field.yPercent + input.field.heightPercent / 2 },
+    { anchor: 'bottom', value: input.field.yPercent + input.field.heightPercent },
+  ] as const;
+
+  const snappedField = { ...input.field };
+  const guides: CanvasGuides = { vertical: [], horizontal: [] };
+
+  let bestX: { candidate: number; anchor: (typeof fieldAnchorsX)[number]['anchor']; distance: number } | null = null;
+  for (const candidate of candidatesX) {
+    for (const anchor of fieldAnchorsX) {
+      const distance = Math.abs(anchor.value - candidate);
+      if (distance <= SNAP_THRESHOLD && (!bestX || distance < bestX.distance)) {
+        bestX = { candidate, anchor: anchor.anchor, distance };
+      }
+    }
+  }
+
+  if (bestX) {
+    if (bestX.anchor === 'left') {
+      snappedField.xPercent = bestX.candidate;
+    } else if (bestX.anchor === 'center') {
+      snappedField.xPercent = bestX.candidate - snappedField.widthPercent / 2;
+    } else {
+      snappedField.xPercent = bestX.candidate - snappedField.widthPercent;
+    }
+    guides.vertical.push(bestX.candidate);
+  }
+
+  let bestY: { candidate: number; anchor: (typeof fieldAnchorsY)[number]['anchor']; distance: number } | null = null;
+  for (const candidate of candidatesY) {
+    for (const anchor of fieldAnchorsY) {
+      const distance = Math.abs(anchor.value - candidate);
+      if (distance <= SNAP_THRESHOLD && (!bestY || distance < bestY.distance)) {
+        bestY = { candidate, anchor: anchor.anchor, distance };
+      }
+    }
+  }
+
+  if (bestY) {
+    if (bestY.anchor === 'top') {
+      snappedField.yPercent = bestY.candidate;
+    } else if (bestY.anchor === 'middle') {
+      snappedField.yPercent = bestY.candidate - snappedField.heightPercent / 2;
+    } else {
+      snappedField.yPercent = bestY.candidate - snappedField.heightPercent;
+    }
+    guides.horizontal.push(bestY.candidate);
+  }
+
+  return {
+    field: normalizeFieldPosition(snappedField),
+    guides,
+  };
 }
 
 function PlacedFieldChip({
   field,
-  containerWidth,
-  containerHeight,
+  canvasWidth,
+  canvasHeight,
   isSelected,
+  hasOverlap,
+  canEdit,
   recipients,
   onSelect,
   onDelete,
+  onBeginDrag,
+  onBeginResize,
 }: PlacedFieldChipProps) {
-  const recipient = recipients.find((r) => r.id === field.recipientId);
+  const recipient = recipients.find((entry) => entry.id === field.recipientId);
+  const accentColor = recipient?.colorTag ?? '#1d4ed8';
+
   return (
     <div
-      onClick={(e) => { e.stopPropagation(); onSelect(); }}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect(event);
+      }}
+      onPointerDown={(event) => {
+        if (!canEdit || event.button !== 0 || event.shiftKey || event.metaKey || event.ctrlKey) {
+          return;
+        }
+        onBeginDrag(event);
+      }}
       style={{
         position: 'absolute',
-        left: field.xPercent * containerWidth,
-        top: field.yPercent * containerHeight,
-        width: field.widthPercent * containerWidth,
-        height: field.heightPercent * containerHeight,
-        borderColor: recipient?.colorTag ?? '#1d4ed8',
-        zIndex: 20,
-        backgroundColor: `${recipient?.colorTag ?? '#1d4ed8'}18`,
+        left: field.xPercent * canvasWidth,
+        top: field.yPercent * canvasHeight,
+        width: field.widthPercent * canvasWidth,
+        height: field.heightPercent * canvasHeight,
+        borderColor: hasOverlap ? '#d97706' : accentColor,
+        backgroundColor: hasOverlap ? 'rgba(217, 119, 6, 0.14)' : `${accentColor}18`,
+        zIndex: isSelected ? 30 : 20,
       }}
       className={cn(
-        'border-2 rounded flex items-center justify-center cursor-pointer select-none',
-        isSelected && 'ring-2 ring-oak-primary ring-offset-1'
+        'pointer-events-auto select-none rounded border-2 shadow-sm transition-shadow',
+        canEdit ? 'cursor-move' : 'cursor-pointer',
+        isSelected && 'ring-2 ring-oak-primary ring-offset-1',
+        hasOverlap && 'shadow-[0_0_0_2px_rgba(217,119,6,0.18)]'
       )}
     >
-      <span
-        className="text-xs font-medium truncate px-1"
-        style={{ color: recipient?.colorTag ?? '#1d4ed8' }}
-      >
-        {ESIGNING_FIELD_TYPE_LABELS[field.type]}
-      </span>
-      {isSelected && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-rose-500 text-white text-xs flex items-center justify-center leading-none"
+      <div className="flex h-full items-center justify-center px-1">
+        <span
+          className="truncate text-xs font-medium"
+          style={{ color: hasOverlap ? '#92400e' : accentColor }}
         >
-          ×
-        </button>
-      )}
+          {ESIGNING_FIELD_TYPE_LABELS[field.type]}
+        </span>
+      </div>
+
+      {hasOverlap ? (
+        <span className="absolute left-1 top-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-amber-800">
+          Overlap
+        </span>
+      ) : null}
+
+      {isSelected && canEdit ? (
+        <>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete();
+            }}
+            className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-xs font-bold text-white shadow"
+          >
+            x
+          </button>
+
+          {(['nw', 'ne', 'se', 'sw'] as ResizeHandle[]).map((handle) => {
+            const handleClasses: Record<ResizeHandle, string> = {
+              nw: '-left-1.5 -top-1.5 cursor-nwse-resize',
+              ne: '-right-1.5 -top-1.5 cursor-nesw-resize',
+              se: '-bottom-1.5 -right-1.5 cursor-nwse-resize',
+              sw: '-bottom-1.5 -left-1.5 cursor-nesw-resize',
+            };
+
+            return (
+              <button
+                key={handle}
+                type="button"
+                onPointerDown={(event) => onBeginResize(event, handle)}
+                className={cn(
+                  'absolute h-3 w-3 rounded-full border border-white bg-oak-primary shadow',
+                  handleClasses[handle]
+                )}
+                aria-label={`Resize ${ESIGNING_FIELD_TYPE_LABELS[field.type]} field`}
+              />
+            );
+          })}
+        </>
+      ) : null}
     </div>
   );
 }
@@ -110,106 +382,557 @@ export function EsigningFieldCanvas({
   recipients,
   viewerPage,
   onPageChange,
+  zoomLevel,
+  onZoomLevelChange,
   canEdit,
 }: EsigningFieldCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const clipboardRef = useRef<PlacedField[]>([]);
+  const interactionPreviewRef = useRef<PlacedField[] | null>(null);
+  const [canvasBounds, setCanvasBounds] = useState<CanvasBounds>({
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0,
+  });
+  const [interaction, setInteraction] = useState<CanvasInteraction | null>(null);
+  const [selectedFieldIdsInternal, setSelectedFieldIdsInternal] = useState<string[]>(
+    selectedFieldId ? [selectedFieldId] : []
+  );
+  const [ghostPosition, setGhostPosition] = useState<{ xPercent: number; yPercent: number } | null>(
+    null
+  );
+  const [snapGuides, setSnapGuides] = useState<CanvasGuides>({ vertical: [], horizontal: [] });
 
-  // Track container dimensions
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const obs = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setContainerSize({
-          width: entry.contentRect.width,
-          height: entry.contentRect.height,
-        });
-      }
-    });
-    obs.observe(containerRef.current);
-    return () => obs.disconnect();
-  }, []);
-
-  // Escape key to deselect
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onFieldSelect(null);
-    }
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onFieldSelect]);
-
-  const selectedDocument = documents.find((d) => d.id === selectedDocumentId) ?? documents[0] ?? null;
+  const selectedDocument =
+    documents.find((document) => document.id === selectedDocumentId) ?? documents[0] ?? null;
 
   const highlights = buildFieldHighlights(
-    fields.map((f) => ({
-      ...f,
-      id: f.localId,
-      label: f.label ?? null,
-      placeholder: f.placeholder ?? null,
+    fields.map((field) => ({
+      ...field,
+      id: field.localId,
+      label: field.label ?? null,
+      placeholder: field.placeholder ?? null,
     })),
     recipients,
     selectedDocumentId,
     selectedFieldId
   );
 
-  const fieldsOnPage = fields.filter(
-    (f) => f.documentId === selectedDocumentId && f.pageNumber === viewerPage
+  const fieldsOnPage = useMemo(
+    () =>
+      fields.filter(
+        (field) => field.documentId === selectedDocumentId && field.pageNumber === viewerPage
+      ),
+    [fields, selectedDocumentId, viewerPage]
+  );
+  const overlapsByField = useMemo(() => detectFieldOverlaps(fields), [fields]);
+
+  useEffect(() => {
+    if (!selectedFieldId) {
+      setSelectedFieldIdsInternal([]);
+      return;
+    }
+
+    setSelectedFieldIdsInternal((current) =>
+      current.includes(selectedFieldId) ? current : [selectedFieldId]
+    );
+  }, [selectedFieldId]);
+
+  useEffect(() => {
+    if (!containerRef.current) {
+      return;
+    }
+
+    const container = containerRef.current;
+    let canvasObserver: ResizeObserver | null = null;
+
+    const syncCanvasBounds = () => {
+      const canvas = container.querySelector('canvas');
+      if (!(canvas instanceof HTMLCanvasElement)) {
+        setCanvasBounds((current) =>
+          current.width === 0 && current.height === 0
+            ? current
+            : { left: 0, top: 0, width: 0, height: 0 }
+        );
+        return;
+      }
+
+      const containerRect = container.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      setCanvasBounds({
+        left: canvasRect.left - containerRect.left,
+        top: canvasRect.top - containerRect.top,
+        width: canvasRect.width,
+        height: canvasRect.height,
+      });
+
+      if (!canvasObserver) {
+        canvasObserver = new ResizeObserver(syncCanvasBounds);
+        canvasObserver.observe(canvas);
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(syncCanvasBounds);
+    resizeObserver.observe(container);
+
+    const mutationObserver = new MutationObserver(syncCanvasBounds);
+    mutationObserver.observe(container, {
+      childList: true,
+      subtree: true,
+    });
+
+    const timeoutId = window.setTimeout(syncCanvasBounds, 0);
+    window.addEventListener('resize', syncCanvasBounds);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+      canvasObserver?.disconnect();
+      window.removeEventListener('resize', syncCanvasBounds);
+    };
+  }, [selectedDocumentId, viewerPage]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setInteraction(null);
+        setSelectedFieldIdsInternal([]);
+        setSnapGuides({ vertical: [], horizontal: [] });
+        onFieldSelect(null);
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onFieldSelect]);
+
+  useEffect(() => {
+    if (!interaction || canvasBounds.width <= 0 || canvasBounds.height <= 0) {
+      return;
+    }
+
+    const activeInteraction = interaction;
+
+    function updateField(nextField: PlacedField) {
+      const nextFields = activeInteraction.allFieldsSnapshot.map((field) =>
+        field.localId === activeInteraction.fieldId ? normalizeFieldPosition(nextField) : field
+      );
+      interactionPreviewRef.current = nextFields;
+      onFieldsChange(
+        nextFields,
+        { recordHistory: false }
+      );
+    }
+
+    function onPointerMove(event: PointerEvent) {
+      if (activeInteraction.kind === 'drag') {
+        const deltaX = (event.clientX - activeInteraction.startClientX) / canvasBounds.width;
+        const deltaY = (event.clientY - activeInteraction.startClientY) / canvasBounds.height;
+        const otherFields = activeInteraction.allFieldsSnapshot.filter(
+          (field) => !activeInteraction.selectedFieldIds.includes(field.localId)
+        );
+        const snappedPrimary = snapFieldToGuides({
+          field: {
+            ...activeInteraction.fieldSnapshot,
+            xPercent: clamp(
+              activeInteraction.fieldSnapshot.xPercent + deltaX,
+              0,
+              1 - activeInteraction.fieldSnapshot.widthPercent
+            ),
+            yPercent: clamp(
+              activeInteraction.fieldSnapshot.yPercent + deltaY,
+              0,
+              1 - activeInteraction.fieldSnapshot.heightPercent
+            ),
+          },
+          otherFields,
+        });
+        const appliedDeltaX = snappedPrimary.field.xPercent - activeInteraction.fieldSnapshot.xPercent;
+        const appliedDeltaY = snappedPrimary.field.yPercent - activeInteraction.fieldSnapshot.yPercent;
+
+        setSnapGuides(snappedPrimary.guides);
+        const nextFields = activeInteraction.allFieldsSnapshot.map((field) => {
+          const snapshot = activeInteraction.selectionSnapshots.find(
+            (entry) => entry.localId === field.localId
+          );
+          if (!snapshot) {
+            return field;
+          }
+
+          return normalizeFieldPosition({
+            ...snapshot,
+            xPercent: snapshot.xPercent + appliedDeltaX,
+            yPercent: snapshot.yPercent + appliedDeltaY,
+          });
+        });
+        interactionPreviewRef.current = nextFields;
+        onFieldsChange(
+          nextFields,
+          { recordHistory: false }
+        );
+        return;
+      }
+
+      const deltaX = (event.clientX - activeInteraction.startClientX) / canvasBounds.width;
+      const deltaY = (event.clientY - activeInteraction.startClientY) / canvasBounds.height;
+      const field = activeInteraction.fieldSnapshot;
+      const nextField = { ...field };
+
+      if (activeInteraction.handle.includes('e')) {
+        nextField.widthPercent = clamp(
+          field.widthPercent + deltaX,
+          ESIGNING_LIMITS.MIN_FIELD_WIDTH,
+          1 - field.xPercent
+        );
+      }
+
+      if (activeInteraction.handle.includes('s')) {
+        nextField.heightPercent = clamp(
+          field.heightPercent + deltaY,
+          ESIGNING_LIMITS.MIN_FIELD_HEIGHT,
+          1 - field.yPercent
+        );
+      }
+
+      if (activeInteraction.handle.includes('w')) {
+        nextField.xPercent = clamp(
+          field.xPercent + deltaX,
+          0,
+          field.xPercent + field.widthPercent - ESIGNING_LIMITS.MIN_FIELD_WIDTH
+        );
+        nextField.widthPercent = clamp(
+          field.widthPercent - (nextField.xPercent - field.xPercent),
+          ESIGNING_LIMITS.MIN_FIELD_WIDTH,
+          1 - nextField.xPercent
+        );
+      }
+
+      if (activeInteraction.handle.includes('n')) {
+        nextField.yPercent = clamp(
+          field.yPercent + deltaY,
+          0,
+          field.yPercent + field.heightPercent - ESIGNING_LIMITS.MIN_FIELD_HEIGHT
+        );
+        nextField.heightPercent = clamp(
+          field.heightPercent - (nextField.yPercent - field.yPercent),
+          ESIGNING_LIMITS.MIN_FIELD_HEIGHT,
+          1 - nextField.yPercent
+        );
+      }
+
+      const snapped = snapFieldToGuides({
+        field: nextField,
+        otherFields: activeInteraction.allFieldsSnapshot.filter(
+          (entry) => entry.localId !== activeInteraction.fieldId
+        ),
+      });
+      setSnapGuides(snapped.guides);
+      updateField(snapped.field);
+    }
+
+    function onPointerUp() {
+      const previewFields = interactionPreviewRef.current;
+      interactionPreviewRef.current = null;
+      if (
+        previewFields &&
+        !areFieldCollectionsEqual(previewFields, activeInteraction.allFieldsSnapshot)
+      ) {
+        onFieldsChange(previewFields, {
+          historySnapshot: activeInteraction.allFieldsSnapshot,
+        });
+      }
+      setInteraction(null);
+      setSnapGuides({ vertical: [], horizontal: [] });
+    }
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [canvasBounds.height, canvasBounds.width, interaction, onFieldsChange]);
+
+  function beginDrag(event: React.PointerEvent<HTMLDivElement>, field: PlacedField) {
+    event.preventDefault();
+    event.stopPropagation();
+    interactionPreviewRef.current = null;
+    const selectedFieldIds = selectedFieldIdsInternal.includes(field.localId)
+      ? selectedFieldIdsInternal
+      : [field.localId];
+    setSelectedFieldIdsInternal(selectedFieldIds);
+    onFieldSelect(field.localId);
+    setInteraction({
+      kind: 'drag',
+      fieldId: field.localId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      fieldSnapshot: field,
+      selectedFieldIds,
+      selectionSnapshots: fields.filter((entry) => selectedFieldIds.includes(entry.localId)),
+      allFieldsSnapshot: fields,
+    });
+  }
+
+  function beginResize(
+    event: React.PointerEvent<HTMLButtonElement>,
+    field: PlacedField,
+    handle: ResizeHandle
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+    interactionPreviewRef.current = null;
+    onFieldSelect(field.localId);
+    setInteraction({
+      kind: 'resize',
+      fieldId: field.localId,
+      handle,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      fieldSnapshot: field,
+      allFieldsSnapshot: fields,
+    });
+  }
+
+  function updateSelection(fieldId: string, append: boolean) {
+    if (!append) {
+      setSelectedFieldIdsInternal([fieldId]);
+      onFieldSelect(fieldId);
+      return;
+    }
+
+    setSelectedFieldIdsInternal((current) => {
+      const nextSelection = current.includes(fieldId)
+        ? current.filter((entry) => entry !== fieldId)
+        : [...current, fieldId];
+      onFieldSelect(nextSelection[nextSelection.length - 1] ?? null);
+      return nextSelection;
+    });
+  }
+
+  const moveSelectedFields = useCallback(
+    (deltaX: number, deltaY: number) => {
+      if (selectedFieldIdsInternal.length === 0) {
+        return;
+      }
+
+      onFieldsChange(
+        fields.map((field) =>
+          selectedFieldIdsInternal.includes(field.localId)
+            ? normalizeFieldPosition({
+                ...field,
+                xPercent: field.xPercent + deltaX,
+                yPercent: field.yPercent + deltaY,
+              })
+            : field
+        )
+      );
+    },
+    [fields, onFieldsChange, selectedFieldIdsInternal]
   );
 
+  const cloneFieldsForPaste = useCallback(
+    (sourceFields: PlacedField[]): PlacedField[] =>
+      sourceFields.map((field, index) =>
+        normalizeFieldPosition({
+          ...field,
+          localId: crypto.randomUUID(),
+          documentId: selectedDocumentId,
+          pageNumber: viewerPage,
+          xPercent: field.xPercent + 0.02,
+          yPercent: field.yPercent + 0.02,
+          sortOrder: fields.length + index,
+        })
+      ),
+    [fields.length, selectedDocumentId, viewerPage]
+  );
+
+  useEffect(() => {
+    if (!canEdit) {
+      return;
+    }
+
+    function shouldIgnoreShortcut(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) {
+        return false;
+      }
+
+      if (target.isContentEditable) {
+        return true;
+      }
+
+      return ['input', 'textarea', 'select'].includes(target.tagName.toLowerCase());
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (shouldIgnoreShortcut(event.target)) {
+        return;
+      }
+
+      const nudgeDistance = event.shiftKey ? LARGE_NUDGE_STEP : NUDGE_STEP;
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        moveSelectedFields(-nudgeDistance, 0);
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        moveSelectedFields(nudgeDistance, 0);
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        moveSelectedFields(0, -nudgeDistance);
+        return;
+      }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        moveSelectedFields(0, nudgeDistance);
+        return;
+      }
+
+      if ((event.key === 'Backspace' || event.key === 'Delete') && selectedFieldIdsInternal.length > 0) {
+        event.preventDefault();
+        onFieldsChange(fields.filter((field) => !selectedFieldIdsInternal.includes(field.localId)));
+        setSelectedFieldIdsInternal([]);
+        onFieldSelect(null);
+        return;
+      }
+
+      const isModifierPressed = event.ctrlKey || event.metaKey;
+      if (!isModifierPressed) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      if (key === 'c' && selectedFieldIdsInternal.length > 0) {
+        event.preventDefault();
+        clipboardRef.current = fields.filter((field) => selectedFieldIdsInternal.includes(field.localId));
+      }
+
+      if (key === 'v' && clipboardRef.current.length > 0 && selectedDocumentId) {
+        event.preventDefault();
+        const nextFields = cloneFieldsForPaste(clipboardRef.current);
+        onFieldsChange([...fields, ...nextFields]);
+        setSelectedFieldIdsInternal(nextFields.map((field) => field.localId));
+        onFieldSelect(nextFields[0]?.localId ?? null);
+      }
+
+      if (key === 'd' && selectedFieldIdsInternal.length > 0 && selectedDocumentId) {
+        event.preventDefault();
+        const sourceFields = fields.filter((field) => selectedFieldIdsInternal.includes(field.localId));
+        const nextFields = cloneFieldsForPaste(sourceFields);
+        clipboardRef.current = sourceFields;
+        onFieldsChange([...fields, ...nextFields]);
+        setSelectedFieldIdsInternal(nextFields.map((field) => field.localId));
+        onFieldSelect(nextFields[0]?.localId ?? null);
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    canEdit,
+    cloneFieldsForPaste,
+    fields,
+    moveSelectedFields,
+    onFieldSelect,
+    onFieldsChange,
+    selectedDocumentId,
+    selectedFieldIdsInternal,
+    viewerPage,
+  ]);
+
   function handleCanvasClick(event: React.MouseEvent<HTMLDivElement>) {
+    if (interaction) {
+      return;
+    }
+
     if (!canEdit || !placementType || !placementRecipientId || !selectedDocumentId) {
+      setSelectedFieldIdsInternal([]);
       onFieldSelect(null);
       return;
     }
+
     const rect = event.currentTarget.getBoundingClientRect();
     const xPercent = (event.clientX - rect.left) / rect.width;
     const yPercent = (event.clientY - rect.top) / rect.height;
     const size = DEFAULT_FIELD_SIZES[placementType];
 
-    const newField: PlacedField = {
+    const newField = normalizeFieldPosition({
       localId: crypto.randomUUID(),
       documentId: selectedDocumentId,
       recipientId: placementRecipientId,
       type: placementType,
       pageNumber: viewerPage,
-      xPercent: Math.max(0, Math.min(1 - size.w, xPercent - size.w / 2)),
-      yPercent: Math.max(0, Math.min(1 - size.h, yPercent - size.h / 2)),
+      xPercent: xPercent - size.w / 2,
+      yPercent: yPercent - size.h / 2,
       widthPercent: size.w,
       heightPercent: size.h,
       required: placementType !== 'CHECKBOX',
       label: null,
       placeholder: null,
       sortOrder: fields.length,
-    };
+    });
+
     onFieldsChange([...fields, newField]);
+    setSelectedFieldIdsInternal([newField.localId]);
+    onFieldSelect(newField.localId);
+  }
+
+  function handleKeyboardPlacement() {
+    if (!canEdit || !placementType || !placementRecipientId || !selectedDocumentId) {
+      return;
+    }
+
+    const size = DEFAULT_FIELD_SIZES[placementType];
+    const ghost = ghostPosition ?? { xPercent: 0.5, yPercent: 0.5 };
+    const newField = normalizeFieldPosition({
+      localId: crypto.randomUUID(),
+      documentId: selectedDocumentId,
+      recipientId: placementRecipientId,
+      type: placementType,
+      pageNumber: viewerPage,
+      xPercent: ghost.xPercent - size.w / 2,
+      yPercent: ghost.yPercent - size.h / 2,
+      widthPercent: size.w,
+      heightPercent: size.h,
+      required: placementType !== 'CHECKBOX',
+      label: null,
+      placeholder: null,
+      sortOrder: fields.length,
+    });
+
+    onFieldsChange([...fields, newField]);
+    setSelectedFieldIdsInternal([newField.localId]);
+    onFieldSelect(newField.localId);
   }
 
   return (
     <div className="flex h-full flex-col">
-      {/* Document tabs */}
-      {documents.length > 1 && (
-        <div className="flex items-center gap-2 border-b border-border-primary bg-background-secondary px-4 py-2 overflow-x-auto flex-shrink-0">
-          {documents.map((doc) => (
+      {documents.length > 1 ? (
+        <div className="flex flex-shrink-0 items-center gap-2 overflow-x-auto border-b border-border-primary bg-background-secondary px-4 py-2">
+          {documents.map((document) => (
             <button
-              key={doc.id}
+              key={document.id}
               type="button"
-              onClick={() => onDocumentChange(doc.id)}
+              onClick={() => onDocumentChange(document.id)}
               className={cn(
-                'flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors',
-                doc.id === selectedDocumentId
-                  ? 'bg-oak-primary text-white'
-                  : 'bg-background-primary text-text-secondary hover:bg-background-tertiary border border-border-primary'
+                'flex-shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                document.id === selectedDocumentId
+                  ? 'border-oak-primary bg-oak-primary text-white'
+                  : 'border-border-primary bg-background-primary text-text-secondary hover:bg-background-tertiary'
               )}
             >
-              {doc.fileName}
+              {document.fileName}
             </button>
           ))}
         </div>
-      )}
+      ) : null}
 
-      {/* Canvas area */}
       <div className="relative flex-1 overflow-hidden" ref={containerRef}>
         {selectedDocument ? (
           <>
@@ -217,47 +940,122 @@ export function EsigningFieldCanvas({
               key={`${selectedDocument.id}:${viewerPage}`}
               pdfUrl={selectedDocument.pdfUrl}
               initialPage={viewerPage}
+              zoomLevel={zoomLevel}
+              onZoomLevelChange={onZoomLevelChange}
               highlights={highlights}
               onPageChange={onPageChange}
               className="h-full w-full"
             />
-            {/* Transparent overlay for click-to-place */}
-            {canEdit && placementType && (
+
+            {canvasBounds.width > 0 && canvasBounds.height > 0 ? (
               <div
-                onClick={handleCanvasClick}
-                className={cn(
-                  'absolute inset-0 z-10',
-                  placementType ? 'cursor-crosshair' : 'cursor-default'
-                )}
-              />
-            )}
-            {/* Placed field chips */}
-            {containerSize.width > 0 && containerSize.height > 0 && (
-              <div className="pointer-events-none absolute inset-0 z-10">
+                className="pointer-events-none absolute z-20"
+                style={{
+                  left: canvasBounds.left,
+                  top: canvasBounds.top,
+                  width: canvasBounds.width,
+                  height: canvasBounds.height,
+                }}
+              >
+                <div
+                  role={canEdit && placementType ? 'button' : undefined}
+                  tabIndex={canEdit ? 0 : -1}
+                  aria-label={
+                    canEdit && placementType
+                      ? `Place ${ESIGNING_FIELD_TYPE_LABELS[placementType]} field`
+                      : undefined
+                  }
+                  onClick={handleCanvasClick}
+                  onMouseMove={(event) => {
+                    if (!canEdit || !placementType) {
+                      return;
+                    }
+
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    setGhostPosition({
+                      xPercent: clamp((event.clientX - rect.left) / rect.width, 0, 1),
+                      yPercent: clamp((event.clientY - rect.top) / rect.height, 0, 1),
+                    });
+                  }}
+                  onMouseLeave={() => setGhostPosition(null)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleKeyboardPlacement();
+                    }
+                  }}
+                  className={cn(
+                    'pointer-events-auto absolute inset-0',
+                    canEdit && placementType ? 'cursor-crosshair' : 'cursor-default'
+                  )}
+                />
+
+                {placementType && ghostPosition ? (
+                  <div
+                    className="pointer-events-none absolute rounded border border-dashed border-oak-primary bg-oak-primary/10"
+                    style={{
+                      left:
+                        clamp(
+                          ghostPosition.xPercent - DEFAULT_FIELD_SIZES[placementType].w / 2,
+                          0,
+                          1 - DEFAULT_FIELD_SIZES[placementType].w
+                        ) * canvasBounds.width,
+                      top:
+                        clamp(
+                          ghostPosition.yPercent - DEFAULT_FIELD_SIZES[placementType].h / 2,
+                          0,
+                          1 - DEFAULT_FIELD_SIZES[placementType].h
+                        ) * canvasBounds.height,
+                      width: DEFAULT_FIELD_SIZES[placementType].w * canvasBounds.width,
+                      height: DEFAULT_FIELD_SIZES[placementType].h * canvasBounds.height,
+                    }}
+                  />
+                ) : null}
+
+                {snapGuides.vertical.map((guide) => (
+                  <div
+                    key={`vertical-${guide}`}
+                    className="pointer-events-none absolute top-0 w-px bg-oak-primary/60"
+                    style={{ left: guide * canvasBounds.width, height: canvasBounds.height }}
+                  />
+                ))}
+                {snapGuides.horizontal.map((guide) => (
+                  <div
+                    key={`horizontal-${guide}`}
+                    className="pointer-events-none absolute left-0 h-px bg-oak-primary/60"
+                    style={{ top: guide * canvasBounds.height, width: canvasBounds.width }}
+                  />
+                ))}
+
                 {fieldsOnPage.map((field) => (
                   <PlacedFieldChip
                     key={field.localId}
                     field={field}
-                    containerWidth={containerSize.width}
-                    containerHeight={containerSize.height}
-                    isSelected={selectedFieldId === field.localId}
+                    canvasWidth={canvasBounds.width}
+                    canvasHeight={canvasBounds.height}
+                    isSelected={selectedFieldIdsInternal.includes(field.localId)}
+                    hasOverlap={overlapsByField.has(field.localId)}
+                    canEdit={canEdit}
                     recipients={recipients}
-                    onSelect={() => onFieldSelect(field.localId)}
-                    onDelete={() => {
-                      onFieldsChange(fields.filter((f) => f.localId !== field.localId));
-                      onFieldSelect(null);
-                    }}
-                    onUpdate={(updates) =>
-                      onFieldsChange(
-                        fields.map((f) =>
-                          f.localId === field.localId ? { ...f, ...updates } : f
-                        )
+                    onSelect={(event) =>
+                      updateSelection(
+                        field.localId,
+                        event.shiftKey || event.metaKey || event.ctrlKey
                       )
                     }
+                    onDelete={() => {
+                      onFieldsChange(fields.filter((entry) => entry.localId !== field.localId));
+                      setSelectedFieldIdsInternal((current) =>
+                        current.filter((entry) => entry !== field.localId)
+                      );
+                      onFieldSelect(null);
+                    }}
+                    onBeginDrag={(event) => beginDrag(event, field)}
+                    onBeginResize={(event, handle) => beginResize(event, field, handle)}
                   />
                 ))}
               </div>
-            )}
+            ) : null}
           </>
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-text-muted">

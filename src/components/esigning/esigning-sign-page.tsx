@@ -5,11 +5,18 @@ import { useParams } from 'next/navigation';
 import { AlertCircle, Loader2, Shield } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { FormInput } from '@/components/ui/form-input';
 import { useToast } from '@/components/ui/toast';
+import { useIsMobile } from '@/hooks/use-media-query';
 import { DocumentPageViewer } from '@/components/processing/document-page-viewer';
 import type { BoundingBox } from '@/components/processing/document-page-viewer';
-import type { EsigningFieldDefinitionDto, EsigningFieldValueDto, EsigningSigningSessionDto } from '@/types/esigning';
+import type {
+  EsigningFieldDefinitionDto,
+  EsigningFieldValueDto,
+  EsigningSigningSessionDto,
+  EsigningSigningSessionStatusDto,
+} from '@/types/esigning';
 import { EsigningConsentScreen } from '@/components/esigning/signing/esigning-consent-screen';
 import { EsigningFieldInputModal } from '@/components/esigning/signing/esigning-field-input-modal';
 import { EsigningSigningHeader } from '@/components/esigning/signing/esigning-signing-header';
@@ -24,6 +31,7 @@ import { EsigningDeclineModal } from '@/components/esigning/signing/esigning-dec
 // =============================================================================
 
 type SigningFlowState = 'loading' | 'requires-code' | 'consent' | 'signing' | 'completed' | 'declined' | 'error';
+type SigningErrorKind = 'general' | 'network' | 'cancelled' | 'expired' | 'session-expired';
 
 interface ExchangeResult {
   requiresAccessCode: boolean;
@@ -38,6 +46,11 @@ interface DraftValue {
   value?: string | null;
   signatureDataUrl?: string | null;
   signaturePreviewUrl?: string | null;
+}
+
+interface SigningErrorState {
+  kind: SigningErrorKind;
+  message: string;
 }
 
 // =============================================================================
@@ -55,6 +68,32 @@ function buildDraftState(fieldValues: EsigningFieldValueDto[]): Record<string, D
         signaturePreviewUrl: fieldValue.signaturePreviewUrl ?? null,
       },
     ])
+  );
+}
+
+function mergeDraftState(
+  currentDraftValues: Record<string, DraftValue>,
+  serverFieldValues: EsigningFieldValueDto[]
+): Record<string, DraftValue> {
+  const serverDraftValues = buildDraftState(serverFieldValues);
+
+  return Object.fromEntries(
+    Object.entries(serverDraftValues).map(([fieldDefinitionId, serverDraftValue]) => {
+      const currentDraftValue = currentDraftValues[fieldDefinitionId];
+      return [
+        fieldDefinitionId,
+        {
+          fieldDefinitionId,
+          value: currentDraftValue?.value ?? serverDraftValue.value,
+          signatureDataUrl: currentDraftValue?.signatureDataUrl ?? null,
+          signaturePreviewUrl:
+            currentDraftValue?.signaturePreviewUrl ??
+            serverDraftValue.signaturePreviewUrl ??
+            currentDraftValue?.signatureDataUrl ??
+            null,
+        } satisfies DraftValue,
+      ];
+    })
   );
 }
 
@@ -97,9 +136,81 @@ function getSuggestedFieldValue(
     case 'COMPANY':
       return session.envelope.companyName ?? session.envelope.tenantName;
     case 'DATE_SIGNED':
-      return new Date().toISOString().slice(0, 10);
+      return getLocalDateInputValue();
     default:
       return field.placeholder ?? null;
+  }
+}
+
+function getLocalDateInputValue(): string {
+  const now = new Date();
+  const offsetMilliseconds = now.getTimezoneOffset() * 60 * 1000;
+  return new Date(now.getTime() - offsetMilliseconds).toISOString().slice(0, 10);
+}
+
+function normalizeSigningError(
+  error: unknown,
+  fallbackMessage: string
+): SigningErrorState {
+  const message = error instanceof Error ? error.message : fallbackMessage;
+  const normalizedMessage = message.toLowerCase();
+
+  if (
+    normalizedMessage.includes('failed to fetch') ||
+    normalizedMessage.includes('networkerror') ||
+    normalizedMessage.includes('network request failed')
+  ) {
+    return {
+      kind: 'network',
+      message: 'We lost the network connection. Reconnect and resume signing to continue.',
+    };
+  }
+
+  if (normalizedMessage.includes('voided') || normalizedMessage.includes('cancelled')) {
+    return {
+      kind: 'cancelled',
+      message: 'This envelope was cancelled by the sender while you were signing.',
+    };
+  }
+
+  if (normalizedMessage.includes('expired')) {
+    return {
+      kind: 'expired',
+      message: 'This envelope expired before your signing session could finish.',
+    };
+  }
+
+  if (normalizedMessage.includes('session expired')) {
+    return {
+      kind: 'session-expired',
+      message: 'Your signing session expired. Resume signing to continue from your saved progress.',
+    };
+  }
+
+  return {
+    kind: 'general',
+    message,
+  };
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
+}
+
+function getSigningErrorTitle(errorState: SigningErrorState | null): string {
+  switch (errorState?.kind) {
+    case 'cancelled':
+      return 'Envelope cancelled';
+    case 'expired':
+      return 'Envelope expired';
+    case 'session-expired':
+      return 'Session expired';
+    case 'network':
+      return 'Connection lost';
+    default:
+      return 'Signing link unavailable';
   }
 }
 
@@ -111,10 +222,11 @@ export function EsigningSignPage() {
   const toast = useToast();
   const params = useParams();
   const token = params.token as string;
+  const isMobile = useIsMobile();
 
   // Boot / flow state
   const [flowState, setFlowState] = useState<SigningFlowState>('loading');
-  const [bootError, setBootError] = useState<string | null>(null);
+  const [errorState, setErrorState] = useState<SigningErrorState | null>(null);
   const [session, setSession] = useState<EsigningSigningSessionDto | null>(null);
   const [accessCode, setAccessCode] = useState('');
   const [accessCodeError, setAccessCodeError] = useState<string | null>(null);
@@ -124,6 +236,8 @@ export function EsigningSignPage() {
   const [selectedDocumentId, setSelectedDocumentId] = useState('');
   const [viewerPage, setViewerPage] = useState(1);
   const [activeFieldIndex, setActiveFieldIndex] = useState(0);
+  const [viewerRetryKey, setViewerRetryKey] = useState(0);
+  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
 
   // Signature modal
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -133,6 +247,7 @@ export function EsigningSignPage() {
 
   // Decline modal
   const [isDeclineModalOpen, setIsDeclineModalOpen] = useState(false);
+  const [isFinishLaterDialogOpen, setIsFinishLaterDialogOpen] = useState(false);
 
   // Cached signatures
   const [adoptedSignature, setAdoptedSignature] = useState<string | null>(null);
@@ -143,6 +258,7 @@ export function EsigningSignPage() {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
   const [isConsenting, setIsConsenting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDraftValuesRef = useRef<Record<string, DraftValue>>({});
@@ -194,77 +310,136 @@ export function EsigningSignPage() {
     latestDraftValuesRef.current = draftValues;
   }, [draftValues]);
 
+  useEffect(() => {
+    if (!isMobile) {
+      setIsPortraitMobile(false);
+      return;
+    }
+
+    const syncOrientation = () => {
+      setIsPortraitMobile(window.innerHeight >= window.innerWidth);
+    };
+
+    syncOrientation();
+    window.addEventListener('resize', syncOrientation);
+    window.addEventListener('orientationchange', syncOrientation);
+
+    return () => {
+      window.removeEventListener('resize', syncOrientation);
+      window.removeEventListener('orientationchange', syncOrientation);
+    };
+  }, [isMobile]);
+
   // ==========================================================================
   // API helpers
   // ==========================================================================
 
-  const loadSession = useCallback(async (recordView = false) => {
-    const loadResponse = await fetch('/api/esigning/sign/session/load');
-    const loadResult = await loadResponse.json().catch(() => ({}));
-    if (!loadResponse.ok) {
-      throw new Error((loadResult as { error?: string }).error || 'Failed to load signing session');
-    }
+  const loadSession = useCallback(
+    async (options?: { recordView?: boolean; preserveDrafts?: boolean }) => {
+      const { recordView = false, preserveDrafts = false } = options ?? {};
+      const currentDraftValues = latestDraftValuesRef.current;
 
-    const nextSession = loadResult as EsigningSigningSessionDto;
-    setSession(nextSession);
-    setDraftValues(buildDraftState(nextSession.fieldValues));
-    setSelectedDocumentId((current) => current || nextSession.documents[0]?.id || '');
-
-    if (recordView) {
-      const viewResponse = await fetch('/api/esigning/sign/session/view', { method: 'POST' });
-      if (viewResponse.ok) {
-        const viewedSession = await viewResponse.json() as EsigningSigningSessionDto;
-        setSession(viewedSession);
-        setDraftValues(buildDraftState(viewedSession.fieldValues));
-        return viewedSession;
+      const loadResponse = await fetch('/api/esigning/sign/session/load');
+      const loadResult = await loadResponse.json().catch(() => ({}));
+      if (!loadResponse.ok) {
+        throw new Error(
+          (loadResult as { error?: string }).error || 'Failed to load signing session'
+        );
       }
+
+      const nextSession = loadResult as EsigningSigningSessionDto;
+      setSession(nextSession);
+      setDraftValues(
+        preserveDrafts
+          ? mergeDraftState(currentDraftValues, nextSession.fieldValues)
+          : buildDraftState(nextSession.fieldValues)
+      );
+      setSelectedDocumentId((current) => current || nextSession.documents[0]?.id || '');
+
+      if (recordView) {
+        const viewResponse = await fetch('/api/esigning/sign/session/view', { method: 'POST' });
+        if (viewResponse.ok) {
+          const viewedSession = (await viewResponse.json()) as EsigningSigningSessionDto;
+          setSession(viewedSession);
+          setDraftValues(
+            preserveDrafts
+              ? mergeDraftState(currentDraftValues, viewedSession.fieldValues)
+              : buildDraftState(viewedSession.fieldValues)
+          );
+          return viewedSession;
+        }
+      }
+
+      return nextSession;
+    },
+    []
+  );
+
+  const refreshSigningStatus = useCallback(async () => {
+    const response = await fetch('/api/esigning/sign/session/status');
+    const responseBody = (await response.json().catch(() => ({}))) as
+      | EsigningSigningSessionStatusDto
+      | { error?: string };
+
+    if (!response.ok) {
+      throw new Error(
+        ('error' in responseBody && responseBody.error) || 'Failed to refresh signing session'
+      );
     }
 
-    return nextSession;
-  }, []);
+    const result = responseBody as EsigningSigningSessionStatusDto;
+    setSaveError(null);
+
+    if (result.recipient.signedAt) {
+      await loadSession({ preserveDrafts: true });
+      setFlowState('completed');
+    }
+  }, [loadSession]);
 
   // ==========================================================================
   // Bootstrap
   // ==========================================================================
 
-  useEffect(() => {
-    let cancelled = false;
+  const bootstrapSigning = useCallback(async () => {
+    setFlowState('loading');
+    setErrorState(null);
 
-    async function bootstrap() {
-      try {
-        setFlowState('loading');
-        const response = await fetch(`/api/esigning/sign/${encodeURIComponent(token)}`, { method: 'POST' });
-        const result = await response.json().catch(() => ({})) as Partial<ExchangeResult> & { error?: string };
-        if (!response.ok) {
-          throw new Error(result.error || 'Signing link is invalid');
-        }
-        if (cancelled) return;
-        if (result.requiresAccessCode) {
-          setFlowState('requires-code');
-          return;
-        }
-        const nextSession = await loadSession(true);
-        if (cancelled) return;
-        if (nextSession.recipient.signedAt) {
-          setFlowState('completed');
-        } else if (!nextSession.recipient.consentedAt) {
-          setFlowState('consent');
-        } else {
-          setFlowState('signing');
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setBootError(error instanceof Error ? error.message : 'Failed to load signing flow');
-          setFlowState('error');
-        }
+    try {
+      const response = await fetch(`/api/esigning/sign/${encodeURIComponent(token)}`, {
+        method: 'POST',
+      });
+      const result = (await response.json().catch(() => ({}))) as Partial<ExchangeResult> & {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Signing link is invalid');
       }
-    }
 
-    void bootstrap();
-    return () => {
-      cancelled = true;
-    };
+      if (result.requiresAccessCode) {
+        setFlowState('requires-code');
+        return;
+      }
+
+      const nextSession = await loadSession({ recordView: true });
+      setSaveError(null);
+
+      if (nextSession.recipient.signedAt) {
+        setFlowState('completed');
+      } else if (!nextSession.recipient.consentedAt) {
+        setFlowState('consent');
+      } else {
+        setFlowState('signing');
+      }
+    } catch (error) {
+      setErrorState(normalizeSigningError(error, 'Failed to load signing flow'));
+      setFlowState('error');
+    }
   }, [loadSession, token]);
+
+  useEffect(() => {
+    void bootstrapSigning();
+  }, [bootstrapSigning]);
 
   // ==========================================================================
   // Autosave
@@ -280,6 +455,43 @@ export function EsigningSignPage() {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
   }, [draftValues, flowState]);
+
+  useEffect(() => {
+    if (flowState !== 'signing') {
+      return;
+    }
+
+    const runStatusRefresh = () => {
+      void (async () => {
+        try {
+          await refreshSigningStatus();
+        } catch (error) {
+          const normalizedError = normalizeSigningError(error, 'Failed to refresh signing session');
+          if (normalizedError.kind === 'network') {
+            setSaveError(normalizedError.message);
+            return;
+          }
+
+          setErrorState(normalizedError);
+          setFlowState('error');
+        }
+      })();
+    };
+
+    const intervalId = window.setInterval(runStatusRefresh, 30_000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        runStatusRefresh();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [flowState, refreshSigningStatus]);
 
   // ==========================================================================
   // Draft helpers
@@ -453,7 +665,7 @@ export function EsigningSignPage() {
       if (!response.ok) {
         throw new Error(result.error || 'Access code is incorrect');
       }
-      const nextSession = await loadSession(true);
+      const nextSession = await loadSession({ recordView: true });
       if (nextSession.recipient.signedAt) {
         setFlowState('completed');
       } else if (!nextSession.recipient.consentedAt) {
@@ -476,17 +688,57 @@ export function EsigningSignPage() {
 
     const requestPromise = (async () => {
       setIsSaving(true);
-      const response = await fetch('/api/esigning/sign/session/fields', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: serializeValues(nextValues) }),
-      });
-      const result = await response.json().catch(() => ({})) as EsigningSigningSessionDto & { error?: string };
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to save progress');
+      let attempt = 0;
+
+      while (attempt < 3) {
+        try {
+          const response = await fetch('/api/esigning/sign/session/fields', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ values: serializeValues(nextValues) }),
+          });
+          const result = (await response.json().catch(() => ({}))) as EsigningSigningSessionDto & {
+            error?: string;
+          };
+
+          if (!response.ok) {
+            const requestError = new Error(result.error || 'Failed to save progress');
+            if (response.status >= 500 && attempt < 2) {
+              attempt += 1;
+              await wait(400 * 2 ** attempt);
+              continue;
+            }
+            throw requestError;
+          }
+
+          setSession(result);
+          setSaveError(null);
+          return result;
+        } catch (error) {
+          const normalizedError = normalizeSigningError(error, 'Failed to save progress');
+
+          if (normalizedError.kind === 'network' && attempt < 2) {
+            attempt += 1;
+            await wait(400 * 2 ** attempt);
+            continue;
+          }
+
+          if (
+            normalizedError.kind === 'cancelled' ||
+            normalizedError.kind === 'expired' ||
+            normalizedError.kind === 'session-expired'
+          ) {
+            setErrorState(normalizedError);
+            setFlowState('error');
+          } else {
+            setSaveError(normalizedError.message);
+          }
+
+          throw error;
+        }
       }
-      setSession(result);
-      return result;
+
+      throw new Error('Failed to save progress');
     })();
 
     savePromiseRef.current = requestPromise;
@@ -528,8 +780,19 @@ export function EsigningSignPage() {
       }
       setSession(result);
       setFlowState('completed');
+      setSaveError(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to complete signing');
+      const normalizedError = normalizeSigningError(error, 'Failed to complete signing');
+      if (
+        normalizedError.kind === 'cancelled' ||
+        normalizedError.kind === 'expired' ||
+        normalizedError.kind === 'session-expired'
+      ) {
+        setErrorState(normalizedError);
+        setFlowState('error');
+      } else {
+        toast.error(normalizedError.message);
+      }
     } finally {
       setIsCompleting(false);
     }
@@ -548,6 +811,21 @@ export function EsigningSignPage() {
         throw new Error(result.error || 'Failed to record consent');
       }
       setSession(result);
+      setSaveError(null);
+    } catch (error) {
+      const normalizedError = normalizeSigningError(error, 'Failed to record consent');
+      if (
+        normalizedError.kind === 'cancelled' ||
+        normalizedError.kind === 'expired' ||
+        normalizedError.kind === 'session-expired' ||
+        normalizedError.kind === 'network'
+      ) {
+        setErrorState(normalizedError);
+        setFlowState('error');
+        return;
+      }
+
+      toast.error(normalizedError.message);
     } finally {
       setIsConsenting(false);
     }
@@ -569,6 +847,16 @@ export function EsigningSignPage() {
       setFlowState('declined');
     } finally {
       setIsDeclining(false);
+    }
+  }
+
+  async function finishLater() {
+    try {
+      await flushPendingSaves();
+      setIsFinishLaterDialogOpen(false);
+      toast.success('Progress saved. You can return to this link later.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save progress');
     }
   }
 
@@ -594,9 +882,24 @@ export function EsigningSignPage() {
         <div className="w-full max-w-lg rounded-3xl border border-border-primary bg-background-secondary p-8 shadow-sm">
           <AlertCircle className="mx-auto h-10 w-10 text-rose-500" />
           <h1 className="mt-4 text-center text-2xl font-semibold text-text-primary">
-            Signing link unavailable
+            {getSigningErrorTitle(errorState)}
           </h1>
-          <p className="mt-2 text-center text-sm text-text-secondary">{bootError}</p>
+          <p className="mt-2 text-center text-sm text-text-secondary">
+            {errorState?.message ?? 'This signing link is not available right now.'}
+          </p>
+          {(errorState?.kind === 'network' || errorState?.kind === 'session-expired') && (
+            <div className="mt-6 flex justify-center">
+              <Button
+                type="button"
+                onClick={() => {
+                  setViewerRetryKey((current) => current + 1);
+                  void bootstrapSigning();
+                }}
+              >
+                Resume signing
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -668,6 +971,10 @@ export function EsigningSignPage() {
         recipientName={session.recipient.name}
         signedAt={session.recipient.signedAt}
         isAllPartiesDone={isAllPartiesDone}
+        remainingSignerCount={session.recipients.filter(
+          (recipient) => recipient.type === 'SIGNER' && recipient.status !== 'SIGNED'
+        ).length}
+        expiresAt={session.envelope.expiresAt}
         documents={session.documents}
         downloadToken={session.downloadToken}
         certificateId={session.envelope.certificateId}
@@ -711,16 +1018,7 @@ export function EsigningSignPage() {
         canFinish={canFinish}
         onPrimaryAction={handlePrimaryAction}
         onDecline={() => setIsDeclineModalOpen(true)}
-        onFinishLater={() =>
-          void (async () => {
-            try {
-              await flushPendingSaves();
-              toast.success('Progress saved. You can return to this link later.');
-            } catch (error) {
-              toast.error(error instanceof Error ? error.message : 'Failed to save progress');
-            }
-          })()
-        }
+        onFinishLater={() => setIsFinishLaterDialogOpen(true)}
         onDownloadOriginal={() => {
           if (selectedDocument) {
             window.open(selectedDocument.pdfUrl, '_blank', 'noreferrer');
@@ -733,6 +1031,26 @@ export function EsigningSignPage() {
       />
 
       <div className="mx-auto w-full max-w-7xl px-4 py-4">
+        {isPortraitMobile ? (
+          <Alert variant="info" className="mb-4">
+            Landscape mode gives you more space to review the document and complete fields on mobile.
+          </Alert>
+        ) : null}
+
+        {saveError ? (
+          <Alert variant="warning" className="mb-4 flex items-center justify-between gap-3">
+            <span>{saveError}</span>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void flushPendingSaves().catch(() => undefined)}
+            >
+              Retry save
+            </Button>
+          </Alert>
+        ) : null}
+
         {/* Document tab bar */}
         {session.documents.length > 1 && (
           <div className="mb-4 flex flex-wrap gap-2">
@@ -756,13 +1074,14 @@ export function EsigningSignPage() {
         {/* PDF viewer */}
         {selectedDocument ? (
           <DocumentPageViewer
-            key={selectedDocument.id}
+            key={`${selectedDocument.id}:${viewerRetryKey}`}
             pdfUrl={selectedDocument.pdfUrl}
             initialPage={viewerPage}
             onPageChange={setViewerPage}
             highlights={currentHighlights}
             showHighlights
             className="rounded-2xl border border-border-primary bg-background-primary"
+            onRetry={() => setViewerRetryKey((current) => current + 1)}
             renderHighlightContent={(highlight, _pixelRect, _idx) => {
               const field = fields.find((f) => f.id === highlight.label);
               if (!field) return null;
@@ -854,12 +1173,23 @@ export function EsigningSignPage() {
         onDecline={(reason) => void declineSigning(reason)}
         isSubmitting={isDeclining}
       />
+      <ConfirmDialog
+        isOpen={isFinishLaterDialogOpen}
+        onClose={() => setIsFinishLaterDialogOpen(false)}
+        onConfirm={() => void finishLater()}
+        title="Save progress and finish later?"
+        description="We will save your completed fields so you can return to this same signing link later."
+        confirmLabel="Save progress"
+        cancelLabel="Keep signing"
+        variant="info"
+        isLoading={isSaving}
+      />
 
       {/* Save indicator */}
       {isSaving && (
         <div className="pointer-events-none fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full border border-border-primary bg-background-secondary px-4 py-2 text-xs text-text-secondary shadow-sm">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Saving…
+          Saving...
         </div>
       )}
     </div>

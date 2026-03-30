@@ -1,8 +1,10 @@
 import { PDFDocument, PDFPage, StandardFonts, rgb } from 'pdf-lib';
+import { v5 as uuidv5 } from 'uuid';
 import { prisma } from '@/lib/prisma';
 import { hashBlake3 } from '@/lib/encryption';
 import { storage, StorageKeys } from '@/lib/storage';
 import { createLogger } from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 import {
   buildEsigningDeliveryDownloadUrl,
   createEsigningDeliveryToken,
@@ -16,6 +18,7 @@ import {
 const log = createLogger('esigning-pdf');
 const PROCESSING_LEASE_MS = 15 * 60 * 1000;
 const MAX_EMAIL_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+const AUTO_FILE_NAMESPACE = '0ab5455a-3dcf-4660-8dfe-c6bc1d495301';
 
 function toPdfBounds(input: {
   pageWidth: number;
@@ -191,6 +194,33 @@ function buildEmailAttachments(input: {
   }));
 }
 
+function sanitizePdfBaseName(value: string): string {
+  return value
+    .trim()
+    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '-')
+    .replace(/\s+/g, ' ')
+    .replace(/[. ]+$/g, '')
+    .slice(0, 120) || 'esigning-package';
+}
+
+function buildSignedPackageFileName(fileName: string): string {
+  return fileName.toLowerCase().endsWith('.pdf')
+    ? fileName.replace(/\.pdf$/i, '-signed.pdf')
+    : `${fileName}-signed.pdf`;
+}
+
+async function mergePdfBuffers(buffers: Buffer[]): Promise<Buffer> {
+  const mergedPdf = await PDFDocument.create();
+
+  for (const buffer of buffers) {
+    const sourcePdf = await PDFDocument.load(buffer);
+    const copiedPages = await mergedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices());
+    copiedPages.forEach((page) => mergedPdf.addPage(page));
+  }
+
+  return Buffer.from(await mergedPdf.save());
+}
+
 async function buildDeliveryDocumentLinks(input: {
   envelopeId: string;
   actorType: 'recipient' | 'sender';
@@ -285,6 +315,102 @@ async function loadEnvelopeForPdf(envelopeId: string) {
     ...envelope,
     fieldValues,
   };
+}
+
+async function autoFileCompletedEnvelopeDocuments(input: {
+  envelope: Awaited<ReturnType<typeof loadEnvelopeForPdf>>;
+  documents: Array<{
+    id: string;
+    fileName: string;
+    signedBuffer: Buffer;
+  }>;
+}): Promise<void> {
+  const { envelope } = input;
+  if (!envelope.companyId) {
+    return;
+  }
+
+  for (const document of input.documents) {
+    const companyDocumentId = uuidv5(
+      `${envelope.id}:${document.id}:signed-package`,
+      AUTO_FILE_NAMESPACE
+    );
+    const fileName = `${companyDocumentId}.pdf`;
+    const originalFileName = buildSignedPackageFileName(document.fileName);
+    const storageKey = StorageKeys.documentOriginal(
+      envelope.tenantId,
+      envelope.companyId,
+      companyDocumentId,
+      '.pdf'
+    );
+    const fileSize = document.signedBuffer.byteLength;
+    const now = new Date();
+
+    await storage.upload(storageKey, document.signedBuffer, {
+      contentType: 'application/pdf',
+      metadata: {
+        tenantId: envelope.tenantId,
+        companyId: envelope.companyId,
+        envelopeId: envelope.id,
+        envelopeDocumentId: document.id,
+        certificateId: envelope.certificateId,
+        originalFileName,
+      },
+    });
+
+    await prisma.document.upsert({
+      where: { id: companyDocumentId },
+      update: {
+        tenantId: envelope.tenantId,
+        companyId: envelope.companyId,
+        uploadedById: envelope.createdById,
+        documentType: 'E_SIGNED_PACKAGE',
+        fileName,
+        originalFileName,
+        storageKey,
+        fileSize,
+        mimeType: 'application/pdf',
+        extractionStatus: 'COMPLETED',
+        extractedAt: now,
+        isLatest: true,
+        deletedAt: null,
+        deletedReason: null,
+      },
+      create: {
+        id: companyDocumentId,
+        tenantId: envelope.tenantId,
+        companyId: envelope.companyId,
+        uploadedById: envelope.createdById,
+        documentType: 'E_SIGNED_PACKAGE',
+        fileName,
+        originalFileName,
+        storageKey,
+        fileSize,
+        mimeType: 'application/pdf',
+        version: 1,
+        isLatest: true,
+        extractionStatus: 'COMPLETED',
+        extractedAt: now,
+      },
+    });
+
+    await createAuditLog({
+      tenantId: envelope.tenantId,
+      userId: envelope.createdById,
+      companyId: envelope.companyId,
+      action: 'UPLOAD',
+      entityType: 'Document',
+      entityId: companyDocumentId,
+      entityName: originalFileName,
+      summary: `Auto-filed signed package "${originalFileName}" from e-signing envelope "${envelope.title}"`,
+      changeSource: 'SYSTEM',
+      metadata: {
+        envelopeId: envelope.id,
+        envelopeDocumentId: document.id,
+        certificateId: envelope.certificateId,
+      },
+    });
+  }
 }
 
 async function generateEnvelopeArtifacts(envelopeId: string): Promise<void> {
@@ -445,6 +571,11 @@ async function generateEnvelopeArtifacts(envelopeId: string): Promise<void> {
       pdfGenerationClaimedAt: null,
       pdfGenerationError: null,
     },
+  });
+
+  await autoFileCompletedEnvelopeDocuments({
+    envelope,
+    documents: generatedDocuments,
   });
 
   const attachments = buildEmailAttachments({ documents: generatedDocuments });
@@ -618,6 +749,65 @@ export async function processQueuedEsigningPdfGeneration(input?: {
     processed: completed + failed,
     completed,
     failed,
+  };
+}
+
+export async function downloadEsigningEnvelopePackage(input: {
+  tenantId: string;
+  envelopeId: string;
+  variant?: 'combined' | 'certificates';
+}): Promise<{
+  buffer: Buffer;
+  fileName: string;
+}> {
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: {
+      id: input.envelopeId,
+      tenantId: input.tenantId,
+    },
+    include: {
+      documents: {
+        orderBy: { sortOrder: 'asc' },
+      },
+    },
+  });
+
+  if (!envelope) {
+    throw new Error('Envelope not found');
+  }
+  if (envelope.status !== 'COMPLETED') {
+    throw new Error('Completed package is not available yet');
+  }
+
+  const variant = input.variant ?? 'combined';
+  const buffers: Buffer[] = [];
+
+  for (const document of envelope.documents) {
+    const storagePath =
+      variant === 'certificates'
+        ? StorageKeys.esigningCertificateDocument(envelope.tenantId, envelope.id, document.id)
+        : document.signedStoragePath;
+
+    if (!storagePath) {
+      throw new Error('One or more generated PDFs are not available yet');
+    }
+
+    buffers.push(await storage.download(storagePath));
+  }
+
+  if (buffers.length === 0) {
+    throw new Error('No generated PDFs are available for download');
+  }
+
+  const fileNameBase = sanitizePdfBaseName(envelope.title);
+  const fileName =
+    variant === 'certificates'
+      ? `${fileNameBase}-certificates.pdf`
+      : `${fileNameBase}-completed-package.pdf`;
+
+  return {
+    buffer: await mergePdfBuffers(buffers),
+    fileName,
   };
 }
 

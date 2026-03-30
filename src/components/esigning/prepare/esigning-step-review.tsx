@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { Send, Copy, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { EsigningEnvelopeDetailDto, EsigningManualLinkDto } from '@/types/esigning';
 import type { PlacedField } from './esigning-field-canvas';
@@ -11,6 +12,7 @@ import {
   formatEsigningDateTime,
 } from '@/components/esigning/esigning-shared';
 import { useToast } from '@/components/ui/toast';
+import { EsigningFieldCanvas } from './esigning-field-canvas';
 
 interface EsigningStepReviewProps {
   envelope: EsigningEnvelopeDetailDto;
@@ -30,7 +32,15 @@ export function EsigningStepReview({
   manualLinks,
 }: EsigningStepReviewProps) {
   const toast = useToast();
+  const [previewRecipientId, setPreviewRecipientId] = useState<string>('');
+  const [previewDocumentId, setPreviewDocumentId] = useState<string>(() => envelope.documents[0]?.id ?? '');
+  const [previewPage, setPreviewPage] = useState(1);
   const signerRecipients = envelope.recipients.filter((r) => r.type === 'SIGNER');
+  const activePreviewRecipientId = previewRecipientId || signerRecipients[0]?.id || '';
+  const previewFields = useMemo(
+    () => fields.filter((field) => field.recipientId === activePreviewRecipientId),
+    [activePreviewRecipientId, fields]
+  );
   const fieldSummaryByRecipient = new Map(
     signerRecipients.map((recipient) => {
       const recipientFields = fields.filter((field) => field.recipientId === recipient.id);
@@ -255,6 +265,54 @@ export function EsigningStepReview({
             </div>
           </section>
         )}
+
+        {signerRecipients.length > 0 && envelope.documents.length > 0 ? (
+          <section className="rounded-3xl border border-border-primary bg-background-secondary p-5 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-text-primary">Preview as signer</h2>
+                <p className="mt-1 text-sm text-text-secondary">
+                  Review what each signer will see before the envelope is sent.
+                </p>
+              </div>
+              <label className="flex flex-col gap-1 text-xs text-text-secondary">
+                Signer
+                <select
+                  value={activePreviewRecipientId}
+                  onChange={(event) => setPreviewRecipientId(event.target.value)}
+                  className="h-9 min-w-52 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"
+                >
+                  {signerRecipients.map((recipient) => (
+                    <option key={recipient.id} value={recipient.id}>
+                      {recipient.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-4 overflow-hidden rounded-2xl border border-border-primary">
+              <EsigningFieldCanvas
+                documents={envelope.documents}
+                selectedDocumentId={previewDocumentId}
+                onDocumentChange={(documentId) => {
+                  setPreviewDocumentId(documentId);
+                  setPreviewPage(1);
+                }}
+                fields={previewFields}
+                onFieldsChange={() => undefined}
+                selectedFieldId={null}
+                onFieldSelect={() => undefined}
+                placementType={null}
+                placementRecipientId={activePreviewRecipientId}
+                recipients={envelope.recipients}
+                viewerPage={previewPage}
+                onPageChange={setPreviewPage}
+                canEdit={false}
+              />
+            </div>
+          </section>
+        ) : null}
       </div>
 
       {/* Sticky footer */}

@@ -9,6 +9,8 @@ interface EsigningCompletionScreenProps {
   recipientName: string;
   signedAt: string | null;
   isAllPartiesDone: boolean;
+  remainingSignerCount: number;
+  expiresAt: string | null;
   documents: Array<{ id: string; fileName: string; signedPdfUrl: string | null }>;
   downloadToken: string | null;
   certificateId: string;
@@ -19,10 +21,13 @@ export function EsigningCompletionScreen({
   recipientName,
   signedAt,
   isAllPartiesDone,
+  remainingSignerCount,
+  expiresAt,
   documents,
   certificateId,
 }: EsigningCompletionScreenProps) {
   const firstSignedDoc = documents.find((d) => d.signedPdfUrl);
+  const hasPendingSigners = !isAllPartiesDone && remainingSignerCount > 0;
 
   return (
     <div className="min-h-screen bg-background-primary px-4 pt-16 pb-12">
@@ -45,6 +50,21 @@ export function EsigningCompletionScreen({
               ? 'All parties will receive a completed copy of the signed documents.'
               : 'The sender has been notified. Waiting for other signers to complete their part.'}
           </p>
+          {hasPendingSigners || expiresAt ? (
+            <div className="mt-4 rounded-2xl border border-border-primary bg-background-primary px-4 py-3 text-left text-sm text-text-secondary">
+              {hasPendingSigners ? (
+                <p>
+                  {remainingSignerCount} signer{remainingSignerCount === 1 ? '' : 's'} still need to
+                  complete this envelope.
+                </p>
+              ) : null}
+              {expiresAt ? (
+                <p className={hasPendingSigners ? 'mt-1' : undefined}>
+                  Envelope deadline: {formatEsigningDateTime(expiresAt)}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           {/* Envelope info */}
           <p className="mt-4 text-xs text-text-muted">

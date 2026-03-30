@@ -245,6 +245,27 @@ export async function sendEsigningExpiredEmailToSender(input: {
   });
 }
 
+export async function sendEsigningVoidedEmailToRecipient(input: {
+  to: string;
+  recipientName: string;
+  envelopeTitle: string;
+  senderName: string;
+  reason?: string | null;
+}): Promise<void> {
+  await safeSendEmail({
+    to: input.to,
+    subject: `Cancelled: "${input.envelopeTitle}"`,
+    html: `
+      <div style="font-family: Arial, Helvetica, sans-serif; color: #111827; line-height: 1.6;">
+        <p>Hello ${escapeHtml(input.recipientName)},</p>
+        <p><strong>${escapeHtml(input.senderName)}</strong> has cancelled <strong>${escapeHtml(input.envelopeTitle)}</strong>.</p>
+        ${input.reason ? `<p>Reason: ${escapeHtml(input.reason)}</p>` : ''}
+        <p>You can ignore any previous signing link for this envelope.</p>
+      </div>
+    `,
+  });
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')

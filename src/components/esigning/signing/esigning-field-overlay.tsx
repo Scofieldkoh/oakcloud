@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Calendar, Check, CheckCircle2, MousePointerClick, Pen, Type } from 'lucide-react';
 import type { EsigningFieldDefinitionDto } from '@/types/esigning';
 
@@ -41,10 +42,20 @@ export function EsigningFieldOverlay({
   recipientColor,
   onClick,
 }: EsigningFieldOverlayProps) {
+  const [reduceMotion, setReduceMotion] = useState(false);
   const actionLabel = ACTION_LABELS[field.type] ?? 'Fill In';
   const isFilled = state === 'filled';
   const isActive = state === 'active';
   const isUnfilledRequired = state === 'unfilled-required';
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncPreference = () => setReduceMotion(mediaQuery.matches);
+
+    syncPreference();
+    mediaQuery.addEventListener('change', syncPreference);
+    return () => mediaQuery.removeEventListener('change', syncPreference);
+  }, []);
 
   // Base styles
   let containerStyle: React.CSSProperties = {
@@ -79,7 +90,7 @@ export function EsigningFieldOverlay({
       ...containerStyle,
       border: `1.5px solid ${recipientColor}`,
       backgroundColor: `${recipientColor}18`,
-      animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      animation: reduceMotion ? undefined : 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
     };
   } else {
     // unfilled-optional
@@ -159,7 +170,19 @@ export function EsigningFieldOverlay({
   }
 
   return (
-    <div style={containerStyle} onClick={onClick} role="button" tabIndex={0} aria-label={actionLabel}>
+    <div
+      style={containerStyle}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={actionLabel}
+    >
       {renderContent()}
 
       {/* Filled checkmark badge */}

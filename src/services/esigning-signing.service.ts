@@ -13,7 +13,10 @@ import {
   verifyEsigningScopedToken,
 } from '@/lib/esigning-session';
 import type { SaveEsigningFieldValuesInput } from '@/lib/validations/esigning';
-import type { EsigningSigningSessionDto } from '@/types/esigning';
+import type {
+  EsigningSigningSessionDto,
+  EsigningSigningSessionStatusDto,
+} from '@/types/esigning';
 import { storage } from '@/lib/storage';
 import { createLogger } from '@/lib/logger';
 import { sendEsigningDeclinedEmailToSender } from '@/services/esigning-notification.service';
@@ -465,6 +468,53 @@ export async function loadEsigningSigningSession(): Promise<EsigningSigningSessi
   const claims = await requireSigningSession();
   const context = await getSigningContext(claims);
   return buildSigningSessionDto(context);
+}
+
+export async function getEsigningSigningSessionStatus(): Promise<EsigningSigningSessionStatusDto> {
+  const claims = await requireSigningSession();
+
+  const recipient = await prisma.esigningEnvelopeRecipient.findFirst({
+    where: {
+      id: claims.recipientId,
+      envelopeId: claims.envelopeId,
+    },
+    select: {
+      id: true,
+      status: true,
+      signedAt: true,
+      sessionVersion: true,
+      envelope: {
+        select: {
+          id: true,
+          status: true,
+          expiresAt: true,
+        },
+      },
+    },
+  });
+
+  if (!recipient || recipient.sessionVersion !== claims.sessionVersion) {
+    throw new Error('Signing session expired');
+  }
+  if (recipient.envelope.expiresAt && recipient.envelope.expiresAt.getTime() < Date.now()) {
+    throw new Error('This envelope has expired');
+  }
+  if (isTerminalEnvelopeStatus(recipient.envelope.status)) {
+    throw new Error(`This envelope is ${recipient.envelope.status.toLowerCase()}`);
+  }
+
+  return {
+    envelope: {
+      id: recipient.envelope.id,
+      status: recipient.envelope.status,
+      expiresAt: toIsoString(recipient.envelope.expiresAt),
+    },
+    recipient: {
+      id: recipient.id,
+      status: recipient.status,
+      signedAt: toIsoString(recipient.signedAt),
+    },
+  };
 }
 
 export async function recordEsigningSigningView(): Promise<EsigningSigningSessionDto> {

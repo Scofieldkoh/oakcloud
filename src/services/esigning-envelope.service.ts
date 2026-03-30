@@ -34,6 +34,7 @@ import {
   sendEsigningExpiryWarningEmailToSender,
   sendEsigningReminderEmail,
   sendEsigningRequestEmail,
+  sendEsigningVoidedEmailToRecipient,
 } from '@/services/esigning-notification.service';
 import {
   buildRecipientSigningOrder,
@@ -267,6 +268,15 @@ function isExpiryWarningEvent(event: {
   return metadata.kind === 'expiry_warning' && metadata.thresholdDays === thresholdDays;
 }
 
+function buildDuplicateEnvelopeTitle(title: string): string {
+  const suffix = ' (Copy)';
+  if (title.length + suffix.length <= 160) {
+    return `${title}${suffix}`;
+  }
+
+  return `${title.slice(0, 160 - suffix.length).trimEnd()}${suffix}`;
+}
+
 export async function listEsigningEnvelopes(
   session: SessionUser,
   tenantId: string,
@@ -398,6 +408,26 @@ export async function listEsigningEnvelopes(
       companyName: envelope.company?.name ?? null,
       createdById: envelope.createdById,
       createdByName: formatUserName(envelope.createdBy.firstName, envelope.createdBy.lastName, envelope.createdBy.email),
+      canDelete: envelope.status === 'DRAFT' && canDeleteEnvelope(scope, session, envelope.createdById),
+      canVoid:
+        ['SENT', 'IN_PROGRESS'].includes(envelope.status) &&
+        (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
+      canDuplicate: scope.canCreate && canReadEnvelope(scope, session, envelope.createdById),
+      canResend:
+        ['SENT', 'IN_PROGRESS'].includes(envelope.status) &&
+        (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)) &&
+        envelope.recipients.some(
+          (recipient) =>
+            recipient.type === 'SIGNER' && ['NOTIFIED', 'VIEWED'].includes(recipient.status)
+        ),
+      canRetryPdf:
+        envelope.status === 'COMPLETED' &&
+        envelope.pdfGenerationStatus === 'FAILED' &&
+        (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
+      resendableRecipientCount: envelope.recipients.filter(
+        (recipient) =>
+          recipient.type === 'SIGNER' && ['NOTIFIED', 'VIEWED'].includes(recipient.status)
+      ).length,
       recipientCount: envelope.recipients.length,
       signerCount: envelope.recipients.filter((recipient) => recipient.type === 'SIGNER').length,
       documentCount: envelope.documents.length,
@@ -563,6 +593,220 @@ export async function updateDraftEsigningEnvelope(
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }
 
+export async function duplicateEsigningEnvelope(
+  session: SessionUser,
+  tenantId: string,
+  envelopeId: string
+): Promise<EsigningEnvelopeDetailDto> {
+  const scope = await resolveEsigningActorScope(session, tenantId);
+  if (!scope.canCreate) {
+    throw new Error('Permission denied: esigning:create');
+  }
+
+  const sourceEnvelope = await prisma.esigningEnvelope.findFirst({
+    where: {
+      id: envelopeId,
+      tenantId,
+      deletedAt: null,
+    },
+    include: {
+      documents: {
+        orderBy: { sortOrder: 'asc' },
+      },
+      recipients: {
+        orderBy: [
+          { signingOrder: 'asc' },
+          { createdAt: 'asc' },
+        ],
+      },
+      fieldDefinitions: {
+        orderBy: [
+          { sortOrder: 'asc' },
+          { createdAt: 'asc' },
+        ],
+      },
+    },
+  });
+
+  if (!sourceEnvelope) {
+    throw new Error('Envelope not found');
+  }
+  if (!canReadEnvelope(scope, session, sourceEnvelope.createdById)) {
+    throw new Error('Forbidden');
+  }
+
+  const duplicatedEnvelopeId = randomUUID();
+  const certificateId = await generateUniqueEsigningCertificateId();
+  const duplicatedDocuments = await Promise.all(
+    sourceEnvelope.documents.map(async (document) => {
+      const duplicatedDocumentId = randomUUID();
+      const extension =
+        StorageKeys.getExtension(document.fileName, 'application/pdf') || '.pdf';
+      const storagePath = StorageKeys.esigningOriginalDocument(
+        tenantId,
+        duplicatedEnvelopeId,
+        duplicatedDocumentId,
+        extension
+      );
+
+      await storage.copy(document.storagePath, storagePath);
+
+      return {
+        sourceId: document.id,
+        id: duplicatedDocumentId,
+        storagePath,
+        fileName: document.fileName,
+        fileSize: document.fileSize,
+        pageCount: document.pageCount,
+        originalHash: document.originalHash,
+        sortOrder: document.sortOrder,
+      };
+    })
+  );
+
+  const recipientIdMap = new Map<string, string>();
+  const duplicatedRecipients = sourceEnvelope.recipients.map((recipient) => {
+    const duplicatedRecipientId = randomUUID();
+    recipientIdMap.set(recipient.id, duplicatedRecipientId);
+
+    return {
+      id: duplicatedRecipientId,
+      name: recipient.name,
+      email: recipient.email,
+      type: recipient.type,
+      signingOrder: recipient.signingOrder,
+      accessMode: recipient.accessMode,
+      accessCodeHash: recipient.accessCodeHash,
+      colorTag: recipient.colorTag,
+    };
+  });
+
+  const documentIdMap = new Map(
+    duplicatedDocuments.map((document) => [document.sourceId, document.id])
+  );
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.esigningEnvelope.create({
+        data: {
+          id: duplicatedEnvelopeId,
+          tenantId,
+          createdById: session.id,
+          title: buildDuplicateEnvelopeTitle(sourceEnvelope.title),
+          message: sourceEnvelope.message,
+          signingOrder: sourceEnvelope.signingOrder,
+          expiresAt: sourceEnvelope.expiresAt,
+          reminderFrequencyDays: sourceEnvelope.reminderFrequencyDays,
+          reminderStartDays: sourceEnvelope.reminderStartDays,
+          expiryWarningDays: sourceEnvelope.expiryWarningDays,
+          companyId: sourceEnvelope.companyId,
+          certificateId,
+        },
+      });
+
+      if (duplicatedDocuments.length > 0) {
+        await tx.esigningEnvelopeDocument.createMany({
+          data: duplicatedDocuments.map((document) => ({
+            id: document.id,
+            tenantId,
+            envelopeId: duplicatedEnvelopeId,
+            fileName: document.fileName,
+            storagePath: document.storagePath,
+            fileSize: document.fileSize,
+            pageCount: document.pageCount,
+            originalHash: document.originalHash,
+            sortOrder: document.sortOrder,
+          })),
+        });
+      }
+
+      if (duplicatedRecipients.length > 0) {
+        await tx.esigningEnvelopeRecipient.createMany({
+          data: duplicatedRecipients.map((recipient) => ({
+            id: recipient.id,
+            tenantId,
+            envelopeId: duplicatedEnvelopeId,
+            type: recipient.type,
+            name: recipient.name,
+            email: recipient.email,
+            signingOrder: recipient.signingOrder,
+            accessMode: recipient.accessMode,
+            accessCodeHash: recipient.accessCodeHash,
+            colorTag: recipient.colorTag,
+          })),
+        });
+      }
+
+      if (sourceEnvelope.fieldDefinitions.length > 0) {
+        await tx.esigningDocumentFieldDefinition.createMany({
+          data: sourceEnvelope.fieldDefinitions.map((field) => {
+            const documentId = documentIdMap.get(field.documentId);
+            const recipientId = recipientIdMap.get(field.recipientId);
+            if (!documentId || !recipientId) {
+              throw new Error('Failed to duplicate field mappings');
+            }
+
+            return {
+              id: randomUUID(),
+              tenantId,
+              envelopeId: duplicatedEnvelopeId,
+              documentId,
+              recipientId,
+              type: field.type,
+              pageNumber: field.pageNumber,
+              xPercent: field.xPercent,
+              yPercent: field.yPercent,
+              widthPercent: field.widthPercent,
+              heightPercent: field.heightPercent,
+              required: field.required,
+              label: field.label,
+              placeholder: field.placeholder,
+              sortOrder: field.sortOrder,
+            };
+          }),
+        });
+      }
+
+      await tx.esigningEnvelopeEvent.create({
+        data: {
+          tenantId,
+          envelopeId: duplicatedEnvelopeId,
+          action: 'CREATED',
+          metadata: {
+            duplicatedFromEnvelopeId: sourceEnvelope.id,
+          },
+        },
+      });
+    });
+  } catch (error) {
+    await storage
+      .deletePrefix(StorageKeys.esigningEnvelopePrefix(tenantId, duplicatedEnvelopeId))
+      .catch((storageError) => {
+        log.warn('Failed to clean up duplicated envelope storage after error', {
+          envelopeId: duplicatedEnvelopeId,
+          storageError,
+        });
+      });
+    throw error;
+  }
+
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: sourceEnvelope.companyId ?? undefined,
+    action: 'CREATE',
+    entityType: 'EsigningEnvelope',
+    entityId: duplicatedEnvelopeId,
+    entityName: buildDuplicateEnvelopeTitle(sourceEnvelope.title),
+    summary: `Duplicated e-signing envelope "${sourceEnvelope.title}"`,
+    metadata: {
+      duplicatedFromEnvelopeId: sourceEnvelope.id,
+    },
+  });
+
+  return getEsigningEnvelopeDetail(session, tenantId, duplicatedEnvelopeId);
+}
+
 export async function deleteDraftEsigningEnvelope(
   session: SessionUser,
   tenantId: string,
@@ -575,6 +819,8 @@ export async function deleteDraftEsigningEnvelope(
       id: true,
       status: true,
       createdById: true,
+      title: true,
+      companyId: true,
     },
   });
 
@@ -597,6 +843,17 @@ export async function deleteDraftEsigningEnvelope(
   } catch (error) {
     log.warn('Failed to delete draft envelope storage prefix', { envelopeId, error });
   }
+
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: envelope.companyId ?? undefined,
+    action: 'DELETE',
+    entityType: 'EsigningEnvelope',
+    entityId: envelopeId,
+    entityName: envelope.title,
+    summary: `Deleted draft e-signing envelope "${envelope.title}"`,
+  });
 }
 
 export async function addEsigningEnvelopeRecipient(
@@ -673,6 +930,22 @@ export async function addEsigningEnvelopeRecipient(
       accessCodeHash: input.accessCode ? hashPassword(input.accessCode) : null,
       colorTag: input.colorTag ?? getEsigningRecipientColor(signerCount),
       status: envelope.signingOrder === 'PARALLEL' && input.type === 'SIGNER' ? 'QUEUED' : 'QUEUED',
+    },
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: envelope.companyId ?? undefined,
+    action: 'CREATE',
+    entityType: 'EsigningEnvelope',
+    entityId: envelopeId,
+    entityName: envelope.title,
+    summary: `Added recipient "${input.name}" to e-signing envelope "${envelope.title}"`,
+    metadata: {
+      recipientEmail: input.email,
+      recipientType: input.type,
+      accessMode: input.accessMode,
     },
   });
 
@@ -854,6 +1127,28 @@ export async function updateEsigningEnvelopeRecipient(
     });
   }
 
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: envelope.companyId ?? undefined,
+    action: 'UPDATE',
+    entityType: 'EsigningEnvelope',
+    entityId: envelopeId,
+    entityName: envelope.title,
+    summary:
+      envelope.status === 'DRAFT'
+        ? `Updated recipient "${nextName}" on draft e-signing envelope "${envelope.title}"`
+        : `Corrected recipient "${nextName}" on e-signing envelope "${envelope.title}"`,
+    metadata: {
+      recipientId,
+      previousName: recipient.name,
+      previousEmail: recipient.email,
+      nextName,
+      nextEmail,
+      envelopeStatus: envelope.status,
+    },
+  });
+
   return {
     envelope: await getEsigningEnvelopeDetail(session, tenantId, envelopeId),
     manualLinks,
@@ -870,9 +1165,16 @@ export async function removeEsigningEnvelopeRecipient(
   const envelope = await prisma.esigningEnvelope.findFirst({
     where: { id: envelopeId, tenantId },
     include: {
+      company: {
+        select: {
+          id: true,
+        },
+      },
       recipients: {
         select: {
           id: true,
+          name: true,
+          email: true,
         },
       },
     },
@@ -891,8 +1193,25 @@ export async function removeEsigningEnvelopeRecipient(
     throw new Error('Recipient not found');
   }
 
+  const recipient = envelope.recipients.find((entry) => entry.id === recipientId)!;
+
   await prisma.esigningEnvelopeRecipient.delete({
     where: { id: recipientId },
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: envelope.companyId ?? undefined,
+    action: 'DELETE',
+    entityType: 'EsigningEnvelope',
+    entityId: envelopeId,
+    entityName: envelope.title,
+    summary: `Removed recipient "${recipient.name}" from e-signing envelope "${envelope.title}"`,
+    metadata: {
+      recipientId,
+      recipientEmail: recipient.email,
+    },
   });
 
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
@@ -990,6 +1309,22 @@ export async function uploadEsigningEnvelopeDocument(
     },
   });
 
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: envelope.companyId ?? undefined,
+    action: 'UPLOAD',
+    entityType: 'EsigningEnvelope',
+    entityId: envelopeId,
+    entityName: envelope.title,
+    summary: `Uploaded document "${file.name}" to e-signing envelope "${envelope.title}"`,
+    metadata: {
+      documentId,
+      pageCount,
+      fileSize: file.size,
+    },
+  });
+
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }
 
@@ -1055,6 +1390,20 @@ export async function deleteEsigningEnvelopeDocument(
   } catch (error) {
     log.warn('Failed to remove envelope document asset', { envelopeId, documentId, error });
   }
+
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: envelope.companyId ?? undefined,
+    action: 'DELETE',
+    entityType: 'EsigningEnvelope',
+    entityId: envelopeId,
+    entityName: envelope.title,
+    summary: `Removed document from e-signing envelope "${envelope.title}"`,
+    metadata: {
+      documentId,
+    },
+  });
 
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }
@@ -1375,9 +1724,141 @@ export async function resendEsigningEnvelopeRecipient(
     });
   }
 
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: envelope.companyId ?? undefined,
+    action: 'UPDATE',
+    entityType: 'EsigningEnvelope',
+    entityId: envelopeId,
+    entityName: envelope.title,
+    summary: `Resent signing request for "${recipient.name}" on e-signing envelope "${envelope.title}"`,
+    metadata: {
+      recipientId,
+      recipientEmail: recipient.email,
+      activeRecipient: isActiveRecipient,
+    },
+  });
+
   return {
     envelope: await getEsigningEnvelopeDetail(session, tenantId, envelopeId),
     manualLinks,
+  };
+}
+
+export async function resendEsigningEnvelopeActiveRecipients(
+  session: SessionUser,
+  tenantId: string,
+  envelopeId: string
+): Promise<{
+  envelope: EsigningEnvelopeDetailDto;
+  manualLinks: EsigningManualLinkDto[];
+}> {
+  const scope = await resolveEsigningActorScope(session, tenantId);
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: { id: envelopeId, tenantId },
+    include: {
+      createdBy: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      recipients: {
+        orderBy: [
+          { signingOrder: 'asc' },
+          { createdAt: 'asc' },
+        ],
+      },
+    },
+  });
+
+  if (!envelope) {
+    throw new Error('Envelope not found');
+  }
+  if (!['SENT', 'IN_PROGRESS'].includes(envelope.status)) {
+    throw new Error('Only sent or in-progress envelopes can be resent');
+  }
+  if (!canMutateEnvelope(scope, session, envelope.createdById) && !scope.canManage) {
+    throw new Error('Forbidden');
+  }
+
+  const activeRecipients = envelope.recipients.filter(
+    (recipient) =>
+      recipient.type === 'SIGNER' && ['NOTIFIED', 'VIEWED'].includes(recipient.status)
+  );
+
+  if (activeRecipients.length === 0) {
+    throw new Error('No active signer is available to resend');
+  }
+
+  const preparedNotifications = prepareRecipientNotifications(
+    activeRecipients.map((recipient) => ({
+      id: recipient.id,
+      name: recipient.name,
+      email: recipient.email,
+      accessMode: recipient.accessMode,
+    }))
+  );
+
+  await prisma.$transaction(async (tx) => {
+    for (const notification of preparedNotifications.updates) {
+      await tx.esigningEnvelopeRecipient.update({
+        where: { id: notification.recipientId },
+        data: {
+          sessionVersion: { increment: 1 },
+          accessTokenHash: notification.accessTokenHash,
+        },
+      });
+
+      await tx.esigningEnvelopeEvent.create({
+        data: {
+          tenantId,
+          envelopeId,
+          recipientId: notification.recipientId,
+          action: 'REMINDER_SENT',
+          metadata: {
+            resent: true,
+            source: 'list_row_action',
+          },
+        },
+      });
+    }
+  });
+
+  const senderName = formatUserName(
+    envelope.createdBy.firstName,
+    envelope.createdBy.lastName,
+    envelope.createdBy.email
+  );
+
+  await deliverPreparedNotifications({
+    senderName,
+    envelopeTitle: envelope.title,
+    message: envelope.message,
+    expiresAt: envelope.expiresAt,
+    notifications: preparedNotifications.updates,
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: envelope.companyId ?? undefined,
+    action: 'UPDATE',
+    entityType: 'EsigningEnvelope',
+    entityId: envelopeId,
+    entityName: envelope.title,
+    summary: `Resent active signing requests for e-signing envelope "${envelope.title}"`,
+    metadata: {
+      recipientCount: activeRecipients.length,
+      recipientIds: activeRecipients.map((recipient) => recipient.id),
+    },
+  });
+
+  return {
+    envelope: await getEsigningEnvelopeDetail(session, tenantId, envelopeId),
+    manualLinks: preparedNotifications.manualLinks,
   };
 }
 
@@ -1390,12 +1871,23 @@ export async function voidEsigningEnvelope(
   const scope = await resolveEsigningActorScope(session, tenantId);
   const envelope = await prisma.esigningEnvelope.findFirst({
     where: { id: envelopeId, tenantId },
-    select: {
-      id: true,
-      title: true,
-      status: true,
-      companyId: true,
-      createdById: true,
+    include: {
+      createdBy: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      recipients: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          status: true,
+          type: true,
+        },
+      },
     },
   });
 
@@ -1448,6 +1940,26 @@ export async function voidEsigningEnvelope(
     summary: `Voided e-signing envelope "${envelope.title}"`,
     reason: reason ?? undefined,
   });
+
+  const senderName = formatUserName(
+    envelope.createdBy.firstName,
+    envelope.createdBy.lastName,
+    envelope.createdBy.email
+  );
+
+  const recipientsToNotify = envelope.recipients.filter((recipient) =>
+    ['QUEUED', 'NOTIFIED', 'VIEWED'].includes(recipient.status)
+  );
+
+  for (const recipient of recipientsToNotify) {
+    await sendEsigningVoidedEmailToRecipient({
+      to: recipient.email,
+      recipientName: recipient.name,
+      envelopeTitle: envelope.title,
+      senderName,
+      reason,
+    });
+  }
 
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }
@@ -1828,6 +2340,92 @@ export async function processEsigningReminderNotifications(input?: {
     processed: candidates.length,
     remindersSent,
     expiryWarningsSent,
+  };
+}
+
+export async function cleanupEsigningOrphanedStorage(input?: {
+  maxKeysPerTenant?: number;
+}): Promise<{
+  tenantsScanned: number;
+  orphanedPrefixes: number;
+  deletedPrefixes: number;
+  failedPrefixes: string[];
+}> {
+  const tenants = await prisma.tenant.findMany({
+    where: {
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+    },
+  });
+  const maxKeysPerTenant = input?.maxKeysPerTenant ?? 10_000;
+  const failedPrefixes: string[] = [];
+  let orphanedPrefixes = 0;
+  let deletedPrefixes = 0;
+
+  for (const tenant of tenants) {
+    const files = await storage.list(`${tenant.id}/esigning/`, maxKeysPerTenant);
+    if (files.length === 0) {
+      continue;
+    }
+
+    const envelopeIds = new Set<string>();
+    for (const file of files) {
+      const match = file.key.match(new RegExp(`^${tenant.id}/esigning/([^/]+)/`));
+      if (match?.[1]) {
+        envelopeIds.add(match[1]);
+      }
+    }
+
+    if (envelopeIds.size === 0) {
+      continue;
+    }
+
+    const existingEnvelopes = await prisma.esigningEnvelope.findMany({
+      where: {
+        tenantId: tenant.id,
+        id: {
+          in: [...envelopeIds],
+        },
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+    const existingEnvelopeIds = new Set(existingEnvelopes.map((envelope) => envelope.id));
+
+    for (const envelopeId of envelopeIds) {
+      if (existingEnvelopeIds.has(envelopeId)) {
+        continue;
+      }
+
+      orphanedPrefixes += 1;
+      const prefix = StorageKeys.esigningEnvelopePrefix(tenant.id, envelopeId);
+
+      try {
+        const deletedCount = await storage.deletePrefix(prefix);
+        if (deletedCount > 0) {
+          deletedPrefixes += 1;
+        }
+      } catch (error) {
+        failedPrefixes.push(prefix);
+        log.warn('Failed to delete orphaned e-signing storage prefix', {
+          tenantId: tenant.id,
+          envelopeId,
+          prefix,
+          error,
+        });
+      }
+    }
+  }
+
+  return {
+    tenantsScanned: tenants.length,
+    orphanedPrefixes,
+    deletedPrefixes,
+    failedPrefixes,
   };
 }
 

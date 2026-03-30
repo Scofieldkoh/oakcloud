@@ -268,6 +268,11 @@ export function serializeEnvelopeDetail(input: {
     canDelete: envelope.status === 'DRAFT' && canDeleteEnvelope(scope, session, envelope.createdById),
     canSend: envelope.status === 'DRAFT' && canMutateEnvelope(scope, session, envelope.createdById),
     canVoid: ['SENT', 'IN_PROGRESS'].includes(envelope.status) && (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
+    canDuplicate: scope.canCreate && canReadEnvelope(scope, session, envelope.createdById),
+    canRetryPdf:
+      envelope.status === 'COMPLETED' &&
+      envelope.pdfGenerationStatus === 'FAILED' &&
+      (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
     documentCount: envelope.documents.length,
     signerCount: envelope.recipients.filter((recipient) => recipient.type === 'SIGNER').length,
     recipientCount: envelope.recipients.length,

@@ -121,6 +121,23 @@ async function deleteEnvelopeRequest(id: string, tenantId?: string | null): Prom
   }
 }
 
+async function duplicateEnvelopeRequest(
+  id: string,
+  tenantId?: string | null
+): Promise<EsigningEnvelopeDetailDto> {
+  const response = await fetch(`/api/esigning/envelopes/${id}/duplicate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenantId }),
+  });
+
+  if (!response.ok) {
+    await readJsonError(response, 'Failed to duplicate envelope');
+  }
+
+  return response.json();
+}
+
 async function addRecipientRequest(
   envelopeId: string,
   payload: EsigningRecipientInput & { tenantId?: string | null }
@@ -303,6 +320,23 @@ async function retryEnvelopeProcessingRequest(
   return response.json();
 }
 
+async function resendEnvelopeRequest(
+  envelopeId: string,
+  tenantId?: string | null
+): Promise<{ envelope: EsigningEnvelopeDetailDto; manualLinks: EsigningManualLinkDto[] }> {
+  const response = await fetch(`/api/esigning/envelopes/${envelopeId}/resend`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenantId }),
+  });
+
+  if (!response.ok) {
+    await readJsonError(response, 'Failed to resend active signing requests');
+  }
+
+  return response.json();
+}
+
 function useEsigningTenant() {
   const { data: session } = useSession();
   return useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
@@ -323,6 +357,14 @@ export function useEsigningEnvelopes(params: Partial<EsigningListQueryInput> = {
     queryFn: () => fetchEsigningEnvelopes(params, tenantId),
     enabled: Boolean(tenantId),
     staleTime: 30_000,
+    refetchInterval: (query) => {
+      const data = query.state.data as EsigningListResult | undefined;
+      const hasLiveEnvelope = (data?.envelopes ?? []).some((envelope) =>
+        ['DRAFT', 'SENT', 'IN_PROGRESS', 'COMPLETED'].includes(envelope.status)
+      );
+      return hasLiveEnvelope ? 15_000 : false;
+    },
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -334,6 +376,14 @@ export function useEsigningEnvelope(id: string | null) {
     queryFn: () => fetchEsigningEnvelopeDetail(id!, tenantId),
     enabled: Boolean(id && tenantId),
     staleTime: 15_000,
+    refetchInterval: (query) => {
+      const data = query.state.data as EsigningEnvelopeDetailDto | undefined;
+      if (!data) {
+        return 10_000;
+      }
+      return ['DRAFT', 'SENT', 'IN_PROGRESS', 'COMPLETED'].includes(data.status) ? 10_000 : false;
+    },
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -372,6 +422,19 @@ export function useDeleteEsigningEnvelope() {
   return useMutation({
     mutationFn: (id: string) => deleteEnvelopeRequest(id, tenantId),
     onSuccess: async () => {
+      await invalidateEnvelopeQueries(queryClient, tenantId);
+    },
+  });
+}
+
+export function useDuplicateEsigningEnvelope() {
+  const tenantId = useEsigningTenant();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => duplicateEnvelopeRequest(id, tenantId),
+    onSuccess: async (result) => {
+      queryClient.setQueryData(['esigning', 'detail', tenantId, result.id], result);
       await invalidateEnvelopeQueries(queryClient, tenantId);
     },
   });
@@ -506,6 +569,19 @@ export function useRetryEsigningEnvelopeProcessing(envelopeId: string) {
     mutationFn: () => retryEnvelopeProcessingRequest(envelopeId, tenantId),
     onSuccess: async (result) => {
       queryClient.setQueryData(['esigning', 'detail', tenantId, envelopeId], result);
+      await invalidateEnvelopeQueries(queryClient, tenantId);
+    },
+  });
+}
+
+export function useResendEsigningEnvelope() {
+  const tenantId = useEsigningTenant();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (envelopeId: string) => resendEnvelopeRequest(envelopeId, tenantId),
+    onSuccess: async (result, envelopeId) => {
+      queryClient.setQueryData(['esigning', 'detail', tenantId, envelopeId], result.envelope);
       await invalidateEnvelopeQueries(queryClient, tenantId);
     },
   });

@@ -23,6 +23,12 @@ export interface EsigningEnvelopeListItem {
   companyName: string | null;
   createdById: string;
   createdByName: string;
+  canDelete: boolean;
+  canVoid: boolean;
+  canDuplicate: boolean;
+  canResend: boolean;
+  canRetryPdf: boolean;
+  resendableRecipientCount: number;
   recipientCount: number;
   signerCount: number;
   documentCount: number;
@@ -134,6 +140,8 @@ export interface EsigningEnvelopeDetailDto {
   canDelete: boolean;
   canSend: boolean;
   canVoid: boolean;
+  canDuplicate: boolean;
+  canRetryPdf: boolean;
   documentCount: number;
   signerCount: number;
   recipientCount: number;
@@ -189,4 +197,17 @@ export interface EsigningSigningSessionDto {
   fields: EsigningFieldDefinitionDto[];
   fieldValues: EsigningFieldValueDto[];
   downloadToken: string | null;
+}
+
+export interface EsigningSigningSessionStatusDto {
+  envelope: {
+    id: string;
+    status: EsigningEnvelopeStatus;
+    expiresAt: string | null;
+  };
+  recipient: {
+    id: string;
+    status: EsigningRecipientStatus;
+    signedAt: string | null;
+  };
 }

@@ -2,12 +2,16 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
+  ChevronDown,
+  ChevronUp,
   Copy,
   Download,
   FileSignature,
   Send,
+  Trash2,
 } from 'lucide-react';
 import type {
   EsigningEnvelopeEventAction,
@@ -26,6 +30,8 @@ import { useSession } from '@/hooks/use-auth';
 import {
   useAddEsigningRecipient,
   useDeleteEsigningDocument,
+  useDeleteEsigningEnvelope,
+  useDuplicateEsigningEnvelope,
   useEsigningEnvelope,
   useRemoveEsigningRecipient,
   useResendEsigningRecipient,
@@ -138,6 +144,7 @@ function formatEventAction(
 type WizardStep = 1 | 2 | 3;
 
 export function EsigningDetailPage({ envelopeId }: Props) {
+  const router = useRouter();
   const toast = useToast();
   const { can } = usePermissions();
   const sessionQuery = useSession();
@@ -152,6 +159,8 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const sendEnvelope = useSendEsigningEnvelope(envelopeId);
   const voidEnvelope = useVoidEsigningEnvelope(envelopeId);
   const retryProcessing = useRetryEsigningEnvelopeProcessing(envelopeId);
+  const deleteEnvelope = useDeleteEsigningEnvelope();
+  const duplicateEnvelope = useDuplicateEsigningEnvelope();
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
@@ -165,12 +174,17 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const [documentActionId, setDocumentActionId] = useState<string | null>(null);
   const [isDeleteRecipientOpen, setIsDeleteRecipientOpen] = useState(false);
   const [isDeleteDocumentOpen, setIsDeleteDocumentOpen] = useState(false);
+  const [isDeleteEnvelopeOpen, setIsDeleteEnvelopeOpen] = useState(false);
   const [isVoidOpen, setIsVoidOpen] = useState(false);
   const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
+  const [showAllActivity, setShowAllActivity] = useState(false);
 
   // Field drafts
   const [fieldDrafts, setFieldDrafts] = useState<PlacedField[]>([]);
   const [hasUnsavedFieldDrafts, setHasUnsavedFieldDrafts] = useState(false);
+  const [fieldUndoStack, setFieldUndoStack] = useState<PlacedField[][]>([]);
+  const [fieldRedoStack, setFieldRedoStack] = useState<PlacedField[][]>([]);
+  const fieldDraftsRef = useRef<PlacedField[]>([]);
   const lastSyncedEnvelopeIdRef = useRef<string | null>(null);
 
   // Recipient hooks (keyed by action IDs)
@@ -211,6 +225,10 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       const summary = signerFieldSummary.get(recipient.id);
       return Boolean(summary && summary.totalCount > 0 && summary.signatureCount > 0);
     });
+  const visibleEvents = useMemo(
+    () => (showAllActivity ? envelope?.events ?? [] : (envelope?.events ?? []).slice(0, 6)),
+    [envelope?.events, showAllActivity]
+  );
 
   // Initialize field drafts from envelope
   useEffect(() => {
@@ -219,23 +237,68 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     if (hasUnsavedFieldDrafts && !isDifferentEnvelope) {
       return;
     }
-    setFieldDrafts(
-      envelope.fields.map((field) =>
-        createFieldDraft({
-          ...field,
-          localId: field.id,
-          label: field.label ?? null,
-          placeholder: field.placeholder ?? null,
-        })
-      )
+    const syncedFieldDrafts = envelope.fields.map((field) =>
+      createFieldDraft({
+        ...field,
+        localId: field.id,
+        label: field.label ?? null,
+        placeholder: field.placeholder ?? null,
+      })
     );
+    setFieldDrafts(syncedFieldDrafts);
+    fieldDraftsRef.current = syncedFieldDrafts;
     setHasUnsavedFieldDrafts(false);
+    setFieldUndoStack([]);
+    setFieldRedoStack([]);
     lastSyncedEnvelopeIdRef.current = envelope.id;
   }, [envelope, hasUnsavedFieldDrafts]);
 
-  const updateFieldDrafts = useCallback((nextFields: PlacedField[]) => {
+  useEffect(() => {
+    fieldDraftsRef.current = fieldDrafts;
+  }, [fieldDrafts]);
+
+  const updateFieldDrafts = useCallback((nextFields: PlacedField[], options?: {
+    recordHistory?: boolean;
+    historySnapshot?: PlacedField[];
+  }) => {
+    if (options?.recordHistory !== false) {
+      const historySnapshot = options?.historySnapshot ?? fieldDraftsRef.current;
+      setFieldUndoStack((current) => [...current.slice(-49), historySnapshot]);
+      setFieldRedoStack([]);
+    }
     setFieldDrafts(nextFields);
+    fieldDraftsRef.current = nextFields;
     setHasUnsavedFieldDrafts(true);
+  }, []);
+
+  const undoFieldDrafts = useCallback(() => {
+    setFieldUndoStack((current) => {
+      const previous = current[current.length - 1];
+      if (!previous) {
+        return current;
+      }
+
+      setFieldRedoStack((redoCurrent) => [fieldDraftsRef.current, ...redoCurrent].slice(0, 50));
+      setFieldDrafts(previous);
+      fieldDraftsRef.current = previous;
+      setHasUnsavedFieldDrafts(true);
+      return current.slice(0, -1);
+    });
+  }, []);
+
+  const redoFieldDrafts = useCallback(() => {
+    setFieldRedoStack((current) => {
+      const [next, ...rest] = current;
+      if (!next) {
+        return current;
+      }
+
+      setFieldUndoStack((undoCurrent) => [...undoCurrent.slice(-49), fieldDraftsRef.current]);
+      setFieldDrafts(next);
+      fieldDraftsRef.current = next;
+      setHasUnsavedFieldDrafts(true);
+      return rest;
+    });
   }, []);
 
   const buildFieldDefinitionPayload = useCallback(
@@ -354,6 +417,36 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       toast.error(error instanceof Error ? error.message : 'Failed to save fields');
       throw error;
     }
+  }
+
+  async function handleDuplicateEnvelope() {
+    try {
+      const duplicated = await duplicateEnvelope.mutateAsync(envelopeId);
+      toast.success('Envelope duplicated');
+      router.push(`/esigning/${duplicated.id}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate envelope');
+    }
+  }
+
+  async function handleDeleteEnvelope() {
+    try {
+      await deleteEnvelope.mutateAsync(envelopeId);
+      toast.success('Draft deleted');
+      setIsDeleteEnvelopeOpen(false);
+      router.push('/esigning');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete draft');
+    }
+  }
+
+  function openEnvelopeDownload(variant: 'combined' | 'certificates') {
+    const query = new URLSearchParams({ variant });
+    window.open(
+      `/api/esigning/envelopes/${envelopeId}/download?${query.toString()}`,
+      '_blank',
+      'noreferrer'
+    );
   }
 
   // ——— Early returns ———
@@ -582,6 +675,15 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         isLoading={deleteDocument.isPending}
       />
       <ConfirmDialog
+        isOpen={isDeleteEnvelopeOpen}
+        onClose={() => setIsDeleteEnvelopeOpen(false)}
+        onConfirm={handleDeleteEnvelope}
+        title="Delete draft envelope?"
+        description="This permanently removes the draft envelope and its uploaded source files."
+        confirmLabel="Delete draft"
+        isLoading={deleteEnvelope.isPending}
+      />
+      <ConfirmDialog
         isOpen={isVoidOpen}
         onClose={() => setIsVoidOpen(false)}
         onConfirm={async (reason) => {
@@ -626,7 +728,30 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               onStepClick={setCurrentStep}
             />
           </div>
-          <span className="text-sm text-text-secondary truncate max-w-48">{envelope.title}</span>
+          <div className="flex items-center gap-2">
+            {envelope.canDuplicate ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Copy className="h-4 w-4" />}
+                onClick={() => void handleDuplicateEnvelope()}
+                isLoading={duplicateEnvelope.isPending}
+              >
+                Duplicate
+              </Button>
+            ) : null}
+            {envelope.canDelete ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Trash2 className="h-4 w-4" />}
+                onClick={() => setIsDeleteEnvelopeOpen(true)}
+              >
+                Delete draft
+              </Button>
+            ) : null}
+            <span className="max-w-48 truncate text-sm text-text-secondary">{envelope.title}</span>
+          </div>
         </div>
 
         {/* Step content */}
@@ -674,6 +799,10 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               onFieldsChange={updateFieldDrafts}
               onSaveFields={persistFields}
               isSaving={saveFields.isPending}
+              canUndo={fieldUndoStack.length > 0}
+              canRedo={fieldRedoStack.length > 0}
+              onUndo={undoFieldDrafts}
+              onRedo={redoFieldDrafts}
               onNext={() => setCurrentStep(3)}
               onBack={() => setCurrentStep(1)}
               canEdit={envelope.canEdit && can.updateEsigning}
@@ -756,6 +885,16 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               )}
             </div>
             <div className="flex flex-wrap gap-3">
+              {envelope.canDuplicate ? (
+                <Button
+                  variant="secondary"
+                  leftIcon={<Copy className="h-4 w-4" />}
+                  onClick={() => void handleDuplicateEnvelope()}
+                  isLoading={duplicateEnvelope.isPending}
+                >
+                  Duplicate
+                </Button>
+              ) : null}
               {envelope.canSend && can.updateEsigning && (
                 <Button
                   leftIcon={<Send className="h-4 w-4" />}
@@ -783,7 +922,25 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   Void
                 </Button>
               )}
-              {envelope.pdfGenerationStatus === 'FAILED' && can.updateEsigning && (
+              {envelope.status === 'COMPLETED' && envelope.pdfGenerationStatus === 'COMPLETED' ? (
+                <>
+                  <Button
+                    variant="secondary"
+                    leftIcon={<Download className="h-4 w-4" />}
+                    onClick={() => openEnvelopeDownload('combined')}
+                  >
+                    Download all
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    leftIcon={<Download className="h-4 w-4" />}
+                    onClick={() => openEnvelopeDownload('certificates')}
+                  >
+                    Certificates only
+                  </Button>
+                </>
+              ) : null}
+              {envelope.canRetryPdf ? (
                 <Button
                   variant="secondary"
                   onClick={async () => {
@@ -798,7 +955,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 >
                   Retry PDF
                 </Button>
-              )}
+              ) : null}
             </div>
           </div>
         </section>
@@ -820,42 +977,42 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                     recipient.status !== 'DECLINED';
 
                   return (
-                  <EsigningRecipientCard
-                    key={recipient.id}
-                    recipient={recipient}
-                    envelopeSigningOrder={envelope.signingOrder}
-                    canEdit={canCorrectRecipient}
-                    onEdit={() => openEditRecipient(recipient.id)}
-                    onRemove={() => {
-                      setRecipientActionId(recipient.id);
-                      setIsDeleteRecipientOpen(true);
-                    }}
-                    onResend={
-                      envelope.status !== 'DRAFT' && can.updateEsigning
-                        ? () =>
-                            void (async () => {
-                              setRecipientActionId(recipient.id);
-                              try {
-                                const result = await resendRecipient.mutateAsync();
-                                if (result.manualLinks.length > 0) {
-                                  setManualLinks(result.manualLinks);
-                                  setIsLinksModalOpen(true);
+                    <EsigningRecipientCard
+                      key={recipient.id}
+                      recipient={recipient}
+                      envelopeSigningOrder={envelope.signingOrder}
+                      canEdit={canCorrectRecipient}
+                      onEdit={() => openEditRecipient(recipient.id)}
+                      onRemove={() => {
+                        setRecipientActionId(recipient.id);
+                        setIsDeleteRecipientOpen(true);
+                      }}
+                      onResend={
+                        envelope.status !== 'DRAFT' && can.updateEsigning
+                          ? () =>
+                              void (async () => {
+                                setRecipientActionId(recipient.id);
+                                try {
+                                  const result = await resendRecipient.mutateAsync();
+                                  if (result.manualLinks.length > 0) {
+                                    setManualLinks(result.manualLinks);
+                                    setIsLinksModalOpen(true);
+                                  }
+                                  toast.success('Recipient resent');
+                                } catch (error) {
+                                  toast.error(
+                                    error instanceof Error
+                                      ? error.message
+                                      : 'Failed to resend recipient'
+                                  );
+                                } finally {
+                                  setRecipientActionId(null);
                                 }
-                                toast.success('Recipient resent');
-                              } catch (error) {
-                                toast.error(
-                                  error instanceof Error
-                                    ? error.message
-                                    : 'Failed to resend recipient'
-                                );
-                              } finally {
-                                setRecipientActionId(null);
-                              }
-                            })()
-                        : undefined
-                    }
-                    warnings={[]}
-                  />
+                              })()
+                          : undefined
+                      }
+                      warnings={[]}
+                    />
                   );
                 })}
               </div>
@@ -910,11 +1067,30 @@ export function EsigningDetailPage({ envelopeId }: Props) {
           <div>
             <section className="rounded-3xl border border-border-primary bg-background-secondary p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-text-primary">Activity</h2>
+              {envelope.events.length > 6 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAllActivity((current) => !current)}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-oak-primary"
+                >
+                  {showAllActivity ? (
+                    <>
+                      <ChevronUp className="h-3.5 w-3.5" />
+                      Collapse older events
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3.5 w-3.5" />
+                      Show all activity
+                    </>
+                  )}
+                </button>
+              ) : null}
               <div className="mt-4 relative">
                 {/* Vertical line */}
                 <div className="absolute left-2 top-2 bottom-2 w-px bg-border-primary" />
                 <div className="space-y-4">
-                  {envelope.events.map((event, idx) => (
+                  {visibleEvents.map((event, idx) => (
                     <div key={event.id} className="flex gap-4">
                       <div className="relative flex-shrink-0 w-5 flex justify-center">
                         <div

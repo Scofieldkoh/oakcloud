@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Caveat, Dancing_Script, Pinyon_Script } from 'next/font/google';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SignaturePad } from '@/components/forms/signature-pad';
@@ -15,20 +16,158 @@ interface EsigningSignatureModalProps {
   isSubmitting?: boolean;
 }
 
-type ActiveTab = 'draw' | 'type';
+type ActiveTab = 'draw' | 'type' | 'upload';
+type SignatureFontKey = 'dancing-script' | 'pinyon-script' | 'caveat';
 
-function textToDataUrl(text: string): string {
+function toBase64(value: string): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary);
+}
+
+const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+});
+
+const pinyonScript = Pinyon_Script({
+  subsets: ['latin'],
+  weight: ['400'],
+});
+
+const caveat = Caveat({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+});
+
+const SIGNATURE_FONT_OPTIONS: Array<{
+  key: SignatureFontKey;
+  label: string;
+  fontFamily: string;
+}> = [
+  {
+    key: 'dancing-script',
+    label: 'Dancing Script',
+    fontFamily: dancingScript.style.fontFamily,
+  },
+  {
+    key: 'pinyon-script',
+    label: 'Pinyon Script',
+    fontFamily: pinyonScript.style.fontFamily,
+  },
+  {
+    key: 'caveat',
+    label: 'Caveat',
+    fontFamily: caveat.style.fontFamily,
+  },
+];
+
+function rasterDataUrlToSvgDataUrl(imageDataUrl: string): string {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 180" width="640" height="180">
+      <rect width="100%" height="100%" fill="white" fill-opacity="0" />
+      <image href="${imageDataUrl}" x="0" y="0" width="640" height="180" preserveAspectRatio="xMidYMid meet" />
+    </svg>
+  `.trim();
+
+  return `data:image/svg+xml;base64,${toBase64(svg)}`;
+}
+
+function textToDataUrl(text: string, fontFamily: string): string {
   const canvas = document.createElement('canvas');
-  canvas.width = 400;
-  canvas.height = 120;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return '';
-  ctx.clearRect(0, 0, 400, 120);
-  ctx.fillStyle = '#111827';
-  ctx.font = 'italic 48px cursive';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, 20, 60);
+  canvas.width = 640;
+  canvas.height = 180;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    return '';
+  }
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = '#111827';
+  context.textBaseline = 'middle';
+  context.font = `64px "${fontFamily}"`;
+  context.fillText(text, 28, canvas.height / 2);
   return canvas.toDataURL('image/png');
+}
+
+function textToSvgDataUrl(text: string, fontFamily: string): string {
+  const imageDataUrl = textToDataUrl(text, fontFamily);
+  return imageDataUrl ? rasterDataUrlToSvgDataUrl(imageDataUrl) : '';
+}
+
+async function ensureFontReady(fontFamily: string): Promise<void> {
+  if (typeof document === 'undefined' || !('fonts' in document)) {
+    return;
+  }
+
+  try {
+    await document.fonts.load(`64px ${fontFamily}`);
+    await document.fonts.ready;
+  } catch {
+    // Continue with the best available font rendering if the browser cannot preload the font.
+  }
+}
+
+async function renderTypedSignatureAssets(
+  text: string,
+  fontFamily: string
+): Promise<{ pngDataUrl: string; svgDataUrl: string } | null> {
+  const trimmedText = text.trim();
+  if (!trimmedText) {
+    return null;
+  }
+
+  await ensureFontReady(fontFamily);
+  const pngDataUrl = textToDataUrl(trimmedText, fontFamily);
+  if (!pngDataUrl) {
+    return null;
+  }
+
+  return {
+    pngDataUrl,
+    svgDataUrl: textToSvgDataUrl(trimmedText, fontFamily),
+  };
+}
+
+async function fileToPngDataUrl(file: File): Promise<string> {
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const nextImage = new Image();
+      nextImage.onload = () => resolve(nextImage);
+      nextImage.onerror = () => reject(new Error('Unable to read uploaded image'));
+      nextImage.src = objectUrl;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 180;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Unable to prepare uploaded signature');
+    }
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+    const drawWidth = image.width * scale;
+    const drawHeight = image.height * scale;
+    const drawX = (canvas.width - drawWidth) / 2;
+    const drawY = (canvas.height - drawHeight) / 2;
+
+    context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+    return canvas.toDataURL('image/png');
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 export function EsigningSignatureModal({
@@ -42,34 +181,104 @@ export function EsigningSignatureModal({
 }: EsigningSignatureModalProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('draw');
   const [drawDataUrl, setDrawDataUrl] = useState<string>(existingSignature ?? '');
+  const [drawVectorDataUrl, setDrawVectorDataUrl] = useState<string | null>(null);
   const [typedText, setTypedText] = useState('');
+  const [typedFont, setTypedFont] = useState<SignatureFontKey>('dancing-script');
+  const [uploadedDataUrl, setUploadedDataUrl] = useState('');
   const [applyToAll, setApplyToAll] = useState(true);
+  const [typedAssets, setTypedAssets] = useState<{ pngDataUrl: string; svgDataUrl: string } | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setDrawDataUrl(existingSignature ?? '');
+    setDrawVectorDataUrl(null);
+    setTypedText('');
+    setTypedFont('dancing-script');
+    setUploadedDataUrl('');
+    setApplyToAll(true);
+    setActiveTab('draw');
+    setTypedAssets(null);
+  }, [existingSignature, isOpen]);
 
   const isSignature = mode === 'SIGNATURE';
   const title = isSignature ? 'Adopt Your Signature' : 'Adopt Your Initials';
   const fieldLabel = isSignature ? 'Signature' : 'Initials';
+  const selectedFont = useMemo(
+    () => SIGNATURE_FONT_OPTIONS.find((font) => font.key === typedFont) ?? SIGNATURE_FONT_OPTIONS[0],
+    [typedFont]
+  );
+  useEffect(() => {
+    let cancelled = false;
 
-  const currentDataUrl = activeTab === 'draw' ? drawDataUrl : (typedText.trim() ? textToDataUrl(typedText.trim()) : '');
+    async function syncTypedAssets() {
+      const nextTypedAssets = await renderTypedSignatureAssets(typedText, selectedFont.fontFamily);
+      if (!cancelled) {
+        setTypedAssets(nextTypedAssets);
+      }
+    }
+
+    void syncTypedAssets();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFont.fontFamily, typedText]);
+
+  const currentDataUrl = useMemo(() => {
+    if (activeTab === 'draw') {
+      return drawDataUrl;
+    }
+
+    if (activeTab === 'upload') {
+      return uploadedDataUrl;
+    }
+
+    return typedAssets?.pngDataUrl ?? '';
+  }, [activeTab, drawDataUrl, typedAssets, uploadedDataUrl]);
+  const currentVectorDataUrl =
+    activeTab === 'draw' ? drawVectorDataUrl : activeTab === 'type' ? typedAssets?.svgDataUrl ?? null : null;
+
   const canAdopt = currentDataUrl.length > 0;
 
   function handleAdopt() {
-    if (!canAdopt) return;
+    if (!canAdopt) {
+      return;
+    }
+
     onAdopt({ dataUrl: currentDataUrl, applyToAll });
-    // Reset for next open
-    setDrawDataUrl('');
-    setTypedText('');
-    setApplyToAll(true);
-    setActiveTab('draw');
   }
 
-  function handleClose() {
-    onClose();
+  async function handleUploadSignature(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    const nextDataUrl = await fileToPngDataUrl(file);
+    setUploadedDataUrl(nextDataUrl);
+  }
+
+  function handleDownloadSvg() {
+    if (!currentVectorDataUrl) {
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = currentVectorDataUrl;
+    link.download = `${fieldLabel.toLowerCase()}-${recipientName.replace(/\s+/g, '-').toLowerCase()}.svg`;
+    link.click();
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={title} size="2xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="2xl">
       <ModalBody className="space-y-4">
-        {/* Full Name display */}
         <div>
           <label className="mb-1 block text-xs font-medium text-text-secondary">Full Name</label>
           <div className="rounded-lg border border-border-primary bg-background-tertiary px-3 py-2 text-sm text-text-primary">
@@ -77,9 +286,8 @@ export function EsigningSignatureModal({
           </div>
         </div>
 
-        {/* Tab selector */}
         <div className="flex rounded-xl border border-border-primary bg-background-tertiary p-1">
-          {(['draw', 'type'] as ActiveTab[]).map((tab) => (
+          {(['draw', 'type', 'upload'] as ActiveTab[]).map((tab) => (
             <button
               key={tab}
               type="button"
@@ -90,13 +298,12 @@ export function EsigningSignatureModal({
                   : 'flex-1 px-4 py-1.5 text-sm text-text-secondary hover:text-text-primary'
               }
             >
-              {tab === 'draw' ? 'Draw' : 'Type'}
+              {tab === 'draw' ? 'Draw' : tab === 'type' ? 'Type' : 'Upload'}
             </button>
           ))}
         </div>
 
-        {/* Draw tab */}
-        {activeTab === 'draw' && (
+        {activeTab === 'draw' ? (
           <div>
             <p className="mb-2 text-xs text-text-muted">
               Draw your {fieldLabel.toLowerCase()} in the box below.
@@ -104,45 +311,105 @@ export function EsigningSignatureModal({
             <SignaturePad
               value={drawDataUrl || undefined}
               onChange={(url) => setDrawDataUrl(url)}
+              onVectorChange={setDrawVectorDataUrl}
               ariaLabel={`${fieldLabel} draw pad`}
             />
           </div>
-        )}
+        ) : activeTab === 'type' ? (
+          <div className="space-y-3">
+            <div>
+              <p className="mb-2 text-xs text-text-muted">
+                Type your {fieldLabel.toLowerCase()} below.
+              </p>
+              <input
+                type="text"
+                value={typedText}
+                onChange={(event) => setTypedText(event.target.value)}
+                placeholder={`Type your ${fieldLabel.toLowerCase()}...`}
+                className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary outline-none focus:border-oak-primary focus:ring-1 focus:ring-oak-primary/30"
+              />
+            </div>
 
-        {/* Type tab */}
-        {activeTab === 'type' && (
-          <div>
-            <p className="mb-2 text-xs text-text-muted">
-              Type your {fieldLabel.toLowerCase()} below.
-            </p>
-            <input
-              type="text"
-              value={typedText}
-              onChange={(e) => setTypedText(e.target.value)}
-              placeholder={`Type your ${fieldLabel.toLowerCase()}...`}
-              className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary outline-none focus:border-oak-primary focus:ring-1 focus:ring-oak-primary/30"
-            />
-            {/* Preview */}
-            <div className="mt-3 flex min-h-16 items-center justify-center rounded-lg border border-dashed border-border-primary bg-background-tertiary px-4 py-3">
+            <div>
+              <p className="mb-2 text-xs font-medium text-text-secondary">Style</p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {SIGNATURE_FONT_OPTIONS.map((fontOption) => (
+                  <button
+                    key={fontOption.key}
+                    type="button"
+                    onClick={() => setTypedFont(fontOption.key)}
+                    className={
+                      typedFont === fontOption.key
+                        ? 'rounded-xl border border-oak-primary bg-oak-primary/5 px-3 py-3 text-left shadow-sm'
+                        : 'rounded-xl border border-border-primary bg-background-primary px-3 py-3 text-left hover:border-oak-primary/40'
+                    }
+                  >
+                    <div className="text-xs font-medium text-text-secondary">{fontOption.label}</div>
+                    <div
+                      className="mt-2 truncate text-2xl text-text-primary"
+                      style={{ fontFamily: fontOption.fontFamily }}
+                    >
+                      {typedText.trim() || 'Abc'}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex min-h-20 items-center justify-center rounded-lg border border-dashed border-border-primary bg-background-tertiary px-4 py-4">
               {typedText.trim() ? (
                 <span
-                  style={{ fontFamily: 'cursive', fontSize: '2rem', fontStyle: 'italic', color: '#111827' }}
+                  style={{
+                    fontFamily: selectedFont.fontFamily,
+                    fontSize: '2.75rem',
+                    color: '#111827',
+                    lineHeight: 1,
+                  }}
                 >
                   {typedText}
                 </span>
               ) : (
-                <span className="text-sm text-text-muted italic">Preview will appear here</span>
+                <span className="text-sm italic text-text-muted">Preview will appear here</span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <p className="mb-2 text-xs text-text-muted">
+                Upload a scanned signature, initials, or mark. We will fit it into the signing field.
+              </p>
+              <label className="flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-border-primary bg-background-primary px-4 py-6 text-sm text-text-secondary hover:border-oak-primary/40 hover:text-text-primary">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/svg+xml"
+                  className="hidden"
+                  onChange={(event) => void handleUploadSignature(event)}
+                />
+                Choose an image
+              </label>
+            </div>
+
+            <div className="flex min-h-20 items-center justify-center rounded-lg border border-dashed border-border-primary bg-background-tertiary px-4 py-4">
+              {uploadedDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={uploadedDataUrl}
+                  alt={`${fieldLabel} upload preview`}
+                  className="max-h-24 w-auto object-contain"
+                />
+              ) : (
+                <span className="text-sm italic text-text-muted">Uploaded preview will appear here</span>
               )}
             </div>
           </div>
         )}
 
-        {/* Apply to all checkbox */}
         <label className="flex cursor-pointer items-start gap-3">
           <input
             type="checkbox"
             checked={applyToAll}
-            onChange={(e) => setApplyToAll(e.target.checked)}
+            onChange={(event) => setApplyToAll(event.target.checked)}
             className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-border-primary accent-oak-primary"
           />
           <span className="text-sm text-text-secondary">
@@ -150,8 +417,7 @@ export function EsigningSignatureModal({
           </span>
         </label>
 
-        {/* Legal text */}
-        <p className="text-xs text-text-muted leading-relaxed">
+        <p className="text-xs leading-relaxed text-text-muted">
           By selecting &ldquo;Adopt and Sign&rdquo;, I agree that the signature and initials will be
           the electronic representation of my signature for all purposes when I use them on
           documents.
@@ -159,7 +425,12 @@ export function EsigningSignatureModal({
       </ModalBody>
 
       <ModalFooter>
-        <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
+        {currentVectorDataUrl ? (
+          <Button variant="secondary" onClick={handleDownloadSvg} disabled={isSubmitting}>
+            Download SVG
+          </Button>
+        ) : null}
+        <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
           Cancel
         </Button>
         <Button onClick={handleAdopt} disabled={!canAdopt || isSubmitting} isLoading={isSubmitting}>
