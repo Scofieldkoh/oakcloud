@@ -15,6 +15,7 @@ import type {
   EsigningEnvelopeDetailDto,
   EsigningEnvelopeListItem,
   EsigningManualLinkDto,
+  EsigningEnvelopeStatusCounts,
 } from '@/types/esigning';
 
 export type { EsigningEnvelopeDetailDto } from '@/types/esigning';
@@ -24,6 +25,7 @@ interface EsigningListResult {
   total: number;
   page: number;
   limit: number;
+  statusCounts: EsigningEnvelopeStatusCounts;
 }
 
 function withTenant(path: string, tenantId?: string | null): string {
@@ -47,6 +49,7 @@ async function fetchEsigningEnvelopes(
   const searchParams = new URLSearchParams();
   if (params.query) searchParams.set('query', params.query);
   if (params.status) searchParams.set('status', params.status);
+  if (params.statuses?.length) searchParams.set('statuses', params.statuses.join(','));
   if (params.companyId) searchParams.set('companyId', params.companyId);
   if (params.createdBy) searchParams.set('createdBy', params.createdBy);
   if (params.page) searchParams.set('page', String(params.page));

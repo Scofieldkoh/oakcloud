@@ -9,6 +9,7 @@ import { createAuditLog } from '@/lib/audit';
 import { storage, StorageKeys } from '@/lib/storage';
 import { ALLOWED_FILE_TYPES, validateFileContent } from '@/lib/file-validation';
 import {
+  createEsigningAccessLinkToken,
   buildEsigningSigningUrl,
   createEsigningAccessToken,
   hashEsigningAccessToken,
@@ -28,7 +29,12 @@ import type {
   EsigningManualLinkDto,
 } from '@/types/esigning';
 import { generateUniqueEsigningCertificateId } from '@/services/esigning-certificate.service';
-import { sendEsigningRequestEmail } from '@/services/esigning-notification.service';
+import {
+  sendEsigningExpiredEmailToSender,
+  sendEsigningExpiryWarningEmailToSender,
+  sendEsigningReminderEmail,
+  sendEsigningRequestEmail,
+} from '@/services/esigning-notification.service';
 import {
   buildRecipientSigningOrder,
   canDeleteEnvelope,
@@ -62,8 +68,8 @@ type PreparedRecipientNotification = {
   recipientName: string;
   recipientEmail: string;
   accessMode: 'EMAIL_LINK' | 'EMAIL_WITH_CODE' | 'MANUAL_LINK';
-  accessTokenHash: string;
-  rawToken: string;
+  accessTokenHash: string | null;
+  rawToken: string | null;
   signingUrl: string;
 };
 
@@ -160,19 +166,49 @@ function prepareRecipientNotifications(recipients: NotificationRecipient[]): {
   return { updates, manualLinks };
 }
 
+async function prepareReminderNotifications(
+  envelopeId: string,
+  recipients: Array<
+    NotificationRecipient & {
+      sessionVersion: number;
+    }
+  >
+): Promise<PreparedRecipientNotification[]> {
+  return Promise.all(
+    recipients.map(async (recipient) => {
+      const signingToken = await createEsigningAccessLinkToken({
+        recipientId: recipient.id,
+        envelopeId,
+        sessionVersion: recipient.sessionVersion,
+      });
+
+      return {
+        recipientId: recipient.id,
+        recipientName: recipient.name,
+        recipientEmail: recipient.email,
+        accessMode: recipient.accessMode,
+        accessTokenHash: null,
+        rawToken: null,
+        signingUrl: buildEsigningSigningUrl(signingToken),
+      };
+    })
+  );
+}
+
 async function deliverPreparedNotifications(input: {
   senderName: string;
   envelopeTitle: string;
   message?: string | null;
   expiresAt?: Date | null;
   notifications: PreparedRecipientNotification[];
+  kind?: 'request' | 'reminder';
 }): Promise<void> {
   for (const notification of input.notifications) {
     if (notification.accessMode === 'MANUAL_LINK') {
       continue;
     }
 
-    await sendEsigningRequestEmail({
+    const emailInput = {
       to: notification.recipientEmail,
       recipientName: notification.recipientName,
       senderName: input.senderName,
@@ -181,8 +217,54 @@ async function deliverPreparedNotifications(input: {
       signingUrl: notification.signingUrl,
       accessMode: notification.accessMode,
       expiresAt: input.expiresAt,
-    });
+    } as const;
+
+    if (input.kind === 'reminder') {
+      await sendEsigningReminderEmail(emailInput);
+      continue;
+    }
+
+    await sendEsigningRequestEmail(emailInput);
   }
+}
+
+function startOfDay(value: Date): Date {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+}
+
+function diffInWholeDays(left: Date, right: Date): number {
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  return Math.floor((startOfDay(left).getTime() - startOfDay(right).getTime()) / millisecondsPerDay);
+}
+
+function getEnvelopeSenderName(input: {
+  firstName: string | null | undefined;
+  lastName: string | null | undefined;
+  email: string;
+}): string {
+  return formatUserName(input.firstName, input.lastName, input.email);
+}
+
+function getSentAtFromEvents(
+  events: Array<{
+    action: string;
+    createdAt: Date;
+  }>,
+  fallback: Date
+): Date {
+  return events.find((event) => event.action === 'SENT')?.createdAt ?? fallback;
+}
+
+function isExpiryWarningEvent(event: {
+  action: string;
+  metadata: Prisma.JsonValue | null;
+}, thresholdDays: number): boolean {
+  if (event.action !== 'REMINDER_SENT' || !event.metadata || Array.isArray(event.metadata)) {
+    return false;
+  }
+
+  const metadata = event.metadata as Record<string, unknown>;
+  return metadata.kind === 'expiry_warning' && metadata.thresholdDays === thresholdDays;
 }
 
 export async function listEsigningEnvelopes(
@@ -194,35 +276,43 @@ export async function listEsigningEnvelopes(
   total: number;
   page: number;
   limit: number;
+  statusCounts: Record<
+    'DRAFT' | 'SENT' | 'IN_PROGRESS' | 'COMPLETED' | 'VOIDED' | 'DECLINED' | 'EXPIRED',
+    number
+  >;
 }> {
   const scope = await resolveEsigningActorScope(session, tenantId);
-  const where: Prisma.EsigningEnvelopeWhereInput = {
+  const baseWhere: Prisma.EsigningEnvelopeWhereInput = {
     tenantId,
     deletedAt: null,
   };
 
-  if (query.status) {
-    where.status = query.status;
-  }
   if (query.companyId) {
-    where.companyId = query.companyId;
+    baseWhere.companyId = query.companyId;
   }
   if (query.query) {
-    where.OR = [
+    baseWhere.OR = [
       { title: { contains: query.query, mode: 'insensitive' } },
       { recipients: { some: { name: { contains: query.query, mode: 'insensitive' } } } },
       { recipients: { some: { email: { contains: query.query, mode: 'insensitive' } } } },
     ];
   }
   if (!scope.canReadAll || query.createdBy === 'me') {
-    where.createdById = session.id;
+    baseWhere.createdById = session.id;
+  }
+
+  const where: Prisma.EsigningEnvelopeWhereInput = { ...baseWhere };
+  if (query.statuses?.length) {
+    where.status = { in: query.statuses };
+  } else if (query.status) {
+    where.status = query.status;
   }
 
   const page = query.page ?? 1;
   const limit = query.limit ?? 20;
   const skip = (page - 1) * limit;
 
-  const [total, envelopes] = await prisma.$transaction([
+  const [total, envelopes, groupedStatusCounts] = await prisma.$transaction([
     prisma.esigningEnvelope.count({ where }),
     prisma.esigningEnvelope.findMany({
       where,
@@ -263,7 +353,35 @@ export async function listEsigningEnvelopes(
         },
       },
     }),
+    prisma.esigningEnvelope.groupBy({
+      by: ['status'],
+      where: baseWhere,
+      orderBy: {
+        status: 'asc',
+      },
+      _count: {
+        status: true,
+      },
+    }),
   ]);
+
+  const statusCounts = {
+    DRAFT: 0,
+    SENT: 0,
+    IN_PROGRESS: 0,
+    COMPLETED: 0,
+    VOIDED: 0,
+    DECLINED: 0,
+    EXPIRED: 0,
+  };
+
+  groupedStatusCounts.forEach((entry) => {
+    const count =
+      typeof entry._count === 'object' && entry._count
+        ? (entry._count.status ?? 0)
+        : 0;
+    statusCounts[entry.status] = count;
+  });
 
   return {
     envelopes: envelopes.map((envelope) => ({
@@ -295,6 +413,7 @@ export async function listEsigningEnvelopes(
     total,
     page,
     limit,
+    statusCounts,
   };
 }
 
@@ -1385,6 +1504,331 @@ export async function retryEsigningEnvelopePdfGeneration(
   });
 
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
+}
+
+export async function processExpiredEsigningEnvelopes(input?: {
+  limit?: number;
+}): Promise<{
+  processed: number;
+  expired: number;
+}> {
+  const now = new Date();
+  const limit = input?.limit ?? 50;
+  const candidates = await prisma.esigningEnvelope.findMany({
+    where: {
+      status: { in: ['SENT', 'IN_PROGRESS'] },
+      expiresAt: { lte: now },
+    },
+    orderBy: { expiresAt: 'asc' },
+    take: limit,
+    include: {
+      createdBy: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      recipients: {
+        orderBy: [
+          { signingOrder: 'asc' },
+          { createdAt: 'asc' },
+        ],
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          type: true,
+          status: true,
+        },
+      },
+    },
+  });
+
+  let expired = 0;
+
+  for (const envelope of candidates) {
+    const expiredEnvelope = await prisma.$transaction(async (tx) => {
+      const updateResult = await tx.esigningEnvelope.updateMany({
+        where: {
+          id: envelope.id,
+          status: { in: ['SENT', 'IN_PROGRESS'] },
+          expiresAt: { lte: now },
+        },
+        data: {
+          status: 'EXPIRED',
+        },
+      });
+
+      if (updateResult.count === 0) {
+        return false;
+      }
+
+      await tx.esigningEnvelopeRecipient.updateMany({
+        where: { envelopeId: envelope.id },
+        data: {
+          accessTokenHash: null,
+          sessionVersion: { increment: 1 },
+        },
+      });
+
+      await tx.esigningEnvelopeEvent.create({
+        data: {
+          tenantId: envelope.tenantId,
+          envelopeId: envelope.id,
+          action: 'EXPIRED',
+        },
+      });
+
+      await createAuditLog(
+        {
+          tenantId: envelope.tenantId,
+          companyId: envelope.companyId ?? undefined,
+          action: 'UPDATE',
+          entityType: 'EsigningEnvelope',
+          entityId: envelope.id,
+          entityName: envelope.title,
+          summary: `Envelope "${envelope.title}" expired automatically`,
+          changeSource: 'SYSTEM',
+          metadata: {
+            expiredAt: now.toISOString(),
+          },
+        },
+        tx
+      );
+
+      return true;
+    });
+
+    if (!expiredEnvelope) {
+      continue;
+    }
+
+    expired += 1;
+
+    const senderName = getEnvelopeSenderName(envelope.createdBy);
+    const pendingRecipients = envelope.recipients
+      .filter((recipient) => recipient.type === 'SIGNER' && recipient.status !== 'SIGNED')
+      .map((recipient) => ({
+        name: recipient.name,
+        email: recipient.email,
+      }));
+
+    await sendEsigningExpiredEmailToSender({
+      to: envelope.createdBy.email,
+      senderName,
+      envelopeTitle: envelope.title,
+      expiredAt: envelope.expiresAt ?? now,
+      pendingRecipients,
+      envelopeId: envelope.id,
+    });
+  }
+
+  return {
+    processed: candidates.length,
+    expired,
+  };
+}
+
+export async function processEsigningReminderNotifications(input?: {
+  limit?: number;
+}): Promise<{
+  processed: number;
+  remindersSent: number;
+  expiryWarningsSent: number;
+}> {
+  const now = new Date();
+  const limit = input?.limit ?? 100;
+  const candidates = await prisma.esigningEnvelope.findMany({
+    where: {
+      status: { in: ['SENT', 'IN_PROGRESS'] },
+      OR: [
+        { reminderFrequencyDays: { not: null } },
+        { expiryWarningDays: { not: null } },
+      ],
+    },
+    orderBy: { updatedAt: 'asc' },
+    take: limit,
+    include: {
+      createdBy: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      recipients: {
+        orderBy: [
+          { signingOrder: 'asc' },
+          { createdAt: 'asc' },
+        ],
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          type: true,
+          status: true,
+          accessMode: true,
+          lastReminderAt: true,
+          sessionVersion: true,
+        },
+      },
+      events: {
+        where: {
+          action: {
+            in: ['SENT', 'REMINDER_SENT'],
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          action: true,
+          createdAt: true,
+          metadata: true,
+        },
+      },
+    },
+  });
+
+  let remindersSent = 0;
+  let expiryWarningsSent = 0;
+
+  for (const envelope of candidates) {
+    if (envelope.expiresAt && envelope.expiresAt <= now) {
+      continue;
+    }
+
+    const senderName = getEnvelopeSenderName(envelope.createdBy);
+    const sentAt = getSentAtFromEvents(envelope.events, envelope.updatedAt);
+
+    if (
+      envelope.expiresAt &&
+      typeof envelope.expiryWarningDays === 'number' &&
+      envelope.expiryWarningDays > 0
+    ) {
+      const daysUntilExpiry = diffInWholeDays(envelope.expiresAt, now);
+      const hasWarningBeenSent = envelope.events.some((event) =>
+        isExpiryWarningEvent(event, envelope.expiryWarningDays ?? 0)
+      );
+
+      if (
+        daysUntilExpiry > 0 &&
+        daysUntilExpiry <= envelope.expiryWarningDays &&
+        !hasWarningBeenSent
+      ) {
+        const pendingRecipients = envelope.recipients
+          .filter((recipient) => recipient.type === 'SIGNER' && recipient.status !== 'SIGNED')
+          .map((recipient) => ({
+            name: recipient.name,
+            email: recipient.email,
+          }));
+
+        await sendEsigningExpiryWarningEmailToSender({
+          to: envelope.createdBy.email,
+          senderName,
+          envelopeTitle: envelope.title,
+          daysUntilExpiry,
+          pendingRecipients,
+          envelopeId: envelope.id,
+        });
+
+        await createEnvelopeEvent({
+          envelopeId: envelope.id,
+          tenantId: envelope.tenantId,
+          action: 'REMINDER_SENT',
+          metadata: {
+            kind: 'expiry_warning',
+            thresholdDays: envelope.expiryWarningDays,
+            daysUntilExpiry,
+          },
+        });
+
+        expiryWarningsSent += 1;
+      }
+    }
+
+    if (typeof envelope.reminderFrequencyDays !== 'number' || envelope.reminderFrequencyDays <= 0) {
+      continue;
+    }
+
+    const reminderStartDays = envelope.reminderStartDays ?? 0;
+    if (diffInWholeDays(now, sentAt) < reminderStartDays) {
+      continue;
+    }
+
+    const recipientsToRemind = envelope.recipients.filter((recipient) => {
+      if (recipient.type !== 'SIGNER') {
+        return false;
+      }
+      if (!['NOTIFIED', 'VIEWED'].includes(recipient.status)) {
+        return false;
+      }
+      if (recipient.accessMode === 'MANUAL_LINK') {
+        return false;
+      }
+
+      if (!recipient.lastReminderAt) {
+        return true;
+      }
+
+      return diffInWholeDays(now, recipient.lastReminderAt) >= envelope.reminderFrequencyDays!;
+    });
+
+    if (recipientsToRemind.length === 0) {
+      continue;
+    }
+
+    const prepared = await prepareReminderNotifications(
+      envelope.id,
+      recipientsToRemind.map((recipient) => ({
+        id: recipient.id,
+        name: recipient.name,
+        email: recipient.email,
+        accessMode: recipient.accessMode,
+        sessionVersion: recipient.sessionVersion,
+      }))
+    );
+
+    await prisma.$transaction(async (tx) => {
+      for (const notification of prepared) {
+        await tx.esigningEnvelopeRecipient.update({
+          where: { id: notification.recipientId },
+          data: {
+            lastReminderAt: now,
+          },
+        });
+
+        await tx.esigningEnvelopeEvent.create({
+          data: {
+            tenantId: envelope.tenantId,
+            envelopeId: envelope.id,
+            recipientId: notification.recipientId,
+            action: 'REMINDER_SENT',
+            metadata: {
+              kind: 'recipient_reminder',
+              automated: true,
+            },
+          },
+        });
+      }
+    });
+
+    await deliverPreparedNotifications({
+      senderName,
+      envelopeTitle: envelope.title,
+      message: envelope.message,
+      expiresAt: envelope.expiresAt,
+      notifications: prepared,
+      kind: 'reminder',
+    });
+
+    remindersSent += prepared.length;
+  }
+
+  return {
+    processed: candidates.length,
+    remindersSent,
+    expiryWarningsSent,
+  };
 }
 
 export async function activateNextQueuedEsigningRecipients(

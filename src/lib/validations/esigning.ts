@@ -218,6 +218,21 @@ export const reorderEsigningDocumentSchema = z.object({
 export const esigningListQuerySchema = paginationSchema.extend({
   query: z.string().trim().max(200).optional(),
   status: esigningEnvelopeStatusSchema.optional(),
+  statuses: z.preprocess(
+    (value) => {
+      if (typeof value !== 'string') {
+        return undefined;
+      }
+
+      const values = value
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+
+      return values.length > 0 ? values : undefined;
+    },
+    z.array(esigningEnvelopeStatusSchema).min(1).optional()
+  ),
   companyId: uuidString.optional(),
   createdBy: z.enum(['me', 'all']).optional().default('all'),
   sortBy: z.enum(['createdAt', 'updatedAt', 'completedAt', 'title']).optional().default('updatedAt'),

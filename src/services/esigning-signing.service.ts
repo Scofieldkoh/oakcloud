@@ -9,6 +9,7 @@ import {
   hashEsigningAccessToken,
   setEsigningChallengeCookie,
   setEsigningSessionCookie,
+  verifyEsigningAccessLinkToken,
   verifyEsigningScopedToken,
 } from '@/lib/esigning-session';
 import type { SaveEsigningFieldValuesInput } from '@/lib/validations/esigning';
@@ -299,6 +300,69 @@ export async function exchangeEsigningLinkToken(rawToken: string): Promise<{
   envelopeTitle: string;
   recipientName: string;
 }> {
+  const accessLinkClaims = await verifyEsigningAccessLinkToken(rawToken);
+  if (accessLinkClaims) {
+    const recipient = await prisma.esigningEnvelopeRecipient.findFirst({
+      where: {
+        id: accessLinkClaims.recipientId,
+        envelopeId: accessLinkClaims.envelopeId,
+      },
+      include: {
+        envelope: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            expiresAt: true,
+          },
+        },
+      },
+    });
+
+    if (!recipient || recipient.sessionVersion !== accessLinkClaims.sessionVersion) {
+      throw new Error('Signing link is invalid or has expired');
+    }
+    if (recipient.envelope.expiresAt && recipient.envelope.expiresAt.getTime() < Date.now()) {
+      throw new Error('This envelope has expired');
+    }
+    if (isTerminalEnvelopeStatus(recipient.envelope.status)) {
+      throw new Error(`This envelope is ${recipient.envelope.status.toLowerCase()}`);
+    }
+
+    await clearEsigningSessionCookie();
+
+    if (recipient.accessMode === 'EMAIL_WITH_CODE') {
+      await setEsigningChallengeCookie({
+        recipientId: recipient.id,
+        envelopeId: recipient.envelopeId,
+        sessionVersion: recipient.sessionVersion,
+      });
+
+      return {
+        requiresAccessCode: true,
+        envelopeId: recipient.envelopeId,
+        recipientId: recipient.id,
+        envelopeTitle: recipient.envelope.title,
+        recipientName: recipient.name,
+      };
+    }
+
+    await clearEsigningChallengeCookie();
+    await setEsigningSessionCookie({
+      recipientId: recipient.id,
+      envelopeId: recipient.envelopeId,
+      sessionVersion: recipient.sessionVersion,
+    });
+
+    return {
+      requiresAccessCode: false,
+      envelopeId: recipient.envelopeId,
+      recipientId: recipient.id,
+      envelopeTitle: recipient.envelope.title,
+      recipientName: recipient.name,
+    };
+  }
+
   const recipient = await prisma.esigningEnvelopeRecipient.findFirst({
     where: {
       accessTokenHash: hashEsigningAccessToken(rawToken),

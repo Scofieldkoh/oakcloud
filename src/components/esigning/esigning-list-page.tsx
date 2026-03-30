@@ -7,6 +7,7 @@ import { CheckCircle2, Circle, Clock, FilePenLine, FileSignature, Minus, Plus, S
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Alert } from '@/components/ui/alert';
+import { Pagination } from '@/components/companies/pagination';
 import { useToast } from '@/components/ui/toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useCreateEsigningEnvelope, useEsigningEnvelopes } from '@/hooks/use-esigning';
@@ -18,7 +19,7 @@ import {
 } from '@/components/esigning/esigning-shared';
 import { cn } from '@/lib/utils';
 
-type StatusFilter = '' | 'DRAFT' | 'SENT' | 'IN_PROGRESS' | 'COMPLETED' | 'VOIDED' | 'DECLINED' | 'EXPIRED';
+type StatusFilter = 'DRAFT' | 'SENT' | 'IN_PROGRESS' | 'COMPLETED' | 'VOIDED' | 'DECLINED' | 'EXPIRED';
 
 type TabKey = 'all' | 'attention' | 'waiting' | 'completed' | 'voided';
 
@@ -45,39 +46,56 @@ export function EsigningListPage() {
   const toast = useToast();
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('all');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [isStarting, setIsStarting] = useState(false);
   const [isDraggingOnHero, setIsDraggingOnHero] = useState(false);
 
+  const activeStatuses = TAB_STATUSES[activeTab];
   const envelopesQuery = useEsigningEnvelopes({
     query: query || undefined,
-    page: 1,
-    limit: 200,
+    statuses: activeStatuses.length > 0 ? activeStatuses : undefined,
+    page,
+    limit,
   });
   const createEnvelope = useCreateEsigningEnvelope();
 
-  const allEnvelopes = useMemo(
+  const envelopes = useMemo(
     () => (envelopesQuery.data?.envelopes ?? []) as EsigningEnvelopeListItem[],
     [envelopesQuery.data?.envelopes],
   );
 
-  const tabCounts = useMemo<Record<TabKey, number>>(
-    () => ({
-      all: allEnvelopes.length,
-      attention: allEnvelopes.filter((e) => TAB_STATUSES.attention.includes(e.status as StatusFilter)).length,
-      waiting: allEnvelopes.filter((e) => TAB_STATUSES.waiting.includes(e.status as StatusFilter)).length,
-      completed: allEnvelopes.filter((e) => TAB_STATUSES.completed.includes(e.status as StatusFilter)).length,
-      voided: allEnvelopes.filter((e) => TAB_STATUSES.voided.includes(e.status as StatusFilter)).length,
-    }),
-    [allEnvelopes],
+  const statusCounts = useMemo(
+    () =>
+      envelopesQuery.data?.statusCounts ?? {
+        DRAFT: 0,
+        SENT: 0,
+        IN_PROGRESS: 0,
+        COMPLETED: 0,
+        VOIDED: 0,
+        DECLINED: 0,
+        EXPIRED: 0,
+      },
+    [envelopesQuery.data?.statusCounts]
   );
 
-  const filteredEnvelopes = useMemo(
-    () =>
-      activeTab === 'all'
-        ? allEnvelopes
-        : allEnvelopes.filter((e) => TAB_STATUSES[activeTab].includes(e.status as StatusFilter)),
-    [allEnvelopes, activeTab],
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, query]);
+
+  const tabCounts = useMemo<Record<TabKey, number>>(
+    () => ({
+      all: Object.values(statusCounts).reduce((sum, count) => sum + count, 0),
+      attention: statusCounts.DRAFT + statusCounts.DECLINED,
+      waiting: statusCounts.SENT + statusCounts.IN_PROGRESS,
+      completed: statusCounts.COMPLETED,
+      voided: statusCounts.VOIDED + statusCounts.EXPIRED,
+    }),
+    [statusCounts],
   );
+
+  const totalResults = envelopesQuery.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalResults / limit));
 
   async function handleStart(file?: File) {
     if (isStarting) return;
@@ -212,7 +230,7 @@ export function EsigningListPage() {
         ) : null}
 
         <section className="grid gap-4">
-          {filteredEnvelopes.map((envelope) => (
+          {envelopes.map((envelope) => (
             <Link
               key={envelope.id}
               href={`/esigning/${envelope.id}`}
@@ -313,14 +331,18 @@ export function EsigningListPage() {
             </div>
           ) : null}
 
-          {!envelopesQuery.isLoading && filteredEnvelopes.length === 0 ? (
+          {!envelopesQuery.isLoading && envelopes.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-border-primary bg-background-secondary p-10 text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-oak-primary/10 text-oak-primary">
                 <FileSignature className="h-6 w-6" />
               </div>
-              <h2 className="mt-4 text-lg font-semibold text-text-primary">No envelopes yet</h2>
+              <h2 className="mt-4 text-lg font-semibold text-text-primary">
+                {query || activeTab !== 'all' ? 'No matching envelopes' : 'No envelopes yet'}
+              </h2>
               <p className="mt-2 text-sm text-text-secondary">
-                Start with a draft envelope, upload PDFs, assign signers, and send for signature.
+                {query || activeTab !== 'all'
+                  ? 'Try a different search or tab to find the envelope you need.'
+                  : 'Start with a draft envelope, upload PDFs, assign signers, and send for signature.'}
               </p>
               {can.createEsigning ? (
                 <div className="mt-5">
@@ -330,6 +352,22 @@ export function EsigningListPage() {
             </div>
           ) : null}
         </section>
+
+        {!envelopesQuery.isLoading && totalResults > 0 ? (
+          <section className="rounded-3xl border border-border-primary bg-background-secondary p-4 shadow-sm">
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={totalResults}
+              limit={limit}
+              onPageChange={setPage}
+              onLimitChange={(nextLimit) => {
+                setLimit(nextLimit);
+                setPage(1);
+              }}
+            />
+          </section>
+        ) : null}
       </div>
     </div>
   );

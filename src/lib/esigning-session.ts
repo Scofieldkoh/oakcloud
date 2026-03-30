@@ -14,17 +14,27 @@ export const ESIGNING_CHALLENGE_COOKIE = 'esigning_challenge';
 const DEFAULT_SIGNING_SESSION_TTL_SECONDS = 30 * 60;
 const DEFAULT_SIGNING_CHALLENGE_TTL_SECONDS = 5 * 60;
 const DEFAULT_SIGNING_DOWNLOAD_TTL_SECONDS = 15 * 60;
+const DEFAULT_SIGNING_DELIVERY_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 export type EsigningTokenScope =
   | 'esigning_challenge'
   | 'esigning_session'
-  | 'esigning_download';
+  | 'esigning_access'
+  | 'esigning_download'
+  | 'esigning_delivery';
 
 export interface EsigningTokenClaims extends JWTPayload {
   recipientId: string;
   envelopeId: string;
   sessionVersion: number;
   scope: EsigningTokenScope;
+}
+
+export interface EsigningDeliveryTokenClaims extends JWTPayload {
+  envelopeId: string;
+  recipientId?: string;
+  actorType: 'recipient' | 'sender';
+  scope: 'esigning_delivery';
 }
 
 function getEsigningTokenSecret(): Uint8Array {
@@ -75,6 +85,13 @@ export function getEsigningDownloadTtlSeconds(): number {
   return parseTtlSeconds(
     process.env.ESIGNING_DOWNLOAD_TTL_SECONDS,
     DEFAULT_SIGNING_DOWNLOAD_TTL_SECONDS
+  );
+}
+
+export function getEsigningDeliveryTtlSeconds(): number {
+  return parseTtlSeconds(
+    process.env.ESIGNING_DELIVERY_TTL_SECONDS,
+    DEFAULT_SIGNING_DELIVERY_TTL_SECONDS
   );
 }
 
@@ -227,12 +244,101 @@ export async function createEsigningDownloadToken(input: {
   });
 }
 
+export async function createEsigningAccessLinkToken(input: {
+  recipientId: string;
+  envelopeId: string;
+  sessionVersion: number;
+  expiresInSeconds?: number;
+}): Promise<string> {
+  return createEsigningScopedToken({
+    ...input,
+    scope: 'esigning_access',
+    expiresInSeconds: input.expiresInSeconds ?? getEsigningDeliveryTtlSeconds(),
+  });
+}
+
+export async function verifyEsigningAccessLinkToken(
+  token: string
+): Promise<EsigningTokenClaims | null> {
+  return verifyEsigningScopedToken(token, 'esigning_access');
+}
+
+export async function createEsigningDeliveryToken(input: {
+  envelopeId: string;
+  actorType: 'recipient' | 'sender';
+  recipientId?: string;
+  expiresInSeconds?: number;
+}): Promise<string> {
+  const ttlSeconds = Math.max(
+    30,
+    Math.floor(input.expiresInSeconds ?? getEsigningDeliveryTtlSeconds())
+  );
+
+  return new SignJWT({
+    envelopeId: input.envelopeId,
+    recipientId: input.recipientId,
+    actorType: input.actorType,
+    scope: 'esigning_delivery',
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuer(TOKEN_ISSUER)
+    .setAudience(TOKEN_AUDIENCE)
+    .setIssuedAt()
+    .setExpirationTime(`${ttlSeconds} seconds`)
+    .sign(ESIGNING_TOKEN_SECRET);
+}
+
+export async function verifyEsigningDeliveryToken(
+  token: string
+): Promise<EsigningDeliveryTokenClaims | null> {
+  try {
+    const { payload } = await jwtVerify(token, ESIGNING_TOKEN_SECRET, {
+      issuer: TOKEN_ISSUER,
+      audience: TOKEN_AUDIENCE,
+    });
+
+    if (payload.scope !== 'esigning_delivery') {
+      return null;
+    }
+
+    if (typeof payload.envelopeId !== 'string' || typeof payload.actorType !== 'string') {
+      return null;
+    }
+
+    if (payload.actorType !== 'recipient' && payload.actorType !== 'sender') {
+      return null;
+    }
+
+    if (payload.recipientId !== undefined && typeof payload.recipientId !== 'string') {
+      return null;
+    }
+
+    return payload as EsigningDeliveryTokenClaims;
+  } catch {
+    return null;
+  }
+}
+
 export function buildEsigningSigningUrl(token: string): string {
   return `${getAppBaseUrl()}/esigning/sign/${token}`;
 }
 
 export function buildEsigningVerificationUrl(certificateId: string): string {
   return `${getAppBaseUrl()}/verify/${encodeURIComponent(certificateId)}`;
+}
+
+export function buildEsigningDeliveryDownloadUrl(input: {
+  token: string;
+  documentId: string;
+  variant?: 'signed' | 'certificate';
+}): string {
+  const searchParams = new URLSearchParams({
+    token: input.token,
+    documentId: input.documentId,
+    variant: input.variant ?? 'signed',
+  });
+
+  return `${getAppBaseUrl()}/api/esigning/delivery/download?${searchParams.toString()}`;
 }
 
 export function isSameOriginRequest(request: Request): boolean {

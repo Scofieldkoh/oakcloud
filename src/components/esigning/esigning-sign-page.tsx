@@ -318,6 +318,38 @@ export function EsigningSignPage() {
     }
   }
 
+  function findNextIncompleteFieldIndex(): number {
+    const currentField = requiredFields[activeFieldIndex];
+    if (currentField) {
+      const currentDraft = draftValues[currentField.id];
+      const currentIsComplete = Boolean(
+        currentDraft?.value || currentDraft?.signatureDataUrl || currentDraft?.signaturePreviewUrl
+      );
+
+      if (!currentIsComplete) {
+        return activeFieldIndex;
+      }
+    }
+
+    const nextAfterCurrent = requiredFields.findIndex((field, index) => {
+      if (index <= activeFieldIndex) {
+        return false;
+      }
+
+      const draft = draftValues[field.id];
+      return !draft?.value && !draft?.signatureDataUrl && !draft?.signaturePreviewUrl;
+    });
+
+    if (nextAfterCurrent !== -1) {
+      return nextAfterCurrent;
+    }
+
+    return requiredFields.findIndex((field) => {
+      const draft = draftValues[field.id];
+      return !draft?.value && !draft?.signatureDataUrl && !draft?.signaturePreviewUrl;
+    });
+  }
+
   function goToFieldIndex(index: number) {
     const clamped = Math.max(0, Math.min(requiredFields.length - 1, index));
     setActiveFieldIndex(clamped);
@@ -326,6 +358,26 @@ export function EsigningSignPage() {
       if (field.documentId !== selectedDocumentId) setSelectedDocumentId(field.documentId);
       setViewerPage(field.pageNumber);
     }
+  }
+
+  function handlePrimaryAction() {
+    if (canFinish) {
+      void completeSigning();
+      return;
+    }
+
+    const nextIndex = findNextIncompleteFieldIndex();
+    if (nextIndex === -1) {
+      return;
+    }
+
+    const nextField = requiredFields[nextIndex];
+    if (!nextField) {
+      return;
+    }
+
+    goToFieldIndex(nextIndex);
+    handleFieldClick(nextField);
   }
 
   // ==========================================================================
@@ -657,7 +709,7 @@ export function EsigningSignPage() {
         completedCount={completedCount}
         requiredCount={requiredFields.length}
         canFinish={canFinish}
-        onFinish={() => void completeSigning()}
+        onPrimaryAction={handlePrimaryAction}
         onDecline={() => setIsDeclineModalOpen(true)}
         onFinishLater={() =>
           void (async () => {

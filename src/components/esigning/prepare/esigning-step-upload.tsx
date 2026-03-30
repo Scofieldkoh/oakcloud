@@ -49,6 +49,16 @@ function toDateTimeLocal(value?: string | null): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+function parseOptionalWholeNumber(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 // ——— PDF thumbnail canvas ———
 
 function PdfThumbnailCanvas({ url }: { url: string }) {
@@ -197,6 +207,9 @@ export function EsigningStepUpload({
   const [signingOrder, setSigningOrder] = useState<EsigningSigningOrder>('PARALLEL');
   const [expiresAt, setExpiresAt] = useState('');
   const [companyId, setCompanyId] = useState('');
+  const [reminderFrequencyDays, setReminderFrequencyDays] = useState('');
+  const [reminderStartDays, setReminderStartDays] = useState('');
+  const [expiryWarningDays, setExpiryWarningDays] = useState('');
   const [isSettingsDirty, setIsSettingsDirty] = useState(false);
 
   // Recipient state
@@ -218,6 +231,9 @@ export function EsigningStepUpload({
     setSigningOrder(envelope.signingOrder);
     setExpiresAt(toDateTimeLocal(envelope.expiresAt));
     setCompanyId(envelope.companyId ?? '');
+    setReminderFrequencyDays(envelope.reminderFrequencyDays?.toString() ?? '');
+    setReminderStartDays(envelope.reminderStartDays?.toString() ?? '');
+    setExpiryWarningDays(envelope.expiryWarningDays?.toString() ?? '');
     setIsSettingsDirty(false);
     lastSyncedEnvelopeIdRef.current = envelope.id;
   }, [envelope, isSettingsDirty]);
@@ -234,6 +250,9 @@ export function EsigningStepUpload({
       companyId: companyId || null,
       signingOrder,
       expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+      reminderFrequencyDays: parseOptionalWholeNumber(reminderFrequencyDays),
+      reminderStartDays: parseOptionalWholeNumber(reminderStartDays),
+      expiryWarningDays: parseOptionalWholeNumber(expiryWarningDays),
     });
     setIsSettingsDirty(false);
     onNext();
@@ -593,6 +612,48 @@ export function EsigningStepUpload({
                   className="h-8 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary disabled:opacity-60"
                 />
               </label>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FormInput
+                label="Reminder every"
+                type="number"
+                min={1}
+                max={30}
+                value={reminderFrequencyDays}
+                onChange={(e) => {
+                  setReminderFrequencyDays(e.target.value);
+                  setIsSettingsDirty(true);
+                }}
+                disabled={!envelope.canEdit}
+                hint="Days between reminder emails."
+              />
+              <FormInput
+                label="Start reminders after"
+                type="number"
+                min={0}
+                max={90}
+                value={reminderStartDays}
+                onChange={(e) => {
+                  setReminderStartDays(e.target.value);
+                  setIsSettingsDirty(true);
+                }}
+                disabled={!envelope.canEdit}
+                hint="Days after send before reminders begin."
+              />
+              <FormInput
+                label="Warn before expiry"
+                type="number"
+                min={0}
+                max={30}
+                value={expiryWarningDays}
+                onChange={(e) => {
+                  setExpiryWarningDays(e.target.value);
+                  setIsSettingsDirty(true);
+                }}
+                disabled={!envelope.canEdit}
+                hint="Days before expiry to notify the sender."
+              />
             </div>
 
             <div className="space-y-2">

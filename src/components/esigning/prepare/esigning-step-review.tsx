@@ -83,6 +83,19 @@ export function EsigningStepReview({
                 Expires {formatEsigningDateTime(envelope.expiresAt)}
               </span>
             )}
+            {envelope.reminderFrequencyDays && (
+              <span className="text-sm text-text-secondary">
+                Reminders every {envelope.reminderFrequencyDays} day{envelope.reminderFrequencyDays === 1 ? '' : 's'}
+                {typeof envelope.reminderStartDays === 'number'
+                  ? ` after ${envelope.reminderStartDays} day${envelope.reminderStartDays === 1 ? '' : 's'}`
+                  : ''}
+              </span>
+            )}
+            {typeof envelope.expiryWarningDays === 'number' && envelope.expiryWarningDays > 0 && (
+              <span className="text-sm text-text-secondary">
+                Sender warned {envelope.expiryWarningDays} day{envelope.expiryWarningDays === 1 ? '' : 's'} before expiry
+              </span>
+            )}
           </div>
           {envelope.message && (
             <p className="mt-4 rounded-2xl border border-border-primary bg-background-primary p-4 text-sm text-text-secondary whitespace-pre-wrap">

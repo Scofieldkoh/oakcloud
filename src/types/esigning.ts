@@ -36,6 +36,8 @@ export interface EsigningEnvelopeListItem {
   }>;
 }
 
+export type EsigningEnvelopeStatusCounts = Record<EsigningEnvelopeStatus, number>;
+
 export interface EsigningEnvelopeDocumentDto {
   id: string;
   fileName: string;

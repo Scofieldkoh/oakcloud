@@ -110,9 +110,14 @@ function parseOptionalInt(value: string): number | null {
 
 function formatEventAction(
   action: EsigningEnvelopeEventAction,
-  recipientName: string | null
+  recipientName: string | null,
+  metadata: Record<string, unknown> | null
 ): string {
   const name = recipientName ?? 'Unknown';
+  if (action === 'REMINDER_SENT' && metadata?.kind === 'expiry_warning') {
+    return 'Expiry warning sent to sender';
+  }
+
   const labels: Partial<Record<EsigningEnvelopeEventAction, string>> = {
     CREATED: 'Envelope created',
     SENT: 'Sent for signing',
@@ -307,7 +312,13 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         await addRecipient.mutateAsync(payload);
       }
       setIsRecipientModalOpen(false);
-      toast.success('Recipient saved');
+      toast.success(
+        editingRecipientId
+          ? envelope?.status === 'DRAFT'
+            ? 'Recipient saved'
+            : 'Recipient corrected'
+          : 'Recipient saved'
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to save recipient');
     }
@@ -383,7 +394,13 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     <Modal
       isOpen={isRecipientModalOpen}
       onClose={() => setIsRecipientModalOpen(false)}
-      title={editingRecipientId ? 'Edit recipient' : 'Add recipient'}
+      title={
+        editingRecipientId
+          ? envelope.status === 'DRAFT'
+            ? 'Edit recipient'
+            : 'Correct recipient'
+          : 'Add recipient'
+      }
       size="xl"
     >
       <form onSubmit={saveRecipient}>
@@ -403,61 +420,69 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               required
             />
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
-              <span>Role</span>
-              <select
-                value={recipientForm.type}
-                onChange={(e) =>
-                  setRecipientForm((prev) => ({ ...prev, type: e.target.value as EsigningRecipientType }))
-                }
-                className="h-8 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"
-              >
-                {Object.entries(ESIGNING_RECIPIENT_TYPE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
-              <span>Access mode</span>
-              <select
-                value={recipientForm.accessMode}
-                onChange={(e) =>
-                  setRecipientForm((prev) => ({
-                    ...prev,
-                    accessMode: e.target.value as EsigningRecipientAccessMode,
-                  }))
-                }
-                className="h-8 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"
-              >
-                {Object.entries(ESIGNING_ACCESS_MODE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          {recipientForm.type === 'SIGNER' && envelope.signingOrder !== 'PARALLEL' && (
-            <FormInput
-              label="Signing group"
-              type="number"
-              min={1}
-              max={ESIGNING_LIMITS.MAX_RECIPIENTS}
-              value={recipientForm.signingOrder}
-              onChange={(e) =>
-                setRecipientForm((prev) => ({ ...prev, signingOrder: e.target.value }))
-              }
-            />
-          )}
-          {recipientForm.accessMode === 'EMAIL_WITH_CODE' && (
-            <FormInput
-              label="Access code"
-              value={recipientForm.accessCode}
-              onChange={(e) =>
-                setRecipientForm((prev) => ({ ...prev, accessCode: e.target.value }))
-              }
-              hint="Minimum 4 characters."
-              required
-            />
+          {envelope.status === 'DRAFT' ? (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
+                  <span>Role</span>
+                  <select
+                    value={recipientForm.type}
+                    onChange={(e) =>
+                      setRecipientForm((prev) => ({ ...prev, type: e.target.value as EsigningRecipientType }))
+                    }
+                    className="h-8 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"
+                  >
+                    {Object.entries(ESIGNING_RECIPIENT_TYPE_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
+                  <span>Access mode</span>
+                  <select
+                    value={recipientForm.accessMode}
+                    onChange={(e) =>
+                      setRecipientForm((prev) => ({
+                        ...prev,
+                        accessMode: e.target.value as EsigningRecipientAccessMode,
+                      }))
+                    }
+                    className="h-8 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"
+                  >
+                    {Object.entries(ESIGNING_ACCESS_MODE_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              {recipientForm.type === 'SIGNER' && envelope.signingOrder !== 'PARALLEL' && (
+                <FormInput
+                  label="Signing group"
+                  type="number"
+                  min={1}
+                  max={ESIGNING_LIMITS.MAX_RECIPIENTS}
+                  value={recipientForm.signingOrder}
+                  onChange={(e) =>
+                    setRecipientForm((prev) => ({ ...prev, signingOrder: e.target.value }))
+                  }
+                />
+              )}
+              {recipientForm.accessMode === 'EMAIL_WITH_CODE' && (
+                <FormInput
+                  label="Access code"
+                  value={recipientForm.accessCode}
+                  onChange={(e) =>
+                    setRecipientForm((prev) => ({ ...prev, accessCode: e.target.value }))
+                  }
+                  hint="Minimum 4 characters."
+                  required
+                />
+              )}
+            </>
+          ) : (
+            <Alert variant="info">
+              After sending, you can correct only the recipient&apos;s name and email. Oakcloud will keep the routing and access settings unchanged.
+            </Alert>
           )}
         </ModalBody>
         <ModalFooter>
@@ -465,7 +490,11 @@ export function EsigningDetailPage({ envelopeId }: Props) {
             Cancel
           </Button>
           <Button type="submit" isLoading={addRecipient.isPending || updateRecipient.isPending}>
-            Save recipient
+            {editingRecipientId
+              ? envelope.status === 'DRAFT'
+                ? 'Save recipient'
+                : 'Save correction'
+              : 'Save recipient'}
           </Button>
         </ModalFooter>
       </form>
@@ -783,12 +812,19 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               <h2 className="text-lg font-semibold text-text-primary">Recipients</h2>
               <p className="text-sm text-text-secondary">Signers and copy recipients.</p>
               <div className="mt-5 space-y-3">
-                {envelope.recipients.map((recipient) => (
+                {envelope.recipients.map((recipient) => {
+                  const canCorrectRecipient =
+                    ['SENT', 'IN_PROGRESS'].includes(envelope.status) &&
+                    can.updateEsigning &&
+                    recipient.status !== 'SIGNED' &&
+                    recipient.status !== 'DECLINED';
+
+                  return (
                   <EsigningRecipientCard
                     key={recipient.id}
                     recipient={recipient}
                     envelopeSigningOrder={envelope.signingOrder}
-                    canEdit={false}
+                    canEdit={canCorrectRecipient}
                     onEdit={() => openEditRecipient(recipient.id)}
                     onRemove={() => {
                       setRecipientActionId(recipient.id);
@@ -820,7 +856,8 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                     }
                     warnings={[]}
                   />
-                ))}
+                  );
+                })}
               </div>
             </section>
 
@@ -891,7 +928,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                       </div>
                       <div className="flex-1 pb-1">
                         <div className="text-sm text-text-primary">
-                          {formatEventAction(event.action, event.recipientName)}
+                          {formatEventAction(event.action, event.recipientName, event.metadata)}
                         </div>
                         <div className="text-xs text-text-secondary">
                           {formatEsigningDateTime(event.createdAt)}

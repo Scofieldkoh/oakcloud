@@ -11,7 +11,7 @@ interface EsigningSigningHeaderProps {
   completedCount: number;
   requiredCount: number;
   canFinish: boolean;
-  onFinish: () => void;
+  onPrimaryAction: () => void;
   onDecline: () => void;
   onFinishLater: () => void;
   onDownloadOriginal: () => void;
@@ -28,7 +28,7 @@ export function EsigningSigningHeader({
   completedCount,
   requiredCount,
   canFinish,
-  onFinish,
+  onPrimaryAction,
   onDecline,
   onFinishLater,
   onDownloadOriginal,
@@ -155,8 +155,8 @@ export function EsigningSigningHeader({
 
           {/* CTA */}
           <Button
-            onClick={onFinish}
-            disabled={!canFinish || isFinishing}
+            onClick={onPrimaryAction}
+            disabled={requiredCount === 0 || isFinishing}
             isLoading={isFinishing}
             size="sm"
           >
