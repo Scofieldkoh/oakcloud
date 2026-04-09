@@ -42,11 +42,17 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const config = dialogVariants[variant];
   const Icon = config.icon;
+  const isBusy = isLoading || isSubmitting;
 
   const handleConfirm = async () => {
+    if (isBusy) {
+      return;
+    }
+
     if (requireReason) {
       if (!reason.trim()) {
         setError('Reason is required');
@@ -59,11 +65,21 @@ export function ConfirmDialog({
     }
 
     setError('');
-    await onConfirm(requireReason ? reason.trim() : undefined);
-    setReason('');
+    setIsSubmitting(true);
+
+    try {
+      await onConfirm(requireReason ? reason.trim() : undefined);
+      setReason('');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
+    if (isBusy) {
+      return;
+    }
+
     setReason('');
     setError('');
     onClose();
@@ -75,8 +91,8 @@ export function ConfirmDialog({
       onClose={handleClose}
       size="sm"
       showCloseButton={false}
-      closeOnOverlayClick={!isLoading}
-      closeOnEscape={!isLoading}
+      closeOnOverlayClick={!isBusy}
+      closeOnEscape={!isBusy}
     >
       <ModalBody>
         <div className="flex flex-col items-center text-center">
@@ -99,7 +115,7 @@ export function ConfirmDialog({
                 }}
                 placeholder={reasonPlaceholder}
                 error={error}
-                disabled={isLoading}
+                disabled={isBusy}
                 inputSize="sm"
               />
             </div>
@@ -118,7 +134,7 @@ export function ConfirmDialog({
           variant="secondary"
           size="sm"
           onClick={handleClose}
-          disabled={isLoading}
+          disabled={isBusy}
         >
           {cancelLabel}
         </Button>
@@ -126,7 +142,7 @@ export function ConfirmDialog({
           variant={config.buttonVariant}
           size="sm"
           onClick={handleConfirm}
-          isLoading={isLoading}
+          isLoading={isBusy}
         >
           {confirmLabel}
         </Button>

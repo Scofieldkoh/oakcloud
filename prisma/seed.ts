@@ -79,6 +79,7 @@ async function main() {
     'company',
     'contact',
     'document',
+    'esigning',
     'officer',
     'shareholder',
     'audit_log',
@@ -150,6 +151,15 @@ async function main() {
       export: 'Export documents',
       import: 'Import documents',
       manage: 'Full document management',
+    },
+    esigning: {
+      create: 'Create e-signing envelopes',
+      read: 'View e-signing envelopes',
+      update: 'Send and update e-signing envelopes',
+      delete: 'Delete draft e-signing envelopes',
+      export: 'Export signed e-signing documents',
+      import: 'Import e-signing templates or documents',
+      manage: 'Full e-signing administration',
     },
     officer: {
       create: 'Add company officers',

@@ -53,7 +53,16 @@
  */
 
 import { scheduler } from './scheduler';
-import { backupTask, cleanupTask, exchangeRateSyncTask, formAiReviewTask, formCountReconciliationTask } from './tasks';
+import {
+  backupTask,
+  cleanupTask,
+  esigningExpiryCheckTask,
+  esigningPdfGenerationTask,
+  esigningRemindersTask,
+  exchangeRateSyncTask,
+  formAiReviewTask,
+  formCountReconciliationTask,
+} from './tasks';
 import { startViewCountFlush, stopViewCountFlush } from '@/lib/view-count-buffer';
 
 /**
@@ -65,6 +74,9 @@ export async function initializeScheduler(): Promise<void> {
   // Register all tasks
   scheduler.registerTask(backupTask);
   scheduler.registerTask(cleanupTask);
+  scheduler.registerTask(esigningExpiryCheckTask);
+  scheduler.registerTask(esigningPdfGenerationTask);
+  scheduler.registerTask(esigningRemindersTask);
   scheduler.registerTask(exchangeRateSyncTask);
   scheduler.registerTask(formAiReviewTask);
   scheduler.registerTask(formCountReconciliationTask);

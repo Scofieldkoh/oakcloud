@@ -418,6 +418,12 @@ export const ModelName = {
   DocumentDraft: 'DocumentDraft',
   TemplatePartial: 'TemplatePartial',
   AiConversation: 'AiConversation',
+  EsigningEnvelope: 'EsigningEnvelope',
+  EsigningEnvelopeDocument: 'EsigningEnvelopeDocument',
+  EsigningEnvelopeRecipient: 'EsigningEnvelopeRecipient',
+  EsigningDocumentFieldDefinition: 'EsigningDocumentFieldDefinition',
+  EsigningDocumentFieldValue: 'EsigningDocumentFieldValue',
+  EsigningEnvelopeEvent: 'EsigningEnvelopeEvent',
   ProcessingDocument: 'ProcessingDocument',
   DocumentLink: 'DocumentLink',
   DocumentTag: 'DocumentTag',
@@ -494,7 +500,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
+    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3011,6 +3017,450 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.AiConversationCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.AiConversationCountAggregateOutputType> | number
+        }
+      }
+    }
+    EsigningEnvelope: {
+      payload: Prisma.$EsigningEnvelopePayload<ExtArgs>
+      fields: Prisma.EsigningEnvelopeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EsigningEnvelopeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EsigningEnvelopeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopePayload>
+        }
+        findFirst: {
+          args: Prisma.EsigningEnvelopeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EsigningEnvelopeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopePayload>
+        }
+        findMany: {
+          args: Prisma.EsigningEnvelopeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopePayload>[]
+        }
+        create: {
+          args: Prisma.EsigningEnvelopeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopePayload>
+        }
+        createMany: {
+          args: Prisma.EsigningEnvelopeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EsigningEnvelopeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopePayload>[]
+        }
+        delete: {
+          args: Prisma.EsigningEnvelopeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopePayload>
+        }
+        update: {
+          args: Prisma.EsigningEnvelopeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopePayload>
+        }
+        deleteMany: {
+          args: Prisma.EsigningEnvelopeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EsigningEnvelopeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EsigningEnvelopeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopePayload>[]
+        }
+        upsert: {
+          args: Prisma.EsigningEnvelopeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopePayload>
+        }
+        aggregate: {
+          args: Prisma.EsigningEnvelopeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEsigningEnvelope>
+        }
+        groupBy: {
+          args: Prisma.EsigningEnvelopeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEnvelopeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EsigningEnvelopeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEnvelopeCountAggregateOutputType> | number
+        }
+      }
+    }
+    EsigningEnvelopeDocument: {
+      payload: Prisma.$EsigningEnvelopeDocumentPayload<ExtArgs>
+      fields: Prisma.EsigningEnvelopeDocumentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EsigningEnvelopeDocumentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeDocumentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EsigningEnvelopeDocumentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeDocumentPayload>
+        }
+        findFirst: {
+          args: Prisma.EsigningEnvelopeDocumentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeDocumentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EsigningEnvelopeDocumentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeDocumentPayload>
+        }
+        findMany: {
+          args: Prisma.EsigningEnvelopeDocumentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeDocumentPayload>[]
+        }
+        create: {
+          args: Prisma.EsigningEnvelopeDocumentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeDocumentPayload>
+        }
+        createMany: {
+          args: Prisma.EsigningEnvelopeDocumentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EsigningEnvelopeDocumentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeDocumentPayload>[]
+        }
+        delete: {
+          args: Prisma.EsigningEnvelopeDocumentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeDocumentPayload>
+        }
+        update: {
+          args: Prisma.EsigningEnvelopeDocumentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeDocumentPayload>
+        }
+        deleteMany: {
+          args: Prisma.EsigningEnvelopeDocumentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EsigningEnvelopeDocumentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EsigningEnvelopeDocumentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeDocumentPayload>[]
+        }
+        upsert: {
+          args: Prisma.EsigningEnvelopeDocumentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeDocumentPayload>
+        }
+        aggregate: {
+          args: Prisma.EsigningEnvelopeDocumentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEsigningEnvelopeDocument>
+        }
+        groupBy: {
+          args: Prisma.EsigningEnvelopeDocumentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEnvelopeDocumentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EsigningEnvelopeDocumentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEnvelopeDocumentCountAggregateOutputType> | number
+        }
+      }
+    }
+    EsigningEnvelopeRecipient: {
+      payload: Prisma.$EsigningEnvelopeRecipientPayload<ExtArgs>
+      fields: Prisma.EsigningEnvelopeRecipientFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EsigningEnvelopeRecipientFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeRecipientPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EsigningEnvelopeRecipientFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeRecipientPayload>
+        }
+        findFirst: {
+          args: Prisma.EsigningEnvelopeRecipientFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeRecipientPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EsigningEnvelopeRecipientFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeRecipientPayload>
+        }
+        findMany: {
+          args: Prisma.EsigningEnvelopeRecipientFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeRecipientPayload>[]
+        }
+        create: {
+          args: Prisma.EsigningEnvelopeRecipientCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeRecipientPayload>
+        }
+        createMany: {
+          args: Prisma.EsigningEnvelopeRecipientCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EsigningEnvelopeRecipientCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeRecipientPayload>[]
+        }
+        delete: {
+          args: Prisma.EsigningEnvelopeRecipientDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeRecipientPayload>
+        }
+        update: {
+          args: Prisma.EsigningEnvelopeRecipientUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeRecipientPayload>
+        }
+        deleteMany: {
+          args: Prisma.EsigningEnvelopeRecipientDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EsigningEnvelopeRecipientUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EsigningEnvelopeRecipientUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeRecipientPayload>[]
+        }
+        upsert: {
+          args: Prisma.EsigningEnvelopeRecipientUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeRecipientPayload>
+        }
+        aggregate: {
+          args: Prisma.EsigningEnvelopeRecipientAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEsigningEnvelopeRecipient>
+        }
+        groupBy: {
+          args: Prisma.EsigningEnvelopeRecipientGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEnvelopeRecipientGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EsigningEnvelopeRecipientCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEnvelopeRecipientCountAggregateOutputType> | number
+        }
+      }
+    }
+    EsigningDocumentFieldDefinition: {
+      payload: Prisma.$EsigningDocumentFieldDefinitionPayload<ExtArgs>
+      fields: Prisma.EsigningDocumentFieldDefinitionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EsigningDocumentFieldDefinitionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldDefinitionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EsigningDocumentFieldDefinitionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldDefinitionPayload>
+        }
+        findFirst: {
+          args: Prisma.EsigningDocumentFieldDefinitionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldDefinitionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EsigningDocumentFieldDefinitionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldDefinitionPayload>
+        }
+        findMany: {
+          args: Prisma.EsigningDocumentFieldDefinitionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldDefinitionPayload>[]
+        }
+        create: {
+          args: Prisma.EsigningDocumentFieldDefinitionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldDefinitionPayload>
+        }
+        createMany: {
+          args: Prisma.EsigningDocumentFieldDefinitionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EsigningDocumentFieldDefinitionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldDefinitionPayload>[]
+        }
+        delete: {
+          args: Prisma.EsigningDocumentFieldDefinitionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldDefinitionPayload>
+        }
+        update: {
+          args: Prisma.EsigningDocumentFieldDefinitionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldDefinitionPayload>
+        }
+        deleteMany: {
+          args: Prisma.EsigningDocumentFieldDefinitionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EsigningDocumentFieldDefinitionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EsigningDocumentFieldDefinitionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldDefinitionPayload>[]
+        }
+        upsert: {
+          args: Prisma.EsigningDocumentFieldDefinitionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldDefinitionPayload>
+        }
+        aggregate: {
+          args: Prisma.EsigningDocumentFieldDefinitionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEsigningDocumentFieldDefinition>
+        }
+        groupBy: {
+          args: Prisma.EsigningDocumentFieldDefinitionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningDocumentFieldDefinitionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EsigningDocumentFieldDefinitionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningDocumentFieldDefinitionCountAggregateOutputType> | number
+        }
+      }
+    }
+    EsigningDocumentFieldValue: {
+      payload: Prisma.$EsigningDocumentFieldValuePayload<ExtArgs>
+      fields: Prisma.EsigningDocumentFieldValueFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EsigningDocumentFieldValueFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldValuePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EsigningDocumentFieldValueFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldValuePayload>
+        }
+        findFirst: {
+          args: Prisma.EsigningDocumentFieldValueFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldValuePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EsigningDocumentFieldValueFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldValuePayload>
+        }
+        findMany: {
+          args: Prisma.EsigningDocumentFieldValueFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldValuePayload>[]
+        }
+        create: {
+          args: Prisma.EsigningDocumentFieldValueCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldValuePayload>
+        }
+        createMany: {
+          args: Prisma.EsigningDocumentFieldValueCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EsigningDocumentFieldValueCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldValuePayload>[]
+        }
+        delete: {
+          args: Prisma.EsigningDocumentFieldValueDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldValuePayload>
+        }
+        update: {
+          args: Prisma.EsigningDocumentFieldValueUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldValuePayload>
+        }
+        deleteMany: {
+          args: Prisma.EsigningDocumentFieldValueDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EsigningDocumentFieldValueUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EsigningDocumentFieldValueUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldValuePayload>[]
+        }
+        upsert: {
+          args: Prisma.EsigningDocumentFieldValueUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningDocumentFieldValuePayload>
+        }
+        aggregate: {
+          args: Prisma.EsigningDocumentFieldValueAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEsigningDocumentFieldValue>
+        }
+        groupBy: {
+          args: Prisma.EsigningDocumentFieldValueGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningDocumentFieldValueGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EsigningDocumentFieldValueCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningDocumentFieldValueCountAggregateOutputType> | number
+        }
+      }
+    }
+    EsigningEnvelopeEvent: {
+      payload: Prisma.$EsigningEnvelopeEventPayload<ExtArgs>
+      fields: Prisma.EsigningEnvelopeEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EsigningEnvelopeEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EsigningEnvelopeEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeEventPayload>
+        }
+        findFirst: {
+          args: Prisma.EsigningEnvelopeEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EsigningEnvelopeEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeEventPayload>
+        }
+        findMany: {
+          args: Prisma.EsigningEnvelopeEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeEventPayload>[]
+        }
+        create: {
+          args: Prisma.EsigningEnvelopeEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeEventPayload>
+        }
+        createMany: {
+          args: Prisma.EsigningEnvelopeEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EsigningEnvelopeEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeEventPayload>[]
+        }
+        delete: {
+          args: Prisma.EsigningEnvelopeEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeEventPayload>
+        }
+        update: {
+          args: Prisma.EsigningEnvelopeEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.EsigningEnvelopeEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EsigningEnvelopeEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EsigningEnvelopeEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.EsigningEnvelopeEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EsigningEnvelopeEventPayload>
+        }
+        aggregate: {
+          args: Prisma.EsigningEnvelopeEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEsigningEnvelopeEvent>
+        }
+        groupBy: {
+          args: Prisma.EsigningEnvelopeEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEnvelopeEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EsigningEnvelopeEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EsigningEnvelopeEventCountAggregateOutputType> | number
         }
       }
     }
@@ -8220,6 +8670,143 @@ export const AiConversationScalarFieldEnum = {
 export type AiConversationScalarFieldEnum = (typeof AiConversationScalarFieldEnum)[keyof typeof AiConversationScalarFieldEnum]
 
 
+export const EsigningEnvelopeScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  createdById: 'createdById',
+  title: 'title',
+  message: 'message',
+  status: 'status',
+  signingOrder: 'signingOrder',
+  expiresAt: 'expiresAt',
+  reminderFrequencyDays: 'reminderFrequencyDays',
+  reminderStartDays: 'reminderStartDays',
+  expiryWarningDays: 'expiryWarningDays',
+  companyId: 'companyId',
+  certificateId: 'certificateId',
+  completedAt: 'completedAt',
+  voidedAt: 'voidedAt',
+  voidReason: 'voidReason',
+  pdfGenerationStatus: 'pdfGenerationStatus',
+  pdfGenerationAttempts: 'pdfGenerationAttempts',
+  pdfGenerationClaimedAt: 'pdfGenerationClaimedAt',
+  pdfGenerationError: 'pdfGenerationError',
+  consentVersion: 'consentVersion',
+  consentDisclosureSnapshot: 'consentDisclosureSnapshot',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type EsigningEnvelopeScalarFieldEnum = (typeof EsigningEnvelopeScalarFieldEnum)[keyof typeof EsigningEnvelopeScalarFieldEnum]
+
+
+export const EsigningEnvelopeDocumentScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  fileName: 'fileName',
+  storagePath: 'storagePath',
+  signedStoragePath: 'signedStoragePath',
+  originalHash: 'originalHash',
+  signedHash: 'signedHash',
+  pageCount: 'pageCount',
+  sortOrder: 'sortOrder',
+  fileSize: 'fileSize',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningEnvelopeDocumentScalarFieldEnum = (typeof EsigningEnvelopeDocumentScalarFieldEnum)[keyof typeof EsigningEnvelopeDocumentScalarFieldEnum]
+
+
+export const EsigningEnvelopeRecipientScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  type: 'type',
+  name: 'name',
+  email: 'email',
+  signingOrder: 'signingOrder',
+  status: 'status',
+  accessMode: 'accessMode',
+  accessTokenHash: 'accessTokenHash',
+  sessionVersion: 'sessionVersion',
+  accessCodeHash: 'accessCodeHash',
+  consentedAt: 'consentedAt',
+  consentIp: 'consentIp',
+  consentUserAgent: 'consentUserAgent',
+  signedAt: 'signedAt',
+  viewedAt: 'viewedAt',
+  declinedAt: 'declinedAt',
+  declineReason: 'declineReason',
+  signedIp: 'signedIp',
+  signedUserAgent: 'signedUserAgent',
+  lastReminderAt: 'lastReminderAt',
+  colorTag: 'colorTag',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningEnvelopeRecipientScalarFieldEnum = (typeof EsigningEnvelopeRecipientScalarFieldEnum)[keyof typeof EsigningEnvelopeRecipientScalarFieldEnum]
+
+
+export const EsigningDocumentFieldDefinitionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  documentId: 'documentId',
+  recipientId: 'recipientId',
+  type: 'type',
+  pageNumber: 'pageNumber',
+  xPercent: 'xPercent',
+  yPercent: 'yPercent',
+  widthPercent: 'widthPercent',
+  heightPercent: 'heightPercent',
+  required: 'required',
+  label: 'label',
+  placeholder: 'placeholder',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningDocumentFieldDefinitionScalarFieldEnum = (typeof EsigningDocumentFieldDefinitionScalarFieldEnum)[keyof typeof EsigningDocumentFieldDefinitionScalarFieldEnum]
+
+
+export const EsigningDocumentFieldValueScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  fieldDefinitionId: 'fieldDefinitionId',
+  recipientId: 'recipientId',
+  value: 'value',
+  signatureStoragePath: 'signatureStoragePath',
+  revision: 'revision',
+  filledAt: 'filledAt',
+  finalizedAt: 'finalizedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningDocumentFieldValueScalarFieldEnum = (typeof EsigningDocumentFieldValueScalarFieldEnum)[keyof typeof EsigningDocumentFieldValueScalarFieldEnum]
+
+
+export const EsigningEnvelopeEventScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  recipientId: 'recipientId',
+  action: 'action',
+  ipAddress: 'ipAddress',
+  userAgent: 'userAgent',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+} as const
+
+export type EsigningEnvelopeEventScalarFieldEnum = (typeof EsigningEnvelopeEventScalarFieldEnum)[keyof typeof EsigningEnvelopeEventScalarFieldEnum]
+
+
 export const ProcessingDocumentScalarFieldEnum = {
   id: 'id',
   documentId: 'documentId',
@@ -9797,6 +10384,132 @@ export type ListEnumDocumentCommentStatusFieldRefInput<$PrismaModel> = FieldRefI
 
 
 /**
+ * Reference to a field of type 'EsigningEnvelopeStatus'
+ */
+export type EnumEsigningEnvelopeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEnvelopeStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningEnvelopeStatus[]'
+ */
+export type ListEnumEsigningEnvelopeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEnvelopeStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningSigningOrder'
+ */
+export type EnumEsigningSigningOrderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningSigningOrder'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningSigningOrder[]'
+ */
+export type ListEnumEsigningSigningOrderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningSigningOrder[]'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningPdfGenerationStatus'
+ */
+export type EnumEsigningPdfGenerationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningPdfGenerationStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningPdfGenerationStatus[]'
+ */
+export type ListEnumEsigningPdfGenerationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningPdfGenerationStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningRecipientType'
+ */
+export type EnumEsigningRecipientTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningRecipientType'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningRecipientType[]'
+ */
+export type ListEnumEsigningRecipientTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningRecipientType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningRecipientStatus'
+ */
+export type EnumEsigningRecipientStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningRecipientStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningRecipientStatus[]'
+ */
+export type ListEnumEsigningRecipientStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningRecipientStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningRecipientAccessMode'
+ */
+export type EnumEsigningRecipientAccessModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningRecipientAccessMode'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningRecipientAccessMode[]'
+ */
+export type ListEnumEsigningRecipientAccessModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningRecipientAccessMode[]'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningFieldType'
+ */
+export type EnumEsigningFieldTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningFieldType'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningFieldType[]'
+ */
+export type ListEnumEsigningFieldTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningFieldType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningEnvelopeEventAction'
+ */
+export type EnumEsigningEnvelopeEventActionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEnvelopeEventAction'>
+    
+
+
+/**
+ * Reference to a field of type 'EsigningEnvelopeEventAction[]'
+ */
+export type ListEnumEsigningEnvelopeEventActionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEnvelopeEventAction[]'>
+    
+
+
+/**
  * Reference to a field of type 'PipelineStatus'
  */
 export type EnumPipelineStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PipelineStatus'>
@@ -9835,20 +10548,6 @@ export type EnumDuplicateStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$
  * Reference to a field of type 'DuplicateStatus[]'
  */
 export type ListEnumDuplicateStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DuplicateStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Float'
- */
-export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
-    
-
-
-/**
- * Reference to a field of type 'Float[]'
- */
-export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 
@@ -10890,6 +11589,12 @@ export type GlobalOmitConfig = {
   documentDraft?: Prisma.DocumentDraftOmit
   templatePartial?: Prisma.TemplatePartialOmit
   aiConversation?: Prisma.AiConversationOmit
+  esigningEnvelope?: Prisma.EsigningEnvelopeOmit
+  esigningEnvelopeDocument?: Prisma.EsigningEnvelopeDocumentOmit
+  esigningEnvelopeRecipient?: Prisma.EsigningEnvelopeRecipientOmit
+  esigningDocumentFieldDefinition?: Prisma.EsigningDocumentFieldDefinitionOmit
+  esigningDocumentFieldValue?: Prisma.EsigningDocumentFieldValueOmit
+  esigningEnvelopeEvent?: Prisma.EsigningEnvelopeEventOmit
   processingDocument?: Prisma.ProcessingDocumentOmit
   documentLink?: Prisma.DocumentLinkOmit
   documentTag?: Prisma.DocumentTagOmit

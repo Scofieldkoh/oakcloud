@@ -6,15 +6,20 @@ import { useContacts } from '@/hooks/use-contacts';
 import { AsyncSearchSelect, type AsyncSearchSelectOption } from './async-search-select';
 import type { Contact } from '@/generated/prisma';
 
+export type SearchableContact = Contact & {
+  defaultEmail?: string | null;
+  defaultPhone?: string | null;
+};
+
 // Extend the base option interface with Contact-specific fields
 interface ContactOption extends AsyncSearchSelectOption {
-  contact: Contact;
+  contact: SearchableContact;
 }
 
 interface ContactSearchSelectProps {
   label?: string;
   value: string;
-  onChange: (contactId: string, contact: Contact | null) => void;
+  onChange: (contactId: string, contact: SearchableContact | null) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -51,7 +56,7 @@ export function ContactSearchSelect({
   const options: ContactOption[] = (contactsData?.contacts || []).map((contact) => ({
     id: contact.id,
     label: contact.fullName,
-    description: contact.identificationNumber || undefined,
+    description: contact.defaultEmail || contact.identificationNumber || undefined,
     contact,
   }));
 

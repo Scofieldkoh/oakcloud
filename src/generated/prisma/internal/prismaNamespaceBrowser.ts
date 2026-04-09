@@ -85,6 +85,12 @@ export const ModelName = {
   DocumentDraft: 'DocumentDraft',
   TemplatePartial: 'TemplatePartial',
   AiConversation: 'AiConversation',
+  EsigningEnvelope: 'EsigningEnvelope',
+  EsigningEnvelopeDocument: 'EsigningEnvelopeDocument',
+  EsigningEnvelopeRecipient: 'EsigningEnvelopeRecipient',
+  EsigningDocumentFieldDefinition: 'EsigningDocumentFieldDefinition',
+  EsigningDocumentFieldValue: 'EsigningDocumentFieldValue',
+  EsigningEnvelopeEvent: 'EsigningEnvelopeEvent',
   ProcessingDocument: 'ProcessingDocument',
   DocumentLink: 'DocumentLink',
   DocumentTag: 'DocumentTag',
@@ -815,6 +821,143 @@ export const AiConversationScalarFieldEnum = {
 } as const
 
 export type AiConversationScalarFieldEnum = (typeof AiConversationScalarFieldEnum)[keyof typeof AiConversationScalarFieldEnum]
+
+
+export const EsigningEnvelopeScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  createdById: 'createdById',
+  title: 'title',
+  message: 'message',
+  status: 'status',
+  signingOrder: 'signingOrder',
+  expiresAt: 'expiresAt',
+  reminderFrequencyDays: 'reminderFrequencyDays',
+  reminderStartDays: 'reminderStartDays',
+  expiryWarningDays: 'expiryWarningDays',
+  companyId: 'companyId',
+  certificateId: 'certificateId',
+  completedAt: 'completedAt',
+  voidedAt: 'voidedAt',
+  voidReason: 'voidReason',
+  pdfGenerationStatus: 'pdfGenerationStatus',
+  pdfGenerationAttempts: 'pdfGenerationAttempts',
+  pdfGenerationClaimedAt: 'pdfGenerationClaimedAt',
+  pdfGenerationError: 'pdfGenerationError',
+  consentVersion: 'consentVersion',
+  consentDisclosureSnapshot: 'consentDisclosureSnapshot',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type EsigningEnvelopeScalarFieldEnum = (typeof EsigningEnvelopeScalarFieldEnum)[keyof typeof EsigningEnvelopeScalarFieldEnum]
+
+
+export const EsigningEnvelopeDocumentScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  fileName: 'fileName',
+  storagePath: 'storagePath',
+  signedStoragePath: 'signedStoragePath',
+  originalHash: 'originalHash',
+  signedHash: 'signedHash',
+  pageCount: 'pageCount',
+  sortOrder: 'sortOrder',
+  fileSize: 'fileSize',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningEnvelopeDocumentScalarFieldEnum = (typeof EsigningEnvelopeDocumentScalarFieldEnum)[keyof typeof EsigningEnvelopeDocumentScalarFieldEnum]
+
+
+export const EsigningEnvelopeRecipientScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  type: 'type',
+  name: 'name',
+  email: 'email',
+  signingOrder: 'signingOrder',
+  status: 'status',
+  accessMode: 'accessMode',
+  accessTokenHash: 'accessTokenHash',
+  sessionVersion: 'sessionVersion',
+  accessCodeHash: 'accessCodeHash',
+  consentedAt: 'consentedAt',
+  consentIp: 'consentIp',
+  consentUserAgent: 'consentUserAgent',
+  signedAt: 'signedAt',
+  viewedAt: 'viewedAt',
+  declinedAt: 'declinedAt',
+  declineReason: 'declineReason',
+  signedIp: 'signedIp',
+  signedUserAgent: 'signedUserAgent',
+  lastReminderAt: 'lastReminderAt',
+  colorTag: 'colorTag',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningEnvelopeRecipientScalarFieldEnum = (typeof EsigningEnvelopeRecipientScalarFieldEnum)[keyof typeof EsigningEnvelopeRecipientScalarFieldEnum]
+
+
+export const EsigningDocumentFieldDefinitionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  documentId: 'documentId',
+  recipientId: 'recipientId',
+  type: 'type',
+  pageNumber: 'pageNumber',
+  xPercent: 'xPercent',
+  yPercent: 'yPercent',
+  widthPercent: 'widthPercent',
+  heightPercent: 'heightPercent',
+  required: 'required',
+  label: 'label',
+  placeholder: 'placeholder',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningDocumentFieldDefinitionScalarFieldEnum = (typeof EsigningDocumentFieldDefinitionScalarFieldEnum)[keyof typeof EsigningDocumentFieldDefinitionScalarFieldEnum]
+
+
+export const EsigningDocumentFieldValueScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  fieldDefinitionId: 'fieldDefinitionId',
+  recipientId: 'recipientId',
+  value: 'value',
+  signatureStoragePath: 'signatureStoragePath',
+  revision: 'revision',
+  filledAt: 'filledAt',
+  finalizedAt: 'finalizedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EsigningDocumentFieldValueScalarFieldEnum = (typeof EsigningDocumentFieldValueScalarFieldEnum)[keyof typeof EsigningDocumentFieldValueScalarFieldEnum]
+
+
+export const EsigningEnvelopeEventScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  recipientId: 'recipientId',
+  action: 'action',
+  ipAddress: 'ipAddress',
+  userAgent: 'userAgent',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+} as const
+
+export type EsigningEnvelopeEventScalarFieldEnum = (typeof EsigningEnvelopeEventScalarFieldEnum)[keyof typeof EsigningEnvelopeEventScalarFieldEnum]
 
 
 export const ProcessingDocumentScalarFieldEnum = {

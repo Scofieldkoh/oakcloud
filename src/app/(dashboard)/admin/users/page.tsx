@@ -8,6 +8,7 @@ import {
   useInviteUser,
   useUpdateUser,
   useDeleteUser,
+  useSendPasswordReset,
   useUserCompanyAssignments,
   useAssignUserToCompany,
   useRemoveCompanyAssignment,
@@ -234,6 +235,7 @@ export default function UsersPage() {
   const inviteUser = useInviteUser(activeTenantId || undefined);
   const updateUser = useUpdateUser(activeTenantId || undefined, editingUser?.id);
   const deleteUser = useDeleteUser(activeTenantId || undefined);
+  const sendPasswordReset = useSendPasswordReset(activeTenantId || undefined, resetPasswordUser?.id);
 
   // Company management hooks
   const { data: assignmentsData } = useUserCompanyAssignments(
@@ -403,17 +405,7 @@ export default function UsersPage() {
     if (!resetPasswordUser || !activeTenantId) return;
 
     try {
-      const res = await fetch(`/api/tenants/${activeTenantId}/users/${resetPasswordUser.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sendPasswordReset: true }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to send password reset');
-      }
-
+      await sendPasswordReset.mutateAsync();
       success('Password reset email sent');
       setResetPasswordUser(null);
     } catch (err) {
@@ -1405,6 +1397,7 @@ export default function UsersPage() {
         description={`Send a password reset email to ${resetPasswordUser?.email}? The user will receive instructions to create a new password.`}
         confirmLabel="Send Reset Email"
         variant="info"
+        isLoading={sendPasswordReset.isPending}
       />
     </div>
   );

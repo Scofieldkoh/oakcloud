@@ -45,6 +45,7 @@ model Tenant {
   formUploads                        FormUpload[]
   forms                              Form[]
   generatedDocuments                 GeneratedDocument[]
+  esigningEnvelopes                  EsigningEnvelope[]
   roles                              Role[]
   templatePartials                   TemplatePartial[]
   backups                            TenantBackup[]
@@ -156,6 +157,7 @@ model User {
   createdTemplates                                                                               DocumentTemplate[]                   @relation("TemplateCreator")
   uploadedDocuments                                                                              Document[]
   createdDocuments                                                                               GeneratedDocument[]                  @relation("DocumentCreator")
+  createdEsigningEnvelopes                                                                       EsigningEnvelope[]                   @relation("EsigningEnvelopeCreatedBy")
   finalizedDocuments                                                                             GeneratedDocument[]                  @relation("DocumentFinalizer")
   createdPartials                                                                                TemplatePartial[]                    @relation("PartialCreator")
   companyAssignments                                                                             UserCompanyAssignment[]
@@ -283,6 +285,7 @@ model Company {
   contactDetails                     ContactDetail[]
   documentTags                       DocumentTag[]
   documents                          Document[]
+  esigningEnvelopes                  EsigningEnvelope[]
   generatedDocuments                 GeneratedDocument[]
   noteTabs                           NoteTab[]
   shareCapital                       ShareCapital[]
@@ -967,6 +970,177 @@ model AiConversation {
   @@map("ai_conversations")
 }
 
+model EsigningEnvelope {
+  id                        String                            @id @default(uuid())
+  tenantId                  String
+  createdById               String
+  title                     String
+  message                   String?
+  status                    EsigningEnvelopeStatus            @default(DRAFT)
+  signingOrder              EsigningSigningOrder              @default(PARALLEL)
+  expiresAt                 DateTime?
+  reminderFrequencyDays     Int?
+  reminderStartDays         Int?
+  expiryWarningDays         Int?
+  companyId                 String?
+  certificateId             String                            @unique
+  completedAt               DateTime?
+  voidedAt                  DateTime?
+  voidReason                String?
+  pdfGenerationStatus       EsigningPdfGenerationStatus?
+  pdfGenerationAttempts     Int                               @default(0)
+  pdfGenerationClaimedAt    DateTime?
+  pdfGenerationError        String?
+  consentVersion            String                            @default("1.0")
+  consentDisclosureSnapshot Json?
+  metadata                  Json?
+  createdAt                 DateTime                          @default(now())
+  updatedAt                 DateTime                          @updatedAt
+  deletedAt                 DateTime?
+  company                   Company?                          @relation(fields: [companyId], references: [id])
+  createdBy                 User                              @relation("EsigningEnvelopeCreatedBy", fields: [createdById], references: [id])
+  tenant                    Tenant                            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  documents                 EsigningEnvelopeDocument[]
+  events                    EsigningEnvelopeEvent[]
+  fieldDefinitions          EsigningDocumentFieldDefinition[]
+  recipients                EsigningEnvelopeRecipient[]
+
+  @@index([tenantId, status, createdAt])
+  @@index([createdById, status, createdAt])
+  @@index([companyId])
+  @@index([tenantId, deletedAt])
+  @@map("esigning_envelopes")
+}
+
+model EsigningEnvelopeDocument {
+  id                String                            @id @default(uuid())
+  tenantId          String
+  envelopeId        String
+  fileName          String
+  storagePath       String
+  signedStoragePath String?
+  originalHash      String
+  signedHash        String?
+  pageCount         Int
+  sortOrder         Int
+  fileSize          Int
+  createdAt         DateTime                          @default(now())
+  updatedAt         DateTime                          @updatedAt
+  envelope          EsigningEnvelope                  @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  fieldDefinitions  EsigningDocumentFieldDefinition[]
+
+  @@index([envelopeId, sortOrder])
+  @@index([tenantId, envelopeId])
+  @@map("esigning_envelope_documents")
+}
+
+model EsigningEnvelopeRecipient {
+  id               String                            @id @default(uuid())
+  tenantId         String
+  envelopeId       String
+  type             EsigningRecipientType
+  name             String
+  email            String
+  signingOrder     Int?
+  status           EsigningRecipientStatus           @default(QUEUED)
+  accessMode       EsigningRecipientAccessMode       @default(EMAIL_LINK)
+  accessTokenHash  String?
+  sessionVersion   Int                               @default(1)
+  accessCodeHash   String?
+  consentedAt      DateTime?
+  consentIp        String?
+  consentUserAgent String?
+  signedAt         DateTime?
+  viewedAt         DateTime?
+  declinedAt       DateTime?
+  declineReason    String?
+  signedIp         String?
+  signedUserAgent  String?
+  lastReminderAt   DateTime?
+  colorTag         String
+  createdAt        DateTime                          @default(now())
+  updatedAt        DateTime                          @updatedAt
+  envelope         EsigningEnvelope                  @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  events           EsigningEnvelopeEvent[]
+  fieldDefinitions EsigningDocumentFieldDefinition[]
+  fieldValues      EsigningDocumentFieldValue[]
+
+  @@unique([envelopeId, email, type])
+  @@index([envelopeId, signingOrder])
+  @@index([tenantId, envelopeId])
+  @@index([envelopeId, status])
+  @@map("esigning_envelope_recipients")
+}
+
+model EsigningDocumentFieldDefinition {
+  id            String                       @id @default(uuid())
+  tenantId      String
+  envelopeId    String
+  documentId    String
+  recipientId   String
+  type          EsigningFieldType
+  pageNumber    Int
+  xPercent      Float
+  yPercent      Float
+  widthPercent  Float
+  heightPercent Float
+  required      Boolean                      @default(true)
+  label         String?
+  placeholder   String?
+  sortOrder     Int
+  createdAt     DateTime                     @default(now())
+  updatedAt     DateTime                     @updatedAt
+  document      EsigningEnvelopeDocument     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  envelope      EsigningEnvelope             @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  recipient     EsigningEnvelopeRecipient    @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  values        EsigningDocumentFieldValue[]
+
+  @@index([envelopeId, recipientId])
+  @@index([documentId, pageNumber])
+  @@index([recipientId, sortOrder])
+  @@map("esigning_document_field_definitions")
+}
+
+model EsigningDocumentFieldValue {
+  id                   String                          @id @default(uuid())
+  tenantId             String
+  fieldDefinitionId    String
+  recipientId          String
+  value                String?
+  signatureStoragePath String?
+  revision             Int                             @default(1)
+  filledAt             DateTime?
+  finalizedAt          DateTime?
+  createdAt            DateTime                        @default(now())
+  updatedAt            DateTime                        @updatedAt
+  fieldDefinition      EsigningDocumentFieldDefinition @relation(fields: [fieldDefinitionId], references: [id], onDelete: Cascade)
+  recipient            EsigningEnvelopeRecipient       @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([fieldDefinitionId, recipientId])
+  @@index([recipientId, finalizedAt])
+  @@index([tenantId, recipientId])
+  @@map("esigning_document_field_values")
+}
+
+model EsigningEnvelopeEvent {
+  id          String                      @id @default(uuid())
+  tenantId    String
+  envelopeId  String
+  recipientId String?
+  action      EsigningEnvelopeEventAction
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime                    @default(now())
+  envelope    EsigningEnvelope            @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  recipient   EsigningEnvelopeRecipient?  @relation(fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@index([envelopeId, createdAt])
+  @@index([recipientId])
+  @@index([tenantId, envelopeId])
+  @@map("esigning_envelope_events")
+}
+
 model ProcessingDocument {
   id                    String                  @id @default(uuid())
   documentId            String                  @unique @map("document_id")
@@ -1608,23 +1782,23 @@ model FormField {
 }
 
 model FormSubmission {
-  id              String               @id @default(uuid())
-  formId          String               @map("form_id")
-  tenantId        String               @map("tenant_id")
-  status          FormSubmissionStatus @default(COMPLETED)
-  respondentName  String?              @map("respondent_name")
-  respondentEmail String?              @map("respondent_email")
-  answers         Json
-  metadata        Json?
-  aiReviewStatus         String?  @map("ai_review_status")
-  hasUnresolvedAiWarning Boolean  @default(false) @map("has_unresolved_ai_warning")
-  submittedAt            DateTime @default(now()) @map("submitted_at")
-  createdAt              DateTime @default(now()) @map("created_at")
-  updatedAt              DateTime @updatedAt @map("updated_at")
-  deletedAt              DateTime? @map("deleted_at")
-  form            Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
-  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  uploads         FormUpload[]
+  id                     String               @id @default(uuid())
+  formId                 String               @map("form_id")
+  tenantId               String               @map("tenant_id")
+  status                 FormSubmissionStatus @default(COMPLETED)
+  respondentName         String?              @map("respondent_name")
+  respondentEmail        String?              @map("respondent_email")
+  answers                Json
+  metadata               Json?
+  aiReviewStatus         String?              @map("ai_review_status")
+  hasUnresolvedAiWarning Boolean              @default(false) @map("has_unresolved_ai_warning")
+  submittedAt            DateTime             @default(now()) @map("submitted_at")
+  createdAt              DateTime             @default(now()) @map("created_at")
+  updatedAt              DateTime             @updatedAt @map("updated_at")
+  deletedAt              DateTime?            @map("deleted_at")
+  form                   Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
+  tenant                 Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploads                FormUpload[]
 
   @@index([formId, submittedAt])
   @@index([tenantId, submittedAt])
@@ -1656,22 +1830,22 @@ model FormDraft {
 }
 
 model FormUpload {
-  id           String          @id @default(uuid())
-  tenantId     String          @map("tenant_id")
-  formId       String          @map("form_id")
-  draftId      String?         @map("draft_id")
-  submissionId String?         @map("submission_id")
-  fieldId      String?         @map("field_id")
-  storageKey        String          @map("storage_key")
-  fileName          String          @map("file_name")
-  originalFileName  String?         @map("original_file_name")
-  mimeType          String          @map("mime_type")
-  sizeBytes    Int             @map("size_bytes")
-  createdAt    DateTime        @default(now()) @map("created_at")
-  draft        FormDraft?      @relation(fields: [draftId], references: [id], onDelete: Cascade)
-  form         Form            @relation(fields: [formId], references: [id], onDelete: Cascade)
-  submission   FormSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
-  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id               String          @id @default(uuid())
+  tenantId         String          @map("tenant_id")
+  formId           String          @map("form_id")
+  draftId          String?         @map("draft_id")
+  submissionId     String?         @map("submission_id")
+  fieldId          String?         @map("field_id")
+  storageKey       String          @map("storage_key")
+  fileName         String          @map("file_name")
+  originalFileName String?         @map("original_file_name")
+  mimeType         String          @map("mime_type")
+  sizeBytes        Int             @map("size_bytes")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  draft            FormDraft?      @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  form             Form            @relation(fields: [formId], references: [id], onDelete: Cascade)
+  submission       FormSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  tenant           Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([draftId])
   @@index([formId, createdAt])
@@ -2990,6 +3164,74 @@ enum FormSubmissionStatus {
   COMPLETED
   PARTIAL
   SPAM
+}
+
+enum EsigningEnvelopeStatus {
+  DRAFT
+  SENT
+  IN_PROGRESS
+  COMPLETED
+  VOIDED
+  DECLINED
+  EXPIRED
+}
+
+enum EsigningSigningOrder {
+  PARALLEL
+  SEQUENTIAL
+  MIXED
+}
+
+enum EsigningPdfGenerationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum EsigningRecipientType {
+  SIGNER
+  CC
+}
+
+enum EsigningRecipientStatus {
+  QUEUED
+  NOTIFIED
+  VIEWED
+  SIGNED
+  DECLINED
+}
+
+enum EsigningRecipientAccessMode {
+  EMAIL_LINK
+  EMAIL_WITH_CODE
+  MANUAL_LINK
+}
+
+enum EsigningFieldType {
+  SIGNATURE
+  INITIALS
+  DATE_SIGNED
+  NAME
+  TEXT
+  CHECKBOX
+  COMPANY
+  TITLE
+}
+
+enum EsigningEnvelopeEventAction {
+  CREATED
+  SENT
+  VIEWED
+  CONSENTED
+  SIGNED
+  DECLINED
+  VOIDED
+  CORRECTED
+  COMPLETED
+  REMINDER_SENT
+  EXPIRED
+  PDF_GENERATION_FAILED
 }
 
 enum ClientRequestStatus {

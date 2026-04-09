@@ -210,6 +210,36 @@ export type TemplatePartial = Prisma.TemplatePartialModel
  */
 export type AiConversation = Prisma.AiConversationModel
 /**
+ * Model EsigningEnvelope
+ * 
+ */
+export type EsigningEnvelope = Prisma.EsigningEnvelopeModel
+/**
+ * Model EsigningEnvelopeDocument
+ * 
+ */
+export type EsigningEnvelopeDocument = Prisma.EsigningEnvelopeDocumentModel
+/**
+ * Model EsigningEnvelopeRecipient
+ * 
+ */
+export type EsigningEnvelopeRecipient = Prisma.EsigningEnvelopeRecipientModel
+/**
+ * Model EsigningDocumentFieldDefinition
+ * 
+ */
+export type EsigningDocumentFieldDefinition = Prisma.EsigningDocumentFieldDefinitionModel
+/**
+ * Model EsigningDocumentFieldValue
+ * 
+ */
+export type EsigningDocumentFieldValue = Prisma.EsigningDocumentFieldValueModel
+/**
+ * Model EsigningEnvelopeEvent
+ * 
+ */
+export type EsigningEnvelopeEvent = Prisma.EsigningEnvelopeEventModel
+/**
  * Model ProcessingDocument
  * 
  */

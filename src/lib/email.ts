@@ -66,22 +66,43 @@ type EmailProvider = 'graph' | 'smtp' | 'none';
 // Provider Detection
 // ============================================================================
 
+function hasConfiguredValue(value: string | undefined): value is string {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return false;
+  }
+
+  const placeholderPatterns = [
+    /^your[-_\s]/i,
+    /^example/i,
+    /^admin@yourdomain\.com$/i,
+    /^noreply@example\.com$/i,
+    /^sk-your-/i,
+  ];
+
+  return !placeholderPatterns.some((pattern) => pattern.test(normalized));
+}
+
 function getEmailProvider(): EmailProvider {
   // Check for Microsoft Graph API (preferred)
   if (
-    process.env.AZURE_TENANT_ID &&
-    process.env.AZURE_CLIENT_ID &&
-    process.env.AZURE_CLIENT_SECRET &&
-    process.env.EMAIL_FROM_ADDRESS
+    hasConfiguredValue(process.env.AZURE_TENANT_ID) &&
+    hasConfiguredValue(process.env.AZURE_CLIENT_ID) &&
+    hasConfiguredValue(process.env.AZURE_CLIENT_SECRET) &&
+    hasConfiguredValue(process.env.EMAIL_FROM_ADDRESS)
   ) {
     return 'graph';
   }
 
   // Check for SMTP
   if (
-    process.env.SMTP_HOST &&
-    process.env.SMTP_USER &&
-    process.env.SMTP_PASSWORD
+    hasConfiguredValue(process.env.SMTP_HOST) &&
+    hasConfiguredValue(process.env.SMTP_USER) &&
+    hasConfiguredValue(process.env.SMTP_PASSWORD)
   ) {
     return 'smtp';
   }
@@ -374,6 +395,9 @@ function stripHtml(html: string): string {
  */
 export function getAppBaseUrl(): string {
   const normalize = (value: string): string => value.trim().replace(/\/+$/, '');
+  const isLocalhostUrl = (value: string): boolean =>
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(value);
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   // Optional override specifically for email links.
   const emailBaseUrl = process.env.EMAIL_APP_URL;
@@ -387,7 +411,7 @@ export function getAppBaseUrl(): string {
   }
 
   const normalized = normalize(appBaseUrl);
-  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalized)) {
+  if (!isDevelopment && isLocalhostUrl(normalized)) {
     return 'https://service.oakcloud.app';
   }
 

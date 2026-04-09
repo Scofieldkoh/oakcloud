@@ -162,6 +162,59 @@ export const StorageKeys = {
     return `${tenantId}/pending/`;
   },
 
+  /**
+   * Get prefix for all files belonging to an e-signing envelope
+   */
+  esigningEnvelopePrefix(tenantId: string, envelopeId: string): string {
+    return `${tenantId}/esigning/${envelopeId}/`;
+  },
+
+  /**
+   * Generate storage key for an original e-signing document
+   */
+  esigningOriginalDocument(
+    tenantId: string,
+    envelopeId: string,
+    documentId: string,
+    extension: string
+  ): string {
+    return `${tenantId}/esigning/${envelopeId}/originals/${documentId}${extension}`;
+  },
+
+  /**
+   * Generate storage key for a signed e-signing document
+   */
+  esigningSignedDocument(
+    tenantId: string,
+    envelopeId: string,
+    documentId: string
+  ): string {
+    return `${tenantId}/esigning/${envelopeId}/signed/${documentId}.pdf`;
+  },
+
+  /**
+   * Generate storage key for a signer signature/initials asset
+   */
+  esigningSignatureAsset(
+    tenantId: string,
+    envelopeId: string,
+    recipientId: string,
+    kind: 'signature' | 'initials'
+  ): string {
+    return `${tenantId}/esigning/${envelopeId}/signatures/${recipientId}_${kind}.png`;
+  },
+
+  /**
+   * Generate storage key for a certificate asset
+   */
+  esigningCertificateDocument(
+    tenantId: string,
+    envelopeId: string,
+    documentId: string
+  ): string {
+    return `${tenantId}/esigning/${envelopeId}/certificates/${documentId}.pdf`;
+  },
+
   // ============================================================================
   // BACKUP STORAGE KEYS
   // ============================================================================

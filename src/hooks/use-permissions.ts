@@ -85,6 +85,13 @@ export function usePermissions(companyId?: string) {
     deleteDocument: hasPermission('document', 'delete'),
     exportDocument: hasPermission('document', 'export'),
 
+    // E-signing permissions
+    createEsigning: hasPermission('esigning', 'create'),
+    readEsigning: hasPermission('esigning', 'read'),
+    updateEsigning: hasPermission('esigning', 'update'),
+    deleteEsigning: hasPermission('esigning', 'delete'),
+    manageEsigning: hasPermission('esigning', 'manage'),
+
     // Contact permissions
     createContact: hasPermission('contact', 'create'),
     readContact: hasPermission('contact', 'read'),
