@@ -17,11 +17,14 @@ import {
   useUpdateCommunicationMailboxes,
 } from '@/hooks/use-communications';
 
+const EMPTY_COMMUNICATIONS: CommunicationItem[] = [];
+
 export default function CommunicationPage() {
   const { data: session, isLoading: sessionLoading } = useSession();
   const { success, error: showError } = useToast();
   const [lookbackDays, setLookbackDays] = useState(30);
   const [mailboxesInput, setMailboxesInput] = useState('');
+  const [ingestAllEmails, setIngestAllEmails] = useState(false);
   const [selectedCommunicationIds, setSelectedCommunicationIds] = useState<string[]>([]);
   const [selectedCommunication, setSelectedCommunication] = useState<CommunicationItem | null>(null);
   const [deletingCommunication, setDeletingCommunication] = useState<CommunicationItem | null>(null);
@@ -41,16 +44,17 @@ export default function CommunicationPage() {
 
   const isAdmin = !!session && (session.isSuperAdmin || session.isTenantAdmin);
   const connector = communicationsQuery.data?.connector;
-  const communications = communicationsQuery.data?.communications ?? [];
+  const communications = communicationsQuery.data?.communications ?? EMPTY_COMMUNICATIONS;
   const allSelected = communications.length > 0 && selectedCommunicationIds.length === communications.length;
   const someSelected =
     selectedCommunicationIds.length > 0 && selectedCommunicationIds.length < communications.length;
 
   useEffect(() => {
-    if (connector?.mailboxUserIds?.length) {
+    if (connector?.mailboxUserIds) {
       setMailboxesInput(connector.mailboxUserIds.join(', '));
     }
-  }, [connector?.mailboxUserIds]);
+    setIngestAllEmails(connector?.ingestAllEmails ?? false);
+  }, [connector?.mailboxUserIds, connector?.ingestAllEmails]);
 
   useEffect(() => {
     const currentIds = new Set(communications.map((item) => item.id));
@@ -97,11 +101,26 @@ export default function CommunicationPage() {
     }
 
     try {
-      await updateMailboxesMutation.mutateAsync({ mailboxUserIds });
-      success('Mailbox settings saved');
+      await updateMailboxesMutation.mutateAsync({ mailboxUserIds, ingestAllEmails });
+      success('Communication settings saved');
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to save mailbox settings');
+      showError(error instanceof Error ? error.message : 'Failed to save communication settings');
     }
+  };
+
+  const renderCompanyCell = (item: CommunicationItem) => {
+    if (item.isUnmatched) {
+      return <span className="text-text-primary">{item.companyName}</span>;
+    }
+
+    return (
+      <Link
+        href={`/companies/${item.companyId}`}
+        className="text-oak-light hover:underline"
+      >
+        {item.companyName}
+      </Link>
+    );
   };
 
   const handleDeleteCommunication = async () => {
@@ -268,13 +287,25 @@ export default function CommunicationPage() {
                   placeholder="mailbox1@tenant.com, mailbox2@tenant.com"
                 />
               </div>
+              <label className="flex items-start gap-3 text-sm text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={ingestAllEmails}
+                  onChange={(e) => setIngestAllEmails(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-border-primary accent-oak-primary cursor-pointer"
+                />
+                <span>
+                  Ingest all emails, even when they do not match a company domain.
+                  Unmatched emails will be stored under <strong>[System] Unmatched Communications</strong>.
+                </span>
+              </label>
               <Button
                 variant="primary"
                 size="sm"
                 onClick={handleSaveMailboxes}
                 isLoading={updateMailboxesMutation.isPending}
               >
-                Save Mailboxes
+                Save Communication Settings
               </Button>
             </div>
           )}
@@ -290,9 +321,46 @@ export default function CommunicationPage() {
 
       {connector?.configured && (
         <div className="card overflow-hidden">
+          <div className="px-4 py-4 border-b border-border-primary bg-bg-tertiary/30 space-y-3">
+            <div>
+              <label className="text-xs text-text-muted block mb-1">
+                Mailbox emails (comma or newline separated)
+              </label>
+              <textarea
+                value={mailboxesInput}
+                onChange={(e) => setMailboxesInput(e.target.value)}
+                className="input w-full min-h-24 p-3"
+                placeholder="mailbox1@tenant.com, mailbox2@tenant.com"
+              />
+            </div>
+            <label className="flex items-start gap-3 text-sm text-text-secondary">
+              <input
+                type="checkbox"
+                checked={ingestAllEmails}
+                onChange={(e) => setIngestAllEmails(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-border-primary accent-oak-primary cursor-pointer"
+              />
+              <span>
+                Ingest all emails, even when they do not match a company domain.
+                Unmatched emails will be stored under <strong>[System] Unmatched Communications</strong>.
+              </span>
+            </label>
+            <div className="flex justify-end">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleSaveMailboxes}
+                isLoading={updateMailboxesMutation.isPending}
+              >
+                Save Communication Settings
+              </Button>
+            </div>
+          </div>
+
           <div className="px-4 py-3 border-b border-border-primary text-xs text-text-muted">
             Connector: {connector.provider} ({connector.source}) | Mailboxes:{' '}
-            {connector.mailboxUserIds.join(', ')}
+            {connector.mailboxUserIds.join(', ')} | Ingest all emails:{' '}
+            {connector.ingestAllEmails ? 'On' : 'Off'}
           </div>
 
           <div className="px-4 py-2 border-b border-border-primary bg-bg-tertiary/40 flex items-center justify-between gap-3">
@@ -352,12 +420,7 @@ export default function CommunicationPage() {
                         />
                       </td>
                       <td>
-                        <Link
-                          href={`/companies/${item.companyId}`}
-                          className="text-oak-light hover:underline"
-                        >
-                          {item.companyName}
-                        </Link>
+                        {renderCompanyCell(item)}
                       </td>
                       <td className="max-w-[420px]">
                         <div className="font-medium text-text-primary truncate">
@@ -411,12 +474,7 @@ export default function CommunicationPage() {
             <div>
               <p className="text-xs text-text-muted">Company</p>
               {selectedCommunication ? (
-                <Link
-                  href={`/companies/${selectedCommunication.companyId}`}
-                  className="text-oak-light hover:underline"
-                >
-                  {selectedCommunication.companyName}
-                </Link>
+                renderCompanyCell(selectedCommunication)
               ) : (
                 <p className="text-text-primary">-</p>
               )}

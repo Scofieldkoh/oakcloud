@@ -19,7 +19,7 @@ import { Alert } from '@/components/ui/alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { useToast } from '@/components/ui/toast';
-import { Pagination } from '@/components/companies/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Trash2,

@@ -10,7 +10,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
 import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
-import { Pagination } from '@/components/companies/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import {
   useTemplatePartials,

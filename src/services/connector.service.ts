@@ -54,6 +54,20 @@ export interface TestResult {
   latencyMs?: number;
 }
 
+function maskCredentialMap(credentials: Record<string, unknown>): Record<string, unknown> {
+  const maskedCredentials: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(credentials)) {
+    if (typeof value === 'string') {
+      maskedCredentials[key] = maskSensitive(value);
+    } else {
+      maskedCredentials[key] = value;
+    }
+  }
+
+  return maskedCredentials;
+}
+
 function formatTestError(error: unknown): string {
   if (!(error instanceof Error)) {
     return 'Unknown error';
@@ -379,34 +393,18 @@ export async function getConnectorWithMaskedCredentials(
 
   if (!connector) return null;
 
-  // Access control - can view but not necessarily see full credentials
-  const canSeeFullCredentials =
-    isSuperAdmin ||
-    (connector.tenantId !== null && connector.tenantId === tenantId);
-
-  let credentials: Record<string, unknown>;
-  let credentialsMasked = true;
-
-  if (canSeeFullCredentials) {
-    credentials = JSON.parse(decrypt(connector.credentials));
-    credentialsMasked = false;
-  } else {
-    // Mask sensitive values
-    const decrypted = JSON.parse(decrypt(connector.credentials)) as Record<string, unknown>;
-    credentials = {};
-    for (const [key, value] of Object.entries(decrypted)) {
-      if (typeof value === 'string') {
-        credentials[key] = maskSensitive(value);
-      } else {
-        credentials[key] = value;
-      }
-    }
+  // Access control - tenant admins can view system connectors but never receive raw secrets.
+  if (!isSuperAdmin && connector.tenantId !== null && connector.tenantId !== tenantId) {
+    throw new Error('Access denied');
   }
+
+  const decrypted = JSON.parse(decrypt(connector.credentials)) as Record<string, unknown>;
+  const credentials = maskCredentialMap(decrypted);
 
   return {
     ...connector,
     credentials,
-    credentialsMasked,
+    credentialsMasked: true,
   };
 }
 
@@ -468,31 +466,13 @@ export async function searchConnectors(
 
   // Map to masked credentials
   const connectorsWithMasked: ConnectorWithMaskedCredentials[] = connectors.map((connector) => {
-    const canSeeFullCredentials =
-      isSuperAdmin ||
-      (connector.tenantId !== null && connector.tenantId === tenantId);
-
-    let credentials: Record<string, unknown>;
-
-    if (canSeeFullCredentials) {
-      credentials = JSON.parse(decrypt(connector.credentials));
-    } else {
-      // Mask sensitive values for system connectors viewed by tenant admin
-      const decrypted = JSON.parse(decrypt(connector.credentials)) as Record<string, unknown>;
-      credentials = {};
-      for (const [key, value] of Object.entries(decrypted)) {
-        if (typeof value === 'string') {
-          credentials[key] = maskSensitive(value);
-        } else {
-          credentials[key] = value;
-        }
-      }
-    }
+    const decrypted = JSON.parse(decrypt(connector.credentials)) as Record<string, unknown>;
+    const credentials = maskCredentialMap(decrypted);
 
     return {
       ...connector,
       credentials,
-      credentialsMasked: !canSeeFullCredentials,
+      credentialsMasked: true,
     };
   });
 

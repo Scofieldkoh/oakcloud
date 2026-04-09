@@ -24,7 +24,7 @@ import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Alert } from '@/components/ui/alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Pagination } from '@/components/companies/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import { useToast } from '@/components/ui/toast';
 import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
 import {

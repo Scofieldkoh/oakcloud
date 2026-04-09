@@ -20,8 +20,16 @@ export const updateCommunicationMailboxesSchema = z.object({
   mailboxUserIds: z
     .array(z.string().email('Mailbox must be a valid email address'))
     .min(1, 'At least one mailbox is required')
-    .max(50, 'Too many mailboxes (max 50)'),
-});
+    .max(50, 'Too many mailboxes (max 50)')
+    .optional(),
+  ingestAllEmails: z.boolean().optional(),
+}).refine(
+  (data) => data.mailboxUserIds !== undefined || data.ingestAllEmails !== undefined,
+  {
+    message: 'Provide mailbox settings to update',
+    path: ['mailboxUserIds'],
+  }
+);
 
 export type UpdateCommunicationMailboxesInput = z.infer<typeof updateCommunicationMailboxesSchema>;
 

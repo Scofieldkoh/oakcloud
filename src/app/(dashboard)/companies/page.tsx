@@ -14,7 +14,7 @@ import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
 import { useSelection } from '@/hooks/use-selection';
 import { CompanyTable, type CompanyInlineFilters, type CompanyFilterOption } from '@/components/companies/company-table';
 import { CompanyFilters, type FilterValues } from '@/components/companies/company-filters';
-import { Pagination } from '@/components/companies/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { FilterChip } from '@/components/ui/filter-chip';

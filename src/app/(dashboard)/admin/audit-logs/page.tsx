@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useSession } from '@/hooks/use-auth';
 import { useAuditLogs, useAuditLogStats, type AuditLog } from '@/hooks/use-admin';
 import { Alert } from '@/components/ui/alert';
-import { Pagination } from '@/components/companies/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import {
   Activity,
   User,

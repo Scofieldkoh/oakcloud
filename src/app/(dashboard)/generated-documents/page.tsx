@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { DocumentTable, type GeneratedDocument } from '@/components/documents/document-table';
-import { Pagination } from '@/components/companies/pagination';
+import { Pagination } from '@/components/ui/pagination';
 
 // ============================================================================
 // Types

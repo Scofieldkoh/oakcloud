@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useId, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +19,8 @@ export interface PaginationProps {
   onLimitChange?: (limit: number) => void;
   /** Show/hide page size selector */
   showPageSize?: boolean;
+  /** Show/hide jump-to-page input */
+  showJumpToPage?: boolean;
   /** Additional class name */
   className?: string;
 }
@@ -28,11 +31,11 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
  * Pagination - Table pagination component with page size selector
  *
  * Features:
- * - Page navigation with Previous/Next buttons
- * - Page number display with ellipsis for large page counts
- * - Page size selector dropdown
+ * - Compact page navigation with ellipsis for large page counts
+ * - Inline jump-to-page input for fast navigation
+ * - Page size selector
  * - "Showing X to Y of Z results" display
- * - Fully responsive design
+ * - Fully responsive layout
  *
  * @example
  * ```tsx
@@ -57,41 +60,42 @@ export function Pagination({
   onPageChange,
   onLimitChange,
   showPageSize = true,
+  showJumpToPage = true,
   className,
 }: PaginationProps) {
-  // Calculate range of records being displayed
-  const start = Math.max(1, (page - 1) * limit + 1);
+  const pageSizeId = useId();
+  const jumpInputId = useId();
+  const [jumpPage, setJumpPage] = useState(String(page));
+
+  useEffect(() => {
+    setJumpPage(String(page));
+  }, [page]);
+
+  const start = total === 0 ? 0 : (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
 
-  // Generate page numbers to display with ellipsis
   const getPageNumbers = (): (number | 'ellipsis')[] => {
     if (totalPages <= 7) {
-      // Show all pages if 7 or fewer
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
     }
 
-    const pages: (number | 'ellipsis')[] = [];
-
-    // Always show first page
-    pages.push(1);
+    const pages: (number | 'ellipsis')[] = [1];
 
     if (page > 3) {
       pages.push('ellipsis');
     }
 
-    // Show pages around current page
     const startPage = Math.max(2, page - 1);
     const endPage = Math.min(totalPages - 1, page + 1);
 
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
+    for (let pageNumber = startPage; pageNumber <= endPage; pageNumber += 1) {
+      pages.push(pageNumber);
     }
 
     if (page < totalPages - 2) {
       pages.push('ellipsis');
     }
 
-    // Always show last page
     if (totalPages > 1) {
       pages.push(totalPages);
     }
@@ -101,104 +105,164 @@ export function Pagination({
 
   const pageNumbers = getPageNumbers();
 
+  const goToPage = (nextPage: number) => {
+    const maxPage = Math.max(1, totalPages);
+    const clampedPage = Math.min(Math.max(nextPage, 1), maxPage);
+
+    if (clampedPage !== page) {
+      onPageChange(clampedPage);
+    }
+
+    setJumpPage(String(clampedPage));
+  };
+
+  const commitJumpPage = () => {
+    const parsedPage = Number.parseInt(jumpPage, 10);
+
+    if (Number.isNaN(parsedPage)) {
+      setJumpPage(String(page));
+      return;
+    }
+
+    goToPage(parsedPage);
+  };
+
+  const handleJumpSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    commitJumpPage();
+  };
+
+  const handleJumpKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') {
+      setJumpPage(String(page));
+      event.currentTarget.blur();
+    }
+  };
+
   return (
-    <div className={cn('flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3', className)}>
-      {/* Results info and page size selector */}
-      <div className="flex items-center gap-2 text-sm text-text-secondary">
+    <div className={cn('flex flex-col gap-4 px-4 py-3 sm:flex-row sm:items-center sm:justify-between', className)}>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-text-secondary">
         <span>
           Showing {start} to {end} of {total.toLocaleString()} results
         </span>
 
         {showPageSize && onLimitChange && (
-          <>
-            <span className="hidden sm:inline">•</span>
-            <div className="flex items-center gap-2">
-              <label htmlFor="page-size" className="whitespace-nowrap">
-                Per page:
-              </label>
-              <select
-                id="page-size"
-                value={limit}
-                onChange={(e) => onLimitChange(Number(e.target.value))}
-                className="px-2 py-1 text-sm border border-border-primary rounded bg-background-primary hover:border-oak-primary/50 focus:outline-none focus:ring-2 focus:ring-oak-primary/30 transition-colors"
-              >
-                {PAGE_SIZE_OPTIONS.map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
+          <div className="flex items-center gap-2">
+            <label htmlFor={pageSizeId} className="whitespace-nowrap">
+              Per page:
+            </label>
+            <select
+              id={pageSizeId}
+              value={limit}
+              onChange={(event) => onLimitChange(Number(event.target.value))}
+              className="h-9 rounded-xl border border-border-primary bg-background-primary px-3 text-sm text-text-primary transition-colors hover:border-oak-primary/50 focus:outline-none focus:ring-2 focus:ring-oak-primary/20"
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
       </div>
 
-      {/* Page navigation */}
-      <div className="flex items-center gap-1">
-        {/* Previous button */}
-        <button
-          onClick={() => onPageChange(page - 1)}
-          disabled={page === 1}
-          className={cn(
-            'flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors',
-            page === 1
-              ? 'text-text-muted cursor-not-allowed'
-              : 'text-text-primary hover:bg-background-tertiary'
-          )}
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">Previous</span>
-        </button>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="inline-flex flex-wrap items-center gap-1 rounded-2xl bg-background-tertiary/80 p-1">
+          <button
+            type="button"
+            onClick={() => goToPage(page - 1)}
+            disabled={page === 1}
+            className={cn(
+              'flex h-8 w-8 items-center justify-center rounded-xl transition-colors',
+              page === 1
+                ? 'cursor-not-allowed text-text-muted'
+                : 'text-text-primary hover:bg-background-primary'
+            )}
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
 
-        {/* Page numbers */}
-        <div className="flex items-center gap-1">
-          {pageNumbers.map((pageNum, index) => {
-            if (pageNum === 'ellipsis') {
+          <div className="flex items-center gap-1">
+            {pageNumbers.map((pageNumber, index) => {
+              if (pageNumber === 'ellipsis') {
+                return (
+                  <span key={`ellipsis-${index}`} className="px-1.5 text-sm text-text-muted">
+                    ...
+                  </span>
+                );
+              }
+
               return (
-                <span
-                  key={`ellipsis-${index}`}
-                  className="px-2 text-text-muted"
+                <button
+                  key={pageNumber}
+                  type="button"
+                  onClick={() => goToPage(pageNumber)}
+                  className={cn(
+                    'h-8 min-w-[32px] rounded-xl px-2.5 text-sm font-medium transition-colors',
+                    pageNumber === page
+                      ? 'bg-oak-primary text-white shadow-sm'
+                      : 'text-text-secondary hover:bg-background-primary hover:text-text-primary'
+                  )}
+                  aria-label={`Go to page ${pageNumber}`}
+                  aria-current={pageNumber === page ? 'page' : undefined}
                 >
-                  ...
-                </span>
+                  {pageNumber}
+                </button>
               );
-            }
+            })}
+          </div>
 
-            return (
-              <button
-                key={pageNum}
-                onClick={() => onPageChange(pageNum)}
-                className={cn(
-                  'min-w-[32px] h-8 px-2 text-sm rounded-lg transition-colors',
-                  pageNum === page
-                    ? 'bg-oak-primary text-white font-medium'
-                    : 'text-text-primary hover:bg-background-tertiary'
-                )}
-                aria-label={`Go to page ${pageNum}`}
-                aria-current={pageNum === page ? 'page' : undefined}
+          <button
+            type="button"
+            onClick={() => goToPage(page + 1)}
+            disabled={page === totalPages}
+            className={cn(
+              'flex h-8 w-8 items-center justify-center rounded-xl transition-colors',
+              page === totalPages
+                ? 'cursor-not-allowed text-text-muted'
+                : 'text-text-primary hover:bg-background-primary'
+            )}
+            aria-label="Next page"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+
+          {showJumpToPage && totalPages > 1 && (
+            <>
+              <div className="mx-1 hidden h-6 w-px bg-border-primary sm:block" />
+              <form
+                onSubmit={handleJumpSubmit}
+                className="flex h-8 items-center gap-1.5 rounded-xl bg-background-primary px-2"
               >
-                {pageNum}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Next button */}
-        <button
-          onClick={() => onPageChange(page + 1)}
-          disabled={page === totalPages}
-          className={cn(
-            'flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors',
-            page === totalPages
-              ? 'text-text-muted cursor-not-allowed'
-              : 'text-text-primary hover:bg-background-tertiary'
+                <label
+                  htmlFor={jumpInputId}
+                  className="whitespace-nowrap text-xs font-semibold uppercase tracking-[0.08em] text-text-muted"
+                >
+                  Pg
+                </label>
+                <input
+                  id={jumpInputId}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={String(totalPages).length}
+                  value={jumpPage}
+                  onChange={(event) => {
+                    const digitsOnly = event.target.value.replace(/\D/g, '');
+                    setJumpPage(digitsOnly);
+                  }}
+                  onBlur={commitJumpPage}
+                  onKeyDown={handleJumpKeyDown}
+                  className="h-6 w-10 rounded-md border border-transparent bg-transparent px-1 text-center text-sm font-medium text-text-primary outline-none transition-colors focus:border-oak-primary/30 focus:bg-background-secondary"
+                  aria-label={`Jump to page. Enter a number from 1 to ${totalPages}`}
+                />
+                <span className="text-xs font-medium text-text-muted">/ {totalPages}</span>
+              </form>
+            </>
           )}
-          aria-label="Next page"
-        >
-          <span className="hidden sm:inline">Next</span>
-          <ChevronRight className="w-4 h-4" />
-        </button>
+        </div>
       </div>
     </div>
   );

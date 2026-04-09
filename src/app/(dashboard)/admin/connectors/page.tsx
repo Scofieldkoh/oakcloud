@@ -128,6 +128,37 @@ function extractMailboxUserIdsFromSettings(settings: Record<string, unknown> | n
   return [...new Set(results)];
 }
 
+function maskCredentialPreview(value: string): string {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return '';
+  }
+
+  if (trimmed.includes('...')) {
+    return trimmed;
+  }
+
+  if (trimmed.length <= 4) {
+    return '*'.repeat(trimmed.length);
+  }
+
+  return `xxx${trimmed.slice(-4)}`;
+}
+
+function getCredentialPlaceholder(
+  connector: Connector,
+  credentialKey: string
+): string {
+  const currentValue = connector.credentials?.[credentialKey];
+
+  if (typeof currentValue !== 'string' || !currentValue.trim()) {
+    return 'Leave blank to keep current';
+  }
+
+  return `Current: ${maskCredentialPreview(currentValue)}`;
+}
+
 interface CreateFormData {
   name: string;
   type: ConnectorType;
@@ -465,6 +496,7 @@ export default function ConnectorsPage() {
       mailboxUserIdsText: mailboxUserIds.join(', '),
       isEnabled: connector.isEnabled,
     });
+    setShowCredentials({});
     setFormError('');
   };
 
@@ -1078,6 +1110,7 @@ export default function ConnectorsPage() {
         onClose={() => {
           setEditingConnector(null);
           setFormError('');
+          setShowCredentials({});
         }}
         title={`Edit ${editingConnector?.name}`}
         size="md"
@@ -1138,11 +1171,7 @@ export default function ConnectorsPage() {
                             },
                           })
                         }
-                        placeholder={
-                          editingConnector.credentialsMasked
-                            ? 'Hidden (enter new value to change)'
-                            : 'Leave blank to keep current'
-                        }
+                        placeholder={getCredentialPlaceholder(editingConnector, field.key)}
                         inputSize="sm"
                       />
                       {field.type === 'password' && (
@@ -1187,7 +1216,7 @@ export default function ConnectorsPage() {
                   </div>
                 )}
 
-              {/* Models — AI providers only */}
+              {/* Models Ã¢â‚¬â€ AI providers only */}
               {editingConnector?.type === 'AI_PROVIDER' && (
                 <div className="space-y-3">
                   <label className="label mb-0">Models</label>
@@ -1624,7 +1653,7 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
                   rel="noopener noreferrer"
                   className="text-oak-light hover:underline inline-flex items-center gap-1"
                 >
-                  Azure Portal â†’ App registrations
+                  Azure Portal -&gt; App registrations
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </li>
@@ -1644,8 +1673,8 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
             <div className="ml-8 text-text-secondary">
               <p className="mb-2">From the app&apos;s <strong>Overview</strong> page, copy:</p>
               <ul className="list-disc list-inside space-y-1">
-                <li><strong>Application (client) ID</strong> â†’ Client ID</li>
-                <li><strong>Directory (tenant) ID</strong> â†’ Microsoft Tenant ID</li>
+                <li><strong>Application (client) ID</strong> -&gt; Client ID</li>
+                <li><strong>Directory (tenant) ID</strong> -&gt; Microsoft Tenant ID</li>
               </ul>
             </div>
           </section>
@@ -1657,10 +1686,10 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
               Create Client Secret
             </h3>
             <ol className="list-decimal list-inside space-y-1 text-text-secondary ml-8">
-              <li>Go to <strong>Certificates & secrets</strong> â†’ <strong>Client secrets</strong></li>
+              <li>Go to <strong>Certificates & secrets</strong> -&gt; <strong>Client secrets</strong></li>
               <li>Click <strong>New client secret</strong></li>
               <li>Add description and select expiry (recommend 24 months)</li>
-              <li>Copy the <strong>Value</strong> immediately (shown only once!) â†’ Client Secret</li>
+              <li>Copy the <strong>Value</strong> immediately (shown only once!) -&gt; Client Secret</li>
             </ol>
           </section>
 
@@ -1671,8 +1700,8 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
               Configure API Permissions
             </h3>
             <ol className="list-decimal list-inside space-y-1 text-text-secondary ml-8">
-              <li>Go to <strong>API permissions</strong> â†’ <strong>Add a permission</strong></li>
-              <li>Select <strong>Microsoft Graph</strong> â†’ <strong>Application permissions</strong></li>
+              <li>Go to <strong>API permissions</strong> -&gt; <strong>Add a permission</strong></li>
+              <li>Select <strong>Microsoft Graph</strong> -&gt; <strong>Application permissions</strong></li>
               <li>
                 Add these permissions:
                 <ul className="list-disc list-inside ml-4 mt-1">
@@ -1728,7 +1757,7 @@ function SetupGuideModal({ provider, onClose }: SetupGuideModalProps) {
                   </a>
                   {' '}to find your site ID.
                 </p>
-                <p>Copy the <strong>id</strong> field from the response â†’ SharePoint Site ID</p>
+                <p>Copy the <strong>id</strong> field from the response -&gt; SharePoint Site ID</p>
               </div>
             </section>
           )}

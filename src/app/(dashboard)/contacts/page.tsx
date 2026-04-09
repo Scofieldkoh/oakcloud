@@ -15,7 +15,7 @@ import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-pre
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ContactTable, type ContactInlineFilters, type ContactFilterOption } from '@/components/contacts/contact-table';
 import { ContactFilters, type FilterValues } from '@/components/contacts/contact-filters';
-import { Pagination } from '@/components/companies/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { useToast } from '@/components/ui/toast';

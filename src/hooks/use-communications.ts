@@ -10,12 +10,14 @@ export interface CommunicationConnectorStatus {
   source?: 'tenant' | 'system';
   connectorId?: string;
   mailboxUserIds: string[];
+  ingestAllEmails: boolean;
 }
 
 export interface CommunicationItem {
   id: string;
   companyId: string;
   companyName: string;
+  isUnmatched: boolean;
   subject: string | null;
   preview: string;
   body: string;
@@ -48,7 +50,8 @@ export interface IngestCommunicationsResult {
 }
 
 export interface UpdateCommunicationMailboxesInput {
-  mailboxUserIds: string[];
+  mailboxUserIds?: string[];
+  ingestAllEmails?: boolean;
 }
 
 export interface DeleteCommunicationInput {

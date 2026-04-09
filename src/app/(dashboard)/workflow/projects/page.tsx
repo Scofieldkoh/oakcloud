@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import { FilterChip } from '@/components/ui/filter-chip';
-import { Pagination } from '@/components/companies/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import {
   type WorkflowDueBucket,

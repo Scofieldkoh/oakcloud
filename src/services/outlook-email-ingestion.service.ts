@@ -76,6 +76,9 @@ interface CandidateCommunication {
   toEmails: string[];
 }
 
+const UNMATCHED_COMMUNICATIONS_UEN = '__SYSTEM_UNMATCHED_COMMUNICATIONS__';
+const UNMATCHED_COMMUNICATIONS_NAME = '[System] Unmatched Communications';
+
 export interface OutlookConnectorStatus {
   configured: boolean;
   reason?: 'missing_connector' | 'missing_mailboxes';
@@ -84,12 +87,14 @@ export interface OutlookConnectorStatus {
   source?: 'tenant' | 'system';
   connectorId?: string;
   mailboxUserIds: string[];
+  ingestAllEmails: boolean;
 }
 
 export interface TenantCommunicationListItem {
   id: string;
   companyId: string;
   companyName: string;
+  isUnmatched: boolean;
   subject: string | null;
   preview: string;
   body: string;
@@ -193,6 +198,60 @@ function getMailboxUserIds(settings: unknown): string[] {
   }
 
   return [...new Set(values)];
+}
+
+function getIngestAllEmails(settings: unknown): boolean {
+  if (!settings || typeof settings !== 'object') {
+    return false;
+  }
+
+  return (settings as Record<string, unknown>).ingestAllEmails === true;
+}
+
+function isUnmatchedCommunicationsCompanyUen(uen: string | null | undefined): boolean {
+  return typeof uen === 'string' && uen === UNMATCHED_COMMUNICATIONS_UEN;
+}
+
+async function ensureUnmatchedCommunicationsCompany(tenantId: string): Promise<string> {
+  const existing = await prisma.company.findFirst({
+    where: {
+      tenantId,
+      uen: UNMATCHED_COMMUNICATIONS_UEN,
+    },
+    select: {
+      id: true,
+      deletedAt: true,
+    },
+  });
+
+  if (existing) {
+    if (existing.deletedAt) {
+      await prisma.company.update({
+        where: { id: existing.id },
+        data: {
+          deletedAt: null,
+          deletedReason: null,
+          name: UNMATCHED_COMMUNICATIONS_NAME,
+        },
+      });
+    }
+
+    return existing.id;
+  }
+
+  const company = await prisma.company.create({
+    data: {
+      tenantId,
+      uen: UNMATCHED_COMMUNICATIONS_UEN,
+      name: UNMATCHED_COMMUNICATIONS_NAME,
+      entityType: 'OTHER',
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return company.id;
 }
 
 function collectMessageEmails(message: GraphMessage): {
@@ -396,7 +455,8 @@ export async function updateOutlookConnectorMailboxSettings(input: {
   tenantId: string;
   userId: string;
   isSuperAdmin: boolean;
-  mailboxUserIds: string[];
+  mailboxUserIds?: string[];
+  ingestAllEmails?: boolean;
 }): Promise<OutlookConnectorStatus> {
   const resolved = await resolveOutlookConnector(input.tenantId);
   if (!resolved) {
@@ -409,12 +469,6 @@ export async function updateOutlookConnectorMailboxSettings(input: {
     );
   }
 
-  const normalizedMailboxUserIds = [...new Set(
-    input.mailboxUserIds
-      .map((mailbox) => mailbox.trim().toLowerCase())
-      .filter(Boolean)
-  )];
-
   const existingSettings =
     resolved.connector.settings && typeof resolved.connector.settings === 'object'
       ? (resolved.connector.settings as Record<string, unknown>)
@@ -422,9 +476,21 @@ export async function updateOutlookConnectorMailboxSettings(input: {
 
   const nextSettings: Record<string, unknown> = {
     ...existingSettings,
-    mailboxUserIds: normalizedMailboxUserIds,
   };
-  delete nextSettings.mailboxUserId;
+
+  if (input.mailboxUserIds !== undefined) {
+    const normalizedMailboxUserIds = [...new Set(
+      input.mailboxUserIds
+        .map((mailbox) => mailbox.trim().toLowerCase())
+        .filter(Boolean)
+    )];
+    nextSettings.mailboxUserIds = normalizedMailboxUserIds;
+    delete nextSettings.mailboxUserId;
+  }
+
+  if (input.ingestAllEmails !== undefined) {
+    nextSettings.ingestAllEmails = input.ingestAllEmails;
+  }
 
   await updateConnector(
     resolved.connector.id,
@@ -512,10 +578,12 @@ export async function getOutlookConnectorStatus(tenantId: string): Promise<Outlo
       reason: 'missing_connector',
       message: 'No Microsoft connector found. Configure OneDrive or SharePoint first.',
       mailboxUserIds: [],
+      ingestAllEmails: false,
     };
   }
 
   const mailboxUserIds = getMailboxUserIds(resolved.connector.settings);
+  const ingestAllEmails = getIngestAllEmails(resolved.connector.settings);
   if (mailboxUserIds.length === 0) {
     return {
       configured: false,
@@ -526,6 +594,7 @@ export async function getOutlookConnectorStatus(tenantId: string): Promise<Outlo
       source: resolved.source,
       connectorId: resolved.connector.id,
       mailboxUserIds: [],
+      ingestAllEmails,
     };
   }
 
@@ -535,6 +604,7 @@ export async function getOutlookConnectorStatus(tenantId: string): Promise<Outlo
     source: resolved.source,
     connectorId: resolved.connector.id,
     mailboxUserIds,
+    ingestAllEmails,
   };
 }
 
@@ -568,10 +638,16 @@ export async function listLatestTenantCommunications(
         select: {
           id: true,
           name: true,
+          uen: true,
         },
       })
     : [];
   const companyNameMap = new Map(companies.map((company) => [company.id, company.name]));
+  const unmatchedCompanyIds = new Set(
+    companies
+      .filter((company) => isUnmatchedCommunicationsCompanyUen(company.uen))
+      .map((company) => company.id)
+  );
 
   return rows.map((row) => {
     const body = row.body || '';
@@ -579,6 +655,7 @@ export async function listLatestTenantCommunications(
       id: row.id,
       companyId: row.companyId,
       companyName: companyNameMap.get(row.companyId) ?? 'Unknown Company',
+      isUnmatched: unmatchedCompanyIds.has(row.companyId),
       subject: row.subject,
       preview: buildCommunicationPreview(body),
       body,
@@ -731,9 +808,10 @@ export async function ingestTenantOutlookCommunications(
 
   const credentials = getGraphCredentials(resolvedConnector.connector.credentials);
   const mailboxUserIds = connectorStatus.mailboxUserIds;
+  const ingestAllEmails = connectorStatus.ingestAllEmails;
 
   const { companyStateById, domainToCompanyIds } = await buildCompanyDomainState(input.tenantId);
-  if (companyStateById.size === 0 || domainToCompanyIds.size === 0) {
+  if ((companyStateById.size === 0 || domainToCompanyIds.size === 0) && !ingestAllEmails) {
     return {
       connectorProvider: resolvedConnector.connector.provider as 'ONEDRIVE' | 'SHAREPOINT',
       connectorSource: resolvedConnector.source,
@@ -750,6 +828,7 @@ export async function ingestTenantOutlookCommunications(
   const candidateMap = new Map<string, CandidateCommunication>();
   const newEmailsByCompany = new Map<string, Set<string>>();
   let scannedMessages = 0;
+  let unmatchedCompanyId: string | null = null;
 
   for (const mailboxUserId of mailboxUserIds) {
     const messages = await fetchOutlookMessages(
@@ -777,7 +856,11 @@ export async function ingestTenantOutlookCommunications(
         }
       }
 
-      if (matchedCompanyIds.size === 0) continue;
+      if (matchedCompanyIds.size === 0) {
+        if (!ingestAllEmails) continue;
+        unmatchedCompanyId ??= await ensureUnmatchedCommunicationsCompany(input.tenantId);
+        matchedCompanyIds.add(unmatchedCompanyId);
+      }
 
       const orderedToEmails = [...emails];
       if (fromEmail && orderedToEmails[0] !== fromEmail) {
@@ -910,6 +993,7 @@ export async function ingestTenantOutlookCommunications(
     connectorId: connectorStatus.connectorId,
     lookbackDays,
     mailboxCount: mailboxUserIds.length,
+    ingestAllEmails,
     scannedMessages,
     matchedCompanies,
     storedCommunications: createRows.length,

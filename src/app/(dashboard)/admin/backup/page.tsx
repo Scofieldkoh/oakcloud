@@ -26,7 +26,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { FormInput } from '@/components/ui/form-input';
 import { useToast } from '@/components/ui/toast';
-import { Pagination } from '@/components/companies/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import {
   RefreshCw,
   Trash2,

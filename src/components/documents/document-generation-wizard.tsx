@@ -16,7 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Stepper, type Step } from '@/components/ui/stepper';
-import { Pagination } from '@/components/companies/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import { TemplateSelector, type DocumentTemplate } from './template-selector';
 import { type ValidationResult } from './validation-panel';
 import { A4PageEditor, type A4PageEditorRef } from './a4-page-editor';

@@ -22,6 +22,7 @@ export async function PATCH(request: NextRequest) {
       userId: session.id,
       isSuperAdmin: session.isSuperAdmin,
       mailboxUserIds: params.mailboxUserIds,
+      ingestAllEmails: params.ingestAllEmails,
     });
 
     return NextResponse.json({ connector });

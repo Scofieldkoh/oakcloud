@@ -4558,7 +4558,7 @@ Located in `src/components/ui/`. These components use **Chakra UI** primitives w
 | `Modal` | `isOpen`, `onClose`, `title`, `size`, `closeOnEscape` | Accessible modal dialog |
 | `ConfirmDialog` | `title`, `description`, `variant`, `requireReason` | Confirmation dialog with optional reason input |
 | `Dropdown` | Composable: `Trigger`, `Menu`, `Item`, `align` | Portal-rendered dropdown (prevents clipping in tables) |
-| `Pagination` | `page`, `totalPages`, `total`, `limit`, `onPageChange`, `onLimitChange` | Table pagination with page size selector |
+| `Pagination` | `page`, `totalPages`, `total`, `limit`, `onPageChange`, `onLimitChange`, `showJumpToPage` | Table pagination with page size selector and jump-to-page input |
 | `Checkbox` | `indeterminate`, `label`, `description`, `size` | Checkbox with indeterminate state for bulk selection |
 | `DatePicker` | `value`, `onChange`, `placeholder`, `size`, `label`, `disabled` | Date/range picker with presets (see Filter Components) |
 | `SearchableSelect` | `options`, `value`, `onChange`, `placeholder`, `clearable`, `size` | Searchable dropdown with keyboard navigation |
@@ -4718,14 +4718,6 @@ Pagination uses custom styling that aligns with the button hierarchy:
 - Use `aria-current="page"` on the active page button
 - Disabled buttons use `disabled` attribute (not just styling)
 - Page size `<select>` should have associated `<label>` with `htmlFor`
-
-#### Legacy Pagination Component
-
-Note: There are two pagination components in the codebase:
-- `src/components/ui/pagination.tsx` - **Recommended** (documented above)
-- `src/components/companies/pagination.tsx` - Legacy, similar functionality
-
-Both have equivalent functionality. New pages should use the UI pagination component.
 
 ### Filter Components
 
