@@ -10,6 +10,7 @@ import {
   parseFormAiSettings,
   parseFormSubmissionAiReview,
   parseObject,
+  sanitizeAiReviewSections,
   toAnswerRecord,
   toUploadIds,
   type FormSubmissionAiReview,
@@ -166,7 +167,7 @@ function normalizeGeneratedSections(
     });
   }
 
-  return normalizedSections;
+  return sanitizeAiReviewSections(normalizedSections);
 }
 
 function normalizeAttachmentCheckItems(
@@ -420,11 +421,6 @@ function buildUserPrompt(input: {
           type: 'bullet_list',
           items: ['Concrete issue or risk to review'],
         },
-        {
-          title: 'Recommended actions',
-          type: 'bullet_list',
-          items: ['Specific follow-up step for staff'],
-        },
       ],
     }, null, 2),
     '',
@@ -448,6 +444,8 @@ function buildUserPrompt(input: {
     '- Keep summary concise and operational.',
     '- tags should be short labels, not full sentences.',
     '- sections should contain only useful form-specific output. Use only these section types: text, bullet_list, key_value.',
+    '- In issue descriptions, do not mention internal field keys or uploaded file names.',
+    '- Write issue bullets in plain language, for example: "Attachment appears to be a national identification card instead of a passport."',
     '- If there are no meaningful issues, return reviewRequired=false and keep sections focused and minimal.',
   ].join('\n');
 }

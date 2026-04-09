@@ -569,7 +569,7 @@ export async function getRateWithPreference(
 ): Promise<RateLookupResult | null> {
   // Normalize date to start of day
   const rateDate = new Date(date);
-  rateDate.setHours(0, 0, 0, 0);
+  rateDate.setUTCHours(0, 0, 0, 0);
 
   // 1. Check tenant manual override first
   if (tenantId) {
@@ -607,7 +607,7 @@ export async function getRateWithPreference(
     // For monthly preference, use first day of the document's month
     // Monthly rates are stored as first day of month (e.g., Dec 1 for Nov's end-of-month rate)
     // A document dated Nov 19 → look for Nov 1 rate
-    lookupDate = new Date(Date.UTC(rateDate.getFullYear(), rateDate.getMonth(), 1));
+    lookupDate = new Date(Date.UTC(rateDate.getUTCFullYear(), rateDate.getUTCMonth(), 1));
     preferredRateType = 'MAS_MONTHLY_RATE';
   } else {
     // For daily preference, use exact date
@@ -724,7 +724,7 @@ export async function getRate(
 ): Promise<RateLookupResult | null> {
   // Normalize date to start of day
   const rateDate = new Date(date);
-  rateDate.setHours(0, 0, 0, 0);
+  rateDate.setUTCHours(0, 0, 0, 0);
 
   // 1. Check tenant override
   if (tenantId) {

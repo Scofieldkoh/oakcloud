@@ -11,6 +11,7 @@ import { hasPermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { clearDuplicateReferencesToDocument } from '@/services/duplicate-detection.service';
+import { resetProcessingRetryState } from '@/services/document-processing.service';
 import { handleApiError } from '@/lib/api-error-handler';
 import type { PipelineStatus } from '@/generated/prisma';
 
@@ -26,6 +27,8 @@ interface BulkResult {
   success: boolean;
   error?: string;
 }
+
+const MAX_BULK_DOCUMENTS = 1000;
 
 /**
  * POST /api/processing-documents/bulk
@@ -47,11 +50,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (documentIds.length > 100) {
+    if (documentIds.length > MAX_BULK_DOCUMENTS) {
       return NextResponse.json(
         {
           success: false,
-          error: { code: 'VALIDATION_ERROR', message: 'Maximum 100 documents per bulk operation' },
+          error: { code: 'VALIDATION_ERROR', message: `Maximum ${MAX_BULK_DOCUMENTS} documents per bulk operation` },
         },
         { status: 400 }
       );
@@ -202,7 +205,7 @@ export async function POST(request: NextRequest) {
             }
 
             // Check if document can be re-extracted
-            const canRetrigger: PipelineStatus[] = ['UPLOADED', 'FAILED_RETRYABLE'];
+            const canRetrigger: PipelineStatus[] = ['UPLOADED', 'FAILED_RETRYABLE', 'FAILED_PERMANENT', 'DEAD_LETTER'];
             if (!canRetrigger.includes(doc.pipelineStatus)) {
               results.push({
                 documentId: doc.id,
@@ -211,6 +214,8 @@ export async function POST(request: NextRequest) {
               });
               continue;
             }
+
+            await resetProcessingRetryState(doc.id);
 
             // Update status to QUEUED
             await prisma.processingDocument.update({

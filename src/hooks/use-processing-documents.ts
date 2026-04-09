@@ -180,6 +180,8 @@ export interface ProcessingDocumentSearchResult {
   totalPages: number;
 }
 
+const SELECT_ALL_FETCH_PAGE_SIZE = 200;
+
 // API functions
 async function fetchProcessingDocuments(
   params: ProcessingDocumentSearchParams
@@ -206,6 +208,40 @@ async function fetchProcessingDocuments(
   }
   const result = await response.json();
   return result.data;
+}
+
+async function fetchAllProcessingDocuments(
+  params: ProcessingDocumentSearchParams
+): Promise<ProcessingDocumentListItem[]> {
+  const firstPage = await fetchProcessingDocuments({
+    ...params,
+    page: 1,
+    limit: SELECT_ALL_FETCH_PAGE_SIZE,
+  });
+
+  if (firstPage.totalPages <= 1) {
+    return firstPage.documents;
+  }
+
+  const remainingPages = Array.from(
+    { length: firstPage.totalPages - 1 },
+    (_value, index) => index + 2
+  );
+
+  const remainingResults = await Promise.all(
+    remainingPages.map((page) =>
+      fetchProcessingDocuments({
+        ...params,
+        page,
+        limit: SELECT_ALL_FETCH_PAGE_SIZE,
+      })
+    )
+  );
+
+  return [
+    ...firstPage.documents,
+    ...remainingResults.flatMap((result) => result.documents),
+  ];
 }
 
 async function fetchProcessingDocument(id: string): Promise<{
@@ -247,13 +283,20 @@ interface TriggerExtractionOptions {
   documentId: string;
   model?: string;
   context?: string;
+  batchMode?: boolean;
 }
 
-async function triggerExtraction(options: TriggerExtractionOptions): Promise<{ extractionId: string }> {
-  const { documentId, model, context } = options;
-  const body: { model?: string; context?: string } = {};
+async function triggerExtraction(options: TriggerExtractionOptions): Promise<{
+  extractionId?: string;
+  revisionId?: string;
+  jobId?: string;
+  estimatedCompletionSeconds?: number;
+}> {
+  const { documentId, model, context, batchMode } = options;
+  const body: { model?: string; context?: string; batchMode?: boolean } = {};
   if (model) body.model = model;
   if (context) body.context = context;
+  if (batchMode) body.batchMode = true;
 
   const response = await fetch(`/api/processing-documents/${documentId}/extract`, {
     method: 'POST',
@@ -412,10 +455,23 @@ export function useProcessingDocuments(params: ProcessingDocumentSearchParams = 
       params.homeTotalTo,
     ],
     queryFn: () => fetchProcessingDocuments(params),
-    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
+    // Processing status changes frequently while extraction jobs are running.
+    staleTime: 15 * 1000,
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
+    refetchOnMount: true,
     placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
+  });
+}
+
+export function useSelectAllProcessingDocuments() {
+  return useMutation({
+    mutationFn: async (params: ProcessingDocumentSearchParams) => {
+      const documents = await fetchAllProcessingDocuments(params);
+      return {
+        ids: documents.map((document) => document.id),
+        documents,
+      };
+    },
   });
 }
 
@@ -480,9 +536,10 @@ export function useProcessingDocumentView(id: string) {
     queryKey: ['processing-document-view', id],
     queryFn: () => fetchProcessingDocumentView(id),
     enabled: !!id,
-    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
+    // The detail page is used to monitor live extraction progress, so always refresh on reopen.
+    staleTime: 0,
     gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
+    refetchOnMount: 'always',
   });
 }
 
@@ -522,6 +579,7 @@ export function useTriggerExtraction() {
     mutationFn: (options: TriggerExtractionOptions) => triggerExtraction(options),
     onSuccess: (_, options) => {
       queryClient.invalidateQueries({ queryKey: ['processing-document', options.documentId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-document-view', options.documentId] });
       queryClient.invalidateQueries({ queryKey: ['processing-documents'] });
     },
   });
@@ -573,6 +631,7 @@ export function useApproveRevision() {
     }) => approveRevision(documentId, revisionId, lockVersion, body),
     onSuccess: (_, { documentId }) => {
       queryClient.invalidateQueries({ queryKey: ['processing-document', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-document-view', documentId] });
       queryClient.invalidateQueries({ queryKey: ['revision-history', documentId] });
       queryClient.invalidateQueries({ queryKey: ['processing-documents'] });
     },

@@ -12,6 +12,7 @@ import { StorageKeys } from '@/lib/storage/config';
 import { createAuditLog } from '@/lib/audit';
 import { hashBlake3 } from '@/lib/encryption';
 import { createLogger } from '@/lib/logger';
+import { getNextCronOccurrence } from '@/lib/cron-utils';
 import { Prisma } from '@/generated/prisma';
 import type { BackupStatus } from '@/generated/prisma';
 
@@ -1816,9 +1817,7 @@ class BackupService {
     }
 
     // Calculate next run time based on cron pattern
-    const nextRunAt = data.isEnabled
-      ? this.calculateNextRun(data.cronPattern, data.timezone || 'UTC')
-      : null;
+    const nextRunAt = data.isEnabled ? getNextCronOccurrence(data.cronPattern, data.timezone || 'UTC') : null;
 
     const schedule = await prisma.backupSchedule.upsert({
       where: { tenantId },
@@ -1928,6 +1927,14 @@ class BackupService {
       return null;
     }
 
+    const scheduledRunAt = schedule.nextRunAt;
+    const executionStartedAt = new Date();
+
+    if (!scheduledRunAt || scheduledRunAt > executionStartedAt) {
+      log.debug(`Schedule ${scheduleId} is no longer due`);
+      return null;
+    }
+
     if (schedule.tenant.deletedAt) {
       log.warn(`Tenant ${schedule.tenantId} is deleted, disabling schedule`);
       await prisma.backupSchedule.update({
@@ -1939,6 +1946,30 @@ class BackupService {
 
     log.info(`Executing scheduled backup for tenant ${schedule.tenant.name}`);
 
+    const nextRunAt = getNextCronOccurrence(schedule.cronPattern, schedule.timezone, executionStartedAt);
+    const claimResult = await prisma.backupSchedule.updateMany({
+      where: {
+        id: scheduleId,
+        isEnabled: true,
+        nextRunAt: scheduledRunAt,
+      },
+      data: {
+        nextRunAt,
+      },
+    });
+
+    if (claimResult.count === 0) {
+      log.debug(`Schedule ${scheduleId} was already claimed by another worker`);
+      return null;
+    }
+
+    if (schedule.lastRunAt && schedule.lastRunAt.getTime() >= scheduledRunAt.getTime()) {
+      log.warn(
+        `Schedule ${scheduleId} already ran for ${scheduledRunAt.toISOString()}, advanced next run to ${nextRunAt.toISOString()}`
+      );
+      return null;
+    }
+
     try {
       // Create the backup (SCHEDULED type)
       const result = await this.createScheduledBackup(
@@ -1947,13 +1978,11 @@ class BackupService {
       );
 
       // Update schedule with success
-      const nextRunAt = this.calculateNextRun(schedule.cronPattern, schedule.timezone);
       await prisma.backupSchedule.update({
         where: { id: scheduleId },
         data: {
-          lastRunAt: new Date(),
+          lastRunAt: executionStartedAt,
           lastBackupId: result.backupId,
-          nextRunAt,
           lastError: null,
           consecutiveFailures: 0,
         },
@@ -1968,12 +1997,10 @@ class BackupService {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
       // Update schedule with failure
-      const nextRunAt = this.calculateNextRun(schedule.cronPattern, schedule.timezone);
       await prisma.backupSchedule.update({
         where: { id: scheduleId },
         data: {
-          lastRunAt: new Date(),
-          nextRunAt,
+          lastRunAt: executionStartedAt,
           lastError: errorMessage,
           consecutiveFailures: { increment: 1 },
         },
@@ -2088,65 +2115,6 @@ class BackupService {
           log.error(`Failed to delete old backup ${backup.id}:`, error);
         }
       }
-    }
-  }
-
-  /**
-   * Calculate the next run time based on cron pattern and timezone.
-   * Returns a UTC Date representing when the backup should next run.
-   *
-   * The cron hour/minute are interpreted in the given timezone, then
-   * converted to UTC for storage so the scheduler can compare with Date.now().
-   */
-  private calculateNextRun(cronPattern: string, timezone: string): Date {
-    // Parse cron pattern: minute hour dayOfMonth month dayOfWeek
-    const parts = cronPattern.split(' ');
-    if (parts.length !== 5) {
-      log.warn(`Invalid cron pattern: ${cronPattern}, defaulting to tomorrow`);
-      return new Date(Date.now() + 24 * 60 * 60 * 1000);
-    }
-
-    const [minute, hour] = parts;
-    const now = new Date();
-
-    const targetMinute = minute === '*' ? 0 : parseInt(minute, 10);
-    const targetHour = hour === '*' ? now.getUTCHours() : parseInt(hour, 10);
-
-    // Get the UTC offset for the target timezone using Intl
-    const tz = timezone || 'UTC';
-    const offsetMinutes = this.getTimezoneOffsetMinutes(tz, now);
-
-    // Build next run in UTC: target time in timezone converted to UTC
-    const nextRun = new Date(now);
-    // Set to target hour/minute in UTC, adjusted by timezone offset
-    nextRun.setUTCHours(targetHour, targetMinute, 0, 0);
-    // Subtract timezone offset to convert from local timezone to UTC
-    // e.g. SGT is +480 min, so 22:30 SGT = 22:30 - 480min = 14:30 UTC
-    nextRun.setUTCMinutes(nextRun.getUTCMinutes() - offsetMinutes);
-
-    // If the calculated time is in the past, move to next day
-    if (nextRun <= now) {
-      nextRun.setUTCDate(nextRun.getUTCDate() + 1);
-    }
-
-    return nextRun;
-  }
-
-  /**
-   * Get the UTC offset in minutes for a given IANA timezone at a specific date.
-   * Positive = east of UTC (e.g. Asia/Singapore = +480).
-   */
-  private getTimezoneOffsetMinutes(timezone: string, date: Date): number {
-    try {
-      // Format the date in the target timezone and in UTC, then compute difference
-      const utcStr = date.toLocaleString('en-US', { timeZone: 'UTC' });
-      const tzStr = date.toLocaleString('en-US', { timeZone: timezone });
-      const utcDate = new Date(utcStr);
-      const tzDate = new Date(tzStr);
-      return (tzDate.getTime() - utcDate.getTime()) / (60 * 1000);
-    } catch {
-      log.warn(`Invalid timezone: ${timezone}, falling back to UTC`);
-      return 0;
     }
   }
 

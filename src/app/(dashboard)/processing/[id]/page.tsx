@@ -438,6 +438,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [showSplitterModal, setShowSplitterModal] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('');
+  const [useBatchProcessing, setUseBatchProcessing] = useState(false);
   const [isReExtraction, setIsReExtraction] = useState(false);
   const [skipAliasLearning, setSkipAliasLearning] = useState(false);
   const [isResolvingAlias, setIsResolvingAlias] = useState(false);
@@ -858,10 +859,14 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   }, [handleNavigatePrev, handleNavigateNext]);
 
   // Action handlers
-  const handleTriggerExtraction = async (model?: string, context?: string) => {
+  const handleTriggerExtraction = async (model?: string, context?: string, batchMode?: boolean) => {
     try {
-      await triggerExtraction.mutateAsync({ documentId: id, model, context });
-      success('Extraction triggered successfully');
+      const result = await triggerExtraction.mutateAsync({ documentId: id, model, context, batchMode });
+      success(
+        batchMode
+          ? `Batch extraction queued${result.jobId ? ` (${result.jobId})` : ''}`
+          : 'Extraction triggered successfully'
+      );
       refetch();
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to trigger extraction');
@@ -871,6 +876,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // Handler to show model selector modal for extraction/re-extraction
   const handleShowModelSelector = useCallback((reExtract: boolean = false) => {
     setSelectedModel(''); // Reset selection
+    setUseBatchProcessing(false);
     setAiContext(''); // Reset context
     setSelectedStandardContexts([]); // Reset standard contexts
     setIsReExtraction(reExtract);
@@ -887,10 +893,15 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       buildFullContext(selectedStandardContexts, aiContext),
     ].filter(Boolean).join('\n\n');
 
-    await handleTriggerExtraction(selectedModel || undefined, fullContext || undefined);
+    await handleTriggerExtraction(
+      selectedModel || undefined,
+      fullContext || undefined,
+      useBatchProcessing
+    );
 
     // Reset state
     setSelectedModel('');
+    setUseBatchProcessing(false);
     setAiContext('');
     setSelectedStandardContexts([]);
   };
@@ -1620,7 +1631,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           canTrigger={canTriggerExtraction}
           isPending={triggerExtraction.isPending}
           pipelineStatus={doc.pipelineStatus}
-          onTrigger={handleTriggerExtraction}
+          onTrigger={() => handleShowModelSelector(false)}
         />
       ) : (
         <div className="space-y-4">
@@ -2190,6 +2201,35 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       >
         <ModalBody>
           <div className="space-y-4">
+            {(() => {
+              const batchAvailable = selectedModel === '';
+              return (
+                <div className="card">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <label className="label mb-1 text-sm">Batch Processing</label>
+                      <p className="text-sm text-text-secondary leading-relaxed">
+                        Queue this extraction through Mistral Batch OCR. This is slower, but better suited for background processing.
+                      </p>
+                      <p className="text-xs text-text-muted mt-2 leading-relaxed">
+                        Batch mode currently applies only when the selector is left on Auto so the backend can use Mistral OCR.
+                      </p>
+                    </div>
+                    <Toggle
+                      checked={useBatchProcessing}
+                      onChange={(checked) => setUseBatchProcessing(checked)}
+                      disabled={!batchAvailable}
+                    />
+                  </div>
+                  {!batchAvailable && (
+                    <p className="text-xs text-text-muted mt-3">
+                      Pick Auto first to enable Mistral batch extraction.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Company Context - Auto-populated, read-only */}
             <div className="card">
               <div className="flex items-start gap-3">
@@ -2216,7 +2256,8 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               value={selectedModel}
               onChange={setSelectedModel}
               label="AI Model for Extraction"
-              helpText="Select the AI model to use for extracting invoice/receipt data."
+              helpText="Leave this on Auto to let the backend choose the best extraction path, including Mistral OCR when configured."
+              allowAuto
               jsonModeOnly
               showContextInput
               contextValue={aiContext}
@@ -2315,7 +2356,7 @@ function NoExtractionPlaceholder({
   canTrigger: boolean;
   isPending: boolean;
   pipelineStatus: string;
-  onTrigger: () => void;
+  onTrigger: () => void | Promise<void>;
 }) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center py-12">

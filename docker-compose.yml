@@ -16,6 +16,11 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - .:/app
       - /app/node_modules
@@ -24,7 +29,7 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: oakcloud-tunnel
     restart: unless-stopped
-    command: tunnel run
+    command: tunnel --protocol http2 run
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:

@@ -24,6 +24,8 @@ interface BulkMergeRequest {
     documentIds: string[];
 }
 
+const MAX_BULK_MERGE_DOCUMENTS = 100;
+
 export async function POST(request: NextRequest) {
     try {
         const session = await requireAuth();
@@ -34,6 +36,13 @@ export async function POST(request: NextRequest) {
         if (!documentIds || !Array.isArray(documentIds) || documentIds.length < 2) {
             return NextResponse.json(
                 { error: { message: 'At least 2 document IDs are required for merging' } },
+                { status: 400 }
+            );
+        }
+
+        if (documentIds.length > MAX_BULK_MERGE_DOCUMENTS) {
+            return NextResponse.json(
+                { error: { message: `Maximum ${MAX_BULK_MERGE_DOCUMENTS} documents can be merged at once` } },
                 { status: 400 }
             );
         }

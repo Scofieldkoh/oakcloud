@@ -44,6 +44,63 @@ function normalizeCurrency(value?: string): string | undefined {
   return trimmed.toUpperCase();
 }
 
+function normalizeCountry(value?: string): string | undefined {
+  if (!value) return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  if (trimmed.toUpperCase() === 'SINGAPORE') {
+    return 'Singapore';
+  }
+
+  return normalizeCompanyName(trimmed) || trimmed;
+}
+
+function splitLevelAndUnit(level?: string, unit?: string): { level?: string; unit?: string } {
+  const cleanLevel = level?.trim().replace(/^#/, '');
+  const cleanUnit = unit?.trim().replace(/^#/, '');
+
+  const combined = cleanLevel && !cleanUnit
+    ? cleanLevel.match(/^([A-Z0-9]+)-([A-Z0-9]+)$/i)
+    : cleanUnit && !cleanLevel
+      ? cleanUnit.match(/^([A-Z0-9]+)-([A-Z0-9]+)$/i)
+      : null;
+
+  if (combined) {
+    return {
+      level: combined[1],
+      unit: combined[2],
+    };
+  }
+
+  return {
+    level: cleanLevel || undefined,
+    unit: cleanUnit || undefined,
+  };
+}
+
+function normalizeStructuredAddress<T extends {
+  streetName: string;
+  buildingName?: string;
+  level?: string;
+  unit?: string;
+  country?: string;
+}>(address: T): T {
+  const normalizedParts = splitLevelAndUnit(address.level, address.unit);
+
+  return {
+    ...address,
+    level: normalizedParts.level,
+    unit: normalizedParts.unit,
+    streetName: normalizeAddress(address.streetName) || address.streetName,
+    buildingName: address.buildingName
+      ? normalizeAddress(address.buildingName)
+      : undefined,
+    country: normalizeCountry(address.country),
+  };
+}
+
 /**
  * Build full address string from address components
  */
@@ -147,23 +204,11 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
 
   // Normalize addresses
   if (normalized.registeredAddress) {
-    normalized.registeredAddress = {
-      ...normalized.registeredAddress,
-      streetName: normalizeAddress(normalized.registeredAddress.streetName) || normalized.registeredAddress.streetName,
-      buildingName: normalized.registeredAddress.buildingName
-        ? normalizeAddress(normalized.registeredAddress.buildingName)
-        : undefined,
-    };
+    normalized.registeredAddress = normalizeStructuredAddress(normalized.registeredAddress);
   }
 
   if (normalized.mailingAddress) {
-    normalized.mailingAddress = {
-      ...normalized.mailingAddress,
-      streetName: normalizeAddress(normalized.mailingAddress.streetName) || normalized.mailingAddress.streetName,
-      buildingName: normalized.mailingAddress.buildingName
-        ? normalizeAddress(normalized.mailingAddress.buildingName)
-        : undefined,
-    };
+    normalized.mailingAddress = normalizeStructuredAddress(normalized.mailingAddress);
   }
 
   // Normalize officers

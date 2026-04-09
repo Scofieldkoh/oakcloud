@@ -219,6 +219,9 @@ export async function checkForDuplicates(
   // Score each candidate
   for (const candidate of candidateDocs) {
     if (!candidate.currentRevision) continue;
+    if (!hasMatchingDocumentNumber(currentRevision.documentNumber, candidate.currentRevision.documentNumber)) {
+      continue;
+    }
 
     const score = calculateDuplicateScore(currentRevision, candidate.currentRevision);
 
@@ -345,46 +348,27 @@ function calculateVendorSimilarity(name1: string | null, name2: string | null): 
  * Calculate document number score
  */
 function calculateDocumentNumberScore(num1: string | null, num2: string | null): number {
-  if (!num1 || !num2) return 0;
-
-  const norm1 = num1.toLowerCase().trim();
-  const norm2 = num2.toLowerCase().trim();
-
-  if (norm1 === norm2) return 1.0;
-
-  // Near match using edit distance
-  const distance = levenshteinDistance(norm1, norm2);
-  if (distance <= 2) return 0.8;
-  if (distance <= 4) return 0.5;
-
-  return 0;
+  return hasMatchingDocumentNumber(num1, num2) ? 1.0 : 0;
 }
 
 /**
- * Levenshtein distance
+ * Require document numbers to match after normalizing case and punctuation.
+ * This keeps OCR formatting differences from blocking true matches while
+ * preventing unrelated documents from being flagged purely on similarity.
  */
-function levenshteinDistance(s1: string, s2: string): number {
-  const matrix: number[][] = [];
+function hasMatchingDocumentNumber(num1: string | null, num2: string | null): boolean {
+  const norm1 = normalizeDocumentNumber(num1);
+  const norm2 = normalizeDocumentNumber(num2);
 
-  for (let i = 0; i <= s1.length; i++) {
-    matrix[i] = [i];
-  }
-  for (let j = 0; j <= s2.length; j++) {
-    matrix[0][j] = j;
-  }
+  if (!norm1 || !norm2) return false;
 
-  for (let i = 1; i <= s1.length; i++) {
-    for (let j = 1; j <= s2.length; j++) {
-      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + cost
-      );
-    }
-  }
+  return norm1 === norm2;
+}
 
-  return matrix[s1.length][s2.length];
+function normalizeDocumentNumber(value: string | null): string {
+  if (!value) return '';
+
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 /**

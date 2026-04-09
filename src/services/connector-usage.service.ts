@@ -6,8 +6,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma';
-import { calculateCost } from '@/lib/ai/models';
-import type { AIModel } from '@/lib/ai/types';
+import { calculateUsageCost } from '@/lib/ai/models';
 
 // ============================================================================
 // Types
@@ -115,8 +114,27 @@ export async function logConnectorUsage(params: LogUsageParams): Promise<void> {
     metadata,
   } = params;
 
+  const metadataRecord =
+    metadata && typeof metadata === 'object' ? metadata : undefined;
+  const pagesProcessed =
+    typeof metadataRecord?.pagesProcessed === 'number'
+      ? metadataRecord.pagesProcessed
+      : undefined;
+  const batchMode =
+    metadataRecord?.batchMode === true ||
+    typeof metadataRecord?.batchJobId === 'string' ||
+    (typeof operation === 'string' && operation.includes('batch'));
+
   // Calculate cost in micro-dollars (1/10000 of USD for 4 decimal precision)
-  const costUsd = calculateCost(model as AIModel, inputTokens, outputTokens);
+  const costUsd = calculateUsageCost({
+    modelId: model,
+    provider,
+    inputTokens,
+    outputTokens,
+    totalTokens,
+    pagesProcessed,
+    batchMode,
+  });
   const costCents = Math.round(costUsd * 10000);
 
   try {

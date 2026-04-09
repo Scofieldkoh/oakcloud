@@ -10,12 +10,15 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '@/lib/document-categories';
+import { getAccountsForSelect } from '@/services/chart-of-accounts.service';
 
 const log = createLogger('bulk-export');
 
 interface BulkExportRequest {
   documentIds: string[];
 }
+
+const MAX_BULK_EXPORT_DOCUMENTS = 1000;
 
 // Status label mappings
 const PIPELINE_STATUS_LABELS: Record<string, string> = {
@@ -60,6 +63,16 @@ function formatDecimal(value: unknown): number | string {
   return isNaN(num) ? '' : num;
 }
 
+type AccountNameLookup = Record<string, string>;
+
+async function buildAccountNameLookup(
+  tenantId: string | null,
+  companyId: string | null | undefined
+): Promise<AccountNameLookup> {
+  const accounts = await getAccountsForSelect(tenantId, companyId ?? null, undefined, true);
+  return Object.fromEntries(accounts.map((account) => [account.code, account.name]));
+}
+
 /**
  * POST /api/processing-documents/bulk-export
  * Export multiple documents to Excel with headers and line items
@@ -80,11 +93,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (documentIds.length > 100) {
+    if (documentIds.length > MAX_BULK_EXPORT_DOCUMENTS) {
       return NextResponse.json(
         {
           success: false,
-          error: { code: 'VALIDATION_ERROR', message: 'Maximum 100 documents per export request' },
+          error: { code: 'VALIDATION_ERROR', message: `Maximum ${MAX_BULK_EXPORT_DOCUMENTS} documents per export request` },
         },
         { status: 400 }
       );
@@ -100,6 +113,11 @@ export async function POST(request: NextRequest) {
             fileName: true,
             originalFileName: true,
             createdAt: true,
+            company: {
+              select: {
+                tenantId: true,
+              },
+            },
           },
         },
         currentRevision: {
@@ -229,10 +247,12 @@ export async function POST(request: NextRequest) {
       { header: 'Description', key: 'description', width: 50 },
       { header: 'Quantity', key: 'quantity', width: 12 },
       { header: 'Unit Price', key: 'unitPrice', width: 15 },
+      { header: 'Currency', key: 'currency', width: 10 },
       { header: 'Amount', key: 'amount', width: 15 },
       { header: 'GST Amount', key: 'gstAmount', width: 15 },
       { header: 'Tax Code', key: 'taxCode', width: 12 },
       { header: 'Account Code', key: 'accountCode', width: 15 },
+      { header: 'Account Name', key: 'accountName', width: 28 },
       { header: 'Home Amount', key: 'homeAmount', width: 15 },
       { header: 'Home GST Amount', key: 'homeGstAmount', width: 15 },
     ];
@@ -246,11 +266,20 @@ export async function POST(request: NextRequest) {
     };
 
     // Add line item data
+    const accountLookupCache = new Map<string, AccountNameLookup>();
     for (const doc of accessibleDocs) {
       const revision = doc.currentRevision ?? doc.revisions[0] ?? null;
       if (!revision?.items || revision.items.length === 0) continue;
 
       const fileName = doc.document?.fileName || doc.document?.originalFileName || '';
+      const companyId = doc.document?.companyId;
+      const tenantId = doc.document?.company?.tenantId ?? session.tenantId;
+      const lookupKey = `${tenantId || ''}::${companyId || ''}`;
+      let accountNameLookup = accountLookupCache.get(lookupKey);
+      if (!accountNameLookup) {
+        accountNameLookup = await buildAccountNameLookup(tenantId, companyId);
+        accountLookupCache.set(lookupKey, accountNameLookup);
+      }
 
       for (const item of revision.items) {
         lineItemsSheet.addRow({
@@ -266,10 +295,12 @@ export async function POST(request: NextRequest) {
           description: item.description || '',
           quantity: formatDecimal(item.quantity),
           unitPrice: formatDecimal(item.unitPrice),
+          currency: revision?.currency || '',
           amount: formatDecimal(item.amount),
           gstAmount: formatDecimal(item.gstAmount),
           taxCode: item.taxCode || '',
           accountCode: item.accountCode || '',
+          accountName: item.accountCode ? (accountNameLookup[item.accountCode] || '') : '',
           homeAmount: formatDecimal(item.homeAmount),
           homeGstAmount: formatDecimal(item.homeGstAmount),
         });

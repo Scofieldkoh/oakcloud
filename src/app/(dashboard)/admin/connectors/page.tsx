@@ -80,7 +80,14 @@ function toLocalDateString(date: Date): string {
 // ============================================================================
 
 type ConnectorType = 'AI_PROVIDER' | 'STORAGE';
-type ConnectorProvider = 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'OPENROUTER' | 'ONEDRIVE' | 'SHAREPOINT';
+type ConnectorProvider =
+  | 'OPENAI'
+  | 'ANTHROPIC'
+  | 'GOOGLE'
+  | 'OPENROUTER'
+  | 'MISTRAL'
+  | 'ONEDRIVE'
+  | 'SHAREPOINT';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
 function parseMailboxUserIdsInput(raw: string): {
@@ -280,6 +287,7 @@ export default function ConnectorsPage() {
     : null;
   const { data: usageData, isLoading: usageLoading } = useConnectorUsage(usageParams);
   const exportMutation = useExportUsage();
+  const usageUnitLabel = usageConnector?.provider === 'MISTRAL' ? 'Pages' : 'Tokens';
 
   // Access control
   if (!isSuperAdmin && !isTenantAdmin) {
@@ -720,6 +728,8 @@ export default function ConnectorsPage() {
           <option value="OPENAI">OpenAI</option>
           <option value="ANTHROPIC">Anthropic</option>
           <option value="GOOGLE">Google AI</option>
+          <option value="OPENROUTER">OpenRouter</option>
+          <option value="MISTRAL">Mistral OCR</option>
           <option value="ONEDRIVE">OneDrive</option>
           <option value="SHAREPOINT">SharePoint</option>
         </select>
@@ -1350,7 +1360,7 @@ export default function ConnectorsPage() {
                   </div>
                 </div>
                 <div className="bg-bg-tertiary rounded-lg p-3">
-                  <div className="text-xs text-text-muted uppercase tracking-wide">Total Tokens</div>
+                  <div className="text-xs text-text-muted uppercase tracking-wide">Total {usageUnitLabel}</div>
                   <div className="text-xl font-semibold text-text-primary mt-1">
                     {formatTokens(usageData.stats.totalTokens)}
                   </div>
@@ -1407,7 +1417,7 @@ export default function ConnectorsPage() {
                         <th className="text-left">Date</th>
                         <th className="text-left">Model</th>
                         <th className="text-left">Operation</th>
-                        <th className="text-right">Tokens</th>
+                        <th className="text-right">{usageUnitLabel}</th>
                         <th className="text-right">Cost</th>
                         <th className="text-right">Latency</th>
                         <th className="text-center">Status</th>

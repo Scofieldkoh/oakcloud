@@ -37,6 +37,12 @@ export const PROVIDER_CONFIG: Record<string, {
     bgColor: 'bg-violet-100 dark:bg-violet-900/30',
     label: 'OpenRouter',
   },
+  MISTRAL: {
+    icon: Brain,
+    color: 'text-rose-600 dark:text-rose-400',
+    bgColor: 'bg-rose-100 dark:bg-rose-900/30',
+    label: 'Mistral OCR',
+  },
   // Storage Providers
   ONEDRIVE: {
     icon: Cloud,

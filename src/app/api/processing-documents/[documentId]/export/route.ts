@@ -12,6 +12,7 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '@/lib/document-categories';
+import { getAccountsForSelect } from '@/services/chart-of-accounts.service';
 
 const log = createLogger('document-export');
 
@@ -62,6 +63,16 @@ function formatDecimal(value: unknown): number | string {
   return isNaN(num) ? '' : num;
 }
 
+type AccountNameLookup = Record<string, string>;
+
+async function buildAccountNameLookup(
+  tenantId: string | null,
+  companyId: string | null | undefined
+): Promise<AccountNameLookup> {
+  const accounts = await getAccountsForSelect(tenantId, companyId ?? null, undefined, true);
+  return Object.fromEntries(accounts.map((account) => [account.code, account.name]));
+}
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function addHeaderRow(sheet: ExcelJS.Worksheet, doc: any) {
@@ -96,7 +107,7 @@ function addHeaderRow(sheet: ExcelJS.Worksheet, doc: any) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function addLineItemRows(sheet: ExcelJS.Worksheet, doc: any) {
+function addLineItemRows(sheet: ExcelJS.Worksheet, doc: any, accountNameLookup: AccountNameLookup) {
   const revision = doc.currentRevision;
   if (!revision?.items || revision.items.length === 0) return;
 
@@ -118,10 +129,12 @@ function addLineItemRows(sheet: ExcelJS.Worksheet, doc: any) {
       description: item.description || '',
       quantity: formatDecimal(item.quantity),
       unitPrice: formatDecimal(item.unitPrice),
+      currency: revision?.currency || '',
       amount: formatDecimal(item.amount),
       gstAmount: formatDecimal(item.gstAmount),
       taxCode: item.taxCode || '',
       accountCode: item.accountCode || '',
+      accountName: item.accountCode ? (accountNameLookup[item.accountCode] || '') : '',
       homeAmount: formatDecimal(item.homeAmount),
       homeGstAmount: formatDecimal(item.homeGstAmount),
     });
@@ -149,6 +162,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             fileName: true,
             originalFileName: true,
             createdAt: true,
+            company: {
+              select: {
+                tenantId: true,
+              },
+            },
           },
         },
         currentRevision: {
@@ -240,10 +258,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { header: 'Description', key: 'description', width: 50 },
       { header: 'Quantity', key: 'quantity', width: 12 },
       { header: 'Unit Price', key: 'unitPrice', width: 15 },
+      { header: 'Currency', key: 'currency', width: 10 },
       { header: 'Amount', key: 'amount', width: 15 },
       { header: 'GST Amount', key: 'gstAmount', width: 15 },
       { header: 'Tax Code', key: 'taxCode', width: 12 },
       { header: 'Account Code', key: 'accountCode', width: 15 },
+      { header: 'Account Name', key: 'accountName', width: 28 },
       { header: 'Home Amount', key: 'homeAmount', width: 15 },
       { header: 'Home GST Amount', key: 'homeGstAmount', width: 15 },
     ];
@@ -258,7 +278,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Add main document data
     addHeaderRow(headersSheet, doc);
-    addLineItemRows(lineItemsSheet, doc);
+    const accountLookupCache = new Map<string, AccountNameLookup>();
+    const mainTenantId = doc.document?.company?.tenantId ?? session.tenantId;
+    const mainLookupKey = `${mainTenantId || ''}::${doc.document?.companyId || ''}`;
+    const mainAccountNameLookup = await buildAccountNameLookup(mainTenantId, doc.document?.companyId);
+    accountLookupCache.set(mainLookupKey, mainAccountNameLookup);
+    addLineItemRows(lineItemsSheet, doc, mainAccountNameLookup);
 
     // Add linked documents if requested
     if (includeLinked) {
@@ -302,6 +327,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 fileName: true,
                 originalFileName: true,
                 createdAt: true,
+                company: {
+                  select: {
+                    tenantId: true,
+                  },
+                },
               },
             },
             currentRevision: {
@@ -318,8 +348,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           // Check access to linked document's company
           const linkedCompanyId = linkedDoc.document?.companyId;
           if (linkedCompanyId && await canAccessCompany(session, linkedCompanyId)) {
+            const linkedTenantId = linkedDoc.document?.company?.tenantId ?? session.tenantId;
+            const lookupKey = `${linkedTenantId || ''}::${linkedCompanyId}`;
+            let accountNameLookup = accountLookupCache.get(lookupKey);
+            if (!accountNameLookup) {
+              accountNameLookup = await buildAccountNameLookup(linkedTenantId, linkedCompanyId);
+              accountLookupCache.set(lookupKey, accountNameLookup);
+            }
             addHeaderRow(headersSheet, linkedDoc);
-            addLineItemRows(lineItemsSheet, linkedDoc);
+            addLineItemRows(lineItemsSheet, linkedDoc, accountNameLookup);
           }
         }
       }

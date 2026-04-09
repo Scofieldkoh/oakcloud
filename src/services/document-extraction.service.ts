@@ -11,15 +11,34 @@ import { Prisma } from '@/generated/prisma';
 import type { DocumentExtraction } from '@/generated/prisma';
 import type { ExtractionType, DocumentCategory, DocumentSubCategory, ExchangeRateSource } from '@/generated/prisma';
 import { createRevision, type LineItemInput } from './document-revision.service';
-import { transitionPipelineStatus, recordProcessingAttempt } from './document-processing.service';
+import { transitionPipelineStatus, recordProcessingAttempt, saveCheckpoint } from './document-processing.service';
 import { checkForDuplicates, updateDuplicateStatus } from './duplicate-detection.service';
-import { callAIWithConnector, getBestAvailableModelForTenant, logExtractionResults, isAIDebugEnabled, stripMarkdownCodeBlocks } from '@/lib/ai';
+import {
+  callAIWithConnector,
+  getBestAvailableModelForTenant,
+  getModelConfig,
+  logExtractionResults,
+  isAIDebugEnabled,
+  stripMarkdownCodeBlocks,
+} from '@/lib/ai';
 import type { AIModel } from '@/lib/ai/types';
+import { PDFDocument } from 'pdf-lib';
+import {
+  extractStructuredWithMistralOCR,
+  MISTRAL_OCR_MODEL_ID,
+  MistralOCRNotConfiguredError,
+  inspectMistralOCRBatchJob,
+  submitMistralOCRBatchJob,
+} from '@/lib/ocr/mistral';
 import { storage } from '@/lib/storage';
 import { performAISplitDetection } from '@/lib/split-detection';
 import { hashBlake3 } from '@/lib/encryption';
+import {
+  getDefaultSubCategory,
+  isValidSubCategoryForCategory,
+} from '@/lib/document-categories';
 import { getAccountsForSelect } from './chart-of-accounts.service';
-import { getRate } from './exchange-rate.service';
+import { getRateWithPreference } from './exchange-rate.service';
 import type { SupportedCurrency } from '@/lib/validations/exchange-rate';
 import { learnVendorAlias, resolveVendor } from './vendor-resolution.service';
 import { learnCustomerAlias, resolveCustomer } from './customer-resolution.service';
@@ -33,12 +52,14 @@ const log = createLogger('document-extraction');
 // ============================================================================
 
 export interface ExtractionConfig {
-  provider: 'openai' | 'anthropic' | 'google';
+  provider: 'openai' | 'anthropic' | 'google' | 'mistral';
   model: string;
   promptVersion: string;
   schemaVersion: string;
   /** Additional context to help AI extraction (e.g., "Focus on line items") */
   additionalContext?: string;
+  /** Queue extraction as a Mistral batch job when supported */
+  batchMode?: boolean;
 }
 
 export interface EvidenceBbox {
@@ -129,6 +150,88 @@ const DEFAULT_CONFIG: ExtractionConfig = {
   model: 'gpt-4-vision',
   promptVersion: '1.0.0',
   schemaVersion: '1.0.0',
+};
+
+const OCR_CONFIDENCE_FIELD_JSON_SCHEMA = {
+  type: ['object', 'null'],
+  additionalProperties: false,
+  properties: {
+    value: {
+      type: ['string', 'number', 'null'],
+    },
+    confidence: {
+      type: 'number',
+    },
+  },
+};
+
+const OCR_HOME_CURRENCY_JSON_SCHEMA = {
+  type: ['object', 'null'],
+  additionalProperties: false,
+  properties: {
+    currency: { type: 'string' },
+    exchangeRate: { type: ['string', 'number'] },
+    subtotal: { type: ['string', 'number', 'null'] },
+    taxAmount: { type: ['string', 'number', 'null'] },
+    totalAmount: { type: ['string', 'number'] },
+    confidence: { type: 'number' },
+  },
+};
+
+const OCR_LINE_ITEM_JSON_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    lineNo: { type: 'number' },
+    description: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    quantity: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    unitPrice: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    amount: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    gstAmount: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    taxCode: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    accountCode: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+  },
+  required: ['lineNo', 'description', 'amount'],
+};
+
+const MISTRAL_DOCUMENT_EXTRACTION_JSON_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    documentCategory: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    documentSubCategory: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    vendorName: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    customerName: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    documentNumber: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    documentDate: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    dueDate: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    currency: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    subtotal: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    taxAmount: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    totalAmount: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    supplierGstNo: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    homeCurrencyEquivalent: OCR_HOME_CURRENCY_JSON_SCHEMA,
+    lineItems: {
+      type: 'array',
+      items: OCR_LINE_ITEM_JSON_SCHEMA,
+    },
+    overallConfidence: {
+      type: 'number',
+    },
+  },
+  required: ['documentCategory', 'currency', 'totalAmount', 'lineItems', 'overallConfidence'],
+};
+
+const MISTRAL_LINE_ITEM_ONLY_JSON_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    lineItems: {
+      type: 'array',
+      items: OCR_LINE_ITEM_JSON_SCHEMA,
+    },
+  },
+  required: ['lineItems'],
 };
 
 // ============================================================================
@@ -249,23 +352,94 @@ export async function extractFields(
 
     log.info(`Found ${pages.length} pages for document ${processingDocumentId}`);
 
-    // Fetch company's home currency - this is the currency used for home equivalent calculations
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-      select: { homeCurrency: true },
-    });
-    const companyHomeCurrency = company?.homeCurrency || 'SGD';
-
     // Generate input fingerprint for reproducibility
     const inputFingerprint = generateInputFingerprint(
       pages.map((p) => p.id),
       mergedConfig
     );
 
+    if (mergedConfig.batchMode) {
+      const firstPage = pages[0];
+      if (!firstPage?.storageKey) {
+        throw new Error('No pages to extract from or missing storage key');
+      }
+
+      const fileBuffer = await storage.download(firstPage.storageKey);
+      const mimeType = getDocumentMimeTypeFromStorageKey(firstPage.storageKey);
+      const prompt = await buildBatchExtractionPrompt(
+        tenantId,
+        companyId,
+        mergedConfig.additionalContext
+      );
+      const batchJob = await submitMistralOCRBatchJob({
+        customId: processingDocumentId,
+        document: {
+          base64: fileBuffer.toString('base64'),
+          mimeType,
+        },
+        prompt,
+        tenantId,
+        userId,
+        operation: 'document_field_extraction_batch',
+        usageMetadata: {
+          companyId,
+          processingDocumentId,
+          processingDocumentPageCount: pages.length,
+        },
+        schemaName: 'processing_document_extraction',
+        jsonSchema: MISTRAL_DOCUMENT_EXTRACTION_JSON_SCHEMA,
+        metadata: {
+          processingDocumentId,
+          companyId,
+        },
+      });
+
+      await transitionPipelineStatus(processingDocumentId, 'QUEUED', tenantId, companyId, {
+        reason: 'Queued for Mistral batch extraction',
+        actorUserId: userId,
+      });
+
+      await saveCheckpoint(processingDocumentId, 'FIELD_EXTRACTION', 'STARTED', {
+        mode: 'mistral_batch',
+        batchJobId: batchJob.jobId,
+        prompt,
+        promptVersion: mergedConfig.promptVersion,
+        schemaVersion: mergedConfig.schemaVersion,
+        inputFingerprint,
+        additionalContext: mergedConfig.additionalContext,
+        submittedAt: new Date().toISOString(),
+      } satisfies PendingMistralBatchState);
+
+      return {
+        success: true,
+        extractionId: '',
+      };
+    }
+
     // Perform AI extraction (falls back to simulation if AI unavailable)
     const { result: extractionResult, modelUsed, providerUsed } = await performAIExtraction(pages, tenantId, companyId, userId, mergedConfig);
 
     const latencyMs = Date.now() - startTime;
+    const completed = await persistCompletedExtraction({
+      processingDocumentId,
+      tenantId,
+      companyId,
+      userId,
+      extractionResult,
+      modelUsed,
+      providerUsed,
+      promptVersion: mergedConfig.promptVersion,
+      schemaVersion: mergedConfig.schemaVersion,
+      inputFingerprint,
+      latencyMs,
+    });
+
+    return {
+      success: true,
+      extractionId: completed.extractionId,
+      revisionId: completed.revisionId,
+    };
+    /*
 
     // Build evidence JSON
     const evidenceJson = buildEvidenceJson(extractionResult);
@@ -539,6 +713,7 @@ export async function extractFields(
       extractionId: extraction.id,
       revisionId: revision.id,
     };
+    */
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const isRetryable = isRetryableError(error);
@@ -573,10 +748,481 @@ export async function extractFields(
   }
 }
 
+export async function reconcilePendingMistralBatchExtraction(
+  processingDocumentId: string,
+  tenantId: string,
+  companyId: string,
+  userId: string
+): Promise<{
+  status: 'QUEUED' | 'RUNNING' | 'CANCELLATION_REQUESTED' | 'SUCCESS' | 'FAILED' | 'TIMEOUT_EXCEEDED' | 'CANCELLED' | 'NOT_PENDING';
+  extractionId?: string;
+  revisionId?: string;
+  errorMessage?: string;
+}> {
+  const checkpoint = await prisma.processingCheckpoint.findUnique({
+    where: {
+      processingDocumentId_step: {
+        processingDocumentId,
+        step: 'FIELD_EXTRACTION',
+      },
+    },
+  });
+
+  const state = checkpoint?.stateJson as PendingMistralBatchState | null;
+  if (!checkpoint || !state || state.mode !== 'mistral_batch') {
+    return { status: 'NOT_PENDING' };
+  }
+
+  if (checkpoint.status === 'COMPLETED') {
+    return {
+      status: 'SUCCESS',
+      extractionId: state.extractionId,
+      revisionId: state.revisionId,
+    };
+  }
+
+  if (checkpoint.status === 'FAILED') {
+    return {
+      status: state.failedStatus ?? 'FAILED',
+      errorMessage: state.errorMessage,
+    };
+  }
+
+  const inspected = await inspectMistralOCRBatchJob<Record<string, unknown>>(state.batchJobId, {
+    prompt: state.prompt,
+    tenantId,
+    operation: 'document_field_extraction_batch',
+    // Safe to log here now that completed/failed checkpoints short-circuit earlier.
+    logAIDebug: true,
+    usageMetadata: {
+      companyId,
+      processingDocumentId,
+    },
+  });
+
+  if (inspected.status === 'QUEUED' || inspected.status === 'RUNNING' || inspected.status === 'CANCELLATION_REQUESTED') {
+    return { status: inspected.status };
+  }
+
+  if (
+    inspected.status === 'FAILED' ||
+    inspected.status === 'TIMEOUT_EXCEEDED' ||
+    inspected.status === 'CANCELLED'
+  ) {
+    const isRetryable = inspected.status !== 'CANCELLED';
+    await recordProcessingAttempt(
+      processingDocumentId,
+      'FIELD_EXTRACTION',
+      isRetryable ? 'FAILED_RETRYABLE' : 'FAILED_PERMANENT',
+      {
+        errorCode: 'EXTRACTION_FAILED',
+        errorMessage: inspected.errorMessage,
+        providerRequestId: state.batchJobId,
+      }
+    );
+    await transitionPipelineStatus(
+      processingDocumentId,
+      isRetryable ? 'FAILED_RETRYABLE' : 'FAILED_PERMANENT',
+      tenantId,
+      companyId,
+      { error: { code: 'EXTRACTION_FAILED', message: inspected.errorMessage } }
+    );
+    await saveCheckpoint(processingDocumentId, 'FIELD_EXTRACTION', 'FAILED', {
+      ...state,
+      failedAt: new Date().toISOString(),
+      failedStatus: inspected.status,
+      errorMessage: inspected.errorMessage,
+    });
+
+    return {
+      status: inspected.status,
+      errorMessage: inspected.errorMessage,
+    };
+  }
+
+  if (inspected.status !== 'SUCCESS') {
+    return { status: inspected.status };
+  }
+
+  const pages = await prisma.documentPage.findMany({
+    where: { processingDocumentId },
+    orderBy: { pageNumber: 'asc' },
+    select: {
+      pageNumber: true,
+      storageKey: true,
+      imageFingerprint: true,
+      id: true,
+    },
+  });
+  let extractionResult = mapAIResponseToResult(
+    inspected.result.documentAnnotation as Record<string, unknown>,
+    pages
+  );
+  const firstPage = pages[0];
+  const extractionMimeType = firstPage?.storageKey
+    ? getDocumentMimeTypeFromStorageKey(firstPage.storageKey)
+    : 'image/png';
+
+  if (firstPage?.storageKey && shouldUseChunkedMistralLineItemFallback(extractionResult, pages, extractionMimeType)) {
+    const extractionDocumentBuffer = await storage.download(firstPage.storageKey);
+    extractionResult = await applyChunkedMistralLineItemFallback({
+      result: extractionResult,
+      pages,
+      documentBuffer: extractionDocumentBuffer,
+      mimeType: extractionMimeType,
+      tenantId,
+      companyId,
+      userId,
+      additionalContext: state.additionalContext,
+    });
+  }
+  const completed = await persistCompletedExtraction({
+    processingDocumentId,
+    tenantId,
+    companyId,
+    userId,
+    extractionResult,
+    modelUsed: inspected.result.model,
+    providerUsed: inspected.result.provider,
+    promptVersion: state.promptVersion,
+    schemaVersion: state.schemaVersion,
+    inputFingerprint: state.inputFingerprint,
+    latencyMs: 0,
+  });
+  await saveCheckpoint(processingDocumentId, 'FIELD_EXTRACTION', 'COMPLETED', {
+    ...state,
+    completedAt: new Date().toISOString(),
+    extractionId: completed.extractionId,
+    revisionId: completed.revisionId,
+  });
+
+  return {
+    status: 'SUCCESS',
+    extractionId: completed.extractionId,
+    revisionId: completed.revisionId,
+  };
+}
+
 interface AIExtractionResult {
   result: FieldExtractionResult;
   modelUsed: string;
   providerUsed: string;
+}
+
+interface PendingMistralBatchState {
+  mode: 'mistral_batch';
+  batchJobId: string;
+  prompt: string;
+  promptVersion: string;
+  schemaVersion: string;
+  inputFingerprint: string;
+  additionalContext?: string;
+  submittedAt: string;
+  completedAt?: string;
+  extractionId?: string;
+  revisionId?: string;
+  failedAt?: string;
+  failedStatus?: 'FAILED' | 'TIMEOUT_EXCEEDED' | 'CANCELLED';
+  errorMessage?: string;
+}
+
+async function persistCompletedExtraction(params: {
+  processingDocumentId: string;
+  tenantId: string;
+  companyId: string;
+  userId: string;
+  extractionResult: FieldExtractionResult;
+  modelUsed: string;
+  providerUsed: string;
+  promptVersion: string;
+  schemaVersion: string;
+  inputFingerprint: string;
+  latencyMs: number;
+}): Promise<{ extractionId: string; revisionId: string }> {
+  const {
+    processingDocumentId,
+    tenantId,
+    companyId,
+    userId,
+    extractionResult,
+    modelUsed,
+    providerUsed,
+    promptVersion,
+    schemaVersion,
+    inputFingerprint,
+    latencyMs,
+  } = params;
+
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { homeCurrency: true },
+  });
+  const companyHomeCurrency = company?.homeCurrency || 'SGD';
+  const normalizedExtractionResult = normalizeHeaderAmountsFromLineItems(extractionResult);
+
+  const evidenceJson = buildEvidenceJson(normalizedExtractionResult);
+
+  const extraction = await prisma.documentExtraction.create({
+    data: {
+      processingDocumentId,
+      extractionType: 'FIELDS',
+      provider: providerUsed,
+      model: modelUsed,
+      promptVersion,
+      extractionSchemaVersion: schemaVersion,
+      inputFingerprint,
+      rawJson: extractionResult as unknown as Prisma.InputJsonValue,
+      confidenceJson: buildConfidenceJson(normalizedExtractionResult),
+      evidenceJson: evidenceJson as Prisma.InputJsonValue,
+      overallConfidence: normalizedExtractionResult.overallConfidence,
+      latencyMs,
+    },
+  });
+
+  const hce = normalizedExtractionResult.homeCurrencyEquivalent;
+  const homeCurrency = companyHomeCurrency;
+  const documentCurrency = normalizedExtractionResult.currency.value;
+  const isSameCurrency = documentCurrency === homeCurrency;
+
+  let exchangeRate: string;
+  let exchangeRateSource: ExchangeRateSource = 'PROVIDER_DEFAULT';
+
+  const hceExchangeRateValid = hce?.exchangeRate && hce?.currency === companyHomeCurrency;
+
+  if (hceExchangeRateValid) {
+    exchangeRate = hce.exchangeRate;
+    exchangeRateSource = 'DOCUMENT';
+  } else if (isSameCurrency) {
+    exchangeRate = '1';
+    exchangeRateSource = 'PROVIDER_DEFAULT';
+  } else {
+    const documentDate = normalizedExtractionResult.documentDate?.value
+      ? new Date(normalizedExtractionResult.documentDate.value)
+      : new Date();
+
+    try {
+      const rateResult = await getRateWithPreference(
+        documentCurrency as SupportedCurrency,
+        companyHomeCurrency as SupportedCurrency,
+        documentDate,
+        tenantId
+      );
+
+      if (rateResult) {
+        exchangeRate = rateResult.rate.toString();
+        if (rateResult.rateType === 'MAS_DAILY_RATE') {
+          exchangeRateSource = 'MAS_DAILY';
+        } else if (rateResult.rateType === 'MAS_MONTHLY_RATE') {
+          exchangeRateSource = 'IRAS_MONTHLY_AVG';
+        } else if (rateResult.rateType === 'MANUAL_RATE') {
+          exchangeRateSource = 'MANUAL';
+        } else {
+          exchangeRateSource = 'PROVIDER_DEFAULT';
+        }
+        log.info(
+          `Exchange rate lookup for ${documentCurrency} on ${documentDate.toISOString().split('T')[0]}: ${exchangeRate} ` +
+            `(source: ${exchangeRateSource})`
+        );
+      } else {
+        exchangeRate = '1';
+        exchangeRateSource = 'PROVIDER_DEFAULT';
+        log.warn(
+          `No exchange rate found for ${documentCurrency} on ${documentDate.toISOString().split('T')[0]}, defaulting to 1`
+        );
+      }
+    } catch (rateError) {
+      log.error(`Failed to lookup exchange rate for ${documentCurrency}:`, rateError);
+      exchangeRate = '1';
+      exchangeRateSource = 'PROVIDER_DEFAULT';
+    }
+  }
+  const exchangeRateNum = parseFloat(exchangeRate);
+
+  const hceMatchesHomeCurrency = hce?.currency === companyHomeCurrency;
+  const useExtractedHce = hceMatchesHomeCurrency && hce;
+
+  const lineItemInputs = normalizedExtractionResult.lineItems?.map((item) => {
+    const amount = parseFloat(item.amount.value) || 0;
+    const gstAmount = item.gstAmount?.value ? parseFloat(item.gstAmount.value) : 0;
+
+    return {
+      lineNo: item.lineNo,
+      description: item.description.value,
+      quantity: item.quantity?.value,
+      unitPrice: item.unitPrice?.value,
+      amount: item.amount.value,
+      gstAmount: item.gstAmount?.value,
+      taxCode: item.taxCode?.value,
+      accountCode: item.accountCode?.value,
+      evidenceJson: {
+        description: item.description.evidence,
+        amount: item.amount.evidence,
+      },
+      homeAmount: (amount * exchangeRateNum).toFixed(2),
+      homeGstAmount: (gstAmount * exchangeRateNum).toFixed(2),
+    };
+  }) as LineItemInput[] | undefined;
+
+  const homeSubtotalFromLines = lineItemInputs?.reduce(
+    (sum, item) => sum + (parseFloat(String(item.homeAmount)) || 0),
+    0
+  );
+  const homeTaxFromLines = lineItemInputs?.reduce(
+    (sum, item) => sum + (parseFloat(String(item.homeGstAmount)) || 0),
+    0
+  );
+  const homeTotalFromLines =
+    homeSubtotalFromLines !== undefined && homeTaxFromLines !== undefined
+      ? homeSubtotalFromLines + homeTaxFromLines
+      : undefined;
+
+  const homeSubtotal = homeSubtotalFromLines !== undefined
+    ? homeSubtotalFromLines.toFixed(2)
+    : (useExtractedHce && hce?.subtotal) ||
+      (normalizedExtractionResult.subtotal?.value
+        ? (parseFloat(normalizedExtractionResult.subtotal.value) * exchangeRateNum).toFixed(2)
+        : undefined);
+  const homeTaxAmount = homeTaxFromLines !== undefined
+    ? homeTaxFromLines.toFixed(2)
+    : (useExtractedHce && hce?.taxAmount) ||
+      (normalizedExtractionResult.taxAmount?.value
+        ? (parseFloat(normalizedExtractionResult.taxAmount.value) * exchangeRateNum).toFixed(2)
+        : undefined);
+  const homeEquivalent = homeTotalFromLines !== undefined
+    ? homeTotalFromLines.toFixed(2)
+    : (useExtractedHce && hce?.totalAmount) ||
+      (parseFloat(normalizedExtractionResult.totalAmount.value) * exchangeRateNum).toFixed(2);
+
+  const isReceivable = normalizedExtractionResult.documentCategory.value === 'ACCOUNTS_RECEIVABLE';
+  const rawCounterpartyName = isReceivable
+    ? normalizedExtractionResult.customerName?.value ?? normalizedExtractionResult.vendorName?.value
+    : normalizedExtractionResult.vendorName?.value;
+
+  const vendorResolution = isReceivable
+    ? { vendorName: undefined, vendorId: undefined, confidence: 0, strategy: 'NONE' as const }
+    : await resolveVendor({
+        tenantId,
+        companyId,
+        rawVendorName: rawCounterpartyName,
+        createdById: userId,
+      });
+
+  const customerResolution = isReceivable
+    ? await resolveCustomer({
+        tenantId,
+        companyId,
+        rawCustomerName: rawCounterpartyName,
+        createdById: userId,
+      })
+    : { customerName: undefined, customerId: undefined, confidence: 0, strategy: 'NONE' as const };
+
+  if (rawCounterpartyName) {
+    if (!isReceivable && vendorResolution.vendorId) {
+      try {
+        const conf = vendorResolution.confidence || normalizedExtractionResult.vendorName?.confidence || 0.9;
+        await learnVendorAlias({
+          tenantId,
+          companyId,
+          rawName: rawCounterpartyName,
+          vendorId: vendorResolution.vendorId,
+          confidence: conf,
+          createdById: userId,
+        });
+      } catch (e) {
+        log.warn(`Failed to learn vendor alias for "${rawCounterpartyName}"`, e);
+      }
+    }
+
+    if (isReceivable && customerResolution.customerId) {
+      try {
+          const conf =
+            customerResolution.confidence ||
+            normalizedExtractionResult.customerName?.confidence ||
+            normalizedExtractionResult.vendorName?.confidence ||
+            0.9;
+        await learnCustomerAlias({
+          tenantId,
+          companyId,
+          rawName: rawCounterpartyName,
+          customerId: customerResolution.customerId,
+          confidence: conf,
+          createdById: userId,
+        });
+      } catch (e) {
+        log.warn(`Failed to learn customer alias for "${rawCounterpartyName}"`, e);
+      }
+    }
+  }
+
+  const revision = await createRevision({
+    processingDocumentId,
+    revisionType: 'EXTRACTION',
+    extractionId: extraction.id,
+    createdById: userId,
+    documentCategory: normalizedExtractionResult.documentCategory.value,
+    documentSubCategory: normalizedExtractionResult.documentSubCategory?.value,
+    vendorName: isReceivable ? customerResolution.customerName : vendorResolution.vendorName,
+    vendorId: isReceivable ? undefined : vendorResolution.vendorId,
+    customerName: isReceivable ? customerResolution.customerName : undefined,
+    customerId: isReceivable ? customerResolution.customerId : undefined,
+    documentNumber: normalizedExtractionResult.documentNumber?.value,
+    documentDate: normalizedExtractionResult.documentDate?.value
+      ? new Date(normalizedExtractionResult.documentDate.value)
+      : undefined,
+    dueDate: normalizedExtractionResult.dueDate?.value
+      ? new Date(normalizedExtractionResult.dueDate.value)
+      : normalizedExtractionResult.documentDate?.value
+        ? new Date(normalizedExtractionResult.documentDate.value)
+        : undefined,
+    currency: normalizedExtractionResult.currency.value,
+    subtotal: normalizedExtractionResult.subtotal?.value,
+    taxAmount: normalizedExtractionResult.taxAmount?.value,
+    totalAmount: normalizedExtractionResult.totalAmount.value,
+    supplierGstNo: normalizedExtractionResult.supplierGstNo?.value,
+    homeCurrency,
+    homeExchangeRate: exchangeRate,
+    homeExchangeRateSource: exchangeRateSource,
+    homeSubtotal,
+    homeTaxAmount,
+    homeEquivalent,
+    headerEvidenceJson: evidenceJson,
+    items: lineItemInputs,
+    reason: 'initial_extraction',
+  });
+
+  await prisma.processingDocument.update({
+    where: { id: processingDocumentId },
+    data: {
+      currentRevisionId: revision.id,
+      lockVersion: { increment: 1 },
+    },
+  });
+
+  await transitionPipelineStatus(processingDocumentId, 'EXTRACTION_DONE', tenantId, companyId);
+
+  await recordProcessingAttempt(processingDocumentId, 'FIELD_EXTRACTION', 'SUCCEEDED', {
+    providerLatencyMs: latencyMs,
+  });
+
+  try {
+    const duplicateResult = await checkForDuplicates(processingDocumentId, tenantId, companyId);
+    if (duplicateResult.hasPotentialDuplicate) {
+      await updateDuplicateStatus(processingDocumentId, duplicateResult);
+      log.info(
+        `Post-extraction duplicate check found ${duplicateResult.candidates.length} candidates ` +
+          `for ${processingDocumentId}`
+      );
+    }
+  } catch (dupError) {
+    log.warn(`Post-extraction duplicate check failed for ${processingDocumentId}:`, dupError);
+  }
+
+  log.info(`Field extraction completed for ${processingDocumentId}, revision ${revision.id} created`);
+
+  return {
+    extractionId: extraction.id,
+    revisionId: revision.id,
+  };
 }
 
 /**
@@ -633,6 +1279,220 @@ Set lower confidence (0.5-0.7) if the account mapping is a best guess rather tha
   }
 }
 
+async function buildBatchExtractionPrompt(
+  tenantId: string,
+  companyId: string | null,
+  additionalContext?: string
+): Promise<string> {
+  const coaContext = await getCOAContextForExtraction(tenantId, companyId);
+
+  const parts = [
+    'You are a document data extraction AI specializing in Singapore business documents.',
+    'Analyze this document and return JSON with: documentCategory, documentSubCategory, vendorName, customerName, documentNumber, documentDate, dueDate, currency, subtotal, taxAmount, totalAmount, supplierGstNo, homeCurrencyEquivalent, lineItems, overallConfidence.',
+    'Every line item should include description, quantity, unitPrice, amount, gstAmount, taxCode, and accountCode when possible.',
+    'For invoices, purchase orders, sales orders, delivery orders, and other table-based documents, extract EVERY visible line item row. Do not stop at 20 or 30 rows.',
+    'Continue across page breaks and continuation tables until every business row is captured.',
+    'Do not aggregate or summarize line items for invoices, purchase orders, sales orders, delivery orders, or statements with item tables.',
+    'For ACCOUNTS_PAYABLE use vendorName for the supplier. For ACCOUNTS_RECEIVABLE use customerName for the buyer.',
+    'Dates must be YYYY-MM-DD. Currency must be a 3-letter code such as SGD or USD.',
+    'Use confidence values between 0 and 1.',
+  ];
+
+  if (coaContext) {
+    parts.push(coaContext);
+  }
+
+  if (additionalContext) {
+    parts.push(`## Additional Context\n${additionalContext}`);
+  }
+
+  return parts.join('\n\n');
+}
+
+async function buildMistralLineItemSupplementPrompt(
+  tenantId: string,
+  companyId: string | null,
+  additionalContext?: string
+): Promise<string> {
+  const coaContext = await getCOAContextForExtraction(tenantId, companyId);
+
+  const parts = [
+    'You are extracting ONLY line items from a structured business document table.',
+    'Return JSON with exactly one top-level field: lineItems.',
+    'Extract EVERY visible business row from these pages.',
+    'Do not stop at 20 or 30 rows.',
+    'Do not aggregate, summarize, or skip repeated-looking rows.',
+    'Continue through all rows visible on the provided page chunk only.',
+    'Do not include subtotal, tax, total, freight summary, page totals, or grand total rows as line items.',
+    'If a row wraps across multiple text lines, keep it as one line item.',
+    'Preserve row order and use the visible row numbering when present.',
+    'Each line item should include description, quantity, unitPrice, amount, gstAmount, taxCode, and accountCode when possible.',
+  ];
+
+  if (coaContext) {
+    parts.push(coaContext);
+  }
+
+  if (additionalContext) {
+    parts.push(`## Additional Context\n${additionalContext}`);
+  }
+
+  return parts.join('\n\n');
+}
+
+function shouldUseChunkedMistralLineItemFallback(
+  result: FieldExtractionResult,
+  pages: { pageNumber: number; storageKey: string | null; imageFingerprint: string | null }[],
+  mimeType: string
+): boolean {
+  return mimeType === 'application/pdf' && pages.length > 1 && (result.lineItems?.length ?? 0) === 30;
+}
+
+function getDocumentMimeTypeFromStorageKey(storageKey: string): string {
+  const normalizedStorageKey = storageKey.toLowerCase();
+
+  if (normalizedStorageKey.endsWith('.pdf')) {
+    return 'application/pdf';
+  }
+
+  if (normalizedStorageKey.endsWith('.jpg') || normalizedStorageKey.endsWith('.jpeg')) {
+    return 'image/jpeg';
+  }
+
+  if (normalizedStorageKey.endsWith('.webp')) {
+    return 'image/webp';
+  }
+
+  return 'image/png';
+}
+
+async function applyChunkedMistralLineItemFallback(params: {
+  result: FieldExtractionResult;
+  pages: { pageNumber: number; storageKey: string | null; imageFingerprint: string | null }[];
+  documentBuffer: Buffer;
+  mimeType: string;
+  tenantId: string;
+  companyId: string | null;
+  userId: string;
+  additionalContext?: string;
+}): Promise<FieldExtractionResult> {
+  const {
+    result,
+    pages,
+    documentBuffer,
+    mimeType,
+    tenantId,
+    companyId,
+    userId,
+    additionalContext,
+  } = params;
+
+  if (!shouldUseChunkedMistralLineItemFallback(result, pages, mimeType)) {
+    return result;
+  }
+
+  try {
+    const fallbackLineItems = await extractMistralLineItemsByPage(
+      documentBuffer,
+      pages,
+      tenantId,
+      companyId,
+      userId,
+      additionalContext,
+      Boolean(result.supplierGstNo?.value)
+    );
+
+    if (fallbackLineItems && fallbackLineItems.length > (result.lineItems?.length ?? 0)) {
+      log.info(
+        `Chunked Mistral line item fallback replaced ${result.lineItems?.length ?? 0} items with ${fallbackLineItems.length} items`
+      );
+      return {
+        ...result,
+        lineItems: fallbackLineItems,
+      };
+    }
+  } catch (fallbackError) {
+    log.warn('Chunked Mistral line item fallback failed', fallbackError);
+  }
+
+  return result;
+}
+
+async function extractMistralLineItemsByPage(
+  pdfBuffer: Buffer,
+  pages: { pageNumber: number; storageKey: string | null; imageFingerprint: string | null }[],
+  tenantId: string,
+  companyId: string | null,
+  userId: string,
+  additionalContext?: string,
+  hasGstRegistration: boolean = false
+): Promise<FieldExtractionResult['lineItems']> {
+  const prompt = await buildMistralLineItemSupplementPrompt(
+    tenantId,
+    companyId,
+    additionalContext
+  );
+
+  const sourcePdf = await PDFDocument.load(pdfBuffer, { ignoreEncryption: true });
+  const mergedItems: NonNullable<FieldExtractionResult['lineItems']> = [];
+
+  for (let index = 0; index < pages.length; index += 1) {
+    const pageMeta = pages[index];
+    const singlePagePdf = await PDFDocument.create();
+    const copiedPages = await singlePagePdf.copyPages(sourcePdf, [index]);
+    singlePagePdf.addPage(copiedPages[0]);
+    const singlePageBytes = await singlePagePdf.save();
+
+    const response = await extractStructuredWithMistralOCR<Record<string, unknown>>({
+      document: {
+        base64: Buffer.from(singlePageBytes).toString('base64'),
+        mimeType: 'application/pdf',
+      },
+      prompt,
+      tenantId,
+      userId,
+      operation: 'document_extraction_line_items_fallback',
+      usageMetadata: {
+        companyId,
+        processingDocumentPageCount: 1,
+        fallbackMode: 'chunked_line_items',
+        sourcePageNumber: pageMeta.pageNumber,
+      },
+      schemaName: 'processing_document_line_items',
+      jsonSchema: MISTRAL_LINE_ITEM_ONLY_JSON_SCHEMA,
+    });
+
+    const rawLineItems = Array.isArray(response.documentAnnotation?.lineItems)
+      ? (response.documentAnnotation.lineItems as Array<Record<string, unknown>>)
+      : [];
+
+    mergedItems.push(
+      ...mapLineItemsFromAIData(
+        rawLineItems,
+        pageMeta.pageNumber,
+        pageMeta.imageFingerprint ?? '',
+        hasGstRegistration
+      )
+    );
+  }
+
+  const dedupedItems = mergedItems.filter((item, index, array) => {
+    const duplicateIndex = array.findIndex((candidate) =>
+      candidate.lineNo === item.lineNo &&
+      candidate.description.value === item.description.value &&
+      candidate.amount.value === item.amount.value
+    );
+    return duplicateIndex === index;
+  });
+
+  return dedupedItems
+    .sort((a, b) => a.lineNo - b.lineNo)
+    .map((item, index) => ({
+      ...item,
+      lineNo: index + 1,
+    }));
+}
+
 /**
  * Extract fields using AI vision model
  */
@@ -643,15 +1503,16 @@ async function performAIExtraction(
   userId: string,
   config: ExtractionConfig
 ): Promise<AIExtractionResult> {
-  // Use config.model if provided and valid, otherwise get best available for tenant
-  const modelId = config.model && config.model !== 'gpt-4-vision'
-    ? config.model
-    : await getBestAvailableModelForTenant(tenantId);
+  const explicitModel =
+    config.model && config.model !== 'gpt-4-vision' ? config.model : undefined;
+  const forceMistral = config.provider === 'mistral';
 
-  if (!modelId) {
-    log.warn('No AI model available for extraction');
-    throw new Error('No AI model configured. Please configure an AI provider (OpenAI, Anthropic, or Google) to enable document extraction.');
-  }
+  // Use config.model if provided and valid, otherwise get best available for tenant
+  const modelId = explicitModel
+    ? explicitModel
+    : forceMistral
+      ? null
+      : await getBestAvailableModelForTenant(tenantId);
 
   // Read and encode the first page image
   const firstPage = pages[0];
@@ -660,28 +1521,16 @@ async function performAIExtraction(
   }
 
   let imageBase64: string;
+  let documentBuffer: Buffer;
   let mimeType: string = 'image/png';
-
-  // Derive provider from model ID
-  const providerFromModel = modelId.startsWith('gpt') ? 'openai'
-    : modelId.startsWith('claude') ? 'anthropic'
-    : modelId.startsWith('gemini') ? 'google'
-    : 'openai';
 
   try {
     // Download image from storage
-    const imageBuffer = await storage.download(firstPage.storageKey);
-    imageBase64 = imageBuffer.toString('base64');
+    documentBuffer = await storage.download(firstPage.storageKey);
+    imageBase64 = documentBuffer.toString('base64');
 
     // Detect mime type from extension
-    const storageKey = firstPage.storageKey.toLowerCase();
-    if (storageKey.endsWith('.pdf')) {
-      mimeType = 'application/pdf';
-    } else if (storageKey.endsWith('.jpg') || storageKey.endsWith('.jpeg')) {
-      mimeType = 'image/jpeg';
-    } else if (storageKey.endsWith('.png')) {
-      mimeType = 'image/png';
-    }
+    mimeType = getDocumentMimeTypeFromStorageKey(firstPage.storageKey);
   } catch (error) {
     log.error(`Failed to read image from storage: ${firstPage.storageKey}`, error);
     throw new Error(`Failed to read document image from storage. Please ensure the document was uploaded correctly.`);
@@ -954,6 +1803,14 @@ Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
 - Always select both documentCategory AND documentSubCategory when possible
 - ALWAYS look for and extract home currency equivalents on foreign currency invoices
 
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
 ## Line Item Aggregation (IMPORTANT for Receipts & Claims)
 For certain document types, DO NOT extract every individual item as a separate line item.
 Instead, aggregate items into meaningful categories for accounting purposes.
@@ -1041,6 +1898,76 @@ The following should NEVER appear as separate line items - always include them i
   if (config.additionalContext) {
     extractionPrompt += `\n\n## Additional Context\n${config.additionalContext}`;
   }
+
+  if (forceMistral || !explicitModel) {
+    try {
+      const mistralResponse = await extractStructuredWithMistralOCR<Record<string, unknown>>({
+        document: {
+          base64: imageBase64,
+          mimeType,
+        },
+        prompt: extractionPrompt,
+        tenantId,
+        userId,
+        operation: 'document_extraction',
+        usageMetadata: {
+          companyId,
+          processingDocumentPageCount: pages.length,
+        },
+        schemaName: 'processing_document_extraction',
+        jsonSchema: MISTRAL_DOCUMENT_EXTRACTION_JSON_SCHEMA,
+      });
+
+      let result = mapAIResponseToResult(mistralResponse.documentAnnotation, pages);
+      result = await applyChunkedMistralLineItemFallback({
+        result,
+        pages,
+        documentBuffer,
+        mimeType,
+        tenantId,
+        companyId,
+        userId,
+        additionalContext: config.additionalContext,
+      });
+
+      if (isAIDebugEnabled()) {
+        logExtractionResults(null, {
+          documentCategory: result.documentCategory,
+          vendorName: result.vendorName,
+          totalAmount: result.totalAmount,
+          currency: result.currency,
+          lineItems: result.lineItems?.map((item) => ({
+            lineNo: item.lineNo,
+            description: item.description,
+            accountCode: item.accountCode,
+          })),
+        });
+      }
+
+      return {
+        result,
+        modelUsed: mistralResponse.model || MISTRAL_OCR_MODEL_ID,
+        providerUsed: 'mistral',
+      };
+    } catch (error) {
+      if (error instanceof MistralOCRNotConfiguredError && !forceMistral) {
+        log.info('Mistral OCR not configured, falling back to standard AI extraction');
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        log.error('Mistral OCR extraction failed', error);
+        throw new Error(`AI extraction failed: ${errorMessage}. Please try again or use a different AI model.`);
+      }
+    }
+  }
+
+  if (!modelId) {
+    log.warn('No AI model available for extraction after Mistral fallback');
+    throw new Error(
+      'No AI model configured. Please configure an AI provider (Mistral, OpenAI, Anthropic, Google, or OpenRouter) to enable document extraction.'
+    );
+  }
+
+  const providerFromModel = getModelConfig(modelId as AIModel).provider;
 
   try {
     const response = await callAIWithConnector({
@@ -1146,6 +2073,256 @@ function extractFieldValue(field: unknown): { value: string; confidence: number 
   return { value: String(field), confidence: 0.8 };
 }
 
+function mapLineItemsFromAIData(
+  rawLineItems: Array<Record<string, unknown>>,
+  pageNum: number,
+  fingerprint: string,
+  hasGstRegistration: boolean
+): NonNullable<FieldExtractionResult['lineItems']> {
+  return rawLineItems.map((item, idx) => {
+    const descField = extractFieldValue(item.description);
+    const qtyField = extractFieldValue(item.quantity);
+    const unitPriceField = extractFieldValue(item.unitPrice);
+    const amountField = extractFieldValue(item.amount);
+    const gstAmountField = extractFieldValue(item.gstAmount);
+    const taxCodeField = extractFieldValue(item.taxCode);
+    const accountCodeField = extractFieldValue(item.accountCode);
+
+    let taxCode = taxCodeField?.value;
+    let taxCodeConfidence = taxCodeField?.confidence || 0.7;
+
+    if (!taxCode) {
+      const gstAmountNum = gstAmountField?.value ? parseFloat(gstAmountField.value) : 0;
+      const amountNum = amountField?.value ? parseFloat(amountField.value) : 0;
+
+      if (gstAmountNum > 0 && amountNum > 0) {
+        const actualRate = gstAmountNum / amountNum;
+
+        if (actualRate >= 0.085 && actualRate <= 0.095) {
+          taxCode = 'SR';
+          taxCodeConfidence = 0.9;
+        } else if (actualRate >= 0.075 && actualRate < 0.085) {
+          taxCode = 'SR8';
+          taxCodeConfidence = 0.9;
+        } else if (actualRate >= 0.065 && actualRate < 0.075) {
+          taxCode = 'SR7';
+          taxCodeConfidence = 0.9;
+        } else if (actualRate < 0.005) {
+          taxCode = hasGstRegistration ? 'ZR' : 'NA';
+          taxCodeConfidence = 0.75;
+        } else {
+          taxCode = 'SR';
+          taxCodeConfidence = 0.6;
+          log.debug(`Line item has unusual GST rate: ${(actualRate * 100).toFixed(2)}%`);
+        }
+      } else if (gstAmountNum > 0) {
+        taxCode = 'SR';
+        taxCodeConfidence = 0.8;
+      } else if (hasGstRegistration) {
+        taxCode = 'SR';
+        taxCodeConfidence = 0.75;
+      } else {
+        taxCode = 'NA';
+        taxCodeConfidence = 0.6;
+      }
+    }
+
+    let gstAmount = gstAmountField?.value;
+    let gstAmountConfidence = gstAmountField?.confidence || 0.8;
+
+    if (!gstAmount && amountField?.value) {
+      const amount = parseFloat(amountField.value);
+      if (!isNaN(amount) && amount > 0) {
+        let gstRate = 0;
+        if (taxCode === 'SR') gstRate = 0.09;
+        else if (taxCode === 'SR8') gstRate = 0.08;
+        else if (taxCode === 'SR7') gstRate = 0.07;
+
+        if (gstRate > 0) {
+          gstAmount = (amount * gstRate).toFixed(2);
+          gstAmountConfidence = 0.7;
+        }
+      }
+    }
+
+    let quantity = qtyField?.value;
+    let quantityConfidence = qtyField?.confidence || 0.8;
+    let unitPrice = unitPriceField?.value;
+    let unitPriceConfidence = unitPriceField?.confidence || 0.8;
+
+    if (!quantity && !unitPrice && amountField?.value) {
+      quantity = '1';
+      quantityConfidence = 0.6;
+      unitPrice = amountField.value;
+      unitPriceConfidence = 0.6;
+    }
+
+    let accountCode = accountCodeField?.value;
+    let accountCodeConfidence = accountCodeField?.confidence || 0.8;
+
+    if (!accountCode && descField?.value) {
+      const desc = descField.value.toLowerCase();
+      const expenseKeywords = [
+        'subscription', 'software', 'saas', 'cloud', 'hosting', 'domain',
+        'service', 'consulting', 'professional', 'legal', 'accounting',
+        'office', 'supplies', 'utilities', 'rent', 'maintenance',
+        'marketing', 'advertising', 'promotion', 'travel', 'transport',
+        'insurance', 'license', 'fee', 'training', 'education'
+      ];
+      const cogsKeywords = [
+        'purchase', 'inventory', 'goods', 'materials', 'raw material',
+        'stock', 'manufacturing', 'production'
+      ];
+
+      if (cogsKeywords.some((kw) => desc.includes(kw))) {
+        accountCode = '5000';
+        accountCodeConfidence = 0.5;
+      } else if (expenseKeywords.some((kw) => desc.includes(kw))) {
+        accountCode = '6000';
+        accountCodeConfidence = 0.5;
+      }
+    }
+
+    return {
+      lineNo: (item.lineNo as number) || idx + 1,
+      description: {
+        value: descField?.value || 'Unknown',
+        confidence: descField?.confidence || 0.9,
+        evidence: descField
+          ? createFieldEvidence(descField.value, descField.confidence || 0.9, pageNum, fingerprint)
+          : undefined,
+      },
+      quantity: quantity ? { value: quantity, confidence: quantityConfidence } : undefined,
+      unitPrice: unitPrice ? { value: unitPrice, confidence: unitPriceConfidence } : undefined,
+      amount: {
+        value: amountField?.value || '0',
+        confidence: amountField?.confidence || 0.9,
+        evidence: amountField
+          ? createFieldEvidence(amountField.value, amountField.confidence || 0.9, pageNum, fingerprint)
+          : undefined,
+      },
+      gstAmount: gstAmount ? { value: gstAmount, confidence: gstAmountConfidence } : undefined,
+      taxCode: { value: taxCode, confidence: taxCodeConfidence },
+      accountCode: accountCode ? { value: accountCode, confidence: accountCodeConfidence } : undefined,
+    };
+  });
+}
+
+function normalizeDocumentSubCategory(
+  rawValue: string | undefined,
+  category: DocumentCategory
+): DocumentSubCategory | undefined {
+  if (!rawValue) return undefined;
+
+  const normalized = rawValue.trim().toUpperCase().replace(/[\s-]+/g, '_');
+
+  if (isValidSubCategoryForCategory(category, normalized as DocumentSubCategory)) {
+    return normalized as DocumentSubCategory;
+  }
+
+  switch (normalized) {
+    case 'INVOICE':
+      if (category === 'ACCOUNTS_RECEIVABLE') return 'SALES_INVOICE';
+      if (category === 'TAX_COMPLIANCE') return 'TAX_INVOICE';
+      return 'VENDOR_INVOICE';
+    case 'CREDIT_NOTE':
+      return category === 'ACCOUNTS_RECEIVABLE' ? 'SALES_CREDIT_NOTE' : 'VENDOR_CREDIT_NOTE';
+    case 'DEBIT_NOTE':
+      return category === 'ACCOUNTS_RECEIVABLE' ? 'SALES_INVOICE' : 'VENDOR_INVOICE';
+    case 'STATEMENT':
+      if (category === 'ACCOUNTS_RECEIVABLE') return 'CUSTOMER_STATEMENT';
+      if (category === 'TREASURY') return 'BANK_STATEMENT';
+      return 'VENDOR_STATEMENT';
+    case 'RECEIPT':
+      return category === 'TAX_COMPLIANCE' ? 'TAX_INVOICE' : 'RECEIPT_VOUCHER';
+    case 'PAYMENT':
+    case 'PAYMENT_VOUCHER':
+      return category === 'TREASURY' ? 'PAYMENT_VOUCHER' : getDefaultSubCategory(category) ?? undefined;
+    case 'ORDER':
+    case 'PURCHASE_ORDER':
+      return category === 'ACCOUNTS_RECEIVABLE' ? 'SALES_ORDER' : 'PURCHASE_ORDER';
+    case 'DELIVERY':
+    case 'DELIVERY_NOTE':
+      return category === 'ACCOUNTS_RECEIVABLE' ? 'DELIVERY_ORDER' : 'DELIVERY_NOTE';
+    case 'QUOTATION':
+    case 'QUOTE':
+      return category === 'ACCOUNTS_RECEIVABLE'
+        ? 'SALES_ORDER'
+        : 'VENDOR_QUOTATION';
+    default:
+      return getDefaultSubCategory(category) ?? undefined;
+  }
+}
+
+function parseAmountString(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function amountsDiffer(a: string | undefined, b: string | undefined, tolerance = 0.005): boolean {
+  const parsedA = parseAmountString(a);
+  const parsedB = parseAmountString(b);
+
+  if (parsedA === null || parsedB === null) {
+    return a !== b;
+  }
+
+  return Math.abs(parsedA - parsedB) > tolerance;
+}
+
+function normalizeHeaderAmountsFromLineItems(result: FieldExtractionResult): FieldExtractionResult {
+  if (!result.lineItems || result.lineItems.length === 0) {
+    return result;
+  }
+
+  const subtotalFromLines = result.lineItems.reduce(
+    (sum, item) => sum + (parseAmountString(item.amount.value) ?? 0),
+    0
+  );
+  const taxFromLines = result.lineItems.reduce(
+    (sum, item) => sum + (parseAmountString(item.gstAmount?.value) ?? 0),
+    0
+  );
+  const totalFromLines = subtotalFromLines + taxFromLines;
+
+  const computedSubtotal = subtotalFromLines.toFixed(2);
+  const computedTax = taxFromLines.toFixed(2);
+  const computedTotal = totalFromLines.toFixed(2);
+
+  const shouldNormalizeSubtotal =
+    !result.subtotal?.value || amountsDiffer(result.subtotal.value, computedSubtotal);
+  const shouldNormalizeTax =
+    result.taxAmount?.value === undefined || amountsDiffer(result.taxAmount.value, computedTax);
+  const shouldNormalizeTotal = amountsDiffer(result.totalAmount.value, computedTotal);
+
+  if (!shouldNormalizeSubtotal && !shouldNormalizeTax && !shouldNormalizeTotal) {
+    return result;
+  }
+
+  return {
+    ...result,
+    subtotal: shouldNormalizeSubtotal
+      ? {
+          value: computedSubtotal,
+          confidence: result.subtotal?.confidence ?? 0.75,
+        }
+      : result.subtotal,
+    taxAmount: shouldNormalizeTax
+      ? {
+          value: computedTax,
+          confidence: result.taxAmount?.confidence ?? 0.75,
+        }
+      : result.taxAmount,
+    totalAmount: shouldNormalizeTotal
+      ? {
+          ...result.totalAmount,
+          value: computedTotal,
+        }
+      : result.totalAmount,
+  };
+}
+
 /**
  * Map AI response to FieldExtractionResult format
  */
@@ -1165,9 +2342,14 @@ function mapAIResponseToResult(
 
   // Handle documentSubCategory (optional field)
   const docSubCategory = extractFieldValue(data.documentSubCategory);
+  const normalizedSubCategory = normalizeDocumentSubCategory(
+    docSubCategory?.value,
+    documentCategory.value
+  );
   const documentSubCategory: ExtractedField<DocumentSubCategory> | undefined = docSubCategory
+    && normalizedSubCategory
     ? {
-        value: docSubCategory.value as DocumentSubCategory,
+        value: normalizedSubCategory,
         confidence: docSubCategory.confidence || 0.8,
       }
     : undefined;

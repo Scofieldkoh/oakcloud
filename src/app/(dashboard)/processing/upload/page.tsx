@@ -34,6 +34,7 @@ import { FileMergeModal } from '@/components/processing/file-merge-modal';
 import { processFileForUpload, isSupportedFileType } from '@/lib/pdf-utils';
 import { calculateFileHash } from '@/lib/file-hash';
 import { cn } from '@/lib/utils';
+import { postFormDataWithFallback } from '@/lib/browser-upload';
 
 type UploadStatus = 'pending' | 'processing' | 'uploading' | 'success' | 'error';
 
@@ -56,7 +57,7 @@ interface QueuedFile {
   uploadAnyway?: boolean; // User override to upload despite duplicate
 }
 
-const MAX_FILES = 20;
+const MAX_FILES = 100;
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB to match API
 
 export default function ProcessingUploadPage() {
@@ -79,6 +80,7 @@ export default function ProcessingUploadPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [uploadWithoutAiExtraction, setUploadWithoutAiExtraction] = useState(false);
+  const [useBatchProcessing, setUseBatchProcessing] = useState(false);
 
   // AI model selection and context (consistent with BizFile upload)
   const [selectedModelId, setSelectedModelId] = useState('');
@@ -90,6 +92,7 @@ export default function ProcessingUploadPage() {
   useEffect(() => {
     if (!uploadWithoutAiExtraction) return;
     setSelectedModelId('');
+    setUseBatchProcessing(false);
     setAiContext('');
     setSelectedStandardContexts([]);
   }, [uploadWithoutAiExtraction]);
@@ -415,6 +418,9 @@ export default function ProcessingUploadPage() {
         formData.append('priority', 'NORMAL');
         formData.append('uploadSource', 'WEB');
         formData.append('skipExtraction', uploadWithoutAiExtraction ? 'true' : 'false');
+        if (!uploadWithoutAiExtraction && useBatchProcessing) {
+          formData.append('batchMode', 'true');
+        }
         // Pass AI model and context if specified
         if (!uploadWithoutAiExtraction && selectedModelId) {
           formData.append('modelId', selectedModelId);
@@ -423,10 +429,7 @@ export default function ProcessingUploadPage() {
           formData.append('additionalContext', fullContext);
         }
 
-        const response = await fetch('/api/processing-documents', {
-          method: 'POST',
-          body: formData,
-        });
+        const response = await postFormDataWithFallback('/api/processing-documents', formData);
 
         if (!response.ok) {
           const err = await response.json();
@@ -483,6 +486,7 @@ export default function ProcessingUploadPage() {
     selectedStandardContexts,
     aiContext,
     uploadWithoutAiExtraction,
+    useBatchProcessing,
     toastError,
     success,
   ]);
@@ -867,12 +871,37 @@ export default function ProcessingUploadPage() {
         />
       </div>
 
+      <div className="card mb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <label className="label mb-1 text-sm">Batch Processing</label>
+            <p className="text-sm text-text-secondary leading-relaxed">
+              Queue uploaded documents through Mistral Batch OCR. This is slower, but better suited for background processing.
+            </p>
+            <p className="text-xs text-text-muted mt-2.5 leading-relaxed">
+              Batch mode currently applies only when AI extraction is enabled and the selector is left on Auto.
+            </p>
+          </div>
+          <Toggle
+            checked={useBatchProcessing}
+            onChange={setUseBatchProcessing}
+            disabled={isUploading || uploadWithoutAiExtraction || selectedModelId !== ''}
+          />
+        </div>
+        {(uploadWithoutAiExtraction || selectedModelId !== '') && (
+          <p className="text-xs text-text-muted mt-3">
+            Leave extraction enabled and keep the model on Auto to use Mistral batch extraction.
+          </p>
+        )}
+      </div>
+
       <AIModelSelector
         value={selectedModelId}
         onChange={setSelectedModelId}
         label="AI Model for Extraction"
-        helpText="Select the AI model to use for extracting invoice/receipt data."
+        helpText="Leave this on Auto to let the backend choose the best extraction path, including Mistral OCR when configured."
         disabled={isUploading || uploadWithoutAiExtraction}
+        allowAuto
         jsonModeOnly
         showContextInput
         contextValue={aiContext}

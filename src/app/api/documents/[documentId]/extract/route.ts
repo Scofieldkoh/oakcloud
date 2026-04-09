@@ -3,8 +3,9 @@ import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { extractBizFileWithVision, normalizeExtractedData } from '@/services/bizfile';
 import { mapEntityType } from '@/services/bizfile/types';
-import { calculateCost, formatCost, getModelConfig } from '@/lib/ai';
+import { AI_MODELS, calculateUsageCost, formatCost } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
+import { MISTRAL_OCR_MODEL_ID, MISTRAL_OCR_MODEL_NAME } from '@/lib/ocr/mistral';
 import { storage } from '@/lib/storage';
 import { retrieveFYEFromACRA, isCompanyEntityType } from '@/lib/external/acra-fye';
 import logger from '@/lib/logger';
@@ -162,15 +163,23 @@ export async function POST(
         },
       });
 
-      const modelConfig = getModelConfig(extractionResult.modelUsed);
+      const modelConfig = AI_MODELS[extractionResult.modelUsed as AIModel];
+      const modelName =
+        modelConfig?.name ||
+        (extractionResult.modelUsed === MISTRAL_OCR_MODEL_ID
+          ? MISTRAL_OCR_MODEL_NAME
+          : extractionResult.modelUsed);
       let estimatedCost: number | undefined;
       let formattedCost: string | undefined;
       if (extractionResult.usage) {
-        estimatedCost = calculateCost(
-          extractionResult.modelUsed,
-          extractionResult.usage.inputTokens,
-          extractionResult.usage.outputTokens
-        );
+        estimatedCost = calculateUsageCost({
+          modelId: extractionResult.modelUsed,
+          provider: extractionResult.providerUsed,
+          inputTokens: extractionResult.usage.inputTokens,
+          outputTokens: extractionResult.usage.outputTokens,
+          totalTokens: extractionResult.usage.totalTokens,
+          pagesProcessed: extractionResult.usage.pagesProcessed,
+        });
         formattedCost = formatCost(estimatedCost);
       }
 
@@ -180,7 +189,7 @@ export async function POST(
         conflict,
         aiMetadata: {
           modelUsed: extractionResult.modelUsed,
-          modelName: modelConfig.name,
+          modelName,
           providerUsed: extractionResult.providerUsed,
           usage: extractionResult.usage,
           estimatedCost,

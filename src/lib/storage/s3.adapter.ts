@@ -305,11 +305,16 @@ export class S3StorageAdapter implements StorageAdapter {
   }
 
   async copy(sourceKey: string, destinationKey: string): Promise<void> {
+    const encodedCopySource = `${this.bucket}/${sourceKey
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/')}`;
+
     // Build command with encryption parameters for the destination
     const commandInput: ConstructorParameters<typeof CopyObjectCommand>[0] = {
       Bucket: this.bucket,
       Key: destinationKey,
-      CopySource: `${this.bucket}/${sourceKey}`,
+      CopySource: encodedCopySource,
     };
 
     // Apply encryption to the copied object

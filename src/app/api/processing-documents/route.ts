@@ -23,7 +23,10 @@ import {
   checkForDuplicates,
   updateDuplicateStatus,
 } from '@/services/duplicate-detection.service';
-import { extractFields } from '@/services/document-extraction.service';
+import {
+  extractFields,
+  reconcilePendingMistralBatchExtraction,
+} from '@/services/document-extraction.service';
 import { storage, StorageKeys } from '@/lib/storage';
 import type { ProcessingPriority, UploadSource, PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
 
@@ -82,7 +85,7 @@ function nowDateOnlyInTimeZone(timeZone: string): string {
  *
  * Query params:
  * - page: Page number (default: 1)
- * - limit: Items per page (default: 20, max: 100)
+ * - limit: Items per page (default: 20, max: 200)
  * - sortBy: Sort field (createdAt, updatedAt, pipelineStatus, duplicateStatus)
  * - sortOrder: Sort direction (asc, desc)
  * - pipelineStatus: Filter by pipeline status
@@ -148,7 +151,8 @@ export async function GET(request: NextRequest) {
     const homeTotalTo = searchParams.get('homeTotalTo');
 
     const page = pageStr ? parseInt(pageStr, 10) : 1;
-    const limit = Math.min(limitStr ? parseInt(limitStr, 10) : 20, 100);
+    const parsedLimit = limitStr ? parseInt(limitStr, 10) : 20;
+    const limit = Math.max(1, Math.min(Number.isFinite(parsedLimit) ? parsedLimit : 20, 200));
     const isContainer =
       isContainerStr === 'true' ? true : isContainerStr === 'false' ? false : undefined;
 
@@ -253,11 +257,11 @@ export async function GET(request: NextRequest) {
       return isNaN(num) ? undefined : num;
     };
 
-    // Get documents with paged results
-    const result = await listProcessingDocumentsPaged({
-      tenantId: effectiveTenantId,
-      companyIds,
-      pipelineStatus: pipelineStatus ?? undefined,
+    const loadPagedDocuments = () =>
+      listProcessingDocumentsPaged({
+        tenantId: effectiveTenantId,
+        companyIds,
+        pipelineStatus: pipelineStatus ?? undefined,
       duplicateStatus: duplicateStatus ?? undefined,
       revisionStatus: revisionStatus ?? undefined,
       needsReview,
@@ -300,9 +304,51 @@ export async function GET(request: NextRequest) {
       homeSubtotalTo: parseAmount(homeSubtotalTo),
       homeTaxFrom: parseAmount(homeTaxFrom),
       homeTaxTo: parseAmount(homeTaxTo),
-      homeTotalFrom: parseAmount(homeTotalFrom),
-      homeTotalTo: parseAmount(homeTotalTo),
-    });
+        homeTotalFrom: parseAmount(homeTotalFrom),
+        homeTotalTo: parseAmount(homeTotalTo),
+      });
+
+    // Get documents with paged results
+    let result = await loadPagedDocuments();
+
+    if (effectiveTenantId) {
+      const pendingDocs = result.documents.filter(
+        (doc) =>
+          (doc.pipelineStatus === 'QUEUED' || doc.pipelineStatus === 'PROCESSING') &&
+          Boolean(doc.document.companyId)
+      );
+
+      if (pendingDocs.length > 0) {
+        const reconciliationResults = await Promise.all(
+          pendingDocs.map((doc) =>
+            reconcilePendingMistralBatchExtraction(
+              doc.id,
+              effectiveTenantId,
+              doc.document.companyId as string,
+              session.id
+            ).catch((error) => {
+              console.warn(
+                `Failed to reconcile pending batch extraction for ${doc.id}:`,
+                error
+              );
+              return { status: 'NOT_PENDING' as const };
+            })
+          )
+        );
+
+        const hasStateChange = reconciliationResults.some(
+          (reconciliation) =>
+            reconciliation.status === 'SUCCESS' ||
+            reconciliation.status === 'FAILED' ||
+            reconciliation.status === 'TIMEOUT_EXCEEDED' ||
+            reconciliation.status === 'CANCELLED'
+        );
+
+        if (hasStateChange) {
+          result = await loadPagedDocuments();
+        }
+      }
+    }
 
     // Transform for API response (convert Decimal to string, Date to ISO string)
     const documents = result.documents.map((doc) => ({
@@ -384,6 +430,7 @@ export async function POST(request: NextRequest) {
     const metadataStr = formData.get('metadata') as string | null;
     const idempotencyKey = request.headers.get('Idempotency-Key');
     const skipExtraction = formData.get('skipExtraction') === 'true';
+    const batchMode = formData.get('batchMode') === 'true';
     // AI model selection (optional - consistent with BizFile upload)
     const modelId = formData.get('modelId') as string | null;
     const additionalContext = formData.get('additionalContext') as string | null;
@@ -563,12 +610,15 @@ export async function POST(request: NextRequest) {
       // Auto-trigger extraction immediately after upload (async, don't block response)
       // This runs in the background so users don't have to manually trigger extraction
       // Pass model and context if specified by user
-      const extractionConfig: { model?: string; additionalContext?: string } = {};
+      const extractionConfig: { model?: string; additionalContext?: string; batchMode?: boolean } = {};
       if (modelId) {
         extractionConfig.model = modelId;
       }
       if (additionalContext) {
         extractionConfig.additionalContext = additionalContext;
+      }
+      if (batchMode) {
+        extractionConfig.batchMode = true;
       }
 
       extractFields(processingDocument.id, company.tenantId, companyId, session.id, extractionConfig)
@@ -600,6 +650,7 @@ export async function POST(request: NextRequest) {
         uploadSource,
         fileSize: file.size,
         skipExtraction,
+        batchMode,
       },
     });
 

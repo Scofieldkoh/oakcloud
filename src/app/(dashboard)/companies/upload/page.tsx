@@ -29,6 +29,7 @@ import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 import { DocumentPageViewer, ResizableSplitView } from '@/components/processing';
+import { postFormDataWithFallback } from '@/lib/browser-upload';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'diff-preview' | 'saving' | 'complete';
 
@@ -139,6 +140,46 @@ async function safeJsonError(response: Response, fallback: string): Promise<stri
   }
 }
 
+async function fetchWithStageError(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  stage: string
+): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (error) {
+    const detail =
+      error instanceof Error && error.message
+        ? ` ${error.message}.`
+        : '';
+
+    throw new Error(
+      `Network error while ${stage}.${detail} Please refresh and try again. ` +
+        `If it keeps happening, restart the dev server and retry.`
+    );
+  }
+}
+
+async function uploadWithStageError(
+  input: string | URL,
+  formData: FormData,
+  stage: string
+): Promise<Response> {
+  try {
+    return await postFormDataWithFallback(input, formData);
+  } catch (error) {
+    const detail =
+      error instanceof Error && error.message
+        ? ` ${error.message}.`
+        : '';
+
+    throw new Error(
+      `Network error while ${stage}.${detail} Please refresh and try again. ` +
+        `If it keeps happening, restart the dev server and retry.`
+    );
+  }
+}
+
 // AI metadata from extraction
 interface AIMetadata {
   modelUsed: string;
@@ -148,6 +189,7 @@ interface AIMetadata {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
+    pagesProcessed?: number;
   };
   estimatedCost?: number;
   formattedCost?: string;
@@ -252,10 +294,11 @@ export default function UploadBizFilePage() {
       }
 
       // Upload and get document ID
-      const uploadResponse = await fetch('/api/documents/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      const uploadResponse = await uploadWithStageError(
+        '/api/documents/upload',
+        formData,
+        'uploading the file'
+      );
 
       if (!uploadResponse.ok) {
         const err = await safeJsonError(uploadResponse, 'Failed to upload file');
@@ -270,7 +313,7 @@ export default function UploadBizFilePage() {
 
       // For update mode, use the diff preview endpoint
       if (isUpdateMode && existingCompanyId) {
-        const diffResponse = await fetch(`/api/documents/${docId}/preview-diff`, {
+        const diffResponse = await fetchWithStageError(`/api/documents/${docId}/preview-diff`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -278,7 +321,7 @@ export default function UploadBizFilePage() {
             modelId: selectedModelId || undefined,
             additionalContext: fullContext || undefined,
           }),
-        });
+        }, 'extracting and comparing the BizFile');
 
         if (!diffResponse.ok) {
           const err = await safeJsonError(diffResponse, 'Failed to extract and compare data');
@@ -294,14 +337,14 @@ export default function UploadBizFilePage() {
         setStep('diff-preview');
       } else {
         // Normal create mode - extract and save
-        const extractResponse = await fetch(`/api/documents/${docId}/extract`, {
+        const extractResponse = await fetchWithStageError(`/api/documents/${docId}/extract`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             modelId: selectedModelId || undefined,
             additionalContext: fullContext || undefined,
           }),
-        });
+        }, 'extracting the BizFile');
 
         if (!extractResponse.ok) {
           const err = await safeJsonError(extractResponse, 'Failed to extract data');
@@ -690,7 +733,8 @@ export default function UploadBizFilePage() {
             value={selectedModelId}
             onChange={setSelectedModelId}
             label="AI Model for Extraction"
-            helpText="Select the AI model to use for extracting data from the BizFile."
+            helpText="Leave this on Auto to let the backend choose the best extraction path, including Mistral OCR when configured."
+            allowAuto
             jsonModeOnly
             showContextInput
             contextValue={aiContext}
@@ -755,7 +799,9 @@ export default function UploadBizFilePage() {
                     {aiMetadata.modelName || aiMetadata.modelUsed} ({aiMetadata.providerUsed})
                     {aiMetadata.usage && (
                       <span className="ml-1 text-text-muted">
-                        • {aiMetadata.usage.totalTokens.toLocaleString()} tokens
+                        • {aiMetadata.providerUsed === 'mistral' && aiMetadata.usage.pagesProcessed
+                          ? `${aiMetadata.usage.pagesProcessed.toLocaleString()} pages`
+                          : `${aiMetadata.usage.totalTokens.toLocaleString()} tokens`}
                       </span>
                     )}
                     {aiMetadata.formattedCost && (
@@ -953,7 +999,9 @@ export default function UploadBizFilePage() {
                     {aiMetadata.modelName || aiMetadata.modelUsed} ({aiMetadata.providerUsed})
                     {aiMetadata.usage && (
                       <span className="ml-1 text-text-muted">
-                        • {aiMetadata.usage.totalTokens.toLocaleString()} tokens
+                        • {aiMetadata.providerUsed === 'mistral' && aiMetadata.usage.pagesProcessed
+                          ? `${aiMetadata.usage.pagesProcessed.toLocaleString()} pages`
+                          : `${aiMetadata.usage.totalTokens.toLocaleString()} tokens`}
                       </span>
                     )}
                     {aiMetadata.formattedCost && (

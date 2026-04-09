@@ -39,6 +39,7 @@ export interface ExtractedBizFileData {
     unit?: string;
     buildingName?: string;
     postalCode: string;
+    country?: string;
     effectiveFrom?: string;
   };
   mailingAddress?: {
@@ -48,6 +49,7 @@ export interface ExtractedBizFileData {
     unit?: string;
     buildingName?: string;
     postalCode: string;
+    country?: string;
   };
   paidUpCapital?: {
     amount: number;
@@ -150,6 +152,8 @@ export interface BizFileVisionInput {
 export interface BizFileExtractionOptions {
   /** AI model to use for extraction (optional, uses best available if not specified) */
   modelId?: AIModel;
+  /** Original document bytes for OCR-first extraction when available */
+  documentInput?: BizFileVisionInput;
   /** Additional context to provide to the AI for better extraction */
   additionalContext?: string;
   /** Tenant ID for connector-aware AI resolution (uses tenant's configured AI provider) */
@@ -167,12 +171,14 @@ export interface BizFileExtractionOptions {
  */
 export interface BizFileExtractionResult {
   data: ExtractedBizFileData;
-  modelUsed: AIModel;
+  modelUsed: string;
   providerUsed: string;
   usage?: {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
+    pagesProcessed?: number;
+    docSizeBytes?: number | null;
   };
 }
 

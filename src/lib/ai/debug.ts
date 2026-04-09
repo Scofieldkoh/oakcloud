@@ -7,6 +7,7 @@
 
 import { createLogger } from '@/lib/logger';
 import type { AIModel, AIRequestOptions, AIResponse } from './types';
+import { calculateUsageCost } from './models';
 import { stripMarkdownCodeBlocks } from './index';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -213,11 +214,21 @@ export function logAIResponse(
     lines.push(`| Input Tokens | ${response.usage.inputTokens} |`);
     lines.push(`| Output Tokens | ${response.usage.outputTokens} |`);
     lines.push(`| Total Tokens | ${response.usage.totalTokens} |`);
-    const cost = estimateCost(
-      context.model,
-      response.usage.inputTokens,
-      response.usage.outputTokens
-    );
+    if (typeof response.usage.pagesProcessed === 'number') {
+      lines.push(`| Pages Processed | ${response.usage.pagesProcessed} |`);
+    }
+    if (context.provider === 'mistral') {
+      lines.push(`| Pricing Mode | ${response.usage.batchMode ? 'Batch' : 'Direct'} |`);
+    }
+    const cost = calculateUsageCost({
+      modelId: context.model,
+      provider: context.provider,
+      inputTokens: response.usage.inputTokens,
+      outputTokens: response.usage.outputTokens,
+      totalTokens: response.usage.totalTokens,
+      pagesProcessed: response.usage.pagesProcessed,
+      batchMode: response.usage.batchMode,
+    });
     lines.push(`| Estimated Cost | $${cost.toFixed(4)} |`);
   }
   if (context.connectorSource) lines.push(`| Connector Source | ${context.connectorSource} |`);

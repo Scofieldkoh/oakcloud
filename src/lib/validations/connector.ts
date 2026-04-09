@@ -13,7 +13,15 @@ import { z } from 'zod';
 export const connectorTypeEnum = z.enum(['AI_PROVIDER', 'STORAGE']);
 export type ConnectorType = z.infer<typeof connectorTypeEnum>;
 
-export const connectorProviderEnum = z.enum(['OPENAI', 'ANTHROPIC', 'GOOGLE', 'OPENROUTER', 'ONEDRIVE', 'SHAREPOINT']);
+export const connectorProviderEnum = z.enum([
+  'OPENAI',
+  'ANTHROPIC',
+  'GOOGLE',
+  'MISTRAL',
+  'OPENROUTER',
+  'ONEDRIVE',
+  'SHAREPOINT',
+]);
 export type ConnectorProvider = z.infer<typeof connectorProviderEnum>;
 
 // ============================================================================
@@ -30,6 +38,10 @@ export const anthropicCredentialsSchema = z.object({
 });
 
 export const googleCredentialsSchema = z.object({
+  apiKey: z.string().min(1, 'API key is required'),
+});
+
+export const mistralCredentialsSchema = z.object({
   apiKey: z.string().min(1, 'API key is required'),
 });
 
@@ -56,6 +68,7 @@ export const sharepointCredentialsSchema = z.object({
 export type OpenAICredentials = z.infer<typeof openaiCredentialsSchema>;
 export type AnthropicCredentials = z.infer<typeof anthropicCredentialsSchema>;
 export type GoogleCredentials = z.infer<typeof googleCredentialsSchema>;
+export type MistralCredentials = z.infer<typeof mistralCredentialsSchema>;
 export type OneDriveCredentials = z.infer<typeof onedriveCredentialsSchema>;
 export type SharePointCredentials = z.infer<typeof sharepointCredentialsSchema>;
 
@@ -64,6 +77,7 @@ export type ConnectorCredentials =
   | OpenAICredentials
   | AnthropicCredentials
   | GoogleCredentials
+  | MistralCredentials
   | OpenRouterCredentials
   | OneDriveCredentials
   | SharePointCredentials;
@@ -199,6 +213,13 @@ export function validateCredentials(
       }
       break;
     }
+    case 'MISTRAL': {
+      const result = mistralCredentialsSchema.safeParse(credentials);
+      if (!result.success) {
+        errors.push(...result.error.issues.map((i) => i.message));
+      }
+      break;
+    }
     case 'OPENROUTER': {
       const result = openrouterCredentialsSchema.safeParse(credentials);
       if (!result.success) {
@@ -235,6 +256,7 @@ export function getProviderType(provider: ConnectorProvider): ConnectorType {
     case 'OPENAI':
     case 'ANTHROPIC':
     case 'GOOGLE':
+    case 'MISTRAL':
     case 'OPENROUTER':
       return 'AI_PROVIDER';
     case 'ONEDRIVE':
@@ -251,7 +273,7 @@ export function getProviderType(provider: ConnectorProvider): ConnectorType {
 export function getProvidersForType(type: ConnectorType): ConnectorProvider[] {
   switch (type) {
     case 'AI_PROVIDER':
-      return ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'OPENROUTER'];
+      return ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'MISTRAL', 'OPENROUTER'];
     case 'STORAGE':
       return ['ONEDRIVE', 'SHAREPOINT'];
     default:
@@ -267,6 +289,7 @@ export function getProviderDisplayName(provider: ConnectorProvider): string {
     OPENAI: 'OpenAI',
     ANTHROPIC: 'Anthropic',
     GOOGLE: 'Google AI',
+    MISTRAL: 'Mistral OCR',
     OPENROUTER: 'OpenRouter',
     ONEDRIVE: 'OneDrive',
     SHAREPOINT: 'SharePoint',

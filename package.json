@@ -58,6 +58,7 @@
     "exceljs": "^4.4.0",
     "file-type": "^16.5.4",
     "jose": "^6.1.2",
+    "jsonrepair": "^3.13.3",
     "lucide-react": "^0.474.0",
     "motion": "^12.23.25",
     "next": "^15.1.6",

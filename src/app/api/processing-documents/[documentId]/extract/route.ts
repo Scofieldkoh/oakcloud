@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
-import { getProcessingDocument } from '@/services/document-processing.service';
+import { getProcessingDocument, resetProcessingRetryState } from '@/services/document-processing.service';
 import { extractFields } from '@/services/document-extraction.service';
 
 type Params = { documentId: string };
@@ -82,7 +82,7 @@ export async function POST(
     }
 
     // Parse optional config from body
-    let body: { provider?: string; model?: string; priority?: string; context?: string } = {};
+    let body: { provider?: string; model?: string; priority?: string; context?: string; batchMode?: boolean } = {};
     try {
       const text = await request.text();
       if (text) {
@@ -92,6 +92,8 @@ export async function POST(
       // Empty or invalid body is ok
     }
 
+    await resetProcessingRetryState(documentId);
+
     // Trigger extraction
     const result = await extractFields(
       documentId,
@@ -99,9 +101,10 @@ export async function POST(
       document.companyId,
       session.id,
       {
-        provider: body.provider as 'openai' | 'anthropic' | 'google' | undefined,
+        provider: body.provider as 'openai' | 'anthropic' | 'google' | 'mistral' | undefined,
         model: body.model,
         additionalContext: body.context,
+        batchMode: body.batchMode,
       }
     );
 

@@ -54,6 +54,30 @@ export interface TestResult {
   latencyMs?: number;
 }
 
+function formatTestError(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return 'Unknown error';
+  }
+
+  const cause = (error as Error & { cause?: unknown }).cause;
+  if (cause instanceof Error && cause.message) {
+    return `${error.message}: ${cause.message}`;
+  }
+
+  if (cause && typeof cause === 'object') {
+    const causeCode =
+      'code' in cause && typeof cause.code === 'string' ? cause.code : undefined;
+    const causeMessage =
+      'message' in cause && typeof cause.message === 'string' ? cause.message : undefined;
+
+    if (causeCode || causeMessage) {
+      return [error.message, causeCode, causeMessage].filter(Boolean).join(' | ');
+    }
+  }
+
+  return error.message;
+}
+
 // Fields tracked for audit logging
 const TRACKED_FIELDS = ['name', 'isEnabled', 'isDefault', 'settings'];
 
@@ -577,7 +601,7 @@ export async function getAvailableConnectors(
 
   // Define all providers per type
   const providersPerType: Record<ConnectorType, ConnectorProvider[]> = {
-    AI_PROVIDER: ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'OPENROUTER'],
+    AI_PROVIDER: ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'OPENROUTER', 'MISTRAL'],
     STORAGE: ['ONEDRIVE', 'SHAREPOINT'],
   };
 
@@ -626,6 +650,9 @@ export async function testConnector(
       case 'OPENROUTER':
         await testOpenRouter(connector.credentials as { apiKey: string });
         break;
+      case 'MISTRAL':
+        await testMistral(connector.credentials as { apiKey: string });
+        break;
       case 'ONEDRIVE':
         await testOneDrive(
           connector.credentials as { clientId: string; clientSecret: string; tenantId: string }
@@ -647,7 +674,7 @@ export async function testConnector(
     }
     success = true;
   } catch (e) {
-    error = e instanceof Error ? e.message : 'Unknown error';
+    error = formatTestError(e);
   }
 
   const latencyMs = Date.now() - startTime;
@@ -708,6 +735,90 @@ async function testOpenRouter(credentials: { apiKey: string }): Promise<void> {
     baseURL: 'https://openrouter.ai/api/v1',
   });
   await client.models.list();
+}
+
+async function testMistral(credentials: { apiKey: string }): Promise<void> {
+  // First verify the API key with a lightweight models request.
+  const modelsResponse = await fetch('https://api.mistral.ai/v1/models', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${credentials.apiKey}`,
+      Accept: 'application/json',
+    },
+  });
+
+  if (!modelsResponse.ok) {
+    const errorData = await modelsResponse.json().catch(() => null) as
+      | {
+          message?: string;
+          error?: string | { message?: string };
+          detail?: string;
+        }
+      | null;
+
+    const errorMessage =
+      errorData?.message ||
+      (typeof errorData?.error === 'string' ? errorData.error : errorData?.error?.message) ||
+      errorData?.detail ||
+      'Failed to validate Mistral API credentials';
+
+    throw new Error(errorMessage);
+  }
+
+  const response = await fetch('https://api.mistral.ai/v1/ocr', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${credentials.apiKey}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'mistral-ocr-latest',
+      document: {
+        type: 'image_url',
+        image_url:
+          'https://raw.githubusercontent.com/mistralai/cookbook/refs/heads/main/mistral/ocr/receipt.png',
+      },
+      document_annotation_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'connector_test',
+          schema: {
+            type: 'object',
+            properties: {
+              status: {
+                type: 'string',
+              },
+            },
+            required: ['status'],
+            additionalProperties: false,
+          },
+        },
+      },
+      document_annotation_prompt:
+        'Return a JSON object with a single string field named "status".',
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null) as
+      | {
+          message?: string;
+          error?: string | { message?: string };
+          detail?: string;
+        }
+      | null;
+
+    const errorMessage =
+      errorData?.message ||
+      (typeof errorData?.error === 'string' ? errorData.error : errorData?.error?.message) ||
+      errorData?.detail ||
+      'Failed to validate Mistral OCR credentials';
+
+    throw new Error(errorMessage);
+  }
+
+  await response.json();
 }
 
 async function testOneDrive(credentials: {

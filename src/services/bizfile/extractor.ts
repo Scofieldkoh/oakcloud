@@ -14,6 +14,11 @@ import {
   stripMarkdownCodeBlocks,
 } from '@/lib/ai';
 import type { AIModel, AIImageInput } from '@/lib/ai';
+import {
+  extractStructuredWithMistralOCR,
+  MISTRAL_OCR_MODEL_ID,
+  MistralOCRNotConfiguredError,
+} from '@/lib/ocr/mistral';
 import type {
   ExtractedBizFileData,
   BizFileVisionInput,
@@ -22,6 +27,9 @@ import type {
 } from './types';
 
 const log = createLogger('bizfile-extractor');
+const NO_AI_PROVIDER_ERROR =
+  'No AI provider configured. Please configure an AI connector for this tenant ' +
+  'or set one of: MISTRAL_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_AI_API_KEY, or OPENROUTER_API_KEY';
 
 // ============================================================================
 // AI Prompts
@@ -185,6 +193,18 @@ function cleanJsonResponse(content: string): string {
 }
 
 /**
+ * Validate parsed extraction data
+ */
+function validateExtractionData(parsed: ExtractedBizFileData): ExtractedBizFileData {
+  // Basic validation of required fields
+  if (!parsed.entityDetails?.uen || !parsed.entityDetails?.name) {
+    throw new Error('AI extraction missing required fields (UEN or company name)');
+  }
+
+  return parsed;
+}
+
+/**
  * Parse and validate AI response
  */
 function parseExtractionResponse(content: string): ExtractedBizFileData {
@@ -201,12 +221,62 @@ function parseExtractionResponse(content: string): ExtractedBizFileData {
     throw new Error('Failed to parse AI extraction response. The AI returned invalid JSON.');
   }
 
-  // Basic validation of required fields
-  if (!parsed.entityDetails?.uen || !parsed.entityDetails?.name) {
-    throw new Error('AI extraction missing required fields (UEN or company name)');
+  return validateExtractionData(parsed);
+}
+
+function buildMistralPrompt(additionalContext?: string): string {
+  return `${EXTRACTION_SYSTEM_PROMPT}\n\n${buildUserPrompt(additionalContext)}`;
+}
+
+async function resolveBizFileModel(
+  options?: BizFileExtractionOptions
+): Promise<AIModel | null> {
+  if (options?.tenantId !== undefined) {
+    return options.modelId || (await getBestAvailableModelForTenant(options.tenantId));
   }
 
-  return parsed;
+  return options?.modelId || getBestAvailableModel();
+}
+
+async function tryExtractBizFileWithMistral(
+  fileInput: BizFileVisionInput,
+  options: BizFileExtractionOptions | undefined,
+  extractionType: 'vision' | 'text'
+): Promise<BizFileExtractionResult | null> {
+  if (options?.modelId) {
+    return null;
+  }
+
+  try {
+    const result = await extractStructuredWithMistralOCR<ExtractedBizFileData>({
+      document: fileInput,
+      prompt: buildMistralPrompt(options?.additionalContext),
+      tenantId: options?.tenantId ?? null,
+      userId: options?.userId,
+      operation: 'bizfile_extraction',
+      usageMetadata: {
+        companyId: options?.companyId,
+        documentId: options?.documentId,
+        extractionType,
+      },
+    });
+
+    log.info(`Using Mistral OCR model: ${result.model} (mistral)`);
+
+    return {
+      data: validateExtractionData(result.documentAnnotation),
+      modelUsed: result.model || MISTRAL_OCR_MODEL_ID,
+      providerUsed: result.provider,
+      usage: result.usage,
+    };
+  } catch (error) {
+    if (error instanceof MistralOCRNotConfiguredError) {
+      log.info('Mistral OCR not configured, falling back to standard AI extraction');
+      return null;
+    }
+
+    throw error;
+  }
 }
 
 // ============================================================================
@@ -233,22 +303,16 @@ export async function extractBizFileWithVision(
   fileInput: BizFileVisionInput,
   options?: BizFileExtractionOptions
 ): Promise<BizFileExtractionResult> {
-  // Determine which model to use based on tenant context
-  let modelId: AIModel | null;
-
-  if (options?.tenantId !== undefined) {
-    // Use connector-aware model resolution
-    modelId = options.modelId || (await getBestAvailableModelForTenant(options.tenantId));
-  } else {
-    // Use environment-based model resolution
-    modelId = options?.modelId || getBestAvailableModel();
+  const mistralResult = await tryExtractBizFileWithMistral(fileInput, options, 'vision');
+  if (mistralResult) {
+    return mistralResult;
   }
 
+  // Determine which model to use based on tenant context
+  const modelId = await resolveBizFileModel(options);
+
   if (!modelId) {
-    throw new Error(
-      'No AI provider configured. Please configure an AI connector for this tenant ' +
-        'or set one of: OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY'
-    );
+    throw new Error(NO_AI_PROVIDER_ERROR);
   }
 
   const modelConfig = getModelConfig(modelId);
@@ -325,22 +389,18 @@ export async function extractBizFileData(
   pdfText: string,
   options?: BizFileExtractionOptions
 ): Promise<BizFileExtractionResult> {
-  // Determine which model to use based on tenant context
-  let modelId: AIModel | null;
-
-  if (options?.tenantId !== undefined) {
-    // Use connector-aware model resolution
-    modelId = options.modelId || (await getBestAvailableModelForTenant(options.tenantId));
-  } else {
-    // Use environment-based model resolution
-    modelId = options?.modelId || getBestAvailableModel();
+  if (options?.documentInput && !options.modelId) {
+    const mistralResult = await tryExtractBizFileWithMistral(options.documentInput, options, 'text');
+    if (mistralResult) {
+      return mistralResult;
+    }
   }
 
+  // Determine which model to use based on tenant context
+  const modelId = await resolveBizFileModel(options);
+
   if (!modelId) {
-    throw new Error(
-      'No AI provider configured. Please configure an AI connector for this tenant ' +
-        'or set one of: OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY'
-    );
+    throw new Error(NO_AI_PROVIDER_ERROR);
   }
 
   const modelConfig = getModelConfig(modelId);

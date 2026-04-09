@@ -15,6 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
+import { reconcilePendingMistralBatchExtraction } from '@/services/document-extraction.service';
 
 type Params = { documentId: string };
 
@@ -31,7 +32,7 @@ export async function GET(
     const { documentId } = await params;
 
     // Single query to get document with all related data
-    const processingDoc = await prisma.processingDocument.findUnique({
+    let processingDoc = await prisma.processingDocument.findUnique({
       where: { id: documentId },
       include: {
         document: {
@@ -102,10 +103,72 @@ export async function GET(
       );
     }
 
+    if (processingDoc.pipelineStatus === 'QUEUED' || processingDoc.pipelineStatus === 'PROCESSING') {
+      try {
+        await reconcilePendingMistralBatchExtraction(
+          processingDoc.id,
+          document.tenantId,
+          document.companyId,
+          session.id
+        );
+        processingDoc = await prisma.processingDocument.findUnique({
+          where: { id: documentId },
+          include: {
+            document: {
+              select: {
+                companyId: true,
+                tenantId: true,
+                fileName: true,
+                originalFileName: true,
+                mimeType: true,
+                fileSize: true,
+                storageKey: true,
+                company: {
+                  select: {
+                    id: true,
+                    name: true,
+                    homeCurrency: true,
+                  },
+                },
+              },
+            },
+            pages: {
+              orderBy: { pageNumber: 'asc' },
+              select: {
+                id: true,
+                pageNumber: true,
+                widthPx: true,
+                heightPx: true,
+                rotationDeg: true,
+                renderDpi: true,
+              },
+            },
+          },
+        });
+        if (!processingDoc) {
+          throw new Error('Document not found after batch reconciliation');
+        }
+      } catch (batchError) {
+        console.warn('Failed to reconcile pending batch extraction:', batchError);
+      }
+    }
+
+    if (!processingDoc) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Document not found' },
+        },
+        { status: 404 }
+      );
+    }
+
+    const resolvedProcessingDoc = processingDoc;
+
     // Get current revision with line items
     // First check currentRevisionId, then fall back to latest revision
     let currentRevision = null;
-    const revisionId = processingDoc.currentRevisionId;
+    const revisionId = resolvedProcessingDoc.currentRevisionId;
 
     if (revisionId) {
       currentRevision = await prisma.documentRevision.findUnique({
@@ -138,7 +201,7 @@ export async function GET(
       document.storageKey?.toLowerCase().endsWith('.pdf');
 
     // Transform pages
-    const pages = processingDoc.pages.map((page) => ({
+    const pages = resolvedProcessingDoc.pages.map((page) => ({
       id: page.id,
       pageNumber: page.pageNumber,
       width: page.widthPx,
@@ -154,22 +217,22 @@ export async function GET(
       success: true,
       data: {
         document: {
-          id: processingDoc.id,
-          documentId: processingDoc.documentId,
-          isContainer: processingDoc.isContainer,
-          parentDocumentId: processingDoc.parentProcessingDocId,
-          pageFrom: processingDoc.pageFrom,
-          pageTo: processingDoc.pageTo,
-          pageCount: processingDoc.pageCount,
-          pipelineStatus: processingDoc.pipelineStatus,
-          duplicateStatus: processingDoc.duplicateStatus,
-          currentRevisionId: processingDoc.currentRevisionId,
-          lockVersion: processingDoc.lockVersion,
-          createdAt: processingDoc.createdAt.toISOString(),
+          id: resolvedProcessingDoc.id,
+          documentId: resolvedProcessingDoc.documentId,
+          isContainer: resolvedProcessingDoc.isContainer,
+          parentDocumentId: resolvedProcessingDoc.parentProcessingDocId,
+          pageFrom: resolvedProcessingDoc.pageFrom,
+          pageTo: resolvedProcessingDoc.pageTo,
+          pageCount: resolvedProcessingDoc.pageCount,
+          pipelineStatus: resolvedProcessingDoc.pipelineStatus,
+          duplicateStatus: resolvedProcessingDoc.duplicateStatus,
+          currentRevisionId: resolvedProcessingDoc.currentRevisionId,
+          lockVersion: resolvedProcessingDoc.lockVersion,
+          createdAt: resolvedProcessingDoc.createdAt.toISOString(),
           pages: pages.length,
           // Versioning
-          version: processingDoc.version,
-          rootDocumentId: processingDoc.rootDocumentId,
+          version: resolvedProcessingDoc.version,
+          rootDocumentId: resolvedProcessingDoc.rootDocumentId,
           // File details (prefer renamed fileName after approval, fallback to original)
           fileName: document.fileName || document.originalFileName,
           mimeType: document.mimeType,
@@ -233,7 +296,7 @@ export async function GET(
           pages,
           isPdf: isPdf || false,
           // Include lockVersion in URL for cache busting after page modifications
-          pdfUrl: isPdf ? `/api/processing-documents/${documentId}/pdf?v=${processingDoc.lockVersion}` : null,
+          pdfUrl: isPdf ? `/api/processing-documents/${documentId}/pdf?v=${resolvedProcessingDoc.lockVersion}` : null,
         },
         // Tags removed - will be loaded lazily via separate endpoint
       },

@@ -6,6 +6,10 @@
 
 import type { AIModel, AIModelConfig, AIProvider } from './types';
 
+export const MISTRAL_OCR_PRICE_PER_PAGE_USD = 0.003;
+export const MISTRAL_OCR_BATCH_PRICE_PER_PAGE_USD =
+  MISTRAL_OCR_PRICE_PER_PAGE_USD / 2;
+
 // Model configurations
 export const AI_MODELS: Record<AIModel, AIModelConfig> = {
   // OpenAI Models
@@ -275,6 +279,49 @@ export function calculateCost(
   const outputCost = (outputTokens / 1_000_000) * config.outputPricePerMillion;
 
   return inputCost + outputCost;
+}
+
+interface UsageCostInput {
+  modelId: string;
+  provider?: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  pagesProcessed?: number;
+  batchMode?: boolean;
+}
+
+/**
+ * Calculate usage cost across both token-priced and page-priced models.
+ * For Mistral OCR, `pagesProcessed` is preferred and `totalTokens` is used
+ * as a page-count fallback so existing usage UIs can keep working.
+ */
+export function calculateUsageCost({
+  modelId,
+  provider,
+  inputTokens,
+  outputTokens,
+  totalTokens,
+  pagesProcessed,
+  batchMode,
+}: UsageCostInput): number {
+  if (modelId === 'mistral-ocr-latest' || provider === 'mistral') {
+    const billablePages =
+      typeof pagesProcessed === 'number' && Number.isFinite(pagesProcessed)
+        ? Math.max(0, Math.trunc(pagesProcessed))
+        : Math.max(0, Math.trunc(totalTokens));
+
+    return billablePages *
+      (batchMode
+        ? MISTRAL_OCR_BATCH_PRICE_PER_PAGE_USD
+        : MISTRAL_OCR_PRICE_PER_PAGE_USD);
+  }
+
+  if (AI_MODELS[modelId as AIModel]) {
+    return calculateCost(modelId as AIModel, inputTokens, outputTokens);
+  }
+
+  return 0;
 }
 
 /**

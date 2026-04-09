@@ -29,6 +29,7 @@ import {
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import {
   useProcessingDocuments,
+  useSelectAllProcessingDocuments,
   useDocumentNavigation,
   type ProcessingDocumentSearchParams,
   type ProcessingDocumentListItem,
@@ -433,6 +434,7 @@ export default function ProcessingDocumentsPage() {
 
   const [params, setParams] = useState(getParamsFromUrl);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedDocumentMap, setSelectedDocumentMap] = useState<Record<string, ProcessingDocumentListItem>>({});
   const [expandedMobileCardIds, setExpandedMobileCardIds] = useState<string[]>([]);
   const isResizingRef = useRef(false);
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
@@ -444,6 +446,7 @@ export default function ProcessingDocumentsPage() {
   const { data: columnPref } = useUserPreference<Record<string, number>>(COLUMN_PREF_KEY);
   const { data: visibilityPref } = useUserPreference<Record<string, boolean>>(COLUMN_VISIBILITY_PREF_KEY);
   const saveColumnPref = useUpsertUserPreference<Record<string, number | boolean>>();
+  const selectAllFilteredDocuments = useSelectAllProcessingDocuments();
   const [columnWidths, setColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
   const [columnVisibility, setColumnVisibility] = useState<Partial<Record<ColumnId, boolean>>>({});
 
@@ -798,35 +801,190 @@ export default function ProcessingDocumentsPage() {
   // Fetch tags for filter dropdown (uses effectiveCompanyId if available, otherwise just tenant tags)
   const { data: tagsData } = useAvailableTags(effectiveCompanyId, activeTenantId);
 
+  const selectionScopeKey = useMemo(() => JSON.stringify({
+    tenantId: activeTenantId,
+    companyId: effectiveCompanyId,
+    pipelineStatus: params.pipelineStatus,
+    duplicateStatus: params.duplicateStatus,
+    revisionStatus: params.revisionStatus,
+    needsReview: params.needsReview,
+    isContainer: params.isContainer,
+    uploadDatePreset: params.uploadDatePreset,
+    uploadDateFrom: params.uploadDateFrom,
+    uploadDateTo: params.uploadDateTo,
+    documentDateFrom: params.documentDateFrom,
+    documentDateTo: params.documentDateTo,
+    search: params.search,
+    vendorName: params.vendorName,
+    documentNumber: params.documentNumber,
+    fileName: params.fileName,
+    documentCategory: params.documentCategory,
+    documentSubCategory: params.documentSubCategory,
+    tagIds: params.tagIds,
+    currency: params.currency,
+    homeCurrency: params.homeCurrency,
+    subtotal: params.subtotal,
+    subtotalFrom: params.subtotalFrom,
+    subtotalTo: params.subtotalTo,
+    tax: params.tax,
+    taxFrom: params.taxFrom,
+    taxTo: params.taxTo,
+    total: params.total,
+    totalFrom: params.totalFrom,
+    totalTo: params.totalTo,
+    homeSubtotal: params.homeSubtotal,
+    homeSubtotalFrom: params.homeSubtotalFrom,
+    homeSubtotalTo: params.homeSubtotalTo,
+    homeTax: params.homeTax,
+    homeTaxFrom: params.homeTaxFrom,
+    homeTaxTo: params.homeTaxTo,
+    homeTotal: params.homeTotal,
+    homeTotalFrom: params.homeTotalFrom,
+    homeTotalTo: params.homeTotalTo,
+  }), [
+    activeTenantId,
+    effectiveCompanyId,
+    params.pipelineStatus,
+    params.duplicateStatus,
+    params.revisionStatus,
+    params.needsReview,
+    params.isContainer,
+    params.uploadDatePreset,
+    params.uploadDateFrom,
+    params.uploadDateTo,
+    params.documentDateFrom,
+    params.documentDateTo,
+    params.search,
+    params.vendorName,
+    params.documentNumber,
+    params.fileName,
+    params.documentCategory,
+    params.documentSubCategory,
+    params.tagIds,
+    params.currency,
+    params.homeCurrency,
+    params.subtotal,
+    params.subtotalFrom,
+    params.subtotalTo,
+    params.tax,
+    params.taxFrom,
+    params.taxTo,
+    params.total,
+    params.totalFrom,
+    params.totalTo,
+    params.homeSubtotal,
+    params.homeSubtotalFrom,
+    params.homeSubtotalTo,
+    params.homeTax,
+    params.homeTaxFrom,
+    params.homeTaxTo,
+    params.homeTotal,
+    params.homeTotalFrom,
+    params.homeTotalTo,
+  ]);
+  const previousSelectionScopeKeyRef = useRef(selectionScopeKey);
+
   // Reset page and selection when tenant or sidebar company changes
   useEffect(() => {
     setParams((prev) => ({ ...prev, page: 1 }));
     setSelectedIds([]);
+    setSelectedDocumentMap({});
   }, [activeTenantId, activeCompanyId]);
 
-  // Clear selection when params change (e.g., page change, filter change)
   useEffect(() => {
-    setSelectedIds([]);
+    if (previousSelectionScopeKeyRef.current !== selectionScopeKey) {
+      setSelectedIds([]);
+      setSelectedDocumentMap({});
+    }
+    previousSelectionScopeKeyRef.current = selectionScopeKey;
+  }, [selectionScopeKey]);
+
+  // Collapse expanded mobile cards when params change
+  useEffect(() => {
     setExpandedMobileCardIds([]);
   }, [params]);
+
+  useEffect(() => {
+    if (!data?.documents || selectedIds.length === 0) return;
+
+    setSelectedDocumentMap((prev) => {
+      const next = { ...prev };
+
+      for (const document of data.documents) {
+        if (selectedIds.includes(document.id)) {
+          next[document.id] = document;
+        }
+      }
+
+      for (const id of Object.keys(next)) {
+        if (!selectedIds.includes(id)) {
+          delete next[id];
+        }
+      }
+
+      return next;
+    });
+  }, [data?.documents, selectedIds]);
 
   // Selection handlers
   const toggleSelectAll = useCallback(() => {
     if (!data?.documents) return;
     const allIds = data.documents.map((d) => d.id);
     const allSelected = allIds.every((id) => selectedIds.includes(id));
-    setSelectedIds(allSelected ? [] : allIds);
+    setSelectedIds((prev) =>
+      allSelected
+        ? prev.filter((id) => !allIds.includes(id))
+        : Array.from(new Set([...prev, ...allIds]))
+    );
+    setSelectedDocumentMap((prev) => {
+      const next = { ...prev };
+      if (allSelected) {
+        for (const id of allIds) {
+          delete next[id];
+        }
+      } else {
+        for (const document of data.documents) {
+          next[document.id] = document;
+        }
+      }
+      return next;
+    });
   }, [data?.documents, selectedIds]);
 
   const toggleSelect = useCallback((id: string) => {
+    const currentDocument = data?.documents?.find((document) => document.id === id);
+
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
     );
-  }, []);
+    setSelectedDocumentMap((prev) => {
+      const next = { ...prev };
+      if (id in next) {
+        delete next[id];
+      } else if (currentDocument) {
+        next[id] = currentDocument;
+      }
+      return next;
+    });
+  }, [data?.documents]);
 
   const clearSelection = useCallback(() => {
     setSelectedIds([]);
+    setSelectedDocumentMap({});
   }, []);
+
+  const handleSelectAllFiltered = useCallback(async () => {
+    const result = await selectAllFilteredDocuments.mutateAsync({
+      ...params,
+      companyId: effectiveCompanyId,
+      tenantId: activeTenantId,
+    });
+
+    setSelectedIds(result.ids);
+    setSelectedDocumentMap(
+      Object.fromEntries(result.documents.map((document) => [document.id, document]))
+    );
+  }, [activeTenantId, effectiveCompanyId, params, selectAllFilteredDocuments]);
 
   const toggleMobileCardExpanded = useCallback((id: string) => {
     setExpandedMobileCardIds((prev) =>
@@ -836,9 +994,11 @@ export default function ProcessingDocumentsPage() {
 
   // Get selected documents for bulk actions summary
   const selectedDocuments = useMemo(() => {
-    if (!data?.documents || selectedIds.length === 0) return [];
-    return data.documents.filter((doc) => selectedIds.includes(doc.id));
-  }, [data?.documents, selectedIds]);
+    if (selectedIds.length === 0) return [];
+    return selectedIds
+      .map((id) => selectedDocumentMap[id])
+      .filter((document): document is ProcessingDocumentListItem => Boolean(document));
+  }, [selectedDocumentMap, selectedIds]);
 
   const handleRowNavigate = useCallback(
     (e: MouseEvent, documentId: string) => {
@@ -906,6 +1066,11 @@ export default function ProcessingDocumentsPage() {
     if (selectedCount === allIds.length) return 'all';
     return 'partial';
   }, [data?.documents, selectedIds]);
+
+  const allFilteredSelected = useMemo(() => {
+    if (!data || data.total === 0) return false;
+    return selectedIds.length === data.total;
+  }, [data, selectedIds.length]);
 
   // Memoize URL construction
   const targetUrl = useMemo(() => {
@@ -1561,6 +1726,49 @@ export default function ProcessingDocumentsPage() {
           activeTenantId={activeTenantId}
         />
       </div>
+
+      {!error && data && data.total > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-text-secondary">
+            {selectedIds.length > 0
+              ? `${selectedIds.length.toLocaleString()} selected`
+              : `${data.total.toLocaleString()} filtered result${data.total === 1 ? '' : 's'}`}
+          </span>
+
+          {data.documents.length > 0 && (
+            <button
+              type="button"
+              onClick={toggleSelectAll}
+              className="btn-ghost btn-sm"
+            >
+              {selectionState === 'all' ? 'Deselect this page' : `Select this page (${data.documents.length})`}
+            </button>
+          )}
+
+          {data.total > data.documents.length && (
+            <button
+              type="button"
+              onClick={() => void handleSelectAllFiltered()}
+              disabled={selectAllFilteredDocuments.isPending || allFilteredSelected}
+              className="btn-secondary btn-sm"
+            >
+              {selectAllFilteredDocuments.isPending
+                ? 'Selecting...'
+                : allFilteredSelected
+                  ? `All ${data.total.toLocaleString()} filtered selected`
+                  : `Select all filtered (${data.total.toLocaleString()})`}
+            </button>
+          )}
+
+          {selectAllFilteredDocuments.isError && (
+            <span className="text-status-error text-xs">
+              {selectAllFilteredDocuments.error instanceof Error
+                ? selectAllFilteredDocuments.error.message
+                : 'Failed to select all filtered documents'}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Error State */}
       {error && (

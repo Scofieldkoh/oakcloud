@@ -61,6 +61,7 @@ const operations: {
   variant: 'default' | 'warning' | 'danger';
   requiresConfirmation: boolean;
   minSelection?: number;
+  maxSelection?: number;
 }[] = [
     {
       id: 'DOWNLOAD_ZIP',
@@ -110,6 +111,7 @@ const operations: {
       variant: 'default',
       requiresConfirmation: true,
       minSelection: 2, // Requires at least 2 documents
+      maxSelection: 100,
     },
   ];
 
@@ -379,7 +381,13 @@ export function BulkActionsToolbar({
               (bulkMerge.isPending && confirmDialog.operation === 'MERGE' && op.id === 'MERGE') ||
               (activeOperationId === op.id);
             const meetsMinSelection = !op.minSelection || selectedIds.length >= op.minSelection;
-            const isDisabled = bulkOperation.isPending || bulkMerge.isPending || activeOperationId !== null || !meetsMinSelection;
+            const meetsMaxSelection = !op.maxSelection || selectedIds.length <= op.maxSelection;
+            const isDisabled =
+              bulkOperation.isPending ||
+              bulkMerge.isPending ||
+              activeOperationId !== null ||
+              !meetsMinSelection ||
+              !meetsMaxSelection;
 
             return (
               <button
@@ -399,6 +407,8 @@ export function BulkActionsToolbar({
                 title={
                   !meetsMinSelection && op.minSelection
                     ? `Requires at least ${op.minSelection} documents selected`
+                    : !meetsMaxSelection && op.maxSelection
+                      ? `Supports up to ${op.maxSelection} documents at once`
                     : op.description
                 }
               >

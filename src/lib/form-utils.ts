@@ -277,6 +277,114 @@ export interface FormSubmissionAiReview {
   };
 }
 
+function normalizeAiReviewSectionTitleValue(title: string): string {
+  return title.trim().replace(/\s+/g, ' ');
+}
+
+function isHiddenAiReviewSectionTitle(title: string): boolean {
+  const normalizedTitle = normalizeAiReviewSectionTitleValue(title).toLowerCase();
+  return normalizedTitle === 'recommended actions' || normalizedTitle === 'recommended action';
+}
+
+function isIssuesFoundSectionTitle(title: string): boolean {
+  return normalizeAiReviewSectionTitleValue(title).toLowerCase() === 'issues found';
+}
+
+export function sanitizeAiReviewIssueText(value: string): string {
+  let cleaned = value.trim().replace(/\s+/g, ' ');
+
+  cleaned = cleaned.replace(/\s*\((?=[^)]*\b(?:field|fields|file|files)\b)[^)]*\)/gi, '');
+  cleaned = cleaned.replace(/\b(?:uploaded|provided)\s+document\b/gi, 'attachment');
+  cleaned = cleaned.replace(/\bthis document\b/gi, 'this attachment');
+  cleaned = cleaned.replace(/^Cannot verify:\s*[^:.;()]+?\s+appears to be\b/i, 'Attachment appears to be');
+  cleaned = cleaned.replace(/^Cannot verify:\s*[^:.;()]+?\s+is\b/i, 'Attachment is');
+  cleaned = cleaned.replace(/^Cannot verify:\s*[^:.;()]+?\s+does\b/i, 'Attachment does');
+  cleaned = cleaned.replace(/^Cannot verify:\s*[^:.;()]+?\s+cannot\b/i, 'Attachment cannot');
+  cleaned = cleaned.replace(/^Cannot verify:\s*[^:.;()]+\b/i, 'Attachment');
+  cleaned = cleaned.replace(
+    /^Proof of Address mismatch\b\s*:?\s*/i,
+    'Proof of address does not match the applicant or declared residential address: '
+  );
+  cleaned = cleaned.replace(
+    /^Identity document type inconsistency\b\s*:?\s*/i,
+    'Identity document type is inconsistent: '
+  );
+  cleaned = cleaned.replace(/\s+([,.;:])/g, '$1');
+  cleaned = cleaned.replace(/:\s*/g, ': ');
+  cleaned = cleaned.trim();
+
+  if (cleaned && /^[a-z]/.test(cleaned)) {
+    cleaned = `${cleaned.charAt(0).toUpperCase()}${cleaned.slice(1)}`;
+  }
+
+  if (cleaned && !/[.!?]$/.test(cleaned)) {
+    cleaned = `${cleaned}.`;
+  }
+
+  return cleaned;
+}
+
+export function sanitizeAiReviewSections(
+  sections: FormSubmissionAiReviewSection[]
+): FormSubmissionAiReviewSection[] {
+  const sanitizedSections: FormSubmissionAiReviewSection[] = [];
+
+  for (const section of sections) {
+    const title = normalizeAiReviewSectionTitleValue(section.title);
+    if (!title || isHiddenAiReviewSectionTitle(title)) continue;
+
+    if (section.type === 'text') {
+      const content = section.content?.trim() || null;
+      if (!content) continue;
+
+      sanitizedSections.push({
+        title,
+        type: 'text',
+        content,
+        items: [],
+        entries: [],
+      });
+      continue;
+    }
+
+    if (section.type === 'bullet_list') {
+      const items = section.items
+        .map((item) => isIssuesFoundSectionTitle(title) ? sanitizeAiReviewIssueText(item) : item.trim())
+        .filter(Boolean);
+
+      if (items.length === 0) continue;
+
+      sanitizedSections.push({
+        title,
+        type: 'bullet_list',
+        content: null,
+        items,
+        entries: [],
+      });
+      continue;
+    }
+
+    const entries = section.entries
+      .map((entry) => ({
+        label: entry.label.trim(),
+        value: entry.value.trim(),
+      }))
+      .filter((entry) => entry.label && entry.value);
+
+    if (entries.length === 0) continue;
+
+    sanitizedSections.push({
+      title,
+      type: 'key_value',
+      content: null,
+      items: [],
+      entries,
+    });
+  }
+
+  return sanitizedSections;
+}
+
 export interface FormI18nFieldTranslation {
   label?: string;
   placeholder?: string;
@@ -435,7 +543,7 @@ function normalizeAiReviewSections(value: unknown): FormSubmissionAiReviewSectio
     if (sections.length >= 8) break;
   }
 
-  return sections;
+  return sanitizeAiReviewSections(sections);
 }
 
 function normalizeAiReviewUsage(value: unknown): FormSubmissionAiReview['usage'] | undefined {

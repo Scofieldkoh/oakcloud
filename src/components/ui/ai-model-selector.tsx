@@ -73,9 +73,12 @@ interface AIModelSelectorProps {
   onChange: (modelId: string) => void;
   label?: string;
   placeholder?: string;
+  autoOptionLabel?: string;
   helpText?: string;
   disabled?: boolean;
   className?: string;
+  /** Allow leaving the selector blank to let the backend choose automatically */
+  allowAuto?: boolean;
   /** Compact variant without card wrapper */
   variant?: 'default' | 'compact';
   /** Show only models that support JSON mode */
@@ -118,9 +121,11 @@ export function AIModelSelector({
   onChange,
   label = 'AI Model',
   placeholder = '-- Select a model --',
+  autoOptionLabel = 'Auto (Recommended)',
   helpText,
   disabled = false,
   className = '',
+  allowAuto = false,
   variant = 'default',
   jsonModeOnly = false,
   showDetails = true,
@@ -182,6 +187,13 @@ export function AIModelSelector({
         // Update the ref for next comparison
         previousDefaultRef.current = result.defaultModel;
 
+        if (allowAuto) {
+          if (value && !currentModelAvailable) {
+            onChange('');
+          }
+          return;
+        }
+
         if (result.defaultModel && (!value || !currentModelAvailable || defaultChanged)) {
           onChange(result.defaultModel);
         }
@@ -215,6 +227,7 @@ export function AIModelSelector({
 
   // Check if no models are available
   const noModelsAvailable = !isLoading && (!filteredModels || filteredModels.length === 0);
+  const autoOnlyMode = allowAuto && noModelsAvailable;
 
   // Handle context change - must be before any early returns
   const handleContextChange = useCallback(
@@ -248,15 +261,19 @@ export function AIModelSelector({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="input input-sm w-full appearance-none pr-8"
-        disabled={disabled || isLoading || noModelsAvailable}
+        disabled={disabled || isLoading || (!allowAuto && noModelsAvailable)}
       >
         {isLoading ? (
           <option value="">Loading models...</option>
         ) : noModelsAvailable ? (
-          <option value="">No AI models available</option>
+          allowAuto ? (
+            <option value="">{autoOptionLabel}</option>
+          ) : (
+            <option value="">No AI models available</option>
+          )
         ) : (
           <>
-            <option value="">{placeholder}</option>
+            <option value="">{allowAuto ? autoOptionLabel : placeholder}</option>
             {/* Group by provider */}
             {data?.providers
               ?.filter((p) => p.available)
@@ -298,15 +315,27 @@ export function AIModelSelector({
 
   // No models available warning
   const noModelsWarning = noModelsAvailable && (
-    <div className="mt-2 p-3 bg-status-warning/10 border border-status-warning/30 rounded text-sm text-status-warning">
-      <div className="flex items-center gap-2">
-        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-        <span>
-          No AI providers are configured. Please configure an AI connector in Admin &rarr; Connectors,
-          or set up environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY).
-        </span>
+    allowAuto ? (
+      <div className="mt-2 p-3 bg-status-info/10 border border-status-info/30 rounded text-sm text-status-info">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>
+            No standard AI models are available in the selector. Auto mode can still use OCR-first
+            extraction, such as Mistral OCR, if it is configured in Admin &rarr; Connectors.
+          </span>
+        </div>
       </div>
-    </div>
+    ) : (
+      <div className="mt-2 p-3 bg-status-warning/10 border border-status-warning/30 rounded text-sm text-status-warning">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>
+            No AI providers are configured. Please configure an AI connector in Admin &rarr; Connectors,
+            or set up environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_AI_API_KEY).
+          </span>
+        </div>
+      </div>
+    )
   );
 
   // Model details
@@ -382,7 +411,7 @@ export function AIModelSelector({
         {selectElement}
         {modelDetails}
         {noModelsWarning}
-        {!value && helpText && !noModelsAvailable && (
+        {!value && helpText && (!noModelsAvailable || autoOnlyMode) && (
           <p className="text-xs text-text-muted mt-1">{helpText}</p>
         )}
         {contextInputElement}
@@ -402,7 +431,7 @@ export function AIModelSelector({
           </div>
         </div>
         {noModelsWarning}
-        {!value && helpText && !noModelsAvailable && (
+        {!value && helpText && (!noModelsAvailable || autoOnlyMode) && (
           <p className="text-sm text-text-muted mt-2 ml-8">{helpText}</p>
         )}
         {contextInputElement}

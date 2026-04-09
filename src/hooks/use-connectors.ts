@@ -13,7 +13,14 @@ export interface Connector {
   tenantId: string | null;
   name: string;
   type: 'AI_PROVIDER' | 'STORAGE';
-  provider: 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'OPENROUTER' | 'ONEDRIVE' | 'SHAREPOINT';
+  provider:
+    | 'OPENAI'
+    | 'ANTHROPIC'
+    | 'GOOGLE'
+    | 'OPENROUTER'
+    | 'MISTRAL'
+    | 'ONEDRIVE'
+    | 'SHAREPOINT';
   credentials: Record<string, unknown>;
   credentialsMasked?: boolean;
   settings: Record<string, unknown> | null;
@@ -37,7 +44,14 @@ export interface ConnectorsResponse {
 export interface ConnectorSearchParams {
   tenantId?: string;
   type?: 'AI_PROVIDER' | 'STORAGE';
-  provider?: 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'OPENROUTER' | 'ONEDRIVE' | 'SHAREPOINT';
+  provider?:
+    | 'OPENAI'
+    | 'ANTHROPIC'
+    | 'GOOGLE'
+    | 'OPENROUTER'
+    | 'MISTRAL'
+    | 'ONEDRIVE'
+    | 'SHAREPOINT';
   isEnabled?: boolean;
   includeSystem?: boolean;
   page?: number;
@@ -48,7 +62,14 @@ export interface CreateConnectorData {
   tenantId?: string | null;
   name: string;
   type: 'AI_PROVIDER' | 'STORAGE';
-  provider: 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'OPENROUTER' | 'ONEDRIVE' | 'SHAREPOINT';
+  provider:
+    | 'OPENAI'
+    | 'ANTHROPIC'
+    | 'GOOGLE'
+    | 'OPENROUTER'
+    | 'MISTRAL'
+    | 'ONEDRIVE'
+    | 'SHAREPOINT';
   credentials: Record<string, unknown>;
   settings?: Record<string, unknown> | null;
   isEnabled?: boolean;
@@ -326,13 +347,21 @@ export function useUpdateTenantAccess(connectorId: string | undefined) {
  * Get display name for provider
  */
 export function getProviderDisplayName(
-  provider: 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'OPENROUTER' | 'ONEDRIVE' | 'SHAREPOINT'
+  provider:
+    | 'OPENAI'
+    | 'ANTHROPIC'
+    | 'GOOGLE'
+    | 'OPENROUTER'
+    | 'MISTRAL'
+    | 'ONEDRIVE'
+    | 'SHAREPOINT'
 ): string {
   const names: Record<string, string> = {
     OPENAI: 'OpenAI',
     ANTHROPIC: 'Anthropic',
     GOOGLE: 'Google AI',
     OPENROUTER: 'OpenRouter',
+    MISTRAL: 'Mistral OCR',
     ONEDRIVE: 'OneDrive',
     SHAREPOINT: 'SharePoint',
   };
@@ -354,7 +383,14 @@ export function getTypeDisplayName(type: 'AI_PROVIDER' | 'STORAGE'): string {
  * Get provider icon class/emoji (for UI)
  */
 export function getProviderIcon(
-  provider: 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'ONEDRIVE' | 'SHAREPOINT'
+  provider:
+    | 'OPENAI'
+    | 'ANTHROPIC'
+    | 'GOOGLE'
+    | 'OPENROUTER'
+    | 'MISTRAL'
+    | 'ONEDRIVE'
+    | 'SHAREPOINT'
 ): string {
   const icons: Record<string, string> = {
     OPENAI: 'ðŸ¤–',
@@ -386,9 +422,11 @@ export function parseTestResult(result: string | null): {
  */
 export function getProvidersForType(
   type: 'AI_PROVIDER' | 'STORAGE'
-): Array<'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'OPENROUTER' | 'ONEDRIVE' | 'SHAREPOINT'> {
+): Array<
+  'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'OPENROUTER' | 'MISTRAL' | 'ONEDRIVE' | 'SHAREPOINT'
+> {
   if (type === 'AI_PROVIDER') {
-    return ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'OPENROUTER'];
+    return ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'OPENROUTER', 'MISTRAL'];
   }
   return ['ONEDRIVE', 'SHAREPOINT'];
 }
@@ -397,7 +435,14 @@ export function getProvidersForType(
  * Get required credential fields for a provider
  */
 export function getCredentialFields(
-  provider: 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'OPENROUTER' | 'ONEDRIVE' | 'SHAREPOINT'
+  provider:
+    | 'OPENAI'
+    | 'ANTHROPIC'
+    | 'GOOGLE'
+    | 'OPENROUTER'
+    | 'MISTRAL'
+    | 'ONEDRIVE'
+    | 'SHAREPOINT'
 ): Array<{ key: string; label: string; type: 'text' | 'password'; required: boolean; helpText?: string }> {
   switch (provider) {
     case 'OPENAI':
@@ -411,6 +456,8 @@ export function getCredentialFields(
       return [{ key: 'apiKey', label: 'API Key', type: 'password', required: true }];
     case 'OPENROUTER':
       return [{ key: 'apiKey', label: 'API Key', type: 'password', required: true, helpText: 'Get your API key from openrouter.ai/keys' }];
+    case 'MISTRAL':
+      return [{ key: 'apiKey', label: 'API Key', type: 'password', required: true, helpText: 'Get your OCR API key from console.mistral.ai' }];
     case 'ONEDRIVE':
       return [
         { key: 'clientId', label: 'Client ID', type: 'text', required: true },

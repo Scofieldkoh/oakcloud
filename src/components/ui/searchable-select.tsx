@@ -319,9 +319,19 @@ export function SearchableSelect({
   // Display value in input: show search when typing, otherwise show selected label
   const inputValue = isOpen ? search : (selectedOption?.label || '');
 
+  const getOptionId = useCallback(
+    (index: number) => `${baseId}-option-${index}`,
+    [baseId]
+  );
+
+  const getOptionKey = useCallback(
+    (optionValue: string, index: number) => `${optionValue}-${index}`,
+    []
+  );
+
   // Get the active option ID for aria-activedescendant
   const activeOptionId = filteredOptions[highlightedIndex]
-    ? `${baseId}-option-${filteredOptions[highlightedIndex].value}`
+    ? getOptionId(highlightedIndex)
     : undefined;
 
   return (
@@ -466,8 +476,8 @@ export function SearchableSelect({
                           const currentIndex = flatIndex++;
                           return (
                             <div
-                              key={option.value}
-                              id={`${baseId}-option-${option.value}`}
+                              key={getOptionKey(option.value, currentIndex)}
+                              id={getOptionId(currentIndex)}
                               role="option"
                               aria-selected={option.value === value}
                               title={option.description || undefined}
@@ -503,8 +513,8 @@ export function SearchableSelect({
                   // Regular ungrouped rendering
                   return filteredOptions.map((option, index) => (
                     <div
-                      key={option.value}
-                      id={`${baseId}-option-${option.value}`}
+                      key={getOptionKey(option.value, index)}
+                      id={getOptionId(index)}
                       role="option"
                       aria-selected={option.value === value}
                       title={option.description || undefined}

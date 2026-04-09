@@ -303,6 +303,25 @@ export async function transitionPipelineStatus(
   log.info(`Document ${processingDocumentId} transitioned from ${fromStatus} to ${updateData.pipelineStatus}`);
 }
 
+/**
+ * Reset retry/dead-letter state before a user-triggered fresh extraction attempt.
+ * This prevents old transient failures from poisoning the next manual run.
+ */
+export async function resetProcessingRetryState(processingDocumentId: string): Promise<void> {
+  await prisma.processingDocument.update({
+    where: { id: processingDocumentId },
+    data: {
+      errorCount: 0,
+      firstErrorAt: null,
+      lastError: Prisma.JsonNull,
+      nextRetryAt: null,
+      deadLetterAt: null,
+      canRetry: true,
+      updatedAt: new Date(),
+    },
+  });
+}
+
 // ============================================================================
 // PDF Metadata Extraction
 // ============================================================================

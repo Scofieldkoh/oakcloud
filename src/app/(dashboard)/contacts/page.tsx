@@ -140,7 +140,16 @@ export default function ContactsPage() {
 
   // Generate contact filter options for the name dropdown
   const contactFilterOptions: ContactFilterOption[] = useMemo(() => {
-    return allContactOptions;
+    const seenNames = new Set<string>();
+
+    return allContactOptions.filter((option) => {
+      if (seenNames.has(option.name)) {
+        return false;
+      }
+
+      seenNames.add(option.name);
+      return true;
+    });
   }, [allContactOptions]);
 
   // Memoize URL construction

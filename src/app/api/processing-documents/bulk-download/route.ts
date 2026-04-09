@@ -22,6 +22,8 @@ interface DownloadInfo {
   fileSize: number;
 }
 
+const MAX_BULK_DOWNLOAD_DOCUMENTS = 1000;
+
 /**
  * POST /api/processing-documents/bulk-download
  * Get download URLs for multiple documents
@@ -42,11 +44,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (documentIds.length > 100) {
+    if (documentIds.length > MAX_BULK_DOWNLOAD_DOCUMENTS) {
       return NextResponse.json(
         {
           success: false,
-          error: { code: 'VALIDATION_ERROR', message: 'Maximum 100 documents per download request' },
+          error: { code: 'VALIDATION_ERROR', message: `Maximum ${MAX_BULK_DOWNLOAD_DOCUMENTS} documents per download request` },
         },
         { status: 400 }
       );

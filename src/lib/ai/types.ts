@@ -72,6 +72,8 @@ export interface AIResponse {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
+    pagesProcessed?: number;
+    batchMode?: boolean;
   };
   finishReason?: string;
 }

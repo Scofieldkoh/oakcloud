@@ -3,7 +3,7 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { extractBizFileData, processBizFileExtraction } from '@/services/bizfile';
-import type { AIModel } from '@/lib/ai';
+import { calculateUsageCost, formatCost, type AIModel } from '@/lib/ai';
 import { storage } from '@/lib/storage';
 import { parseIdParams } from '@/lib/validations/params';
 import { requireTenantContext } from '@/lib/api-helpers';
@@ -80,6 +80,7 @@ export async function POST(
         throw new Error('Document has no storage key');
       }
       const pdfBuffer = await storage.download(document.storageKey);
+      const base64Data = pdfBuffer.toString('base64');
       const pdfData = await parsePdf(pdfBuffer);
       const pdfText = pdfData.text;
 
@@ -96,6 +97,10 @@ export async function POST(
       // Extract data using AI with optional model selection (connector-aware)
       const extractionResult = await extractBizFileData(pdfText, {
         modelId,
+        documentInput: {
+          base64: base64Data,
+          mimeType: document.mimeType || 'application/pdf',
+        },
         tenantId, // Use tenant's configured AI connector
       });
 
@@ -106,6 +111,19 @@ export async function POST(
         session.id,
         tenantId
       );
+      const usage = extractionResult.usage || {
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+      };
+      const estimatedCost = calculateUsageCost({
+        modelId: extractionResult.modelUsed,
+        provider: extractionResult.providerUsed,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        totalTokens: usage.totalTokens,
+        pagesProcessed: usage.pagesProcessed,
+      });
 
       return NextResponse.json({
         success: true,
@@ -115,7 +133,9 @@ export async function POST(
         aiMetadata: {
           modelUsed: extractionResult.modelUsed,
           providerUsed: extractionResult.providerUsed,
-          usage: extractionResult.usage,
+          usage,
+          estimatedCost,
+          formattedCost: formatCost(estimatedCost),
         },
       });
     } catch (extractionError) {
@@ -201,6 +221,7 @@ export async function GET(
       return NextResponse.json({ error: 'Document has no storage key' }, { status: 400 });
     }
     const pdfBuffer = await storage.download(document.storageKey);
+    const base64Data = pdfBuffer.toString('base64');
     const pdfData = await parsePdf(pdfBuffer);
     const pdfText = pdfData.text;
 
@@ -215,7 +236,24 @@ export async function GET(
     const documentTenantId = document.company?.tenantId || document.tenantId;
     const extractionResult = await extractBizFileData(pdfText, {
       modelId: modelId || undefined,
+      documentInput: {
+        base64: base64Data,
+        mimeType: document.mimeType || 'application/pdf',
+      },
       tenantId: documentTenantId,
+    });
+    const usage = extractionResult.usage || {
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+    };
+    const estimatedCost = calculateUsageCost({
+      modelId: extractionResult.modelUsed,
+      provider: extractionResult.providerUsed,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      totalTokens: usage.totalTokens,
+      pagesProcessed: usage.pagesProcessed,
     });
 
     return NextResponse.json({
@@ -224,7 +262,9 @@ export async function GET(
       aiMetadata: {
         modelUsed: extractionResult.modelUsed,
         providerUsed: extractionResult.providerUsed,
-        usage: extractionResult.usage,
+        usage,
+        estimatedCost,
+        formattedCost: formatCost(estimatedCost),
       },
     });
   } catch (error) {

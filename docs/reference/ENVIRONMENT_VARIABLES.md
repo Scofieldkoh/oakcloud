@@ -45,12 +45,14 @@ Use a long random value for `JWT_SECRET`.
 ## AI Providers
 
 These variables power AI-backed document processing, AI Helpbot flows, and Forms AI review / translation / context assist.
+`MISTRAL_API_KEY` is used specifically for OCR-driven BizFile extraction and document field extraction.
 
 | Variable | Description |
 |----------|-------------|
 | `OPENAI_API_KEY` | OpenAI API key |
 | `ANTHROPIC_API_KEY` | Anthropic API key |
 | `GOOGLE_AI_API_KEY` | Google AI / Gemini API key |
+| `MISTRAL_API_KEY` | Mistral OCR API key for BizFile and document OCR extraction |
 | `OPENROUTER_API_KEY` | OpenRouter API key |
 | `OPENROUTER_SITE_URL` | Referrer sent to OpenRouter |
 | `OPENROUTER_APP_NAME` | App title sent to OpenRouter |
