@@ -21,7 +21,12 @@ import { storage } from '@/lib/storage';
 import { createLogger } from '@/lib/logger';
 import { sendEsigningDeclinedEmailToSender } from '@/services/esigning-notification.service';
 import { activateNextQueuedEsigningRecipients } from '@/services/esigning-envelope.service';
+import { summarizeEsigningUserAgent } from '@/services/esigning-evidence';
 import { isRequiredEsigningFieldComplete, saveRecipientFieldValues } from '@/services/esigning-field.service';
+import {
+  ensureEsigningEnvelopeArtifacts,
+  generateEsigningEnvelopeArtifactsNow,
+} from '@/services/esigning-pdf.service';
 
 const log = createLogger('esigning-signing');
 
@@ -136,6 +141,7 @@ async function requireSigningSession(): Promise<{
   recipientId: string;
   envelopeId: string;
   sessionVersion: number;
+  sessionId: string | null;
 }> {
   const claims = await getEsigningSessionClaims();
   if (!claims) {
@@ -146,7 +152,35 @@ async function requireSigningSession(): Promise<{
     recipientId: claims.recipientId,
     envelopeId: claims.envelopeId,
     sessionVersion: claims.sessionVersion,
+    sessionId: claims.sessionId ?? null,
   };
+}
+
+async function setOrReuseEsigningSessionCookie(input: {
+  recipientId: string;
+  envelopeId: string;
+  sessionVersion: number;
+}) {
+  const existingClaims = await getEsigningSessionClaims();
+  const shouldReuseSessionId =
+    existingClaims?.scope === 'esigning_session' &&
+    existingClaims.recipientId === input.recipientId &&
+    existingClaims.envelopeId === input.envelopeId &&
+    existingClaims.sessionVersion === input.sessionVersion;
+
+  await setEsigningSessionCookie({
+    ...input,
+    sessionId: shouldReuseSessionId ? existingClaims.sessionId : undefined,
+  });
+}
+
+function getViewSessionIdFromMetadata(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return null;
+  }
+
+  const sessionId = (metadata as { sessionId?: unknown }).sessionId;
+  return typeof sessionId === 'string' && sessionId.trim() ? sessionId : null;
 }
 
 async function buildSigningSessionDto(context: SigningContext): Promise<EsigningSigningSessionDto> {
@@ -173,6 +207,7 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
       title: context.envelope.title,
       message: context.envelope.message,
       status: context.envelope.status,
+      pdfGenerationStatus: context.envelope.pdfGenerationStatus ?? null,
       certificateId: context.envelope.certificateId,
       companyName: context.envelope.company?.name ?? null,
       tenantName: context.envelope.tenant.name,
@@ -285,7 +320,7 @@ function buildCompletionInputs(input: {
     if (field.type === 'DATE_SIGNED') {
       return {
         fieldDefinitionId: field.id,
-        value: existing?.value ?? new Date().toISOString().slice(0, 10),
+        value: existing?.value ?? formatSigningDate(new Date()),
       };
     }
 
@@ -294,6 +329,13 @@ function buildCompletionInputs(input: {
       value: existing?.value ?? null,
     };
   });
+}
+
+function formatSigningDate(date: Date): string {
+  const day = `${date.getDate()}`.padStart(2, '0');
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const year = `${date.getFullYear()}`;
+  return `${day}-${month}-${year}`;
 }
 
 export async function exchangeEsigningLinkToken(rawToken: string): Promise<{
@@ -351,7 +393,7 @@ export async function exchangeEsigningLinkToken(rawToken: string): Promise<{
     }
 
     await clearEsigningChallengeCookie();
-    await setEsigningSessionCookie({
+    await setOrReuseEsigningSessionCookie({
       recipientId: recipient.id,
       envelopeId: recipient.envelopeId,
       sessionVersion: recipient.sessionVersion,
@@ -411,7 +453,7 @@ export async function exchangeEsigningLinkToken(rawToken: string): Promise<{
   }
 
   await clearEsigningChallengeCookie();
-  await setEsigningSessionCookie({
+  await setOrReuseEsigningSessionCookie({
     recipientId: recipient.id,
     envelopeId: recipient.envelopeId,
     sessionVersion: recipient.sessionVersion,
@@ -457,7 +499,7 @@ export async function verifyEsigningAccessCode(accessCode: string): Promise<void
   }
 
   await clearEsigningChallengeCookie();
-  await setEsigningSessionCookie({
+  await setOrReuseEsigningSessionCookie({
     recipientId: recipient.id,
     envelopeId: claims.envelopeId,
     sessionVersion: recipient.sessionVersion,
@@ -517,25 +559,51 @@ export async function getEsigningSigningSessionStatus(): Promise<EsigningSigning
   };
 }
 
-export async function recordEsigningSigningView(): Promise<EsigningSigningSessionDto> {
+export async function recordEsigningSigningView(input?: {
+  ipAddress?: string | null;
+  userAgent?: string | null;
+}): Promise<EsigningSigningSessionDto> {
   const claims = await requireSigningSession();
   const context = await getSigningContext(claims);
+  const canRecordRepeatView = context.recipient.status === 'NOTIFIED' || context.recipient.status === 'VIEWED';
 
-  if (context.recipient.status === 'NOTIFIED') {
-    await prisma.$transaction(async (tx) => {
-      await tx.esigningEnvelopeRecipient.update({
-        where: { id: context.recipient.id },
-        data: {
-          status: 'VIEWED',
-          viewedAt: context.recipient.viewedAt ?? new Date(),
+  if (!canRecordRepeatView) {
+    return loadEsigningSigningSession();
+  }
+
+  const priorViewEvents = claims.sessionId
+    ? await prisma.esigningEnvelopeEvent.findMany({
+        where: {
+          envelopeId: context.envelope.id,
+          recipientId: context.recipient.id,
+          action: 'VIEWED',
         },
-      });
+        select: {
+          metadata: true,
+        },
+      })
+    : [];
+  const hasRecordedThisSession = claims.sessionId
+    ? priorViewEvents.some((event) => getViewSessionIdFromMetadata(event.metadata) === claims.sessionId)
+    : context.recipient.status !== 'NOTIFIED';
 
-      if (context.envelope.status === 'SENT') {
-        await tx.esigningEnvelope.update({
-          where: { id: context.envelope.id },
-          data: { status: 'IN_PROGRESS' },
+  if (!hasRecordedThisSession) {
+    await prisma.$transaction(async (tx) => {
+      if (context.recipient.status === 'NOTIFIED') {
+        await tx.esigningEnvelopeRecipient.update({
+          where: { id: context.recipient.id },
+          data: {
+            status: 'VIEWED',
+            viewedAt: context.recipient.viewedAt ?? new Date(),
+          },
         });
+
+        if (context.envelope.status === 'SENT') {
+          await tx.esigningEnvelope.update({
+            where: { id: context.envelope.id },
+            data: { status: 'IN_PROGRESS' },
+          });
+        }
       }
 
       await tx.esigningEnvelopeEvent.create({
@@ -544,6 +612,12 @@ export async function recordEsigningSigningView(): Promise<EsigningSigningSessio
           envelopeId: context.envelope.id,
           recipientId: context.recipient.id,
           action: 'VIEWED',
+          metadata: {
+            sessionId: claims.sessionId,
+            ipAddress: input?.ipAddress ?? null,
+            userAgent: input?.userAgent ?? null,
+            device: summarizeEsigningUserAgent(input?.userAgent),
+          },
         },
       });
     });
@@ -629,6 +703,7 @@ export async function completeEsigningSigningSession(input: {
     context,
     values: input.values,
   });
+  let envelopeJustCompleted = false;
 
   await prisma.$transaction(async (tx) => {
     await saveRecipientFieldValues(
@@ -716,6 +791,7 @@ export async function completeEsigningSigningSession(input: {
       });
 
       if (completionUpdate.count > 0) {
+        envelopeJustCompleted = true;
         await tx.esigningEnvelopeEvent.create({
           data: {
             tenantId: context.envelope.tenantId,
@@ -739,6 +815,19 @@ export async function completeEsigningSigningSession(input: {
       envelopeId: context.envelope.id,
       error,
     });
+  }
+
+  if (envelopeJustCompleted) {
+    try {
+      await generateEsigningEnvelopeArtifactsNow({
+        envelopeId: context.envelope.id,
+      });
+    } catch (error) {
+      log.warn('Failed to generate completed e-signing package immediately after final signature', {
+        envelopeId: context.envelope.id,
+        error,
+      });
+    }
   }
 
   return loadEsigningSigningSession();
@@ -839,6 +928,13 @@ export async function downloadEsigningSessionDocument(input: {
   const document = context.envelope.documents.find((entry) => entry.id === input.documentId);
   if (!document) {
     throw new Error('Document not found');
+  }
+
+  if (input.variant === 'signed') {
+    await ensureEsigningEnvelopeArtifacts({
+      envelopeId: context.envelope.id,
+      requireCertificates: false,
+    });
   }
 
   const storagePath =

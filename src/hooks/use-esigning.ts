@@ -190,6 +190,32 @@ async function removeRecipientRequest(
   return response.json();
 }
 
+async function reorderRecipientsRequest(
+  envelopeId: string,
+  payload: {
+    recipientIds?: string[];
+    recipients?: Array<{ recipientId: string; signingOrder: number }>;
+  },
+  tenantId?: string | null
+): Promise<EsigningEnvelopeDetailDto> {
+  const response = await fetch(`/api/esigning/envelopes/${envelopeId}/recipients/reorder`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenantId, ...payload }),
+  });
+
+  if (!response.ok) {
+    await readJsonError(response, 'Failed to reorder recipients');
+  }
+
+  return response.json();
+}
+
+export interface ReorderEsigningRecipientsPayload {
+  recipientIds?: string[];
+  recipients?: Array<{ recipientId: string; signingOrder: number }>;
+}
+
 async function uploadDocumentRequest(
   envelopeId: string,
   file: File,
@@ -298,6 +324,24 @@ async function resendRecipientRequest(
 
   if (!response.ok) {
     await readJsonError(response, 'Failed to resend recipient');
+  }
+
+  return response.json();
+}
+
+async function recipientManualLinkRequest(
+  envelopeId: string,
+  recipientId: string,
+  tenantId?: string | null
+): Promise<EsigningManualLinkDto> {
+  const response = await fetch(`/api/esigning/envelopes/${envelopeId}/manual-link/${recipientId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenantId }),
+  });
+
+  if (!response.ok) {
+    await readJsonError(response, 'Failed to create signer link');
   }
 
   return response.json();
@@ -481,6 +525,20 @@ export function useRemoveEsigningRecipient(envelopeId: string, recipientId: stri
   });
 }
 
+export function useReorderEsigningRecipients(envelopeId: string) {
+  const tenantId = useEsigningTenant();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: ReorderEsigningRecipientsPayload) =>
+      reorderRecipientsRequest(envelopeId, payload, tenantId),
+    onSuccess: async (result) => {
+      queryClient.setQueryData(['esigning', 'detail', tenantId, envelopeId], result);
+      await invalidateEnvelopeQueries(queryClient, tenantId);
+    },
+  });
+}
+
 export function useUploadEsigningDocument(envelopeId: string) {
   const tenantId = useEsigningTenant();
   const queryClient = useQueryClient();
@@ -558,6 +616,14 @@ export function useResendEsigningRecipient(envelopeId: string, recipientId: stri
       queryClient.setQueryData(['esigning', 'detail', tenantId, envelopeId], result.envelope);
       await invalidateEnvelopeQueries(queryClient, tenantId);
     },
+  });
+}
+
+export function useEsigningRecipientManualLink(envelopeId: string, recipientId: string) {
+  const tenantId = useEsigningTenant();
+
+  return useMutation({
+    mutationFn: () => recipientManualLinkRequest(envelopeId, recipientId, tenantId),
   });
 }
 

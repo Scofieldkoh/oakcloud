@@ -389,6 +389,14 @@ export function EsigningFieldCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const clipboardRef = useRef<PlacedField[]>([]);
   const interactionPreviewRef = useRef<PlacedField[] | null>(null);
+  const placementPointerStateRef = useRef<{
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    startScrollLeft: number;
+    startScrollTop: number;
+    moved: boolean;
+  } | null>(null);
   const [canvasBounds, setCanvasBounds] = useState<CanvasBounds>({
     left: 0,
     top: 0,
@@ -440,6 +448,15 @@ export function EsigningFieldCanvas({
   }, [selectedFieldId]);
 
   useEffect(() => {
+    if (placementType) {
+      return;
+    }
+
+    setGhostPosition(null);
+    placementPointerStateRef.current = null;
+  }, [placementType]);
+
+  useEffect(() => {
     if (!containerRef.current) {
       return;
     }
@@ -448,7 +465,7 @@ export function EsigningFieldCanvas({
     let canvasObserver: ResizeObserver | null = null;
 
     const syncCanvasBounds = () => {
-      const canvas = container.querySelector('canvas');
+      const canvas = container.querySelector('[data-main-pdf-canvas="true"]');
       if (!(canvas instanceof HTMLCanvasElement)) {
         setCanvasBounds((current) =>
           current.width === 0 && current.height === 0
@@ -846,20 +863,12 @@ export function EsigningFieldCanvas({
     viewerPage,
   ]);
 
-  function handleCanvasClick(event: React.MouseEvent<HTMLDivElement>) {
-    if (interaction) {
-      return;
-    }
-
+  function placeFieldAt(xPercent: number, yPercent: number) {
     if (!canEdit || !placementType || !placementRecipientId || !selectedDocumentId) {
       setSelectedFieldIdsInternal([]);
       onFieldSelect(null);
       return;
     }
-
-    const rect = event.currentTarget.getBoundingClientRect();
-    const xPercent = (event.clientX - rect.left) / rect.width;
-    const yPercent = (event.clientY - rect.top) / rect.height;
     const size = DEFAULT_FIELD_SIZES[placementType];
 
     const newField = normalizeFieldPosition({
@@ -881,6 +890,87 @@ export function EsigningFieldCanvas({
     onFieldsChange([...fields, newField]);
     setSelectedFieldIdsInternal([newField.localId]);
     onFieldSelect(newField.localId);
+  }
+
+  function updateGhostPositionFromClient(target: HTMLDivElement, clientX: number, clientY: number) {
+    const rect = target.getBoundingClientRect();
+    setGhostPosition({
+      xPercent: clamp((clientX - rect.left) / rect.width, 0, 1),
+      yPercent: clamp((clientY - rect.top) / rect.height, 0, 1),
+    });
+  }
+
+  function getViewerScrollContainer(): HTMLDivElement | null {
+    const scrollContainer = containerRef.current?.querySelector('[data-document-scroll-container="true"]');
+    return scrollContainer instanceof HTMLDivElement ? scrollContainer : null;
+  }
+
+  function handlePlacementPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (!canEdit || !placementType || event.button !== 0) {
+      return;
+    }
+
+    updateGhostPositionFromClient(event.currentTarget, event.clientX, event.clientY);
+
+    const scrollContainer = getViewerScrollContainer();
+    placementPointerStateRef.current = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startScrollLeft: scrollContainer?.scrollLeft ?? 0,
+      startScrollTop: scrollContainer?.scrollTop ?? 0,
+      moved: false,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function handlePlacementPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (!canEdit || !placementType) {
+      return;
+    }
+
+    updateGhostPositionFromClient(event.currentTarget, event.clientX, event.clientY);
+
+    const pointerState = placementPointerStateRef.current;
+    if (!pointerState || pointerState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - pointerState.startClientX;
+    const deltaY = event.clientY - pointerState.startClientY;
+    if (!pointerState.moved && (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4)) {
+      pointerState.moved = true;
+    }
+
+    if (!pointerState.moved) {
+      return;
+    }
+
+    const scrollContainer = getViewerScrollContainer();
+    if (!scrollContainer) {
+      return;
+    }
+
+    scrollContainer.scrollLeft = pointerState.startScrollLeft - deltaX;
+    scrollContainer.scrollTop = pointerState.startScrollTop - deltaY;
+  }
+
+  function handlePlacementPointerEnd(event: React.PointerEvent<HTMLDivElement>) {
+    const pointerState = placementPointerStateRef.current;
+    if (!pointerState || pointerState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    placementPointerStateRef.current = null;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+
+    if (!pointerState.moved) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      placeFieldAt(
+        (event.clientX - rect.left) / rect.width,
+        (event.clientY - rect.top) / rect.height
+      );
+    }
   }
 
   function handleKeyboardPlacement() {
@@ -937,7 +1027,6 @@ export function EsigningFieldCanvas({
         {selectedDocument ? (
           <>
             <DocumentPageViewer
-              key={`${selectedDocument.id}:${viewerPage}`}
               pdfUrl={selectedDocument.pdfUrl}
               initialPage={viewerPage}
               zoomLevel={zoomLevel}
@@ -965,19 +1054,22 @@ export function EsigningFieldCanvas({
                       ? `Place ${ESIGNING_FIELD_TYPE_LABELS[placementType]} field`
                       : undefined
                   }
-                  onClick={handleCanvasClick}
-                  onMouseMove={(event) => {
-                    if (!canEdit || !placementType) {
-                      return;
+                  onPointerDown={placementType ? handlePlacementPointerDown : undefined}
+                  onPointerMove={placementType ? handlePlacementPointerMove : undefined}
+                  onPointerUp={placementType ? handlePlacementPointerEnd : undefined}
+                  onPointerCancel={placementType ? handlePlacementPointerEnd : undefined}
+                  onMouseMove={
+                    placementType
+                      ? undefined
+                      : () => {
+                          setGhostPosition(null);
+                        }
+                  }
+                  onMouseLeave={() => {
+                    if (!placementPointerStateRef.current) {
+                      setGhostPosition(null);
                     }
-
-                    const rect = event.currentTarget.getBoundingClientRect();
-                    setGhostPosition({
-                      xPercent: clamp((event.clientX - rect.left) / rect.width, 0, 1),
-                      yPercent: clamp((event.clientY - rect.top) / rect.height, 0, 1),
-                    });
                   }}
-                  onMouseLeave={() => setGhostPosition(null)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.preventDefault();
@@ -985,8 +1077,10 @@ export function EsigningFieldCanvas({
                     }
                   }}
                   className={cn(
-                    'pointer-events-auto absolute inset-0',
-                    canEdit && placementType ? 'cursor-crosshair' : 'cursor-default'
+                    'absolute inset-0',
+                    placementType
+                      ? 'pointer-events-auto cursor-crosshair'
+                      : 'pointer-events-none cursor-default'
                   )}
                 />
 

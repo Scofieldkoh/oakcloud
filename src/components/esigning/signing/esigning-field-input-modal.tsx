@@ -88,9 +88,10 @@ export function EsigningFieldInputModal({
           <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
             <span>{title}</span>
             <input
-              type="date"
+              type="text"
               value={value}
               onChange={(event) => setValue(event.target.value)}
+              placeholder="DD-MM-YYYY"
               className="h-9 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"
             />
           </label>

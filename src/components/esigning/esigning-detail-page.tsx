@@ -31,8 +31,9 @@ import {
   useAddEsigningRecipient,
   useDeleteEsigningDocument,
   useDeleteEsigningEnvelope,
-  useDuplicateEsigningEnvelope,
   useEsigningEnvelope,
+  useEsigningRecipientManualLink,
+  useReorderEsigningRecipients,
   useRemoveEsigningRecipient,
   useResendEsigningRecipient,
   useRetryEsigningEnvelopeProcessing,
@@ -160,8 +161,6 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const voidEnvelope = useVoidEsigningEnvelope(envelopeId);
   const retryProcessing = useRetryEsigningEnvelopeProcessing(envelopeId);
   const deleteEnvelope = useDeleteEsigningEnvelope();
-  const duplicateEnvelope = useDuplicateEsigningEnvelope();
-
   // Wizard state
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [manualLinks, setManualLinks] = useState<EsigningManualLinkDto[]>([]);
@@ -189,9 +188,11 @@ export function EsigningDetailPage({ envelopeId }: Props) {
 
   // Recipient hooks (keyed by action IDs)
   const addRecipient = useAddEsigningRecipient(envelopeId);
+  const reorderRecipients = useReorderEsigningRecipients(envelopeId);
   const updateRecipient = useUpdateEsigningRecipient(envelopeId, editingRecipientId ?? '');
   const removeRecipient = useRemoveEsigningRecipient(envelopeId, recipientActionId ?? '');
   const resendRecipient = useResendEsigningRecipient(envelopeId, recipientActionId ?? '');
+  const recipientManualLink = useEsigningRecipientManualLink(envelopeId, recipientActionId ?? '');
   const deleteDocument = useDeleteEsigningDocument(envelopeId, documentActionId ?? '');
 
   // Derived
@@ -419,16 +420,6 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     }
   }
 
-  async function handleDuplicateEnvelope() {
-    try {
-      const duplicated = await duplicateEnvelope.mutateAsync(envelopeId);
-      toast.success('Envelope duplicated');
-      router.push(`/esigning/${duplicated.id}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to duplicate envelope');
-    }
-  }
-
   async function handleDeleteEnvelope() {
     try {
       await deleteEnvelope.mutateAsync(envelopeId);
@@ -440,8 +431,11 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     }
   }
 
-  function openEnvelopeDownload(variant: 'combined' | 'certificates') {
-    const query = new URLSearchParams({ variant });
+  function openEnvelopeDownload(variant: 'documents' | 'documents_with_certificates' | 'certificates') {
+    const query = new URLSearchParams({
+      variant,
+      tenantId: envelope.tenantId,
+    });
     window.open(
       `/api/esigning/envelopes/${envelopeId}/download?${query.toString()}`,
       '_blank',
@@ -550,13 +544,18 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               </div>
               {recipientForm.type === 'SIGNER' && envelope.signingOrder !== 'PARALLEL' && (
                 <FormInput
-                  label="Signing group"
+                  label={envelope.signingOrder === 'MIXED' ? 'Signing group' : 'Signing sequence'}
                   type="number"
                   min={1}
                   max={ESIGNING_LIMITS.MAX_RECIPIENTS}
                   value={recipientForm.signingOrder}
                   onChange={(e) =>
                     setRecipientForm((prev) => ({ ...prev, signingOrder: e.target.value }))
+                  }
+                  hint={
+                    envelope.signingOrder === 'MIXED'
+                      ? 'Recipients in the same group sign in parallel.'
+                      : undefined
                   }
                 />
               )}
@@ -712,45 +711,36 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     return (
       <div className="min-h-screen bg-background-primary flex flex-col">
         {/* Header */}
-        <div className="border-b border-border-primary bg-background-secondary px-6 py-3 flex items-center gap-4 flex-shrink-0">
-          <Link
-            href="/esigning"
-            className="inline-flex items-center gap-2 rounded-full border border-border-primary px-3 py-1.5 text-sm text-text-secondary hover:bg-background-tertiary"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
-          <div className="flex-1 min-w-0">
-            <EsigningStepIndicator
-              currentStep={currentStep}
-              canProceedToStep2={canProceedToStep2}
-              canProceedToStep3={canProceedToStep3}
-              onStepClick={setCurrentStep}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            {envelope.canDuplicate ? (
-              <Button
-                variant="secondary"
-                size="sm"
-                leftIcon={<Copy className="h-4 w-4" />}
-                onClick={() => void handleDuplicateEnvelope()}
-                isLoading={duplicateEnvelope.isPending}
-              >
-                Duplicate
-              </Button>
-            ) : null}
-            {envelope.canDelete ? (
-              <Button
-                variant="secondary"
-                size="sm"
-                leftIcon={<Trash2 className="h-4 w-4" />}
-                onClick={() => setIsDeleteEnvelopeOpen(true)}
-              >
-                Delete draft
-              </Button>
-            ) : null}
-            <span className="max-w-48 truncate text-sm text-text-secondary">{envelope.title}</span>
+        <div className="border-b border-border-primary bg-background-secondary px-3 py-2 flex-shrink-0 sm:px-6 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link
+              href="/esigning"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border-primary px-2.5 py-1.5 text-sm text-text-secondary hover:bg-background-tertiary sm:gap-2 sm:px-3"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Back</span>
+            </Link>
+            <div className="flex-1 min-w-0 overflow-x-auto">
+              <EsigningStepIndicator
+                currentStep={currentStep}
+                canProceedToStep2={canProceedToStep2}
+                canProceedToStep3={canProceedToStep3}
+                onStepClick={setCurrentStep}
+              />
+            </div>
+            <div className="hidden items-center gap-2 sm:flex">
+              {envelope.canDelete ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<Trash2 className="h-4 w-4" />}
+                  onClick={() => setIsDeleteEnvelopeOpen(true)}
+                >
+                  Delete draft
+                </Button>
+              ) : null}
+              <span className="max-w-48 truncate text-sm text-text-secondary">{envelope.title}</span>
+            </div>
           </div>
         </div>
 
@@ -778,6 +768,10 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 await addRecipient.mutateAsync(data);
                 toast.success('Recipient added');
               }}
+              onReorderRecipients={async (payload) => {
+                await reorderRecipients.mutateAsync(payload);
+              }}
+              isReorderingRecipients={reorderRecipients.isPending}
               onEditRecipient={openEditRecipient}
               onRemoveRecipient={(id) => {
                 setRecipientActionId(id);
@@ -843,9 +837,9 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   // ——— Non-draft: read-only detail view ———
   return (
     <div className="min-h-screen bg-background-primary">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
         {/* Back + status */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Link
             href="/esigning"
             className="inline-flex items-center gap-2 rounded-full border border-border-primary bg-background-secondary px-3 py-1.5 text-sm text-text-secondary"
@@ -857,21 +851,22 @@ export function EsigningDetailPage({ envelopeId }: Props) {
           <span className="inline-flex items-center rounded-full border border-border-primary px-3 py-1 text-xs text-text-secondary">
             {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
           </span>
-          {envelope.pdfGenerationStatus ? (
+          {envelope.pdfGenerationStatus &&
+          !(envelope.status === 'COMPLETED' && envelope.pdfGenerationStatus === 'COMPLETED') ? (
             <PdfGenerationBadge status={envelope.pdfGenerationStatus} />
           ) : null}
         </div>
 
         {/* Header card */}
-        <section className="rounded-3xl border border-border-primary bg-background-secondary p-6 shadow-sm">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div>
+        <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-oak-primary/10 p-3 text-oak-primary">
+                <div className="hidden shrink-0 rounded-2xl bg-oak-primary/10 p-3 text-oak-primary sm:flex">
                   <FileSignature className="h-6 w-6" />
                 </div>
-                <div>
-                  <h1 className="text-3xl font-semibold text-text-primary">{envelope.title}</h1>
+                <div className="min-w-0">
+                  <h1 className="truncate text-2xl font-semibold text-text-primary sm:text-3xl">{envelope.title}</h1>
                   <p className="mt-1 text-sm text-text-secondary">
                     Certificate {envelope.certificateId} · Updated{' '}
                     {formatEsigningDateTime(envelope.updatedAt)}
@@ -884,17 +879,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 </Alert>
               )}
             </div>
-            <div className="flex flex-wrap gap-3">
-              {envelope.canDuplicate ? (
-                <Button
-                  variant="secondary"
-                  leftIcon={<Copy className="h-4 w-4" />}
-                  onClick={() => void handleDuplicateEnvelope()}
-                  isLoading={duplicateEnvelope.isPending}
-                >
-                  Duplicate
-                </Button>
-              ) : null}
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               {envelope.canSend && can.updateEsigning && (
                 <Button
                   leftIcon={<Send className="h-4 w-4" />}
@@ -927,16 +912,23 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   <Button
                     variant="secondary"
                     leftIcon={<Download className="h-4 w-4" />}
-                    onClick={() => openEnvelopeDownload('combined')}
+                    onClick={() => openEnvelopeDownload('documents')}
                   >
-                    Download all
+                    Document only
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    leftIcon={<Download className="h-4 w-4" />}
+                    onClick={() => openEnvelopeDownload('documents_with_certificates')}
+                  >
+                    Document + Certificate
                   </Button>
                   <Button
                     variant="secondary"
                     leftIcon={<Download className="h-4 w-4" />}
                     onClick={() => openEnvelopeDownload('certificates')}
                   >
-                    Certificates only
+                    Certificate only
                   </Button>
                 </>
               ) : null}
@@ -946,14 +938,20 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   onClick={async () => {
                     try {
                       await retryProcessing.mutateAsync();
-                      toast.success('PDF generation queued again');
+                      toast.success(
+                        envelope.pdfGenerationStatus === 'FAILED'
+                          ? 'PDF generation retried'
+                          : 'PDF generation triggered'
+                      );
                     } catch (error) {
-                      toast.error(error instanceof Error ? error.message : 'Failed to retry');
+                      toast.error(
+                        error instanceof Error ? error.message : 'Failed to trigger PDF generation'
+                      );
                     }
                   }}
                   isLoading={retryProcessing.isPending}
                 >
-                  Retry PDF
+                  {envelope.pdfGenerationStatus === 'FAILED' ? 'Retry PDF' : 'Generate PDF now'}
                 </Button>
               ) : null}
             </div>
@@ -961,11 +959,11 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         </section>
 
         {/* Two-column layout */}
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
+        <div className="grid gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
           {/* Left: recipients + documents */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Recipients */}
-            <section className="rounded-3xl border border-border-primary bg-background-secondary p-6 shadow-sm">
+            <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
               <h2 className="text-lg font-semibold text-text-primary">Recipients</h2>
               <p className="text-sm text-text-secondary">Signers and copy recipients.</p>
               <div className="mt-5 space-y-3">
@@ -975,6 +973,16 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                     can.updateEsigning &&
                     recipient.status !== 'SIGNED' &&
                     recipient.status !== 'DECLINED';
+                  const canResendRecipient =
+                    ['SENT', 'IN_PROGRESS'].includes(envelope.status) &&
+                    can.updateEsigning &&
+                    recipient.type === 'SIGNER' &&
+                    ['NOTIFIED', 'VIEWED'].includes(recipient.status);
+                  const canCopyRecipientLink =
+                    ['SENT', 'IN_PROGRESS'].includes(envelope.status) &&
+                    can.updateEsigning &&
+                    recipient.type === 'SIGNER' &&
+                    ['NOTIFIED', 'VIEWED'].includes(recipient.status);
 
                   return (
                     <EsigningRecipientCard
@@ -987,8 +995,32 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                         setRecipientActionId(recipient.id);
                         setIsDeleteRecipientOpen(true);
                       }}
+                      onCopyLink={
+                        canCopyRecipientLink
+                          ? () =>
+                              void (async () => {
+                                setRecipientActionId(recipient.id);
+                                try {
+                                  const link = await recipientManualLink.mutateAsync();
+                                  await navigator.clipboard.writeText(link.signingUrl);
+                                  toast.success('Signer link copied');
+                                } catch (error) {
+                                  toast.error(
+                                    error instanceof Error
+                                      ? error.message
+                                      : 'Failed to copy signer link'
+                                  );
+                                } finally {
+                                  setRecipientActionId(null);
+                                }
+                              })()
+                          : undefined
+                      }
+                      isCopyingLink={
+                        recipientActionId === recipient.id && recipientManualLink.isPending
+                      }
                       onResend={
-                        envelope.status !== 'DRAFT' && can.updateEsigning
+                        canResendRecipient
                           ? () =>
                               void (async () => {
                                 setRecipientActionId(recipient.id);
@@ -1019,7 +1051,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
             </section>
 
             {/* Documents */}
-            <section className="rounded-3xl border border-border-primary bg-background-secondary p-6 shadow-sm">
+            <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
               <h2 className="text-lg font-semibold text-text-primary">Documents</h2>
               <div className="mt-5 space-y-3">
                 {envelope.documents.map((doc) => (
@@ -1052,7 +1084,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                             className="inline-flex items-center gap-2 rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
                           >
                             <Download className="h-4 w-4" />
-                            Signed
+                            Document only
                           </a>
                         )}
                       </div>
@@ -1065,7 +1097,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
 
           {/* Right: activity timeline */}
           <div>
-            <section className="rounded-3xl border border-border-primary bg-background-secondary p-6 shadow-sm">
+            <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
               <h2 className="text-lg font-semibold text-text-primary">Activity</h2>
               {envelope.events.length > 6 ? (
                 <button

@@ -12,7 +12,7 @@ import { downloadEsigningEnvelopePackage } from '@/services/esigning-pdf.service
 
 const downloadQuerySchema = z.object({
   tenantId: z.string().uuid().optional(),
-  variant: z.enum(['combined', 'certificates']).optional().default('combined'),
+  variant: z.enum(['documents', 'documents_with_certificates', 'certificates']).optional().default('documents_with_certificates'),
 });
 
 interface RouteParams {

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-media-query';
 import type { EsigningFieldType } from '@/generated/prisma';
 import type { EsigningEnvelopeDetailDto } from '@/types/esigning';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,13 @@ interface EsigningStepFieldsProps {
   canEdit: boolean;
 }
 
+const DEFAULT_LEFT_PANEL_WIDTH = 280;
+const DEFAULT_RIGHT_PANEL_WIDTH = 300;
+const PANEL_COLLAPSED_WIDTH = 44;
+const PANEL_MIN_WIDTH = 220;
+const PANEL_MAX_WIDTH = 420;
+const PANEL_MIN_CENTER_WIDTH = 480;
+
 export function EsigningStepFields({
   envelope,
   fields,
@@ -62,6 +70,25 @@ export function EsigningStepFields({
   const [preparationZoom, setPreparationZoom] = useState<number>(
     DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS[6] ?? 1.5
   );
+  const [leftPanelWidth, setLeftPanelWidth] = useState(DEFAULT_LEFT_PANEL_WIDTH);
+  const [rightPanelWidth, setRightPanelWidth] = useState(DEFAULT_RIGHT_PANEL_WIDTH);
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [activeResizePanel, setActiveResizePanel] = useState<'left' | 'right' | null>(null);
+  const isMobile = useIsMobile();
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const resizeStateRef = useRef<{
+    panel: 'left' | 'right';
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (isMobile) {
+      setLeftPanelCollapsed(true);
+      setRightPanelCollapsed(true);
+    }
+  }, [isMobile]);
 
   const recipientFieldSummary = useMemo(() => {
     const map = new Map<string, { required: number; optional: number; hasSignature: boolean }>();
@@ -169,21 +196,363 @@ export function EsigningStepFields({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canEdit, canRedo, canUndo, onRedo, onUndo]);
 
-  return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 57px)' }}>
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-56 flex-shrink-0">
-          <EsigningFieldPalette
-            recipients={envelope.recipients}
-            selectedRecipientId={selectedRecipientId}
-            onRecipientChange={setSelectedRecipientId}
-            activePlacementType={activePlacementType}
-            onPlacementTypeSelect={setActivePlacementType}
-            recipientFieldSummary={recipientFieldSummary}
-          />
+  useEffect(() => {
+    if (!activeResizePanel) {
+      return;
+    }
+
+    function clampWidth(nextWidth: number, panel: 'left' | 'right') {
+      const layoutWidth = layoutRef.current?.clientWidth ?? 0;
+      const oppositeWidth =
+        panel === 'left'
+          ? (rightPanelCollapsed ? PANEL_COLLAPSED_WIDTH : rightPanelWidth)
+          : (leftPanelCollapsed ? PANEL_COLLAPSED_WIDTH : leftPanelWidth);
+
+      const maxWidth = layoutWidth
+        ? Math.max(PANEL_MIN_WIDTH, layoutWidth - oppositeWidth - PANEL_MIN_CENTER_WIDTH)
+        : PANEL_MAX_WIDTH;
+
+      return Math.min(Math.max(nextWidth, PANEL_MIN_WIDTH), Math.min(PANEL_MAX_WIDTH, maxWidth));
+    }
+
+    function handleMouseMove(event: MouseEvent) {
+      const state = resizeStateRef.current;
+      if (!state) {
+        return;
+      }
+
+      const delta = event.clientX - state.startX;
+      if (state.panel === 'left') {
+        setLeftPanelWidth(clampWidth(state.startWidth + delta, 'left'));
+      } else {
+        setRightPanelWidth(clampWidth(state.startWidth - delta, 'right'));
+      }
+    }
+
+    function handleMouseUp() {
+      resizeStateRef.current = null;
+      setActiveResizePanel(null);
+    }
+
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [activeResizePanel, leftPanelCollapsed, leftPanelWidth, rightPanelCollapsed, rightPanelWidth]);
+
+  function beginPanelResize(panel: 'left' | 'right', event: React.MouseEvent<HTMLDivElement>) {
+    event.preventDefault();
+    resizeStateRef.current = {
+      panel,
+      startX: event.clientX,
+      startWidth: panel === 'left' ? leftPanelWidth : rightPanelWidth,
+    };
+    setActiveResizePanel(panel);
+  }
+
+  const rightPanelContent = (
+    <>
+      {showCoachmarks ? (
+        <Alert
+          variant="info"
+          compact
+          className="mb-4"
+          title="Placement tips"
+          onClose={() => {
+            window.localStorage.setItem(`esigning-field-coachmarks:${envelope.id}`, 'dismissed');
+            setShowCoachmarks(false);
+          }}
+        >
+          Click a field in the palette, place it on the page, then drag or resize it. Use Ctrl/Cmd+Z to undo layout changes as you work.
+        </Alert>
+      ) : null}
+
+      <div className="mb-4 flex items-center gap-2">
+        <Button
+          variant="secondary"
+          size="xs"
+          leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
+          onClick={onUndo}
+          disabled={!canUndo}
+        >
+          Undo
+        </Button>
+        <Button
+          variant="secondary"
+          size="xs"
+          leftIcon={<RotateCw className="h-3.5 w-3.5" />}
+          onClick={onRedo}
+          disabled={!canRedo}
+        >
+          Redo
+        </Button>
+      </div>
+
+      <div className="mb-4 rounded-xl border border-border-primary bg-background-primary p-3">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-text-primary">Zoom</h3>
+          <span className="text-xs font-medium text-text-secondary">
+            {Math.round(preparationZoom * 100)}%
+          </span>
         </div>
 
-        <div className="flex-1 overflow-hidden">
+        <div className="mt-3 flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="xs"
+            leftIcon={<ZoomOut className="h-3.5 w-3.5" />}
+            onClick={() =>
+              setPreparationZoom(
+                DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS[Math.max(0, preparationZoomIndex - 1)]
+              )
+            }
+            disabled={preparationZoomIndex === 0}
+          >
+            Out
+          </Button>
+          <Button
+            variant="secondary"
+            size="xs"
+            leftIcon={<ZoomIn className="h-3.5 w-3.5" />}
+            onClick={() =>
+              setPreparationZoom(
+                DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS[
+                  Math.min(
+                    DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS.length - 1,
+                    preparationZoomIndex + 1
+                  )
+                ]
+              )
+            }
+            disabled={preparationZoomIndex === DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS.length - 1}
+          >
+            In
+          </Button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[1, 1.5, 2].map((zoomPreset) => (
+            <Button
+              key={zoomPreset}
+              variant={preparationZoom === zoomPreset ? 'primary' : 'secondary'}
+              size="xs"
+              onClick={() => setPreparationZoom(zoomPreset)}
+            >
+              {Math.round(zoomPreset * 100)}%
+            </Button>
+          ))}
+        </div>
+
+        <p className="mt-3 text-xs text-text-secondary">
+          Use these controls while placing fields, or use the viewer toolbar and +/- shortcuts.
+        </p>
+      </div>
+
+      {overlappingFields.length > 0 && !overlapWarningDismissed ? (
+        <Alert
+          variant="warning"
+          compact
+          className="mb-4"
+          title="Overlapping fields detected"
+          onClose={() => setOverlapWarningDismissed(true)}
+        >
+          {overlappingFields.length} field{overlappingFields.length === 1 ? '' : 's'} overlap on the current layout. Review before sending so signers do not run into competing targets.
+        </Alert>
+      ) : null}
+
+      {selectedField ? (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-text-primary">Field Properties</h3>
+            <Button
+              variant="danger"
+              size="xs"
+              onClick={() => {
+                onFieldsChange(fields.filter((field) => field.localId !== selectedField.localId));
+                setSelectedFieldId(null);
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+
+          <div className="text-xs text-text-secondary">
+            Type: {ESIGNING_FIELD_TYPE_LABELS[selectedField.type]}
+          </div>
+
+          {overlapMap.has(selectedField.localId) ? (
+            <Alert variant="warning" compact>
+              This field overlaps another field on the same page.
+            </Alert>
+          ) : null}
+
+          <label className="flex flex-col gap-1 text-xs text-text-secondary">
+            Assigned to
+            <select
+              value={selectedField.recipientId}
+              onChange={(event) =>
+                onFieldsChange(
+                  fields.map((field) =>
+                    field.localId === selectedField.localId
+                      ? { ...field, recipientId: event.target.value }
+                      : field
+                  )
+                )
+              }
+              className="h-7 rounded border border-border-primary bg-background-primary px-2 text-xs text-text-primary"
+            >
+              {signerRecipients.map((recipient) => (
+                <option key={recipient.id} value={recipient.id}>
+                  {recipient.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1 text-xs text-text-secondary">
+            Label
+            <input
+              value={selectedField.label ?? ''}
+              onChange={(event) =>
+                onFieldsChange(
+                  fields.map((field) =>
+                    field.localId === selectedField.localId
+                      ? { ...field, label: event.target.value || null }
+                      : field
+                  )
+                )
+              }
+              className="h-7 rounded border border-border-primary bg-background-primary px-2 text-xs text-text-primary"
+            />
+          </label>
+
+          <label className="flex items-center gap-2 text-xs text-text-secondary">
+            <input
+              type="checkbox"
+              checked={selectedField.required}
+              onChange={(event) =>
+                onFieldsChange(
+                  fields.map((field) =>
+                    field.localId === selectedField.localId
+                      ? { ...field, required: event.target.checked }
+                      : field
+                  )
+                )
+              }
+            />
+            Required
+          </label>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-text-primary">Field Coverage</h3>
+          {signerRecipients.map((recipient) => {
+            const summary = recipientFieldSummary.get(recipient.id);
+            const hasIssue = !summary?.hasSignature;
+
+            return (
+              <div
+                key={recipient.id}
+                className="rounded-xl border border-border-primary bg-background-primary p-2"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="h-2 w-2 flex-shrink-0 rounded-full"
+                    style={{ backgroundColor: recipient.colorTag }}
+                  />
+                  <span className="truncate text-xs font-medium text-text-primary">
+                    {recipient.name}
+                  </span>
+                </div>
+                <div
+                  className={cn(
+                    'mt-1 text-xs',
+                    hasIssue ? 'text-amber-600' : 'text-text-secondary'
+                  )}
+                >
+                  {summary?.required ?? 0} required / {summary?.optional ?? 0} optional
+                  {hasIssue ? <div>No signature field assigned</div> : null}
+                </div>
+              </div>
+            );
+          })}
+
+          {fields.length === 0 ? (
+            <p className="text-xs text-text-secondary">
+              Select a field type in the palette, then click on the document to place it.
+            </p>
+          ) : null}
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 57px)' }}>
+      <div ref={layoutRef} className="flex flex-1 overflow-hidden">
+        <div
+          className={cn(
+            'relative flex-shrink-0 overflow-hidden transition-[width] duration-200',
+            activeResizePanel && 'duration-0'
+          )}
+          style={{ width: leftPanelCollapsed ? PANEL_COLLAPSED_WIDTH : leftPanelWidth }}
+        >
+          {leftPanelCollapsed ? (
+            <div className="flex h-full items-start justify-center border-r border-border-primary bg-background-secondary pt-4">
+              <button
+                type="button"
+                onClick={() => setLeftPanelCollapsed(false)}
+                className="rounded-lg border border-border-primary bg-background-primary p-1.5 text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                aria-label="Expand field palette"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="relative h-full">
+              <button
+                type="button"
+                onClick={() => setLeftPanelCollapsed(true)}
+                className="absolute right-3 top-3 z-10 rounded-lg border border-border-primary bg-background-primary/95 p-1.5 text-text-muted shadow-sm hover:bg-background-tertiary hover:text-text-primary"
+                aria-label="Collapse field palette"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <EsigningFieldPalette
+                recipients={envelope.recipients}
+                selectedRecipientId={selectedRecipientId}
+                onRecipientChange={setSelectedRecipientId}
+                activePlacementType={activePlacementType}
+                onPlacementTypeSelect={setActivePlacementType}
+                recipientFieldSummary={recipientFieldSummary}
+              />
+            </div>
+          )}
+        </div>
+
+        {!leftPanelCollapsed ? (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize left panel"
+            onMouseDown={(event) => beginPanelResize('left', event)}
+            className="group flex w-3 flex-shrink-0 cursor-col-resize items-center justify-center bg-background-primary"
+          >
+            <div className="h-16 w-1 rounded-full bg-border-primary transition-colors group-hover:bg-oak-primary" />
+          </div>
+        ) : null}
+
+        <div className="min-w-0 flex-1 overflow-hidden">
           <EsigningFieldCanvas
             documents={envelope.documents}
             selectedDocumentId={selectedDocumentId}
@@ -206,259 +575,70 @@ export function EsigningStepFields({
           />
         </div>
 
-        <div className="w-56 flex-shrink-0 overflow-y-auto border-l border-border-primary bg-background-secondary p-4">
-          {showCoachmarks ? (
-            <Alert
-              variant="info"
-              compact
-              className="mb-4"
-              title="Placement tips"
-              onClose={() => {
-                window.localStorage.setItem(`esigning-field-coachmarks:${envelope.id}`, 'dismissed');
-                setShowCoachmarks(false);
-              }}
-            >
-              Click a field in the palette, place it on the page, then drag or resize it. Use Ctrl/Cmd+Z to undo layout changes as you work.
-            </Alert>
-          ) : null}
-
-          <div className="mb-4 flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="xs"
-              leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
-              onClick={onUndo}
-              disabled={!canUndo}
-            >
-              Undo
-            </Button>
-            <Button
-              variant="secondary"
-              size="xs"
-              leftIcon={<RotateCw className="h-3.5 w-3.5" />}
-              onClick={onRedo}
-              disabled={!canRedo}
-            >
-              Redo
-            </Button>
+        {!rightPanelCollapsed ? (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize right panel"
+            onMouseDown={(event) => beginPanelResize('right', event)}
+            className="group flex w-3 flex-shrink-0 cursor-col-resize items-center justify-center bg-background-primary"
+          >
+            <div className="h-16 w-1 rounded-full bg-border-primary transition-colors group-hover:bg-oak-primary" />
           </div>
+        ) : null}
 
-          <div className="mb-4 rounded-xl border border-border-primary bg-background-primary p-3">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-text-primary">Zoom</h3>
-              <span className="text-xs font-medium text-text-secondary">
-                {Math.round(preparationZoom * 100)}%
-              </span>
-            </div>
-
-            <div className="mt-3 flex items-center gap-2">
-              <Button
-                variant="secondary"
-                size="xs"
-                leftIcon={<ZoomOut className="h-3.5 w-3.5" />}
-                onClick={() =>
-                  setPreparationZoom(
-                    DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS[Math.max(0, preparationZoomIndex - 1)]
-                  )
-                }
-                disabled={preparationZoomIndex === 0}
+        <div
+          className={cn(
+            'relative flex-shrink-0 overflow-hidden transition-[width] duration-200',
+            activeResizePanel && 'duration-0'
+          )}
+          style={{ width: rightPanelCollapsed ? PANEL_COLLAPSED_WIDTH : rightPanelWidth }}
+        >
+          {rightPanelCollapsed ? (
+            <div className="flex h-full items-start justify-center border-l border-border-primary bg-background-secondary pt-4">
+              <button
+                type="button"
+                onClick={() => setRightPanelCollapsed(false)}
+                className="rounded-lg border border-border-primary bg-background-primary p-1.5 text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                aria-label="Expand field details"
               >
-                Out
-              </Button>
-              <Button
-                variant="secondary"
-                size="xs"
-                leftIcon={<ZoomIn className="h-3.5 w-3.5" />}
-                onClick={() =>
-                  setPreparationZoom(
-                    DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS[
-                      Math.min(
-                        DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS.length - 1,
-                        preparationZoomIndex + 1
-                      )
-                    ]
-                  )
-                }
-                disabled={preparationZoomIndex === DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS.length - 1}
-              >
-                In
-              </Button>
-            </div>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              {[1, 1.5, 2].map((zoomPreset) => (
-                <Button
-                  key={zoomPreset}
-                  variant={preparationZoom === zoomPreset ? 'primary' : 'secondary'}
-                  size="xs"
-                  onClick={() => setPreparationZoom(zoomPreset)}
-                >
-                  {Math.round(zoomPreset * 100)}%
-                </Button>
-              ))}
-            </div>
-
-            <p className="mt-3 text-xs text-text-secondary">
-              Use these controls while placing fields, or use the viewer toolbar and +/- shortcuts.
-            </p>
-          </div>
-
-          {overlappingFields.length > 0 && !overlapWarningDismissed ? (
-            <Alert
-              variant="warning"
-              compact
-              className="mb-4"
-              title="Overlapping fields detected"
-              onClose={() => setOverlapWarningDismissed(true)}
-            >
-              {overlappingFields.length} field{overlappingFields.length === 1 ? '' : 's'} overlap on the current layout. Review before sending so signers do not run into competing targets.
-            </Alert>
-          ) : null}
-
-          {selectedField ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-text-primary">Field Properties</h3>
-                <Button
-                  variant="danger"
-                  size="xs"
-                  onClick={() => {
-                    onFieldsChange(fields.filter((field) => field.localId !== selectedField.localId));
-                    setSelectedFieldId(null);
-                  }}
-                >
-                  Delete
-                </Button>
-              </div>
-
-              <div className="text-xs text-text-secondary">
-                Type: {ESIGNING_FIELD_TYPE_LABELS[selectedField.type]}
-              </div>
-
-              {overlapMap.has(selectedField.localId) ? (
-                <Alert variant="warning" compact>
-                  This field overlaps another field on the same page.
-                </Alert>
-              ) : null}
-
-              <label className="flex flex-col gap-1 text-xs text-text-secondary">
-                Assigned to
-                <select
-                  value={selectedField.recipientId}
-                  onChange={(event) =>
-                    onFieldsChange(
-                      fields.map((field) =>
-                        field.localId === selectedField.localId
-                          ? { ...field, recipientId: event.target.value }
-                          : field
-                      )
-                    )
-                  }
-                  className="h-7 rounded border border-border-primary bg-background-primary px-2 text-xs text-text-primary"
-                >
-                  {signerRecipients.map((recipient) => (
-                    <option key={recipient.id} value={recipient.id}>
-                      {recipient.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="flex flex-col gap-1 text-xs text-text-secondary">
-                Label
-                <input
-                  value={selectedField.label ?? ''}
-                  onChange={(event) =>
-                    onFieldsChange(
-                      fields.map((field) =>
-                        field.localId === selectedField.localId
-                          ? { ...field, label: event.target.value || null }
-                          : field
-                      )
-                    )
-                  }
-                  className="h-7 rounded border border-border-primary bg-background-primary px-2 text-xs text-text-primary"
-                />
-              </label>
-
-              <label className="flex items-center gap-2 text-xs text-text-secondary">
-                <input
-                  type="checkbox"
-                  checked={selectedField.required}
-                  onChange={(event) =>
-                    onFieldsChange(
-                      fields.map((field) =>
-                        field.localId === selectedField.localId
-                          ? { ...field, required: event.target.checked }
-                          : field
-                      )
-                    )
-                  }
-                />
-                Required
-              </label>
+                <ChevronLeft className="h-4 w-4" />
+              </button>
             </div>
           ) : (
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-text-primary">Field Coverage</h3>
-              {signerRecipients.map((recipient) => {
-                const summary = recipientFieldSummary.get(recipient.id);
-                const hasIssue = !summary?.hasSignature;
-
-                return (
-                  <div
-                    key={recipient.id}
-                    className="rounded-xl border border-border-primary bg-background-primary p-2"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="h-2 w-2 flex-shrink-0 rounded-full"
-                        style={{ backgroundColor: recipient.colorTag }}
-                      />
-                      <span className="truncate text-xs font-medium text-text-primary">
-                        {recipient.name}
-                      </span>
-                    </div>
-                    <div
-                      className={cn(
-                        'mt-1 text-xs',
-                        hasIssue ? 'text-amber-600' : 'text-text-secondary'
-                      )}
-                    >
-                      {summary?.required ?? 0} required · {summary?.optional ?? 0} optional
-                      {hasIssue ? <div>No signature field assigned</div> : null}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {fields.length === 0 ? (
-                <p className="text-xs text-text-secondary">
-                  Select a field type in the palette, then click on the document to place it.
-                </p>
-              ) : null}
+            <div className="relative h-full overflow-y-auto border-l border-border-primary bg-background-secondary p-4 pt-12">
+              <button
+                type="button"
+                onClick={() => setRightPanelCollapsed(true)}
+                className="absolute left-3 top-3 z-10 rounded-lg border border-border-primary bg-background-primary/95 p-1.5 text-text-muted shadow-sm hover:bg-background-tertiary hover:text-text-primary"
+                aria-label="Collapse field details"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              {rightPanelContent}
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex flex-shrink-0 items-center justify-between gap-4 border-t border-border-primary bg-background-secondary px-6 py-3">
-        <Button variant="secondary" onClick={onBack}>
+      <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border-primary bg-background-secondary px-3 py-2 sm:gap-4 sm:px-6 sm:py-3">
+        <Button variant="secondary" size="sm" onClick={onBack}>
           Back
         </Button>
 
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={onUndo} disabled={!canUndo}>
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <Button variant="secondary" size="sm" onClick={onUndo} disabled={!canUndo}>
             Undo
           </Button>
-          <Button variant="secondary" onClick={onRedo} disabled={!canRedo}>
+          <Button variant="secondary" size="sm" onClick={onRedo} disabled={!canRedo}>
             Redo
           </Button>
-          <Button variant="secondary" onClick={() => void onSaveFields()} isLoading={isSaving}>
-            Save layout
+          <Button variant="secondary" size="sm" onClick={() => void onSaveFields()} isLoading={isSaving}>
+            Save
           </Button>
-          <Button onClick={onNext} disabled={!canProceedToStep3}>
-            Next: Review & Send
+          <Button size="sm" onClick={onNext} disabled={!canProceedToStep3}>
+            <span className="hidden sm:inline">Next: Review & Send</span>
+            <span className="sm:hidden">Next</span>
           </Button>
         </div>
       </div>

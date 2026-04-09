@@ -103,6 +103,8 @@ interface DocumentPageViewerProps {
   onHighlightClick?: (index: number, highlight: BoundingBox) => void;
   /** Renders custom React content inside each highlight's foreignObject. Receives the highlight, its pixel rect, and index. */
   renderHighlightContent?: (highlight: BoundingBox, pixelRect: { x: number; y: number; width: number; height: number }, index: number) => React.ReactNode;
+  /** Label of the highlight to bring into view when the current page is rendered. */
+  focusedHighlightLabel?: string;
   /** Optional retry handler when using a direct pdfUrl prop and loading fails. */
   onRetry?: () => void;
 }
@@ -145,6 +147,7 @@ function getClosestZoomIndex(zoomLevel: number): number {
 
 let pdfjsLib: typeof import('pdfjs-dist') | null = null;
 let workerInitialized = false;
+const pdfBytesCache = new Map<string, Promise<Uint8Array>>();
 
 async function getPdfJs() {
   if (pdfjsLib && workerInitialized) return pdfjsLib;
@@ -158,6 +161,31 @@ async function getPdfJs() {
 
   pdfjsLib = pdfjs;
   return pdfjs;
+}
+
+async function fetchPdfBytes(url: string): Promise<Uint8Array> {
+  const cached = pdfBytesCache.get(url);
+  if (cached) {
+    return (await cached).slice();
+  }
+
+  const loadPromise = (async () => {
+    const response = await fetch(url, { credentials: 'same-origin' });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch PDF (${response.status})`);
+    }
+
+    return new Uint8Array(await response.arrayBuffer());
+  })();
+
+  pdfBytesCache.set(url, loadPromise);
+
+  try {
+    return (await loadPromise).slice();
+  } catch (error) {
+    pdfBytesCache.delete(url);
+    throw error;
+  }
 }
 
 // =============================================================================
@@ -330,6 +358,7 @@ export function DocumentPageViewer({
   onPagesChanged,
   onHighlightClick,
   renderHighlightContent,
+  focusedHighlightLabel,
   onRetry,
 }: DocumentPageViewerProps) {
   // Stable references
@@ -387,6 +416,15 @@ export function DocumentPageViewer({
   const zoomIndexRef = useRef(zoomIndex);
   const pinchStartDistanceRef = useRef<number | null>(null);
   const pinchStartZoomIndexRef = useRef(zoomIndex);
+  const panStateRef = useRef<{
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    startScrollLeft: number;
+    startScrollTop: number;
+  } | null>(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const lastFocusedHighlightKeyRef = useRef<string | null>(null);
 
   // ==========================================================================
   // Handlers
@@ -436,6 +474,68 @@ export function DocumentPageViewer({
   const handleZoomOut = useCallback(() => {
     setResolvedZoomIndex((prev) => prev - 1);
   }, [setResolvedZoomIndex]);
+
+  const handleScrollContainerPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0) {
+        return;
+      }
+
+      const interactiveTarget = (event.target as HTMLElement | null)?.closest(
+        'button, a, input, textarea, select, [role="button"], [data-no-pan="true"]'
+      );
+      if (interactiveTarget) {
+        return;
+      }
+
+      const container = scrollContainerRef.current;
+      if (!container) {
+        return;
+      }
+
+      panStateRef.current = {
+        pointerId: event.pointerId,
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        startScrollLeft: container.scrollLeft,
+        startScrollTop: container.scrollTop,
+      };
+      setIsPanning(true);
+      container.setPointerCapture?.(event.pointerId);
+    },
+    []
+  );
+
+  const handleScrollContainerPointerMove = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const state = panStateRef.current;
+      const container = scrollContainerRef.current;
+      if (!state || !container || state.pointerId !== event.pointerId) {
+        return;
+      }
+
+      const deltaX = event.clientX - state.startClientX;
+      const deltaY = event.clientY - state.startClientY;
+      container.scrollLeft = state.startScrollLeft - deltaX;
+      container.scrollTop = state.startScrollTop - deltaY;
+    },
+    []
+  );
+
+  const handleScrollContainerPointerEnd = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const state = panStateRef.current;
+      const container = scrollContainerRef.current;
+      if (!state || state.pointerId !== event.pointerId) {
+        return;
+      }
+
+      panStateRef.current = null;
+      setIsPanning(false);
+      container?.releasePointerCapture?.(event.pointerId);
+    },
+    []
+  );
 
   const handleRotateCW = useCallback(() => {
     setRotation((prev) => {
@@ -491,10 +591,11 @@ export function DocumentPageViewer({
       }
 
       const page = await pdf.getPage(pageNum);
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
       // PDF.js viewport supports rotation in degrees
       const viewport = page.getViewport({ scale: zoom, rotation: pageRotation });
-
-      const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
       if (!context) return;
 
@@ -516,11 +617,21 @@ export function DocumentPageViewer({
       renderTaskRef.current = renderTask;
 
       await renderTask.promise;
-      renderTaskRef.current = null;
+
+      if (renderTaskRef.current === renderTask) {
+        renderTaskRef.current = null;
+      }
+
+      if (!canvasRef.current || canvasRef.current !== canvas) {
+        return;
+      }
 
       // Extract text layer for highlighting
       try {
         const textItems = await extractTextLayer(page);
+        if (!canvasRef.current || canvasRef.current !== canvas) {
+          return;
+        }
         setTextLayerItems(textItems);
         onTextLayerReady?.(textItems, pageNum);
       } catch (textErr) {
@@ -565,7 +676,12 @@ export function DocumentPageViewer({
           pdfDocRef.current = null;
         }
 
-        const loadingTask = pdfjs.getDocument(pdfUrlToLoad);
+        const pdfBytes = await fetchPdfBytes(pdfUrlToLoad);
+        if (cancelled) {
+          return;
+        }
+
+        const loadingTask = pdfjs.getDocument({ data: pdfBytes });
         const pdf = await loadingTask.promise;
 
         if (cancelled) {
@@ -661,6 +777,63 @@ export function DocumentPageViewer({
 
     setTextLayerHighlights(newHighlights);
   }, [textLayerItems, stableFieldValues, currentPage]);
+
+  useEffect(() => {
+    if (!focusedHighlightLabel || isPdfLoading || canvasDimensions.width <= 0 || canvasDimensions.height <= 0) {
+      return;
+    }
+
+    const targetHighlight = stableHighlights.find(
+      (highlight) => highlight.label === focusedHighlightLabel && highlight.pageNumber === currentPage
+    );
+    if (!targetHighlight) {
+      return;
+    }
+
+    const focusKey = [
+      focusedHighlightLabel,
+      currentPage,
+      Math.round(canvasDimensions.width),
+      Math.round(canvasDimensions.height),
+    ].join(':');
+    if (lastFocusedHighlightKeyRef.current === focusKey) {
+      return;
+    }
+
+    const scrollContainer = scrollContainerRef.current;
+    const canvas = canvasRef.current;
+    if (!scrollContainer || !canvas) {
+      return;
+    }
+
+    const canvasRect = canvas.getBoundingClientRect();
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const targetCenterX =
+      scrollContainer.scrollLeft +
+      (canvasRect.left - containerRect.left) +
+      (targetHighlight.x + targetHighlight.width / 2) * canvasDimensions.width;
+    const targetCenterY =
+      scrollContainer.scrollTop +
+      (canvasRect.top - containerRect.top) +
+      (targetHighlight.y + targetHighlight.height / 2) * canvasDimensions.height;
+
+    const nextScrollLeft = Math.max(0, targetCenterX - scrollContainer.clientWidth / 2);
+    const nextScrollTop = Math.max(0, targetCenterY - scrollContainer.clientHeight / 2);
+
+    scrollContainer.scrollTo({
+      left: nextScrollLeft,
+      top: nextScrollTop,
+      behavior: 'smooth',
+    });
+    lastFocusedHighlightKeyRef.current = focusKey;
+  }, [
+    canvasDimensions.height,
+    canvasDimensions.width,
+    currentPage,
+    focusedHighlightLabel,
+    isPdfLoading,
+    stableHighlights,
+  ]);
 
   // Keyboard navigation for PDF pages and zoom
   // Left/Right arrows for page navigation, +/- for zoom
@@ -1020,7 +1193,15 @@ export function DocumentPageViewer({
           {/* Scrollable PDF content area - tabIndex allows keyboard scrolling with arrow keys */}
           <div
             ref={scrollContainerRef}
-            className="flex-1 overflow-auto p-4 bg-background-secondary focus:outline-none"
+            data-document-scroll-container="true"
+            onPointerDown={handleScrollContainerPointerDown}
+            onPointerMove={handleScrollContainerPointerMove}
+            onPointerUp={handleScrollContainerPointerEnd}
+            onPointerCancel={handleScrollContainerPointerEnd}
+            className={cn(
+              'flex-1 overflow-auto p-4 bg-background-secondary focus:outline-none',
+              isPanning ? 'cursor-grabbing' : 'cursor-grab'
+            )}
             tabIndex={0}
           >
             <div className="inline-flex min-w-full min-h-full items-center justify-center">
@@ -1034,6 +1215,7 @@ export function DocumentPageViewer({
 
                 <canvas
                   ref={canvasRef}
+                  data-main-pdf-canvas="true"
                   className={cn(
                     'shadow-lg rounded border border-border-primary',
                     isPdfLoading && 'opacity-0'
@@ -1043,7 +1225,10 @@ export function DocumentPageViewer({
                 {/* SVG overlay for highlights */}
                 {showHighlights && !isPdfLoading && currentHighlights.length > 0 && canvasDimensions.width > 0 && (
                   <svg
-                    className="absolute top-0 left-0 pointer-events-none"
+                    className={cn(
+                      'absolute top-0 left-0',
+                      !(onHighlightClick || renderHighlightContent) && 'pointer-events-none'
+                    )}
                     style={{
                       width: canvasDimensions.width,
                       height: canvasDimensions.height,
@@ -1078,7 +1263,13 @@ export function DocumentPageViewer({
                               : {})}
                           />
                           {renderHighlightContent && (
-                            <foreignObject x={x} y={y} width={w} height={h}>
+                            <foreignObject
+                              x={x}
+                              y={y}
+                              width={w}
+                              height={h}
+                              style={{ pointerEvents: 'auto' }}
+                            >
                               {renderHighlightContent(highlight, { x, y, width: w, height: h }, idx)}
                             </foreignObject>
                           )}
@@ -1226,7 +1417,12 @@ function PdfThumbnail({
     async function renderThumbnail() {
       try {
         const pdfjs = await getPdfJs();
-        const loadingTask = pdfjs.getDocument(pdfUrl);
+        const pdfBytes = await fetchPdfBytes(pdfUrl);
+        if (cancelled) {
+          return;
+        }
+
+        const loadingTask = pdfjs.getDocument({ data: pdfBytes });
         const pdf = await loadingTask.promise;
 
         if (cancelled) {

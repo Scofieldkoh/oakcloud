@@ -38,12 +38,15 @@ export function isEnvelopeTerminal(status: string): boolean {
 }
 
 export function buildDocumentUrls(
+  tenantId: string,
   envelopeId: string,
   documentId: string
 ): Pick<EsigningEnvelopeDocumentDto, 'pdfUrl' | 'signedPdfUrl'> {
+  const tenantQuery = `?tenantId=${encodeURIComponent(tenantId)}`;
+
   return {
-    pdfUrl: `/api/esigning/envelopes/${envelopeId}/documents/${documentId}/pdf`,
-    signedPdfUrl: `/api/esigning/envelopes/${envelopeId}/documents/${documentId}/signed-pdf`,
+    pdfUrl: `/api/esigning/envelopes/${envelopeId}/documents/${documentId}/pdf${tenantQuery}`,
+    signedPdfUrl: `/api/esigning/envelopes/${envelopeId}/documents/${documentId}/signed-pdf${tenantQuery}`,
   };
 }
 
@@ -285,8 +288,8 @@ export function serializeEnvelopeDetail(input: {
       fileSize: document.fileSize,
       originalHash: document.originalHash,
       signedHash: document.signedHash,
-      ...buildDocumentUrls(envelope.id, document.id),
-    }) satisfies EsigningEnvelopeDocumentDto),
+        ...buildDocumentUrls(envelope.tenantId, envelope.id, document.id),
+      }) satisfies EsigningEnvelopeDocumentDto),
     recipients: envelope.recipients.map((recipient) => {
       const counts = fieldCountByRecipient.get(recipient.id) ?? { total: 0, required: 0, signature: 0 };
       return {

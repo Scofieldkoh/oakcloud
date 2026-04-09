@@ -90,7 +90,7 @@ function textToDataUrl(text: string, fontFamily: string): string {
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = '#111827';
   context.textBaseline = 'middle';
-  context.font = `64px "${fontFamily}"`;
+  context.font = `64px ${fontFamily}`;
   context.fillText(text, 28, canvas.height / 2);
   return canvas.toDataURL('image/png');
 }

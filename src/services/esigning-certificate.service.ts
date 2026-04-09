@@ -1,6 +1,12 @@
 import { randomUUID } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { hashSha256 } from '@/lib/encryption';
+import {
+  buildEsigningEventLabel,
+  formatEsigningAccessModeLabel,
+  isEsigningPositiveEvent,
+  summarizeEsigningUserAgent,
+} from '@/services/esigning-evidence';
 
 function formatCertificateDate(date: Date): string {
   const year = date.getUTCFullYear();
@@ -75,8 +81,27 @@ export async function getEsigningVerificationData(certificateId: string) {
           email: true,
           type: true,
           status: true,
+          accessMode: true,
           signingOrder: true,
+          viewedAt: true,
+          consentedAt: true,
+          consentIp: true,
+          consentUserAgent: true,
           signedAt: true,
+          signedIp: true,
+          signedUserAgent: true,
+        },
+      },
+      events: {
+        orderBy: { createdAt: 'asc' },
+        include: {
+          recipient: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
       },
     },
@@ -106,8 +131,28 @@ export async function getEsigningVerificationData(certificateId: string) {
       emailMasked: maskEmailAddress(recipient.email),
       type: recipient.type,
       status: recipient.status,
+      accessMode: recipient.accessMode,
+      accessModeLabel: formatEsigningAccessModeLabel(recipient.accessMode),
       signingOrder: recipient.signingOrder,
+      viewedAt: recipient.viewedAt?.toISOString() ?? null,
+      consentedAt: recipient.consentedAt?.toISOString() ?? null,
+      consentIp: recipient.consentIp ?? null,
+      consentDevice: summarizeEsigningUserAgent(recipient.consentUserAgent),
       signedAt: recipient.signedAt?.toISOString() ?? null,
+      signedIp: recipient.signedIp ?? null,
+      signedDevice: summarizeEsigningUserAgent(recipient.signedUserAgent),
+    })),
+    events: envelope.events.map((event) => ({
+      id: event.id,
+      timestamp: event.createdAt.toISOString(),
+      action: event.action,
+      label: buildEsigningEventLabel({
+        action: event.action,
+        recipientName: event.recipient?.name ?? null,
+      }),
+      recipientId: event.recipient?.id ?? null,
+      recipientName: event.recipient?.name ?? null,
+      isPositive: isEsigningPositiveEvent(event.action),
     })),
   };
 }

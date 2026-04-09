@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Building2,
   Users,
@@ -45,6 +45,7 @@ import { cn } from '@/lib/utils';
 import { getSidebarWidth as getSidebarWidthFn } from '@/lib/constants/layout';
 import { SidebarTenantButton } from '@/components/ui/tenant-selector';
 import { SidebarCompanyButton } from '@/components/ui/company-selector';
+import { Dropdown, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, DropdownTrigger } from '@/components/ui/dropdown';
 
 interface NavItem {
   name: string;
@@ -560,8 +561,10 @@ function ThemeToggleButton({ collapsed }: { collapsed: boolean }) {
 
 // User section
 function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMobile?: boolean }) {
+  const router = useRouter();
   const { data: user } = useSession();
   const logout = useLogout();
+  const setMobileSidebarOpen = useUIStore((state) => state.setMobileSidebarOpen);
 
   const getInitials = () => {
     if (!user) return 'U';
@@ -571,7 +574,17 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
   };
 
   const handleLogout = () => {
+    if (isMobile) {
+      setMobileSidebarOpen(false);
+    }
     logout.mutate();
+  };
+
+  const handleChangePassword = () => {
+    if (isMobile) {
+      setMobileSidebarOpen(false);
+    }
+    router.push('/change-password');
   };
 
   return (
@@ -597,41 +610,67 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
         )}
 
         {/* User info */}
-        <div
-          className={cn(
-            'flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-background-secondary',
-            collapsed && 'justify-center'
-          )}
-        >
-          <div className="w-7 h-7 rounded-full bg-oak-primary/20 flex items-center justify-center flex-shrink-0">
-            <span className="text-oak-light text-xs font-medium">{getInitials()}</span>
-          </div>
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text-primary truncate">
-                {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User' : 'Loading...'}
-              </p>
-              <p className="text-xs text-text-tertiary truncate">{user?.email}</p>
-            </div>
-          )}
-          {!collapsed && (
-            <button
-              onClick={handleLogout}
-              className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-status-error transition-colors"
-              aria-label="Sign out"
+        {user ? (
+          <Dropdown>
+            <DropdownTrigger
+              asChild
+              aria-label={collapsed ? 'Open account menu' : `Open account menu for ${user.firstName || user.email}`}
+              className="w-full"
             >
-              <LogOut className="w-4 h-4" aria-hidden="true" />
-            </button>
-          )}
-        </div>
-        {collapsed && (
-          <button
-            onClick={handleLogout}
-            className="w-full p-2 rounded hover:bg-background-tertiary text-text-muted hover:text-status-error transition-colors flex items-center justify-center"
-            aria-label="Sign out"
+              <div
+                className={cn(
+                  'flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-background-secondary hover:bg-background-elevated transition-colors w-full',
+                  collapsed && 'justify-center'
+                )}
+              >
+                <div className="w-7 h-7 rounded-full bg-oak-primary/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-oak-light text-xs font-medium">{getInitials()}</span>
+                </div>
+                {!collapsed && (
+                  <>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-text-primary truncate">
+                        {`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'}
+                      </p>
+                      <p className="text-xs text-text-tertiary truncate">{user.email}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-text-muted flex-shrink-0" aria-hidden="true" />
+                  </>
+                )}
+              </div>
+            </DropdownTrigger>
+            <DropdownMenu align="right">
+              <DropdownLabel>
+                {`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'}
+              </DropdownLabel>
+              <DropdownLabel className="normal-case tracking-normal font-normal text-text-tertiary -mt-1">
+                {user.email}
+              </DropdownLabel>
+              <DropdownSeparator />
+              <DropdownItem icon={<Lock className="w-4 h-4" />} onClick={handleChangePassword}>
+                Change Password
+              </DropdownItem>
+              <DropdownItem icon={<LogOut className="w-4 h-4" />} onClick={handleLogout} destructive>
+                Sign Out
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
+        ) : (
+          <div
+            className={cn(
+              'flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-background-secondary',
+              collapsed && 'justify-center'
+            )}
           >
-            <LogOut className="w-4 h-4" aria-hidden="true" />
-          </button>
+            <div className="w-7 h-7 rounded-full bg-oak-primary/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-oak-light text-xs font-medium">{getInitials()}</span>
+            </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-text-primary truncate">Loading...</p>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

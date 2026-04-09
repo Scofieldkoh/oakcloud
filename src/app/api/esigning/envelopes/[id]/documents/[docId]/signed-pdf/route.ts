@@ -9,6 +9,7 @@ import {
 import { storage } from '@/lib/storage';
 import { getEsigningEnvelopeDetail } from '@/services/esigning-envelope.service';
 import { prisma } from '@/lib/prisma';
+import { ensureEsigningEnvelopeArtifacts } from '@/services/esigning-pdf.service';
 
 interface RouteParams {
   params: Promise<{ id: string; docId: string }>;
@@ -28,6 +29,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (!document) {
       throw new Error('Document not found');
     }
+
+    await ensureEsigningEnvelopeArtifacts({
+      envelopeId: id,
+      requireCertificates: false,
+    });
 
     const stored = await prisma.esigningEnvelopeDocument.findFirst({
       where: {

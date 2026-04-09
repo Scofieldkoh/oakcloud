@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy } from 'lucide-react';
 import type { EsigningSigningOrder } from '@/generated/prisma';
 import type { EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,8 @@ interface EsigningRecipientCardProps {
   canEdit: boolean;
   onEdit: () => void;
   onRemove: () => void;
+  onCopyLink?: () => void;
+  isCopyingLink?: boolean;
   onResend?: () => void;
   warnings: string[];
 }
@@ -26,6 +29,8 @@ export function EsigningRecipientCard({
   canEdit,
   onEdit,
   onRemove,
+  onCopyLink,
+  isCopyingLink = false,
   onResend,
   warnings,
 }: EsigningRecipientCardProps) {
@@ -87,6 +92,17 @@ export function EsigningRecipientCard({
             {canEdit && (
               <Button variant="secondary" size="xs" onClick={onEdit}>
                 Edit
+              </Button>
+            )}
+            {onCopyLink && (
+              <Button
+                variant="secondary"
+                size="xs"
+                leftIcon={<Copy className="h-3.5 w-3.5" />}
+                onClick={onCopyLink}
+                isLoading={isCopyingLink}
+              >
+                Copy link
               </Button>
             )}
             {onResend && (

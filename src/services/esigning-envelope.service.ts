@@ -36,6 +36,7 @@ import {
   sendEsigningRequestEmail,
   sendEsigningVoidedEmailToRecipient,
 } from '@/services/esigning-notification.service';
+import { generateEsigningEnvelopeArtifactsNow } from '@/services/esigning-pdf.service';
 import {
   buildRecipientSigningOrder,
   canDeleteEnvelope,
@@ -396,8 +397,10 @@ export async function listEsigningEnvelopes(
   return {
     envelopes: envelopes.map((envelope) => ({
       id: envelope.id,
+      tenantId: envelope.tenantId,
       title: envelope.title,
       status: envelope.status,
+      pdfGenerationStatus: envelope.pdfGenerationStatus ?? null,
       signingOrder: envelope.signingOrder,
       certificateId: envelope.certificateId,
       createdAt: envelope.createdAt.toISOString(),
@@ -422,7 +425,7 @@ export async function listEsigningEnvelopes(
         ),
       canRetryPdf:
         envelope.status === 'COMPLETED' &&
-        envelope.pdfGenerationStatus === 'FAILED' &&
+        envelope.pdfGenerationStatus !== 'COMPLETED' &&
         (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
       resendableRecipientCount: envelope.recipients.filter(
         (recipient) =>
@@ -1461,6 +1464,99 @@ export async function reorderEsigningEnvelopeDocument(
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }
 
+export async function reorderEsigningEnvelopeRecipients(
+  session: SessionUser,
+  tenantId: string,
+  envelopeId: string,
+  input: {
+    recipientIds?: string[];
+    recipients?: Array<{ recipientId: string; signingOrder: number }>;
+  }
+): Promise<EsigningEnvelopeDetailDto> {
+  const scope = await resolveEsigningActorScope(session, tenantId);
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: { id: envelopeId, tenantId },
+    include: {
+      recipients: {
+        orderBy: [
+          { signingOrder: 'asc' },
+          { createdAt: 'asc' },
+        ],
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          signingOrder: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+
+  if (!envelope) {
+    throw new Error('Envelope not found');
+  }
+  if (envelope.status !== 'DRAFT') {
+    throw new Error('Recipients can only be reordered while the envelope is a draft');
+  }
+  if (envelope.signingOrder === 'PARALLEL') {
+    throw new Error('Enable sequential signing before reordering recipients');
+  }
+  if (!canMutateEnvelope(scope, session, envelope.createdById)) {
+    throw new Error('Forbidden');
+  }
+
+  const signerRecipients = envelope.recipients.filter((recipient) => recipient.type === 'SIGNER');
+  const signerIds = signerRecipients.map((recipient) => recipient.id);
+  const recipientIds = input.recipientIds ?? input.recipients?.map((recipient) => recipient.recipientId) ?? [];
+
+  if (signerIds.length !== recipientIds.length) {
+    throw new Error('Recipient reorder payload must include every signer exactly once');
+  }
+
+  const expected = new Set(signerIds);
+  const provided = new Set(recipientIds);
+  if (expected.size !== provided.size || signerIds.some((id) => !provided.has(id))) {
+    throw new Error('Recipient reorder payload does not match the envelope signers');
+  }
+
+  const signingOrderByRecipientId = new Map<string, number>();
+
+  if (input.recipients?.length) {
+    input.recipients.forEach((recipient) => {
+      signingOrderByRecipientId.set(recipient.recipientId, recipient.signingOrder);
+    });
+
+    validateSigningOrderConfiguration({
+      envelopeSigningOrder: envelope.signingOrder,
+      recipients: envelope.recipients.map((recipient) => ({
+        id: recipient.id,
+        name: recipient.name,
+        type: recipient.type,
+        signingOrder:
+          recipient.type === 'SIGNER'
+            ? signingOrderByRecipientId.get(recipient.id) ?? null
+            : recipient.signingOrder,
+      })),
+    });
+  } else {
+    recipientIds.forEach((recipientId, index) => {
+      signingOrderByRecipientId.set(recipientId, index + 1);
+    });
+  }
+
+  await prisma.$transaction(
+    signerRecipients.map((recipient) =>
+      prisma.esigningEnvelopeRecipient.update({
+        where: { id: recipient.id },
+        data: { signingOrder: signingOrderByRecipientId.get(recipient.id) ?? null },
+      })
+    )
+  );
+
+  return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
+}
+
 export async function sendEsigningEnvelope(
   session: SessionUser,
   tenantId: string,
@@ -1746,6 +1842,76 @@ export async function resendEsigningEnvelopeRecipient(
   };
 }
 
+export async function getEsigningEnvelopeRecipientManualLink(
+  session: SessionUser,
+  tenantId: string,
+  envelopeId: string,
+  recipientId: string,
+  appBaseUrl?: string
+): Promise<EsigningManualLinkDto> {
+  const scope = await resolveEsigningActorScope(session, tenantId);
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: { id: envelopeId, tenantId },
+    include: {
+      recipients: {
+        orderBy: { createdAt: 'asc' },
+      },
+    },
+  });
+
+  if (!envelope) {
+    throw new Error('Envelope not found');
+  }
+  if (!['SENT', 'IN_PROGRESS'].includes(envelope.status)) {
+    throw new Error('Signer links are available only after the envelope has been sent');
+  }
+  if (!canMutateEnvelope(scope, session, envelope.createdById) && !scope.canManage) {
+    throw new Error('Forbidden');
+  }
+
+  const recipient = envelope.recipients.find((entry) => entry.id === recipientId);
+  if (!recipient) {
+    throw new Error('Recipient not found');
+  }
+  if (recipient.type !== 'SIGNER') {
+    throw new Error('Only signer recipients have signing links');
+  }
+  if (recipient.status === 'SIGNED' || recipient.status === 'DECLINED') {
+    throw new Error('Completed or declined recipients do not have an active signing link');
+  }
+  if (!['NOTIFIED', 'VIEWED'].includes(recipient.status)) {
+    throw new Error('This signer link will be available once their signing step becomes active');
+  }
+
+  const signingToken = await createEsigningAccessLinkToken({
+    recipientId: recipient.id,
+    envelopeId,
+    sessionVersion: recipient.sessionVersion,
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: envelope.companyId ?? undefined,
+    action: 'UPDATE',
+    entityType: 'EsigningEnvelope',
+    entityId: envelopeId,
+    entityName: envelope.title,
+    summary: `Copied signer link for "${recipient.name}"`,
+    metadata: {
+      recipientId: recipient.id,
+      recipientEmail: recipient.email,
+    },
+  });
+
+  return {
+    recipientId: recipient.id,
+    recipientName: recipient.name,
+    recipientEmail: recipient.email,
+    signingUrl: buildEsigningSigningUrl(signingToken, appBaseUrl),
+  };
+}
+
 export async function resendEsigningEnvelopeActiveRecipients(
   session: SessionUser,
   tenantId: string,
@@ -1988,20 +2154,18 @@ export async function retryEsigningEnvelopePdfGeneration(
   if (envelope.status !== 'COMPLETED') {
     throw new Error('Only completed envelopes can retry signed PDF generation');
   }
-  if (envelope.pdfGenerationStatus !== 'FAILED') {
-    throw new Error('This envelope is not waiting for a retry');
+  if (envelope.pdfGenerationStatus === 'COMPLETED') {
+    throw new Error('This envelope already has a completed signed package');
   }
   if (!scope.canManage && !canMutateEnvelope(scope, session, envelope.createdById)) {
     throw new Error('Forbidden');
   }
 
-  await prisma.esigningEnvelope.update({
-    where: { id: envelopeId },
-    data: {
-      pdfGenerationStatus: 'PENDING',
-      pdfGenerationClaimedAt: null,
-      pdfGenerationError: null,
-    },
+  const actionLabel =
+    envelope.pdfGenerationStatus === 'FAILED' ? 'Retried' : 'Triggered';
+
+  await generateEsigningEnvelopeArtifactsNow({
+    envelopeId,
   });
 
   await createAuditLog({
@@ -2012,7 +2176,7 @@ export async function retryEsigningEnvelopePdfGeneration(
     entityType: 'EsigningEnvelope',
     entityId: envelopeId,
     entityName: envelope.title,
-    summary: `Queued signed PDF regeneration for "${envelope.title}"`,
+    summary: `${actionLabel} signed PDF generation for "${envelope.title}"`,
   });
 
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);

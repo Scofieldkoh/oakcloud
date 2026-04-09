@@ -28,6 +28,7 @@ export interface EsigningTokenClaims extends JWTPayload {
   envelopeId: string;
   sessionVersion: number;
   scope: EsigningTokenScope;
+  sessionId?: string;
 }
 
 export interface EsigningDeliveryTokenClaims extends JWTPayload {
@@ -121,6 +122,7 @@ export async function createEsigningScopedToken(input: {
   sessionVersion: number;
   scope: EsigningTokenScope;
   expiresInSeconds: number;
+  sessionId?: string;
 }): Promise<string> {
   const ttlSeconds = Math.max(30, Math.floor(input.expiresInSeconds));
 
@@ -129,6 +131,7 @@ export async function createEsigningScopedToken(input: {
     envelopeId: input.envelopeId,
     sessionVersion: input.sessionVersion,
     scope: input.scope,
+    ...(input.sessionId ? { sessionId: input.sessionId } : {}),
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuer(TOKEN_ISSUER)
@@ -162,11 +165,13 @@ export async function setEsigningSessionCookie(input: {
   recipientId: string;
   envelopeId: string;
   sessionVersion: number;
+  sessionId?: string;
 }): Promise<string> {
   const token = await createEsigningScopedToken({
     ...input,
     scope: 'esigning_session',
     expiresInSeconds: getEsigningSessionTtlSeconds(),
+    sessionId: input.sessionId ?? randomBytes(16).toString('hex'),
   });
 
   const cookieStore = await cookies();
@@ -319,8 +324,9 @@ export async function verifyEsigningDeliveryToken(
   }
 }
 
-export function buildEsigningSigningUrl(token: string): string {
-  return `${getAppBaseUrl()}/esigning/sign/${token}`;
+export function buildEsigningSigningUrl(token: string, baseUrl?: string): string {
+  const normalizedBaseUrl = (baseUrl ?? getAppBaseUrl()).trim().replace(/\/+$/, '');
+  return `${normalizedBaseUrl}/esigning/sign/${token}`;
 }
 
 export function buildEsigningVerificationUrl(certificateId: string): string {
@@ -347,12 +353,16 @@ export function isSameOriginRequest(request: Request): boolean {
     return true;
   }
 
-  const baseUrl = getAppBaseUrl();
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const requestOrigin =
+    forwardedProto && forwardedHost
+      ? `${forwardedProto}://${forwardedHost}`
+      : new URL(request.url).origin;
 
   try {
     const originUrl = new URL(origin);
-    const appUrl = new URL(baseUrl);
-    return originUrl.origin === appUrl.origin;
+    return originUrl.origin === requestOrigin;
   } catch {
     return false;
   }

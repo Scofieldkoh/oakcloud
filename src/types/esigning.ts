@@ -11,8 +11,10 @@ import type {
 
 export interface EsigningEnvelopeListItem {
   id: string;
+  tenantId: string;
   title: string;
   status: EsigningEnvelopeStatus;
+  pdfGenerationStatus: EsigningPdfGenerationStatus | null;
   signingOrder: EsigningSigningOrder;
   certificateId: string;
   createdAt: string;
@@ -166,6 +168,7 @@ export interface EsigningSigningSessionDto {
     title: string;
     message: string | null;
     status: EsigningEnvelopeStatus;
+    pdfGenerationStatus: EsigningPdfGenerationStatus | null;
     certificateId: string;
     companyName: string | null;
     tenantName: string;

@@ -2,12 +2,10 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   Circle,
   Clock,
-  Copy,
   Download,
   ExternalLink,
   FilePenLine,
@@ -33,7 +31,6 @@ import { usePermissions } from '@/hooks/use-permissions';
 import {
   useCreateEsigningEnvelope,
   useDeleteEsigningEnvelope,
-  useDuplicateEsigningEnvelope,
   useEsigningEnvelopes,
   useResendEsigningEnvelope,
   useRetryEsigningEnvelopeProcessing,
@@ -76,17 +73,19 @@ const TAB_STATUSES: Record<TabKey, StatusFilter[]> = {
 
 interface EnvelopeActionsDropdownProps {
   envelope: EsigningEnvelopeListItem;
-  onDuplicate: (envelopeId: string) => void;
   onResend: (envelope: EsigningEnvelopeListItem) => void;
   onDelete: (envelope: EsigningEnvelopeListItem) => void;
   onVoid: (envelope: EsigningEnvelopeListItem) => void;
   onRetryPdf: (envelopeId: string) => void;
-  onDownload: (envelopeId: string, variant: 'combined' | 'certificates') => void;
+  onDownload: (
+    envelopeId: string,
+    tenantId: string,
+    variant: 'documents' | 'documents_with_certificates' | 'certificates'
+  ) => void;
 }
 
 function EnvelopeActionsDropdown({
   envelope,
-  onDuplicate,
   onResend,
   onDelete,
   onVoid,
@@ -94,7 +93,6 @@ function EnvelopeActionsDropdown({
   onDownload,
 }: EnvelopeActionsDropdownProps) {
   const hasActions =
-    envelope.canDuplicate ||
     envelope.canResend ||
     envelope.canDelete ||
     envelope.canVoid ||
@@ -121,15 +119,21 @@ function EnvelopeActionsDropdown({
           <>
             <DropdownItem
               icon={<Download className="h-4 w-4" />}
-              onClick={() => onDownload(envelope.id, 'combined')}
+              onClick={() => onDownload(envelope.id, envelope.tenantId, 'documents')}
             >
-              Download all
+              Document only
             </DropdownItem>
             <DropdownItem
               icon={<Download className="h-4 w-4" />}
-              onClick={() => onDownload(envelope.id, 'certificates')}
+              onClick={() => onDownload(envelope.id, envelope.tenantId, 'documents_with_certificates')}
             >
-              Certificates only
+              Document + Certificate
+            </DropdownItem>
+            <DropdownItem
+              icon={<Download className="h-4 w-4" />}
+              onClick={() => onDownload(envelope.id, envelope.tenantId, 'certificates')}
+            >
+              Certificate only
             </DropdownItem>
           </>
         ) : null}
@@ -143,21 +147,12 @@ function EnvelopeActionsDropdown({
           </DropdownItem>
         ) : null}
 
-        {envelope.canDuplicate ? (
-          <DropdownItem
-            icon={<Copy className="h-4 w-4" />}
-            onClick={() => onDuplicate(envelope.id)}
-          >
-            Duplicate
-          </DropdownItem>
-        ) : null}
-
         {envelope.canRetryPdf ? (
           <DropdownItem
             icon={<RefreshCw className="h-4 w-4" />}
             onClick={() => onRetryPdf(envelope.id)}
           >
-            Retry PDF generation
+            {envelope.pdfGenerationStatus === 'FAILED' ? 'Retry PDF generation' : 'Generate PDF now'}
           </DropdownItem>
         ) : null}
 
@@ -188,7 +183,6 @@ function EnvelopeActionsDropdown({
 }
 
 export function EsigningListPage() {
-  const router = useRouter();
   const { can } = usePermissions();
   const toast = useToast();
   const [query, setQuery] = useState('');
@@ -212,7 +206,6 @@ export function EsigningListPage() {
   });
   const createEnvelope = useCreateEsigningEnvelope();
   const deleteEnvelope = useDeleteEsigningEnvelope();
-  const duplicateEnvelope = useDuplicateEsigningEnvelope();
   const resendEnvelope = useResendEsigningEnvelope();
   const voidEnvelope = useVoidEsigningEnvelope(voidTarget?.id ?? '');
   const retryProcessing = useRetryEsigningEnvelopeProcessing(retryTargetId ?? '');
@@ -263,6 +256,7 @@ export function EsigningListPage() {
       setIsStarting(true);
       const title = file ? file.name.replace(/\.pdf$/i, '') : 'New Envelope';
       const envelope = await createEnvelope.mutateAsync({ title, signingOrder: 'PARALLEL' });
+      const destination = `/esigning/${envelope.id}`;
 
       if (file) {
         const formData = new FormData();
@@ -273,37 +267,39 @@ export function EsigningListPage() {
         });
       }
 
-      router.push(`/esigning/${envelope.id}`);
+      window.location.assign(destination);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to create envelope');
+    } finally {
       setIsStarting(false);
-    }
-  }
-
-  async function handleDuplicateEnvelope(envelopeId: string) {
-    try {
-      const duplicated = await duplicateEnvelope.mutateAsync(envelopeId);
-      toast.success('Envelope duplicated');
-      router.push(`/esigning/${duplicated.id}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to duplicate envelope');
     }
   }
 
   async function handleRetryPdf(envelopeId: string) {
     try {
       setRetryTargetId(envelopeId);
+      const targetEnvelope = envelopes.find((envelope) => envelope.id === envelopeId);
       await retryProcessing.mutateAsync();
-      toast.success('PDF generation queued again');
+      toast.success(
+        targetEnvelope?.pdfGenerationStatus === 'FAILED'
+          ? 'PDF generation retried'
+          : 'PDF generation triggered'
+      );
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to retry PDF generation');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to trigger PDF generation'
+      );
     } finally {
       setRetryTargetId(null);
     }
   }
 
-  function handleDownload(envelopeId: string, variant: 'combined' | 'certificates') {
-    const queryParams = new URLSearchParams({ variant });
+  function handleDownload(
+    envelopeId: string,
+    tenantId: string,
+    variant: 'documents' | 'documents_with_certificates' | 'certificates'
+  ) {
+    const queryParams = new URLSearchParams({ variant, tenantId });
     window.open(`/api/esigning/envelopes/${envelopeId}/download?${queryParams.toString()}`, '_blank', 'noreferrer');
   }
 
@@ -335,8 +331,8 @@ export function EsigningListPage() {
 
   return (
     <div className="min-h-screen bg-background-primary">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-6">
-        <section className="rounded-3xl border border-border-primary bg-background-secondary p-6 shadow-sm">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+        <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 rounded-full border border-border-primary bg-background-tertiary px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-text-muted">
@@ -344,7 +340,7 @@ export function EsigningListPage() {
                 E-Signing
               </div>
               <div>
-                <h1 className="text-3xl font-semibold text-text-primary">Envelopes</h1>
+                <h1 className="text-2xl font-semibold text-text-primary sm:text-3xl">Envelopes</h1>
                 <p className="mt-1 max-w-2xl text-sm text-text-secondary">
                   Prepare signature packages, manage signer access, and track document completion from one queue.
                 </p>
@@ -369,7 +365,7 @@ export function EsigningListPage() {
               }
             }}
             className={cn(
-              'flex flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed p-10 text-center transition-colors',
+              'flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed p-6 text-center transition-colors sm:rounded-3xl sm:p-10',
               isDraggingOnHero
                 ? 'border-oak-primary bg-oak-primary/5'
                 : 'border-border-primary bg-background-secondary hover:border-oak-primary/40 hover:bg-background-secondary/80'
@@ -394,15 +390,15 @@ export function EsigningListPage() {
           </section>
         ) : null}
 
-        <section className="rounded-3xl border border-border-primary bg-background-secondary shadow-sm">
-          <div className="flex flex-wrap gap-0 border-b border-border-primary px-4">
+        <section className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl">
+          <div className="flex gap-0 overflow-x-auto border-b border-border-primary px-2 sm:px-4">
             {(Object.keys(TAB_LABELS) as TabKey[]).map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
                 className={cn(
-                  'relative flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors',
+                  'relative flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors sm:px-4',
                   activeTab === tab
                     ? 'text-oak-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-oak-primary'
                     : 'text-text-secondary hover:text-text-primary'
@@ -442,13 +438,13 @@ export function EsigningListPage() {
           {envelopes.map((envelope) => (
             <article
               key={envelope.id}
-              className="rounded-3xl border border-border-primary bg-background-secondary p-5 shadow-sm transition-colors hover:border-oak-primary/40"
+              className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm transition-colors hover:border-oak-primary/40 sm:rounded-3xl sm:p-5"
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-3 sm:gap-4">
                 <Link href={`/esigning/${envelope.id}`} className="min-w-0 flex-1">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-3">
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         <EnvelopeStatusBadge status={envelope.status} />
                         <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
                           {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
@@ -476,17 +472,16 @@ export function EsigningListPage() {
                       </div>
                     </div>
 
-                    <div className="grid gap-1 text-sm text-text-secondary lg:text-right">
+                    <div className="grid gap-1 text-xs text-text-secondary sm:text-sm lg:text-right">
                       <div>Updated {formatEsigningDateTime(envelope.updatedAt)}</div>
                       <div>Created {formatEsigningDateTime(envelope.createdAt)}</div>
-                      <div>Certificate {envelope.certificateId}</div>
+                      <div className="truncate">Certificate {envelope.certificateId}</div>
                     </div>
                   </div>
                 </Link>
 
                 <EnvelopeActionsDropdown
                   envelope={envelope}
-                  onDuplicate={handleDuplicateEnvelope}
                   onResend={(target) => void handleResendEnvelope(target)}
                   onDelete={setDeleteTarget}
                   onVoid={setVoidTarget}
@@ -552,13 +547,13 @@ export function EsigningListPage() {
           ))}
 
           {envelopesQuery.isLoading ? (
-            <div className="rounded-3xl border border-dashed border-border-primary bg-background-secondary p-10 text-center text-sm text-text-secondary">
+            <div className="rounded-2xl border border-dashed border-border-primary bg-background-secondary p-6 text-center text-sm text-text-secondary sm:rounded-3xl sm:p-10">
               Loading e-signing envelopes...
             </div>
           ) : null}
 
           {!envelopesQuery.isLoading && envelopes.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-border-primary bg-background-secondary p-10 text-center">
+            <div className="rounded-2xl border border-dashed border-border-primary bg-background-secondary p-6 text-center sm:rounded-3xl sm:p-10">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-oak-primary/10 text-oak-primary">
                 <FileSignature className="h-6 w-6" />
               </div>
@@ -570,19 +565,12 @@ export function EsigningListPage() {
                   ? 'Try a different search or tab to find the envelope you need.'
                   : 'Start with a draft envelope, upload PDFs, assign signers, and send for signature.'}
               </p>
-              {can.createEsigning ? (
-                <div className="mt-5">
-                  <Button isLoading={isStarting} onClick={() => void handleStart()}>
-                    Create your first envelope
-                  </Button>
-                </div>
-              ) : null}
             </div>
           ) : null}
         </section>
 
         {!envelopesQuery.isLoading && totalResults > 0 ? (
-          <section className="rounded-3xl border border-border-primary bg-background-secondary p-4 shadow-sm">
+          <section className="rounded-2xl border border-border-primary bg-background-secondary p-3 shadow-sm sm:rounded-3xl sm:p-4">
             <Pagination
               page={page}
               totalPages={totalPages}

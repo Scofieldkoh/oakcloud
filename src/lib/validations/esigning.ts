@@ -215,6 +215,22 @@ export const reorderEsigningDocumentSchema = z.object({
   sortOrder: z.number().int().min(0).max(9999),
 });
 
+export const reorderEsigningRecipientsSchema = z.object({
+  recipientIds: z.array(uuidString).min(1).max(ESIGNING_LIMITS.MAX_RECIPIENTS).optional(),
+  recipients: z.array(
+    z.object({
+      recipientId: uuidString,
+      signingOrder: z.number().int().min(1).max(ESIGNING_LIMITS.MAX_RECIPIENTS),
+    })
+  ).min(1).max(ESIGNING_LIMITS.MAX_RECIPIENTS).optional(),
+}).refine(
+  (value) => Boolean(value.recipientIds?.length || value.recipients?.length),
+  {
+    message: 'Provide recipientIds or recipients',
+    path: ['recipientIds'],
+  }
+);
+
 export const esigningListQuerySchema = paginationSchema.extend({
   query: z.string().trim().max(200).optional(),
   status: esigningEnvelopeStatusSchema.optional(),

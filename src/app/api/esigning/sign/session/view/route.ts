@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createErrorResponse } from '@/lib/api-helpers';
-import { RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+import { RATE_LIMIT_CONFIGS, getClientIp } from '@/lib/rate-limit';
 import { enforceEsigningRateLimit, requireEsigningSameOrigin } from '@/lib/esigning-public-route';
 import { recordEsigningSigningView } from '@/services/esigning-signing.service';
 
@@ -21,7 +21,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await recordEsigningSigningView();
+    const result = await recordEsigningSigningView({
+      ipAddress: getClientIp(request),
+      userAgent: request.headers.get('user-agent'),
+    });
     return NextResponse.json(result);
   } catch (error) {
     return createErrorResponse(error);

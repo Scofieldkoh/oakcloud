@@ -11,6 +11,7 @@ interface EsigningCompletionScreenProps {
   isAllPartiesDone: boolean;
   remainingSignerCount: number;
   expiresAt: string | null;
+  pdfGenerationStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | null;
   documents: Array<{ id: string; fileName: string; signedPdfUrl: string | null }>;
   downloadToken: string | null;
   certificateId: string;
@@ -23,11 +24,14 @@ export function EsigningCompletionScreen({
   isAllPartiesDone,
   remainingSignerCount,
   expiresAt,
+  pdfGenerationStatus,
   documents,
   certificateId,
 }: EsigningCompletionScreenProps) {
   const firstSignedDoc = documents.find((d) => d.signedPdfUrl);
   const hasPendingSigners = !isAllPartiesDone && remainingSignerCount > 0;
+  const isSignedCopyReady = isAllPartiesDone && pdfGenerationStatus === 'COMPLETED' && Boolean(firstSignedDoc?.signedPdfUrl);
+  const isSignedCopyPreparing = isAllPartiesDone && pdfGenerationStatus !== 'COMPLETED';
 
   return (
     <div className="min-h-screen bg-background-primary px-4 pt-16 pb-12">
@@ -138,7 +142,7 @@ export function EsigningCompletionScreen({
             View Certificate
           </Link>
 
-          {firstSignedDoc?.signedPdfUrl && (
+          {isSignedCopyReady && firstSignedDoc?.signedPdfUrl && (
             <a
               href={firstSignedDoc.signedPdfUrl}
               target="_blank"
@@ -150,6 +154,12 @@ export function EsigningCompletionScreen({
             </a>
           )}
         </div>
+
+        {isSignedCopyPreparing ? (
+          <p className="mt-3 text-center text-xs text-text-muted">
+            Your signed PDF is being prepared and will be available once processing finishes.
+          </p>
+        ) : null}
       </div>
     </div>
   );

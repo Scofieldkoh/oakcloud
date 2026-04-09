@@ -101,6 +101,10 @@ function serializeValues(values: Record<string, DraftValue>): DraftValue[] {
   return Object.values(values).filter((entry) => entry.value !== undefined || entry.signatureDataUrl);
 }
 
+function isDraftValueComplete(draftValue: DraftValue | undefined): boolean {
+  return Boolean(draftValue?.value || draftValue?.signatureDataUrl || draftValue?.signaturePreviewUrl);
+}
+
 function buildSignerHighlights(
   fields: EsigningFieldDefinitionDto[],
   documentId: string
@@ -144,8 +148,10 @@ function getSuggestedFieldValue(
 
 function getLocalDateInputValue(): string {
   const now = new Date();
-  const offsetMilliseconds = now.getTimezoneOffset() * 60 * 1000;
-  return new Date(now.getTime() - offsetMilliseconds).toISOString().slice(0, 10);
+  const day = `${now.getDate()}`.padStart(2, '0');
+  const month = `${now.getMonth() + 1}`.padStart(2, '0');
+  const year = `${now.getFullYear()}`;
+  return `${day}-${month}-${year}`;
 }
 
 function normalizeSigningError(
@@ -287,7 +293,7 @@ export function EsigningSignPage() {
     () =>
       requiredFields.filter((f) => {
         const d = draftValues[f.id];
-        return d?.value != null || d?.signatureDataUrl != null || d?.signaturePreviewUrl != null;
+        return isDraftValueComplete(d);
       }).length,
     [requiredFields, draftValues]
   );
@@ -309,6 +315,53 @@ export function EsigningSignPage() {
   useEffect(() => {
     latestDraftValuesRef.current = draftValues;
   }, [draftValues]);
+
+  useEffect(() => {
+    if (flowState !== 'signing' || fields.length === 0) {
+      return;
+    }
+
+    const autoDateValue = getLocalDateInputValue();
+    let hasChanges = false;
+
+    setDraftValues((current) => {
+      const next = { ...current };
+
+      for (const field of fields) {
+        if (field.type !== 'DATE_SIGNED') {
+          continue;
+        }
+
+        const existing = next[field.id];
+        if (existing?.value) {
+          continue;
+        }
+
+        next[field.id] = {
+          fieldDefinitionId: field.id,
+          value: autoDateValue,
+          signatureDataUrl: existing?.signatureDataUrl ?? null,
+          signaturePreviewUrl: existing?.signaturePreviewUrl ?? null,
+        };
+        hasChanges = true;
+      }
+
+      return hasChanges ? next : current;
+    });
+  }, [fields, flowState]);
+
+  useEffect(() => {
+    if (requiredFields.length === 0) {
+      return;
+    }
+
+    const nextIncompleteIndex = requiredFields.findIndex((field) => !isDraftValueComplete(draftValues[field.id]));
+    const fallbackIndex = nextIncompleteIndex === -1 ? requiredFields.length - 1 : nextIncompleteIndex;
+
+    if (fallbackIndex !== activeFieldIndex) {
+      setActiveFieldIndex(fallbackIndex);
+    }
+  }, [activeFieldIndex, draftValues, requiredFields]);
 
   useEffect(() => {
     if (!isMobile) {
@@ -523,10 +576,7 @@ export function EsigningSignPage() {
       return !d?.value && !d?.signatureDataUrl && !d?.signaturePreviewUrl;
     });
     if (nextIndex !== -1) {
-      setActiveFieldIndex(nextIndex);
-      const nextField = requiredFields[nextIndex];
-      if (nextField.documentId !== selectedDocumentId) setSelectedDocumentId(nextField.documentId);
-      setViewerPage(nextField.pageNumber);
+      goToFieldIndex(nextIndex);
     }
   }
 
@@ -589,7 +639,6 @@ export function EsigningSignPage() {
     }
 
     goToFieldIndex(nextIndex);
-    handleFieldClick(nextField);
   }
 
   // ==========================================================================
@@ -615,8 +664,10 @@ export function EsigningSignPage() {
       const current = draftValues[field.id]?.value;
       setDraft(field.id, { value: current === 'true' ? null : 'true' });
       advanceToNextField();
+    } else if (field.type === 'DATE_SIGNED') {
+      setDraft(field.id, { value: getLocalDateInputValue() });
+      advanceToNextField();
     } else if (
-      field.type === 'DATE_SIGNED' ||
       field.type === 'TEXT' ||
       field.type === 'NAME' ||
       field.type === 'COMPANY' ||
@@ -975,6 +1026,7 @@ export function EsigningSignPage() {
           (recipient) => recipient.type === 'SIGNER' && recipient.status !== 'SIGNED'
         ).length}
         expiresAt={session.envelope.expiresAt}
+        pdfGenerationStatus={session.envelope.pdfGenerationStatus}
         documents={session.documents}
         downloadToken={session.downloadToken}
         certificateId={session.envelope.certificateId}
@@ -1079,6 +1131,7 @@ export function EsigningSignPage() {
             initialPage={viewerPage}
             onPageChange={setViewerPage}
             highlights={currentHighlights}
+            focusedHighlightLabel={activeField?.id}
             showHighlights
             className="rounded-2xl border border-border-primary bg-background-primary"
             onRetry={() => setViewerRetryKey((current) => current + 1)}
@@ -1122,12 +1175,7 @@ export function EsigningSignPage() {
             if (canFinish) {
               void completeSigning();
             } else if (activeField) {
-              // Navigate to the active field
-              if (activeField.documentId !== selectedDocumentId) {
-                setSelectedDocumentId(activeField.documentId);
-              }
-              setViewerPage(activeField.pageNumber);
-              handleFieldClick(activeField);
+              goToFieldIndex(activeFieldIndex);
             }
           }}
           onNext={() => goToFieldIndex(activeFieldIndex + 1)}
