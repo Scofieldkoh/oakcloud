@@ -1,15 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import SignaturePadEngine from '../../lib/vendor/signature-pad-engine.js';
 import { RotateCcw, Undo2 } from 'lucide-react';
-
-interface SignaturePoint {
-  x: number;
-  y: number;
-  pressure: number;
-}
-
-type SignatureStroke = SignaturePoint[];
 
 interface SignaturePadProps {
   value?: string;
@@ -18,47 +11,25 @@ interface SignaturePadProps {
   ariaLabel?: string;
 }
 
-function toBase64(value: string): string {
-  const bytes = new TextEncoder().encode(value);
-  let binary = '';
-
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-
-  return btoa(binary);
-}
-
-function buildSvgDataUrl(
-  strokes: SignatureStroke[],
-  width: number,
-  height: number
-): string | null {
-  if (strokes.length === 0) {
-    return null;
+async function drawImageOnCanvas(
+  canvas: HTMLCanvasElement,
+  dataUrl: string
+): Promise<void> {
+  const context = canvas.getContext('2d');
+  if (!context) {
+    return;
   }
 
-  const paths = strokes
-    .filter((stroke) => stroke.length > 0)
-    .map((stroke) => {
-      const path = stroke
-        .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
-        .join(' ');
-      const pressure = stroke.reduce((sum, point) => sum + point.pressure, 0) / stroke.length;
-      const strokeWidth = Math.max(1.5, Math.min(3.5, 1.5 + pressure * 2));
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const nextImage = new Image();
+    nextImage.onload = () => resolve(nextImage);
+    nextImage.onerror = () => reject(new Error('Unable to load signature image'));
+    nextImage.src = dataUrl;
+  });
 
-      return `<path d="${path}" fill="none" stroke="#111111" stroke-linecap="round" stroke-linejoin="round" stroke-width="${strokeWidth.toFixed(2)}" />`;
-    })
-    .join('');
-
-  const svg = [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">`,
-    '<rect width="100%" height="100%" fill="white" fill-opacity="0" />',
-    paths,
-    '</svg>',
-  ].join('');
-
-  return `data:image/svg+xml;base64,${toBase64(svg)}`;
+  const displayWidth = canvas.getBoundingClientRect().width;
+  const displayHeight = canvas.getBoundingClientRect().height;
+  context.drawImage(image, 0, 0, displayWidth, displayHeight);
 }
 
 export function SignaturePad({
@@ -68,91 +39,146 @@ export function SignaturePad({
   ariaLabel = 'Signature field',
 }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const isDrawingRef = useRef(false);
-  const currentStrokeRef = useRef<SignatureStroke>([]);
-  const strokesRef = useRef<SignatureStroke[]>([]);
-  const [hasDrawn, setHasDrawn] = useState(false);
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const signaturePadRef = useRef<SignaturePadEngine | null>(null);
+  const onChangeRef = useRef(onChange);
+  const onVectorChangeRef = useRef(onVectorChange);
+  const loadedImageValueRef = useRef<string | null>(null);
+  const lastEmittedValueRef = useRef<string>('');
+  const strokeDataRef = useRef<ReturnType<SignaturePadEngine['toData']>>([]);
+  const [hasSignature, setHasSignature] = useState(false);
 
-  const getCanvasContext = useCallback(() => {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext('2d');
-    return canvas && context ? { canvas, context } : null;
-  }, []);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    onVectorChangeRef.current = onVectorChange;
+  }, [onVectorChange]);
 
   const configureCanvas = useCallback(() => {
-    const result = getCanvasContext();
-    if (!result) {
+    const canvas = canvasRef.current;
+    if (!canvas) {
       return null;
     }
 
-    const { canvas, context } = result;
     const rect = canvas.getBoundingClientRect();
-    const scale = window.devicePixelRatio || 1;
-    canvas.width = rect.width * scale;
-    canvas.height = rect.height * scale;
-    context.setTransform(1, 0, 0, 1, 0, 0);
-    context.scale(scale, scale);
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = Math.max(1, Math.round(rect.width * ratio));
+    canvas.height = Math.max(1, Math.round(rect.height * ratio));
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return null;
+    }
+
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.imageSmoothingEnabled = true;
     context.lineCap = 'round';
     context.lineJoin = 'round';
-    context.strokeStyle = '#111111';
-    context.lineWidth = 2;
-    setCanvasSize({ width: rect.width, height: rect.height });
+    return { canvas, rect };
+  }, []);
 
-    return { canvas, context, rect };
-  }, [getCanvasContext]);
+  const restorePadState = useCallback(
+    async (signaturePad: SignaturePadEngine, canvas: HTMLCanvasElement) => {
+      signaturePad.clear();
 
-  const redrawCanvas = useCallback((backgroundDataUrl?: string) => {
-    const configured = configureCanvas();
-    if (!configured) {
-      return;
-    }
-
-    const { context, rect } = configured;
-    context.clearRect(0, 0, rect.width, rect.height);
-
-    if (backgroundDataUrl) {
-      const image = new Image();
-      image.onload = () => {
-        context.clearRect(0, 0, rect.width, rect.height);
-        context.drawImage(image, 0, 0, rect.width, rect.height);
-      };
-      image.src = backgroundDataUrl;
-      return;
-    }
-
-    for (const stroke of strokesRef.current) {
-      if (stroke.length === 0) {
-        continue;
+      if (loadedImageValueRef.current) {
+        await drawImageOnCanvas(canvas, loadedImageValueRef.current);
       }
 
-      context.beginPath();
-      context.lineWidth = Math.max(
-        1.5,
-        Math.min(
-          3.5,
-          1.5 + stroke.reduce((sum, point) => sum + point.pressure, 0) / stroke.length * 2
-        )
-      );
-      context.moveTo(stroke[0].x, stroke[0].y);
-      for (const point of stroke.slice(1)) {
-        context.lineTo(point.x, point.y);
+      if (strokeDataRef.current.length > 0) {
+        signaturePad.fromData(strokeDataRef.current, { clear: false });
       }
-      context.stroke();
-    }
-  }, [configureCanvas]);
+
+      setHasSignature(Boolean(loadedImageValueRef.current || strokeDataRef.current.length > 0));
+    },
+    []
+  );
 
   const emitChanges = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) {
+    const signaturePad = signaturePadRef.current;
+    if (!signaturePad) {
       return;
     }
 
-    const pngDataUrl = strokesRef.current.length > 0 ? canvas.toDataURL('image/png') : '';
-    onChange(pngDataUrl);
-    onVectorChange?.(buildSvgDataUrl(strokesRef.current, canvasSize.width, canvasSize.height));
-    setHasDrawn(strokesRef.current.length > 0);
-  }, [canvasSize.height, canvasSize.width, onChange, onVectorChange]);
+    const strokeData = signaturePad.toData();
+    const hasStrokeData = strokeData.length > 0;
+    strokeDataRef.current = strokeData;
+    const effectiveValue = hasStrokeData
+      ? signaturePad.toDataURL('image/png')
+      : loadedImageValueRef.current ?? '';
+
+    lastEmittedValueRef.current = effectiveValue;
+    onChangeRef.current(effectiveValue);
+    onVectorChangeRef.current?.(
+      hasStrokeData && !loadedImageValueRef.current
+        ? signaturePad.toDataURL('image/svg+xml')
+        : null
+    );
+    setHasSignature(effectiveValue.length > 0);
+  }, []);
+
+  const clearPad = useCallback(() => {
+    const signaturePad = signaturePadRef.current;
+    if (!signaturePad) {
+      return;
+    }
+
+    signaturePad.clear();
+    loadedImageValueRef.current = null;
+    lastEmittedValueRef.current = '';
+    strokeDataRef.current = [];
+    setHasSignature(false);
+    onChangeRef.current('');
+    onVectorChangeRef.current?.(null);
+  }, []);
+
+  const syncDisplayedValue = useCallback(async () => {
+    const signaturePad = signaturePadRef.current;
+    const canvas = canvasRef.current;
+    if (!signaturePad || !canvas) {
+      return;
+    }
+
+    if (
+      value &&
+      value === lastEmittedValueRef.current &&
+      (strokeDataRef.current.length > 0 || loadedImageValueRef.current)
+    ) {
+      await restorePadState(signaturePad, canvas);
+      return;
+    }
+
+    signaturePad.clear();
+    strokeDataRef.current = [];
+    loadedImageValueRef.current = null;
+
+    if (!value) {
+      lastEmittedValueRef.current = '';
+      setHasSignature(false);
+      onVectorChangeRef.current?.(null);
+      return;
+    }
+
+    try {
+      await drawImageOnCanvas(canvas, value);
+      loadedImageValueRef.current = value;
+      lastEmittedValueRef.current = value;
+      setHasSignature(true);
+    } catch {
+      setHasSignature(false);
+    }
+  }, [restorePadState, value]);
+
+  const redrawCurrentSignature = useCallback(async () => {
+    const configured = configureCanvas();
+    const signaturePad = signaturePadRef.current;
+    if (!configured || !signaturePad) {
+      return;
+    }
+
+    await restorePadState(signaturePad, configured.canvas);
+  }, [configureCanvas, restorePadState]);
 
   useEffect(() => {
     const configured = configureCanvas();
@@ -160,23 +186,37 @@ export function SignaturePad({
       return;
     }
 
-    if (!value) {
-      strokesRef.current = [];
-      currentStrokeRef.current = [];
-      setHasDrawn(false);
-      onVectorChange?.(null);
-      return;
-    }
+    const signaturePad = new SignaturePadEngine(configured.canvas, {
+      minWidth: 0.8,
+      maxWidth: 2.2,
+      throttle: 0,
+      minDistance: 0.35,
+      velocityFilterWeight: 0.35,
+      penColor: '#111111',
+      backgroundColor: 'rgba(0,0,0,0)',
+      canvasContextOptions: {
+        desynchronized: true,
+      },
+    });
 
-    const { context, rect } = configured;
-    const image = new Image();
-    image.onload = () => {
-      context.clearRect(0, 0, rect.width, rect.height);
-      context.drawImage(image, 0, 0, rect.width, rect.height);
-      setHasDrawn(true);
+    signaturePadRef.current = signaturePad;
+
+    const handleStrokeEnd = () => {
+      emitChanges();
     };
-    image.src = value;
-  }, [configureCanvas, onVectorChange, value]);
+
+    signaturePad.addEventListener('endStroke', handleStrokeEnd);
+
+    return () => {
+      signaturePad.removeEventListener('endStroke', handleStrokeEnd);
+      signaturePad.off();
+      signaturePadRef.current = null;
+    };
+  }, [configureCanvas, emitChanges]);
+
+  useEffect(() => {
+    void syncDisplayedValue();
+  }, [syncDisplayedValue]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -185,93 +225,29 @@ export function SignaturePad({
     }
 
     const observer = new ResizeObserver(() => {
-      redrawCanvas(strokesRef.current.length === 0 ? value : undefined);
+      void redrawCurrentSignature();
     });
+
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [redrawCanvas, value]);
+  }, [redrawCurrentSignature]);
 
-  function getPoint(event: React.PointerEvent<HTMLCanvasElement>): SignaturePoint {
-    const rect = event.currentTarget.getBoundingClientRect();
-    return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-      pressure: event.pressure > 0 ? event.pressure : event.pointerType === 'mouse' ? 0.5 : 0.8,
-    };
-  }
-
-  function startDrawing(event: React.PointerEvent<HTMLCanvasElement>) {
-    const result = getCanvasContext();
-    if (!result) {
-      return;
-    }
-
-    const { canvas, context } = result;
-    if (strokesRef.current.length === 0 && value) {
-      strokesRef.current = [];
-      currentStrokeRef.current = [];
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      onVectorChange?.(null);
-    }
-
-    const point = getPoint(event);
-    currentStrokeRef.current = [point];
-    isDrawingRef.current = true;
-    context.beginPath();
-    context.lineWidth = Math.max(1.5, Math.min(3.5, 1.5 + point.pressure * 2));
-    context.moveTo(point.x, point.y);
-    context.lineTo(point.x, point.y);
-    context.stroke();
-    canvas.setPointerCapture(event.pointerId);
-  }
-
-  function draw(event: React.PointerEvent<HTMLCanvasElement>) {
-    const result = getCanvasContext();
-    if (!result || !isDrawingRef.current) {
-      return;
-    }
-
-    const { context } = result;
-    const point = getPoint(event);
-    currentStrokeRef.current.push(point);
-    context.lineWidth = Math.max(1.5, Math.min(3.5, 1.5 + point.pressure * 2));
-    context.lineTo(point.x, point.y);
-    context.stroke();
-  }
-
-  function stopDrawing(event: React.PointerEvent<HTMLCanvasElement>) {
+  async function undoLastStroke() {
+    const signaturePad = signaturePadRef.current;
     const canvas = canvasRef.current;
-    if (!canvas || !isDrawingRef.current) {
+    if (!signaturePad || !canvas) {
       return;
     }
 
-    isDrawingRef.current = false;
-    canvas.releasePointerCapture(event.pointerId);
-
-    if (currentStrokeRef.current.length > 0) {
-      strokesRef.current = [...strokesRef.current, currentStrokeRef.current];
-      currentStrokeRef.current = [];
-      emitChanges();
-    }
-  }
-
-  function clear() {
-    strokesRef.current = [];
-    currentStrokeRef.current = [];
-    redrawCanvas();
-    setHasDrawn(false);
-    onChange('');
-    onVectorChange?.(null);
-  }
-
-  function undoLastStroke() {
-    if (strokesRef.current.length === 0) {
-      clear();
+    const strokeData = signaturePad.toData();
+    if (strokeData.length === 0) {
+      clearPad();
       return;
     }
 
-    strokesRef.current = strokesRef.current.slice(0, -1);
-    redrawCanvas();
+    const nextStrokeData = strokeData.slice(0, -1);
+    strokeDataRef.current = nextStrokeData;
+    await restorePadState(signaturePad, canvas);
     emitChanges();
   }
 
@@ -282,18 +258,13 @@ export function SignaturePad({
           ref={canvasRef}
           className="h-full w-full touch-none cursor-crosshair"
           aria-label={ariaLabel}
-          onPointerDown={startDrawing}
-          onPointerMove={draw}
-          onPointerUp={stopDrawing}
-          onPointerLeave={stopDrawing}
-          onPointerCancel={stopDrawing}
         />
       </div>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={undoLastStroke}
-          disabled={!hasDrawn}
+          onClick={() => void undoLastStroke()}
+          disabled={!hasSignature}
           className="inline-flex items-center gap-1 rounded border border-border-primary px-2 py-1 text-xs text-text-secondary hover:bg-background-tertiary disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Undo2 className="h-3 w-3" />
@@ -301,11 +272,11 @@ export function SignaturePad({
         </button>
         <button
           type="button"
-          onClick={clear}
+          onClick={clearPad}
           className="inline-flex items-center gap-1 rounded border border-border-primary px-2 py-1 text-xs text-text-secondary hover:bg-background-tertiary"
         >
           <RotateCcw className="h-3 w-3" />
-          {hasDrawn ? 'Clear signature' : 'Reset'}
+          {hasSignature ? 'Clear signature' : 'Reset'}
         </button>
       </div>
     </div>

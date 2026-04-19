@@ -9,11 +9,19 @@ import { SignaturePad } from '@/components/forms/signature-pad';
 interface EsigningSignatureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdopt: (result: { dataUrl: string; applyToAll: boolean }) => void;
+  onAdopt: (result: { dataUrl: string; vectorDataUrl?: string | null; applyToAll: boolean }) => void;
   mode: 'SIGNATURE' | 'INITIALS';
   recipientName: string;
   existingSignature?: string | null;
   isSubmitting?: boolean;
+  titleOverride?: string;
+  fullNameLabel?: string;
+  confirmLabel?: string;
+  legalText?: string;
+  showApplyToAll?: boolean;
+  applyToAllLabel?: string;
+  applyToAllDefault?: boolean;
+  showDownloadSvg?: boolean;
 }
 
 type ActiveTab = 'draw' | 'type' | 'upload';
@@ -178,6 +186,14 @@ export function EsigningSignatureModal({
   recipientName,
   existingSignature,
   isSubmitting = false,
+  titleOverride,
+  fullNameLabel = 'Full Name',
+  confirmLabel = 'Adopt and Sign',
+  legalText = 'By selecting "Adopt and Sign", I agree that the signature and initials will be the electronic representation of my signature for all purposes when I use them on documents.',
+  showApplyToAll = true,
+  applyToAllLabel,
+  applyToAllDefault = true,
+  showDownloadSvg = true,
 }: EsigningSignatureModalProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('draw');
   const [drawDataUrl, setDrawDataUrl] = useState<string>(existingSignature ?? '');
@@ -185,7 +201,7 @@ export function EsigningSignatureModal({
   const [typedText, setTypedText] = useState('');
   const [typedFont, setTypedFont] = useState<SignatureFontKey>('dancing-script');
   const [uploadedDataUrl, setUploadedDataUrl] = useState('');
-  const [applyToAll, setApplyToAll] = useState(true);
+  const [applyToAll, setApplyToAll] = useState(applyToAllDefault);
   const [typedAssets, setTypedAssets] = useState<{ pngDataUrl: string; svgDataUrl: string } | null>(
     null
   );
@@ -200,14 +216,16 @@ export function EsigningSignatureModal({
     setTypedText('');
     setTypedFont('dancing-script');
     setUploadedDataUrl('');
-    setApplyToAll(true);
+    setApplyToAll(applyToAllDefault);
     setActiveTab('draw');
     setTypedAssets(null);
-  }, [existingSignature, isOpen]);
+  }, [applyToAllDefault, existingSignature, isOpen]);
 
   const isSignature = mode === 'SIGNATURE';
-  const title = isSignature ? 'Adopt Your Signature' : 'Adopt Your Initials';
+  const title = titleOverride ?? (isSignature ? 'Adopt Your Signature' : 'Adopt Your Initials');
   const fieldLabel = isSignature ? 'Signature' : 'Initials';
+  const resolvedApplyToAllLabel =
+    applyToAllLabel ?? `Apply to all ${fieldLabel} fields in this document`;
   const selectedFont = useMemo(
     () => SIGNATURE_FONT_OPTIONS.find((font) => font.key === typedFont) ?? SIGNATURE_FONT_OPTIONS[0],
     [typedFont]
@@ -250,7 +268,11 @@ export function EsigningSignatureModal({
       return;
     }
 
-    onAdopt({ dataUrl: currentDataUrl, applyToAll });
+    onAdopt({
+      dataUrl: currentDataUrl,
+      vectorDataUrl: currentVectorDataUrl,
+      applyToAll,
+    });
   }
 
   async function handleUploadSignature(event: React.ChangeEvent<HTMLInputElement>) {
@@ -280,7 +302,7 @@ export function EsigningSignatureModal({
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="2xl">
       <ModalBody className="space-y-4">
         <div>
-          <label className="mb-1 block text-xs font-medium text-text-secondary">Full Name</label>
+          <label className="mb-1 block text-xs font-medium text-text-secondary">{fullNameLabel}</label>
           <div className="rounded-lg border border-border-primary bg-background-tertiary px-3 py-2 text-sm text-text-primary">
             {recipientName}
           </div>
@@ -405,27 +427,25 @@ export function EsigningSignatureModal({
           </div>
         )}
 
-        <label className="flex cursor-pointer items-start gap-3">
-          <input
-            type="checkbox"
-            checked={applyToAll}
-            onChange={(event) => setApplyToAll(event.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-border-primary accent-oak-primary"
-          />
-          <span className="text-sm text-text-secondary">
-            Apply to all {fieldLabel} fields in this document
-          </span>
-        </label>
+        {showApplyToAll ? (
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={applyToAll}
+              onChange={(event) => setApplyToAll(event.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-border-primary accent-oak-primary"
+            />
+            <span className="text-sm text-text-secondary">{resolvedApplyToAllLabel}</span>
+          </label>
+        ) : null}
 
         <p className="text-xs leading-relaxed text-text-muted">
-          By selecting &ldquo;Adopt and Sign&rdquo;, I agree that the signature and initials will be
-          the electronic representation of my signature for all purposes when I use them on
-          documents.
+          {legalText}
         </p>
       </ModalBody>
 
       <ModalFooter>
-        {currentVectorDataUrl ? (
+        {showDownloadSvg && currentVectorDataUrl ? (
           <Button variant="secondary" onClick={handleDownloadSvg} disabled={isSubmitting}>
             Download SVG
           </Button>
@@ -434,7 +454,7 @@ export function EsigningSignatureModal({
           Cancel
         </Button>
         <Button onClick={handleAdopt} disabled={!canAdopt || isSubmitting} isLoading={isSubmitting}>
-          Adopt and Sign
+          {confirmLabel}
         </Button>
       </ModalFooter>
     </Modal>

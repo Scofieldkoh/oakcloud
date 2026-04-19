@@ -3,10 +3,10 @@
 import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, ChevronDown, Copy, Download, Info, Mail, Plus, UploadCloud, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronDown, Copy, Download, Info, Mail, PenLine, Plus, RotateCcw, UploadCloud, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SingleDateInput } from '@/components/ui/single-date-input';
-import { SignaturePad } from '@/components/forms/signature-pad';
+import { EsigningSignatureModal } from '@/components/esigning/signing/esigning-signature-modal';
 import { Tooltip } from '@/components/ui/tooltip';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import {
@@ -111,6 +111,18 @@ const DEFAULT_UI_LABELS = {
   send: 'Send',
   email_send_failed: 'Failed to send email',
   email_sent_feedback: 'PDF link sent to {email}',
+  signature_empty_title: 'Add your signature',
+  signature_empty_hint: 'Draw, type, or upload your signature in a larger signing modal.',
+  signature_open_action: 'Add signature',
+  signature_added: 'Signature ready',
+  signature_edit: 'Edit signature',
+  signature_clear: 'Clear signature',
+  signature_modal_title: 'Create your signature',
+  signature_modal_confirm: 'Save signature',
+  signature_modal_legal: 'By selecting "Save signature", I agree that this electronic signature represents my intent for this form.',
+  signature_apply_all: 'Use this signature for all signature fields in this form',
+  signature_name_label: 'Signer name',
+  signature_name_fallback: 'Form respondent',
   validation_required: '{field} is required',
   validation_email: '{field} must be a valid email',
   validation_choice_detail: '{field}: please specify for {option}',
@@ -278,6 +290,46 @@ function normalizeOptionalText(value: unknown, maxLength: number): string | null
   if (trimmed.length > maxLength) return null;
   if (DATA_URI_PATTERN.test(trimmed)) return null;
   return trimmed;
+}
+
+function isSignatureDataUrl(value: unknown): value is string {
+  return typeof value === 'string' && DATA_URI_PATTERN.test(value.trim());
+}
+
+function inferRespondentName(
+  orderedFields: PublicField[],
+  answersRecord: Record<string, unknown>
+): string | null {
+  const shortTextFields = orderedFields.filter((field) => field.type === 'SHORT_TEXT');
+  const inferredNameField = shortTextFields.find((field) => {
+    const hint = `${field.key} ${field.label || ''}`;
+    return NAME_HINT_PATTERN.test(hint);
+  });
+  const fallbackNameAnswer = answersRecord.full_name ?? answersRecord.name;
+  return normalizeOptionalText(
+    inferredNameField ? answersRecord[inferredNameField.key] : fallbackNameAnswer,
+    200
+  );
+}
+
+function inferRespondentEmail(
+  orderedFields: PublicField[],
+  answersRecord: Record<string, unknown>
+): string | null {
+  const shortTextFields = orderedFields.filter((field) => field.type === 'SHORT_TEXT');
+  const inferredEmailField = shortTextFields.find((field) => {
+    const hint = `${field.key} ${field.label || ''}`;
+    return field.inputType === 'email' || EMAIL_HINT_PATTERN.test(hint);
+  });
+  const fallbackEmailAnswer = answersRecord.email_address ?? answersRecord.email;
+  const normalizedEmailCandidate = normalizeOptionalText(
+    inferredEmailField ? answersRecord[inferredEmailField.key] : fallbackEmailAnswer,
+    320
+  );
+
+  return normalizedEmailCandidate && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmailCandidate)
+    ? normalizedEmailCandidate.toLowerCase()
+    : null;
 }
 
 function toDomSafeId(value: string): string {
@@ -855,6 +907,7 @@ export default function PublicFormPage() {
   const [pdfRecipientEmail, setPdfRecipientEmail] = useState('');
   const [emailFeedback, setEmailFeedback] = useState<string | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [activeSignatureFieldKey, setActiveSignatureFieldKey] = useState<string | null>(null);
   const formTopRef = useRef<HTMLDivElement | null>(null);
 
   const i18nSettings = useMemo(
@@ -947,17 +1000,30 @@ export default function PublicFormPage() {
   }, [form]);
 
   const detectedEmailFromForm = useMemo(() => {
-    if (!orderedFields) return '';
-    for (const field of orderedFields) {
-      if (EMAIL_HINT_PATTERN.test(field.key) || EMAIL_HINT_PATTERN.test(field.label ?? '')) {
-        const val = answers[field.key];
-        if (typeof val === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())) {
-          return val.trim();
-        }
-      }
-    }
-    return '';
+    return inferRespondentEmail(orderedFields, answers) ?? '';
   }, [orderedFields, answers]);
+
+  const inferredRespondentName = useMemo(
+    () => inferRespondentName(orderedFields, answers),
+    [orderedFields, answers]
+  );
+
+  const signatureFieldKeys = useMemo(
+    () =>
+      orderedFields
+        .filter((field) => field.type === 'SIGNATURE' && !field.isReadOnly)
+        .map((field) => field.key),
+    [orderedFields]
+  );
+
+  const activeSignatureValue = useMemo(() => {
+    if (!activeSignatureFieldKey) {
+      return null;
+    }
+
+    const candidate = answers[activeSignatureFieldKey];
+    return isSignatureDataUrl(candidate) ? candidate.trim() : null;
+  }, [activeSignatureFieldKey, answers]);
 
   const localizedFieldsById = useMemo(() => {
     const fieldMap = new Map<string, PublicField>();
@@ -1465,9 +1531,7 @@ export default function PublicFormPage() {
     }
 
     if (field.type === 'SIGNATURE') {
-      if (typeof value !== 'string') return false;
-      const trimmed = value.trim();
-      return trimmed.length > 0 && DATA_URI_PATTERN.test(trimmed);
+      return isSignatureDataUrl(value);
     }
 
     return !isEmptyValue(value);
@@ -1870,29 +1934,8 @@ export default function PublicFormPage() {
         Object.entries(answersWithDefaults).filter(([, value]) => value !== undefined)
       );
 
-      const shortTextFields = orderedFields.filter((field) => field.type === 'SHORT_TEXT');
-      const inferredNameField = shortTextFields.find((field) => {
-        const hint = `${field.key} ${field.label || ''}`;
-        return NAME_HINT_PATTERN.test(hint);
-      });
-      const fallbackNameAnswer = answersWithDefaults.full_name ?? answersWithDefaults.name;
-      const respondentName = normalizeOptionalText(
-        inferredNameField ? answersWithDefaults[inferredNameField.key] : fallbackNameAnswer,
-        200
-      );
-
-      const inferredEmailField = shortTextFields.find((field) => {
-        const hint = `${field.key} ${field.label || ''}`;
-        return field.inputType === 'email' || EMAIL_HINT_PATTERN.test(hint);
-      });
-      const fallbackEmailAnswer = answersWithDefaults.email_address ?? answersWithDefaults.email;
-      const normalizedEmailCandidate = normalizeOptionalText(
-        inferredEmailField ? answersWithDefaults[inferredEmailField.key] : fallbackEmailAnswer,
-        320
-      );
-      const respondentEmail = normalizedEmailCandidate && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmailCandidate)
-        ? normalizedEmailCandidate.toLowerCase()
-        : null;
+      const respondentName = inferRespondentName(orderedFields, answersWithDefaults);
+      const respondentEmail = inferRespondentEmail(orderedFields, answersWithDefaults);
 
       const response = await fetch(`/api/forms/public/${slug}/submit`, {
         method: 'POST',
@@ -1943,6 +1986,39 @@ export default function PublicFormPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function handleSignatureAdopt(result: {
+    dataUrl: string;
+    vectorDataUrl?: string | null;
+    applyToAll: boolean;
+  }) {
+    if (!activeSignatureFieldKey) {
+      return;
+    }
+
+    const targetKeys = result.applyToAll && signatureFieldKeys.length > 1
+      ? signatureFieldKeys
+      : [activeSignatureFieldKey];
+    const adoptedValue = result.vectorDataUrl ?? result.dataUrl;
+
+    setAnswers((prev) => {
+      const next = { ...prev };
+      for (const key of targetKeys) {
+        next[key] = adoptedValue;
+      }
+      return next;
+    });
+
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      for (const key of targetKeys) {
+        delete next[key];
+      }
+      return next;
+    });
+
+    setActiveSignatureFieldKey(null);
   }
 
   async function sendSubmissionPdfEmail() {
@@ -3168,12 +3244,82 @@ export default function PublicFormPage() {
 
           {/* SIGNATURE */}
           {field.type === 'SIGNATURE' && (
-            <div role="group" aria-label={field.hideLabel ? accessibleLabel : undefined} aria-labelledby={field.hideLabel ? undefined : labelId} aria-describedby={describedBy}>
-              <SignaturePad
-                value={typeof value === 'string' ? value : ''}
-                onChange={(next) => setFieldValue(field.key, next)}
-                ariaLabel={accessibleLabel}
-              />
+            <div
+              role="group"
+              aria-label={field.hideLabel ? accessibleLabel : undefined}
+              aria-labelledby={field.hideLabel ? undefined : labelId}
+              aria-describedby={describedBy}
+              className="space-y-3"
+            >
+              {(() => {
+                const signatureValue = isSignatureDataUrl(value) ? value.trim() : '';
+                const hasSignature = signatureValue.length > 0;
+
+                return (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSignatureFieldKey(field.key)}
+                      disabled={field.isReadOnly}
+                      aria-label={field.hideLabel ? accessibleLabel : undefined}
+                      className={cn(
+                        'group w-full overflow-hidden rounded-2xl border text-left transition-all duration-200',
+                        hasSignature
+                          ? 'border-[#D8E3DF] bg-white hover:border-[#B7CAC2] hover:shadow-sm'
+                          : 'border-dashed border-[#C8D7D1] bg-[linear-gradient(180deg,#FCFEFD_0%,#F4F7F6_100%)] hover:border-[#294D44]/40 hover:shadow-sm',
+                        field.isReadOnly && 'cursor-not-allowed opacity-70'
+                      )}
+                    >
+                      <div className="relative px-4 py-4">
+                        <div className="pointer-events-none absolute bottom-8 left-8 right-8 border-b border-dashed border-[#B7CAC2]" />
+                        {hasSignature ? (
+                          <div className="flex min-h-[140px] items-center justify-center rounded-xl border border-[#E3ECE8] bg-white px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={signatureValue}
+                              alt={`${accessibleLabel} preview`}
+                              className="max-h-28 w-auto max-w-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex min-h-[140px] flex-col items-center justify-center rounded-xl border border-dashed border-[#D7E2DD] bg-white/85 px-5 py-5 text-center">
+                            <PenLine className="mb-3 h-6 w-6 text-[#294D44]" />
+                            <p className="text-sm font-medium text-text-primary">{uiLabel('signature_empty_title')}</p>
+                            <p className="mt-1 max-w-xs text-xs leading-relaxed text-text-secondary">
+                              {uiLabel('signature_empty_hint')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setActiveSignatureFieldKey(field.key)}
+                        disabled={field.isReadOnly}
+                        leftIcon={<PenLine className="h-4 w-4" />}
+                      >
+                        {hasSignature ? uiLabel('signature_edit') : uiLabel('signature_open_action')}
+                      </Button>
+                      {hasSignature ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setFieldValue(field.key, '')}
+                          disabled={field.isReadOnly}
+                          leftIcon={<RotateCcw className="h-4 w-4" />}
+                        >
+                          {uiLabel('signature_clear')}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           )}
 
@@ -3576,6 +3722,24 @@ export default function PublicFormPage() {
           </Button>
         </ModalFooter>
       </Modal>
+
+      <EsigningSignatureModal
+        isOpen={Boolean(activeSignatureFieldKey)}
+        onClose={() => setActiveSignatureFieldKey(null)}
+        onAdopt={handleSignatureAdopt}
+        mode="SIGNATURE"
+        recipientName={inferredRespondentName ?? localizedUiLabels.signature_name_fallback}
+        existingSignature={activeSignatureValue}
+        isSubmitting={false}
+        titleOverride={localizedUiLabels.signature_modal_title}
+        fullNameLabel={localizedUiLabels.signature_name_label}
+        confirmLabel={localizedUiLabels.signature_modal_confirm}
+        legalText={localizedUiLabels.signature_modal_legal}
+        showApplyToAll={signatureFieldKeys.length > 1}
+        applyToAllLabel={localizedUiLabels.signature_apply_all}
+        applyToAllDefault={false}
+        showDownloadSvg={false}
+      />
     </div>
   );
 }

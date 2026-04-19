@@ -28,6 +28,7 @@ export const CATEGORY_SUBCATEGORY_MAP: Record<DocumentCategory, DocumentSubCateg
     DocumentSubCategory.DELIVERY_NOTE,
     DocumentSubCategory.VENDOR_STATEMENT,
     DocumentSubCategory.VENDOR_QUOTATION,
+    DocumentSubCategory.OTHERS_ACCOUNTS_PAYABLE,
   ],
   [DocumentCategory.ACCOUNTS_RECEIVABLE]: [
     DocumentSubCategory.SALES_INVOICE,
@@ -35,6 +36,7 @@ export const CATEGORY_SUBCATEGORY_MAP: Record<DocumentCategory, DocumentSubCateg
     DocumentSubCategory.SALES_ORDER,
     DocumentSubCategory.DELIVERY_ORDER,
     DocumentSubCategory.CUSTOMER_STATEMENT,
+    DocumentSubCategory.OTHERS_ACCOUNTS_RECEIVABLE,
   ],
   [DocumentCategory.TREASURY]: [
     DocumentSubCategory.BANK_STATEMENT,
@@ -42,18 +44,19 @@ export const CATEGORY_SUBCATEGORY_MAP: Record<DocumentCategory, DocumentSubCateg
     DocumentSubCategory.PAYMENT_VOUCHER,
     DocumentSubCategory.RECEIPT_VOUCHER,
     DocumentSubCategory.LOAN_DOCUMENT,
+    DocumentSubCategory.OTHERS_TREASURY,
   ],
   [DocumentCategory.TAX_COMPLIANCE]: [
     DocumentSubCategory.GST_RETURN,
     DocumentSubCategory.INCOME_TAX,
-    DocumentSubCategory.WITHHOLDING_TAX,
-    DocumentSubCategory.TAX_INVOICE,
+    DocumentSubCategory.OTHERS_TAX_COMPLIANCE,
   ],
   [DocumentCategory.PAYROLL]: [
     DocumentSubCategory.PAYSLIP,
     DocumentSubCategory.CPF_SUBMISSION,
     DocumentSubCategory.IR8A,
     DocumentSubCategory.EXPENSE_CLAIM,
+    DocumentSubCategory.OTHERS_PAYROLL,
   ],
   [DocumentCategory.CORPORATE_SECRETARIAL]: [
     DocumentSubCategory.BIZFILE,
@@ -62,25 +65,30 @@ export const CATEGORY_SUBCATEGORY_MAP: Record<DocumentCategory, DocumentSubCateg
     DocumentSubCategory.INCORPORATION,
     DocumentSubCategory.ANNUAL_RETURN,
     DocumentSubCategory.MEETING_MINUTES,
+    DocumentSubCategory.OTHERS_CORPORATE_SECRETARIAL,
   ],
   [DocumentCategory.CONTRACTS]: [
     DocumentSubCategory.VENDOR_CONTRACT,
     DocumentSubCategory.CUSTOMER_CONTRACT,
     DocumentSubCategory.EMPLOYMENT_CONTRACT,
     DocumentSubCategory.LEASE_AGREEMENT,
+    DocumentSubCategory.OTHERS_CONTRACTS,
   ],
   [DocumentCategory.FINANCIAL_REPORTS]: [
     DocumentSubCategory.FINANCIAL_STATEMENT,
     DocumentSubCategory.MANAGEMENT_REPORT,
     DocumentSubCategory.AUDIT_REPORT,
+    DocumentSubCategory.OTHERS_FINANCIAL_REPORTS,
   ],
   [DocumentCategory.INSURANCE]: [
     DocumentSubCategory.INSURANCE_POLICY,
     DocumentSubCategory.INSURANCE_CLAIM,
+    DocumentSubCategory.OTHERS_INSURANCE,
   ],
   [DocumentCategory.CORRESPONDENCE]: [
     DocumentSubCategory.LETTER,
     DocumentSubCategory.EMAIL,
+    DocumentSubCategory.OTHERS_CORRESPONDENCE,
   ],
   [DocumentCategory.OTHER]: [
     DocumentSubCategory.MISCELLANEOUS,
@@ -120,6 +128,7 @@ export const SUBCATEGORY_LABELS: Record<DocumentSubCategory, string> = {
   [DocumentSubCategory.DELIVERY_NOTE]: 'Delivery Note',
   [DocumentSubCategory.VENDOR_STATEMENT]: 'Vendor Statement',
   [DocumentSubCategory.VENDOR_QUOTATION]: 'Vendor Quotation',
+  [DocumentSubCategory.OTHERS_ACCOUNTS_PAYABLE]: 'Others',
 
   // ACCOUNTS_RECEIVABLE
   [DocumentSubCategory.SALES_INVOICE]: 'Sales Invoice',
@@ -127,6 +136,7 @@ export const SUBCATEGORY_LABELS: Record<DocumentSubCategory, string> = {
   [DocumentSubCategory.SALES_ORDER]: 'Sales Order',
   [DocumentSubCategory.DELIVERY_ORDER]: 'Delivery Order',
   [DocumentSubCategory.CUSTOMER_STATEMENT]: 'Customer Statement',
+  [DocumentSubCategory.OTHERS_ACCOUNTS_RECEIVABLE]: 'Others',
 
   // TREASURY
   [DocumentSubCategory.BANK_STATEMENT]: 'Bank Statement',
@@ -134,18 +144,19 @@ export const SUBCATEGORY_LABELS: Record<DocumentSubCategory, string> = {
   [DocumentSubCategory.PAYMENT_VOUCHER]: 'Payment Voucher',
   [DocumentSubCategory.RECEIPT_VOUCHER]: 'Receipt Voucher',
   [DocumentSubCategory.LOAN_DOCUMENT]: 'Loan Document',
+  [DocumentSubCategory.OTHERS_TREASURY]: 'Others',
 
   // TAX_COMPLIANCE
   [DocumentSubCategory.GST_RETURN]: 'GST Return',
   [DocumentSubCategory.INCOME_TAX]: 'Income Tax',
-  [DocumentSubCategory.WITHHOLDING_TAX]: 'Withholding Tax',
-  [DocumentSubCategory.TAX_INVOICE]: 'Tax Invoice',
+  [DocumentSubCategory.OTHERS_TAX_COMPLIANCE]: 'Others',
 
   // PAYROLL
   [DocumentSubCategory.PAYSLIP]: 'Payslip',
   [DocumentSubCategory.CPF_SUBMISSION]: 'CPF Submission',
   [DocumentSubCategory.IR8A]: 'IR8A',
   [DocumentSubCategory.EXPENSE_CLAIM]: 'Expense Claim',
+  [DocumentSubCategory.OTHERS_PAYROLL]: 'Others',
 
   // CORPORATE_SECRETARIAL
   [DocumentSubCategory.BIZFILE]: 'BizFile',
@@ -154,25 +165,30 @@ export const SUBCATEGORY_LABELS: Record<DocumentSubCategory, string> = {
   [DocumentSubCategory.INCORPORATION]: 'Incorporation',
   [DocumentSubCategory.ANNUAL_RETURN]: 'Annual Return',
   [DocumentSubCategory.MEETING_MINUTES]: 'Meeting Minutes',
+  [DocumentSubCategory.OTHERS_CORPORATE_SECRETARIAL]: 'Others',
 
   // CONTRACTS
   [DocumentSubCategory.VENDOR_CONTRACT]: 'Vendor Contract',
   [DocumentSubCategory.CUSTOMER_CONTRACT]: 'Customer Contract',
   [DocumentSubCategory.EMPLOYMENT_CONTRACT]: 'Employment Contract',
   [DocumentSubCategory.LEASE_AGREEMENT]: 'Lease Agreement',
+  [DocumentSubCategory.OTHERS_CONTRACTS]: 'Others',
 
   // FINANCIAL_REPORTS
   [DocumentSubCategory.FINANCIAL_STATEMENT]: 'Financial Statement',
   [DocumentSubCategory.MANAGEMENT_REPORT]: 'Management Report',
   [DocumentSubCategory.AUDIT_REPORT]: 'Audit Report',
+  [DocumentSubCategory.OTHERS_FINANCIAL_REPORTS]: 'Others',
 
   // INSURANCE
   [DocumentSubCategory.INSURANCE_POLICY]: 'Insurance Policy',
   [DocumentSubCategory.INSURANCE_CLAIM]: 'Insurance Claim',
+  [DocumentSubCategory.OTHERS_INSURANCE]: 'Others',
 
   // CORRESPONDENCE
   [DocumentSubCategory.LETTER]: 'Letter',
   [DocumentSubCategory.EMAIL]: 'Email',
+  [DocumentSubCategory.OTHERS_CORRESPONDENCE]: 'Others',
 
   // OTHER
   [DocumentSubCategory.MISCELLANEOUS]: 'Miscellaneous',
@@ -273,6 +289,38 @@ export function getSubCategoryOptions(
 export function getDefaultSubCategory(category: DocumentCategory): DocumentSubCategory | null {
   const subCategories = CATEGORY_SUBCATEGORY_MAP[category];
   return subCategories?.[0] ?? null;
+}
+
+/**
+ * Get the catch-all "Others" sub-category for a category, if one exists.
+ */
+export function getCatchAllSubCategory(category: DocumentCategory): DocumentSubCategory | null {
+  switch (category) {
+    case DocumentCategory.ACCOUNTS_PAYABLE:
+      return DocumentSubCategory.OTHERS_ACCOUNTS_PAYABLE;
+    case DocumentCategory.ACCOUNTS_RECEIVABLE:
+      return DocumentSubCategory.OTHERS_ACCOUNTS_RECEIVABLE;
+    case DocumentCategory.TREASURY:
+      return DocumentSubCategory.OTHERS_TREASURY;
+    case DocumentCategory.TAX_COMPLIANCE:
+      return DocumentSubCategory.OTHERS_TAX_COMPLIANCE;
+    case DocumentCategory.PAYROLL:
+      return DocumentSubCategory.OTHERS_PAYROLL;
+    case DocumentCategory.CORPORATE_SECRETARIAL:
+      return DocumentSubCategory.OTHERS_CORPORATE_SECRETARIAL;
+    case DocumentCategory.CONTRACTS:
+      return DocumentSubCategory.OTHERS_CONTRACTS;
+    case DocumentCategory.FINANCIAL_REPORTS:
+      return DocumentSubCategory.OTHERS_FINANCIAL_REPORTS;
+    case DocumentCategory.INSURANCE:
+      return DocumentSubCategory.OTHERS_INSURANCE;
+    case DocumentCategory.CORRESPONDENCE:
+      return DocumentSubCategory.OTHERS_CORRESPONDENCE;
+    case DocumentCategory.OTHER:
+      return null;
+    default:
+      return null;
+  }
 }
 
 // =============================================================================

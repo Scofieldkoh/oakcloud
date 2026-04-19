@@ -39,7 +39,7 @@ import { storage } from '@/lib/storage';
 import { performAISplitDetection } from '@/lib/split-detection';
 import { hashBlake3 } from '@/lib/encryption';
 import {
-  getDefaultSubCategory,
+  getCatchAllSubCategory,
   isValidSubCategoryForCategory,
 } from '@/lib/document-categories';
 import { getAccountsForSelect } from './chart-of-accounts.service';
@@ -2000,6 +2000,7 @@ Select the most appropriate category and sub-category based on document content:
 - DELIVERY_NOTE: Goods received notes, delivery receipts
 - VENDOR_STATEMENT: Supplier statements of account
 - VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
 
 **ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
 - SALES_INVOICE: Invoices & debit notes to customers
@@ -2007,6 +2008,7 @@ Select the most appropriate category and sub-category based on document content:
 - SALES_ORDER: Sales orders & quotations
 - DELIVERY_ORDER: Delivery orders issued
 - CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
 
 **TREASURY** (Banking & Cash Management):
 - BANK_STATEMENT: Monthly/periodic bank statements
@@ -2014,18 +2016,19 @@ Select the most appropriate category and sub-category based on document content:
 - PAYMENT_VOUCHER: Payment vouchers, cheques
 - RECEIPT_VOUCHER: Receipt vouchers
 - LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
 
 **TAX_COMPLIANCE** (Tax & Regulatory):
 - GST_RETURN: GST F5/F7 returns & assessments
 - INCOME_TAX: Form C/C-S, tax assessments, computations
-- WITHHOLDING_TAX: WHT certificates (Form IR37)
-- TAX_INVOICE: Tax invoices & receipts
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
 
 **PAYROLL** (HR & Payroll):
 - PAYSLIP: Employee payslips
 - CPF_SUBMISSION: CPF contribution records
 - IR8A: Annual IR8A/IR8S forms
 - EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
 
 **CORPORATE_SECRETARIAL** (Corporate Governance):
 - BIZFILE: ACRA BizFile extracts
@@ -2034,25 +2037,30 @@ Select the most appropriate category and sub-category based on document content:
 - INCORPORATION: Constitution, incorporation cert, share certs
 - ANNUAL_RETURN: Annual returns, statutory forms
 - MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
 
 **CONTRACTS** (Legal Agreements):
 - VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
 - CUSTOMER_CONTRACT: Customer/client agreements
 - EMPLOYMENT_CONTRACT: Employment agreements
 - LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
 
 **FINANCIAL_REPORTS** (Reporting & Analysis):
 - FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
 - MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
 - AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
 
 **INSURANCE** (Risk Management):
 - INSURANCE_POLICY: Policies, certificates, renewals
 - INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
 
 **CORRESPONDENCE** (General Communications):
 - LETTER: Business letters, memos, notices
 - EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
 
 **OTHER** (Uncategorized):
 - MISCELLANEOUS: Documents that don't fit other categories
@@ -2094,6 +2102,7 @@ Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
 - Be precise with numbers - extract exactly as shown, don't round
 - When extracting from Singapore invoices, assume SGD unless otherwise specified
 - Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
 - ALWAYS look for and extract home currency equivalents on foreign currency invoices
 
 ## Line Item Completeness (CRITICAL)
@@ -2515,7 +2524,7 @@ function normalizeDocumentSubCategory(
   switch (normalized) {
     case 'INVOICE':
       if (category === 'ACCOUNTS_RECEIVABLE') return 'SALES_INVOICE';
-      if (category === 'TAX_COMPLIANCE') return 'TAX_INVOICE';
+      if (category === 'TAX_COMPLIANCE') return 'OTHERS_TAX_COMPLIANCE';
       return 'VENDOR_INVOICE';
     case 'CREDIT_NOTE':
       return category === 'ACCOUNTS_RECEIVABLE' ? 'SALES_CREDIT_NOTE' : 'VENDOR_CREDIT_NOTE';
@@ -2526,10 +2535,10 @@ function normalizeDocumentSubCategory(
       if (category === 'TREASURY') return 'BANK_STATEMENT';
       return 'VENDOR_STATEMENT';
     case 'RECEIPT':
-      return category === 'TAX_COMPLIANCE' ? 'TAX_INVOICE' : 'RECEIPT_VOUCHER';
+      return category === 'TAX_COMPLIANCE' ? 'OTHERS_TAX_COMPLIANCE' : 'RECEIPT_VOUCHER';
     case 'PAYMENT':
     case 'PAYMENT_VOUCHER':
-      return category === 'TREASURY' ? 'PAYMENT_VOUCHER' : getDefaultSubCategory(category) ?? undefined;
+      return category === 'TREASURY' ? 'PAYMENT_VOUCHER' : getCatchAllSubCategory(category) ?? undefined;
     case 'ORDER':
     case 'PURCHASE_ORDER':
       return category === 'ACCOUNTS_RECEIVABLE' ? 'SALES_ORDER' : 'PURCHASE_ORDER';
@@ -2542,7 +2551,7 @@ function normalizeDocumentSubCategory(
         ? 'SALES_ORDER'
         : 'VENDOR_QUOTATION';
     default:
-      return getDefaultSubCategory(category) ?? undefined;
+      return getCatchAllSubCategory(category) ?? undefined;
   }
 }
 
