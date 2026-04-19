@@ -41,9 +41,9 @@ const WORKFLOW_SEARCH_INPUT_ID = 'workflow-projects-search-input';
 const COLUMN_PREF_KEY = 'workflow:projects:list:columns:v1';
 
 const DUE_BUCKET_LABELS: Record<WorkflowDueBucket, string> = {
-  today: 'Due Today',
-  thisWeek: 'Due This Week',
-  nextWeek: 'Due Next Week',
+  today: 'Ends Today',
+  thisWeek: 'Ends This Week',
+  nextWeek: 'Ends Next Week',
   overdue: 'Overdue',
 };
 
@@ -431,7 +431,7 @@ export default function WorkflowProjectsPage() {
     if (params.dueDateFrom || params.dueDateTo) {
       chips.push({
         key: 'dueDate',
-        label: 'Due Date',
+        label: 'End Date',
         value: formatDateRange(params.dueDateFrom, params.dueDateTo),
         onRemove: () => setParams((previous) => ({ ...previous, dueDateFrom: undefined, dueDateTo: undefined, page: 1 })),
       });
@@ -546,19 +546,19 @@ export default function WorkflowProjectsPage() {
   const dueCards = [
     {
       key: 'today' as const,
-      title: 'Due Today',
+      title: 'Ends Today',
       count: data?.stats.dueToday ?? 0,
       icon: Clock,
     },
     {
       key: 'thisWeek' as const,
-      title: 'Due This Week',
+      title: 'Ends This Week',
       count: data?.stats.dueThisWeek ?? 0,
       icon: Calendar,
     },
     {
       key: 'nextWeek' as const,
-      title: 'Due Next Week',
+      title: 'Ends Next Week',
       count: data?.stats.dueNextWeek ?? 0,
       icon: CheckCircle,
     },

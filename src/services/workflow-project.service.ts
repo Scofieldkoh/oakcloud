@@ -174,6 +174,7 @@ export interface WorkflowProjectResource {
 
 export type WorkflowProjectBillingMode = 'FIXED' | 'TIERED';
 export type WorkflowProjectBillingStatus = 'PENDING' | 'TO_BE_BILLED' | 'BILLED';
+export type WorkflowProjectReferralFeeType = 'AMOUNT' | 'PERCENTAGE';
 
 export interface WorkflowProjectBillingTier {
   upTo: number | null;
@@ -184,6 +185,12 @@ export interface WorkflowProjectBillingConfig {
   mode: WorkflowProjectBillingMode;
   currency: string;
   fixedPrice: number | null;
+  disbursementAmount: number | null;
+  referralFeeAmount: number | null;
+  referralFeeType: WorkflowProjectReferralFeeType;
+  referralFeeRecurringLimit: number | null;
+  referralPayee: string;
+  referralPayeeContactId: string | null;
   tiers: WorkflowProjectBillingTier[];
 }
 
@@ -208,6 +215,8 @@ export interface WorkflowProjectDetail {
   startDate: string;
   dueDate: string;
   recurrenceMonths: number | null;
+  instanceNumber: number;
+  instanceCount: number;
   nextTaskDueDate: string | null;
   tags: string[];
   billingLabel: string;
@@ -270,6 +279,18 @@ interface WorkflowProjectSetting {
   billingCurrency: string | null;
   billingTieredPricing: unknown;
   workspaceState: unknown;
+}
+
+interface WorkflowProjectBillingStoragePayload {
+  tiers?: unknown;
+  fixedPricing?: {
+    disbursementAmount?: unknown;
+    referralFeeAmount?: unknown;
+    referralFeeType?: unknown;
+    referralFeeRecurringLimit?: unknown;
+    referralPayee?: unknown;
+    referralPayeeContactId?: unknown;
+  };
 }
 
 interface WorkflowProjectInstance {
@@ -467,15 +488,61 @@ function normalizeBillingTiers(value: unknown): WorkflowProjectBillingTier[] {
     });
 }
 
+function normalizeOptionalMoneyValue(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return roundMoney(parsed);
+}
+
+function normalizeOptionalPositiveIntegerValue(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed <= 0) return null;
+  return parsed;
+}
+
+function normalizeOptionalTextValue(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeOptionalTextId(value: unknown): string | null {
+  const normalized = normalizeOptionalTextValue(value);
+  return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeReferralFeeType(value: unknown): WorkflowProjectReferralFeeType {
+  return value === 'PERCENTAGE' ? 'PERCENTAGE' : 'AMOUNT';
+}
+
+function extractBillingStoragePayload(value: unknown): WorkflowProjectBillingStoragePayload {
+  if (Array.isArray(value)) {
+    return { tiers: value };
+  }
+
+  if (!value || typeof value !== 'object') {
+    return {};
+  }
+
+  return value as WorkflowProjectBillingStoragePayload;
+}
+
 function calculateBillingAmount(
   config: WorkflowProjectBillingConfig,
-  quantity: number | null
+  quantity: number | null,
+  _instanceNumber: number = 1
 ): number {
   if (config.mode === 'FIXED') {
     const fixedPrice = typeof config.fixedPrice === 'number' && Number.isFinite(config.fixedPrice)
       ? config.fixedPrice
       : 0;
-    return roundMoney(Math.max(0, fixedPrice));
+    const disbursementAmount = typeof config.disbursementAmount === 'number' && Number.isFinite(config.disbursementAmount)
+      ? config.disbursementAmount
+      : 0;
+    return roundMoney(
+      Math.max(0, fixedPrice)
+      + Math.max(0, disbursementAmount)
+    );
   }
 
   const normalizedQuantity = typeof quantity === 'number' && Number.isInteger(quantity) && quantity > 0
@@ -585,18 +652,33 @@ function resolveBillingConfig(
     defaultFixedPrice: number;
   }
 ): WorkflowProjectBillingConfig {
+  const billingStorage = extractBillingStoragePayload(setting?.billingTieredPricing);
   const mode = normalizeBillingMode(setting?.billingMode) ?? 'FIXED';
   const currency = normalizeBillingCurrency(setting?.billingCurrency, defaults.defaultCurrency);
   const fixedPriceCandidate = parseDbNumber(setting?.billingFixedPrice);
   const fixedPrice = fixedPriceCandidate !== null && fixedPriceCandidate >= 0
     ? roundMoney(fixedPriceCandidate)
     : roundMoney(defaults.defaultFixedPrice);
-  const tiers = normalizeBillingTiers(setting?.billingTieredPricing);
+  const tiers = normalizeBillingTiers(billingStorage.tiers ?? setting?.billingTieredPricing);
+  const disbursementAmount = normalizeOptionalMoneyValue(billingStorage.fixedPricing?.disbursementAmount);
+  const referralFeeAmount = normalizeOptionalMoneyValue(billingStorage.fixedPricing?.referralFeeAmount);
+  const referralFeeType = normalizeReferralFeeType(billingStorage.fixedPricing?.referralFeeType);
+  const referralFeeRecurringLimit = normalizeOptionalPositiveIntegerValue(
+    billingStorage.fixedPricing?.referralFeeRecurringLimit
+  );
+  const referralPayee = normalizeOptionalTextValue(billingStorage.fixedPricing?.referralPayee);
+  const referralPayeeContactId = normalizeOptionalTextId(billingStorage.fixedPricing?.referralPayeeContactId);
 
   return {
     mode,
     currency,
     fixedPrice,
+    disbursementAmount,
+    referralFeeAmount,
+    referralFeeType,
+    referralFeeRecurringLimit,
+    referralPayee,
+    referralPayeeContactId,
     tiers,
   };
 }
@@ -614,12 +696,24 @@ function normalizeBillingConfigInput(
   const fixedPrice = typeof parsedFixedPrice === 'number' && Number.isFinite(parsedFixedPrice) && parsedFixedPrice >= 0
     ? roundMoney(parsedFixedPrice)
     : roundMoney(defaults.defaultFixedPrice);
+  const disbursementAmount = normalizeOptionalMoneyValue(input.disbursementAmount);
+  const referralFeeAmount = normalizeOptionalMoneyValue(input.referralFeeAmount);
+  const referralFeeType = normalizeReferralFeeType(input.referralFeeType);
+  const referralFeeRecurringLimit = normalizeOptionalPositiveIntegerValue(input.referralFeeRecurringLimit);
+  const referralPayee = normalizeOptionalTextValue(input.referralPayee);
+  const referralPayeeContactId = normalizeOptionalTextId(input.referralPayeeContactId);
   const tiers = normalizeBillingTiers(input.tiers);
 
   return {
     mode,
     currency,
     fixedPrice,
+    disbursementAmount,
+    referralFeeAmount,
+    referralFeeType,
+    referralFeeRecurringLimit,
+    referralPayee,
+    referralPayeeContactId,
     tiers,
   };
 }
@@ -943,6 +1037,11 @@ function sortProjectInstances(instances: WorkflowProjectInstance[]): WorkflowPro
     if (startComparison !== 0) return startComparison;
     return a.id.localeCompare(b.id);
   });
+}
+
+function getProjectInstanceNumber(instances: WorkflowProjectInstance[], instanceId: string): number {
+  const index = instances.findIndex((instance) => instance.id === instanceId);
+  return index >= 0 ? index + 1 : 1;
 }
 
 function pickCurrentProjectInstance(instances: WorkflowProjectInstance[]): WorkflowProjectInstance | null {
@@ -1480,7 +1579,7 @@ export async function searchWorkflowProjects(
     if (instances.length === 0) return [];
 
     const sortedInstances = sortProjectInstances(instances);
-    return sortedInstances.map((instance) => {
+    return sortedInstances.map((instance, index) => {
       const project = buildProject({
         company,
         requests,
@@ -1523,7 +1622,8 @@ export async function searchWorkflowProjects(
       });
       const calculatedBillingAmount = calculateBillingAmount(
         billingConfig,
-        companyWorkspaceState.billingQuantity
+        companyWorkspaceState.billingQuantity,
+        index + 1
       );
       return {
         ...project,
@@ -1878,8 +1978,9 @@ export async function getWorkflowProjectDetail(projectId: string, scope: Workflo
 
   await cloneRecurringProjectInstances(instancesByCompany, settingsByCompany);
 
-  const companyInstances = instancesByCompany.get(company.id) ?? [];
+  const companyInstances = sortProjectInstances(instancesByCompany.get(company.id) ?? []);
   const selectedInstance = companyInstances.find((instance) => instance.id === resolvedInstance.id) ?? resolvedInstance;
+  const instanceNumber = getProjectInstanceNumber(companyInstances, selectedInstance.id);
 
   const project = buildProject({
     company,
@@ -1948,7 +2049,7 @@ export async function getWorkflowProjectDetail(projectId: string, scope: Workflo
     autoStatusFromWorkspace ?? project.status,
     workspaceState.projectStatusOverride
   );
-  const calculatedBillingAmount = calculateBillingAmount(billingConfig, workspaceState.billingQuantity);
+  const calculatedBillingAmount = calculateBillingAmount(billingConfig, workspaceState.billingQuantity, instanceNumber);
   const billingStatus = resolveBillingStatus(workspaceState.billingStatus, calculatedBillingAmount, resolvedProjectStatus);
 
   return {
@@ -1963,6 +2064,8 @@ export async function getWorkflowProjectDetail(projectId: string, scope: Workflo
     startDate: project.startDate,
     dueDate: project.dueDate,
     recurrenceMonths: project.recurrenceMonths,
+    instanceNumber,
+    instanceCount: companyInstances.length,
     nextTaskDueDate: project.nextTaskDueDate ?? null,
     tags: dedupe([
       STATUS_LABELS[resolvedProjectStatus],
@@ -2070,7 +2173,17 @@ export async function updateWorkflowProjectSettings(
     })
     : existingWorkspaceState;
   const normalizedName = input.name.trim();
-  const tieredPricingJson = JSON.stringify(normalizedBillingConfig.tiers);
+  const tieredPricingJson = JSON.stringify({
+    tiers: normalizedBillingConfig.tiers,
+    fixedPricing: {
+      disbursementAmount: normalizedBillingConfig.disbursementAmount,
+      referralFeeAmount: normalizedBillingConfig.referralFeeAmount,
+      referralFeeType: normalizedBillingConfig.referralFeeType,
+      referralFeeRecurringLimit: normalizedBillingConfig.referralFeeRecurringLimit,
+      referralPayee: normalizedBillingConfig.referralPayee,
+      referralPayeeContactId: normalizedBillingConfig.referralPayeeContactId,
+    },
+  });
   const workspaceStateJson = normalizedWorkspaceState ? JSON.stringify(normalizedWorkspaceState) : null;
 
   await ensureWorkflowProjectStorageTables();

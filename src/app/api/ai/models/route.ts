@@ -66,6 +66,9 @@ export async function GET(request: NextRequest) {
         connectorIdByProvider.set(item.provider, item.connectorId);
       }
     }
+    const mistralConnector = await resolveConnector(tenantId, 'AI_PROVIDER', 'MISTRAL');
+    const mistralOcrAvailable =
+      Boolean(mistralConnector) || Boolean(process.env.MISTRAL_API_KEY?.trim());
 
     const connectorIds = Array.from(new Set(Array.from(connectorIdByProvider.values())));
     const connectorOverrides = connectorIds.length > 0
@@ -171,6 +174,7 @@ export async function GET(request: NextRequest) {
           available: m.available,
         })),
       },
+      mistralOcrAvailable,
     };
 
     return NextResponse.json(response);

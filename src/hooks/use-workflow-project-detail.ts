@@ -80,6 +80,7 @@ export interface WorkflowProjectResource {
 
 export type WorkflowProjectBillingMode = 'FIXED' | 'TIERED';
 export type WorkflowProjectBillingStatus = 'PENDING' | 'TO_BE_BILLED' | 'BILLED';
+export type WorkflowProjectReferralFeeType = 'AMOUNT' | 'PERCENTAGE';
 export type WorkflowProjectStatusOverride = 'AT_RISK' | 'ON_HOLD';
 
 export interface WorkflowProjectBillingTier {
@@ -91,6 +92,12 @@ export interface WorkflowProjectBillingConfig {
   mode: WorkflowProjectBillingMode;
   currency: string;
   fixedPrice: number | null;
+  disbursementAmount: number | null;
+  referralFeeAmount: number | null;
+  referralFeeType: WorkflowProjectReferralFeeType;
+  referralFeeRecurringLimit: number | null;
+  referralPayee: string;
+  referralPayeeContactId: string | null;
   tiers: WorkflowProjectBillingTier[];
 }
 
@@ -124,6 +131,8 @@ export interface WorkflowProjectDetail {
   startDate: string;
   dueDate: string;
   recurrenceMonths: number | null;
+  instanceNumber: number;
+  instanceCount: number;
   nextTaskDueDate: string | null;
   tags: string[];
   billingLabel: string;

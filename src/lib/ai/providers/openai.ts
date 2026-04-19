@@ -4,13 +4,13 @@
  * Implementation for OpenAI GPT models.
  */
 
-import type { AIRequestOptions, AIResponse, AICredentials } from '../types';
+import type { AIRequestOptions, AIResponse, AICredentials, AIModel } from '../types';
 import { getModelConfig } from '../models';
 
 // Lazy load OpenAI SDK to reduce initial bundle size
 let openaiInstance: import('openai').default | null = null;
 
-async function getOpenAI(credentials?: AICredentials['openai']) {
+export async function getOpenAI(credentials?: AICredentials['openai']) {
   // If custom credentials provided, create a new instance
   if (credentials?.apiKey) {
     const OpenAI = (await import('openai')).default;
@@ -38,7 +38,7 @@ export function isOpenAIConfigured(): boolean {
   return !!process.env.OPENAI_API_KEY;
 }
 
-function extractOpenAIMessageContent(
+export function extractOpenAIMessageContent(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   message: any
 ): string | null {
@@ -90,7 +90,7 @@ function extractOpenAIMessageContent(
   return null;
 }
 
-function describeOpenAIMessage(
+export function describeOpenAIMessage(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   message: any
 ): string {
@@ -134,21 +134,14 @@ function describeOpenAIMessage(
  * @param options - Request options
  * @param credentials - Optional custom credentials (from connector)
  */
-export async function callOpenAI(
-  options: AIRequestOptions,
-  credentials?: AICredentials['openai']
-): Promise<AIResponse> {
-  // Allow either env var or provided credentials
-  if (!isOpenAIConfigured() && !credentials?.apiKey) {
-    throw new Error('OpenAI API key not configured');
-  }
-
+export function buildOpenAIChatCompletionRequest(
+  options: AIRequestOptions
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any {
   const modelConfig = getModelConfig(options.model);
   if (modelConfig.provider !== 'openai') {
     throw new Error(`Model ${options.model} is not an OpenAI model`);
   }
-
-  const openai = await getOpenAI(credentials);
 
   // We use 'any' for messages to avoid complex SDK type gymnastics while ensuring runtime correctness
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -212,8 +205,16 @@ export async function callOpenAI(
     requestOptions.temperature = options.temperature ?? 0.1;
   }
 
-  const response = await openai.chat.completions.create(requestOptions);
-  const choice = response.choices[0];
+  return requestOptions;
+}
+
+export function parseOpenAIChatCompletionResponse(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  response: any,
+  model: AIModel,
+  batchMode = false
+): AIResponse {
+  const choice = response.choices?.[0];
   const content = extractOpenAIMessageContent(choice?.message);
   if (!content) {
     const finishReason = typeof choice?.finish_reason === 'string' ? choice.finish_reason : 'unknown';
@@ -223,15 +224,32 @@ export async function callOpenAI(
 
   return {
     content,
-    model: options.model,
+    model,
     provider: 'openai',
     usage: response.usage
       ? {
           inputTokens: response.usage.prompt_tokens,
           outputTokens: response.usage.completion_tokens,
           totalTokens: response.usage.total_tokens,
+          batchMode,
         }
       : undefined,
     finishReason: choice?.finish_reason ?? undefined,
   };
+}
+
+export async function callOpenAI(
+  options: AIRequestOptions,
+  credentials?: AICredentials['openai']
+): Promise<AIResponse> {
+  // Allow either env var or provided credentials
+  if (!isOpenAIConfigured() && !credentials?.apiKey) {
+    throw new Error('OpenAI API key not configured');
+  }
+
+  const openai = await getOpenAI(credentials);
+  const requestOptions = buildOpenAIChatCompletionRequest(options);
+
+  const response = await openai.chat.completions.create(requestOptions);
+  return parseOpenAIChatCompletionResponse(response, options.model);
 }

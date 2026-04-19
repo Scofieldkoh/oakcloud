@@ -35,6 +35,9 @@ import { processFileForUpload, isSupportedFileType } from '@/lib/pdf-utils';
 import { calculateFileHash } from '@/lib/file-hash';
 import { cn } from '@/lib/utils';
 import { postFormDataWithFallback } from '@/lib/browser-upload';
+import { MISTRAL_OCR_MODEL_ID } from '@/lib/ocr/constants';
+import { AI_MODELS } from '@/lib/ai/models';
+import type { AIModel } from '@/lib/ai/types';
 
 type UploadStatus = 'pending' | 'processing' | 'uploading' | 'success' | 'error';
 
@@ -59,6 +62,15 @@ interface QueuedFile {
 
 const MAX_FILES = 100;
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB to match API
+
+function getBatchProcessingProvider(modelId: string): 'mistral' | 'openai' | null {
+  if (modelId === MISTRAL_OCR_MODEL_ID) {
+    return 'mistral';
+  }
+
+  const modelConfig = AI_MODELS[modelId as AIModel];
+  return modelConfig?.provider === 'openai' ? 'openai' : null;
+}
 
 export default function ProcessingUploadPage() {
   const router = useRouter();
@@ -87,6 +99,7 @@ export default function ProcessingUploadPage() {
   const [companyContext, setCompanyContext] = useState(''); // Auto-populated from company
   const [aiContext, setAiContext] = useState(''); // User's additional context
   const [selectedStandardContexts, setSelectedStandardContexts] = useState<string[]>([]);
+  const previousBatchProviderRef = useRef<'mistral' | 'openai' | null>(null);
 
   // Clear extraction-specific fields when extraction is disabled
   useEffect(() => {
@@ -96,6 +109,20 @@ export default function ProcessingUploadPage() {
     setAiContext('');
     setSelectedStandardContexts([]);
   }, [uploadWithoutAiExtraction]);
+
+  useEffect(() => {
+    const batchProvider = getBatchProcessingProvider(selectedModelId);
+
+    if (batchProvider === 'mistral') {
+      setUseBatchProcessing(true);
+    } else if (batchProvider === 'openai' && previousBatchProviderRef.current !== 'openai') {
+      setUseBatchProcessing(false);
+    } else if (!batchProvider) {
+      setUseBatchProcessing(false);
+    }
+
+    previousBatchProviderRef.current = batchProvider;
+  }, [selectedModelId]);
 
   // Update selected company when activeCompanyId changes or companies load
   useEffect(() => {
@@ -871,37 +898,39 @@ export default function ProcessingUploadPage() {
         />
       </div>
 
-      <div className="card mb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <label className="label mb-1 text-sm">Batch Processing</label>
-            <p className="text-sm text-text-secondary leading-relaxed">
-              Queue uploaded documents through Mistral Batch OCR. This is slower, but better suited for background processing.
-            </p>
-            <p className="text-xs text-text-muted mt-2.5 leading-relaxed">
-              Batch mode currently applies only when AI extraction is enabled and the selector is left on Auto.
-            </p>
+      {!uploadWithoutAiExtraction && getBatchProcessingProvider(selectedModelId) && (
+        <div className="card mb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <label className="label mb-1 text-sm">Batch Processing</label>
+              <p className="text-sm text-text-secondary leading-relaxed">
+                {getBatchProcessingProvider(selectedModelId) === 'mistral'
+                  ? 'Queue uploaded documents through Mistral Batch OCR. This is slower, but better suited for background processing.'
+                  : 'Queue uploaded documents through the OpenAI Batch API. This runs asynchronously and is better suited for background processing.'}
+              </p>
+              <p className="text-xs text-text-muted mt-2.5 leading-relaxed">
+                {getBatchProcessingProvider(selectedModelId) === 'mistral'
+                  ? 'Mistral OCR turns batch processing on by default when selected.'
+                  : 'OpenAI batch processing is available for OpenAI extraction models and can take up to 24 hours to complete.'}
+              </p>
+            </div>
+            <Toggle
+              checked={useBatchProcessing}
+              onChange={setUseBatchProcessing}
+              disabled={isUploading}
+            />
           </div>
-          <Toggle
-            checked={useBatchProcessing}
-            onChange={setUseBatchProcessing}
-            disabled={isUploading || uploadWithoutAiExtraction || selectedModelId !== ''}
-          />
         </div>
-        {(uploadWithoutAiExtraction || selectedModelId !== '') && (
-          <p className="text-xs text-text-muted mt-3">
-            Leave extraction enabled and keep the model on Auto to use Mistral batch extraction.
-          </p>
-        )}
-      </div>
+      )}
 
       <AIModelSelector
         value={selectedModelId}
         onChange={setSelectedModelId}
         label="AI Model for Extraction"
-        helpText="Leave this on Auto to let the backend choose the best extraction path, including Mistral OCR when configured."
+        helpText="Choose the extraction model directly. Mistral OCR is OCR-first, while OpenAI models can also be queued through batch processing."
         disabled={isUploading || uploadWithoutAiExtraction}
-        allowAuto
+        includeMistralOcrOption
+        showEmptyOption={false}
         jsonModeOnly
         showContextInput
         contextValue={aiContext}

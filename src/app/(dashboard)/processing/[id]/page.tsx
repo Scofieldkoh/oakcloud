@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useMemo, useEffect, useCallback } from 'react';
+import { use, useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -81,6 +81,9 @@ import { useCompany } from '@/hooks/use-companies';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 import { SingleDateInput } from '@/components/ui/single-date-input';
+import { MISTRAL_OCR_MODEL_ID } from '@/lib/ocr/constants';
+import { AI_MODELS } from '@/lib/ai/models';
+import type { AIModel } from '@/lib/ai/types';
 
 // Status display configs
 const pipelineStatusConfig: Record<
@@ -97,6 +100,15 @@ const pipelineStatusConfig: Record<
   FAILED_PERMANENT: { label: 'Failed', color: 'text-status-error', bgColor: 'bg-status-error/10' },
   DEAD_LETTER: { label: 'Dead Letter', color: 'text-status-error', bgColor: 'bg-status-error/10' },
 };
+
+function getBatchProcessingProvider(modelId: string): 'mistral' | 'openai' | null {
+  if (modelId === MISTRAL_OCR_MODEL_ID) {
+    return 'mistral';
+  }
+
+  const modelConfig = AI_MODELS[modelId as AIModel];
+  return modelConfig?.provider === 'openai' ? 'openai' : null;
+}
 
 const duplicateStatusConfig: Record<
   DuplicateStatus,
@@ -446,6 +458,21 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // AI context state (matching upload page)
   const [aiContext, setAiContext] = useState('');
   const [selectedStandardContexts, setSelectedStandardContexts] = useState<string[]>([]);
+  const previousBatchProviderRef = useRef<'mistral' | 'openai' | null>(null);
+
+  useEffect(() => {
+    const batchProvider = getBatchProcessingProvider(selectedModel);
+
+    if (batchProvider === 'mistral') {
+      setUseBatchProcessing(true);
+    } else if (batchProvider === 'openai' && previousBatchProviderRef.current !== 'openai') {
+      setUseBatchProcessing(false);
+    } else if (!batchProvider) {
+      setUseBatchProcessing(false);
+    }
+
+    previousBatchProviderRef.current = batchProvider;
+  }, [selectedModel]);
 
   // Fetch company details for context
   const companyId = data?.document?.company?.id;
@@ -2202,30 +2229,32 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         <ModalBody>
           <div className="space-y-4">
             {(() => {
-              const batchAvailable = selectedModel === '';
+              const batchAvailable = getBatchProcessingProvider(selectedModel);
+              if (!batchAvailable) {
+                return null;
+              }
               return (
                 <div className="card">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <label className="label mb-1 text-sm">Batch Processing</label>
                       <p className="text-sm text-text-secondary leading-relaxed">
-                        Queue this extraction through Mistral Batch OCR. This is slower, but better suited for background processing.
+                        {batchAvailable === 'mistral'
+                          ? 'Queue this extraction through Mistral Batch OCR. This is slower, but better suited for background processing.'
+                          : 'Queue this extraction through the OpenAI Batch API. This runs asynchronously and is better suited for background processing.'}
                       </p>
                       <p className="text-xs text-text-muted mt-2 leading-relaxed">
-                        Batch mode currently applies only when the selector is left on Auto so the backend can use Mistral OCR.
+                        {batchAvailable === 'mistral'
+                          ? 'Mistral OCR turns batch processing on by default when selected.'
+                          : 'OpenAI batch processing is available for OpenAI extraction models and can take up to 24 hours to complete.'}
                       </p>
                     </div>
                     <Toggle
                       checked={useBatchProcessing}
                       onChange={(checked) => setUseBatchProcessing(checked)}
-                      disabled={!batchAvailable}
+                      disabled={false}
                     />
                   </div>
-                  {!batchAvailable && (
-                    <p className="text-xs text-text-muted mt-3">
-                      Pick Auto first to enable Mistral batch extraction.
-                    </p>
-                  )}
                 </div>
               );
             })()}
@@ -2256,8 +2285,9 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               value={selectedModel}
               onChange={setSelectedModel}
               label="AI Model for Extraction"
-              helpText="Leave this on Auto to let the backend choose the best extraction path, including Mistral OCR when configured."
-              allowAuto
+              helpText="Choose the extraction model directly. Mistral OCR is OCR-first, while OpenAI models can also be queued through batch processing."
+              includeMistralOcrOption
+              showEmptyOption={false}
               jsonModeOnly
               showContextInput
               contextValue={aiContext}

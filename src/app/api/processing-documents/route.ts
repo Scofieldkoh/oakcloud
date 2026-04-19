@@ -25,7 +25,7 @@ import {
 } from '@/services/duplicate-detection.service';
 import {
   extractFields,
-  reconcilePendingMistralBatchExtraction,
+  reconcilePendingBatchExtraction,
 } from '@/services/document-extraction.service';
 import { storage, StorageKeys } from '@/lib/storage';
 import type { ProcessingPriority, UploadSource, PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
@@ -321,7 +321,7 @@ export async function GET(request: NextRequest) {
       if (pendingDocs.length > 0) {
         const reconciliationResults = await Promise.all(
           pendingDocs.map((doc) =>
-            reconcilePendingMistralBatchExtraction(
+            reconcilePendingBatchExtraction(
               doc.id,
               effectiveTenantId,
               doc.document.companyId as string,

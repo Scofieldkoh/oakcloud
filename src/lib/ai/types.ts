@@ -10,10 +10,9 @@ export type AIProvider = 'openai' | 'anthropic' | 'google' | 'openrouter';
 // Supported AI models
 export type AIModel =
   // OpenAI models
-  | 'gpt-5.2'
-  | 'gpt-5-mini'
+  | 'gpt-5.4'
+  | 'gpt-5.4-mini'
   | 'o4-mini-deep-research'
-  | 'gpt-4.1'
   // Anthropic models
   | 'claude-opus-4.6'
   | 'claude-sonnet-4.6'

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AlertCircle, ArrowLeft, Loader2, Save, ShieldAlert } from 'lucide-react';
 import { AsyncSearchSelect } from '@/components/ui/async-search-select';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
 import { useCreateWorkflowProject } from '@/hooks/use-workflow-projects';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -80,7 +81,7 @@ export default function NewWorkflowProjectPage() {
     }
 
     if (dueDate < startDate) {
-      setSubmitError('Due date must be on or after start date');
+      setSubmitError('End date must be on or after start date');
       return;
     }
 
@@ -212,25 +213,19 @@ export default function NewWorkflowProjectPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Start Date *</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(event) => setStartDate(event.target.value)}
-                  className="input input-sm"
-                />
-              </div>
+              <SingleDateInput
+                label="Start Date"
+                required
+                value={startDate}
+                onChange={setStartDate}
+              />
 
-              <div>
-                <label className="label">Due Date *</label>
-                <input
-                  type="date"
-                  value={dueDate}
-                  onChange={(event) => setDueDate(event.target.value)}
-                  className="input input-sm"
-                />
-              </div>
+              <SingleDateInput
+                label="End Date (Optional)"
+                value={dueDate}
+                onChange={setDueDate}
+                minDate={startDate || undefined}
+              />
             </div>
 
             <div>

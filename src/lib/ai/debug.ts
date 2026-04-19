@@ -217,7 +217,7 @@ export function logAIResponse(
     if (typeof response.usage.pagesProcessed === 'number') {
       lines.push(`| Pages Processed | ${response.usage.pagesProcessed} |`);
     }
-    if (context.provider === 'mistral') {
+    if (typeof response.usage.batchMode === 'boolean') {
       lines.push(`| Pricing Mode | ${response.usage.batchMode ? 'Batch' : 'Direct'} |`);
     }
     const cost = calculateUsageCost({

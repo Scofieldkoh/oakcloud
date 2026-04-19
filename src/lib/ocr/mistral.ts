@@ -1,11 +1,10 @@
 import { createLogger } from '@/lib/logger';
 import { stripMarkdownCodeBlocks } from '@/lib/ai';
 import { jsonrepair } from 'jsonrepair';
+import { MISTRAL_OCR_MODEL_ID } from './constants';
+export { MISTRAL_OCR_MODEL_ID, MISTRAL_OCR_MODEL_NAME } from './constants';
 
 const log = createLogger('mistral-ocr');
-
-export const MISTRAL_OCR_MODEL_ID = 'mistral-ocr-latest';
-export const MISTRAL_OCR_MODEL_NAME = 'Mistral OCR Latest';
 
 export interface MistralOCRDocumentInput {
   base64: string;

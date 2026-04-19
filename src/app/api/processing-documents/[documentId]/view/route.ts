@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
-import { reconcilePendingMistralBatchExtraction } from '@/services/document-extraction.service';
+import { reconcilePendingBatchExtraction } from '@/services/document-extraction.service';
 
 type Params = { documentId: string };
 
@@ -105,7 +105,7 @@ export async function GET(
 
     if (processingDoc.pipelineStatus === 'QUEUED' || processingDoc.pipelineStatus === 'PROCESSING') {
       try {
-        await reconcilePendingMistralBatchExtraction(
+        await reconcilePendingBatchExtraction(
           processingDoc.id,
           document.tenantId,
           document.companyId,

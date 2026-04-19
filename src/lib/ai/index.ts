@@ -221,7 +221,7 @@ export function createAICaller(defaultOptions: Partial<AIRequestOptions>) {
     const mergedOptions: AIRequestOptions = {
       ...defaultOptions,
       ...options,
-      model: options.model || defaultOptions.model || getBestAvailableModel() || 'gpt-4.1',
+      model: options.model || defaultOptions.model || getBestAvailableModel() || 'gpt-5.4-mini',
     };
     return callAI(mergedOptions);
   };

@@ -13,45 +13,32 @@ export const MISTRAL_OCR_BATCH_PRICE_PER_PAGE_USD =
 // Model configurations
 export const AI_MODELS: Record<AIModel, AIModelConfig> = {
   // OpenAI Models
-  'gpt-5.2': {
-    id: 'gpt-5.2',
-    name: 'GPT-5.2',
+  'gpt-5.4': {
+    id: 'gpt-5.4',
+    name: 'GPT-5.4',
     provider: 'openai',
-    providerModelId: 'gpt-5.2',
-    description: 'Most advanced model for coding and agentic tasks',
-    maxTokens: 400000, // 400K context window
-    inputPricePerMillion: 1.75,
-    outputPricePerMillion: 14.0,
-    supportsJson: true,
-    supportsVision: true,
-    supportsTemperature: false, // GPT-5.2 doesn't support custom temperature
-  },
-  // GPT-5 disabled - use GPT-5.2 instead (better performance, lower cost)
-  // 'gpt-5': {
-  //   id: 'gpt-5',
-  //   name: 'GPT-5',
-  //   provider: 'openai',
-  //   providerModelId: 'gpt-5',
-  //   description: 'Most capable OpenAI model',
-  //   maxTokens: 128000,
-  //   inputPricePerMillion: 5.0,
-  //   outputPricePerMillion: 15.0,
-  //   supportsJson: true,
-  //   supportsVision: true,
-  //   supportsTemperature: false,
-  // },
-  'gpt-5-mini': {
-    id: 'gpt-5-mini',
-    name: 'GPT-5 Mini',
-    provider: 'openai',
-    providerModelId: 'gpt-5-mini',
-    description: 'Faster, cost-efficient GPT-5 for well-defined tasks',
-    maxTokens: 400000,
-    inputPricePerMillion: 0.25,
-    outputPricePerMillion: 2.0,
+    providerModelId: 'gpt-5.4',
+    description: 'Flagship OpenAI model for complex reasoning, coding, and agentic workflows',
+    maxTokens: 1000000, // 1M context window
+    inputPricePerMillion: 2.5,
+    outputPricePerMillion: 15.0,
     supportsJson: true,
     supportsVision: true,
     supportsTemperature: false,
+  },
+  'gpt-5.4-mini': {
+    id: 'gpt-5.4-mini',
+    name: 'GPT-5.4 Mini',
+    provider: 'openai',
+    providerModelId: 'gpt-5.4-mini',
+    description: 'Faster, lower-cost GPT-5.4 variant for strong extraction and workflow tasks',
+    maxTokens: 400000,
+    inputPricePerMillion: 0.75,
+    outputPricePerMillion: 4.5,
+    supportsJson: true,
+    supportsVision: true,
+    supportsTemperature: false,
+    isDefault: true,
     enabled: true,
   },
   'o4-mini-deep-research': {
@@ -68,19 +55,6 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
     supportsTemperature: false,
     enabled: true,
   },
-  'gpt-4.1': {
-    id: 'gpt-4.1',
-    name: 'GPT-4.1',
-    provider: 'openai',
-    providerModelId: 'gpt-4.1',
-    description: 'Fast and efficient GPT model',
-    maxTokens: 128000,
-    inputPricePerMillion: 2.0,
-    outputPricePerMillion: 8.0,
-    supportsJson: true,
-    supportsVision: true,
-  },
-
   // Anthropic Models
   'claude-opus-4.6': {
     id: 'claude-opus-4.6',
@@ -180,7 +154,10 @@ export const AI_MODELS: Record<AIModel, AIModelConfig> = {
 // Backward-compatible model ID aliases for env/config values.
 // This lets older deployments keep working while docs/config are updated.
 const MODEL_ID_ALIASES: Record<string, AIModel> = {
-  'gpt-5': 'gpt-5.2',
+  'gpt-5': 'gpt-5.4',
+  'gpt-5.2': 'gpt-5.4',
+  'gpt-5-mini': 'gpt-5.4-mini',
+  'gpt-4.1': 'gpt-5.4',
   'gemini-3': 'gemini-3.1',
   'gemini-3.1-pro': 'gemini-3.1',
   'gemini-2.5-flash': 'gemini-3-flash',
@@ -231,7 +208,7 @@ export function getDefaultModel(): AIModelConfig {
 
   // Fall back to code-defined default
   const defaultModel = Object.values(AI_MODELS).find((m) => m.isDefault);
-  return defaultModel || AI_MODELS['gpt-5.2'];
+  return defaultModel || AI_MODELS['gpt-5.4-mini'];
 }
 
 // Get the default model ID (for frontend)

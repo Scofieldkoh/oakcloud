@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Search, Filter, X, ChevronDown } from 'lucide-react';
+import { WorkflowDateRangeInput } from '@/components/workflow/workflow-date-range-input';
 import type { WorkflowProjectStatus } from '@/hooks/use-workflow-projects';
 
 export interface WorkflowProjectFilterValues {
@@ -195,25 +196,17 @@ export function WorkflowProjectFilters({
               </select>
             </div>
 
-            <div>
-              <label className="label">Due Date From</label>
-              <input
-                type="date"
-                value={filters.dueDateFrom || ''}
-                onChange={(event) => handleFilterChange('dueDateFrom', event.target.value || undefined)}
-                className="input input-sm"
-              />
-            </div>
-
-            <div>
-              <label className="label">Due Date To</label>
-              <input
-                type="date"
-                value={filters.dueDateTo || ''}
-                onChange={(event) => handleFilterChange('dueDateTo', event.target.value || undefined)}
-                className="input input-sm"
-              />
-            </div>
+            <WorkflowDateRangeInput
+              fromValue={filters.dueDateFrom || ''}
+              toValue={filters.dueDateTo || ''}
+              onFromChange={(value) => handleFilterChange('dueDateFrom', value || undefined)}
+              onToChange={(value) => handleFilterChange('dueDateTo', value || undefined)}
+              fromLabel="End Date From"
+              toLabel="End Date To"
+              fromAriaLabel="Workflow project end date from"
+              toAriaLabel="Workflow project end date to"
+              className="sm:col-span-2"
+            />
 
             <div>
               <label className="label">Progress Min (%)</label>

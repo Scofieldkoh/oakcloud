@@ -18,8 +18,8 @@ import {
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
+import { WorkflowDateRangeInput } from '@/components/workflow/workflow-date-range-input';
 import {
   type WorkflowProject,
   type WorkflowProjectStatus,
@@ -104,7 +104,7 @@ const COLUMN_LABELS: Record<ColumnId, string> = {
   billing: 'Billing',
   nextTaskDueDate: 'Next Task Due',
   startDate: 'Start Date',
-  dueDate: 'Due Date',
+  dueDate: 'End Date',
   assignees: 'Assignees',
   actions: '',
 };
@@ -145,13 +145,6 @@ const statusClassMap: Record<WorkflowProjectStatus, string> = {
   ON_HOLD: 'badge-neutral',
   COMPLETED: 'badge-success',
 };
-
-function toLocalDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -502,92 +495,38 @@ export function WorkflowProjectTable({
         );
       case 'startDate':
         return (
-          <DatePicker
-            value={
-              inlineFilters.startDateFrom || inlineFilters.startDateTo
-                ? {
-                  mode: 'range',
-                  range: {
-                    from: inlineFilters.startDateFrom ? new Date(inlineFilters.startDateFrom) : undefined,
-                    to: inlineFilters.startDateTo ? new Date(inlineFilters.startDateTo) : undefined,
-                  },
-                }
-                : undefined
-            }
-            onChange={(value: DatePickerValue | undefined) => {
-              if (!value || value.mode !== 'range') {
-                onInlineFilterChange({ startDateFrom: undefined, startDateTo: undefined });
-              } else if (value.range) {
-                onInlineFilterChange({
-                  startDateFrom: value.range.from ? toLocalDateString(value.range.from) : undefined,
-                  startDateTo: value.range.to ? toLocalDateString(value.range.to) : undefined,
-                });
-              }
-            }}
-            placeholder="All dates"
-            size="sm"
-            defaultTab="range"
-            className="text-xs"
+          <WorkflowDateRangeInput
+            fromValue={inlineFilters.startDateFrom || ''}
+            toValue={inlineFilters.startDateTo || ''}
+            onFromChange={(value) => onInlineFilterChange({ startDateFrom: value || undefined })}
+            onToChange={(value) => onInlineFilterChange({ startDateTo: value || undefined })}
+            fromAriaLabel="Workflow project start date from"
+            toAriaLabel="Workflow project start date to"
+            className="min-w-[10rem]"
           />
         );
       case 'nextTaskDueDate':
         return (
-          <DatePicker
-            value={
-              inlineFilters.nextTaskDueDateFrom || inlineFilters.nextTaskDueDateTo
-                ? {
-                  mode: 'range',
-                  range: {
-                    from: inlineFilters.nextTaskDueDateFrom ? new Date(inlineFilters.nextTaskDueDateFrom) : undefined,
-                    to: inlineFilters.nextTaskDueDateTo ? new Date(inlineFilters.nextTaskDueDateTo) : undefined,
-                  },
-                }
-                : undefined
-            }
-            onChange={(value: DatePickerValue | undefined) => {
-              if (!value || value.mode !== 'range') {
-                onInlineFilterChange({ nextTaskDueDateFrom: undefined, nextTaskDueDateTo: undefined });
-              } else if (value.range) {
-                onInlineFilterChange({
-                  nextTaskDueDateFrom: value.range.from ? toLocalDateString(value.range.from) : undefined,
-                  nextTaskDueDateTo: value.range.to ? toLocalDateString(value.range.to) : undefined,
-                });
-              }
-            }}
-            placeholder="All dates"
-            size="sm"
-            defaultTab="range"
-            className="text-xs"
+          <WorkflowDateRangeInput
+            fromValue={inlineFilters.nextTaskDueDateFrom || ''}
+            toValue={inlineFilters.nextTaskDueDateTo || ''}
+            onFromChange={(value) => onInlineFilterChange({ nextTaskDueDateFrom: value || undefined })}
+            onToChange={(value) => onInlineFilterChange({ nextTaskDueDateTo: value || undefined })}
+            fromAriaLabel="Workflow next task due date from"
+            toAriaLabel="Workflow next task due date to"
+            className="min-w-[10rem]"
           />
         );
       case 'dueDate':
         return (
-          <DatePicker
-            value={
-              inlineFilters.dueDateFrom || inlineFilters.dueDateTo
-                ? {
-                  mode: 'range',
-                  range: {
-                    from: inlineFilters.dueDateFrom ? new Date(inlineFilters.dueDateFrom) : undefined,
-                    to: inlineFilters.dueDateTo ? new Date(inlineFilters.dueDateTo) : undefined,
-                  },
-                }
-                : undefined
-            }
-            onChange={(value: DatePickerValue | undefined) => {
-              if (!value || value.mode !== 'range') {
-                onInlineFilterChange({ dueDateFrom: undefined, dueDateTo: undefined });
-              } else if (value.range) {
-                onInlineFilterChange({
-                  dueDateFrom: value.range.from ? toLocalDateString(value.range.from) : undefined,
-                  dueDateTo: value.range.to ? toLocalDateString(value.range.to) : undefined,
-                });
-              }
-            }}
-            placeholder="All dates"
-            size="sm"
-            defaultTab="range"
-            className="text-xs"
+          <WorkflowDateRangeInput
+            fromValue={inlineFilters.dueDateFrom || ''}
+            toValue={inlineFilters.dueDateTo || ''}
+            onFromChange={(value) => onInlineFilterChange({ dueDateFrom: value || undefined })}
+            onToChange={(value) => onInlineFilterChange({ dueDateTo: value || undefined })}
+            fromAriaLabel="Workflow project end date from"
+            toAriaLabel="Workflow project end date to"
+            className="min-w-[10rem]"
           />
         );
       case 'assignees':
@@ -675,7 +614,7 @@ export function WorkflowProjectTable({
                   <CardDetailsGrid>
                     <CardDetailItem label="Template" value={project.templateName} fullWidth />
                     <CardDetailItem label="Progress" value={`${progress}%`} />
-                    <CardDetailItem label="Due Date" value={formatDateShort(project.dueDate)} />
+                    <CardDetailItem label="End Date" value={formatDateShort(project.dueDate)} />
                     <CardDetailItem label="Billing" value={formatCurrency(project.billingAmount, project.billingCurrency)} />
                     <CardDetailItem label="Assignees" value={project.assignees.join(', ')} fullWidth />
                   </CardDetailsGrid>

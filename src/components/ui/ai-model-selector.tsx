@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sparkles, AlertCircle, ChevronDown, MessageSquare, Check } from 'lucide-react';
+import { MISTRAL_OCR_MODEL_ID, MISTRAL_OCR_MODEL_NAME } from '@/lib/ocr/constants';
 
 // Types matching the API response
 interface AIModel {
@@ -34,6 +35,7 @@ interface AIModelsResponse {
   models: AIModel[];
   providers: AIProvider[];
   defaultModel: string | null;
+  mistralOcrAvailable?: boolean;
   grouped: {
     openai: GroupedModel[];
     anthropic: GroupedModel[];
@@ -81,6 +83,8 @@ interface AIModelSelectorProps {
   allowAuto?: boolean;
   /** Compact variant without card wrapper */
   variant?: 'default' | 'compact';
+  /** Show an empty placeholder option in the select */
+  showEmptyOption?: boolean;
   /** Show only models that support JSON mode */
   jsonModeOnly?: boolean;
   /** Show detailed model info */
@@ -109,6 +113,8 @@ interface AIModelSelectorProps {
   onStandardContextsChange?: (selectedIds: string[]) => void;
   /** Tenant ID for connector-aware model availability (SUPER_ADMIN use) */
   tenantId?: string;
+  /** Show a dedicated Mistral OCR option when available */
+  includeMistralOcrOption?: boolean;
 }
 
 /**
@@ -127,6 +133,7 @@ export function AIModelSelector({
   className = '',
   allowAuto = false,
   variant = 'default',
+  showEmptyOption = true,
   jsonModeOnly = false,
   showDetails = true,
   showContextInput = false,
@@ -141,6 +148,7 @@ export function AIModelSelector({
   selectedStandardContexts = [],
   onStandardContextsChange,
   tenantId,
+  includeMistralOcrOption = false,
 }: AIModelSelectorProps) {
   const [data, setData] = useState<AIModelsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,6 +156,7 @@ export function AIModelSelector({
 
   // Track the previous default model from API to detect when it changes
   const previousDefaultRef = useRef<string | null>(null);
+  const hasMistralOcrOption = includeMistralOcrOption && Boolean(data?.mistralOcrAvailable);
 
   // Fetch available models (re-fetch when tenantId changes)
   useEffect(() => {
@@ -177,9 +186,11 @@ export function AIModelSelector({
         // 1. No value currently selected
         // 2. Current value is not available for this tenant (e.g., tenant changed)
         // 3. The API default changed (e.g., configured default became available after tenant selection)
-        const currentModelAvailable = result.models?.some(
-          (m: { id: string; available: boolean }) => m.id === value && m.available
-        );
+        const currentModelAvailable = value === MISTRAL_OCR_MODEL_ID
+          ? includeMistralOcrOption && Boolean(result.mistralOcrAvailable)
+          : result.models?.some(
+              (m: { id: string; available: boolean }) => m.id === value && m.available
+            );
 
         const defaultChanged = previousDefaultRef.current !== null &&
                                previousDefaultRef.current !== result.defaultModel;
@@ -196,6 +207,16 @@ export function AIModelSelector({
 
         if (result.defaultModel && (!value || !currentModelAvailable || defaultChanged)) {
           onChange(result.defaultModel);
+          return;
+        }
+
+        if (
+          includeMistralOcrOption &&
+          result.mistralOcrAvailable &&
+          (!value || !currentModelAvailable) &&
+          !result.defaultModel
+        ) {
+          onChange(MISTRAL_OCR_MODEL_ID);
         }
       } catch (err) {
         if (cancelled) return;
@@ -224,9 +245,16 @@ export function AIModelSelector({
 
   // Get selected model info
   const selectedModel = data?.models?.find((m) => m.id === value);
+  const selectedSpecialModel = value === MISTRAL_OCR_MODEL_ID && hasMistralOcrOption
+    ? {
+        providerName: 'Mistral OCR',
+        description: 'OCR-first extraction for scanned documents, with optional batch processing.',
+      }
+    : null;
 
   // Check if no models are available
-  const noModelsAvailable = !isLoading && (!filteredModels || filteredModels.length === 0);
+  const hasProviderModels = Boolean(filteredModels && filteredModels.length > 0);
+  const noModelsAvailable = !isLoading && !hasProviderModels && !hasMistralOcrOption;
   const autoOnlyMode = allowAuto && noModelsAvailable;
 
   // Handle context change - must be before any early returns
@@ -273,7 +301,14 @@ export function AIModelSelector({
           )
         ) : (
           <>
-            <option value="">{allowAuto ? autoOptionLabel : placeholder}</option>
+            {showEmptyOption && (
+              <option value="">{allowAuto ? autoOptionLabel : placeholder}</option>
+            )}
+            {hasMistralOcrOption && (
+              <optgroup label="OCR">
+                <option value={MISTRAL_OCR_MODEL_ID}>{MISTRAL_OCR_MODEL_NAME}</option>
+              </optgroup>
+            )}
             {/* Group by provider */}
             {data?.providers
               ?.filter((p) => p.available)
@@ -320,8 +355,8 @@ export function AIModelSelector({
         <div className="flex items-center gap-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>
-            No standard AI models are available in the selector. Auto mode can still use OCR-first
-            extraction, such as Mistral OCR, if it is configured in Admin &rarr; Connectors.
+            No AI models are currently available in the selector. Configure an AI connector in
+            Admin &rarr; Connectors, or enable Mistral OCR there if you want the OCR option to appear.
           </span>
         </div>
       </div>
@@ -339,11 +374,13 @@ export function AIModelSelector({
   );
 
   // Model details
-  const modelDetails = showDetails && selectedModel && (
+  const modelDetails = showDetails && (selectedModel || selectedSpecialModel) && (
     <div className="mt-2 text-xs text-text-secondary">
-      <span className="font-medium">{selectedModel.providerName}</span>
+      <span className="font-medium">
+        {selectedModel?.providerName || selectedSpecialModel?.providerName}
+      </span>
       <span className="mx-1">•</span>
-      <span>{selectedModel.description}</span>
+      <span>{selectedModel?.description || selectedSpecialModel?.description}</span>
     </div>
   );
 
@@ -490,9 +527,11 @@ export function useAIModels(tenantId?: string) {
     providers: data?.providers || [],
     defaultModel: data?.defaultModel,
     grouped: data?.grouped,
+    mistralOcrAvailable: data?.mistralOcrAvailable ?? false,
     isLoading,
     error,
-    hasAvailableModels: data?.models?.some((m) => m.available) ?? false,
+    hasAvailableModels:
+      (data?.models?.some((m) => m.available) ?? false) || (data?.mistralOcrAvailable ?? false),
   };
 }
 

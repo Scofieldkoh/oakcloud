@@ -19,6 +19,12 @@ const billingConfigSchema = z.object({
   mode: z.enum(['FIXED', 'TIERED']),
   currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, 'Billing currency must be a 3-letter code'),
   fixedPrice: z.number().min(0, 'Fixed price must be zero or more').nullable(),
+  disbursementAmount: z.number().min(0, 'Disbursement amount must be zero or more').nullable(),
+  referralFeeAmount: z.number().min(0, 'Referral fee must be zero or more').nullable(),
+  referralFeeType: z.enum(['AMOUNT', 'PERCENTAGE']),
+  referralFeeRecurringLimit: z.number().int().positive('Referral cycle limit must be a positive whole number').nullable(),
+  referralPayee: z.string().max(255, 'Referral payee is too long'),
+  referralPayeeContactId: z.string().trim().max(255, 'Referral contact is invalid').nullable(),
   tiers: z.array(billingTierSchema).max(50, 'Too many pricing tiers'),
 }).superRefine((value, ctx) => {
   if (value.mode === 'FIXED' && value.fixedPrice === null) {
@@ -34,6 +40,22 @@ const billingConfigSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ['tiers'],
       message: 'At least one tier is required when billing mode is tiered',
+    });
+  }
+
+  if ((value.referralFeeAmount ?? 0) > 0 && value.referralPayee.trim().length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['referralPayee'],
+      message: 'Referral payee is required when a referral fee is entered',
+    });
+  }
+
+  if (value.referralFeeType === 'PERCENTAGE' && (value.referralFeeAmount ?? 0) > 100) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['referralFeeAmount'],
+      message: 'Referral percentage cannot exceed 100',
     });
   }
 });

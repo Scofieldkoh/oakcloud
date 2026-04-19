@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type DragEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ComponentType, type DragEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -34,12 +34,12 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@/components/ui/dropdown';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
 import { SingleDateInput } from '@/components/ui/single-date-input';
+import { WorkflowDateRangeInput } from '@/components/workflow/workflow-date-range-input';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { useToast } from '@/components/ui/toast';
 import {
@@ -50,6 +50,7 @@ import {
   type WorkflowProjectBillingStatus,
   type WorkflowProjectBillingTier,
   type WorkflowProjectDetail,
+  type WorkflowProjectReferralFeeType,
   type WorkflowProjectTask,
   type WorkflowTaskAttachment,
   type WorkflowTaskGroup,
@@ -106,6 +107,12 @@ interface WorkflowProjectBillingDraft {
   mode: WorkflowProjectBillingMode;
   currency: string;
   fixedPrice: string;
+  disbursementAmount: string;
+  referralFeeAmount: string;
+  referralFeeType: WorkflowProjectReferralFeeType;
+  referralFeeRecurringLimit: string;
+  referralPayee: string;
+  referralPayeeContactId: string;
   quantity: string;
   statusOverride: Extract<WorkflowProjectBillingStatus, 'BILLED'> | null;
   tiers: WorkflowProjectBillingTierDraft[];
@@ -508,13 +515,6 @@ function parseAmountInput(value: string): number | null {
   return Math.round(parsed * 100) / 100;
 }
 
-function toLocalDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
 function getDateTimestamp(value: string | null | undefined): number | null {
   if (!value) return null;
   const timestamp = new Date(value).getTime();
@@ -563,6 +563,47 @@ function parsePriceInput(value: string): number | null {
   const parsed = parseAmountInput(value);
   if (parsed === null || parsed < 0) return null;
   return parsed;
+}
+
+function calculateFixedBillingAmount(
+  fixedPrice: number,
+  disbursementAmount: number
+): number {
+  return Math.round((fixedPrice + disbursementAmount) * 100) / 100;
+}
+
+function calculateFixedMargin(
+  billingAmount: number,
+  disbursementAmount: number,
+  referralFeeAmount: number
+): number {
+  return Math.round((billingAmount - disbursementAmount - referralFeeAmount) * 100) / 100;
+}
+
+function resolveReferralFeeValue(
+  fixedPrice: number,
+  referralFeeAmount: number,
+  referralFeeType: WorkflowProjectReferralFeeType
+): number {
+  if (referralFeeType === 'PERCENTAGE') {
+    return Math.round(fixedPrice * Math.max(0, referralFeeAmount) * 100) / 10000;
+  }
+
+  return Math.round(Math.max(0, referralFeeAmount) * 100) / 100;
+}
+
+function resolveEffectiveReferralFee(
+  referralFeeAmount: number,
+  fixedPrice: number,
+  referralFeeType: WorkflowProjectReferralFeeType,
+  referralFeeRecurringLimit: number | null,
+  instanceNumber: number
+): number {
+  const resolvedReferralFeeAmount = resolveReferralFeeValue(fixedPrice, referralFeeAmount, referralFeeType);
+  if (referralFeeRecurringLimit !== null && instanceNumber > referralFeeRecurringLimit) {
+    return 0;
+  }
+  return resolvedReferralFeeAmount;
 }
 
 function parsePositiveIntegerInput(value: string): number | null {
@@ -626,6 +667,12 @@ function buildComparableBillingDraft(
     mode: draft.mode,
     currency: normalizeCurrencyInput(draft.currency, fallbackCurrency),
     fixedPrice: normalizeMoneyInputForComparison(draft.fixedPrice),
+    disbursementAmount: normalizeMoneyInputForComparison(draft.disbursementAmount),
+    referralFeeAmount: normalizeMoneyInputForComparison(draft.referralFeeAmount),
+    referralFeeType: draft.referralFeeType,
+    referralFeeRecurringLimit: normalizePositiveIntegerInputForComparison(draft.referralFeeRecurringLimit),
+    referralPayee: draft.referralPayee.trim(),
+    referralPayeeContactId: draft.referralPayeeContactId.trim(),
     quantity: normalizeNonNegativeIntegerInputForComparison(draft.quantity),
     statusOverride: draft.statusOverride ?? null,
     tiers: draft.tiers
@@ -656,6 +703,14 @@ function buildBillingDraft(project: WorkflowProjectDetail): WorkflowProjectBilli
     mode: project.billingConfig.mode,
     currency: project.billingConfig.currency,
     fixedPrice: toMoneyInput(project.billingConfig.fixedPrice),
+    disbursementAmount: toMoneyInput(project.billingConfig.disbursementAmount),
+    referralFeeAmount: toMoneyInput(project.billingConfig.referralFeeAmount),
+    referralFeeType: project.billingConfig.referralFeeType,
+    referralFeeRecurringLimit: project.billingConfig.referralFeeRecurringLimit === null
+      ? ''
+      : String(project.billingConfig.referralFeeRecurringLimit),
+    referralPayee: project.billingConfig.referralPayee ?? '',
+    referralPayeeContactId: project.billingConfig.referralPayeeContactId ?? '',
     quantity: typeof project.billingQuantity === 'number' ? String(project.billingQuantity) : '',
     statusOverride: project.billingStatus === 'BILLED' ? 'BILLED' : null,
     tiers,
@@ -1241,6 +1296,44 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
     }));
   }, [companyContactDetails?.contactDetails, projectDetail?.companySnapshot.pocContact]);
 
+  const referralPayeeContactOptions = useMemo(() => {
+    const contactMap = new Map<string, { value: string; label: string; description?: string }>();
+
+    for (const entry of companyContactDetails?.contactDetails ?? []) {
+      if (!entry.contact) continue;
+      if (contactMap.has(entry.contact.id)) continue;
+
+      const primaryEmail = entry.details.find((detail) => detail.detailType === 'EMAIL' && detail.value.trim().length > 0 && detail.isPrimary)?.value
+        ?? entry.details.find((detail) => detail.detailType === 'EMAIL' && detail.value.trim().length > 0)?.value
+        ?? undefined;
+
+      contactMap.set(entry.contact.id, {
+        value: entry.contact.id,
+        label: entry.contact.fullName,
+        description: primaryEmail,
+      });
+    }
+
+    return Array.from(contactMap.values()).sort((left, right) => left.label.localeCompare(right.label));
+  }, [companyContactDetails?.contactDetails]);
+
+  const referralPayeeSuggestionsId = `workflow-referral-payee-${projectId}`;
+
+  const handleReferralPayeeInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    const matchedContact = referralPayeeContactOptions.find((option) => option.label === value);
+
+    setBillingDraft((previous) => (
+      previous
+        ? {
+          ...previous,
+          referralPayee: value,
+          referralPayeeContactId: matchedContact?.value ?? '',
+        }
+        : previous
+    ));
+  }, [referralPayeeContactOptions]);
+
   const nextId = useCallback((prefix: string) => {
     const id = `${prefix}-${Date.now()}-${idCounterRef.current}`;
     idCounterRef.current += 1;
@@ -1259,6 +1352,8 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
     [billingDraft?.currency, projectDetail?.billingConfig.currency]
   );
 
+  const currentProjectInstanceNumber = projectDetail?.instanceNumber ?? 1;
+
   const tierQuantity = useMemo(() => parsePositiveIntegerInput(billingDraft?.quantity ?? '') ?? 0, [billingDraft?.quantity]);
 
   const tierPricingPreview = useMemo(
@@ -1271,10 +1366,59 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
     [billingDraft?.fixedPrice]
   );
 
+  const disbursementAmountPreview = useMemo(
+    () => parsePriceInput(billingDraft?.disbursementAmount ?? '') ?? 0,
+    [billingDraft?.disbursementAmount]
+  );
+
+  const configuredReferralFeeAmountPreview = useMemo(
+    () => parsePriceInput(billingDraft?.referralFeeAmount ?? '') ?? 0,
+    [billingDraft?.referralFeeAmount]
+  );
+
+  const referralFeeTypePreview = billingDraft?.referralFeeType ?? 'AMOUNT';
+
+  const referralFeeRecurringLimitPreview = useMemo(
+    () => parsePositiveIntegerInput(billingDraft?.referralFeeRecurringLimit ?? ''),
+    [billingDraft?.referralFeeRecurringLimit]
+  );
+
+  const referralFeeActiveForCurrentInstance = useMemo(
+    () => referralFeeRecurringLimitPreview === null || currentProjectInstanceNumber <= referralFeeRecurringLimitPreview,
+    [currentProjectInstanceNumber, referralFeeRecurringLimitPreview]
+  );
+
+  const effectiveReferralFeeAmountPreview = useMemo(
+    () => resolveEffectiveReferralFee(
+      configuredReferralFeeAmountPreview,
+      fixedPricingPreview,
+      referralFeeTypePreview,
+      referralFeeRecurringLimitPreview,
+      currentProjectInstanceNumber
+    ),
+    [
+      configuredReferralFeeAmountPreview,
+      currentProjectInstanceNumber,
+      fixedPricingPreview,
+      referralFeeRecurringLimitPreview,
+      referralFeeTypePreview,
+    ]
+  );
+
+  const fixedBillingAmountPreview = useMemo(
+    () => calculateFixedBillingAmount(fixedPricingPreview, disbursementAmountPreview),
+    [disbursementAmountPreview, fixedPricingPreview]
+  );
+
+  const fixedMarginPreview = useMemo(
+    () => calculateFixedMargin(fixedBillingAmountPreview, disbursementAmountPreview, effectiveReferralFeeAmountPreview),
+    [disbursementAmountPreview, effectiveReferralFeeAmountPreview, fixedBillingAmountPreview]
+  );
+
   const billingPreviewAmount = useMemo(() => {
     if (!billingDraft) return 0;
-    return billingDraft.mode === 'FIXED' ? fixedPricingPreview : tierPricingPreview.total;
-  }, [billingDraft, fixedPricingPreview, tierPricingPreview.total]);
+    return billingDraft.mode === 'FIXED' ? fixedBillingAmountPreview : tierPricingPreview.total;
+  }, [billingDraft, fixedBillingAmountPreview, tierPricingPreview.total]);
 
   const autoBillingStatus = useMemo(
     () => resolveAutoBillingStatus(billingPreviewAmount, projectStatusPreview),
@@ -1592,6 +1736,12 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
 
     const currency = normalizeCurrencyInput(billingDraft.currency, projectDetail.billingConfig.currency || 'SGD');
     const parsedFixedPrice = parsePriceInput(billingDraft.fixedPrice);
+    const parsedDisbursementAmount = parsePriceInput(billingDraft.disbursementAmount);
+    const parsedReferralFeeAmount = parsePriceInput(billingDraft.referralFeeAmount);
+    const parsedReferralFeeRecurringLimit = parsePositiveIntegerInput(billingDraft.referralFeeRecurringLimit);
+    const referralFeeType = billingDraft.referralFeeType;
+    const referralPayee = billingDraft.referralPayee.trim();
+    const referralPayeeContactId = billingDraft.referralPayeeContactId.trim() || null;
     const parsedTiers = parseBillingTierDrafts(billingDraft.tiers);
     const parsedBillingQuantity = parseNonNegativeIntegerInput(billingDraft.quantity);
 
@@ -1602,6 +1752,31 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
 
     if (billingDraft.mode === 'FIXED' && parsedFixedPrice === null) {
       toast.error('Fixed pricing amount is required');
+      return;
+    }
+
+    if (billingDraft.disbursementAmount.trim().length > 0 && parsedDisbursementAmount === null) {
+      toast.error('Disbursement amount must be zero or more');
+      return;
+    }
+
+    if (billingDraft.referralFeeAmount.trim().length > 0 && parsedReferralFeeAmount === null) {
+      toast.error('Referral fee must be zero or more');
+      return;
+    }
+
+    if (referralFeeType === 'PERCENTAGE' && (parsedReferralFeeAmount ?? 0) > 100) {
+      toast.error('Referral percentage cannot exceed 100');
+      return;
+    }
+
+    if (billingDraft.referralFeeRecurringLimit.trim().length > 0 && parsedReferralFeeRecurringLimit === null) {
+      toast.error('Referral cycle limit must be a positive whole number');
+      return;
+    }
+
+    if ((parsedReferralFeeAmount ?? 0) > 0 && referralPayee.length === 0) {
+      toast.error('Referral payee is required when a referral fee is entered');
       return;
     }
 
@@ -1630,6 +1805,12 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
           mode: billingDraft.mode,
           currency,
           fixedPrice: parsedFixedPrice ?? projectDetail.billingConfig.fixedPrice ?? 0,
+          disbursementAmount: parsedDisbursementAmount,
+          referralFeeAmount: parsedReferralFeeAmount,
+          referralFeeType,
+          referralFeeRecurringLimit: parsedReferralFeeRecurringLimit,
+          referralPayee,
+          referralPayeeContactId,
           tiers: tiersForPayload,
         },
         workspaceState: {
@@ -1651,6 +1832,12 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
 
     const currency = normalizeCurrencyInput(billingDraft.currency, projectDetail.billingConfig.currency || 'SGD');
     const parsedFixedPrice = parsePriceInput(billingDraft.fixedPrice);
+    const parsedDisbursementAmount = parsePriceInput(billingDraft.disbursementAmount);
+    const parsedReferralFeeAmount = parsePriceInput(billingDraft.referralFeeAmount);
+    const parsedReferralFeeRecurringLimit = parsePositiveIntegerInput(billingDraft.referralFeeRecurringLimit);
+    const referralFeeType = billingDraft.referralFeeType;
+    const referralPayee = billingDraft.referralPayee.trim();
+    const referralPayeeContactId = billingDraft.referralPayeeContactId.trim() || null;
     const parsedTiers = parseBillingTierDrafts(billingDraft.tiers);
     const parsedBillingQuantity = parseNonNegativeIntegerInput(billingDraft.quantity);
 
@@ -1661,6 +1848,31 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
 
     if (billingDraft.mode === 'FIXED' && parsedFixedPrice === null) {
       toast.error('Fixed pricing amount is required');
+      return;
+    }
+
+    if (billingDraft.disbursementAmount.trim().length > 0 && parsedDisbursementAmount === null) {
+      toast.error('Disbursement amount must be zero or more');
+      return;
+    }
+
+    if (billingDraft.referralFeeAmount.trim().length > 0 && parsedReferralFeeAmount === null) {
+      toast.error('Referral fee must be zero or more');
+      return;
+    }
+
+    if (referralFeeType === 'PERCENTAGE' && (parsedReferralFeeAmount ?? 0) > 100) {
+      toast.error('Referral percentage cannot exceed 100');
+      return;
+    }
+
+    if (billingDraft.referralFeeRecurringLimit.trim().length > 0 && parsedReferralFeeRecurringLimit === null) {
+      toast.error('Referral cycle limit must be a positive whole number');
+      return;
+    }
+
+    if ((parsedReferralFeeAmount ?? 0) > 0 && referralPayee.length === 0) {
+      toast.error('Referral payee is required when a referral fee is entered');
       return;
     }
 
@@ -1689,6 +1901,12 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
           mode: billingDraft.mode,
           currency,
           fixedPrice: parsedFixedPrice ?? projectDetail.billingConfig.fixedPrice ?? 0,
+          disbursementAmount: parsedDisbursementAmount,
+          referralFeeAmount: parsedReferralFeeAmount,
+          referralFeeType,
+          referralFeeRecurringLimit: parsedReferralFeeRecurringLimit,
+          referralPayee,
+          referralPayeeContactId,
           tiers: tiersForPayload,
         },
         workspaceState: {
@@ -2096,12 +2314,12 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
     }
 
     if (!projectEditDraft.startDate || !projectEditDraft.dueDate) {
-      toast.error('Start date and due date are required');
+      toast.error('Start date and end date are required');
       return;
     }
 
     if (compareDateOnly(projectEditDraft.dueDate, projectEditDraft.startDate) < 0) {
-      toast.error('Due date must be on or after start date');
+      toast.error('End date must be on or after start date');
       return;
     }
 
@@ -2816,33 +3034,18 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                         </div>
                       </th>
                       <th className="px-3 py-2 max-w-0">
-                        <DatePicker
-                          value={
-                            filesInlineFilters.documentDateFrom || filesInlineFilters.documentDateTo
-                              ? {
-                                mode: 'range',
-                                range: {
-                                  from: filesInlineFilters.documentDateFrom ? new Date(filesInlineFilters.documentDateFrom) : undefined,
-                                  to: filesInlineFilters.documentDateTo ? new Date(filesInlineFilters.documentDateTo) : undefined,
-                                },
-                              }
-                              : undefined
+                        <WorkflowDateRangeInput
+                          fromValue={filesInlineFilters.documentDateFrom}
+                          toValue={filesInlineFilters.documentDateTo}
+                          onFromChange={(value) =>
+                            setFilesInlineFilters((previous) => ({ ...previous, documentDateFrom: value }))
                           }
-                          onChange={(value) => {
-                            if (!value || value.mode !== 'range') {
-                              setFilesInlineFilters((previous) => ({ ...previous, documentDateFrom: '', documentDateTo: '' }));
-                              return;
-                            }
-                            setFilesInlineFilters((previous) => ({
-                              ...previous,
-                              documentDateFrom: value.range?.from ? toLocalDateString(value.range.from) : '',
-                              documentDateTo: value.range?.to ? toLocalDateString(value.range.to) : '',
-                            }));
-                          }}
-                          placeholder="All dates"
-                          size="sm"
-                          defaultTab="range"
-                          className="text-xs"
+                          onToChange={(value) =>
+                            setFilesInlineFilters((previous) => ({ ...previous, documentDateTo: value }))
+                          }
+                          fromAriaLabel="Workflow linked document date from"
+                          toAriaLabel="Workflow linked document date to"
+                          className="min-w-[10rem]"
                         />
                       </th>
                       <th className="px-3 py-2 max-w-0">
@@ -2928,33 +3131,18 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                         />
                       </th>
                       <th className="px-3 py-2 max-w-0">
-                        <DatePicker
-                          value={
-                            filesInlineFilters.uploadedFrom || filesInlineFilters.uploadedTo
-                              ? {
-                                mode: 'range',
-                                range: {
-                                  from: filesInlineFilters.uploadedFrom ? new Date(filesInlineFilters.uploadedFrom) : undefined,
-                                  to: filesInlineFilters.uploadedTo ? new Date(filesInlineFilters.uploadedTo) : undefined,
-                                },
-                              }
-                              : undefined
+                        <WorkflowDateRangeInput
+                          fromValue={filesInlineFilters.uploadedFrom}
+                          toValue={filesInlineFilters.uploadedTo}
+                          onFromChange={(value) =>
+                            setFilesInlineFilters((previous) => ({ ...previous, uploadedFrom: value }))
                           }
-                          onChange={(value) => {
-                            if (!value || value.mode !== 'range') {
-                              setFilesInlineFilters((previous) => ({ ...previous, uploadedFrom: '', uploadedTo: '' }));
-                              return;
-                            }
-                            setFilesInlineFilters((previous) => ({
-                              ...previous,
-                              uploadedFrom: value.range?.from ? toLocalDateString(value.range.from) : '',
-                              uploadedTo: value.range?.to ? toLocalDateString(value.range.to) : '',
-                            }));
-                          }}
-                          placeholder="All dates"
-                          size="sm"
-                          defaultTab="range"
-                          className="text-xs"
+                          onToChange={(value) =>
+                            setFilesInlineFilters((previous) => ({ ...previous, uploadedTo: value }))
+                          }
+                          fromAriaLabel="Workflow linked file upload date from"
+                          toAriaLabel="Workflow linked file upload date to"
+                          className="min-w-[10rem]"
                         />
                       </th>
                       <th className="px-3 py-2 max-w-0" />
@@ -3317,27 +3505,36 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
         </div>
       ) : activeTab === 'BILLING' ? (
         <div className="space-y-4">
-          <section className="card p-4 sm:p-5 space-y-4">
+          <section className="card p-5 sm:p-6">
+            {/* Header row — title, description, metadata chips */}
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-base font-semibold text-text-primary">Pricing Configuration</h2>
                 <p className="text-sm text-text-secondary mt-1">
                   Choose fixed or tiered pricing. Tiered pricing auto-calculates when quantity is entered.
                 </p>
               </div>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={saveBillingConfig}
-                isLoading={updateProjectMutation.isPending}
-                disabled={!billingDraft}
-              >
-                <span className="hidden sm:inline">Save Pricing (Ctrl+S)</span>
-                <span className="sm:hidden">Save Pricing</span>
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-border-primary bg-background-secondary px-2.5 py-1 text-xs text-text-secondary">
+                  Instance #{currentProjectInstanceNumber}
+                </span>
+                {referralFeeRecurringLimitPreview ? (
+                  <span className={cn(
+                    'rounded-full border px-2.5 py-1 text-xs',
+                    referralFeeActiveForCurrentInstance
+                      ? 'border-status-success/30 bg-status-success/10 text-status-success'
+                      : 'border-border-primary bg-background-secondary text-text-secondary'
+                  )}>
+                    {referralFeeActiveForCurrentInstance
+                      ? `Referral ${currentProjectInstanceNumber} of ${referralFeeRecurringLimitPreview}`
+                      : `Referral ended after ${referralFeeRecurringLimitPreview}`}
+                  </span>
+                ) : null}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Mode + meta row */}
+            <div className="mt-5 grid gap-4 md:grid-cols-[auto_1fr] md:items-end">
               <div>
                 <label className="label">Pricing Mode</label>
                 <div className="inline-flex items-center rounded-full border border-border-primary bg-background-secondary p-1">
@@ -3382,45 +3579,22 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                 </div>
               </div>
 
-              <div>
-                <label className="label">Currency</label>
-                <input
-                  type="text"
-                  maxLength={3}
-                  value={billingDraft?.currency ?? ''}
-                  onChange={(event) =>
-                    setBillingDraft((previous) => (
-                      previous
-                        ? { ...previous, currency: event.target.value.toUpperCase() }
-                        : previous
-                    ))
-                  }
-                  className="input input-sm uppercase"
-                  placeholder="SGD"
-                  disabled={!billingDraft}
-                />
-              </div>
-            </div>
-
-            {billingDraft?.mode === 'FIXED' ? (
-              <section className="rounded-lg border border-border-primary p-3 space-y-2.5">
-                <h3 className="text-sm font-medium text-text-primary">Fixed Pricing</h3>
+              <div className="grid gap-3 sm:grid-cols-2 md:justify-self-end md:w-auto md:min-w-[280px]">
                 <div>
-                  <label className="label">Fixed Amount</label>
+                  <label className="label">Currency</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    value={billingDraft?.fixedPrice ?? ''}
+                    type="text"
+                    maxLength={3}
+                    value={billingDraft?.currency ?? ''}
                     onChange={(event) =>
                       setBillingDraft((previous) => (
                         previous
-                          ? { ...previous, fixedPrice: event.target.value }
+                          ? { ...previous, currency: event.target.value.toUpperCase() }
                           : previous
                       ))
                     }
-                    className="input input-sm"
-                    placeholder="0.00"
+                    className="input input-sm uppercase"
+                    placeholder="SGD"
                     disabled={!billingDraft}
                   />
                 </div>
@@ -3446,202 +3620,433 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                     )}
                   </select>
                 </div>
-                <p className="text-xs text-text-secondary">
-                  Current fixed total: <span className="text-text-primary font-medium">{formatCurrency(fixedPricingPreview, billingCurrency)}</span>
-                </p>
-              </section>
-            ) : (
-              <section className="rounded-lg border border-border-primary p-3 space-y-3">
-                <h3 className="text-sm font-medium text-text-primary">Tiered Pricing</h3>
+              </div>
+            </div>
 
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div>
-                    <label className="label">Actual Quantity</label>
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={billingDraft?.quantity ?? ''}
-                      onChange={(event) =>
-                        setBillingDraft((previous) => (
-                          previous
-                            ? { ...previous, quantity: event.target.value }
-                            : previous
-                        ))
-                      }
-                      className="input input-sm"
-                      placeholder="Enter qty"
-                      disabled={!billingDraft}
-                    />
-                  </div>
-                  <div>
-                    <label className="label">Billing Status</label>
-                    <select
-                      value={billingStatusPreview === 'BILLED' ? 'BILLED' : 'AUTO'}
-                      onChange={(event) =>
-                        setBillingDraft((previous) => (
-                          previous
-                            ? { ...previous, statusOverride: event.target.value === 'BILLED' ? 'BILLED' : null }
-                            : previous
-                        ))
-                      }
-                      className="input input-sm"
-                      disabled={!billingDraft || autoBillingStatus === null}
-                    >
-                      <option value="AUTO">
-                        {autoBillingStatus ? BILLING_STATUS_LABELS[autoBillingStatus] : 'No billing'}
-                      </option>
-                      {autoBillingStatus && (
-                        <option value="BILLED">Billed</option>
-                      )}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-border-primary overflow-hidden">
-                  <table className="w-full text-xs">
-                    <thead className="bg-background-tertiary border-b border-border-primary">
-                      <tr>
-                        <th className="px-2.5 py-2 text-left font-medium text-text-secondary">Tier</th>
-                        <th className="px-2.5 py-2 text-left font-medium text-text-secondary">Up To Qty</th>
-                        <th className="px-2.5 py-2 text-left font-medium text-text-secondary">Unit Price</th>
-                        <th className="px-2.5 py-2 text-right font-medium text-text-secondary">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(billingDraft?.tiers ?? []).map((tier, index) => (
-                        <tr key={tier.id} className="border-b border-border-primary last:border-0">
-                          <td className="px-2.5 py-2 text-text-primary">Tier {index + 1}</td>
-                          <td className="px-2.5 py-2">
-                            <input
-                              type="number"
-                              min={1}
-                              step={1}
-                              value={tier.upTo}
-                              onChange={(event) => updateBillingTierDraft(tier.id, 'upTo', event.target.value)}
-                              className="input input-sm h-7"
-                              placeholder="No limit"
-                              disabled={!billingDraft}
-                            />
-                          </td>
-                          <td className="px-2.5 py-2">
-                            <input
-                              type="number"
-                              min={0}
-                              step="0.01"
-                              value={tier.unitPrice}
-                              onChange={(event) => updateBillingTierDraft(tier.id, 'unitPrice', event.target.value)}
-                              className="input input-sm h-7"
-                              placeholder="0.00"
-                              disabled={!billingDraft}
-                            />
-                          </td>
-                          <td className="px-2.5 py-2 text-right">
-                            <Button
-                              variant="ghost"
-                              size="xs"
-                              iconOnly
-                              leftIcon={<Trash2 className="w-3.5 h-3.5 text-status-error" />}
-                              aria-label={`Remove tier ${index + 1}`}
-                              onClick={() => removeBillingTierDraft(tier.id)}
-                              disabled={!billingDraft}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div className="px-2.5 py-2 border-t border-border-primary bg-background-secondary/50">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Plus className="w-4 h-4 shrink-0 text-text-muted" />
+            {/* Pricing section */}
+            <section className="mt-6 border-t border-border-primary pt-6">
+              {billingDraft?.mode === 'FIXED' ? (
+                <>
+                  <h3 className="text-sm font-semibold text-text-primary mb-4">Pricing</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="label">Fixed Amount</label>
                       <input
                         type="number"
-                        min={1}
-                        step={1}
-                        value={quickTierUpToDraft}
-                        onChange={(event) => setQuickTierUpToDraft(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') commitQuickAddTier();
-                        }}
-                        className="input input-sm h-7 w-[170px]"
-                        placeholder="Up to qty (optional)"
+                        step="0.01"
+                        min={0}
+                        value={billingDraft?.fixedPrice ?? ''}
+                        onChange={(event) =>
+                          setBillingDraft((previous) => (
+                            previous
+                              ? { ...previous, fixedPrice: event.target.value }
+                              : previous
+                          ))
+                        }
+                        className="input input-sm"
+                        placeholder="0.00"
                         disabled={!billingDraft}
                       />
+                    </div>
+                    <div>
+                      <label className="label">Disbursement</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={billingDraft?.disbursementAmount ?? ''}
+                        onChange={(event) =>
+                          setBillingDraft((previous) => (
+                            previous
+                              ? { ...previous, disbursementAmount: event.target.value }
+                              : previous
+                          ))
+                        }
+                        className="input input-sm"
+                        placeholder="0.00"
+                        disabled={!billingDraft}
+                      />
+                      <p className="mt-1 text-xs text-text-secondary">
+                        Pass-through cost, deducted from margin.
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-text-primary">Pricing</h3>
+                    <div className="w-full sm:w-auto sm:min-w-[200px]">
+                      <label className="label">Actual Quantity</label>
                       <input
                         type="number"
                         min={0}
-                        step="0.01"
-                        value={quickTierUnitPriceDraft}
-                        onChange={(event) => setQuickTierUnitPriceDraft(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') commitQuickAddTier();
-                        }}
-                        className="input input-sm h-7 w-[170px]"
-                        placeholder="Unit price"
+                        step={1}
+                        value={billingDraft?.quantity ?? ''}
+                        onChange={(event) =>
+                          setBillingDraft((previous) => (
+                            previous
+                              ? { ...previous, quantity: event.target.value }
+                              : previous
+                          ))
+                        }
+                        className="input input-sm"
+                        placeholder="Enter qty"
                         disabled={!billingDraft}
                       />
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        onClick={commitQuickAddTier}
-                        disabled={!billingDraft}
-                      >
-                        Add
-                      </Button>
                     </div>
                   </div>
-                </div>
 
-                {parsedBillingTiers.error && (
-                  <p className="text-xs text-status-error">{parsedBillingTiers.error}</p>
-                )}
-
-                {tierPricingPreview.rows.length > 0 && (
-                  <div className="rounded-lg border border-border-primary overflow-hidden">
-                    <table className="w-full text-xs">
+                  <div className="overflow-hidden rounded-md border border-border-primary">
+                    <table className="w-full text-sm">
                       <thead className="bg-background-tertiary border-b border-border-primary">
                         <tr>
-                          <th className="px-2.5 py-2 text-left font-medium text-text-secondary">Band</th>
-                          <th className="px-2.5 py-2 text-right font-medium text-text-secondary">Qty</th>
-                          <th className="px-2.5 py-2 text-right font-medium text-text-secondary">Rate</th>
-                          <th className="px-2.5 py-2 text-right font-medium text-text-secondary">Amount</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-text-secondary">Tier</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-text-secondary">Up To Qty</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-text-secondary">Unit Price</th>
+                          <th className="px-3 py-2 text-right text-xs font-medium text-text-secondary">Action</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {tierPricingPreview.rows.map((row) => (
-                          <tr key={row.key} className="border-b border-border-primary last:border-0">
-                            <td className="px-2.5 py-2 text-text-primary">
-                              {row.from} - {row.to ?? 'Above'}
+                        {(billingDraft?.tiers ?? []).map((tier, index) => (
+                          <tr key={tier.id} className="border-b border-border-primary last:border-0">
+                            <td className="px-3 py-2 text-text-primary">Tier {index + 1}</td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="number"
+                                min={1}
+                                step={1}
+                                value={tier.upTo}
+                                onChange={(event) => updateBillingTierDraft(tier.id, 'upTo', event.target.value)}
+                                className="input input-sm h-7"
+                                placeholder="No limit"
+                                disabled={!billingDraft}
+                              />
                             </td>
-                            <td className="px-2.5 py-2 text-right text-text-primary">{row.quantity}</td>
-                            <td className="px-2.5 py-2 text-right text-text-primary">{formatCurrency(row.unitPrice, billingCurrency)}</td>
-                            <td className="px-2.5 py-2 text-right text-text-primary">{formatCurrency(row.amount, billingCurrency)}</td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                value={tier.unitPrice}
+                                onChange={(event) => updateBillingTierDraft(tier.id, 'unitPrice', event.target.value)}
+                                className="input input-sm h-7"
+                                placeholder="0.00"
+                                disabled={!billingDraft}
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <Button
+                                variant="ghost"
+                                size="xs"
+                                iconOnly
+                                leftIcon={<Trash2 className="w-3.5 h-3.5 text-status-error" />}
+                                aria-label={`Remove tier ${index + 1}`}
+                                onClick={() => removeBillingTierDraft(tier.id)}
+                                disabled={!billingDraft}
+                              />
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                  </div>
-                )}
 
-                {tierPricingPreview.unpricedQuantity > 0 && (
-                  <p className="text-xs text-status-warning">
-                    {tierPricingPreview.unpricedQuantity} quantity is not covered by any tier.
+                    <div className="px-3 py-2 border-t border-border-primary bg-background-secondary/60">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Plus className="w-4 h-4 shrink-0 text-text-muted" />
+                        <input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={quickTierUpToDraft}
+                          onChange={(event) => setQuickTierUpToDraft(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') commitQuickAddTier();
+                          }}
+                          className="input input-sm h-7 w-[170px]"
+                          placeholder="Up to qty (optional)"
+                          disabled={!billingDraft}
+                        />
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={quickTierUnitPriceDraft}
+                          onChange={(event) => setQuickTierUnitPriceDraft(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') commitQuickAddTier();
+                          }}
+                          className="input input-sm h-7 w-[170px]"
+                          placeholder="Unit price"
+                          disabled={!billingDraft}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          onClick={commitQuickAddTier}
+                          disabled={!billingDraft}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {parsedBillingTiers.error && (
+                    <p className="mt-2 text-xs text-status-error">{parsedBillingTiers.error}</p>
+                  )}
+
+                  {tierPricingPreview.rows.length > 0 && (
+                    <div className="mt-3 overflow-hidden rounded-md border border-border-primary">
+                      <table className="w-full text-sm">
+                        <thead className="bg-background-tertiary border-b border-border-primary">
+                          <tr>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-text-secondary">Band</th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-text-secondary">Qty</th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-text-secondary">Rate</th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-text-secondary">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tierPricingPreview.rows.map((row) => (
+                            <tr key={row.key} className="border-b border-border-primary last:border-0">
+                              <td className="px-3 py-2 text-text-primary">
+                                {row.from} - {row.to ?? 'Above'}
+                              </td>
+                              <td className="px-3 py-2 text-right text-text-primary">{row.quantity}</td>
+                              <td className="px-3 py-2 text-right text-text-primary">{formatCurrency(row.unitPrice, billingCurrency)}</td>
+                              <td className="px-3 py-2 text-right text-text-primary">{formatCurrency(row.amount, billingCurrency)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {tierPricingPreview.unpricedQuantity > 0 && (
+                    <p className="mt-2 text-xs text-status-warning">
+                      {tierPricingPreview.unpricedQuantity} quantity is not covered by any tier.
+                    </p>
+                  )}
+                </>
+              )}
+            </section>
+
+            {/* Referral Fee section — Fixed mode only */}
+            {billingDraft?.mode === 'FIXED' && (
+              <section className="mt-6 border-t border-border-primary pt-6">
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold text-text-primary">Referral Fee</h3>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Optional fee deducted from margin, paid to a referrer.
                   </p>
-                )}
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="label">Fee</label>
+                    <div className="flex items-stretch gap-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        max={billingDraft?.referralFeeType === 'PERCENTAGE' ? 100 : undefined}
+                        value={billingDraft?.referralFeeAmount ?? ''}
+                        onChange={(event) =>
+                          setBillingDraft((previous) => (
+                            previous
+                              ? { ...previous, referralFeeAmount: event.target.value }
+                              : previous
+                          ))
+                        }
+                        className="input input-sm flex-1"
+                        placeholder="0.00"
+                        disabled={!billingDraft}
+                      />
+                      <div className="inline-flex items-center rounded-md border border-border-primary bg-background-secondary p-0.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setBillingDraft((previous) => (
+                              previous
+                                ? { ...previous, referralFeeType: 'AMOUNT' }
+                                : previous
+                            ))
+                          }
+                          disabled={!billingDraft}
+                          className={cn(
+                            'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                            billingDraft?.referralFeeType === 'AMOUNT'
+                              ? 'bg-oak-primary text-white'
+                              : 'text-text-secondary hover:text-text-primary'
+                          )}
+                          aria-label="Amount"
+                        >
+                          $
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setBillingDraft((previous) => (
+                              previous
+                                ? { ...previous, referralFeeType: 'PERCENTAGE' }
+                                : previous
+                            ))
+                          }
+                          disabled={!billingDraft}
+                          className={cn(
+                            'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                            billingDraft?.referralFeeType === 'PERCENTAGE'
+                              ? 'bg-oak-primary text-white'
+                              : 'text-text-secondary hover:text-text-primary'
+                          )}
+                          aria-label="Percentage"
+                        >
+                          %
+                        </button>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      {billingDraft?.referralFeeType === 'PERCENTAGE'
+                        ? 'Calculated from fixed amount only.'
+                        : 'Deducted as a flat amount.'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="label">Recurring Cycles</label>
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={billingDraft?.referralFeeRecurringLimit ?? ''}
+                      onChange={(event) =>
+                        setBillingDraft((previous) => (
+                          previous
+                            ? { ...previous, referralFeeRecurringLimit: event.target.value }
+                            : previous
+                        ))
+                      }
+                      className="input input-sm"
+                      placeholder="Unlimited"
+                      disabled={!billingDraft}
+                    />
+                    <p className="mt-1 text-xs text-text-secondary">Blank means every instance.</p>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="label">Pay Referral To</label>
+                    <input
+                      type="text"
+                      list={referralPayeeSuggestionsId}
+                      value={billingDraft?.referralPayee ?? ''}
+                      onChange={handleReferralPayeeInputChange}
+                      className="input input-sm"
+                      placeholder="Type a name or pick a contact"
+                      disabled={!billingDraft}
+                    />
+                    <datalist id={referralPayeeSuggestionsId}>
+                      {referralPayeeContactOptions.map((option) => (
+                        <option key={option.value} value={option.label} label={option.description} />
+                      ))}
+                    </datalist>
+                    <p className="mt-1 text-xs text-text-secondary">Type freely or choose a contact.</p>
+                  </div>
+                </div>
               </section>
             )}
 
-            <div className="rounded-lg border border-border-primary bg-background-secondary/50 p-3 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-xs text-text-secondary">Estimated Billing</p>
-                <p className="text-base font-semibold text-text-primary">
-                  {formatCurrency(billingPreviewAmount, billingCurrency)}
-                </p>
-              </div>
-              <p className="text-xs text-text-secondary">
-                Mode: <span className="text-text-primary">{billingDraft?.mode === 'TIERED' ? 'Tiered Pricing' : 'Fixed Pricing'}</span>
-              </p>
+            {/* Summary section */}
+            <section className="mt-6 border-t border-border-primary pt-6">
+              <h3 className="text-sm font-semibold text-text-primary mb-4">Summary</h3>
+
+              {billingDraft?.mode === 'FIXED' ? (
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2 text-sm">
+                    <p className="text-xs font-medium uppercase tracking-wide text-text-secondary">Billing Amount</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-text-secondary">Fixed Amount</span>
+                      <span className="font-medium text-text-primary">{formatCurrency(fixedPricingPreview, billingCurrency)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-text-secondary">+ Disbursement</span>
+                      <span className="font-medium text-text-primary">{formatCurrency(disbursementAmountPreview, billingCurrency)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-border-primary pt-2">
+                      <span className="font-medium text-text-primary">Total</span>
+                      <span className="text-base font-semibold text-text-primary">
+                        {formatCurrency(fixedBillingAmountPreview, billingCurrency)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <p className="text-xs font-medium uppercase tracking-wide text-text-secondary">Margin</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-text-secondary">Billing Amount</span>
+                      <span className="font-medium text-text-primary">{formatCurrency(fixedBillingAmountPreview, billingCurrency)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-text-secondary">- Disbursement</span>
+                      <span className="font-medium text-text-primary">{formatCurrency(-disbursementAmountPreview, billingCurrency)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-text-secondary">
+                        - {billingDraft?.referralFeeType === 'PERCENTAGE'
+                          ? `${configuredReferralFeeAmountPreview.toFixed(2)}% `
+                          : ''}Referral{billingDraft?.referralPayee.trim() ? ` (Pay to: ${billingDraft.referralPayee.trim()})` : ''}
+                      </span>
+                      <span className="font-medium text-text-primary">{formatCurrency(-effectiveReferralFeeAmountPreview, billingCurrency)}</span>
+                    </div>
+                    {configuredReferralFeeAmountPreview > 0 && !referralFeeActiveForCurrentInstance ? (
+                      <p className="text-xs text-text-secondary">
+                        Configured referral fee is {billingDraft?.referralFeeType === 'PERCENTAGE'
+                          ? `${configuredReferralFeeAmountPreview.toFixed(2)}%`
+                          : formatCurrency(-configuredReferralFeeAmountPreview, billingCurrency)}, but it no longer applies from instance {currentProjectInstanceNumber}.
+                      </p>
+                    ) : null}
+                    <div className="flex items-center justify-between gap-3 border-t border-border-primary pt-2">
+                      <span className="font-medium text-text-primary">Net Margin</span>
+                      <span className="text-base font-semibold text-text-primary">
+                        {formatCurrency(fixedMarginPreview, billingCurrency)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid gap-4 text-sm sm:grid-cols-3">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-text-secondary">Quantity</p>
+                    <p className="mt-1 font-medium text-text-primary">{tierQuantity || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-text-secondary">Effective Rate</p>
+                    <p className="mt-1 font-medium text-text-primary">
+                      {tierRatePreview === null ? '-' : formatCurrency(tierRatePreview, billingCurrency)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-text-secondary">Total</p>
+                    <p className="mt-1 text-base font-semibold text-text-primary">
+                      {formatCurrency(billingPreviewAmount, billingCurrency)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* Form footer — right-aligned Save, matches design guide full-page form pattern */}
+            <div className="mt-6 flex items-center justify-end gap-3 border-t border-border-primary pt-4">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={saveBillingConfig}
+                isLoading={updateProjectMutation.isPending}
+                disabled={!billingDraft}
+              >
+                <span className="hidden sm:inline">Save Pricing (Ctrl+S)</span>
+                <span className="sm:hidden">Save Pricing</span>
+              </Button>
             </div>
           </section>
         </div>
@@ -4110,8 +4515,9 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                 </div>
                 <div className="text-xs text-text-secondary space-y-1.5">
                   <p>Start: <span className="text-text-primary">{formatDateShort(projectDetail.startDate)}</span></p>
-                  <p>Due: <span className="text-text-primary">{formatDateShort(projectDetail.dueDate)}</span></p>
+                  <p>End: <span className="text-text-primary">{formatDateShort(projectDetail.dueDate)}</span></p>
                   <p>Recurring: <span className="text-text-primary">{recurringLabel}</span></p>
+                  <p>Instance: <span className="text-text-primary">#{projectDetail.instanceNumber} of {projectDetail.instanceCount}</span></p>
                   <p>
                     Next Task:{' '}
                     <span className="text-text-primary">
@@ -4191,6 +4597,10 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                   <span className="text-text-secondary">Currency</span>
                   <span className="text-text-primary font-medium">{billingCurrency}</span>
                 </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-text-secondary">Instance</span>
+                  <span className="text-text-primary font-medium">#{projectDetail.instanceNumber}</span>
+                </div>
                 {billingDraft?.mode === 'TIERED' ? (
                   <>
                     <div className="space-y-1">
@@ -4212,21 +4622,69 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-text-secondary">Rate</span>
+                      <span className="text-text-secondary">Effective Rate</span>
                       <span className="text-text-primary font-medium">
                         {tierRatePreview === null ? '-' : formatCurrency(tierRatePreview, billingCurrency)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-text-secondary">Estimated Billing</span>
-                      <span className="text-text-primary font-medium">{formatCurrency(billingPreviewAmount, billingCurrency)}</span>
+                    <div className="flex items-center justify-between border-t border-border-primary pt-2">
+                      <span className="text-text-primary font-medium">Total</span>
+                      <span className="text-text-primary font-semibold">{formatCurrency(billingPreviewAmount, billingCurrency)}</span>
                     </div>
                   </>
                 ) : (
-                  <div className="flex items-center justify-between">
-                    <span className="text-text-secondary">Fixed Amount</span>
-                    <span className="text-text-primary font-medium">{formatCurrency(fixedPricingPreview, billingCurrency)}</span>
-                  </div>
+                  <>
+                    <div className="pt-1">
+                      <p className="text-xs font-medium uppercase tracking-wide text-text-secondary">Billing Amount</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-secondary">Fixed Amount</span>
+                      <span className="text-text-primary font-medium">{formatCurrency(fixedPricingPreview, billingCurrency)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-secondary">+ Disbursement</span>
+                      <span className="text-text-primary font-medium">{formatCurrency(disbursementAmountPreview, billingCurrency)}</span>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-border-primary pt-2">
+                      <span className="text-text-primary font-medium">Total</span>
+                      <span className="text-text-primary font-semibold">{formatCurrency(fixedBillingAmountPreview, billingCurrency)}</span>
+                    </div>
+                    <div className="pt-1">
+                      <p className="text-xs font-medium uppercase tracking-wide text-text-secondary">Margin</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-secondary">- Disbursement</span>
+                      <span className="text-text-primary font-medium">{formatCurrency(-disbursementAmountPreview, billingCurrency)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-secondary">
+                        - {billingDraft?.referralFeeType === 'PERCENTAGE'
+                          ? `${configuredReferralFeeAmountPreview.toFixed(2)}% `
+                          : ''}Referral{billingDraft?.referralPayee.trim() ? ` (Pay to: ${billingDraft.referralPayee.trim()})` : ''}
+                      </span>
+                      <span className="text-text-primary font-medium">{formatCurrency(-effectiveReferralFeeAmountPreview, billingCurrency)}</span>
+                    </div>
+                    {referralFeeRecurringLimitPreview ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-text-secondary">Referral Cycle</span>
+                        <span className="text-right text-text-primary font-medium">
+                          {referralFeeActiveForCurrentInstance
+                            ? `${projectDetail.instanceNumber} of ${referralFeeRecurringLimitPreview}`
+                            : `Completed after ${referralFeeRecurringLimitPreview}`}
+                        </span>
+                      </div>
+                    ) : null}
+                    {billingDraft?.referralPayee.trim() ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-text-secondary">Pay Referral To</span>
+                        <span className="text-right text-text-primary font-medium">{billingDraft.referralPayee.trim()}</span>
+                      </div>
+                    ) : null}
+                    <div className="flex items-center justify-between border-t border-border-primary pt-2">
+                      <span className="text-text-primary font-medium">Net Margin</span>
+                      <span className="text-text-primary font-semibold">{formatCurrency(fixedMarginPreview, billingCurrency)}</span>
+                    </div>
+                  </>
                 )}
                 <div className="flex items-center justify-between">
                   <span className="text-text-secondary">Billing Status</span>
@@ -4496,7 +4954,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
               placeholder="Select date..."
             />
             <SingleDateInput
-              label="Due Date"
+              label="End Date (Optional)"
               value={projectEditDraft?.dueDate ?? ''}
               onChange={(value) =>
                 setProjectEditDraft((previous) =>
