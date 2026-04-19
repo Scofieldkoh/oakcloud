@@ -5,7 +5,7 @@ import { getAuditHistory } from '@/lib/audit';
 import type { AuditAction } from '@/generated/prisma';
 import { parseIdParams } from '@/lib/validations/params';
 import { prisma } from '@/lib/prisma';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { clampLimit, parseIntegerParam, parseNumericParam, requireTenantContext } from '@/lib/api-helpers';
 
 export async function GET(
   request: NextRequest,
@@ -39,8 +39,8 @@ export async function GET(
       await requirePermission(session, 'contact', 'read');
     }
 
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
-    const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
+    const limit = clampLimit(parseNumericParam(searchParams.get('limit')), { default: 50, max: 200 });
+    const offset = Math.max(0, parseIntegerParam(searchParams.get('offset'), 0) ?? 0);
     const actions = searchParams.get('actions')?.split(',') as AuditAction[] | undefined;
 
     const auditLogs = await getAuditHistory('Contact', id, {

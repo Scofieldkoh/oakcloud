@@ -9,6 +9,7 @@ import {
   deleteOfficer,
   getCompanyById,
 } from '@/services/company.service';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { z } from 'zod';
 
 const linkSchema = z.object({
@@ -74,8 +75,7 @@ export async function PATCH(
       const officer = await updateOfficer(
         officerId,
         companyId,
-        tenantId,
-        session.id,
+        { tenantId, userId: session.id },
         data
       );
       return NextResponse.json({ success: true, officer });
@@ -84,29 +84,18 @@ export async function PATCH(
     // Default: link/unlink contact
     // If contactId is provided, link; if null/undefined, unlink
     if (body.contactId === null || body.contactId === undefined) {
-      // Unlink
-      await unlinkOfficerFromContact(officerId, tenantId, session.id);
+      await unlinkOfficerFromContact(officerId, { tenantId, userId: session.id });
       return NextResponse.json({ success: true, action: 'unlinked' });
     } else {
-      // Link
       const data = linkSchema.parse(body);
-      await linkOfficerToContact(officerId, data.contactId, tenantId, session.id);
+      await linkOfficerToContact(officerId, data.contactId, { tenantId, userId: session.id });
       return NextResponse.json({ success: true, action: 'linked' });
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
     }
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
@@ -148,21 +137,12 @@ export async function DELETE(
     }
 
     if (action === 'delete') {
-      await deleteOfficer(officerId, companyId, tenantId, session.id);
+      await deleteOfficer(officerId, companyId, { tenantId, userId: session.id });
     } else {
-      await removeOfficer(officerId, companyId, tenantId, session.id);
+      await removeOfficer(officerId, companyId, { tenantId, userId: session.id });
     }
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

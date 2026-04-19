@@ -7,7 +7,8 @@
 
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, computeChanges } from '@/lib/audit';
-import { canAddCompany } from '@/lib/tenant';
+import { canAddCompany, assertTenantOwned } from '@/lib/tenant';
+import { NotFoundError, ValidationError } from '@/lib/errors';
 import type {
   CreateCompanyInput,
   UpdateCompanyInput,
@@ -117,6 +118,13 @@ const TRACKED_FIELDS: (keyof Company)[] = [
   'isGstRegistered',
   'gstRegistrationNumber',
 ];
+
+// Shared relation select used when loading a child entity (officer, shareholder,
+// charge, etc.) together with the minimal company fields needed for tenant
+// authorization checks and audit-log metadata.
+const COMPANY_SCOPE_INCLUDE = {
+  company: { select: { id: true, tenantId: true, name: true } },
+} as const;
 
 // ============================================================================
 // Create Company
@@ -1373,19 +1381,16 @@ export async function getCompanyLinkInfo(
 export async function updateOfficer(
   officerId: string,
   companyId: string,
-  tenantId: string,
-  userId: string,
+  params: TenantAwareParams,
   data: { appointmentDate?: string | null; cessationDate?: string | null }
 ): Promise<{ id: string; appointmentDate: Date | null; cessationDate: Date | null; isCurrent: boolean }> {
-  // Verify officer exists and belongs to this company in this tenant
+  const { tenantId, userId } = params;
+
   const officer = await prisma.companyOfficer.findFirst({
     where: { id: officerId, companyId },
-    include: { company: { select: { id: true, tenantId: true, name: true } } },
+    include: COMPANY_SCOPE_INCLUDE,
   });
-
-  if (!officer || officer.company.tenantId !== tenantId) {
-    throw new Error('Officer not found');
-  }
+  assertTenantOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
 
   const oldValues = {
     appointmentDate: officer.appointmentDate,
@@ -1402,9 +1407,8 @@ export async function updateOfficer(
     : officer.cessationDate;
   const isCurrent = cessationDate === null;
 
-  // Validate: cessation date must be after appointment date
   if (appointmentDate && cessationDate && cessationDate < appointmentDate) {
-    throw new Error('Cessation date must be after appointment date');
+    throw new ValidationError('Cessation date must be after appointment date');
   }
 
   // Update officer
@@ -1453,27 +1457,22 @@ export async function updateOfficer(
 export async function linkOfficerToContact(
   officerId: string,
   contactId: string,
-  tenantId: string,
-  userId: string
+  params: TenantAwareParams
 ): Promise<void> {
-  // Verify officer exists and belongs to a company in this tenant
+  const { tenantId, userId } = params;
+
   const officer = await prisma.companyOfficer.findFirst({
     where: { id: officerId },
-    include: { company: { select: { id: true, tenantId: true, name: true } } },
+    include: COMPANY_SCOPE_INCLUDE,
   });
+  assertTenantOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
 
-  if (!officer || officer.company.tenantId !== tenantId) {
-    throw new Error('Officer not found');
-  }
-
-  // Verify contact exists and belongs to the same tenant
   const contact = await prisma.contact.findFirst({
     where: { id: contactId, tenantId, deletedAt: null },
     select: { id: true, fullName: true },
   });
-
   if (!contact) {
-    throw new Error('Contact not found');
+    throw new NotFoundError('Contact not found');
   }
 
   // Update officer with contact link
@@ -1505,10 +1504,10 @@ export async function linkOfficerToContact(
  */
 export async function unlinkOfficerFromContact(
   officerId: string,
-  tenantId: string,
-  userId: string
+  params: TenantAwareParams
 ): Promise<void> {
-  // Verify officer exists and belongs to a company in this tenant
+  const { tenantId, userId } = params;
+
   const officer = await prisma.companyOfficer.findFirst({
     where: { id: officerId },
     include: {
@@ -1516,13 +1515,10 @@ export async function unlinkOfficerFromContact(
       contact: { select: { id: true, fullName: true } },
     },
   });
-
-  if (!officer || officer.company.tenantId !== tenantId) {
-    throw new Error('Officer not found');
-  }
+  assertTenantOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
 
   if (!officer.contactId) {
-    throw new Error('Officer is not linked to any contact');
+    throw new ValidationError('Officer is not linked to any contact');
   }
 
   const previousContactName = officer.contact?.fullName || 'Unknown';
@@ -1557,18 +1553,15 @@ export async function unlinkOfficerFromContact(
 export async function removeOfficer(
   officerId: string,
   companyId: string,
-  tenantId: string,
-  userId: string
+  params: TenantAwareParams
 ): Promise<void> {
-  // Verify officer exists and belongs to this company in this tenant
+  const { tenantId, userId } = params;
+
   const officer = await prisma.companyOfficer.findFirst({
     where: { id: officerId, companyId },
-    include: { company: { select: { id: true, tenantId: true, name: true } } },
+    include: COMPANY_SCOPE_INCLUDE,
   });
-
-  if (!officer || officer.company.tenantId !== tenantId) {
-    throw new Error('Officer not found');
-  }
+  assertTenantOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
 
   // Mark as ceased
   await prisma.companyOfficer.update({
@@ -1606,18 +1599,15 @@ export async function removeOfficer(
 export async function deleteOfficer(
   officerId: string,
   companyId: string,
-  tenantId: string,
-  userId: string
+  params: TenantAwareParams
 ): Promise<void> {
-  // Verify officer exists and belongs to this company in this tenant
+  const { tenantId, userId } = params;
+
   const officer = await prisma.companyOfficer.findFirst({
     where: { id: officerId, companyId },
-    include: { company: { select: { id: true, tenantId: true, name: true } } },
+    include: COMPANY_SCOPE_INCLUDE,
   });
-
-  if (!officer || officer.company.tenantId !== tenantId) {
-    throw new Error('Officer not found');
-  }
+  assertTenantOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
 
   await prisma.companyOfficer.delete({
     where: { id: officerId },
@@ -1650,19 +1640,16 @@ export async function deleteOfficer(
 export async function updateShareholder(
   shareholderId: string,
   companyId: string,
-  tenantId: string,
-  userId: string,
+  params: TenantAwareParams,
   data: { numberOfShares?: number; shareClass?: string }
 ): Promise<{ id: string; numberOfShares: number; shareClass: string | null; percentageHeld: number | null }> {
-  // Verify shareholder exists and belongs to this company in this tenant
+  const { tenantId, userId } = params;
+
   const shareholder = await prisma.companyShareholder.findFirst({
     where: { id: shareholderId, companyId },
-    include: { company: { select: { id: true, tenantId: true, name: true } } },
+    include: COMPANY_SCOPE_INCLUDE,
   });
-
-  if (!shareholder || shareholder.company.tenantId !== tenantId) {
-    throw new Error('Shareholder not found');
-  }
+  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
   const oldValues = {
     numberOfShares: shareholder.numberOfShares,
@@ -1761,27 +1748,22 @@ export async function updateShareholder(
 export async function linkShareholderToContact(
   shareholderId: string,
   contactId: string,
-  tenantId: string,
-  userId: string
+  params: TenantAwareParams
 ): Promise<void> {
-  // Verify shareholder exists and belongs to a company in this tenant
+  const { tenantId, userId } = params;
+
   const shareholder = await prisma.companyShareholder.findFirst({
     where: { id: shareholderId },
-    include: { company: { select: { id: true, tenantId: true, name: true } } },
+    include: COMPANY_SCOPE_INCLUDE,
   });
+  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
-  if (!shareholder || shareholder.company.tenantId !== tenantId) {
-    throw new Error('Shareholder not found');
-  }
-
-  // Verify contact exists and belongs to the same tenant
   const contact = await prisma.contact.findFirst({
     where: { id: contactId, tenantId, deletedAt: null },
     select: { id: true, fullName: true },
   });
-
   if (!contact) {
-    throw new Error('Contact not found');
+    throw new NotFoundError('Contact not found');
   }
 
   // Update shareholder with contact link
@@ -1813,10 +1795,10 @@ export async function linkShareholderToContact(
  */
 export async function unlinkShareholderFromContact(
   shareholderId: string,
-  tenantId: string,
-  userId: string
+  params: TenantAwareParams
 ): Promise<void> {
-  // Verify shareholder exists and belongs to a company in this tenant
+  const { tenantId, userId } = params;
+
   const shareholder = await prisma.companyShareholder.findFirst({
     where: { id: shareholderId },
     include: {
@@ -1824,13 +1806,10 @@ export async function unlinkShareholderFromContact(
       contact: { select: { id: true, fullName: true } },
     },
   });
-
-  if (!shareholder || shareholder.company.tenantId !== tenantId) {
-    throw new Error('Shareholder not found');
-  }
+  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
   if (!shareholder.contactId) {
-    throw new Error('Shareholder is not linked to any contact');
+    throw new ValidationError('Shareholder is not linked to any contact');
   }
 
   const previousContactName = shareholder.contact?.fullName || 'Unknown';
@@ -1866,18 +1845,15 @@ export async function unlinkShareholderFromContact(
 export async function removeShareholder(
   shareholderId: string,
   companyId: string,
-  tenantId: string,
-  userId: string
+  params: TenantAwareParams
 ): Promise<void> {
-  // Verify shareholder exists and belongs to this company in this tenant
+  const { tenantId, userId } = params;
+
   const shareholder = await prisma.companyShareholder.findFirst({
     where: { id: shareholderId, companyId },
-    include: { company: { select: { id: true, tenantId: true, name: true } } },
+    include: COMPANY_SCOPE_INCLUDE,
   });
-
-  if (!shareholder || shareholder.company.tenantId !== tenantId) {
-    throw new Error('Shareholder not found');
-  }
+  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
   // Use transaction to ensure atomicity of removal and percentage recalculation
   await prisma.$transaction(async (tx) => {
@@ -1939,21 +1915,18 @@ export async function removeShareholder(
 export async function reactivateShareholder(
   shareholderId: string,
   companyId: string,
-  tenantId: string,
-  userId: string
+  params: TenantAwareParams
 ): Promise<void> {
-  // Verify shareholder exists and belongs to this company in this tenant
+  const { tenantId, userId } = params;
+
   const shareholder = await prisma.companyShareholder.findFirst({
     where: { id: shareholderId, companyId },
-    include: { company: { select: { id: true, tenantId: true, name: true } } },
+    include: COMPANY_SCOPE_INCLUDE,
   });
-
-  if (!shareholder || shareholder.company.tenantId !== tenantId) {
-    throw new Error('Shareholder not found');
-  }
+  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
   if (shareholder.isCurrent) {
-    throw new Error('Shareholder is already active');
+    throw new ValidationError('Shareholder is already active');
   }
 
   // Use transaction to ensure atomicity of reactivation and percentage recalculation
@@ -2014,18 +1987,15 @@ export async function reactivateShareholder(
 export async function deleteShareholder(
   shareholderId: string,
   companyId: string,
-  tenantId: string,
-  userId: string
+  params: TenantAwareParams
 ): Promise<void> {
-  // Verify shareholder exists and belongs to this company in this tenant
+  const { tenantId, userId } = params;
+
   const shareholder = await prisma.companyShareholder.findFirst({
     where: { id: shareholderId, companyId },
-    include: { company: { select: { id: true, tenantId: true, name: true } } },
+    include: COMPANY_SCOPE_INCLUDE,
   });
-
-  if (!shareholder || shareholder.company.tenantId !== tenantId) {
-    throw new Error('Shareholder not found');
-  }
+  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
   await prisma.companyShareholder.delete({
     where: { id: shareholderId },

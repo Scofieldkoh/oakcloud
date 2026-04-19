@@ -36,6 +36,7 @@ import type {
 import { randomBytes } from 'crypto';
 import { hashPassword, verifyPassword } from '@/lib/encryption';
 import type { TenantAwareParams } from '@/lib/types';
+import { NotFoundError } from '@/lib/errors';
 
 // ============================================================================
 // Types
@@ -120,7 +121,7 @@ export async function createDocumentFromTemplate(
   });
 
   if (!template) {
-    throw new Error('Template not found');
+    throw new NotFoundError('Template not found');
   }
 
   if (!template.isActive) {
@@ -136,7 +137,7 @@ export async function createDocumentFromTemplate(
   if (data.companyId) {
     const company = await getCompanyById(data.companyId, tenantId);
     if (!company) {
-      throw new Error('Company not found');
+      throw new NotFoundError('Company not found');
     }
     context = {
       ...prepareCompanyContext(company as unknown as Parameters<typeof prepareCompanyContext>[0]),
@@ -219,7 +220,7 @@ export async function createBlankDocument(
       where: { id: data.companyId, tenantId, deletedAt: null },
     });
     if (!company) {
-      throw new Error('Company not found');
+      throw new NotFoundError('Company not found');
     }
   }
 
@@ -268,7 +269,7 @@ export async function updateGeneratedDocument(
   });
 
   if (!existing) {
-    throw new Error('Document not found');
+    throw new NotFoundError('Document not found');
   }
 
   if (existing.status === 'FINALIZED') {
@@ -338,7 +339,7 @@ export async function finalizeDocument(
   });
 
   if (!existing) {
-    throw new Error('Document not found');
+    throw new NotFoundError('Document not found');
   }
 
   if (existing.status === 'FINALIZED') {
@@ -389,7 +390,7 @@ export async function unfinalizeDocument(
   });
 
   if (!existing) {
-    throw new Error('Document not found');
+    throw new NotFoundError('Document not found');
   }
 
   if (existing.status !== 'FINALIZED') {
@@ -436,7 +437,7 @@ export async function archiveDocument(
   });
 
   if (!existing) {
-    throw new Error('Document not found');
+    throw new NotFoundError('Document not found');
   }
 
   if (existing.status === 'ARCHIVED') {
@@ -488,7 +489,7 @@ export async function deleteGeneratedDocument(
   });
 
   if (!existing) {
-    throw new Error('Document not found');
+    throw new NotFoundError('Document not found');
   }
 
   if (existing.deletedAt) {
@@ -539,7 +540,7 @@ export async function cloneDocument(
   });
 
   if (!source) {
-    throw new Error('Document not found');
+    throw new NotFoundError('Document not found');
   }
 
   // Generate unique title
@@ -852,7 +853,7 @@ export async function createDocumentShare(
   });
 
   if (!document) {
-    throw new Error('Document not found');
+    throw new NotFoundError('Document not found');
   }
 
   // Hash password if provided (using Argon2id)
@@ -911,7 +912,7 @@ export async function revokeDocumentShare(
   });
 
   if (!share || share.document.tenantId !== tenantId) {
-    throw new Error('Share not found');
+    throw new NotFoundError('Share not found');
   }
 
   if (!share.isActive) {
@@ -1037,7 +1038,7 @@ export async function createDocumentComment(
   });
 
   if (!document) {
-    throw new Error('Document not found');
+    throw new NotFoundError('Document not found');
   }
 
   // For external comments, verify share allows comments
@@ -1069,7 +1070,7 @@ export async function createDocumentComment(
       where: { id: data.parentId, documentId: data.documentId, deletedAt: null },
     });
     if (!parent) {
-      throw new Error('Parent comment not found');
+      throw new NotFoundError('Parent comment not found');
     }
   }
 
@@ -1135,7 +1136,7 @@ export async function resolveComment(
   });
 
   if (!comment || comment.document.tenantId !== tenantId) {
-    throw new Error('Comment not found');
+    throw new NotFoundError('Comment not found');
   }
 
   if (comment.status === 'RESOLVED') {
@@ -1182,7 +1183,7 @@ export async function hideComment(
   });
 
   if (!comment || comment.document.tenantId !== tenantId) {
-    throw new Error('Comment not found');
+    throw new NotFoundError('Comment not found');
   }
 
   const updated = await prisma.documentComment.update({
@@ -1225,7 +1226,7 @@ export async function unhideComment(
   });
 
   if (!comment || comment.document.tenantId !== tenantId) {
-    throw new Error('Comment not found');
+    throw new NotFoundError('Comment not found');
   }
 
   const updated = await prisma.documentComment.update({
@@ -1258,7 +1259,7 @@ export async function saveDraft(
   });
 
   if (!document) {
-    throw new Error('Document not found');
+    throw new NotFoundError('Document not found');
   }
 
   // Delete old drafts for this user (keep only latest)

@@ -8,6 +8,8 @@
 import { NextResponse } from 'next/server';
 import { Prisma } from '@/generated/prisma';
 import { createLogger } from './logger';
+import { ApiError, ErrorCodes } from './errors';
+import type { ErrorCode } from './errors';
 
 const log = createLogger('api-error-handler');
 
@@ -28,38 +30,6 @@ export interface ApiSuccessResponse<T = unknown> {
     timestamp?: string;
     [key: string]: unknown;
   };
-}
-
-/**
- * Standard error codes
- */
-export const ErrorCodes = {
-  AUTHENTICATION_REQUIRED: 'AUTHENTICATION_REQUIRED',
-  PERMISSION_DENIED: 'PERMISSION_DENIED',
-  NOT_FOUND: 'NOT_FOUND',
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  CONFLICT: 'CONFLICT',
-  INTERNAL_ERROR: 'INTERNAL_ERROR',
-  BAD_REQUEST: 'BAD_REQUEST',
-  RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
-  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
-} as const;
-
-export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
-
-/**
- * Custom API Error class
- */
-export class ApiError extends Error {
-  constructor(
-    public code: ErrorCode,
-    message: string,
-    public statusCode: number = 500,
-    public details?: unknown
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
 }
 
 /**
@@ -316,3 +286,14 @@ export function createErrorResponse(
     { status: statusCode }
   );
 }
+
+export { ApiError, ErrorCodes } from './errors';
+export type { ErrorCode } from './errors';
+export {
+  NotFoundError,
+  ValidationError,
+  ForbiddenError,
+  UnauthorizedError,
+  ConflictError,
+  BadRequestError,
+} from './errors';

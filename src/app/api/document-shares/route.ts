@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
+import { clampLimit, parseIntegerParam, parseNumericParam } from '@/lib/api-helpers';
 
 /**
  * GET /api/document-shares
@@ -30,8 +31,8 @@ export async function GET(request: NextRequest) {
     const skipTenantFilter = session.isSuperAdmin && !effectiveTenantId;
 
     // Pagination
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const page = Math.max(1, parseIntegerParam(searchParams.get('page'), 1) ?? 1);
+    const limit = clampLimit(parseNumericParam(searchParams.get('limit')), { default: 20, max: 100 });
     const skip = (page - 1) * limit;
 
     // Filters

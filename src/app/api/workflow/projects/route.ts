@@ -10,6 +10,7 @@ import {
   type WorkflowProjectStatus,
   type WorkflowDueBucket,
 } from '@/services/workflow-project.service';
+import { clampLimit, parseIntegerParam } from '@/lib/api-helpers';
 import { z } from 'zod';
 
 function parseOptionalNumber(value: string | null): number | undefined {
@@ -68,8 +69,8 @@ export async function GET(request: NextRequest) {
 
     const params: WorkflowProjectSearchParams = {
       query: searchParams.get('q') || undefined,
-      page: parseOptionalNumber(searchParams.get('page')),
-      limit: parseOptionalNumber(searchParams.get('limit')),
+      page: parseIntegerParam(searchParams.get('page')),
+      limit: clampLimit(parseOptionalNumber(searchParams.get('limit')), { default: 20, max: 200 }),
       sortBy: (searchParams.get('sortBy') || undefined) as WorkflowProjectSortField | undefined,
       sortOrder: (searchParams.get('sortOrder') || undefined) as 'asc' | 'desc' | undefined,
       dueBucket: (searchParams.get('dueBucket') || undefined) as WorkflowDueBucket | undefined,

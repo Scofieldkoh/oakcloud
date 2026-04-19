@@ -10,6 +10,7 @@ import { Prisma } from '@/generated/prisma';
 import type { SessionUser } from './auth';
 import { prisma } from './prisma';
 import { HTTP_STATUS } from './constants/application';
+import { ApiError } from './errors';
 
 // ============================================================================
 // Tenant Context Helpers
@@ -126,6 +127,10 @@ export function createErrorResponse(
   error: unknown,
   defaultMessage: string = 'Internal server error'
 ): NextResponse {
+  if (error instanceof ApiError) {
+    return NextResponse.json({ error: error.message }, { status: error.statusCode });
+  }
+
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === 'P2021' || error.code === 'P2022') {
       return NextResponse.json(
@@ -236,9 +241,41 @@ export function parseQueryParams<T>(
  * Parse numeric query parameter
  */
 export function parseNumericParam(value: string | null, defaultValue?: number): number | undefined {
-  if (!value) return defaultValue;
-  const parsed = Number(value);
-  return isNaN(parsed) ? defaultValue : parsed;
+  const normalized = value?.trim();
+  if (!normalized) return defaultValue;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : defaultValue;
+}
+
+/**
+ * Parse integer query parameter safely.
+ *
+ * Non-finite values fall back to the provided default. Decimal input is
+ * normalized with `Math.floor` so callers can use the result directly in
+ * pagination offsets without relying on downstream coercion.
+ */
+export function parseIntegerParam(value: string | null, defaultValue?: number): number | undefined {
+  const parsed = parseNumericParam(value, defaultValue);
+  if (parsed == null) return parsed;
+  return Math.floor(parsed);
+}
+
+/**
+ * Clamp a caller-supplied pagination limit to a safe range.
+ *
+ * Service/list endpoints should pass caller input through this helper so a
+ * bad or hostile client can't trigger an unbounded scan. Non-finite or
+ * nullish input falls back to `default`.
+ */
+export function clampLimit(
+  value: number | null | undefined,
+  opts: { default?: number; min?: number; max?: number } = {}
+): number {
+  const def = opts.default ?? 50;
+  const max = opts.max ?? 500;
+  const min = opts.min ?? 1;
+  if (value == null || !Number.isFinite(value)) return Math.min(max, Math.max(min, def));
+  return Math.min(max, Math.max(min, Math.floor(value)));
 }
 
 /**

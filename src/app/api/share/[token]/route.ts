@@ -7,6 +7,7 @@ import {
   checkCommentRateLimit,
 } from '@/services/document-generator.service';
 import { verifyShareVerificationToken } from '@/lib/share-verification-token';
+import { createErrorResponse } from '@/lib/api-helpers';
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -211,10 +212,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       if (error.message.includes('Rate limit')) {
         return NextResponse.json({ error: error.message }, { status: 429 });
       }
-      return NextResponse.json({ error: error.message }, { status: 400 });
     }
-
-    console.error('Comment creation error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

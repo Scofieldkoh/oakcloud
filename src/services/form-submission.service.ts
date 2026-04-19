@@ -133,6 +133,7 @@ export interface FormResponsesResult {
 
 const MAX_NOTIFICATION_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 const MAX_NOTIFICATION_UPLOAD_ATTACHMENTS = 20;
+const MAX_NOTIFICATION_DOWNLOAD_CONCURRENCY = 4;
 const UPLOAD_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const RESPONSE_ATTACHMENTS_COLUMN_ID = '__submission_attachments';
 const log = createLogger('form-builder');
@@ -346,43 +347,71 @@ async function buildSubmissionNotificationAttachments(input: {
     },
   ];
 
-  let totalBytes = input.pdfBuffer.length;
   let omittedUploads = 0;
   const uploadsToAttach = input.uploads.slice(0, MAX_NOTIFICATION_UPLOAD_ATTACHMENTS);
   omittedUploads += Math.max(0, input.uploads.length - uploadsToAttach.length);
 
+  // Phase 1: pre-filter based on expected size so we avoid downloading bytes
+  // we know won't fit. Mirrors the greedy accept-in-order semantics of the
+  // original sequential loop, but without waiting on each download.
+  const toDownload: FormUpload[] = [];
+  let projectedBytes = input.pdfBuffer.length;
   for (const upload of uploadsToAttach) {
-    if (totalBytes >= MAX_NOTIFICATION_ATTACHMENT_BYTES) {
+    if (projectedBytes >= MAX_NOTIFICATION_ATTACHMENT_BYTES) {
       omittedUploads += 1;
       continue;
     }
-
     const expectedSize = Math.max(0, upload.sizeBytes || 0);
-    if (expectedSize > 0 && totalBytes + expectedSize > MAX_NOTIFICATION_ATTACHMENT_BYTES) {
+    if (expectedSize > 0 && projectedBytes + expectedSize > MAX_NOTIFICATION_ATTACHMENT_BYTES) {
       omittedUploads += 1;
       continue;
     }
+    toDownload.push(upload);
+    projectedBytes += expectedSize;
+  }
 
-    try {
-      const content = await storage.download(upload.storageKey);
+  // Phase 2: fetch survivors in small concurrent batches so we improve
+  // latency without over-downloading large blobs that may later be dropped.
+  let totalBytes = input.pdfBuffer.length;
+  for (let i = 0; i < toDownload.length; i += MAX_NOTIFICATION_DOWNLOAD_CONCURRENCY) {
+    if (totalBytes >= MAX_NOTIFICATION_ATTACHMENT_BYTES) {
+      omittedUploads += toDownload.length - i;
+      break;
+    }
+
+    const batch = toDownload.slice(i, i + MAX_NOTIFICATION_DOWNLOAD_CONCURRENCY);
+    const downloadResults = await Promise.all(
+      batch.map(async (upload): Promise<{ upload: FormUpload; content?: Buffer; error?: unknown }> => {
+        try {
+          const content = await storage.download(upload.storageKey);
+          return { upload, content };
+        } catch (error) {
+          return { upload, error };
+        }
+      })
+    );
+
+    // Apply the real-byte budget in original order.
+    for (const { upload, content, error } of downloadResults) {
+      if (error || !content) {
+        omittedUploads += 1;
+        log.error('Failed to load upload for form completion email', {
+          formId: upload.formId,
+          uploadId: upload.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        continue;
+      }
       if (totalBytes + content.length > MAX_NOTIFICATION_ATTACHMENT_BYTES) {
         omittedUploads += 1;
         continue;
       }
-
       attachments.push({
         filename: upload.fileName,
         content,
         contentType: upload.mimeType || 'application/octet-stream',
       });
       totalBytes += content.length;
-    } catch (error) {
-      omittedUploads += 1;
-      log.error('Failed to load upload for form completion email', {
-        formId: upload.formId,
-        uploadId: upload.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
     }
   }
 

@@ -2535,8 +2535,9 @@ export async function cleanupEsigningOrphanedStorage(input?: {
     }
 
     const envelopeIds = new Set<string>();
+    const envelopeKeyRegex = new RegExp(`^${tenant.id}/esigning/([^/]+)/`);
     for (const file of files) {
-      const match = file.key.match(new RegExp(`^${tenant.id}/esigning/([^/]+)/`));
+      const match = file.key.match(envelopeKeyRegex);
       if (match?.[1]) {
         envelopeIds.add(match[1]);
       }

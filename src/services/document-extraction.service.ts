@@ -47,6 +47,7 @@ import { getRateWithPreference } from './exchange-rate.service';
 import type { SupportedCurrency } from '@/lib/validations/exchange-rate';
 import { learnVendorAlias, resolveVendor } from './vendor-resolution.service';
 import { learnCustomerAlias, resolveCustomer } from './customer-resolution.service';
+import { resolveLookupDate } from '@/lib/date-lookup';
 
 type _Decimal = Prisma.Decimal;
 
@@ -512,281 +513,6 @@ export async function extractFields(
       extractionId: completed.extractionId,
       revisionId: completed.revisionId,
     };
-    /*
-
-    // Build evidence JSON
-    const evidenceJson = buildEvidenceJson(extractionResult);
-
-    // Create extraction record
-    const extraction = await prisma.documentExtraction.create({
-      data: {
-        processingDocumentId,
-        extractionType: 'FIELDS',
-        provider: providerUsed,
-        model: modelUsed,
-        promptVersion: mergedConfig.promptVersion,
-        extractionSchemaVersion: mergedConfig.schemaVersion,
-        inputFingerprint,
-        rawJson: extractionResult as unknown as Prisma.InputJsonValue,
-        confidenceJson: buildConfidenceJson(extractionResult),
-        evidenceJson: evidenceJson as Prisma.InputJsonValue,
-        overallConfidence: extractionResult.overallConfidence,
-        latencyMs,
-      },
-    });
-
-    // Extract home currency equivalent if present (from invoice showing home currency tax equivalent)
-    const hce = extractionResult.homeCurrencyEquivalent;
-
-    // Home currency is ALWAYS the company's home currency, not extracted from document
-    // The AI may extract HCE amounts, but the currency itself comes from company settings
-    const homeCurrency = companyHomeCurrency;
-    const documentCurrency = extractionResult.currency.value;
-    const isSameCurrency = documentCurrency === homeCurrency;
-
-    // Determine exchange rate with priority:
-    // 1. Document-extracted exchange rate (only if HCE currency matches company home currency)
-    // 2. Database lookup (MAS/IRAS rates based on document date)
-    // 3. Default to 1 (same currency or fallback)
-    let exchangeRate: string;
-    let exchangeRateSource: ExchangeRateSource = 'PROVIDER_DEFAULT';
-
-    // Only use document exchange rate if the HCE currency matches company's home currency
-    // Example: Invoice MYR→SGD rate is only useful if company's home currency is SGD
-    const hceExchangeRateValid = hce?.exchangeRate && hce?.currency === companyHomeCurrency;
-
-    if (hceExchangeRateValid) {
-      // Priority 1: Use exchange rate from document (HCE currency matches company home currency)
-      exchangeRate = hce!.exchangeRate!;
-      exchangeRateSource = 'DOCUMENT';
-    } else if (isSameCurrency) {
-      // Same currency - no conversion needed
-      exchangeRate = '1';
-      exchangeRateSource = 'PROVIDER_DEFAULT';
-    } else {
-      // Priority 2: Look up exchange rate from database
-      const documentDate = extractionResult.documentDate?.value
-        ? new Date(extractionResult.documentDate.value)
-        : new Date(); // Use today if no date
-
-      try {
-        const rateResult = await getRate(
-          documentCurrency as SupportedCurrency,
-          companyHomeCurrency as SupportedCurrency,
-          documentDate,
-          tenantId
-        );
-
-        if (rateResult) {
-          exchangeRate = rateResult.rate.toString();
-          // Map the rate type to ExchangeRateSource
-          if (rateResult.rateType === 'MAS_DAILY_RATE') {
-            exchangeRateSource = 'MAS_DAILY';
-          } else if (rateResult.rateType === 'MAS_MONTHLY_RATE') {
-            exchangeRateSource = 'IRAS_MONTHLY_AVG';
-          } else if (rateResult.rateType === 'MANUAL_RATE') {
-            exchangeRateSource = 'MANUAL';
-          } else {
-            exchangeRateSource = 'PROVIDER_DEFAULT';
-          }
-          log.info(`Exchange rate lookup for ${documentCurrency} on ${documentDate.toISOString().split('T')[0]}: ${exchangeRate} (source: ${exchangeRateSource})`);
-        } else {
-          // Priority 3: No rate found, default to 1
-          exchangeRate = '1';
-          exchangeRateSource = 'PROVIDER_DEFAULT';
-          log.warn(`No exchange rate found for ${documentCurrency} on ${documentDate.toISOString().split('T')[0]}, defaulting to 1`);
-        }
-      } catch (rateError) {
-        // Log error but don't fail extraction - use default rate
-        log.error(`Failed to lookup exchange rate for ${documentCurrency}:`, rateError);
-        exchangeRate = '1';
-        exchangeRateSource = 'PROVIDER_DEFAULT';
-      }
-    }
-    const exchangeRateNum = parseFloat(exchangeRate);
-
-    // Only use AI-extracted HCE amounts if the extracted currency matches company's home currency
-    // Example: Invoice shows MYR with SGD equivalents, but company uses USD
-    // In this case, we must calculate USD equivalents, not use the SGD amounts from the invoice
-    const hceMatchesHomeCurrency = hce?.currency === companyHomeCurrency;
-    const useExtractedHce = hceMatchesHomeCurrency && hce;
-
-    // Calculate home amounts - prefer extracted if currency matches, otherwise calculate
-    const homeSubtotal = (useExtractedHce && hce?.subtotal) ||
-      (extractionResult.subtotal?.value ? (parseFloat(extractionResult.subtotal.value) * exchangeRateNum).toFixed(2) : undefined);
-    const homeTaxAmount = (useExtractedHce && hce?.taxAmount) ||
-      (extractionResult.taxAmount?.value ? (parseFloat(extractionResult.taxAmount.value) * exchangeRateNum).toFixed(2) : undefined);
-    const homeEquivalent = (useExtractedHce && hce?.totalAmount) ||
-      (parseFloat(extractionResult.totalAmount.value) * exchangeRateNum).toFixed(2);
-
-    // Counterparty canonicalization:
-    // - For ACCOUNTS_PAYABLE: vendor is the other party (vendorName).
-    // - For ACCOUNTS_RECEIVABLE: customer is the other party (customerName).
-    const isReceivable = extractionResult.documentCategory.value === 'ACCOUNTS_RECEIVABLE';
-    const rawCounterpartyName = isReceivable
-      ? extractionResult.customerName?.value ?? extractionResult.vendorName?.value
-      : extractionResult.vendorName?.value;
-
-    const vendorResolution = isReceivable
-      ? { vendorName: undefined, vendorId: undefined, confidence: 0, strategy: 'NONE' as const }
-      : await resolveVendor({
-          tenantId,
-          companyId,
-          rawVendorName: rawCounterpartyName,
-          createdById: userId,
-        });
-
-    const customerResolution = isReceivable
-      ? await resolveCustomer({
-          tenantId,
-          companyId,
-          rawCustomerName: rawCounterpartyName,
-          createdById: userId,
-        })
-      : { customerName: undefined, customerId: undefined, confidence: 0, strategy: 'NONE' as const };
-
-    // Learn aliases from extraction (best-effort)
-    if (rawCounterpartyName) {
-      if (!isReceivable && vendorResolution.vendorId) {
-        try {
-          const conf = vendorResolution.confidence || extractionResult.vendorName?.confidence || 0.9;
-          await learnVendorAlias({
-            tenantId,
-            companyId,
-            rawName: rawCounterpartyName,
-            vendorId: vendorResolution.vendorId,
-            confidence: conf,
-            createdById: userId,
-          });
-        } catch (e) {
-          log.warn(`Failed to learn vendor alias for "${rawCounterpartyName}"`, e);
-        }
-      }
-
-      if (isReceivable && customerResolution.customerId) {
-        try {
-          const conf =
-            customerResolution.confidence ||
-            extractionResult.customerName?.confidence ||
-            extractionResult.vendorName?.confidence ||
-            0.9;
-          await learnCustomerAlias({
-            tenantId,
-            companyId,
-            rawName: rawCounterpartyName,
-            customerId: customerResolution.customerId,
-            confidence: conf,
-            createdById: userId,
-          });
-        } catch (e) {
-          log.warn(`Failed to learn customer alias for "${rawCounterpartyName}"`, e);
-        }
-      }
-    }
-
-    // Create revision from extraction with calculated home amounts
-    const revision = await createRevision({
-      processingDocumentId,
-      revisionType: 'EXTRACTION',
-      extractionId: extraction.id,
-      createdById: userId,
-      documentCategory: extractionResult.documentCategory.value,
-      documentSubCategory: extractionResult.documentSubCategory?.value,
-      // Keep `vendorName` populated for existing UI/duplicate detection; for AR docs, this is the customer name.
-      vendorName: isReceivable ? customerResolution.customerName : vendorResolution.vendorName,
-      vendorId: isReceivable ? undefined : vendorResolution.vendorId,
-      customerName: isReceivable ? customerResolution.customerName : undefined,
-      customerId: isReceivable ? customerResolution.customerId : undefined,
-      documentNumber: extractionResult.documentNumber?.value,
-      documentDate: extractionResult.documentDate?.value
-        ? new Date(extractionResult.documentDate.value)
-        : undefined,
-      // Fallback: if dueDate is not provided, use documentDate
-      dueDate: extractionResult.dueDate?.value
-        ? new Date(extractionResult.dueDate.value)
-        : extractionResult.documentDate?.value
-          ? new Date(extractionResult.documentDate.value)
-          : undefined,
-      currency: extractionResult.currency.value,
-      subtotal: extractionResult.subtotal?.value,
-      taxAmount: extractionResult.taxAmount?.value,
-      totalAmount: extractionResult.totalAmount.value,
-      supplierGstNo: extractionResult.supplierGstNo?.value,
-      // Home currency equivalent - use extracted or calculated values
-      homeCurrency,
-      homeExchangeRate: exchangeRate,
-      homeExchangeRateSource: exchangeRateSource,
-      homeSubtotal,
-      homeTaxAmount,
-      homeEquivalent,
-      headerEvidenceJson: evidenceJson,
-      items: extractionResult.lineItems?.map((item) => {
-        const amount = parseFloat(item.amount.value) || 0;
-        const gstAmount = item.gstAmount?.value ? parseFloat(item.gstAmount.value) : 0;
-
-        return {
-          lineNo: item.lineNo,
-          description: item.description.value,
-          quantity: item.quantity?.value,
-          unitPrice: item.unitPrice?.value,
-          amount: item.amount.value,
-          gstAmount: item.gstAmount?.value,
-          taxCode: item.taxCode?.value,
-          accountCode: item.accountCode?.value,
-          evidenceJson: {
-            description: item.description.evidence,
-            amount: item.amount.evidence,
-          },
-          // Calculate home amounts for line items
-          homeAmount: (amount * exchangeRateNum).toFixed(2),
-          homeGstAmount: gstAmount > 0 ? (gstAmount * exchangeRateNum).toFixed(2) : undefined,
-        };
-      }) as LineItemInput[],
-      reason: 'initial_extraction',
-    });
-
-    // Point the processing document to the latest extracted draft revision so list views and sorting
-    // can use it immediately (no approval required).
-    await prisma.processingDocument.update({
-      where: { id: processingDocumentId },
-      data: {
-        currentRevisionId: revision.id,
-        lockVersion: { increment: 1 },
-      },
-    });
-
-    // Update pipeline status to EXTRACTION_DONE
-    await transitionPipelineStatus(processingDocumentId, 'EXTRACTION_DONE', tenantId, companyId);
-
-    // Record success
-    await recordProcessingAttempt(processingDocumentId, 'FIELD_EXTRACTION', 'SUCCEEDED', {
-      providerLatencyMs: latencyMs,
-    });
-
-    // Re-run duplicate check now that extraction data is available
-    // This is critical for image PDFs where content-based matching wasn't possible at upload time
-    try {
-      const duplicateResult = await checkForDuplicates(processingDocumentId, tenantId, companyId);
-      if (duplicateResult.hasPotentialDuplicate) {
-        await updateDuplicateStatus(processingDocumentId, duplicateResult);
-        log.info(
-          `Post-extraction duplicate check found ${duplicateResult.candidates.length} candidates ` +
-            `for ${processingDocumentId}`
-        );
-      }
-    } catch (dupError) {
-      // Log but don't fail extraction if duplicate check fails
-      log.warn(`Post-extraction duplicate check failed for ${processingDocumentId}:`, dupError);
-    }
-
-    log.info(`Field extraction completed for ${processingDocumentId}, revision ${revision.id} created`);
-
-    return {
-      success: true,
-      extractionId: extraction.id,
-      revisionId: revision.id,
-    };
-    */
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const isRetryable = isRetryableError(error);
@@ -1283,12 +1009,35 @@ async function persistCompletedExtraction(params: {
     exchangeRate = hce.exchangeRate;
     exchangeRateSource = 'DOCUMENT';
   } else if (isSameCurrency) {
+    // Legitimate rate=1 (document currency == home currency); no fallback.
     exchangeRate = '1';
     exchangeRateSource = 'PROVIDER_DEFAULT';
   } else {
-    const documentDate = normalizedExtractionResult.documentDate?.value
-      ? new Date(normalizedExtractionResult.documentDate.value)
-      : new Date();
+    const lookupDate = resolveLookupDate(normalizedExtractionResult.documentDate?.value);
+    const documentDate = lookupDate.date;
+    const documentDateIso = lookupDate.isoDate;
+
+    // Correlation context shared by every log emitted from this block so an
+    // operator can alert on `event: 'fx_rate_fallback'` and immediately see
+    // which tenant/document/currency was affected. Critical for detecting
+    // systemic FX-sync outages — behavior still falls back to rate=1 so the
+    // pipeline does not stall, but the degradation is no longer silent.
+    const fxLogContext = {
+      event: 'fx_rate_fallback' as const,
+      tenantId,
+      processingDocumentId,
+      documentCurrency,
+      homeCurrency: companyHomeCurrency,
+      documentDate: documentDateIso,
+      documentDateFallback: lookupDate.usedFallback,
+    };
+
+    if (lookupDate.usedFallback) {
+      log.warn(
+        `Invalid extraction document date "${lookupDate.rawValue ?? ''}" for ${processingDocumentId}; using ${documentDateIso} for FX lookup`,
+        { ...fxLogContext, reason: 'invalid_document_date' }
+      );
+    }
 
     try {
       const rateResult = await getRateWithPreference(
@@ -1310,20 +1059,27 @@ async function persistCompletedExtraction(params: {
           exchangeRateSource = 'PROVIDER_DEFAULT';
         }
         log.info(
-          `Exchange rate lookup for ${documentCurrency} on ${documentDate.toISOString().split('T')[0]}: ${exchangeRate} ` +
-            `(source: ${exchangeRateSource})`
+          `Exchange rate resolved for ${documentCurrency} on ${documentDateIso}: ${exchangeRate} (source: ${exchangeRateSource})`
         );
       } else {
         exchangeRate = '1';
         exchangeRateSource = 'PROVIDER_DEFAULT';
         log.warn(
-          `No exchange rate found for ${documentCurrency} on ${documentDate.toISOString().split('T')[0]}, defaulting to 1`
+          `FX fallback: no rate found for ${documentCurrency} on ${documentDateIso}, coerced to 1`,
+          { ...fxLogContext, reason: 'rate_not_found' }
         );
       }
     } catch (rateError) {
-      log.error(`Failed to lookup exchange rate for ${documentCurrency}:`, rateError);
       exchangeRate = '1';
       exchangeRateSource = 'PROVIDER_DEFAULT';
+      log.error(
+        `FX fallback: lookup threw for ${documentCurrency} on ${documentDateIso}, coerced to 1`,
+        {
+          ...fxLogContext,
+          reason: 'lookup_threw',
+          errorMessage: rateError instanceof Error ? rateError.message : String(rateError),
+        }
+      );
     }
   }
   const exchangeRateNum = parseFloat(exchangeRate);

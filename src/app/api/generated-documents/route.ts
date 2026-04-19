@@ -11,6 +11,7 @@ import {
   createBlankDocument,
   searchGeneratedDocuments,
 } from '@/services/document-generator.service';
+import { createErrorResponse } from '@/lib/api-helpers';
 
 /**
  * GET /api/generated-documents
@@ -54,16 +55,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
@@ -104,15 +96,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(document, { status: 201 });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

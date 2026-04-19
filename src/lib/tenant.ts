@@ -294,6 +294,37 @@ export function withTenantId<T extends Record<string, unknown>>(
 }
 
 // ============================================================================
+// Tenant Ownership Assertions
+// ============================================================================
+
+/**
+ * Assert a loaded entity both exists and belongs to the expected tenant.
+ *
+ * Throws a uniform "not found" style error for either missing entity OR
+ * cross-tenant mismatch — intentionally indistinguishable to avoid leaking
+ * existence of resources outside the caller's tenant.
+ *
+ * The `actualTenantId` argument is taken separately so callers can pass
+ * a nested field (e.g. `entity?.company.tenantId`) without needing to
+ * re-shape the entity.
+ *
+ * @example
+ *   const officer = await prisma.companyOfficer.findFirst({ ... include: COMPANY_SCOPE_INCLUDE });
+ *   assertTenantOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
+ *   // `officer` is now narrowed to non-null
+ */
+export function assertTenantOwned<T>(
+  entity: T | null | undefined,
+  actualTenantId: string | null | undefined,
+  expectedTenantId: string,
+  notFoundMessage: string
+): asserts entity is NonNullable<T> {
+  if (!entity || actualTenantId !== expectedTenantId) {
+    throw new Error(notFoundMessage);
+  }
+}
+
+// ============================================================================
 // Tenant Validation
 // ============================================================================
 
