@@ -58,9 +58,9 @@ export function EsigningDeclineModal({
             id="decline-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            rows={4}
+            rows={3}
             placeholder="Please provide a reason for declining..."
-            className="w-full resize-none rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-rose-400 focus:ring-1 focus:ring-rose-400/30"
+            className="min-h-[80px] w-full resize-none rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-rose-400 focus:ring-1 focus:ring-rose-400/30 sm:min-h-[112px]"
           />
           {reason.trim().length > 0 && reason.trim().length < 3 && (
             <p className="mt-1 text-xs text-rose-500">Please enter at least 3 characters.</p>

@@ -10,6 +10,7 @@ import { createAuditLog } from '@/lib/audit';
 import {
   parseFormDraftSettings,
   parseObject,
+  pruneHiddenConditionalAnswers,
   toAnswerRecord,
 } from '@/lib/form-utils';
 import { prisma } from '@/lib/prisma';
@@ -302,6 +303,20 @@ function sanitizeChoiceEntry(entry: unknown): string | { value: string; detailTe
   };
 }
 
+function sanitizeTimeTimezoneValue(value: unknown): { time: string; timezone: string } | null {
+  const record = parseObject(value);
+  if (!record) return null;
+
+  const time = typeof record.time === 'string' ? record.time.trim() : '';
+  if (!/^\d{2}:\d{2}$/.test(time)) return null;
+
+  const timezone = typeof record.timezone === 'string' ? record.timezone.trim().slice(0, 120) : '';
+  return {
+    time,
+    timezone: timezone || 'Asia/Singapore',
+  };
+}
+
 function sanitizePublicAnswers(
   fields: FormField[],
   answers: Record<string, unknown>,
@@ -319,6 +334,17 @@ function sanitizePublicAnswers(
 
     switch (field.type) {
       case 'SHORT_TEXT':
+        if (field.inputType === 'time_timezone') {
+          if (Array.isArray(value)) {
+            sanitizedAnswers[key] = value
+              .slice(0, 100)
+              .map((item) => sanitizeTimeTimezoneValue(item) ?? { time: '', timezone: 'Asia/Singapore' });
+          } else {
+            const sanitizedValue = sanitizeTimeTimezoneValue(value);
+            if (sanitizedValue) sanitizedAnswers[key] = sanitizedValue;
+          }
+          break;
+        }
       case 'LONG_TEXT':
       case 'DROPDOWN':
         if (typeof value === 'string') {
@@ -428,10 +454,20 @@ export async function savePublicDraft(
     throw new Error('Draft access is incomplete');
   }
 
-  const uploadIds = [...new Set((input.uploadIds || []).filter((id) => typeof id === 'string' && UPLOAD_ID_PATTERN.test(id)))];
+  const answers = pruneHiddenConditionalAnswers(
+    form.fields,
+    applyDefaultTodayAnswers(form.fields, toAnswerRecord(input.answers))
+  );
+  const referencedUploadIdSet = new Set(
+    form.fields
+      .filter((field) => field.type === 'FILE_UPLOAD')
+      .flatMap((field) => collectUploadIdsFromAnswer(answers[field.key]))
+      .filter((id) => UPLOAD_ID_PATTERN.test(id))
+  );
+  const uploadIds = [...new Set((input.uploadIds || []).filter((id) => (
+    typeof id === 'string' && UPLOAD_ID_PATTERN.test(id) && referencedUploadIdSet.has(id)
+  )))];
   const uploadIdSet = new Set(uploadIds);
-
-  const answers = applyDefaultTodayAnswers(form.fields, toAnswerRecord(input.answers));
   const sanitizedAnswers = sanitizePublicAnswers(form.fields, answers, uploadIdSet);
   const normalizedMetadata = normalizeDraftMetadata(input.metadata);
   const expiresAt = new Date(Date.now() + draftSettings.autoDeleteDays * 24 * 60 * 60 * 1000);

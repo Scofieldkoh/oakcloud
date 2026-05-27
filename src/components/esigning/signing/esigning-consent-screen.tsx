@@ -26,9 +26,9 @@ export function EsigningConsentScreen({
   const [isAgreed, setIsAgreed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background-primary px-4 py-12">
+    <div className="min-h-screen bg-background-primary px-4 py-8 sm:py-12">
       <div className="mx-auto w-full max-w-2xl">
-        <div className="rounded-3xl border border-border-primary bg-background-secondary p-8 shadow-sm">
+        <div className="rounded-3xl border border-border-primary bg-background-secondary p-5 shadow-sm sm:p-8">
           {/* Badge */}
           <div className="flex justify-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-border-primary bg-background-tertiary px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-text-muted">
@@ -38,7 +38,7 @@ export function EsigningConsentScreen({
           </div>
 
           {/* Heading */}
-          <h1 className="mt-6 text-center text-2xl font-semibold text-text-primary">
+          <h1 className="mt-6 text-center text-xl font-semibold text-text-primary sm:text-2xl">
             Electronic Signature Disclosure
           </h1>
           <p className="mt-2 text-center text-sm text-text-secondary">
@@ -54,9 +54,9 @@ export function EsigningConsentScreen({
             </p>
             <ul className="space-y-1.5">
               {documents.map((doc) => (
-                <li key={doc.id} className="flex items-center gap-2 text-sm text-text-primary">
-                  <FileText className="h-4 w-4 shrink-0 text-oak-primary" />
-                  {doc.fileName}
+                <li key={doc.id} className="flex items-start gap-2 text-sm text-text-primary">
+                  <FileText className="mt-0.5 h-4 w-4 shrink-0 text-oak-primary" />
+                  <span className="min-w-0 break-words">{doc.fileName}</span>
                 </li>
               ))}
             </ul>
@@ -103,15 +103,17 @@ export function EsigningConsentScreen({
           </label>
 
           {/* Footer buttons */}
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:flex-wrap">
             <Button
               variant="danger"
+              className="w-full sm:w-auto"
               onClick={onDecline}
               disabled={isSubmitting}
             >
               Decline to Sign
             </Button>
             <Button
+              className="w-full sm:w-auto"
               onClick={onConsent}
               disabled={!isAgreed || isSubmitting}
               isLoading={isSubmitting}

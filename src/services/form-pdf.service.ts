@@ -7,6 +7,7 @@ import { generatePDF } from '@/services/document-export.service';
 import {
   evaluateCondition,
   formatChoiceAnswer,
+  formatTimeTimezoneAnswer,
   isEmptyValue,
   parseChoiceOptions,
   parseFormFileNameSettings,
@@ -115,6 +116,11 @@ function toFileNameTemplateValue(value: unknown): string {
   const choiceText = formatChoiceAnswer(value);
   if (choiceText) {
     return normalizeTemplateValue(choiceText, 240);
+  }
+
+  const timeTimezoneText = formatTimeTimezoneAnswer(value);
+  if (timeTimezoneText) {
+    return normalizeTemplateValue(timeTimezoneText, 240);
   }
 
   if (Array.isArray(value)) {
@@ -413,6 +419,11 @@ export function buildSubmissionPdfHtml(input: {
     return validation?.choiceInlineRight === true;
   }
 
+  function fieldGridStyle(field: FormField, span: number): string {
+    const validation = parseObject(field.validation);
+    return `grid-column: ${validation?.layoutBreakBefore === true ? '1 / ' : ''}span ${span};`;
+  }
+
   function renderChoiceInlineRight(field: FormField, value: unknown): string {
     const label = esc(field.label?.trim() || field.key);
     const options = parseChoiceOptions(field.options);
@@ -449,6 +460,10 @@ export function buildSubmissionPdfHtml(input: {
       const text = formatChoiceAnswer(value);
       return text ? esc(text) : `<span class="empty">\u2014</span>`;
     }
+    const timeTimezoneText = formatTimeTimezoneAnswer(value);
+    if (timeTimezoneText) {
+      return esc(timeTimezoneText);
+    }
     if (value === null || value === undefined || value === '') {
       return `<span class="empty">\u2014</span>`;
     }
@@ -466,12 +481,12 @@ export function buildSubmissionPdfHtml(input: {
 
     // choiceInlineRight: label on left, selected option pills on right
     if ((field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') && isChoiceInlineRight(field)) {
-      return `<div class="field" style="grid-column: span ${span};">${renderChoiceInlineRight(field, value)}</div>`;
+      return `<div class="field" style="${fieldGridStyle(field, span)}">${renderChoiceInlineRight(field, value)}</div>`;
     }
 
     const label = esc(field.label?.trim() || field.key);
     return `
-      <div class="field" style="grid-column: span ${span};">
+      <div class="field" style="${fieldGridStyle(field, span)}">
         <div class="field-label">${label}</div>
         <div class="field-value">${renderFieldValue(field, value)}</div>
       </div>`;

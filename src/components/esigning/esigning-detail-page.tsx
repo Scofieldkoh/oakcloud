@@ -715,10 +715,11 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     return (
       <div className="min-h-screen bg-background-primary flex flex-col">
         {/* Header */}
-        <div className="border-b border-border-primary bg-background-secondary px-3 py-2 flex-shrink-0 sm:px-6 sm:py-3">
+        <div className="border-b border-border-primary bg-background-secondary px-3 py-3 flex-shrink-0 sm:px-6 sm:py-3">
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/esigning"
+              aria-label="Back to envelopes"
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border-primary px-2.5 py-1.5 text-sm text-text-secondary hover:bg-background-tertiary sm:gap-2 sm:px-3"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -732,6 +733,8 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 onStepClick={setCurrentStep}
               />
             </div>
+            {/* Mobile-only spacer mirrors the back-button width so the indicator is visually centered. */}
+            <div aria-hidden className="h-9 w-9 shrink-0 sm:hidden" />
             <div className="hidden items-center gap-2 sm:flex">
               {envelope.canDelete ? (
                 <Button
@@ -870,7 +873,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   <FileSignature className="h-6 w-6" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="truncate text-2xl font-semibold text-text-primary sm:text-3xl">{envelope.title}</h1>
+                  <h1 className="truncate text-xl font-semibold text-text-primary sm:text-2xl lg:text-3xl">{envelope.title}</h1>
                   <p className="mt-1 text-sm text-text-secondary">
                     Certificate {envelope.certificateId} · Updated{' '}
                     {formatEsigningDateTime(envelope.updatedAt)}
@@ -883,9 +886,10 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 </Alert>
               )}
             </div>
-            <div className="flex flex-wrap gap-2 sm:gap-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
               {envelope.canSend && can.updateEsigning && (
                 <Button
+                  className="w-full sm:w-auto"
                   leftIcon={<Send className="h-4 w-4" />}
                   onClick={async () => {
                     try {
@@ -907,37 +911,44 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 </Button>
               )}
               {envelope.canVoid && can.updateEsigning && (
-                <Button variant="secondary" onClick={() => setIsVoidOpen(true)}>
+                <Button className="w-full sm:w-auto" variant="secondary" onClick={() => setIsVoidOpen(true)}>
                   Void
                 </Button>
               )}
               {envelope.status === 'COMPLETED' && envelope.pdfGenerationStatus === 'COMPLETED' ? (
                 <>
                   <Button
+                    className="w-full sm:w-auto"
                     variant="secondary"
                     leftIcon={<Download className="h-4 w-4" />}
                     onClick={() => openEnvelopeDownload('documents')}
                   >
-                    Document only
+                    <span className="sm:hidden">Doc only</span>
+                    <span className="hidden sm:inline">Document only</span>
                   </Button>
                   <Button
+                    className="w-full sm:w-auto"
                     variant="secondary"
                     leftIcon={<Download className="h-4 w-4" />}
                     onClick={() => openEnvelopeDownload('documents_with_certificates')}
                   >
-                    Document + Certificate
+                    <span className="sm:hidden">Doc + Cert</span>
+                    <span className="hidden sm:inline">Document + Certificate</span>
                   </Button>
                   <Button
+                    className="w-full sm:w-auto"
                     variant="secondary"
                     leftIcon={<Download className="h-4 w-4" />}
                     onClick={() => openEnvelopeDownload('certificates')}
                   >
-                    Certificate only
+                    <span className="sm:hidden">Cert only</span>
+                    <span className="hidden sm:inline">Certificate only</span>
                   </Button>
                 </>
               ) : null}
               {envelope.canRetryPdf ? (
                 <Button
+                  className="w-full sm:w-auto"
                   variant="secondary"
                   onClick={async () => {
                     try {
@@ -963,7 +974,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         </section>
 
         {/* Two-column layout */}
-        <div className="grid gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
           {/* Left: recipients + documents */}
           <div className="space-y-4 sm:space-y-6">
             {/* Recipients */}
@@ -1064,8 +1075,8 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                     className="rounded-2xl border border-border-primary bg-background-primary p-4"
                   >
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                      <div>
-                        <div className="font-semibold text-text-primary">{doc.fileName}</div>
+                      <div className="min-w-0">
+                        <div className="break-words font-semibold text-text-primary">{doc.fileName}</div>
                         <div className="text-sm text-text-secondary">
                           {doc.pageCount} pages · {formatEsigningFileSize(doc.fileSize)}
                         </div>
@@ -1075,7 +1086,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                           href={doc.pdfUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+                          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary sm:min-h-0"
                         >
                           <Download className="h-4 w-4" />
                           Original
@@ -1085,10 +1096,11 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                             href={doc.signedPdfUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-2 rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+                            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary sm:min-h-0"
                           >
                             <Download className="h-4 w-4" />
-                            Document only
+                            <span className="sm:hidden">Signed</span>
+                            <span className="hidden sm:inline">Document only</span>
                           </a>
                         )}
                       </div>

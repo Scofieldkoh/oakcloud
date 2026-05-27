@@ -76,11 +76,11 @@ export function EsigningStepReview({
   const isReady = blockingIssues.length === 0;
 
   return (
-    <div className="pb-20">
+    <div className="pb-6 sm:pb-20">
       <div className="max-w-4xl mx-auto p-4 space-y-4 sm:p-6 sm:space-y-6">
         {/* Envelope summary card */}
         <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
-          <h1 className="text-2xl font-semibold text-text-primary">{envelope.title}</h1>
+          <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">{envelope.title}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center rounded-full border border-border-primary px-3 py-1 text-xs text-text-secondary">
               {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}

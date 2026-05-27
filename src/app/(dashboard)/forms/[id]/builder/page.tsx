@@ -35,6 +35,7 @@ import {
   FIELD_TYPE_LABEL,
   defaultField,
   fromServerField,
+  isBlockDividerInputType,
   newClientId,
   normalizeKey,
   serializeBuilderState,
@@ -300,6 +301,7 @@ function getBuilderFieldTypeLabel(field: BuilderField): string {
   if (field.type === 'PAGE_BREAK') {
     if (field.inputType === 'repeat_start') return 'Dynamic section start';
     if (field.inputType === 'repeat_end') return 'Dynamic section end';
+    if (isBlockDividerInputType(field.inputType)) return 'Block divider';
     return FIELD_TYPE_LABEL[field.type];
   }
 
@@ -842,6 +844,23 @@ export default function FormBuilderPage() {
       const created = { ...defaultField(type, prev.length), clientId: createdClientId };
       const next = [...prev, created];
       return resequence(next);
+    });
+    setSelectedFieldId(createdClientId);
+  }
+
+  function addBlockDivider() {
+    const createdClientId = newClientId();
+    setFields((prev) => {
+      const created: BuilderField = {
+        ...defaultField('PAGE_BREAK', prev.length),
+        clientId: createdClientId,
+        label: 'Block divider',
+        key: `block_divider_${prev.length + 1}`,
+        inputType: 'block_divider',
+        hideLabel: true,
+        showOnSummary: false,
+      };
+      return resequence([...prev, created]);
     });
     setSelectedFieldId(createdClientId);
   }
@@ -2328,6 +2347,19 @@ export default function FormBuilderPage() {
                     className="!bg-background-secondary hover:!bg-background-tertiary"
                   >
                     Page <span className="ml-1 text-2xs text-text-muted">Ctrl/Cmd+Shift+B</span>
+                  </Button>
+                </div>
+              </Tooltip>
+              <Tooltip content="Start a new block">
+                <div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<Plus className="w-4 h-4" />}
+                    onClick={addBlockDivider}
+                    className="!bg-background-secondary hover:!bg-background-tertiary"
+                  >
+                    Block
                   </Button>
                 </div>
               </Tooltip>

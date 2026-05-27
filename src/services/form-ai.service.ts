@@ -6,6 +6,7 @@ import { getModelConfig } from '@/lib/ai/models';
 import type { AIImageInput } from '@/lib/ai/types';
 import {
   formatChoiceAnswer,
+  formatTimeTimezoneAnswer,
   isEmptyValue,
   parseFormAiSettings,
   parseFormSubmissionAiReview,
@@ -276,6 +277,9 @@ function normalizeAnswerValueForAI(
   if (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE' || field.type === 'DROPDOWN') {
     return formatChoiceAnswer(value);
   }
+
+  const timeTimezoneText = formatTimeTimezoneAnswer(value);
+  if (timeTimezoneText) return timeTimezoneText;
 
   return normalizePrimitiveValue(value);
 }

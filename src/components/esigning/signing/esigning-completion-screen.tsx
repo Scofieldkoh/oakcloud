@@ -34,19 +34,19 @@ export function EsigningCompletionScreen({
   const isSignedCopyPreparing = isAllPartiesDone && pdfGenerationStatus !== 'COMPLETED';
 
   return (
-    <div className="min-h-screen bg-background-primary px-4 pt-16 pb-12">
+    <div className="min-h-screen bg-background-primary px-4 pt-8 pb-8 sm:pt-16 sm:pb-12">
       <div className="mx-auto w-full max-w-2xl">
         {/* Main card */}
-        <div className="rounded-3xl border border-border-primary bg-background-secondary p-8 shadow-sm text-center">
+        <div className="rounded-3xl border border-border-primary bg-background-secondary p-5 shadow-sm text-center sm:p-8">
           {/* Icon */}
           <div className="flex justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200">
-              <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200 sm:h-20 sm:w-20">
+              <CheckCircle2 className="h-8 w-8 text-emerald-500 sm:h-10 sm:w-10" />
             </div>
           </div>
 
           {/* Title */}
-          <h1 className="mt-6 text-2xl font-semibold text-text-primary">
+          <h1 className="mt-6 text-xl font-semibold text-text-primary sm:text-2xl">
             {isAllPartiesDone ? 'Completed' : 'Your part is complete'}
           </h1>
           <p className="mt-2 text-sm text-text-secondary">
@@ -71,10 +71,10 @@ export function EsigningCompletionScreen({
           ) : null}
 
           {/* Envelope info */}
-          <p className="mt-4 text-xs text-text-muted">
+          <p className="mt-4 break-words text-xs text-text-muted">
             Envelope: <span className="font-medium text-text-secondary">{envelopeTitle}</span>
           </p>
-          <p className="text-xs text-text-muted">
+          <p className="break-words text-xs text-text-muted">
             Recipient: <span className="font-medium text-text-secondary">{recipientName}</span>
           </p>
         </div>

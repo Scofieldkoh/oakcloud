@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import { CSS } from '@dnd-kit/utilities';
-import { Upload, FileText, UserPlus, MoreVertical, Pencil, X, Check, ChevronDown, ChevronUp, GripVertical, Mail } from 'lucide-react';
+import { Upload, FileText, UserPlus, MoreVertical, Pencil, X, Check, ChevronDown, ChevronUp, GripVertical, Mail, Trash2, Plus } from 'lucide-react';
 import type { EsigningRecipientAccessMode, EsigningRecipientType } from '@/generated/prisma';
 import type { EsigningEnvelopeDetailDto, EsigningEnvelopeDocumentDto, EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { UpdateEsigningEnvelopeInput } from '@/lib/validations/esigning';
@@ -445,16 +445,18 @@ function SortableSignerRow({
           <button
             type="button"
             onClick={onEdit}
-            className="flex-shrink-0 rounded p-1 text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+            aria-label={`Edit ${recipient.name}`}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary sm:h-8 sm:w-8"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-4 w-4" />
           </button>
           <button
             type="button"
             onClick={onRemove}
-            className="flex-shrink-0 rounded p-1 text-text-muted hover:bg-background-tertiary hover:text-rose-500"
+            aria-label={`Remove ${recipient.name}`}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-rose-500 sm:h-8 sm:w-8"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
         </>
       )}
@@ -504,16 +506,18 @@ function RecipientRow({
           <button
             type="button"
             onClick={onEdit}
-            className="flex-shrink-0 rounded p-1 text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+            aria-label={`Edit ${recipient.name}`}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary sm:h-8 sm:w-8"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-4 w-4" />
           </button>
           <button
             type="button"
             onClick={onRemove}
-            className="flex-shrink-0 rounded p-1 text-text-muted hover:bg-background-tertiary hover:text-rose-500"
+            aria-label={`Remove ${recipient.name}`}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-rose-500 sm:h-8 sm:w-8"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
         </>
       )}
@@ -1217,11 +1221,11 @@ export function EsigningStepUpload({
                         key={`mixed-group-${group.groupIndex}`}
                         className="rounded-2xl border border-border-primary bg-background-primary p-3 space-y-3"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
                               <h4 className="text-sm font-semibold text-text-primary">Group {group.groupIndex + 1}</h4>
-                              <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                              <span className="rounded-full border border-oak-primary/20 bg-oak-primary/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-oak-primary">
                                 Parallel within group
                               </span>
                             </div>
@@ -1230,39 +1234,45 @@ export function EsigningStepUpload({
                             </p>
                           </div>
                           {envelope.canEdit && (
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {/* Move earlier / later — grouped icon pair with shared affordance */}
+                              <div className="inline-flex overflow-hidden rounded-lg border border-border-primary">
+                                <button
+                                  type="button"
+                                  aria-label="Move group earlier"
+                                  onClick={() => {
+                                    void applyMixedGroupChange(
+                                      (groups) => moveGroup(groups, group.groupIndex, -1),
+                                      'Failed to move group earlier'
+                                    );
+                                  }}
+                                  disabled={isReorderingRecipients || group.groupIndex === 0}
+                                  className="inline-flex h-8 min-w-[36px] items-center justify-center border-r border-border-primary bg-background-elevated px-3 text-sm text-text-primary transition-colors hover:bg-background-tertiary disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  <ChevronUp className="h-4 w-4" />
+                                  <span className="ml-1 hidden sm:inline">Earlier</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  aria-label="Move group later"
+                                  onClick={() => {
+                                    void applyMixedGroupChange(
+                                      (groups) => moveGroup(groups, group.groupIndex, 1),
+                                      'Failed to move group later'
+                                    );
+                                  }}
+                                  disabled={isReorderingRecipients || group.groupIndex === mixedSignerGroups.length - 1}
+                                  className="inline-flex h-8 min-w-[36px] items-center justify-center bg-background-elevated px-3 text-sm text-text-primary transition-colors hover:bg-background-tertiary disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  <ChevronDown className="h-4 w-4" />
+                                  <span className="ml-1 hidden sm:inline">Later</span>
+                                </button>
+                              </div>
                               <Button
                                 type="button"
                                 size="sm"
                                 variant="secondary"
-                                onClick={() => {
-                                  void applyMixedGroupChange(
-                                    (groups) => moveGroup(groups, group.groupIndex, -1),
-                                    'Failed to move group earlier'
-                                  );
-                                }}
-                                disabled={isReorderingRecipients || group.groupIndex === 0}
-                              >
-                                Move earlier
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => {
-                                  void applyMixedGroupChange(
-                                    (groups) => moveGroup(groups, group.groupIndex, 1),
-                                    'Failed to move group later'
-                                  );
-                                }}
-                                disabled={isReorderingRecipients || group.groupIndex === mixedSignerGroups.length - 1}
-                              >
-                                Move later
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
+                                leftIcon={<Trash2 className="h-4 w-4" />}
                                 onClick={() => {
                                   void applyMixedGroupChange(
                                     (groups) => mergeGroup(groups, group.groupIndex),
@@ -1271,7 +1281,7 @@ export function EsigningStepUpload({
                                 }}
                                 disabled={isReorderingRecipients || mixedSignerGroups.length <= 1}
                               >
-                                Remove group
+                                Remove
                               </Button>
                             </div>
                           )}
@@ -1305,55 +1315,63 @@ export function EsigningStepUpload({
                                       <button
                                         type="button"
                                         onClick={() => onEditRecipient(recipient.id)}
-                                        className="rounded p-1 text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                                        aria-label={`Edit ${recipient.name}`}
+                                        className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary sm:h-8 sm:w-8"
                                       >
-                                        <Pencil className="h-3.5 w-3.5" />
+                                        <Pencil className="h-4 w-4" />
                                       </button>
                                       <button
                                         type="button"
                                         onClick={() => onRemoveRecipient(recipient.id)}
-                                        className="rounded p-1 text-text-muted hover:bg-background-tertiary hover:text-rose-500"
+                                        aria-label={`Remove ${recipient.name}`}
+                                        className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-rose-500 sm:h-8 sm:w-8"
                                       >
-                                        <X className="h-3.5 w-3.5" />
+                                        <X className="h-4 w-4" />
                                       </button>
                                     </div>
                                   )}
                                 </div>
 
                                 {envelope.canEdit && (
-                                  <div className="mt-3 flex flex-wrap gap-2">
+                                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                                    {/* Join previous / next — grouped icon pair */}
+                                    <div className="inline-flex overflow-hidden rounded-lg border border-border-primary">
+                                      <button
+                                        type="button"
+                                        aria-label="Join previous group"
+                                        onClick={() => {
+                                          void applyMixedGroupChange(
+                                            (groups) => moveSignerToAdjacentGroup(groups, group.groupIndex, recipient.id, -1),
+                                            'Failed to move signer to the earlier group'
+                                          );
+                                        }}
+                                        disabled={isReorderingRecipients || group.groupIndex === 0}
+                                        className="inline-flex h-8 items-center justify-center gap-1 border-r border-border-primary bg-background-elevated px-3 text-sm text-text-primary transition-colors hover:bg-background-tertiary disabled:cursor-not-allowed disabled:opacity-40"
+                                      >
+                                        <ChevronUp className="h-4 w-4" />
+                                        <span>Previous group</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        aria-label="Join next group"
+                                        onClick={() => {
+                                          void applyMixedGroupChange(
+                                            (groups) => moveSignerToAdjacentGroup(groups, group.groupIndex, recipient.id, 1),
+                                            'Failed to move signer to the next group'
+                                          );
+                                        }}
+                                        disabled={isReorderingRecipients || group.groupIndex === mixedSignerGroups.length - 1}
+                                        className="inline-flex h-8 items-center justify-center gap-1 bg-background-elevated px-3 text-sm text-text-primary transition-colors hover:bg-background-tertiary disabled:cursor-not-allowed disabled:opacity-40"
+                                      >
+                                        <ChevronDown className="h-4 w-4" />
+                                        <span>Next group</span>
+                                      </button>
+                                    </div>
                                     <Button
                                       type="button"
                                       size="sm"
                                       variant="secondary"
-                                      onClick={() => {
-                                        void applyMixedGroupChange(
-                                          (groups) => moveSignerToAdjacentGroup(groups, group.groupIndex, recipient.id, -1),
-                                          'Failed to move signer to the earlier group'
-                                        );
-                                      }}
-                                      disabled={isReorderingRecipients || group.groupIndex === 0}
-                                    >
-                                      Join previous group
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="secondary"
-                                      onClick={() => {
-                                        void applyMixedGroupChange(
-                                          (groups) => moveSignerToAdjacentGroup(groups, group.groupIndex, recipient.id, 1),
-                                          'Failed to move signer to the next group'
-                                        );
-                                      }}
-                                      disabled={isReorderingRecipients || group.groupIndex === mixedSignerGroups.length - 1}
-                                    >
-                                      Join next group
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="ghost"
+                                      leftIcon={<Plus className="h-4 w-4" />}
                                       onClick={() => {
                                         void applyMixedGroupChange(
                                           (groups) => splitSignerIntoOwnGroup(groups, group.groupIndex, recipient.id),
@@ -1362,7 +1380,7 @@ export function EsigningStepUpload({
                                       }}
                                       disabled={isReorderingRecipients || group.recipientIds.length <= 1}
                                     >
-                                      New group below
+                                      New group
                                     </Button>
                                   </div>
                                 )}
@@ -1556,10 +1574,10 @@ export function EsigningStepUpload({
           <button
             type="button"
             onClick={() => setIsAddingRecipient(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-dashed border-border-primary px-4 py-2 text-sm text-text-muted hover:border-oak-primary/50 hover:text-text-primary transition-colors"
+            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-dashed border-border-primary px-4 py-2 text-sm text-text-primary hover:border-oak-primary/50 hover:bg-background-tertiary transition-colors"
           >
-            <UserPlus className="h-4 w-4" />
-            Add Recipient +
+            <UserPlus className="h-4 w-4 text-text-muted" />
+            Add recipient
           </button>
         )}
       </section>

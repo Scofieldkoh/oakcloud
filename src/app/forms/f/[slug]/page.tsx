@@ -6,6 +6,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigat
 import { ArrowLeft, CheckCircle2, ChevronDown, Copy, Download, Info, Mail, PenLine, Plus, RotateCcw, UploadCloud, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SingleDateInput } from '@/components/ui/single-date-input';
+import { SingleTimeInput } from '@/components/ui/single-time-input';
 import { EsigningSignatureModal } from '@/components/esigning/signing/esigning-signature-modal';
 import { Tooltip } from '@/components/ui/tooltip';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -17,6 +18,8 @@ import {
   parseFormI18nSettings,
   isEmptyValue,
   evaluateCondition,
+  isProgressStopInfoBlock,
+  pruneHiddenConditionalAnswers,
   type PublicFormField as PublicField,
   type PublicFormDefinition,
 } from '@/lib/form-utils';
@@ -28,6 +31,7 @@ import {
   getLocalizedCountryPresetOptions,
   getLocalizedNationalityPresetOptions,
 } from '@/lib/constants/form-option-presets';
+import { TIMEZONE_OPTIONS } from '@/lib/constants/timezones';
 import { cn } from '@/lib/utils';
 import DOMPurify from 'dompurify';
 
@@ -38,6 +42,9 @@ const DATA_URI_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,/i;
 const HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 const CHOICE_RADIO_INPUT_CLASS = 'h-4 w-4 border-[#D8E3DF] bg-[#F4F7F6] accent-[#294D44]';
 const CHOICE_CHECKBOX_INPUT_CLASS = 'h-4 w-4 rounded border-[#D8E3DF] bg-[#F4F7F6] accent-[#294D44]';
+const ERROR_FIELD_CLASS = 'border-status-error/70 bg-status-error/5 focus:border-status-error focus:ring-status-error/20';
+const ERROR_CHOICE_CLASS = 'border-status-error/70 bg-status-error/5 ring-1 ring-status-error/20';
+const DEFAULT_TIMEZONE = 'Asia/Singapore';
 const DEFAULT_UI_LABELS = {
   language_label: 'Language',
   back: 'Back',
@@ -404,6 +411,27 @@ function isTooltipEnabled(field: PublicField): boolean {
   return validation?.tooltipEnabled === true && typeof field.helpText === 'string' && field.helpText.trim().length > 0;
 }
 
+function getTooltipMode(field: PublicField): 'hover' | 'inline' {
+  const validation = parseObject(field.validation);
+  return validation?.tooltipMode === 'inline' ? 'inline' : 'hover';
+}
+
+function getTooltipInfoStyle(field: PublicField): React.CSSProperties {
+  const validation = parseObject(field.validation);
+  const top = parseInfoPaddingValue(validation?.tooltipInfoPaddingTopPx) ?? 8;
+  const right = parseInfoPaddingValue(validation?.tooltipInfoPaddingRightPx) ?? 12;
+  const bottom = parseInfoPaddingValue(validation?.tooltipInfoPaddingBottomPx) ?? 8;
+  const left = parseInfoPaddingValue(validation?.tooltipInfoPaddingLeftPx) ?? 12;
+
+  return {
+    backgroundColor: normalizeHexColor(validation?.tooltipInfoBackgroundColor) || '#f8fafc',
+    paddingTop: `${top}px`,
+    paddingRight: `${right}px`,
+    paddingBottom: `${bottom}px`,
+    paddingLeft: `${left}px`,
+  };
+}
+
 function isValidHttpUrl(value: string | null): value is string {
   if (!value) return false;
   try {
@@ -429,7 +457,14 @@ function normalizeHexColor(value: unknown): string | null {
 function getInfoBackgroundColor(field: PublicField): string | null {
   if (field.type !== 'PARAGRAPH') return null;
   const validation = parseObject(field.validation);
+  if (validation?.infoBareStyle === true) return null;
   return normalizeHexColor(validation?.infoBackgroundColor);
+}
+
+function isBareInfoTextBlock(field: PublicField): boolean {
+  const validation = parseObject(field.validation);
+  const isTextBlock = field.inputType === 'info_text' || !field.inputType;
+  return field.type === 'PARAGRAPH' && isTextBlock && validation?.infoBareStyle === true;
 }
 
 type InfoPadding = {
@@ -459,7 +494,9 @@ function getInfoPadding(field: PublicField): InfoPadding | null {
   const bottom = parseInfoPaddingValue(validation?.infoPaddingBottomPx) ?? fallbackPadding;
   const left = parseInfoPaddingValue(validation?.infoPaddingLeftPx) ?? fallbackPadding;
 
-  if (top === null && right === null && bottom === null && left === null) return null;
+  if (top === null && right === null && bottom === null && left === null) {
+    return validation?.infoBareStyle === true ? { top: 0, right: 0, bottom: 0, left: 0 } : null;
+  }
 
   return { top, right, bottom, left };
 }
@@ -468,6 +505,13 @@ function isDateDefaultTodayEnabled(field: PublicField): boolean {
   if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return false;
   const validation = parseObject(field.validation);
   return validation?.defaultToday === true;
+}
+
+function getDefaultMultipleChoiceValue(field: PublicField): unknown[] {
+  if (field.type !== 'MULTIPLE_CHOICE') return [];
+  return parseChoiceOptions(field.options)
+    .filter((option) => option.defaultSelected)
+    .map((option) => (option.allowTextInput ? { value: option.value, detailText: '' } : option.value));
 }
 
 function getLocalTodayIsoDate(): string {
@@ -483,11 +527,46 @@ function resolveDateBoundary(value: unknown): string | undefined {
   return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : undefined;
 }
 
-function getDateValidationRange(field: PublicField): { minDate?: string; maxDate?: string } {
+function addIsoDateDays(value: string, offsetDays: number): string | undefined {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return undefined;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + offsetDays);
+  return date.toISOString().slice(0, 10);
+}
+
+function resolveRelativeDateBoundary(
+  validation: Record<string, unknown> | null,
+  fieldKeyName: 'minDateFieldKey' | 'maxDateFieldKey',
+  offsetName: 'minDateOffsetDays' | 'maxDateOffsetDays',
+  answersRecord: Record<string, unknown>
+): string | undefined {
+  const fieldKey = typeof validation?.[fieldKeyName] === 'string' ? validation[fieldKeyName].trim() : '';
+  if (!fieldKey) return undefined;
+
+  const referencedValue = answersRecord[fieldKey];
+  if (typeof referencedValue !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(referencedValue.trim())) {
+    return undefined;
+  }
+
+  const rawOffset = validation?.[offsetName];
+  const offsetDays = typeof rawOffset === 'number' && Number.isFinite(rawOffset) ? Math.trunc(rawOffset) : 0;
+  return addIsoDateDays(referencedValue.trim(), offsetDays);
+}
+
+function getDateValidationRange(field: PublicField, answersRecord: Record<string, unknown>): { minDate?: string; maxDate?: string } {
   if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return {};
   const validation = parseObject(field.validation);
-  const minDate = resolveDateBoundary(validation?.minDate);
-  const maxDate = resolveDateBoundary(validation?.maxDate);
+  const fixedMinDate = resolveDateBoundary(validation?.minDate);
+  const fixedMaxDate = resolveDateBoundary(validation?.maxDate);
+  const relativeMinDate = resolveRelativeDateBoundary(validation, 'minDateFieldKey', 'minDateOffsetDays', answersRecord);
+  const relativeMaxDate = resolveRelativeDateBoundary(validation, 'maxDateFieldKey', 'maxDateOffsetDays', answersRecord);
+  const minDate = [fixedMinDate, relativeMinDate].filter((value): value is string => !!value).sort().at(-1);
+  const maxDate = [fixedMaxDate, relativeMaxDate].filter((value): value is string => !!value).sort()[0];
 
   return { minDate, maxDate };
 }
@@ -665,14 +744,74 @@ function buildPhoneValue(countryCode: string, number: string): string {
   return `${countryCode} ${trimmedNumber}`;
 }
 
+function getTimezoneDefault(field: PublicField): string {
+  if (field.type !== 'SHORT_TEXT' || field.inputType !== 'time_timezone') return DEFAULT_TIMEZONE;
+  const validation = parseObject(field.validation);
+  const rawValue = typeof validation?.timezoneDefault === 'string' ? validation.timezoneDefault.trim() : '';
+  return TIMEZONE_OPTIONS.some((option) => option.value === rawValue) ? rawValue : DEFAULT_TIMEZONE;
+}
+
+function parseTimeTimezoneValue(value: unknown, defaultTimezone: string): { time: string; timezone: string } {
+  const record = parseObject(value);
+  const rawTime = typeof record?.time === 'string' ? record.time.trim() : '';
+  const rawTimezone = typeof record?.timezone === 'string' ? record.timezone.trim() : '';
+  const matchedTimezone = TIMEZONE_OPTIONS.some((option) => option.value === rawTimezone) ? rawTimezone : defaultTimezone;
+  return {
+    time: /^\d{2}:\d{2}$/.test(rawTime) ? rawTime : '',
+    timezone: matchedTimezone,
+  };
+}
+
+function buildTimeTimezoneValue(time: string, timezone: string): { time: string; timezone: string } {
+  return {
+    time,
+    timezone: TIMEZONE_OPTIONS.some((option) => option.value === timezone) ? timezone : DEFAULT_TIMEZONE,
+  };
+}
+
 function isChoiceInlineRightEnabled(field: PublicField): boolean {
   if (field.type !== 'SINGLE_CHOICE' && field.type !== 'MULTIPLE_CHOICE') return false;
   const validation = parseObject(field.validation);
   return validation?.choiceInlineRight === true;
 }
 
+function isLayoutBreakBeforeEnabled(field: PublicField): boolean {
+  const validation = parseObject(field.validation);
+  return validation?.layoutBreakBefore === true;
+}
+
 function hasHtmlMarkup(value: string): boolean {
   return /<\/?[a-z][\s\S]*>/i.test(value);
+}
+
+function decodeHtmlEntities(value: string): string {
+  if (typeof document === 'undefined') {
+    return value
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&amp;/gi, '&')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'");
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = value;
+  return textarea.value;
+}
+
+function richTextToPlainText(value: string): string {
+  const decoded = decodeHtmlEntities(value || '');
+  return decoded
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function isRepeatStartMarker(field: PublicField): boolean {
@@ -681,6 +820,10 @@ function isRepeatStartMarker(field: PublicField): boolean {
 
 function isRepeatEndMarker(field: PublicField): boolean {
   return field.type === 'PAGE_BREAK' && field.inputType === 'repeat_end';
+}
+
+function isBlockDivider(field: PublicField): boolean {
+  return field.type === 'PAGE_BREAK' && field.inputType === 'block_divider';
 }
 
 function getRepeatSectionConfig(startField: PublicField): RepeatSectionConfig {
@@ -758,6 +901,23 @@ function getChoiceDetailValidationError(
   return null;
 }
 
+function getChoiceDetailErrorValues(
+  options: ReturnType<typeof parseChoiceOptions>,
+  value: unknown
+): Set<string> {
+  const errorValues = new Set<string>();
+  const entries = parseChoiceAnswerEntries(value);
+
+  for (const entry of entries) {
+    const option = options.find((candidate) => candidate.value === entry.value);
+    if (!option?.allowTextInput) continue;
+    if (entry.detailText.trim().length > 0) continue;
+    errorValues.add(entry.value);
+  }
+
+  return errorValues;
+}
+
 type RenderGroup = {
   kind: 'group';
   heading: PublicField | null;
@@ -783,6 +943,19 @@ const CARD_ELIGIBLE_TYPES = new Set([
   'SIGNATURE',
 ]);
 
+function isHeadingInfoBlock(field: PublicField): boolean {
+  return field.type === 'PARAGRAPH' && (
+    field.inputType === 'info_heading_1' ||
+    field.inputType === 'info_heading_2' ||
+    field.inputType === 'info_heading_3'
+  );
+}
+
+function isInlineInfoBlock(field: PublicField): boolean {
+  const validation = parseObject(field.validation);
+  return field.type === 'PARAGRAPH' && validation?.infoInlineCard === true;
+}
+
 function buildRenderGroups(fields: PublicField[]): RenderItem[] {
   const items: RenderItem[] = [];
   let currentGroup: RenderGroup | null = null;
@@ -799,6 +972,11 @@ function buildRenderGroups(fields: PublicField[]): RenderItem[] {
     // Hidden fields are pass-through standalone items.
     if (field.type === 'HIDDEN') {
       items.push({ kind: 'standalone', field });
+      continue;
+    }
+
+    if (isBlockDivider(field)) {
+      flushGroup();
       continue;
     }
 
@@ -826,13 +1004,16 @@ function buildRenderGroups(fields: PublicField[]): RenderItem[] {
     // Note: repeat section markers (inputType === 'repeat_start'/'repeat_end') are PAGE_BREAK fields,
     // already captured as standalone above. They are handled in renderStandaloneField.
 
+    if (isInlineInfoBlock(field)) {
+      if (!currentGroup) {
+        currentGroup = { kind: 'group', heading: null, fields: [] };
+      }
+      currentGroup.fields.push(field);
+      continue;
+    }
+
     // Heading blocks: flush current group, become next group's heading
-    if (
-      field.type === 'PARAGRAPH' &&
-      (field.inputType === 'info_heading_1' ||
-        field.inputType === 'info_heading_2' ||
-        field.inputType === 'info_heading_3')
-    ) {
+    if (isHeadingInfoBlock(field)) {
       flushGroup();
       currentGroup = { kind: 'group', heading: field, fields: [] };
       continue;
@@ -861,6 +1042,55 @@ function buildRenderGroups(fields: PublicField[]): RenderItem[] {
 
   flushGroup();
   return items;
+}
+
+function hasActiveProgressStopInfoBlock(
+  pageFields: PublicField[],
+  answersRecord: Record<string, unknown>,
+  repeatCounts: Record<string, number>
+): boolean {
+  for (let index = 0; index < pageFields.length; index += 1) {
+    const field = pageFields[index];
+
+    if (isRepeatStartMarker(field)) {
+      const sectionVisible = evaluateCondition(field.condition, answersRecord);
+      const sectionConfig = getRepeatSectionConfig(field);
+      const sectionFields: PublicField[] = [];
+      let cursor = index + 1;
+
+      while (cursor < pageFields.length && !isRepeatEndMarker(pageFields[cursor])) {
+        if (pageFields[cursor].type !== 'PAGE_BREAK') {
+          sectionFields.push(pageFields[cursor]);
+        }
+        cursor += 1;
+      }
+
+      if (sectionVisible) {
+        const rowCount = repeatCounts[sectionConfig.id] || sectionConfig.minItems;
+        for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+          const rowAnswers = buildAnswerContext(answersRecord, rowIndex);
+          for (const sectionField of sectionFields) {
+            if (
+              isProgressStopInfoBlock(sectionField) &&
+              evaluateCondition(sectionField.condition, rowAnswers)
+            ) {
+              return true;
+            }
+          }
+        }
+      }
+
+      index = cursor;
+      continue;
+    }
+
+    if (isRepeatEndMarker(field) || isBlockDivider(field) || field.type === 'PAGE_BREAK') continue;
+    if (isProgressStopInfoBlock(field) && evaluateCondition(field.condition, answersRecord)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export default function PublicFormPage() {
@@ -908,6 +1138,7 @@ export default function PublicFormPage() {
   const [emailFeedback, setEmailFeedback] = useState<string | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [activeSignatureFieldKey, setActiveSignatureFieldKey] = useState<string | null>(null);
+  const [openInlineTooltips, setOpenInlineTooltips] = useState<Record<string, boolean>>({});
   const formTopRef = useRef<HTMLDivElement | null>(null);
 
   const i18nSettings = useMemo(
@@ -1138,6 +1369,7 @@ export default function PublicFormPage() {
           setFieldErrors({});
           setCurrentPage(0);
           setUploadedByFieldKey({});
+          setOpenInlineTooltips({});
           setDraftSession(null);
           setPendingDraftRestore(null);
         }
@@ -1261,16 +1493,26 @@ export default function PublicFormPage() {
           }
 
           for (const sectionField of sectionFields) {
-            if (!isDateDefaultTodayEnabled(sectionField)) continue;
-
             const existingRows = Array.isArray(next[sectionField.key]) ? [...(next[sectionField.key] as unknown[])] : [];
             for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
               const rowValue = existingRows[rowIndex];
-              if (typeof rowValue === 'string' && rowValue.trim().length > 0) continue;
-              existingRows[rowIndex] = todayIso;
-              changed = true;
+              if (isDateDefaultTodayEnabled(sectionField)) {
+                if (typeof rowValue === 'string' && rowValue.trim().length > 0) continue;
+                existingRows[rowIndex] = todayIso;
+                changed = true;
+                continue;
+              }
+
+              if (sectionField.type === 'MULTIPLE_CHOICE' && isEmptyValue(rowValue)) {
+                const defaultValue = getDefaultMultipleChoiceValue(sectionField);
+                if (defaultValue.length === 0) continue;
+                existingRows[rowIndex] = defaultValue;
+                changed = true;
+              }
             }
-            next[sectionField.key] = existingRows;
+            if (existingRows.length > 0) {
+              next[sectionField.key] = existingRows;
+            }
           }
 
           index = cursor;
@@ -1278,13 +1520,22 @@ export default function PublicFormPage() {
         }
 
         if (field.type === 'PAGE_BREAK' || isRepeatEndMarker(field)) continue;
-        if (!isDateDefaultTodayEnabled(field)) continue;
 
         const existingValue = next[field.key];
-        if (typeof existingValue === 'string' && existingValue.trim().length > 0) continue;
+        if (isDateDefaultTodayEnabled(field)) {
+          if (typeof existingValue === 'string' && existingValue.trim().length > 0) continue;
 
-        next[field.key] = todayIso;
-        changed = true;
+          next[field.key] = todayIso;
+          changed = true;
+          continue;
+        }
+
+        if (field.type === 'MULTIPLE_CHOICE' && isEmptyValue(existingValue)) {
+          const defaultValue = getDefaultMultipleChoiceValue(field);
+          if (defaultValue.length === 0) continue;
+          next[field.key] = defaultValue;
+          changed = true;
+        }
       }
 
       return changed ? next : prev;
@@ -1296,7 +1547,13 @@ export default function PublicFormPage() {
 
     const result: PublicField[][] = [[]];
     for (const field of orderedFields) {
-      if (field.type === 'PAGE_BREAK' && !isRepeatStartMarker(field) && !isRepeatEndMarker(field)) {
+      if (
+        field.type === 'PAGE_BREAK' &&
+        !isBlockDivider(field) &&
+        !isRepeatStartMarker(field) &&
+        !isRepeatEndMarker(field) &&
+        evaluateCondition(field.condition, answers)
+      ) {
         result.push([]);
       } else {
         result[result.length - 1].push(field);
@@ -1304,7 +1561,12 @@ export default function PublicFormPage() {
     }
 
     return result.filter((page) => page.length > 0);
-  }, [form, orderedFields]);
+  }, [form, orderedFields, answers]);
+
+  useEffect(() => {
+    if (currentPage < pages.length) return;
+    setCurrentPage(Math.max(0, pages.length - 1));
+  }, [currentPage, pages.length]);
 
   const visibleFields = useMemo(() => {
     const pageFields = pages[currentPage] || [];
@@ -1350,6 +1612,27 @@ export default function PublicFormPage() {
     return nextVisible;
   }, [pages, currentPage, answers]);
 
+  useEffect(() => {
+    if (!form) return;
+    const visibleFieldIds = new Set(visibleFields.map((field) => field.id));
+    setAnswers((prev) => withDefaultAnswers(
+      pruneHiddenConditionalAnswers(orderedFields, prev),
+      visibleFieldIds
+    ));
+  }, [form, orderedFields, answers, visibleFields]);
+
+  const firstProgressStopPage = useMemo(() => (
+    pages.findIndex((pageFields) => hasActiveProgressStopInfoBlock(pageFields, answers, repeatSectionCounts))
+  ), [pages, answers, repeatSectionCounts]);
+
+  const isCurrentPageProgressStopped = firstProgressStopPage === currentPage;
+
+  useEffect(() => {
+    if (firstProgressStopPage < 0 || currentPage <= firstProgressStopPage) return;
+    setCurrentPage(firstProgressStopPage);
+    scrollToFormTop();
+  }, [currentPage, firstProgressStopPage]);
+
   // Pre-compute which field IDs belong inside repeat sections (should not render as standalone)
   const hiddenFieldIds = useMemo(() => {
     const ids = new Set<string>();
@@ -1384,7 +1667,7 @@ export default function PublicFormPage() {
     router.replace(nextUrl);
   }
 
-  function withDateDefaultAnswers(baseAnswers: Record<string, unknown>): Record<string, unknown> {
+  function withDefaultAnswers(baseAnswers: Record<string, unknown>, allowedFieldIds?: Set<string>): Record<string, unknown> {
     if (!form) return baseAnswers;
 
     const todayIso = getLocalTodayIsoDate();
@@ -1393,6 +1676,7 @@ export default function PublicFormPage() {
 
     for (let index = 0; index < orderedFields.length; index += 1) {
       const field = orderedFields[index];
+      if (allowedFieldIds && !allowedFieldIds.has(field.id)) continue;
 
       if (isRepeatStartMarker(field)) {
         const sectionConfig = getRepeatSectionConfig(field);
@@ -1401,23 +1685,31 @@ export default function PublicFormPage() {
 
         let cursor = index + 1;
         while (cursor < orderedFields.length && !isRepeatEndMarker(orderedFields[cursor])) {
-          if (orderedFields[cursor].type !== 'PAGE_BREAK') {
+          if (orderedFields[cursor].type !== 'PAGE_BREAK' && (!allowedFieldIds || allowedFieldIds.has(orderedFields[cursor].id))) {
             sectionFields.push(orderedFields[cursor]);
           }
           cursor += 1;
         }
 
         for (const sectionField of sectionFields) {
-          if (!isDateDefaultTodayEnabled(sectionField)) continue;
-
           const existingRows = Array.isArray(next[sectionField.key]) ? [...(next[sectionField.key] as unknown[])] : [];
           let sectionChanged = false;
 
           for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
             const rowValue = existingRows[rowIndex];
-            if (typeof rowValue === 'string' && rowValue.trim().length > 0) continue;
-            existingRows[rowIndex] = todayIso;
-            sectionChanged = true;
+            if (isDateDefaultTodayEnabled(sectionField)) {
+              if (typeof rowValue === 'string' && rowValue.trim().length > 0) continue;
+              existingRows[rowIndex] = todayIso;
+              sectionChanged = true;
+              continue;
+            }
+
+            if (sectionField.type === 'MULTIPLE_CHOICE' && isEmptyValue(rowValue)) {
+              const defaultValue = getDefaultMultipleChoiceValue(sectionField);
+              if (defaultValue.length === 0) continue;
+              existingRows[rowIndex] = defaultValue;
+              sectionChanged = true;
+            }
           }
 
           if (sectionChanged) {
@@ -1431,12 +1723,21 @@ export default function PublicFormPage() {
       }
 
       if (field.type === 'PAGE_BREAK' || isRepeatEndMarker(field)) continue;
-      if (!isDateDefaultTodayEnabled(field)) continue;
 
       const existingValue = next[field.key];
-      if (typeof existingValue === 'string' && existingValue.trim().length > 0) continue;
-      next[field.key] = todayIso;
-      changed = true;
+      if (isDateDefaultTodayEnabled(field)) {
+        if (typeof existingValue === 'string' && existingValue.trim().length > 0) continue;
+        next[field.key] = todayIso;
+        changed = true;
+        continue;
+      }
+
+      if (field.type === 'MULTIPLE_CHOICE' && isEmptyValue(existingValue)) {
+        const defaultValue = getDefaultMultipleChoiceValue(field);
+        if (defaultValue.length === 0) continue;
+        next[field.key] = defaultValue;
+        changed = true;
+      }
     }
 
     return changed ? next : baseAnswers;
@@ -1562,7 +1863,7 @@ export default function PublicFormPage() {
     }
 
     if (
-      ((field.type === 'SHORT_TEXT' && field.inputType !== 'date' && field.inputType !== 'number') || field.type === 'LONG_TEXT') &&
+      ((field.type === 'SHORT_TEXT' && field.inputType !== 'date' && field.inputType !== 'number' && field.inputType !== 'time_timezone') || field.type === 'LONG_TEXT') &&
       typeof value === 'string' &&
       value.length > 0
     ) {
@@ -1576,7 +1877,7 @@ export default function PublicFormPage() {
     }
 
     if (field.type === 'SHORT_TEXT' && field.inputType === 'date' && typeof value === 'string' && value.trim().length > 0) {
-      const { minDate, maxDate } = getDateValidationRange(field);
+      const { minDate, maxDate } = getDateValidationRange(field, answersRecord);
       const normalizedValue = value.trim();
 
       if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
@@ -1589,6 +1890,13 @@ export default function PublicFormPage() {
 
       if (maxDate && normalizedValue > maxDate) {
         return `${fieldLabel} must be on or before ${formatValidationDate(maxDate)}.`;
+      }
+    }
+
+    if (field.type === 'SHORT_TEXT' && field.inputType === 'time_timezone' && !isEmptyValue(value)) {
+      const timeValue = parseTimeTimezoneValue(value, getTimezoneDefault(field));
+      if (!/^\d{2}:\d{2}$/.test(timeValue.time)) {
+        return uiLabel('invalid_value');
       }
     }
 
@@ -1621,7 +1929,7 @@ export default function PublicFormPage() {
   function validateCurrentPage(): boolean {
     const nextErrors: Record<string, string> = {};
     const pageFields = pages[currentPage] || [];
-    const effectiveAnswers = withDateDefaultAnswers(answers);
+    const effectiveAnswers = withDefaultAnswers(answers);
 
     for (let index = 0; index < pageFields.length; index += 1) {
       const field = pageFields[index];
@@ -1668,7 +1976,7 @@ export default function PublicFormPage() {
         continue;
       }
 
-      if (isRepeatEndMarker(field) || field.type === 'PAGE_BREAK') continue;
+      if (isRepeatEndMarker(field) || isBlockDivider(field) || field.type === 'PAGE_BREAK') continue;
       if (!evaluateCondition(field.condition, effectiveAnswers)) continue;
 
       const value = effectiveAnswers[field.key];
@@ -1792,7 +2100,7 @@ export default function PublicFormPage() {
     setDraftFeedback(null);
     setDraftError(null);
     try {
-      const answersWithDefaults = withDateDefaultAnswers(answers);
+      const answersWithDefaults = pruneHiddenConditionalAnswers(orderedFields, withDefaultAnswers(answers));
       const uploadIds = orderedFields
         .filter((field) => field.type === 'FILE_UPLOAD')
         .flatMap((field) => collectUploadIds(answersWithDefaults[field.key]));
@@ -1913,11 +2221,19 @@ export default function PublicFormPage() {
       return;
     }
 
+    if (firstProgressStopPage >= 0) {
+      if (currentPage !== firstProgressStopPage) {
+        setCurrentPage(firstProgressStopPage);
+        scrollToFormTop();
+      }
+      return;
+    }
+
     if (!validateCurrentPage()) return;
 
     setIsSubmitting(true);
     try {
-      const answersWithDefaults = withDateDefaultAnswers(answers);
+      const answersWithDefaults = pruneHiddenConditionalAnswers(orderedFields, withDefaultAnswers(answers));
       const fileUploadKeys = orderedFields
         .filter((field) => field.type === 'FILE_UPLOAD')
         .map((field) => field.key);
@@ -2069,12 +2385,14 @@ export default function PublicFormPage() {
       h2: 'text-lg font-semibold text-text-primary mt-4 mb-1.5',
       h3: 'text-base font-semibold text-text-primary mt-3 mb-1',
     };
+    const headingText = richTextToPlainText(localizedField.label || localizedField.subtext || '');
+    const descriptionText = localizedField.label ? richTextToPlainText(localizedField.subtext || '') : '';
     const Tag = headingType as 'h1' | 'h2' | 'h3';
     return (
       <div key={field.id}>
-        <Tag className={headingClasses[headingType]}>{localizedField.label || localizedField.subtext}</Tag>
-        {localizedField.subtext && localizedField.label && (
-          <p className="text-sm text-text-secondary">{localizedField.subtext}</p>
+        <Tag className={headingClasses[headingType]}>{headingText}</Tag>
+        {descriptionText && (
+          <p className="whitespace-pre-wrap text-sm text-text-secondary">{descriptionText}</p>
         )}
       </div>
     );
@@ -2084,6 +2402,7 @@ export default function PublicFormPage() {
     const localizedField = getLocalizedField(field);
 
     if (field.type === 'HIDDEN') return null;
+    if (isBlockDivider(field)) return null;
     if (isRepeatEndMarker(field)) return null;
     if (field.type === 'PAGE_BREAK' && !isRepeatStartMarker(field)) return null;
 
@@ -2105,14 +2424,11 @@ export default function PublicFormPage() {
           ...(infoPaddingLeft !== null ? { paddingLeft: `${infoPaddingLeft}px` } : {}),
         }
       : undefined;
+    const infoStopsProgress = isProgressStopInfoBlock(localizedField);
+    const bareInfoTextBlock = isBareInfoTextBlock(localizedField);
 
     // Heading blocks
-    if (
-      localizedField.type === 'PARAGRAPH' &&
-      (localizedField.inputType === 'info_heading_1' ||
-        localizedField.inputType === 'info_heading_2' ||
-        localizedField.inputType === 'info_heading_3')
-    ) {
+    if (isHeadingInfoBlock(localizedField)) {
       return renderHeadingField(localizedField);
     }
 
@@ -2120,8 +2436,14 @@ export default function PublicFormPage() {
     if (localizedField.type === 'PARAGRAPH' && localizedField.inputType === 'info_image') {
       const imageUrl = isValidHttpUrl(localizedField.placeholder?.trim() || null) ? localizedField.placeholder!.trim() : null;
       return (
-        <div key={field.id} className={widthClass}>
-          <div className="overflow-hidden rounded-lg border border-border-primary bg-background-primary" style={infoStyle}>
+        <div key={field.id} className={cn(widthClass, isLayoutBreakBeforeEnabled(field) && 'md:col-start-1')}>
+          <div
+            className={cn(
+              'overflow-hidden rounded-lg border bg-background-primary',
+              infoStopsProgress ? 'border-status-warning/60 ring-1 ring-status-warning/20' : 'border-border-primary'
+            )}
+            style={infoStyle}
+          >
             {imageUrl ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2142,8 +2464,14 @@ export default function PublicFormPage() {
     if (localizedField.type === 'PARAGRAPH' && localizedField.inputType === 'info_url') {
       const href = isValidHttpUrl(localizedField.placeholder?.trim() || null) ? localizedField.placeholder!.trim() : null;
       return (
-        <div key={field.id} className={widthClass}>
-          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm" style={infoStyle}>
+        <div key={field.id} className={cn(widthClass, isLayoutBreakBeforeEnabled(field) && 'md:col-start-1')}>
+          <div
+            className={cn(
+              'rounded-lg border bg-background-primary px-3 py-2 text-sm',
+              infoStopsProgress ? 'border-status-warning/60 ring-1 ring-status-warning/20' : 'border-border-primary'
+            )}
+            style={infoStyle}
+          >
             {href ? (
               <a href={href} target="_blank" rel="noopener noreferrer" className="break-all text-text-primary underline hover:text-text-secondary">
                 {localizedField.subtext || localizedField.label || href}
@@ -2162,8 +2490,17 @@ export default function PublicFormPage() {
       const richContent = hasHtmlMarkup(infoText);
 
       return (
-        <div key={field.id} className={widthClass}>
-          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary" style={infoStyle}>
+        <div key={field.id} className={cn(widthClass, isLayoutBreakBeforeEnabled(field) && 'md:col-start-1')}>
+          <div
+            className={cn(
+              'text-sm text-text-primary',
+              bareInfoTextBlock
+                ? 'bg-transparent'
+                : 'rounded-lg border bg-background-primary px-3 py-2',
+              !bareInfoTextBlock && (infoStopsProgress ? 'border-status-warning/60 ring-1 ring-status-warning/20' : 'border-border-primary')
+            )}
+            style={infoStyle}
+          >
             {richContent ? (
               <div
                 className="form-rich-render text-sm text-text-primary"
@@ -2180,7 +2517,7 @@ export default function PublicFormPage() {
     // HTML
     if (localizedField.type === 'HTML') {
       return (
-        <div key={field.id} className={widthClass}>
+        <div key={field.id} className={cn(widthClass, isLayoutBreakBeforeEnabled(field) && 'md:col-start-1')}>
           <div className="text-sm text-text-primary" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(localizedField.subtext || '') }} />
         </div>
       );
@@ -2241,9 +2578,14 @@ export default function PublicFormPage() {
                       const sectionDescribedBy = [sectionHintId, sectionErrorId].filter(Boolean).join(' ') || undefined;
                       const sectionLabel = localizedSectionField.label || sectionField.key;
                       const sectionUseDateSelector = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'date';
-                      const sectionDateValidationRange = sectionUseDateSelector ? getDateValidationRange(sectionField) : {};
+                      const sectionDateValidationRange = sectionUseDateSelector ? getDateValidationRange(sectionField, rowAnswers) : {};
                       const sectionUseSplitPhoneInput = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'phone' && isSplitPhoneCountryCodeEnabled(sectionField);
+                      const sectionUseTimeTimezoneInput = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'time_timezone';
                       const sectionChoiceInlineRight = isChoiceInlineRightEnabled(sectionField);
+                      const sectionChoiceDetailErrorValues = (sectionField.type === 'SINGLE_CHOICE' || sectionField.type === 'MULTIPLE_CHOICE')
+                        ? getChoiceDetailErrorValues(sectionChoiceOptions, sectionValue)
+                        : new Set<string>();
+                      const sectionHighlightChoiceGroup = !!sectionErrorText && sectionChoiceDetailErrorValues.size === 0;
                       const sectionDefaultDateValue = sectionUseDateSelector && isDateDefaultTodayEnabled(sectionField)
                         ? getLocalTodayIsoDate()
                         : '';
@@ -2253,6 +2595,9 @@ export default function PublicFormPage() {
                       const sectionPhoneParts = sectionUseSplitPhoneInput
                         ? parsePhoneParts(sectionValue, sectionPhoneDefaultCountryCode)
                         : null;
+                      const sectionTimeTimezoneParts = sectionUseTimeTimezoneInput
+                        ? parseTimeTimezoneValue(sectionValue, getTimezoneDefault(sectionField))
+                        : null;
                       const resolvedSectionDateValue = typeof sectionValue === 'string' && sectionValue.trim().length > 0
                         ? sectionValue
                         : sectionDefaultDateValue;
@@ -2260,7 +2605,10 @@ export default function PublicFormPage() {
                       if (sectionField.type === 'HIDDEN') return null;
 
                       return (
-                        <div key={`${sectionField.id}-${rowIndex}`} className={sectionWidthClass}>
+                        <div
+                          key={`${sectionField.id}-${rowIndex}`}
+                          className={cn(sectionWidthClass, isLayoutBreakBeforeEnabled(sectionField) && 'md:col-start-1')}
+                        >
                           {!sectionField.hideLabel && !sectionChoiceInlineRight && (
                             <label
                               htmlFor={sectionControlId}
@@ -2275,7 +2623,7 @@ export default function PublicFormPage() {
                             <p id={sectionHintId} className="mb-2 text-xs text-text-muted">{localizedSectionField.subtext}</p>
                           )}
 
-                          {sectionField.type === 'SHORT_TEXT' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && (
+                          {sectionField.type === 'SHORT_TEXT' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && !sectionUseTimeTimezoneInput && (
                             <input
                               id={sectionControlId}
                               type={sectionField.inputType === 'phone' ? 'tel' : sectionField.inputType || 'text'}
@@ -2286,8 +2634,44 @@ export default function PublicFormPage() {
                               readOnly={sectionField.isReadOnly}
                               aria-invalid={sectionErrorText ? 'true' : undefined}
                               aria-describedby={sectionDescribedBy}
-                              className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                              className={cn(
+                                'w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                                sectionErrorText && ERROR_FIELD_CLASS
+                              )}
                             />
+                          )}
+
+                          {sectionUseTimeTimezoneInput && sectionTimeTimezoneParts && (
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,9rem)_minmax(0,1fr)]">
+                              <SingleTimeInput
+                                id={sectionControlId}
+                                value={sectionTimeTimezoneParts.time}
+                                onChange={(nextTime) => setRepeatFieldValue(
+                                  sectionField.key,
+                                  rowIndex,
+                                  buildTimeTimezoneValue(nextTime, sectionTimeTimezoneParts.timezone)
+                                )}
+                                onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                                disabled={sectionField.isReadOnly}
+                                error={sectionErrorText}
+                                ariaLabel={sectionField.hideLabel ? sectionLabel : undefined}
+                                className="w-full"
+                              />
+                              <SearchableSelect
+                                options={TIMEZONE_OPTIONS}
+                                value={sectionTimeTimezoneParts.timezone}
+                                onChange={(nextTimezone) => setRepeatFieldValue(
+                                  sectionField.key,
+                                  rowIndex,
+                                  buildTimeTimezoneValue(sectionTimeTimezoneParts.time, nextTimezone || getTimezoneDefault(sectionField))
+                                )}
+                                placeholder="Timezone"
+                                clearable={false}
+                                showKeyboardHints={false}
+                                containerClassName={cn('h-10', sectionErrorText && ERROR_FIELD_CLASS)}
+                                onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                              />
+                            </div>
                           )}
 
                           {sectionUseSplitPhoneInput && sectionPhoneParts && (
@@ -2303,7 +2687,7 @@ export default function PublicFormPage() {
                                 placeholder={uiLabel('phone_code_placeholder')}
                                 clearable={false}
                                 showKeyboardHints={false}
-                                containerClassName="h-10"
+                                containerClassName={cn('h-10', sectionErrorText && ERROR_FIELD_CLASS)}
                                 onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
                               />
                               <input
@@ -2320,7 +2704,10 @@ export default function PublicFormPage() {
                                 readOnly={sectionField.isReadOnly}
                                 aria-invalid={sectionErrorText ? 'true' : undefined}
                                 aria-describedby={sectionDescribedBy}
-                                className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                                className={cn(
+                                  'w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                                  sectionErrorText && ERROR_FIELD_CLASS
+                                )}
                               />
                             </div>
                           )}
@@ -2351,7 +2738,10 @@ export default function PublicFormPage() {
                               readOnly={sectionField.isReadOnly}
                               aria-invalid={sectionErrorText ? 'true' : undefined}
                               aria-describedby={sectionDescribedBy}
-                              className="w-full min-h-24 rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                              className={cn(
+                                'w-full min-h-24 rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                                sectionErrorText && ERROR_FIELD_CLASS
+                              )}
                             />
                           )}
 
@@ -2364,12 +2754,12 @@ export default function PublicFormPage() {
                               placeholder={localizedSectionField.placeholder || uiLabel('select_option_placeholder')}
                               clearable={false}
                               showKeyboardHints={false}
-                              containerClassName="h-10"
+                              containerClassName={cn('h-10', sectionErrorText && ERROR_FIELD_CLASS)}
                             />
                           )}
 
                           {sectionField.type === 'SINGLE_CHOICE' && (
-                            <fieldset className="space-y-1.5" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex)); }}>
+                            <fieldset className={cn('space-y-1.5 rounded-lg', sectionHighlightChoiceGroup && 'ring-1 ring-status-error/20')} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex)); }}>
                               {sectionChoiceInlineRight ? (
                                 (() => {
                                   const selectedEntry = parseChoiceAnswerEntry(sectionValue);
@@ -2387,7 +2777,7 @@ export default function PublicFormPage() {
                                             const isSelected = selectedEntry?.value === option.value;
                                             const optionId = `${sectionFieldDomId}-option-${optionIndex}`;
                                             return (
-                                              <label key={`${option.value}-${optionIndex}`} htmlFor={optionId} className="inline-flex cursor-pointer items-center gap-2 text-sm text-text-primary">
+                                              <label key={`${option.value}-${optionIndex}`} htmlFor={optionId} className={cn('inline-flex cursor-pointer items-center gap-2 text-sm text-text-primary', sectionHighlightChoiceGroup && 'text-status-error')}>
                                                 <input
                                                   id={optionId}
                                                   type="radio"
@@ -2412,9 +2802,9 @@ export default function PublicFormPage() {
                                         const isSelected = selectedEntry?.value === option.value;
                                         if (!option.allowTextInput || !isSelected) return null;
                                         return (
-                                          <input
+                                          <textarea
                                             key={`${option.value}-${optionIndex}-detail`}
-                                            type="text"
+                                            rows={3}
                                             value={selectedEntry?.detailText || ''}
                                             onChange={(e) => setRepeatFieldValue(
                                               sectionField.key,
@@ -2422,7 +2812,10 @@ export default function PublicFormPage() {
                                               { value: option.value, detailText: e.target.value }
                                             )}
                                             placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
-                                            className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                                            className={cn(
+                                              'w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                                              sectionChoiceDetailErrorValues.has(option.value) && ERROR_FIELD_CLASS
+                                            )}
                                           />
                                         );
                                       })}
@@ -2436,7 +2829,7 @@ export default function PublicFormPage() {
                                   const optionId = `${sectionFieldDomId}-option-${optionIndex}`;
                                   return (
                                     <div key={`${option.value}-${optionIndex}`} className="space-y-1.5">
-                                      <label htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
+                                      <label htmlFor={optionId} className={cn('flex items-center gap-2 text-sm text-text-primary', sectionHighlightChoiceGroup && 'text-status-error')}>
                                         <input
                                           id={optionId}
                                           type="radio"
@@ -2454,8 +2847,8 @@ export default function PublicFormPage() {
                                         {option.label}
                                       </label>
                                       {option.allowTextInput && isSelected && (
-                                        <input
-                                          type="text"
+                                        <textarea
+                                          rows={3}
                                           value={selectedEntry?.detailText || ''}
                                           onChange={(e) => setRepeatFieldValue(
                                             sectionField.key,
@@ -2463,7 +2856,10 @@ export default function PublicFormPage() {
                                             { value: option.value, detailText: e.target.value }
                                           )}
                                           placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
-                                          className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                                          className={cn(
+                                            'w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                                            sectionChoiceDetailErrorValues.has(option.value) && ERROR_FIELD_CLASS
+                                          )}
                                         />
                                       )}
                                     </div>
@@ -2474,7 +2870,7 @@ export default function PublicFormPage() {
                           )}
 
                           {sectionField.type === 'MULTIPLE_CHOICE' && (
-                            <fieldset className="space-y-1.5" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex)); }}>
+                            <fieldset className={cn('space-y-1.5 rounded-lg', sectionHighlightChoiceGroup && 'ring-1 ring-status-error/20')} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex)); }}>
                               {sectionChoiceInlineRight ? (
                                 (() => {
                                   const currentEntries = parseChoiceAnswerEntries(sectionValue);
@@ -2492,7 +2888,7 @@ export default function PublicFormPage() {
                                           {sectionChoiceOptions.map((option, optionIndex) => {
                                             const optionId = `${sectionFieldDomId}-option-${optionIndex}-${toDomSafeId(option.value)}`;
                                             return (
-                                              <label key={`${option.value}-${optionIndex}`} htmlFor={optionId} className="inline-flex cursor-pointer items-center gap-2 text-sm text-text-primary">
+                                              <label key={`${option.value}-${optionIndex}`} htmlFor={optionId} className={cn('inline-flex cursor-pointer items-center gap-2 text-sm text-text-primary', sectionHighlightChoiceGroup && 'text-status-error')}>
                                                 <input
                                                   id={optionId}
                                                   type="checkbox"
@@ -2532,9 +2928,9 @@ export default function PublicFormPage() {
                                         const entry = currentEntries.find((candidate) => candidate.value === option.value);
                                         if (!option.allowTextInput || !currentValues.includes(option.value)) return null;
                                         return (
-                                          <input
+                                          <textarea
                                             key={`${option.value}-${optionIndex}-detail`}
-                                            type="text"
+                                            rows={3}
                                             value={entry?.detailText || ''}
                                             onChange={(e) => {
                                               const next = currentEntries.map((candidate) => (
@@ -2553,7 +2949,10 @@ export default function PublicFormPage() {
                                               );
                                             }}
                                             placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
-                                            className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                                            className={cn(
+                                              'w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                                              sectionChoiceDetailErrorValues.has(option.value) && ERROR_FIELD_CLASS
+                                            )}
                                           />
                                         );
                                       })}
@@ -2568,7 +2967,7 @@ export default function PublicFormPage() {
                                   const optionId = `${sectionFieldDomId}-option-${optionIndex}-${toDomSafeId(option.value)}`;
                                   return (
                                     <div key={`${option.value}-${optionIndex}`} className="space-y-1.5">
-                                      <label htmlFor={optionId} className="flex items-center gap-2 text-sm text-text-primary">
+                                      <label htmlFor={optionId} className={cn('flex items-center gap-2 text-sm text-text-primary', sectionHighlightChoiceGroup && 'text-status-error')}>
                                         <input
                                           id={optionId}
                                           type="checkbox"
@@ -2601,8 +3000,8 @@ export default function PublicFormPage() {
                                         {option.label}
                                       </label>
                                       {option.allowTextInput && currentValues.includes(option.value) && (
-                                        <input
-                                          type="text"
+                                        <textarea
+                                          rows={3}
                                           value={entry?.detailText || ''}
                                           onChange={(e) => {
                                             const next = currentEntries.map((candidate) => (
@@ -2621,7 +3020,10 @@ export default function PublicFormPage() {
                                             );
                                           }}
                                           placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
-                                          className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                                          className={cn(
+                                            'w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                                            sectionChoiceDetailErrorValues.has(option.value) && ERROR_FIELD_CLASS
+                                          )}
                                         />
                                       )}
                                     </div>
@@ -2637,7 +3039,7 @@ export default function PublicFormPage() {
                             </div>
                           )}
 
-                          {sectionErrorText && !sectionUseDateSelector && (
+                          {sectionErrorText && !sectionUseDateSelector && !sectionUseTimeTimezoneInput && (
                             <p id={sectionErrorId} className="mt-1 text-xs text-status-error">{sectionErrorText}</p>
                           )}
                         </div>
@@ -2694,7 +3096,11 @@ export default function PublicFormPage() {
       return renderStandaloneField(field);
     }
 
-    if (isRepeatEndMarker(field) || field.type === 'PAGE_BREAK' || field.type === 'PARAGRAPH' || field.type === 'HTML' || field.type === 'HIDDEN') {
+    if (field.type === 'PARAGRAPH' && isInlineInfoBlock(field)) {
+      return renderStandaloneField(field);
+    }
+
+    if (isRepeatEndMarker(field) || isBlockDivider(field) || field.type === 'PAGE_BREAK' || field.type === 'PARAGRAPH' || field.type === 'HTML' || field.type === 'HIDDEN') {
       return null;
     }
 
@@ -2709,14 +3115,23 @@ export default function PublicFormPage() {
     const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
     const accessibleLabel = localizedField.label || field.key;
     const choiceInlineRight = isChoiceInlineRightEnabled(field);
+    const choiceOptions = parseChoiceOptions(localizedField.options);
+    const choiceDetailErrorValues = (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE')
+      ? getChoiceDetailErrorValues(choiceOptions, value)
+      : new Set<string>();
+    const highlightChoiceGroup = !!errorText && choiceDetailErrorValues.size === 0;
     const renderLabelAsText =
       ((field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') && !choiceInlineRight) ||
       field.type === 'SIGNATURE';
     const useDateSelector = field.type === 'SHORT_TEXT' && field.inputType === 'date';
-    const dateValidationRange = useDateSelector ? getDateValidationRange(field) : {};
+    const dateValidationRange = useDateSelector ? getDateValidationRange(field, answers) : {};
     const useSplitPhoneInput = field.type === 'SHORT_TEXT' && field.inputType === 'phone' && isSplitPhoneCountryCodeEnabled(field);
+    const useTimeTimezoneInput = field.type === 'SHORT_TEXT' && field.inputType === 'time_timezone';
     const showTooltip = isTooltipEnabled(localizedField);
     const tooltipText = showTooltip ? localizedField.helpText!.trim() : null;
+    const tooltipMode = tooltipText ? getTooltipMode(localizedField) : 'hover';
+    const inlineTooltipKey = field.id || field.key;
+    const isInlineTooltipOpen = tooltipMode === 'inline' && openInlineTooltips[inlineTooltipKey] === true;
     const allowMultipleFiles = field.type === 'FILE_UPLOAD' && isMultipleFileUploadEnabled(field);
     const uploadStatuses = uploadedByFieldKey[field.key] || [];
     const isUploadDragOver = dragOverUploadFieldKey === field.key;
@@ -2725,13 +3140,94 @@ export default function PublicFormPage() {
       : '';
     const phoneDefaultCountryCode = useSplitPhoneInput ? getPhoneDefaultCountryCode(field) : DEFAULT_PHONE_COUNTRY_CODE;
     const phoneParts = useSplitPhoneInput ? parsePhoneParts(value, phoneDefaultCountryCode) : null;
+    const timeTimezoneParts = useTimeTimezoneInput ? parseTimeTimezoneValue(value, getTimezoneDefault(field)) : null;
     const resolvedDateValue = typeof value === 'string' && value.trim().length > 0
       ? value
       : dateDefaultValue;
+    const renderTooltipTrigger = () => {
+      if (!tooltipText) return null;
+
+      if (tooltipMode === 'inline') {
+        const toggleInlineTooltip = (event: React.MouseEvent | React.KeyboardEvent) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setOpenInlineTooltips((prev) => ({
+            ...prev,
+            [inlineTooltipKey]: !prev[inlineTooltipKey],
+          }));
+        };
+
+        return (
+          <Tooltip content="Click to see">
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label={isInlineTooltipOpen ? 'Hide field information' : 'Show field information'}
+              aria-expanded={isInlineTooltipOpen}
+              className={cn(
+                'inline-flex h-4 w-4 cursor-pointer items-center justify-center text-text-muted hover:text-text-secondary',
+                isInlineTooltipOpen && 'text-oak-primary'
+              )}
+              onClick={toggleInlineTooltip}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                toggleInlineTooltip(event);
+              }}
+            >
+              <Info className="h-3.5 w-3.5" />
+            </span>
+          </Tooltip>
+        );
+      }
+
+      return (
+        <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
+          <span className="inline-flex h-4 w-4 cursor-help items-center justify-center text-text-muted hover:text-text-secondary">
+            <Info className="h-3.5 w-3.5" />
+          </span>
+        </Tooltip>
+      );
+    };
+    const inlineTooltipBlock = tooltipText && isInlineTooltipOpen ? (
+      <div
+        className="mb-3 rounded-lg border border-border-primary text-sm text-text-primary"
+        style={getTooltipInfoStyle(localizedField)}
+      >
+        {hasHtmlMarkup(tooltipText) ? (
+          <div
+            className="form-rich-render text-sm text-text-primary"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tooltipText) }}
+          />
+        ) : (
+          <div className="whitespace-pre-wrap">{tooltipText}</div>
+        )}
+      </div>
+    ) : null;
+    const renderChoiceOptionLabel = (option: (typeof choiceOptions)[number]) => (
+      <span className="inline-flex min-w-0 items-center gap-1.5">
+        <span className="min-w-0">{option.label}</span>
+        {option.tooltipText && (
+          <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{option.tooltipText}</span>}>
+            <span
+              role="img"
+              tabIndex={0}
+              aria-label={`More information about ${option.label}`}
+              className="inline-flex h-4 w-4 shrink-0 cursor-help items-center justify-center text-text-muted hover:text-text-secondary"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+            >
+              <Info className="h-3.5 w-3.5" />
+            </span>
+          </Tooltip>
+        )}
+      </span>
+    );
 
     return (
       <React.Fragment key={field.id}>
-        <div className={widthClass}>
+        <div className={cn(widthClass, isLayoutBreakBeforeEnabled(field) && 'md:col-start-1')}>
           {/* Label */}
           {!field.hideLabel && !choiceInlineRight && (
             renderLabelAsText ? (
@@ -2741,13 +3237,7 @@ export default function PublicFormPage() {
                     {accessibleLabel}
                     {field.isRequired && <span className="text-oak-primary"> *</span>}
                   </span>
-                  {tooltipText && (
-                    <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
-                      <span className="inline-flex h-4 w-4 cursor-help items-center justify-center text-text-muted hover:text-text-secondary">
-                        <Info className="h-3.5 w-3.5" />
-                      </span>
-                    </Tooltip>
-                  )}
+                  {renderTooltipTrigger()}
                 </span>
               </p>
             ) : (
@@ -2757,22 +3247,17 @@ export default function PublicFormPage() {
                     {accessibleLabel}
                     {field.isRequired && <span className="text-oak-primary"> *</span>}
                   </span>
-                  {tooltipText && (
-                    <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
-                      <span className="inline-flex h-4 w-4 cursor-help items-center justify-center text-text-muted hover:text-text-secondary">
-                        <Info className="h-3.5 w-3.5" />
-                      </span>
-                    </Tooltip>
-                  )}
+                  {renderTooltipTrigger()}
                 </span>
               </label>
             )
           )}
 
           {localizedField.subtext && <p id={hintId} className="mb-2 text-sm text-text-secondary">{localizedField.subtext}</p>}
+          {inlineTooltipBlock}
 
           {/* SHORT_TEXT */}
-          {field.type === 'SHORT_TEXT' && !useDateSelector && !useSplitPhoneInput && (
+          {field.type === 'SHORT_TEXT' && !useDateSelector && !useSplitPhoneInput && !useTimeTimezoneInput && (
             <input
               id={controlId}
               type={field.inputType === 'phone' ? 'tel' : field.inputType || 'text'}
@@ -2788,9 +3273,39 @@ export default function PublicFormPage() {
               className={cn(
                 'w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50',
                 'focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                errorText && ERROR_FIELD_CLASS,
                 field.isReadOnly && 'bg-[#EDE9E5] cursor-not-allowed opacity-70'
               )}
             />
+          )}
+
+          {useTimeTimezoneInput && timeTimezoneParts && (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,9rem)_minmax(0,1fr)]">
+              <SingleTimeInput
+                id={controlId}
+                value={timeTimezoneParts.time}
+                onChange={(nextTime) => setFieldValue(field.key, buildTimeTimezoneValue(nextTime, timeTimezoneParts.timezone))}
+                onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
+                disabled={field.isReadOnly}
+                required={field.isRequired}
+                ariaLabel={field.hideLabel ? accessibleLabel : undefined}
+                error={errorText}
+                className="w-full"
+              />
+              <SearchableSelect
+                options={TIMEZONE_OPTIONS}
+                value={timeTimezoneParts.timezone}
+                onChange={(nextTimezone) => setFieldValue(
+                  field.key,
+                  buildTimeTimezoneValue(timeTimezoneParts.time, nextTimezone || getTimezoneDefault(field))
+                )}
+                placeholder="Timezone"
+                clearable={false}
+                showKeyboardHints={false}
+                containerClassName={cn('h-10', errorText && ERROR_FIELD_CLASS)}
+                onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
+              />
+            </div>
           )}
 
           {useSplitPhoneInput && phoneParts && (
@@ -2805,7 +3320,7 @@ export default function PublicFormPage() {
                 placeholder={uiLabel('phone_code_placeholder')}
                 clearable={false}
                 showKeyboardHints={false}
-                containerClassName="h-10"
+                containerClassName={cn('h-10', errorText && ERROR_FIELD_CLASS)}
                 onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
               />
               <input
@@ -2823,6 +3338,7 @@ export default function PublicFormPage() {
                 className={cn(
                   'w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50',
                   'focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                  errorText && ERROR_FIELD_CLASS,
                   field.isReadOnly && 'bg-[#EDE9E5] cursor-not-allowed opacity-70'
                 )}
               />
@@ -2862,6 +3378,7 @@ export default function PublicFormPage() {
               className={cn(
                 'w-full min-h-24 rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50',
                 'focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150 resize-y',
+                errorText && ERROR_FIELD_CLASS,
                 field.isReadOnly && 'bg-[#EDE9E5] cursor-not-allowed opacity-70'
               )}
             />
@@ -2876,7 +3393,7 @@ export default function PublicFormPage() {
               placeholder={localizedField.placeholder || uiLabel('select_option_placeholder')}
               clearable={false}
               showKeyboardHints={false}
-              containerClassName="h-10"
+              containerClassName={cn('h-10', errorText && ERROR_FIELD_CLASS)}
               onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
             />
           )}
@@ -2884,7 +3401,7 @@ export default function PublicFormPage() {
           {/* SINGLE_CHOICE */}
           {field.type === 'SINGLE_CHOICE' && (
             <fieldset
-              className="space-y-2"
+              className={cn('space-y-2 rounded-lg', highlightChoiceGroup && 'ring-1 ring-status-error/20')}
               aria-label={field.hideLabel ? accessibleLabel : undefined}
               aria-labelledby={field.hideLabel ? undefined : labelId}
               aria-describedby={describedBy}
@@ -2904,22 +3421,16 @@ export default function PublicFormPage() {
                                 {accessibleLabel}
                                 {field.isRequired && <span className="text-oak-primary"> *</span>}
                               </span>
-                              {tooltipText && (
-                                <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
-                                  <span className="inline-flex h-4 w-4 cursor-help items-center justify-center text-text-muted hover:text-text-secondary">
-                                    <Info className="h-3.5 w-3.5" />
-                                  </span>
-                                </Tooltip>
-                              )}
+                              {renderTooltipTrigger()}
                             </span>
                           </legend>
                         )}
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:flex-nowrap sm:justify-self-end sm:whitespace-nowrap">
-                          {parseChoiceOptions(localizedField.options).map((option, index) => {
+                          {choiceOptions.map((option, index) => {
                             const isSelected = selectedEntry?.value === option.value;
                             const optionId = `${fieldDomId}-option-${index}`;
                             return (
-                              <label key={`${option.value}-${index}`} htmlFor={optionId} className="inline-flex cursor-pointer items-center gap-2 text-sm text-text-primary">
+                              <label key={`${option.value}-${index}`} htmlFor={optionId} className={cn('inline-flex cursor-pointer items-center gap-2 text-sm text-text-primary', highlightChoiceGroup && 'text-status-error')}>
                                 <input
                                   id={optionId}
                                   type="radio"
@@ -2934,23 +3445,23 @@ export default function PublicFormPage() {
                                   )}
                                   className={CHOICE_RADIO_INPUT_CLASS}
                                 />
-                                {option.label}
+                                {renderChoiceOptionLabel(option)}
                               </label>
                             );
                           })}
                         </div>
                       </div>
-                      {parseChoiceOptions(localizedField.options).map((option, index) => {
+                      {choiceOptions.map((option, index) => {
                         const isSelected = selectedEntry?.value === option.value;
                         if (!option.allowTextInput || !isSelected) return null;
                         return (
-                          <input
+                          <textarea
                             key={`${option.value}-${index}-detail`}
-                            type="text"
+                            rows={3}
                             value={selectedEntry?.detailText || ''}
                             onChange={(e) => setFieldValue(field.key, { value: option.value, detailText: e.target.value })}
                             placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
-                            className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                            className={cn('w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150', choiceDetailErrorValues.has(option.value) && ERROR_FIELD_CLASS)}
                           />
                         );
                       })}
@@ -2958,7 +3469,7 @@ export default function PublicFormPage() {
                   );
                 })()
               ) : (
-                parseChoiceOptions(localizedField.options).map((option, index) => {
+                choiceOptions.map((option, index) => {
                   const selectedEntry = parseChoiceAnswerEntry(value);
                   const isSelected = selectedEntry?.value === option.value;
                   const optionId = `${fieldDomId}-option-${index}`;
@@ -2971,7 +3482,8 @@ export default function PublicFormPage() {
                           'focus-within:ring-2 focus-within:ring-oak-primary/20 focus-within:border-oak-primary',
                           isSelected
                             ? 'border-oak-primary/40 bg-oak-primary/5 text-text-primary'
-                            : 'border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60'
+                            : 'border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60',
+                          highlightChoiceGroup && ERROR_CHOICE_CLASS
                         )}
                       >
                         <input id={optionId} type="radio" name={field.key} value={option.value} checked={isSelected}
@@ -2981,13 +3493,13 @@ export default function PublicFormPage() {
                         <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-[#F4F7F6] transition-all duration-150 peer-focus-visible:border-oak-primary peer-focus-visible:ring-2 peer-focus-visible:ring-oak-primary/20', isSelected ? 'border-oak-primary' : 'border-border-primary')}>
                           {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-oak-primary" />}
                         </span>
-                        {option.label}
+                        {renderChoiceOptionLabel(option)}
                       </label>
                       {option.allowTextInput && isSelected && (
-                        <input type="text" value={selectedEntry?.detailText || ''}
+                        <textarea rows={3} value={selectedEntry?.detailText || ''}
                           onChange={(e) => setFieldValue(field.key, { value: option.value, detailText: e.target.value })}
                           placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
-                          className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                          className={cn('w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150', choiceDetailErrorValues.has(option.value) && ERROR_FIELD_CLASS)}
                         />
                       )}
                     </div>
@@ -3000,7 +3512,7 @@ export default function PublicFormPage() {
           {/* MULTIPLE_CHOICE */}
           {field.type === 'MULTIPLE_CHOICE' && (
             <fieldset
-              className="space-y-2"
+              className={cn('space-y-2 rounded-lg', highlightChoiceGroup && 'ring-1 ring-status-error/20')}
               aria-label={field.hideLabel ? accessibleLabel : undefined}
               aria-labelledby={field.hideLabel ? undefined : labelId}
               aria-describedby={describedBy}
@@ -3021,22 +3533,16 @@ export default function PublicFormPage() {
                                 {accessibleLabel}
                                 {field.isRequired && <span className="text-oak-primary"> *</span>}
                               </span>
-                              {tooltipText && (
-                                <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{tooltipText}</span>}>
-                                  <span className="inline-flex h-4 w-4 cursor-help items-center justify-center text-text-muted hover:text-text-secondary">
-                                    <Info className="h-3.5 w-3.5" />
-                                  </span>
-                                </Tooltip>
-                              )}
+                              {renderTooltipTrigger()}
                             </span>
                           </legend>
                         )}
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:flex-nowrap sm:justify-self-end sm:whitespace-nowrap">
-                          {parseChoiceOptions(localizedField.options).map((option, index) => {
+                          {choiceOptions.map((option, index) => {
                             const isChecked = values.includes(option.value);
                             const optionId = `${fieldDomId}-option-${index}-${toDomSafeId(option.value)}`;
                             return (
-                              <label key={`${option.value}-${index}`} htmlFor={optionId} className="inline-flex cursor-pointer items-center gap-2 text-sm text-text-primary">
+                              <label key={`${option.value}-${index}`} htmlFor={optionId} className={cn('inline-flex cursor-pointer items-center gap-2 text-sm text-text-primary', highlightChoiceGroup && 'text-status-error')}>
                                 <input
                                   id={optionId}
                                   type="checkbox"
@@ -3052,27 +3558,30 @@ export default function PublicFormPage() {
                                   }}
                                   className={CHOICE_CHECKBOX_INPUT_CLASS}
                                 />
-                                {option.label}
+                                {renderChoiceOptionLabel(option)}
                               </label>
                             );
                           })}
                         </div>
                       </div>
-                      {parseChoiceOptions(localizedField.options).map((option, index) => {
+                      {choiceOptions.map((option, index) => {
                         const isChecked = values.includes(option.value);
                         const optionEntry = entries.find((e) => e.value === option.value);
                         if (!option.allowTextInput || !isChecked) return null;
                         return (
-                          <input
+                          <textarea
                             key={`${option.value}-${index}-detail`}
-                            type="text"
+                            rows={3}
                             value={optionEntry?.detailText || ''}
                             onChange={(e) => {
                               const nextEntries = entries.map((en) => (en.value === option.value ? { ...en, detailText: e.target.value } : en));
                               setFieldValue(field.key, nextEntries.map((en) => (en.detailText ? { value: en.value, detailText: en.detailText } : en.value)));
                             }}
                             placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
-                            className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                            className={cn(
+                              'w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                              choiceDetailErrorValues.has(option.value) && ERROR_FIELD_CLASS
+                            )}
                           />
                         );
                       })}
@@ -3080,7 +3589,7 @@ export default function PublicFormPage() {
                   );
                 })()
               ) : (
-                parseChoiceOptions(localizedField.options).map((option, index) => {
+                choiceOptions.map((option, index) => {
                   const entries = parseChoiceAnswerEntries(value);
                   const values = entries.map((e) => e.value);
                   const isChecked = values.includes(option.value);
@@ -3095,7 +3604,8 @@ export default function PublicFormPage() {
                           'focus-within:ring-2 focus-within:ring-oak-primary/20 focus-within:border-oak-primary',
                           isChecked
                             ? 'border-oak-primary/40 bg-oak-primary/5 text-text-primary'
-                            : 'border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60'
+                            : 'border-border-primary/25 bg-background-secondary/30 text-text-primary hover:border-border-primary/50 hover:bg-background-secondary/60',
+                          highlightChoiceGroup && ERROR_CHOICE_CLASS
                         )}
                       >
                         <input id={optionId} type="checkbox" checked={isChecked}
@@ -3117,16 +3627,19 @@ export default function PublicFormPage() {
                             </svg>
                           )}
                         </span>
-                        {option.label}
+                        {renderChoiceOptionLabel(option)}
                       </label>
                       {option.allowTextInput && isChecked && (
-                        <input type="text" value={optionEntry?.detailText || ''}
+                        <textarea rows={3} value={optionEntry?.detailText || ''}
                           onChange={(e) => {
                             const nextEntries = entries.map((en) => (en.value === option.value ? { ...en, detailText: e.target.value } : en));
                             setFieldValue(field.key, nextEntries.map((en) => (en.detailText ? { value: en.value, detailText: en.detailText } : en.value)));
                           }}
                           placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
-                          className="w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150"
+                          className={cn(
+                            'w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                            choiceDetailErrorValues.has(option.value) && ERROR_FIELD_CLASS
+                          )}
                         />
                       )}
                     </div>
@@ -3141,7 +3654,9 @@ export default function PublicFormPage() {
             <div className={cn(
               'rounded-xl border border-dashed bg-background-primary/50 p-6 text-center transition-colors duration-150',
               'cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#294D44]/20',
-              isUploadDragOver
+              errorText
+                ? ERROR_CHOICE_CLASS
+                : isUploadDragOver
                 ? 'border-oak-primary bg-oak-primary/5'
                 : (uploadStatuses.length > 0 ? 'border-status-success/40' : 'border-border-primary/60 hover:border-oak-primary/40')
             )}
@@ -3267,6 +3782,7 @@ export default function PublicFormPage() {
                         hasSignature
                           ? 'border-[#D8E3DF] bg-white hover:border-[#B7CAC2] hover:shadow-sm'
                           : 'border-dashed border-[#C8D7D1] bg-[linear-gradient(180deg,#FCFEFD_0%,#F4F7F6_100%)] hover:border-[#294D44]/40 hover:shadow-sm',
+                        errorText && ERROR_CHOICE_CLASS,
                         field.isReadOnly && 'cursor-not-allowed opacity-70'
                       )}
                     >
@@ -3324,7 +3840,7 @@ export default function PublicFormPage() {
           )}
 
           {/* Error */}
-          {errorText && !useDateSelector && (
+          {errorText && !useDateSelector && !useTimeTimezoneInput && (
             <p id={errorId} className="mt-1 text-xs text-status-error">{errorText}</p>
           )}
         </div>
@@ -3462,7 +3978,7 @@ export default function PublicFormPage() {
 
         {!isEmbed && (
           <div className="mb-6">
-            <div className="flex items-center gap-3">
+            <div className="flex items-start gap-3">
               {shouldShowLogo && (
                 <img
                   src={form.tenantLogoUrl!}
@@ -3470,15 +3986,16 @@ export default function PublicFormPage() {
                   className="h-32 w-auto max-w-[480px] object-contain rounded-sm flex-shrink-0"
                 />
               )}
-              <h1 className="text-2xl font-bold text-text-primary">{localizedFormTitle || form.title}</h1>
+              <div className="min-w-0 pt-2 md:pt-5">
+                <h1 className="text-2xl font-bold text-text-primary md:text-4xl">{localizedFormTitle || form.title}</h1>
+                {localizedFormDescription && <p className="mt-2 text-base text-text-secondary leading-relaxed md:text-lg">{localizedFormDescription}</p>}
+              </div>
             </div>
-            {localizedFormDescription && <p className="mt-2 text-base text-text-secondary leading-relaxed">{localizedFormDescription}</p>}
             {isPreview && (
               <p className="mt-2 text-xs text-text-muted">
                 {uiLabel('preview_notice')}
               </p>
             )}
-            {pages.length <= 1 && <div className="mt-4 h-[3px] w-12 rounded-full bg-oak-primary" />}
           </div>
         )}
 
@@ -3569,30 +4086,32 @@ export default function PublicFormPage() {
                   : (draftBannerFeedback && draftSession ? localizedUiLabels.draft_updated : draftSession ? localizedUiLabels.update_draft : localizedUiLabels.save_draft)}
               </Button>
             )}
-            {currentPage < pages.length - 1 ? (
-              <Button
-                variant="primary"
-                size="sm"
-                className="rounded-xl px-6 py-2.5 transition-transform duration-150 hover:scale-[1.02]"
-                onClick={() => {
-                  if (!validateCurrentPage()) return;
-                  setCurrentPage((prev) => prev + 1);
-                  scrollToFormTop();
-                }}
-              >
-                {localizedUiLabels.continue}
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                size="sm"
-                className="rounded-xl px-6 py-2.5 transition-transform duration-150 hover:scale-[1.02]"
-                onClick={submitForm}
-                isLoading={isSubmitting}
-                disabled={isPreview}
-              >
-                {isPreview ? localizedUiLabels.preview_mode : localizedUiLabels.submit}
-              </Button>
+            {!isCurrentPageProgressStopped && (
+              currentPage < pages.length - 1 ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="rounded-xl px-6 py-2.5 transition-transform duration-150 hover:scale-[1.02]"
+                  onClick={() => {
+                    if (!validateCurrentPage()) return;
+                    setCurrentPage((prev) => prev + 1);
+                    scrollToFormTop();
+                  }}
+                >
+                  {localizedUiLabels.continue}
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="rounded-xl px-6 py-2.5 transition-transform duration-150 hover:scale-[1.02]"
+                  onClick={submitForm}
+                  isLoading={isSubmitting}
+                  disabled={isPreview}
+                >
+                  {isPreview ? localizedUiLabels.preview_mode : localizedUiLabels.submit}
+                </Button>
+              )
             )}
           </div>
           {draftSettings.enabled && !isPreview && !isDraftDetailsModalOpen && (draftError || draftFeedback) && (

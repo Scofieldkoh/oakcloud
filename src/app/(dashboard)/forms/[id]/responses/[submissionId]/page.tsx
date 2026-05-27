@@ -289,6 +289,10 @@ function isRepeatEndMarker(field: FormField): boolean {
   return field.type === 'PAGE_BREAK' && field.inputType === 'repeat_end';
 }
 
+function isBlockDivider(field: FormField): boolean {
+  return field.type === 'PAGE_BREAK' && field.inputType === 'block_divider';
+}
+
 function getRepeatSectionConfig(startField: FormField): RepeatSectionConfig {
   const validation = parseObject(startField.validation);
   const minItemsRaw = typeof validation?.repeatMinItems === 'number' ? Math.trunc(validation.repeatMinItems) : 1;
@@ -419,6 +423,10 @@ export default function FormResponseDetailPage() {
       const field = form.fields[index];
 
       if (field.type === 'PAGE_BREAK') {
+        if (isBlockDivider(field)) {
+          continue;
+        }
+
         if (isRepeatStartMarker(field)) {
           const sectionFields: FormField[] = [];
           let cursor = index + 1;

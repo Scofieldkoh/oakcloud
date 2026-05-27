@@ -1111,10 +1111,11 @@ export function EsigningSignPage() {
                 key={doc.id}
                 type="button"
                 onClick={() => { setSelectedDocumentId(doc.id); setViewerPage(1); }}
+                title={doc.fileName}
                 className={
                   (selectedDocument?.id ?? session.documents[0]?.id) === doc.id
-                    ? 'rounded-full border border-oak-primary bg-oak-primary/10 px-3 py-1.5 text-xs font-medium text-oak-primary'
-                    : 'rounded-full border border-border-primary bg-background-primary px-3 py-1.5 text-xs text-text-secondary hover:bg-background-tertiary'
+                    ? 'min-h-[36px] max-w-[180px] truncate rounded-full border border-oak-primary bg-oak-primary/10 px-3 py-1.5 text-xs font-medium text-oak-primary sm:max-w-[260px] md:max-w-none'
+                    : 'min-h-[36px] max-w-[180px] truncate rounded-full border border-border-primary bg-background-primary px-3 py-1.5 text-xs text-text-secondary hover:bg-background-tertiary sm:max-w-[260px] md:max-w-none'
                 }
               >
                 {doc.fileName}

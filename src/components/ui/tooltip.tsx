@@ -42,7 +42,7 @@ export function Tooltip({
       <span
         role="tooltip"
         className={cn(
-          'pointer-events-none absolute z-50 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-elevation-2 transition-all duration-150',
+          'pointer-events-none absolute z-50 w-max max-w-[min(24rem,calc(100vw-2rem))] whitespace-normal break-words rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-elevation-2 transition-all duration-150',
           containerPosition,
           open ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-0.5'
         )}

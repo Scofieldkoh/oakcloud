@@ -55,8 +55,8 @@ export function EsigningSigningHeader({
   const progressPct = requiredCount > 0 ? (completedCount / requiredCount) * 100 : 0;
 
   return (
-    <header className="sticky top-0 z-50 bg-background-secondary border-b border-border-primary px-4 py-3">
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-4">
+    <header className="sticky top-0 z-50 bg-background-secondary border-b border-border-primary px-3 py-2 sm:px-4 sm:py-3">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-2 sm:gap-4">
         {/* Left: badge + title */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -96,7 +96,8 @@ export function EsigningSigningHeader({
               onClick={() => setIsMenuOpen((prev) => !prev)}
               rightIcon={<ChevronDown className="h-3.5 w-3.5" />}
             >
-              Other Options
+              <span className="sm:hidden">Options</span>
+              <span className="hidden sm:inline">Other Options</span>
             </Button>
 
             {isMenuOpen && (

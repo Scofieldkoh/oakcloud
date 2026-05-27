@@ -35,6 +35,8 @@ export interface ChoiceOption {
   allowTextInput: boolean;
   textInputLabel: string | null;
   textInputPlaceholder: string | null;
+  tooltipText: string | null;
+  defaultSelected: boolean;
 }
 
 export const WIDTH_CLASS: Record<number, string> = {
@@ -108,6 +110,8 @@ function normalizeChoiceOption(input: unknown): ChoiceOption | null {
       allowTextInput: false,
       textInputLabel: null,
       textInputPlaceholder: null,
+      tooltipText: null,
+      defaultSelected: false,
     };
   }
 
@@ -123,6 +127,7 @@ function normalizeChoiceOption(input: unknown): ChoiceOption | null {
   const allowTextInput = raw.allowTextInput === true;
   const textInputLabel = typeof raw.textInputLabel === 'string' ? raw.textInputLabel.trim() : '';
   const textInputPlaceholder = typeof raw.textInputPlaceholder === 'string' ? raw.textInputPlaceholder.trim() : '';
+  const tooltipText = typeof raw.tooltipText === 'string' ? raw.tooltipText.trim() : '';
 
   return {
     label,
@@ -130,6 +135,8 @@ function normalizeChoiceOption(input: unknown): ChoiceOption | null {
     allowTextInput,
     textInputLabel: textInputLabel || null,
     textInputPlaceholder: textInputPlaceholder || null,
+    tooltipText: tooltipText || null,
+    defaultSelected: raw.defaultSelected === true,
   };
 }
 
@@ -201,6 +208,16 @@ export function formatChoiceAnswer(value: unknown): string | null {
   const entry = parseChoiceAnswerEntry(value);
   if (!entry) return null;
   return formatEntry(entry);
+}
+
+export function formatTimeTimezoneAnswer(value: unknown): string | null {
+  const entry = parseObject(value);
+  if (!entry) return null;
+
+  const time = typeof entry.time === 'string' ? entry.time.trim() : '';
+  const timezone = typeof entry.timezone === 'string' ? entry.timezone.trim() : '';
+  if (!time) return null;
+  return timezone ? `${time} ${timezone}` : time;
 }
 
 export const RESPONSE_COLUMN_SUBMITTED_ID = '__submitted';
@@ -411,6 +428,11 @@ export interface FormI18nSettings {
 
 export function isSummaryEligibleFieldType(fieldType: string): boolean {
   return !['PAGE_BREAK', 'PARAGRAPH', 'HTML', 'HIDDEN'].includes(fieldType);
+}
+
+export function isProgressStopInfoBlock(field: { type: string; validation: unknown }): boolean {
+  const validation = parseObject(field.validation);
+  return field.type === 'PARAGRAPH' && validation?.infoStopsProgress === true;
 }
 
 function normalizeStringArray(value: unknown): string[] {
@@ -1096,6 +1118,9 @@ export function isEmptyValue(value: unknown): boolean {
     if (value.length === 0) return true;
     return value.every((item) => isEmptyValue(item));
   }
+  if (isRecord(value) && 'time' in value && 'timezone' in value) {
+    return isEmptyValue(value.time);
+  }
   if (isRecord(value) && 'value' in value) {
     return isEmptyValue(value.value);
   }
@@ -1109,6 +1134,17 @@ export function evaluateCondition(
   if (!condition) return true;
   const cond = isRecord(condition) ? condition : null;
   if (!cond) return true;
+
+  const rules = Array.isArray(cond.rules) ? cond.rules : null;
+  if (rules) {
+    const validRules = rules.filter(isRecord);
+    if (validRules.length === 0) return true;
+
+    const logic = cond.logic === 'or' ? 'or' : 'and';
+    return logic === 'or'
+      ? validRules.some((rule) => evaluateCondition(rule, answers))
+      : validRules.every((rule) => evaluateCondition(rule, answers));
+  }
 
   const fieldKey = typeof cond.fieldKey === 'string' ? cond.fieldKey : null;
   const operator = typeof cond.operator === 'string' ? cond.operator : null;
@@ -1130,7 +1166,7 @@ export function evaluateCondition(
     case 'equals':
       return actual === expected;
     case 'not_equals':
-      return actual !== expected;
+      return !isEmptyValue(actual) && actual !== expected;
     case 'contains':
       if (Array.isArray(actual)) return actual.map((item) => normalizeActual(item)).includes(expected);
       if (typeof actual === 'string' && typeof expected === 'string') {
@@ -1144,4 +1180,142 @@ export function evaluateCondition(
     default:
       return true;
   }
+}
+
+type ConditionalAnswerField = {
+  key: string;
+  type: string;
+  inputType: string | null;
+  condition: unknown;
+};
+
+function isRepeatStartField(field: ConditionalAnswerField): boolean {
+  return field.type === 'PAGE_BREAK' && field.inputType === 'repeat_start';
+}
+
+function isRepeatEndField(field: ConditionalAnswerField): boolean {
+  return field.type === 'PAGE_BREAK' && field.inputType === 'repeat_end';
+}
+
+function isBlockDividerField(field: ConditionalAnswerField): boolean {
+  return field.type === 'PAGE_BREAK' && field.inputType === 'block_divider';
+}
+
+function isAnswerField(field: ConditionalAnswerField): boolean {
+  return field.type !== 'PAGE_BREAK' && field.type !== 'PARAGRAPH' && field.type !== 'HTML';
+}
+
+function getRepeatRowContext(answers: Record<string, unknown>, rowIndex: number): Record<string, unknown> {
+  const context: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(answers)) {
+    context[key] = Array.isArray(value) ? value[rowIndex] : value;
+  }
+  return context;
+}
+
+function maxAnswerRowCount(fields: ConditionalAnswerField[], answers: Record<string, unknown>): number {
+  let rowCount = 0;
+  for (const field of fields) {
+    const value = answers[field.key];
+    if (Array.isArray(value)) {
+      rowCount = Math.max(rowCount, value.length);
+    }
+  }
+  return rowCount;
+}
+
+export function pruneHiddenConditionalAnswers<T extends Record<string, unknown>>(
+  fields: ConditionalAnswerField[],
+  answers: T
+): T {
+  let next: Record<string, unknown> = answers;
+  let changedAny = false;
+
+  const ensureWritable = () => {
+    if (next === answers) {
+      next = { ...answers };
+    }
+  };
+
+  const clearField = (fieldKey: string): boolean => {
+    if (!(fieldKey in next)) return false;
+    ensureWritable();
+    delete next[fieldKey];
+    return true;
+  };
+
+  const clearRepeatFieldRow = (fieldKey: string, rowIndex: number): boolean => {
+    const currentValue = next[fieldKey];
+    if (!Array.isArray(currentValue)) return false;
+    if (isEmptyValue(currentValue[rowIndex]) && !(rowIndex in currentValue)) return false;
+
+    ensureWritable();
+    const updated = [...currentValue];
+    updated[rowIndex] = undefined;
+    while (updated.length > 0 && isEmptyValue(updated[updated.length - 1])) {
+      updated.pop();
+    }
+    if (updated.length === 0) {
+      delete next[fieldKey];
+    } else {
+      next[fieldKey] = updated;
+    }
+    return true;
+  };
+
+  for (let pass = 0; pass < fields.length + 1; pass += 1) {
+    let changedThisPass = false;
+
+    for (let index = 0; index < fields.length; index += 1) {
+      const field = fields[index];
+
+      if (isRepeatStartField(field)) {
+        const sectionFields: ConditionalAnswerField[] = [];
+        let cursor = index + 1;
+        while (cursor < fields.length && !isRepeatEndField(fields[cursor])) {
+          if (fields[cursor].type !== 'PAGE_BREAK' && !isBlockDividerField(fields[cursor])) {
+            sectionFields.push(fields[cursor]);
+          }
+          cursor += 1;
+        }
+
+        if (!evaluateCondition(field.condition, next)) {
+          for (const sectionField of sectionFields) {
+            if (isAnswerField(sectionField)) {
+              changedThisPass = clearField(sectionField.key) || changedThisPass;
+            }
+          }
+          index = cursor;
+          continue;
+        }
+
+        const rowCount = maxAnswerRowCount(sectionFields, next);
+        for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+          const rowAnswers = getRepeatRowContext(next, rowIndex);
+          for (const sectionField of sectionFields) {
+            if (!isAnswerField(sectionField)) continue;
+            if (!evaluateCondition(sectionField.condition, rowAnswers)) {
+              if (clearRepeatFieldRow(sectionField.key, rowIndex)) {
+                rowAnswers[sectionField.key] = undefined;
+                changedThisPass = true;
+              }
+            }
+          }
+        }
+
+        index = cursor;
+        continue;
+      }
+
+      if (!isAnswerField(field)) continue;
+      if (!evaluateCondition(field.condition, next)) {
+        changedThisPass = clearField(field.key) || changedThisPass;
+      }
+    }
+
+    changedAny = changedAny || changedThisPass;
+    if (!changedThisPass) break;
+  }
+
+  return changedAny ? next as T : answers;
 }

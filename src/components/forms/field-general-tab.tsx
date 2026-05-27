@@ -6,13 +6,14 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Toggle } from '@/components/ui/toggle';
 import { DROPDOWN_PRESETS } from '@/lib/constants/form-option-presets';
 import { isSummaryEligibleFieldType } from '@/lib/form-utils';
-import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS, normalizeKey, isRepeatMarkerInputType } from './builder-utils';
+import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS, normalizeKey, isRepeatMarkerInputType, isBlockDividerInputType } from './builder-utils';
 import type { FormFieldInput } from '@/lib/validations/form-builder';
 import type { BuilderField, ShortInputType } from './builder-utils';
 
 const INFO_INPUT_TYPES: ReadonlyArray<ShortInputType> = ['info_text', 'info_image', 'info_url', 'info_heading_1', 'info_heading_2', 'info_heading_3'];
 const PAGE_BREAK_REPEAT_START: ShortInputType = 'repeat_start';
 const PAGE_BREAK_REPEAT_END: ShortInputType = 'repeat_end';
+const PAGE_BREAK_BLOCK_DIVIDER: ShortInputType = 'block_divider';
 const HEX_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 function normalizeHexColor(value: string): string | undefined {
@@ -58,7 +59,8 @@ export function FieldGeneralTab({
   const normalizedInfoPaddingRightPx = normalizeInfoPaddingPx(field.validation?.infoPaddingRightPx);
   const normalizedInfoPaddingBottomPx = normalizeInfoPaddingPx(field.validation?.infoPaddingBottomPx);
   const normalizedInfoPaddingLeftPx = normalizeInfoPaddingPx(field.validation?.infoPaddingLeftPx);
-  const defaultInfoPadding = getDefaultInfoPadding(
+  const infoBareStyle = field.validation?.infoBareStyle === true;
+  const defaultInfoPadding = infoBareStyle ? { top: 0, right: 0, bottom: 0, left: 0 } : getDefaultInfoPadding(
     INFO_INPUT_TYPES.includes(field.inputType) ? field.inputType : 'info_text'
   );
 
@@ -127,7 +129,7 @@ export function FieldGeneralTab({
           <div>
             <label className="mb-1.5 block text-xs font-medium text-text-secondary">Page break mode</label>
             <select
-              value={isRepeatMarkerInputType(field.inputType) ? field.inputType : 'text'}
+              value={isRepeatMarkerInputType(field.inputType) || isBlockDividerInputType(field.inputType) ? field.inputType : 'text'}
               onChange={(e) => {
                 const nextMode = e.target.value as ShortInputType;
                 if (nextMode === PAGE_BREAK_REPEAT_START) {
@@ -154,6 +156,20 @@ export function FieldGeneralTab({
                   });
                   return;
                 }
+                if (nextMode === PAGE_BREAK_BLOCK_DIVIDER) {
+                  onChange({
+                    ...field,
+                    inputType: PAGE_BREAK_BLOCK_DIVIDER,
+                    label: 'Block divider',
+                    key: field.key || 'block_divider',
+                    isRequired: false,
+                    isReadOnly: false,
+                    hideLabel: true,
+                    showOnSummary: false,
+                    validation: field.validation || null,
+                  });
+                  return;
+                }
                 onChange({ ...field, inputType: 'text' });
               }}
               className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
@@ -161,6 +177,7 @@ export function FieldGeneralTab({
               <option value="text">Page break</option>
               <option value={PAGE_BREAK_REPEAT_START}>Dynamic section start</option>
               <option value={PAGE_BREAK_REPEAT_END}>Dynamic section end</option>
+              <option value={PAGE_BREAK_BLOCK_DIVIDER}>Block divider</option>
             </select>
           </div>
 
@@ -228,6 +245,12 @@ export function FieldGeneralTab({
               This marks the end of a dynamic section. All fields between start and end become repeatable cards.
             </p>
           )}
+
+          {field.inputType === PAGE_BREAK_BLOCK_DIVIDER && (
+            <p className="rounded-lg border border-border-primary bg-background-elevated p-3 text-xs text-text-secondary">
+              Starts a new visual block for the elements that follow it. This divider is not shown to respondents and does not collect an answer.
+            </p>
+          )}
         </>
       )}
 
@@ -244,6 +267,7 @@ export function FieldGeneralTab({
             <option value="email">Email</option>
             <option value="number">Number</option>
             <option value="date">Datepicker</option>
+            <option value="time_timezone">Time + timezone</option>
           </select>
         </div>
       )}
@@ -316,8 +340,68 @@ export function FieldGeneralTab({
             </>
           )}
 
-          {!['info_heading_1', 'info_heading_2', 'info_heading_3'].includes(field.inputType) && (
-            <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
+          <div className="rounded-lg border border-status-warning/25 bg-status-warning/5 p-3">
+            <Toggle
+              checked={field.validation?.infoStopsProgress === true}
+              onChange={(checked) => onChange({
+                ...field,
+                validation: {
+                  ...(field.validation || {}),
+                  infoStopsProgress: checked ? true : undefined,
+                },
+              })}
+              label="Stop form progression"
+              description="When this information block is visible, respondents cannot continue to the next page or submit the form."
+              size="sm"
+            />
+          </div>
+
+          <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
+            <Toggle
+              checked={field.validation?.infoInlineCard === true}
+              onChange={(checked) => onChange({
+                ...field,
+                validation: {
+                  ...(field.validation || {}),
+                  infoInlineCard: checked ? true : undefined,
+                },
+              })}
+              label="Place inside current card"
+              description="Render this information block together with nearby form fields instead of as its own full-width card."
+              size="sm"
+            />
+
+            {field.validation?.infoInlineCard === true && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-secondary">Layout width</label>
+                <select
+                  value={field.layoutWidth}
+                  onChange={(e) => onChange({ ...field, layoutWidth: Number(e.target.value) as 25 | 33 | 50 | 66 | 75 | 100 })}
+                  className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                >
+                  {WIDTH_OPTIONS.map((width) => (
+                    <option key={width} value={width}>{width}%</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {(field.inputType === 'info_text' || !INFO_INPUT_TYPES.includes(field.inputType)) && (
+              <Toggle
+                checked={infoBareStyle}
+                onChange={(checked) => onChange({
+                  ...field,
+                  validation: {
+                    ...(field.validation || {}),
+                    infoBareStyle: checked ? true : undefined,
+                  },
+                })}
+                label="Plain text style"
+                description="Show this text block without border or background."
+                size="sm"
+              />
+            )}
+
               <div className="space-y-3">
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-text-secondary">Background color</label>
@@ -426,7 +510,6 @@ export function FieldGeneralTab({
                 </div>
               </div>
             </div>
-          )}
         </>
       )}
 
@@ -468,6 +551,17 @@ export function FieldGeneralTab({
                       className="pt-1"
                       size="sm"
                     />
+                    <FormInput
+                      label="Hover tooltip"
+                      value={option.tooltipText || ''}
+                      onChange={(e) => {
+                        const nextOptions = field.options.map((candidate, idx) => (
+                          idx === optionIndex ? { ...candidate, tooltipText: e.target.value } : candidate
+                        ));
+                        onChange({ ...field, options: nextOptions });
+                      }}
+                      placeholder="Optional tooltip for this option"
+                    />
                     {option.allowTextInput === true && (
                       <div className="mt-2 grid grid-cols-1 gap-2">
                         <FormInput
@@ -491,6 +585,22 @@ export function FieldGeneralTab({
                             onChange({ ...field, options: nextOptions });
                           }}
                           placeholder="Enter details"
+                        />
+                      </div>
+                    )}
+                    {field.type === 'MULTIPLE_CHOICE' && (
+                      <div className="mt-2 rounded-lg border border-border-primary bg-background-primary p-2.5">
+                        <Toggle
+                          checked={option.defaultSelected === true}
+                          onChange={(checked) => {
+                            const nextOptions = field.options.map((candidate, idx) => (
+                              idx === optionIndex ? { ...candidate, defaultSelected: checked } : candidate
+                            ));
+                            onChange({ ...field, options: nextOptions });
+                          }}
+                          label="Selected by default"
+                          description="Pre-select this option for new responses."
+                          size="sm"
                         />
                       </div>
                     )}
@@ -625,12 +735,26 @@ export function FieldGeneralTab({
             <Toggle checked={field.hideLabel} onChange={(checked) => onChange({ ...field, hideLabel: checked })} label="Hide label" size="sm" />
             <Toggle checked={field.isReadOnly} onChange={(checked) => onChange({ ...field, isReadOnly: checked })} label="Read only" size="sm" />
             <Toggle
+              checked={field.validation?.layoutBreakBefore === true}
+              onChange={(checked) => onChange({
+                ...field,
+                validation: {
+                  ...(field.validation || {}),
+                  layoutBreakBefore: checked ? true : undefined,
+                },
+              })}
+              label="Start on new row"
+              description="Prevent this field from merging into the previous row when widths leave space."
+              size="sm"
+            />
+            <Toggle
               checked={field.validation?.tooltipEnabled === true}
               onChange={(checked) => onChange({
                 ...field,
                 validation: {
                   ...(field.validation || {}),
                   tooltipEnabled: checked,
+                  tooltipMode: checked ? (field.validation?.tooltipMode || 'hover') : undefined,
                 },
               })}
               label="Tooltip"
@@ -650,15 +774,112 @@ export function FieldGeneralTab({
           </div>
 
           {field.validation?.tooltipEnabled === true && (
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-text-secondary">Tooltip content</label>
-              <textarea
-                value={field.helpText}
-                onChange={(e) => onChange({ ...field, helpText: e.target.value })}
-                className="w-full min-h-20 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
-                placeholder="Guidance shown when users hover the info icon"
-              />
-            </div>
+            <>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-secondary">Tooltip mode</label>
+                <select
+                  value={field.validation?.tooltipMode || 'hover'}
+                  onChange={(e) => onChange({
+                    ...field,
+                    validation: {
+                      ...(field.validation || {}),
+                      tooltipEnabled: true,
+                      tooltipMode: e.target.value as 'hover' | 'inline',
+                    },
+                  })}
+                  className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                >
+                  <option value="hover">Hover tooltip</option>
+                  <option value="inline">Click to show information block</option>
+                </select>
+              </div>
+
+              {field.validation?.tooltipMode === 'inline' ? (
+                <div className="space-y-2">
+                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">Tooltip content</label>
+                  <div className="overflow-hidden rounded-lg border border-border-primary">
+                    <RichTextEditor
+                      value={field.helpText || ''}
+                      onChange={(nextHtml) => onChange({ ...field, helpText: nextHtml })}
+                      minHeight={120}
+                    />
+                  </div>
+                  <p className="text-2xs text-text-muted">
+                    Supports rich text formatting for the information block shown after clicking the icon.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">Tooltip content</label>
+                  <textarea
+                    value={field.helpText}
+                    onChange={(e) => onChange({ ...field, helpText: e.target.value })}
+                    className="w-full min-h-20 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                    placeholder="Guidance shown when users hover the info icon"
+                  />
+                </div>
+              )}
+
+              {field.validation?.tooltipMode === 'inline' && (
+                <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Information block background</label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="color"
+                        value={normalizeHexColor(field.validation?.tooltipInfoBackgroundColor || '') || '#f8fafc'}
+                        onChange={(e) => onChange({
+                          ...field,
+                          validation: {
+                            ...(field.validation || {}),
+                            tooltipInfoBackgroundColor: normalizeHexColor(e.target.value),
+                          },
+                        })}
+                        className="h-8 w-10 cursor-pointer rounded border border-border-primary bg-background-primary p-1"
+                        aria-label="Choose tooltip information block background color"
+                      />
+                      <div className="rounded border border-border-primary bg-background-primary px-2 py-1 text-xs font-mono text-text-secondary">
+                        {normalizeHexColor(field.validation?.tooltipInfoBackgroundColor || '') || 'Default'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Information block padding (px)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {([
+                        { key: 'tooltipInfoPaddingTopPx', label: 'Top' },
+                        { key: 'tooltipInfoPaddingRightPx', label: 'Right' },
+                        { key: 'tooltipInfoPaddingBottomPx', label: 'Bottom' },
+                        { key: 'tooltipInfoPaddingLeftPx', label: 'Left' },
+                      ] as const).map((paddingField) => (
+                        <div key={paddingField.key}>
+                          <label className="mb-1 block text-2xs font-medium uppercase tracking-[0.08em] text-text-muted">
+                            {paddingField.label}
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            max={80}
+                            step={1}
+                            value={normalizeInfoPaddingPx(field.validation?.[paddingField.key]) ?? ''}
+                            onChange={(e) => onChange({
+                              ...field,
+                              validation: {
+                                ...(field.validation || {}),
+                                [paddingField.key]: normalizeInfoPaddingPx(e.target.value),
+                              },
+                            })}
+                            className="w-full rounded border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs text-text-primary"
+                            placeholder="12"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

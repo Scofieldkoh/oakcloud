@@ -41,6 +41,7 @@ export const shortInputTypeSchema = z.enum([
   'phone',
   'number',
   'date',
+  'time_timezone',
   'info_text',
   'info_image',
   'info_url',
@@ -49,6 +50,7 @@ export const shortInputTypeSchema = z.enum([
   'info_heading_3',
   'repeat_start',
   'repeat_end',
+  'block_divider',
 ]);
 
 export const fieldValidationSchema = z
@@ -63,6 +65,10 @@ export const fieldValidationSchema = z
     equalFormula: z.string().min(1).max(500).refine(isValidFormulaExpression, { message: 'Invalid formula expression' }).optional(),
     minDate: z.string().regex(DATE_BOUND_PATTERN).optional(),
     maxDate: z.string().regex(DATE_BOUND_PATTERN).optional(),
+    minDateFieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
+    minDateOffsetDays: z.number().int().min(-3650).max(3650).optional(),
+    maxDateFieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
+    maxDateOffsetDays: z.number().int().min(-3650).max(3650).optional(),
     startsWith: z.string().max(200).optional(),
     containsText: z.string().max(200).optional(),
     notContainsText: z.string().max(200).optional(),
@@ -72,9 +78,17 @@ export const fieldValidationSchema = z
     allowMultipleFiles: z.boolean().optional(),
     allowedMimeTypes: z.array(z.string().min(1).max(120)).max(20).optional(),
     uploadFileNameTemplate: z.string().min(1).max(240).optional(),
+    layoutBreakBefore: z.boolean().optional(),
     tooltipEnabled: z.boolean().optional(),
+    tooltipMode: z.enum(['hover', 'inline']).optional(),
+    tooltipInfoBackgroundColor: z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/).optional(),
+    tooltipInfoPaddingTopPx: z.number().int().min(0).max(80).optional(),
+    tooltipInfoPaddingRightPx: z.number().int().min(0).max(80).optional(),
+    tooltipInfoPaddingBottomPx: z.number().int().min(0).max(80).optional(),
+    tooltipInfoPaddingLeftPx: z.number().int().min(0).max(80).optional(),
     choiceInlineRight: z.boolean().optional(),
     defaultToday: z.boolean().optional(),
+    timezoneDefault: z.string().min(1).max(120).optional(),
     splitPhoneCountryCode: z.boolean().optional(),
     phoneDefaultCountryCode: z.string().regex(/^\+\d{1,4}$/).optional(),
     infoBackgroundColor: z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/).optional(),
@@ -83,6 +97,9 @@ export const fieldValidationSchema = z
     infoPaddingRightPx: z.number().int().min(0).max(80).optional(),
     infoPaddingBottomPx: z.number().int().min(0).max(80).optional(),
     infoPaddingLeftPx: z.number().int().min(0).max(80).optional(),
+    infoInlineCard: z.boolean().optional(),
+    infoBareStyle: z.boolean().optional(),
+    infoStopsProgress: z.boolean().optional(),
     repeatMinItems: z.number().int().min(1).max(50).optional(),
     repeatMaxItems: z.number().int().min(1).max(50).optional(),
     repeatAddLabel: z.string().min(1).max(80).optional(),
@@ -112,6 +129,12 @@ export const fieldValidationSchema = z
         ctx.addIssue({ code: 'custom', message: 'maxDate must be >= minDate', path: ['maxDate'] });
       }
     }
+    if (value.minDateOffsetDays !== undefined && value.minDateFieldKey === undefined) {
+      ctx.addIssue({ code: 'custom', message: 'minDateFieldKey is required when minDateOffsetDays is set', path: ['minDateFieldKey'] });
+    }
+    if (value.maxDateOffsetDays !== undefined && value.maxDateFieldKey === undefined) {
+      ctx.addIssue({ code: 'custom', message: 'maxDateFieldKey is required when maxDateOffsetDays is set', path: ['maxDateFieldKey'] });
+    }
     if (value.repeatMinItems !== undefined && value.repeatMaxItems !== undefined) {
       if (value.repeatMaxItems < value.repeatMinItems) {
         ctx.addIssue({ code: 'custom', message: 'repeatMaxItems must be >= repeatMinItems', path: ['repeatMaxItems'] });
@@ -119,11 +142,24 @@ export const fieldValidationSchema = z
     }
   });
 
-export const fieldConditionSchema = z.object({
+export const fieldConditionRuleSchema = z.object({
   fieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH),
   operator: z.enum(['equals', 'not_equals', 'contains', 'is_empty', 'not_empty']),
   value: z.union([z.string(), z.number(), z.boolean()]).optional().nullable(),
 });
+
+export type FieldConditionInput = z.infer<typeof fieldConditionRuleSchema> | {
+  logic?: 'and' | 'or';
+  rules: FieldConditionInput[];
+};
+
+export const fieldConditionSchema: z.ZodType<FieldConditionInput> = z.lazy(() => z.union([
+  fieldConditionRuleSchema,
+  z.object({
+  logic: z.enum(['and', 'or']).default('and'),
+    rules: z.array(fieldConditionSchema).min(1).max(20),
+  }),
+]));
 
 const choiceOptionSchema = z.object({
   label: z.string().min(1).max(200),
@@ -131,6 +167,8 @@ const choiceOptionSchema = z.object({
   allowTextInput: z.boolean().optional(),
   textInputLabel: z.string().max(200).optional().nullable(),
   textInputPlaceholder: z.string().max(200).optional().nullable(),
+  tooltipText: z.string().max(500).optional().nullable(),
+  defaultSelected: z.boolean().optional(),
 });
 
 const layoutWidthSchema = z.union([

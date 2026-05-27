@@ -10,10 +10,10 @@ interface EsigningStepIndicatorProps {
   onStepClick: (step: 1 | 2 | 3) => void;
 }
 
-const STEPS: Array<{ step: 1 | 2 | 3; label: string }> = [
-  { step: 1, label: 'Upload & Recipients' },
-  { step: 2, label: 'Place Fields' },
-  { step: 3, label: 'Review & Send' },
+const STEPS: Array<{ step: 1 | 2 | 3; label: string; shortLabel: string }> = [
+  { step: 1, label: 'Upload & Recipients', shortLabel: 'Upload' },
+  { step: 2, label: 'Place Fields', shortLabel: 'Fields' },
+  { step: 3, label: 'Review & Send', shortLabel: 'Review' },
 ];
 
 export function EsigningStepIndicator({
@@ -35,7 +35,7 @@ export function EsigningStepIndicator({
 
   return (
     <div className="flex items-center justify-center gap-0">
-      {STEPS.map(({ step, label }, index) => {
+      {STEPS.map(({ step, label, shortLabel }, index) => {
         const accessible = isAccessible(step);
         const completed = isCompleted(step);
         const active = step === currentStep;
@@ -68,11 +68,12 @@ export function EsigningStepIndicator({
               </div>
               <span
                 className={cn(
-                  'text-[10px] whitespace-nowrap sm:text-xs',
+                  'text-[11px] whitespace-nowrap sm:text-xs',
                   active ? 'text-text-primary font-medium' : 'text-text-muted'
                 )}
               >
-                {label}
+                <span className="sm:hidden">{shortLabel}</span>
+                <span className="hidden sm:inline">{label}</span>
               </span>
             </button>
 
@@ -80,7 +81,7 @@ export function EsigningStepIndicator({
             {index < STEPS.length - 1 && (
               <div
                 className={cn(
-                  'h-px w-6 mb-4 flex-shrink-0 sm:w-12 sm:mb-5',
+                  'h-px w-3 mb-4 flex-shrink-0 sm:w-12 sm:mb-5',
                   isCompleted(STEPS[index + 1].step) || currentStep > step
                     ? 'bg-emerald-500'
                     : 'bg-border-primary'

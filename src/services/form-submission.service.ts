@@ -17,11 +17,14 @@ import {
   buildPublicFormSettings,
   evaluateCondition,
   formatChoiceAnswer,
+  formatTimeTimezoneAnswer,
   isEmptyValue,
   parseFormAiSettings,
   parseFormNotificationSettings,
   parseFormSubmissionAiReview,
   parseObject,
+  pruneHiddenConditionalAnswers,
+  isProgressStopInfoBlock,
   toAnswerRecord,
   toUploadIds,
   type FormSubmissionAiReview,
@@ -160,6 +163,9 @@ function formatResponseCellValue(fieldType: FormFieldType | string, value: unkno
     const choiceText = formatChoiceAnswer(value);
     return choiceText || '-';
   }
+
+  const timeTimezoneText = formatTimeTimezoneAnswer(value);
+  if (timeTimezoneText) return timeTimezoneText;
 
   if (Array.isArray(value)) {
     const text = value.map((item) => String(item)).join(', ').trim();
@@ -585,10 +591,27 @@ function collectUploadIdsFromAnswer(value: unknown): string[] {
 function hasItemValue(item: unknown): boolean {
   if (isEmptyValue(item)) return false;
   const itemRecord = parseObject(item);
+  if (itemRecord && 'time' in itemRecord && 'timezone' in itemRecord) {
+    return typeof itemRecord.time === 'string' && itemRecord.time.trim().length > 0;
+  }
   if (itemRecord && 'value' in itemRecord) {
     return typeof itemRecord.value === 'string' && itemRecord.value.trim().length > 0;
   }
   return true;
+}
+
+function sanitizeTimeTimezoneValue(value: unknown): { time: string; timezone: string } | null {
+  const record = parseObject(value);
+  if (!record) return null;
+
+  const time = typeof record.time === 'string' ? record.time.trim() : '';
+  if (!/^\d{2}:\d{2}$/.test(time)) return null;
+
+  const timezone = typeof record.timezone === 'string' ? record.timezone.trim().slice(0, 120) : '';
+  return {
+    time,
+    timezone: timezone || 'Asia/Singapore',
+  };
 }
 
 function sanitizeChoiceEntry(entry: unknown): string | { value: string; detailText?: string } | null {
@@ -628,11 +651,46 @@ function resolveDateBoundary(value: unknown): string | undefined {
   return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : undefined;
 }
 
-function getDateValidationRange(field: FormField): { minDate?: string; maxDate?: string } {
+function addIsoDateDays(value: string, offsetDays: number): string | undefined {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return undefined;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + offsetDays);
+  return date.toISOString().slice(0, 10);
+}
+
+function resolveRelativeDateBoundary(
+  validation: Record<string, unknown> | null,
+  fieldKeyName: 'minDateFieldKey' | 'maxDateFieldKey',
+  offsetName: 'minDateOffsetDays' | 'maxDateOffsetDays',
+  answersRecord: Record<string, unknown>
+): string | undefined {
+  const fieldKey = typeof validation?.[fieldKeyName] === 'string' ? validation[fieldKeyName].trim() : '';
+  if (!fieldKey) return undefined;
+
+  const referencedValue = answersRecord[fieldKey];
+  if (typeof referencedValue !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(referencedValue.trim())) {
+    return undefined;
+  }
+
+  const rawOffset = validation?.[offsetName];
+  const offsetDays = typeof rawOffset === 'number' && Number.isFinite(rawOffset) ? Math.trunc(rawOffset) : 0;
+  return addIsoDateDays(referencedValue.trim(), offsetDays);
+}
+
+function getDateValidationRange(field: FormField, answersRecord: Record<string, unknown>): { minDate?: string; maxDate?: string } {
   if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return {};
   const validation = parseObject(field.validation);
-  const minDate = resolveDateBoundary(validation?.minDate);
-  const maxDate = resolveDateBoundary(validation?.maxDate);
+  const fixedMinDate = resolveDateBoundary(validation?.minDate);
+  const fixedMaxDate = resolveDateBoundary(validation?.maxDate);
+  const relativeMinDate = resolveRelativeDateBoundary(validation, 'minDateFieldKey', 'minDateOffsetDays', answersRecord);
+  const relativeMaxDate = resolveRelativeDateBoundary(validation, 'maxDateFieldKey', 'maxDateOffsetDays', answersRecord);
+  const minDate = [fixedMinDate, relativeMinDate].filter((value): value is string => !!value).sort().at(-1);
+  const maxDate = [fixedMaxDate, relativeMaxDate].filter((value): value is string => !!value).sort()[0];
 
   return { minDate, maxDate };
 }
@@ -689,7 +747,7 @@ function getRowAnswerContext(answersRecord: Record<string, unknown>, rowIndex?: 
   return context;
 }
 
-function validateDateFieldValue(field: FormField, value: unknown): void {
+function validateDateFieldValue(field: FormField, value: unknown, answersRecord: Record<string, unknown>): void {
   if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return;
   if (typeof value !== 'string') return;
 
@@ -699,7 +757,7 @@ function validateDateFieldValue(field: FormField, value: unknown): void {
     throw new Error(`Enter a valid date for ${field.label || field.key}.`);
   }
 
-  const { minDate, maxDate } = getDateValidationRange(field);
+  const { minDate, maxDate } = getDateValidationRange(field, answersRecord);
   if (minDate && normalizedValue < minDate) {
     throw new Error(`${field.label || field.key} must be on or after ${formatValidationDate(minDate)}.`);
   }
@@ -776,23 +834,100 @@ function validateNumberFieldValue(field: FormField, value: unknown, answersRecor
   }
 }
 
+function validateTimeTimezoneFieldValue(field: FormField, value: unknown): void {
+  if (field.type !== 'SHORT_TEXT' || field.inputType !== 'time_timezone') return;
+  if (isEmptyValue(value)) return;
+
+  const normalizedValue = sanitizeTimeTimezoneValue(value);
+  if (!normalizedValue) {
+    throw new Error(`Enter a valid time and timezone for ${field.label || field.key}.`);
+  }
+}
+
 function validatePublicAnswerConstraints(fields: FormField[], answers: Record<string, unknown>): void {
   for (const field of fields) {
     const value = answers[field.key];
 
     if (Array.isArray(value)) {
       for (const [index, item] of value.entries()) {
-        validateDateFieldValue(field, item);
+        const rowAnswers = getRowAnswerContext(answers, index);
+        validateDateFieldValue(field, item, rowAnswers);
         validateTextFieldValue(field, item);
-        validateNumberFieldValue(field, item, getRowAnswerContext(answers, index));
+        validateNumberFieldValue(field, item, rowAnswers);
+        validateTimeTimezoneFieldValue(field, item);
       }
       continue;
     }
 
-    validateDateFieldValue(field, value);
+    validateDateFieldValue(field, value, answers);
     validateTextFieldValue(field, value);
     validateNumberFieldValue(field, value, answers);
+    validateTimeTimezoneFieldValue(field, value);
   }
+}
+
+function getRepeatMinItems(field: FormField): number {
+  const validation = parseObject(field.validation);
+  const minItemsRaw = typeof validation?.repeatMinItems === 'number' ? Math.trunc(validation.repeatMinItems) : 1;
+  return Math.max(1, Math.min(50, minItemsRaw));
+}
+
+function getRepeatRowCount(sectionFields: FormField[], answers: Record<string, unknown>, startField: FormField): number {
+  let rowCount = getRepeatMinItems(startField);
+  for (const sectionField of sectionFields) {
+    const value = answers[sectionField.key];
+    if (Array.isArray(value)) {
+      rowCount = Math.max(rowCount, value.length);
+    }
+  }
+  return Math.max(1, Math.min(50, rowCount));
+}
+
+function hasActiveProgressStopInfoBlock(fields: FormField[], answers: Record<string, unknown>): boolean {
+  for (let index = 0; index < fields.length; index += 1) {
+    const field = fields[index];
+
+    if (isRepeatStartMarker(field)) {
+      const sectionVisible = evaluateCondition(parseObject(field.condition), answers);
+      const sectionFields: FormField[] = [];
+      let cursor = index + 1;
+
+      while (cursor < fields.length && !isRepeatEndMarker(fields[cursor])) {
+        if (fields[cursor].type !== 'PAGE_BREAK') {
+          sectionFields.push(fields[cursor]);
+        }
+        cursor += 1;
+      }
+
+      if (sectionVisible) {
+        const rowCount = getRepeatRowCount(sectionFields, answers, field);
+        for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+          const rowAnswers = getRowAnswerContext(answers, rowIndex);
+          for (const sectionField of sectionFields) {
+            if (
+              isProgressStopInfoBlock(sectionField) &&
+              evaluateCondition(parseObject(sectionField.condition), rowAnswers)
+            ) {
+              return true;
+            }
+          }
+        }
+      }
+
+      index = cursor;
+      continue;
+    }
+
+    if (isRepeatEndMarker(field) || field.type === 'PAGE_BREAK') continue;
+    if (
+      isProgressStopInfoBlock(field) &&
+      evaluateCondition(parseObject(field.condition), answers)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function validateRequiredFieldValue(
@@ -898,6 +1033,18 @@ function sanitizePublicAnswers(
 
     switch (field.type) {
       case 'SHORT_TEXT':
+        if (field.inputType === 'time_timezone') {
+          const sanitizeOne = (item: unknown) => sanitizeTimeTimezoneValue(item);
+          if (Array.isArray(value)) {
+            sanitizedAnswers[key] = value
+              .slice(0, 100)
+              .map((item) => sanitizeOne(item) ?? { time: '', timezone: 'Asia/Singapore' });
+          } else {
+            const sanitizedValue = sanitizeOne(value);
+            if (sanitizedValue) sanitizedAnswers[key] = sanitizedValue;
+          }
+          break;
+        }
       case 'LONG_TEXT':
       case 'DROPDOWN':
         if (typeof value === 'string') {
@@ -1808,9 +1955,22 @@ export async function createPublicSubmission(
   }
 
   const tenantTimeZone = await getTenantTimeZone(form.tenantId);
-  const answers = applyDefaultTodayAnswers(form.fields, toAnswerRecord(input.answers));
-  const uploadIds = normalizeUploadIds(input.uploadIds);
+  const answers = pruneHiddenConditionalAnswers(
+    form.fields,
+    applyDefaultTodayAnswers(form.fields, toAnswerRecord(input.answers))
+  );
+  const referencedUploadIdSet = new Set(
+    form.fields
+      .filter((field) => field.type === 'FILE_UPLOAD')
+      .flatMap((field) => collectUploadIdsFromAnswer(answers[field.key]))
+      .filter((id) => UPLOAD_ID_PATTERN.test(id))
+  );
+  const uploadIds = normalizeUploadIds(input.uploadIds).filter((id) => referencedUploadIdSet.has(id));
   const uploadIdSet = new Set(uploadIds);
+
+  if (hasActiveProgressStopInfoBlock(form.fields, answers)) {
+    throw new Error('This response cannot be submitted because a stopping information block is active.');
+  }
 
   validateRequiredPublicAnswers(form.fields, answers, uploadIdSet);
   validatePublicAnswerConstraints(form.fields, answers);
@@ -2067,6 +2227,8 @@ export async function exportFormResponsesCsv(
     if (value === null || value === undefined) return '';
     const choiceText = formatChoiceAnswer(value);
     if (choiceText) return choiceText;
+    const timeTimezoneText = formatTimeTimezoneAnswer(value);
+    if (timeTimezoneText) return timeTimezoneText;
     if (typeof value === 'string') return value;
     if (Array.isArray(value)) return value.join(', ');
     return String(value);

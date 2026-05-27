@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-media-query';
+import { useIsMobile, useIsTablet } from '@/hooks/use-media-query';
 import type { EsigningFieldType } from '@/generated/prisma';
 import type { EsigningEnvelopeDetailDto } from '@/types/esigning';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,8 @@ interface EsigningStepFieldsProps {
 
 const DEFAULT_LEFT_PANEL_WIDTH = 280;
 const DEFAULT_RIGHT_PANEL_WIDTH = 300;
+const TABLET_LEFT_PANEL_WIDTH = 220;
+const TABLET_RIGHT_PANEL_WIDTH = 240;
 const PANEL_COLLAPSED_WIDTH = 44;
 const PANEL_MIN_WIDTH = 220;
 const PANEL_MAX_WIDTH = 420;
@@ -76,6 +78,7 @@ export function EsigningStepFields({
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [activeResizePanel, setActiveResizePanel] = useState<'left' | 'right' | null>(null);
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
   const layoutRef = useRef<HTMLDivElement>(null);
   const resizeStateRef = useRef<{
     panel: 'left' | 'right';
@@ -87,8 +90,15 @@ export function EsigningStepFields({
     if (isMobile) {
       setLeftPanelCollapsed(true);
       setRightPanelCollapsed(true);
+      return;
     }
-  }, [isMobile]);
+    if (isTablet) {
+      // Tablet: keep palette accessible but collapse properties panel and tighten widths
+      setLeftPanelWidth(TABLET_LEFT_PANEL_WIDTH);
+      setRightPanelWidth(TABLET_RIGHT_PANEL_WIDTH);
+      setRightPanelCollapsed(true);
+    }
+  }, [isMobile, isTablet]);
 
   const recipientFieldSummary = useMemo(() => {
     const map = new Map<string, { required: number; optional: number; hasSignature: boolean }>();

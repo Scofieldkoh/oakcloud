@@ -31,6 +31,7 @@ export type ShortInputType =
   | 'phone'
   | 'number'
   | 'date'
+  | 'time_timezone'
   | 'info_text'
   | 'info_image'
   | 'info_url'
@@ -38,10 +39,15 @@ export type ShortInputType =
   | 'info_heading_2'
   | 'info_heading_3'
   | 'repeat_start'
-  | 'repeat_end';
+  | 'repeat_end'
+  | 'block_divider';
 
 export function isRepeatMarkerInputType(value: string): value is 'repeat_start' | 'repeat_end' {
   return value === 'repeat_start' || value === 'repeat_end';
+}
+
+export function isBlockDividerInputType(value: string): value is 'block_divider' {
+  return value === 'block_divider';
 }
 
 export type ValidationConfig = {
@@ -55,6 +61,10 @@ export type ValidationConfig = {
   equalFormula?: string;
   minDate?: string;
   maxDate?: string;
+  minDateFieldKey?: string;
+  minDateOffsetDays?: number;
+  maxDateFieldKey?: string;
+  maxDateOffsetDays?: number;
   startsWith?: string;
   containsText?: string;
   notContainsText?: string;
@@ -64,9 +74,17 @@ export type ValidationConfig = {
   allowMultipleFiles?: boolean;
   allowedMimeTypes?: string[];
   uploadFileNameTemplate?: string;
+  layoutBreakBefore?: boolean;
   tooltipEnabled?: boolean;
+  tooltipMode?: 'hover' | 'inline';
+  tooltipInfoBackgroundColor?: string;
+  tooltipInfoPaddingTopPx?: number;
+  tooltipInfoPaddingRightPx?: number;
+  tooltipInfoPaddingBottomPx?: number;
+  tooltipInfoPaddingLeftPx?: number;
   choiceInlineRight?: boolean;
   defaultToday?: boolean;
+  timezoneDefault?: string;
   splitPhoneCountryCode?: boolean;
   phoneDefaultCountryCode?: string;
   infoBackgroundColor?: string;
@@ -75,6 +93,9 @@ export type ValidationConfig = {
   infoPaddingRightPx?: number;
   infoPaddingBottomPx?: number;
   infoPaddingLeftPx?: number;
+  infoInlineCard?: boolean;
+  infoBareStyle?: boolean;
+  infoStopsProgress?: boolean;
   repeatMinItems?: number;
   repeatMaxItems?: number;
   repeatAddLabel?: string;
@@ -86,6 +107,8 @@ export type ChoiceOptionConfig = {
   allowTextInput?: boolean;
   textInputLabel?: string | null;
   textInputPlaceholder?: string | null;
+  tooltipText?: string | null;
+  defaultSelected?: boolean;
 };
 
 export type ConditionConfig = {
@@ -93,6 +116,13 @@ export type ConditionConfig = {
   operator: 'equals' | 'not_equals' | 'contains' | 'is_empty' | 'not_empty';
   value?: string | number | boolean | null;
 };
+
+export type ConditionGroupConfig = {
+  logic: 'and' | 'or';
+  rules: FieldConditionConfig[];
+};
+
+export type FieldConditionConfig = ConditionConfig | ConditionGroupConfig;
 
 export interface BuilderField {
   clientId: string;
@@ -106,7 +136,7 @@ export interface BuilderField {
   inputType: ShortInputType;
   options: ChoiceOptionConfig[];
   validation: ValidationConfig | null;
-  condition: ConditionConfig | null;
+  condition: FieldConditionConfig | null;
   isRequired: boolean;
   hideLabel: boolean;
   isReadOnly: boolean;
@@ -180,10 +210,54 @@ function parseFieldOptions(value: unknown): ChoiceOptionConfig[] {
       allowTextInput: optionRecord.allowTextInput === true,
       textInputLabel: typeof optionRecord.textInputLabel === 'string' ? optionRecord.textInputLabel.trim() || null : null,
       textInputPlaceholder: typeof optionRecord.textInputPlaceholder === 'string' ? optionRecord.textInputPlaceholder.trim() || null : null,
+      defaultSelected: optionRecord.defaultSelected === true,
     });
   }
 
   return parsed;
+}
+
+function parseConditionRule(value: unknown): ConditionConfig | null {
+  if (!isRecord(value)) return null;
+
+  const fieldKey = typeof value.fieldKey === 'string' ? value.fieldKey.trim() : '';
+  const operator = value.operator;
+  if (
+    !fieldKey
+    || (
+      operator !== 'equals'
+      && operator !== 'not_equals'
+      && operator !== 'contains'
+      && operator !== 'is_empty'
+      && operator !== 'not_empty'
+    )
+  ) {
+    return null;
+  }
+
+  return {
+    fieldKey,
+    operator,
+    value: value.value as string | number | boolean | null | undefined,
+  };
+}
+
+export function normalizeConditionConfig(value: unknown): FieldConditionConfig | null {
+  const singleRule = parseConditionRule(value);
+  if (singleRule) return singleRule;
+
+  if (!isRecord(value) || !Array.isArray(value.rules)) return null;
+
+  const rules = value.rules
+    .map(normalizeConditionConfig)
+    .filter((rule): rule is FieldConditionConfig => !!rule);
+
+  if (rules.length === 0) return null;
+
+  return {
+    logic: value.logic === 'or' ? 'or' : 'and',
+    rules,
+  };
 }
 
 export function fromServerField(field: {
@@ -205,7 +279,7 @@ export function fromServerField(field: {
   position: number;
 }, options?: { showOnSummary?: boolean }): BuilderField {
   const validation = isRecord(field.validation) ? field.validation as ValidationConfig : null;
-  const condition = isRecord(field.condition) ? field.condition as ConditionConfig : null;
+  const condition = normalizeConditionConfig(field.condition);
   const inputType = (field.inputType || (field.type === 'PARAGRAPH' ? 'info_text' : 'text')) as ShortInputType;
 
   return {
@@ -243,7 +317,7 @@ export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
     helpText: field.helpText || null,
     inputType: field.type === 'SHORT_TEXT' || field.type === 'PARAGRAPH'
       ? field.inputType
-      : (field.type === 'PAGE_BREAK' && isRepeatMarkerInputType(field.inputType) ? field.inputType : null),
+      : (field.type === 'PAGE_BREAK' && (isRepeatMarkerInputType(field.inputType) || isBlockDividerInputType(field.inputType)) ? field.inputType : null),
     options: (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE')
       ? field.options
         .map((option) => {
@@ -256,6 +330,8 @@ export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
             ...(option.allowTextInput ? { allowTextInput: true } : {}),
             ...(option.textInputLabel ? { textInputLabel: option.textInputLabel.trim() } : {}),
             ...(option.textInputPlaceholder ? { textInputPlaceholder: option.textInputPlaceholder.trim() } : {}),
+            ...(option.tooltipText ? { tooltipText: option.tooltipText.trim() } : {}),
+            ...(option.defaultSelected && field.type === 'MULTIPLE_CHOICE' ? { defaultSelected: true } : {}),
           };
         })
         .filter((option): option is NonNullable<typeof option> => !!option)

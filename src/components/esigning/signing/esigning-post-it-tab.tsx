@@ -55,12 +55,14 @@ export function EsigningPostItTab({
             backgroundColor: bgColor,
             color: 'white',
             borderRadius: '0 6px 0 0',
-            padding: '4px 8px',
+            padding: '8px 12px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             borderBottom: '1px solid rgba(255,255,255,0.2)',
             cursor: 'pointer',
+            minWidth: 52,
+            minHeight: 36,
           }}
         >
           <ChevronUp className="h-3.5 w-3.5" />
@@ -76,14 +78,15 @@ export function EsigningPostItTab({
           backgroundColor: bgColor,
           color: 'white',
           borderRadius: isComplete ? '0 8px 8px 0' : '0',
-          padding: '10px 14px',
+          padding: '12px 14px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: 6,
           cursor: 'pointer',
           boxShadow: '2px 2px 8px rgba(0,0,0,0.25)',
-          minWidth: 52,
+          minWidth: 56,
+          minHeight: 64,
           transition: 'filter 0.15s',
         }}
         onMouseEnter={(e) => {
@@ -96,7 +99,7 @@ export function EsigningPostItTab({
         <TabIcon label={isComplete ? 'Finish' : label} />
         <span
           style={{
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: 700,
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
@@ -106,7 +109,7 @@ export function EsigningPostItTab({
           {isComplete ? 'Finish' : label}
         </span>
         {!isComplete && totalCount > 0 && (
-          <span style={{ fontSize: 9, opacity: 0.75 }}>
+          <span style={{ fontSize: 10, opacity: 0.75 }}>
             {currentIndex + 1}/{totalCount}
           </span>
         )}
@@ -122,12 +125,14 @@ export function EsigningPostItTab({
             backgroundColor: bgColor,
             color: 'white',
             borderRadius: '0 0 6px 0',
-            padding: '4px 8px',
+            padding: '8px 12px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             borderTop: '1px solid rgba(255,255,255,0.2)',
             cursor: 'pointer',
+            minWidth: 56,
+            minHeight: 36,
           }}
         >
           <ChevronDown className="h-3.5 w-3.5" />

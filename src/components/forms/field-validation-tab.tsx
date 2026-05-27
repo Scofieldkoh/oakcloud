@@ -3,22 +3,33 @@
 import { FormInput } from '@/components/ui/form-input';
 import { Toggle } from '@/components/ui/toggle';
 import { DEFAULT_PHONE_COUNTRY_CODE, PHONE_COUNTRY_CODE_OPTIONS } from '@/lib/constants/phone-country-codes';
+import { TIMEZONE_OPTIONS } from '@/lib/constants/timezones';
 import type { BuilderField } from './builder-utils';
+
+const DEFAULT_TIMEZONE = 'Asia/Singapore';
 
 export function FieldValidationTab({
   field,
+  allFields,
   onChange,
 }: {
   field: BuilderField;
+  allFields: BuilderField[];
   onChange: (next: BuilderField) => void;
 }) {
   const phoneDefaultCountryCode = typeof field.validation?.phoneDefaultCountryCode === 'string'
     ? field.validation.phoneDefaultCountryCode
     : DEFAULT_PHONE_COUNTRY_CODE;
+  const timezoneDefault = typeof field.validation?.timezoneDefault === 'string'
+    ? field.validation.timezoneDefault
+    : DEFAULT_TIMEZONE;
+  const dateFieldCandidates = allFields.filter(
+    (candidate) => candidate.clientId !== field.clientId && candidate.type === 'SHORT_TEXT' && candidate.inputType === 'date'
+  );
 
   return (
     <>
-      {((field.type === 'SHORT_TEXT' && field.inputType !== 'date' && field.inputType !== 'number') || field.type === 'LONG_TEXT') && (
+      {((field.type === 'SHORT_TEXT' && field.inputType !== 'date' && field.inputType !== 'number' && field.inputType !== 'time_timezone') || field.type === 'LONG_TEXT') && (
         <div className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormInput
@@ -254,6 +265,86 @@ export function FieldValidationTab({
             </div>
           </div>
           <p className="text-2xs text-text-muted">Use a fixed date like `2026-03-08` or the variable `today`.</p>
+          <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-text-secondary">Relative min date</label>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_8rem]">
+                <select
+                  value={field.validation?.minDateFieldKey || ''}
+                  onChange={(e) => onChange({
+                    ...field,
+                    validation: {
+                      ...(field.validation || {}),
+                      minDateFieldKey: e.target.value || undefined,
+                      minDateOffsetDays: e.target.value ? (field.validation?.minDateOffsetDays || 0) : undefined,
+                    },
+                  })}
+                  className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                >
+                  <option value="">No relative min</option>
+                  {dateFieldCandidates.map((candidate) => (
+                    <option key={candidate.clientId} value={candidate.key}>
+                      {candidate.label || candidate.key}
+                    </option>
+                  ))}
+                </select>
+                <FormInput
+                  label="Offset days"
+                  type="number"
+                  disabled={!field.validation?.minDateFieldKey}
+                  value={field.validation?.minDateOffsetDays?.toString() || '0'}
+                  onChange={(e) => onChange({
+                    ...field,
+                    validation: {
+                      ...(field.validation || {}),
+                      minDateOffsetDays: e.target.value ? Number(e.target.value) : 0,
+                    },
+                  })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-text-secondary">Relative max date</label>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_8rem]">
+                <select
+                  value={field.validation?.maxDateFieldKey || ''}
+                  onChange={(e) => onChange({
+                    ...field,
+                    validation: {
+                      ...(field.validation || {}),
+                      maxDateFieldKey: e.target.value || undefined,
+                      maxDateOffsetDays: e.target.value ? (field.validation?.maxDateOffsetDays || 0) : undefined,
+                    },
+                  })}
+                  className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                >
+                  <option value="">No relative max</option>
+                  {dateFieldCandidates.map((candidate) => (
+                    <option key={candidate.clientId} value={candidate.key}>
+                      {candidate.label || candidate.key}
+                    </option>
+                  ))}
+                </select>
+                <FormInput
+                  label="Offset days"
+                  type="number"
+                  disabled={!field.validation?.maxDateFieldKey}
+                  value={field.validation?.maxDateOffsetDays?.toString() || '0'}
+                  onChange={(e) => onChange({
+                    ...field,
+                    validation: {
+                      ...(field.validation || {}),
+                      maxDateOffsetDays: e.target.value ? Number(e.target.value) : 0,
+                    },
+                  })}
+                />
+              </div>
+            </div>
+            <p className="text-2xs text-text-muted">
+              Offsets are relative to the selected date field. Use -15 for 15 days earlier, or 15 for 15 days later.
+            </p>
+          </div>
           <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
             <Toggle
               checked={field.validation?.defaultToday === true}
@@ -312,6 +403,29 @@ export function FieldValidationTab({
               </select>
             </div>
           )}
+        </div>
+      )}
+
+      {field.type === 'SHORT_TEXT' && field.inputType === 'time_timezone' && (
+        <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Default timezone</label>
+            <select
+              value={timezoneDefault}
+              onChange={(e) => onChange({
+                ...field,
+                validation: {
+                  ...(field.validation || {}),
+                  timezoneDefault: e.target.value || DEFAULT_TIMEZONE,
+                },
+              })}
+              className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+            >
+              {TIMEZONE_OPTIONS.map((timezone) => (
+                <option key={timezone.value} value={timezone.value}>{timezone.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
 

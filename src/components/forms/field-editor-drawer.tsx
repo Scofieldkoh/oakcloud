@@ -132,7 +132,7 @@ export function FieldEditorDrawer({
           )}
 
           {activeTab === 'validation' && (
-            <FieldValidationTab field={field} onChange={onChange} />
+            <FieldValidationTab field={field} allFields={allFields} onChange={onChange} />
           )}
 
           {activeTab === 'condition' && (

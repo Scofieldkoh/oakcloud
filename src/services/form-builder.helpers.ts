@@ -1,5 +1,5 @@
 import { Prisma, type FormField } from '@/generated/prisma';
-import { isEmptyValue, parseObject } from '@/lib/form-utils';
+import { isEmptyValue, parseChoiceOptions, parseObject } from '@/lib/form-utils';
 import { prisma } from '@/lib/prisma';
 
 export const DEFAULT_TENANT_TIME_ZONE = 'Asia/Singapore';
@@ -58,11 +58,37 @@ export function applyDefaultTodayAnswers(
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   for (const field of fields) {
+    const currentValue = answers[field.key];
+    if (field.type === 'MULTIPLE_CHOICE') {
+      const defaultValue = parseChoiceOptions(field.options)
+        .filter((option) => option.defaultSelected)
+        .map((option) => (option.allowTextInput ? { value: option.value, detailText: '' } : option.value));
+      if (defaultValue.length > 0 && isEmptyValue(currentValue)) {
+        answers[field.key] = defaultValue;
+      }
+      continue;
+    }
+
+    if (field.type === 'SHORT_TEXT' && field.inputType === 'time_timezone') {
+      const validation = parseObject(field.validation);
+      const timezone = normalizeTenantTimeZone(validation?.timezoneDefault);
+      if (Array.isArray(currentValue)) {
+        answers[field.key] = currentValue.map((rowValue) => {
+          const rowRecord = parseObject(rowValue);
+          const time = typeof rowRecord?.time === 'string' ? rowRecord.time : '';
+          const rowTimezone = typeof rowRecord?.timezone === 'string' ? rowRecord.timezone : timezone;
+          return { time, timezone: normalizeTenantTimeZone(rowTimezone) };
+        });
+      } else if (isEmptyValue(currentValue)) {
+        answers[field.key] = { time: '', timezone };
+      }
+      continue;
+    }
+
     if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') continue;
     const validation = parseObject(field.validation);
     if (validation?.defaultToday !== true) continue;
 
-    const currentValue = answers[field.key];
     if (Array.isArray(currentValue)) {
       answers[field.key] = currentValue.map((rowValue) => (isEmptyValue(rowValue) ? todayIso : rowValue));
       continue;

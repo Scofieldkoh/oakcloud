@@ -6,13 +6,14 @@ import { CSS } from '@dnd-kit/utilities';
 import { Copy, GripVertical, MoreHorizontal, MoveHorizontal, Plus, SquarePen, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip } from '@/components/ui/tooltip';
-import { FIELD_TYPE_LABEL, WIDTH_CLASS, WIDTH_OPTIONS } from './builder-utils';
+import { FIELD_TYPE_LABEL, WIDTH_CLASS, WIDTH_OPTIONS, isBlockDividerInputType } from './builder-utils';
 import type { BuilderField } from './builder-utils';
 
 function getFieldTypeLabel(field: BuilderField): string {
   if (field.type === 'PAGE_BREAK') {
     if (field.inputType === 'repeat_start') return 'Dynamic section start';
     if (field.inputType === 'repeat_end') return 'Dynamic section end';
+    if (isBlockDividerInputType(field.inputType)) return 'Block divider';
     return FIELD_TYPE_LABEL[field.type];
   }
 
@@ -30,8 +31,16 @@ function getFieldToneClasses(field: BuilderField): string {
     return 'border-blue-300 dark:border-blue-700 bg-blue-50/40 dark:bg-blue-900/10';
   }
 
+  if (field.type === 'PAGE_BREAK' && isBlockDividerInputType(field.inputType)) {
+    return 'border-sky-300 dark:border-sky-700 bg-sky-50/40 dark:bg-sky-900/10';
+  }
+
   if (field.type === 'PAGE_BREAK') {
     return 'border-orange-300 dark:border-orange-700 bg-orange-50/40 dark:bg-orange-900/10';
+  }
+
+  if (field.type === 'PARAGRAPH' && field.validation?.infoStopsProgress === true) {
+    return 'border-status-warning/70 bg-status-warning/10';
   }
 
   if (field.type === 'PARAGRAPH') {
@@ -48,6 +57,7 @@ function getEnabledFieldFlags(field: BuilderField): string[] {
   if (field.isReadOnly) flags.push('Read only');
   if (field.hideLabel) flags.push('Hide label');
   if (field.validation?.tooltipEnabled === true) flags.push('Tooltip');
+  if (field.type === 'PARAGRAPH' && field.validation?.infoStopsProgress === true) flags.push('Stops progress');
   if (field.showOnSummary) flags.push('Summary');
 
   return flags;

@@ -63,6 +63,14 @@ const TAB_LABELS: Record<TabKey, string> = {
   voided: 'Voided / Expired',
 };
 
+const TAB_LABELS_SHORT: Record<TabKey, string> = {
+  all: 'All',
+  attention: 'Attention',
+  waiting: 'Waiting',
+  completed: 'Done',
+  voided: 'Voided',
+};
+
 const TAB_STATUSES: Record<TabKey, StatusFilter[]> = {
   all: [],
   attention: ['DRAFT', 'DECLINED'],
@@ -404,7 +412,8 @@ export function EsigningListPage() {
                     : 'text-text-secondary hover:text-text-primary'
                 )}
               >
-                {TAB_LABELS[tab]}
+                <span className="sm:hidden">{TAB_LABELS_SHORT[tab]}</span>
+                <span className="hidden sm:inline">{TAB_LABELS[tab]}</span>
                 <span
                   className={cn(
                     'rounded-full px-1.5 py-0.5 text-xs font-semibold',
@@ -444,7 +453,7 @@ export function EsigningListPage() {
                 <Link href={`/esigning/${envelope.id}`} className="min-w-0 flex-1">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-3">
-                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                         <EnvelopeStatusBadge status={envelope.status} />
                         <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
                           {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
@@ -472,7 +481,7 @@ export function EsigningListPage() {
                       </div>
                     </div>
 
-                    <div className="grid gap-1 text-xs text-text-secondary sm:text-sm lg:text-right">
+                    <div className="grid min-w-0 gap-1 text-xs text-text-secondary sm:text-sm lg:shrink-0 lg:text-right">
                       <div>Updated {formatEsigningDateTime(envelope.updatedAt)}</div>
                       <div>Created {formatEsigningDateTime(envelope.createdAt)}</div>
                       <div className="truncate">Certificate {envelope.certificateId}</div>
@@ -657,13 +666,14 @@ export function EsigningListPage() {
               key={link.recipientId}
               className="rounded-2xl border border-border-primary bg-background-primary p-4"
             >
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="font-medium text-text-primary">{link.recipientName}</div>
-                  <div className="text-sm text-text-secondary">{link.recipientEmail}</div>
+                  <div className="break-all text-sm text-text-secondary">{link.recipientEmail}</div>
                   <div className="mt-2 break-all text-xs text-text-muted">{link.signingUrl}</div>
                 </div>
                 <Button
+                  className="w-full sm:w-auto"
                   variant="secondary"
                   onClick={() =>
                     void navigator.clipboard

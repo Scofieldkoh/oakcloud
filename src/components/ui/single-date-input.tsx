@@ -619,7 +619,10 @@ export function SingleDateInput({
 
   const handleInputFocus = useCallback(() => {
     setIsEditing(true);
-  }, []);
+    if (!disabled) {
+      setIsOpen(true);
+    }
+  }, [disabled]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

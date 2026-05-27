@@ -80,7 +80,7 @@ export function EsigningRecipientCard({
                   {ESIGNING_RECIPIENT_TYPE_LABELS[recipient.type]}
                 </span>
               </div>
-              <div className="mt-0.5 text-sm text-text-secondary">{recipient.email}</div>
+              <div className="mt-0.5 break-all text-sm text-text-secondary">{recipient.email}</div>
               <div className="mt-0.5 text-xs text-text-muted">
                 {ESIGNING_ACCESS_MODE_LABELS[recipient.accessMode]}
               </div>

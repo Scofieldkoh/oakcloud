@@ -102,8 +102,8 @@ export function EsigningFieldInputModal({
               value={value}
               onChange={(event) => setValue(event.target.value)}
               placeholder={placeholder}
-              rows={5}
-              className="rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary outline-none resize-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/30"
+              rows={4}
+              className="min-h-[100px] rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary outline-none resize-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/30 sm:min-h-[140px]"
             />
           </label>
         ) : (
