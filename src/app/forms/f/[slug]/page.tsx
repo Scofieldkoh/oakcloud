@@ -10,6 +10,7 @@ import { SingleTimeInput } from '@/components/ui/single-time-input';
 import { EsigningSignatureModal } from '@/components/esigning/signing/esigning-signature-modal';
 import { Tooltip } from '@/components/ui/tooltip';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { copyTextToClipboard } from '@/lib/clipboard';
 import {
   WIDTH_CLASS,
   parseObject,
@@ -33,12 +34,13 @@ import {
 } from '@/lib/constants/form-option-presets';
 import { TIMEZONE_OPTIONS } from '@/lib/constants/timezones';
 import { cn } from '@/lib/utils';
+import { extractSignatureDataUrl } from '@/lib/signature-utils';
 import DOMPurify from 'dompurify';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NAME_HINT_PATTERN = /(full[\s_-]?name|first[\s_-]?name|last[\s_-]?name|name)/i;
 const EMAIL_HINT_PATTERN = /email/i;
-const DATA_URI_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,/i;
+const DATA_URI_PATTERN = /^data:image\/[a-z0-9.+-]+(?:;[a-z0-9.+_-]+=[a-z0-9.+_-]+)*;base64,/i;
 const HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 const CHOICE_RADIO_INPUT_CLASS = 'h-4 w-4 border-[#D8E3DF] bg-[#F4F7F6] accent-[#294D44]';
 const CHOICE_CHECKBOX_INPUT_CLASS = 'h-4 w-4 rounded border-[#D8E3DF] bg-[#F4F7F6] accent-[#294D44]';
@@ -202,6 +204,7 @@ type RepeatSectionConfig = {
 type ChoiceAnswerEntry = {
   value: string;
   detailText: string;
+  children: ChoiceAnswerEntry[];
 };
 
 function matchesPresetOptions(
@@ -261,7 +264,15 @@ function withLocalizedFieldText(field: PublicField, fieldTranslation: Record<str
     : field.helpText;
 
   const optionTranslations = Array.isArray(fieldTranslation.options)
-    ? fieldTranslation.options.map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    ? fieldTranslation.options.map((entry) => {
+      if (typeof entry === 'string') return entry.trim();
+      const optionTranslation = parseObject(entry);
+      if (!optionTranslation) return '';
+      return {
+        label: typeof optionTranslation.label === 'string' ? optionTranslation.label.trim() : '',
+        bodyHtml: typeof optionTranslation.bodyHtml === 'string' ? optionTranslation.bodyHtml.trim() : '',
+      };
+    })
     : [];
 
   let options = field.options;
@@ -270,7 +281,12 @@ function withLocalizedFieldText(field: PublicField, fieldTranslation: Record<str
     if (parsedOptions.length > 0) {
       options = parsedOptions.map((option, index) => ({
         ...option,
-        label: optionTranslations[index] || option.label,
+        label: typeof optionTranslations[index] === 'string'
+          ? optionTranslations[index]
+          : optionTranslations[index]?.label || option.label,
+        bodyHtml: typeof optionTranslations[index] === 'object'
+          ? optionTranslations[index]?.bodyHtml || option.bodyHtml
+          : option.bodyHtml,
       }));
     }
   } else {
@@ -297,10 +313,6 @@ function normalizeOptionalText(value: unknown, maxLength: number): string | null
   if (trimmed.length > maxLength) return null;
   if (DATA_URI_PATTERN.test(trimmed)) return null;
   return trimmed;
-}
-
-function isSignatureDataUrl(value: unknown): value is string {
-  return typeof value === 'string' && DATA_URI_PATTERN.test(value.trim());
 }
 
 function inferRespondentName(
@@ -504,14 +516,154 @@ function getInfoPadding(field: PublicField): InfoPadding | null {
 function isDateDefaultTodayEnabled(field: PublicField): boolean {
   if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return false;
   const validation = parseObject(field.validation);
-  return validation?.defaultToday === true;
+  return validation?.defaultToday === true || validation?.alwaysDefaultToday === true;
+}
+
+function isDateAlwaysDefaultTodayEnabled(field: PublicField): boolean {
+  if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return false;
+  const validation = parseObject(field.validation);
+  return validation?.alwaysDefaultToday === true;
+}
+
+function getConfiguredDefaultValue(field: PublicField, todayIso: string): unknown | null {
+  if (field.type !== 'SHORT_TEXT' && field.type !== 'LONG_TEXT' && field.type !== 'DROPDOWN') return null;
+  const validation = parseObject(field.validation);
+  if (field.type === 'SHORT_TEXT' && field.inputType === 'date' && validation?.alwaysDefaultToday === true) {
+    return todayIso;
+  }
+
+  const defaultValue = typeof validation?.defaultValue === 'string' ? validation.defaultValue : '';
+  if (defaultValue.length > 0) {
+    if (field.type === 'SHORT_TEXT' && field.inputType === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(defaultValue)) {
+      return null;
+    }
+    return defaultValue;
+  }
+
+  if (isDateDefaultTodayEnabled(field)) {
+    return todayIso;
+  }
+
+  return null;
+}
+
+function applyAlwaysDefaultTodayAnswers(
+  fields: PublicField[],
+  inputAnswers: Record<string, unknown>,
+  todayIso: string
+): Record<string, unknown> {
+  const next = { ...inputAnswers };
+  let changed = false;
+
+  for (const field of fields) {
+    if (!isDateAlwaysDefaultTodayEnabled(field)) continue;
+
+    const currentValue = next[field.key];
+    if (Array.isArray(currentValue)) {
+      const nextRows = currentValue.map(() => todayIso);
+      if (JSON.stringify(nextRows) !== JSON.stringify(currentValue)) {
+        next[field.key] = nextRows;
+        changed = true;
+      }
+      continue;
+    }
+
+    if (currentValue !== todayIso) {
+      next[field.key] = todayIso;
+      changed = true;
+    }
+  }
+
+  return changed ? next : inputAnswers;
 }
 
 function getDefaultMultipleChoiceValue(field: PublicField): unknown[] {
   if (field.type !== 'MULTIPLE_CHOICE') return [];
   return parseChoiceOptions(field.options)
-    .filter((option) => option.defaultSelected)
-    .map((option) => (option.allowTextInput ? { value: option.value, detailText: '' } : option.value));
+    .filter((option) => option.defaultSelected || option.requiredSelected)
+    .map((option) => buildChoiceAnswerValue(option));
+}
+
+function choiceEntryValue(entry: unknown): string {
+  if (typeof entry === 'string') return entry.trim();
+  const entryRecord = parseObject(entry);
+  return typeof entryRecord?.value === 'string' ? entryRecord.value.trim() : '';
+}
+
+function buildChoiceAnswerValue(
+  option: ReturnType<typeof parseChoiceOptions>[number],
+  existingEntry?: unknown
+): unknown {
+  const existingRecord = parseObject(existingEntry);
+  const existingChildren = parseChoiceAnswerEntries(existingRecord?.children);
+  const defaultChildOptions = option.childOptions
+    .filter((childOption) => childOption.defaultSelected || childOption.requiredSelected);
+  const childOptionsToApply = option.childSelectionMode === 'single'
+    ? defaultChildOptions.slice(0, 1)
+    : defaultChildOptions;
+  const childDefaults = childOptionsToApply.map((childOption) => buildChoiceAnswerValue(childOption));
+  const childValues = new Set(existingChildren.map((entry) => entry.value));
+  const missingChildDefaults = childDefaults.filter((childDefault) => !childValues.has(choiceEntryValue(childDefault)));
+  const children = option.childSelectionMode === 'single'
+    ? ([...existingChildren.map(serializeChoiceAnswerEntry), ...missingChildDefaults].slice(0, 1))
+    : [...existingChildren.map(serializeChoiceAnswerEntry), ...missingChildDefaults];
+  const detailText = typeof existingRecord?.detailText === 'string' ? existingRecord.detailText : '';
+
+  if (!option.allowTextInput && children.length === 0 && !detailText) {
+    return option.value;
+  }
+
+  return {
+    value: option.value,
+    detailText,
+    ...(children.length > 0 ? { children } : {}),
+  };
+}
+
+function serializeChoiceAnswerEntry(entry: ChoiceAnswerEntry): unknown {
+  if (!entry.detailText && entry.children.length === 0) return entry.value;
+  return {
+    value: entry.value,
+    detailText: entry.detailText,
+    ...(entry.children.length > 0 ? { children: entry.children.map(serializeChoiceAnswerEntry) } : {}),
+  };
+}
+
+function serializeChoiceAnswerEntries(entries: ChoiceAnswerEntry[]): unknown[] {
+  return entries.map(serializeChoiceAnswerEntry);
+}
+
+function ensureRequiredMultipleChoiceValue(field: PublicField, value: unknown): unknown[] | null {
+  if (field.type !== 'MULTIPLE_CHOICE' || !Array.isArray(value)) return null;
+  const options = parseChoiceOptions(field.options);
+  const requiredOptions = options.filter((option) => option.requiredSelected);
+  const optionByValue = new Map(options.map((option) => [option.value, option]));
+  if (requiredOptions.length === 0 && options.every((option) => option.childOptions.length === 0)) return null;
+
+  const entries = parseChoiceAnswerEntries(value);
+  const normalizedEntries = entries.map((entry) => {
+    const option = optionByValue.get(entry.value);
+    if (!option) return serializeChoiceAnswerEntry(entry);
+    return buildChoiceAnswerValue(option, serializeChoiceAnswerEntry(entry));
+  });
+  const selectedValues = new Set(normalizedEntries.map(choiceEntryValue));
+  const missingRequiredValues = requiredOptions
+    .filter((option) => !selectedValues.has(option.value))
+    .map((option) => buildChoiceAnswerValue(option));
+  const nextValue = [...normalizedEntries, ...missingRequiredValues];
+
+  return JSON.stringify(nextValue) === JSON.stringify(value) ? null : nextValue;
+}
+
+function getDefaultSingleChoiceValue(field: PublicField): unknown | null {
+  if (field.type !== 'SINGLE_CHOICE') return null;
+  const option = parseChoiceOptions(field.options).find((candidate) => candidate.defaultSelected);
+  if (!option) return null;
+  return option.allowTextInput ? { value: option.value, detailText: '' } : option.value;
+}
+
+function getChoiceOptionDisplayLabel(option: ReturnType<typeof parseChoiceOptions>[number]): string {
+  return option.requiredSelected ? `${option.label} (Required)` : option.label;
 }
 
 function getLocalTodayIsoDate(): string {
@@ -740,7 +892,7 @@ function parsePhoneParts(value: unknown, defaultCountryCode: string): { countryC
 
 function buildPhoneValue(countryCode: string, number: string): string {
   const trimmedNumber = number.trim();
-  if (!trimmedNumber) return '';
+  if (!trimmedNumber) return countryCode;
   return `${countryCode} ${trimmedNumber}`;
 }
 
@@ -814,6 +966,55 @@ function richTextToPlainText(value: string): string {
     .trim();
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlightRichTextHtml(value: string, searchTerm: string): string {
+  const sanitized = DOMPurify.sanitize(value || '');
+  const trimmedTerm = searchTerm.trim();
+  if (!trimmedTerm) return sanitized;
+
+  if (typeof document === 'undefined') return sanitized;
+
+  const template = document.createElement('template');
+  template.innerHTML = sanitized;
+  const matcher = new RegExp(escapeRegExp(trimmedTerm), 'gi');
+  const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+
+  while (walker.nextNode()) {
+    if (walker.currentNode.textContent?.match(matcher)) {
+      textNodes.push(walker.currentNode as Text);
+    }
+  }
+
+  for (const textNode of textNodes) {
+    const text = textNode.textContent || '';
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+    text.replace(matcher, (match, offset: number) => {
+      if (offset > lastIndex) {
+        fragment.appendChild(document.createTextNode(text.slice(lastIndex, offset)));
+      }
+      const mark = document.createElement('mark');
+      mark.className = 'rounded bg-status-warning/25 px-0.5 text-inherit';
+      mark.textContent = match;
+      fragment.appendChild(mark);
+      lastIndex = offset + match.length;
+      return match;
+    });
+    if (lastIndex < text.length) {
+      fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+    textNode.parentNode?.replaceChild(fragment, textNode);
+  }
+
+  const container = document.createElement('div');
+  container.appendChild(template.content.cloneNode(true));
+  return container.innerHTML;
+}
+
 function isRepeatStartMarker(field: PublicField): boolean {
   return field.type === 'PAGE_BREAK' && field.inputType === 'repeat_start';
 }
@@ -850,7 +1051,7 @@ function parseChoiceAnswerEntry(value: unknown): ChoiceAnswerEntry | null {
   if (typeof value === 'string') {
     const trimmed = value.trim();
     if (!trimmed) return null;
-    return { value: trimmed, detailText: '' };
+    return { value: trimmed, detailText: '', children: [] };
   }
 
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -861,7 +1062,8 @@ function parseChoiceAnswerEntry(value: unknown): ChoiceAnswerEntry | null {
   const answerValue = typeof record.value === 'string' ? record.value.trim() : '';
   if (!answerValue) return null;
   const detailText = typeof record.detailText === 'string' ? record.detailText : '';
-  return { value: answerValue, detailText };
+  const children = parseChoiceAnswerEntries(record.children);
+  return { value: answerValue, detailText, children };
 }
 
 function parseChoiceAnswerEntries(value: unknown): ChoiceAnswerEntry[] {
@@ -888,17 +1090,26 @@ function getChoiceDetailValidationError(
   const entries = parseChoiceAnswerEntries(value);
   if (entries.length === 0) return null;
 
-  for (const entry of entries) {
-    const option = options.find((candidate) => candidate.value === entry.value);
-    if (!option?.allowTextInput) continue;
-    if (entry.detailText.trim().length > 0) continue;
-    return interpolateUiLabel(template, {
-      field: fieldLabel,
-      option: option.label,
-    });
-  }
+  const validateEntries = (
+    availableOptions: ReturnType<typeof parseChoiceOptions>,
+    selectedEntries: ChoiceAnswerEntry[]
+  ): string | null => {
+    for (const entry of selectedEntries) {
+      const option = availableOptions.find((candidate) => candidate.value === entry.value);
+      if (!option) continue;
+      if (option.allowTextInput && entry.detailText.trim().length === 0) {
+        return interpolateUiLabel(template, {
+          field: fieldLabel,
+          option: option.label,
+        });
+      }
+      const childError = validateEntries(option.childOptions, entry.children);
+      if (childError) return childError;
+    }
+    return null;
+  };
 
-  return null;
+  return validateEntries(options, entries);
 }
 
 function getChoiceDetailErrorValues(
@@ -908,12 +1119,19 @@ function getChoiceDetailErrorValues(
   const errorValues = new Set<string>();
   const entries = parseChoiceAnswerEntries(value);
 
-  for (const entry of entries) {
-    const option = options.find((candidate) => candidate.value === entry.value);
-    if (!option?.allowTextInput) continue;
-    if (entry.detailText.trim().length > 0) continue;
-    errorValues.add(entry.value);
-  }
+  const collectErrors = (
+    availableOptions: ReturnType<typeof parseChoiceOptions>,
+    selectedEntries: ChoiceAnswerEntry[]
+  ) => {
+    for (const entry of selectedEntries) {
+      const option = availableOptions.find((candidate) => candidate.value === entry.value);
+      if (!option) continue;
+      if (option.allowTextInput && entry.detailText.trim().length === 0) errorValues.add(entry.value);
+      collectErrors(option.childOptions, entry.children);
+    }
+  };
+
+  collectErrors(options, entries);
 
   return errorValues;
 }
@@ -932,6 +1150,10 @@ type RenderStandalone = {
 type RenderItem = RenderGroup | RenderStandalone;
 
 const NON_VALIDATABLE_FIELD_TYPES = new Set(['PARAGRAPH', 'HTML', 'HIDDEN']);
+
+function isFaqField(field: Pick<PublicField, 'type' | 'inputType'>): boolean {
+  return field.type === 'PARAGRAPH' && field.inputType === 'info_faq';
+}
 
 const CARD_ELIGIBLE_TYPES = new Set([
   'SHORT_TEXT',
@@ -1019,7 +1241,7 @@ function buildRenderGroups(fields: PublicField[]): RenderItem[] {
       continue;
     }
 
-    // Other PARAGRAPH variants and HTML: standalone
+    // Other display-only content: standalone
     if (field.type === 'PARAGRAPH' || field.type === 'HTML') {
       flushGroup();
       items.push({ kind: 'standalone', field });
@@ -1044,16 +1266,189 @@ function buildRenderGroups(fields: PublicField[]): RenderItem[] {
   return items;
 }
 
+function getDefaultFaqExpandedIds(items: Array<{ id: string }>, defaultState: string): Set<string> {
+  if (defaultState === 'expanded') {
+    return new Set(items.map((item) => item.id));
+  }
+  if (defaultState === 'first_expanded' && items[0]) {
+    return new Set([items[0].id]);
+  }
+  return new Set();
+}
+
+function FaqField({ field }: { field: PublicField }) {
+  const validation = parseObject(field.validation);
+  const defaultState = typeof validation?.faqDefaultState === 'string' ? validation.faqDefaultState : 'collapsed';
+  const searchEnabled = validation?.faqSearchEnabled !== false;
+  const mainToggleEnabled = validation?.faqMainToggleEnabled === true;
+  const mainDefaultExpanded = !mainToggleEnabled || validation?.faqMainDefaultExpanded === true;
+  const items = useMemo(() => (
+    parseChoiceOptions(field.options).map((option, index) => ({
+      id: option.value || `${field.id}-${index}`,
+      headerHtml: option.label || `Question ${index + 1}`,
+      bodyHtml: option.bodyHtml || '',
+      searchableText: `${richTextToPlainText(option.label || '')} ${richTextToPlainText(option.bodyHtml || '')}`.toLowerCase(),
+    }))
+  ), [field.id, field.options]);
+
+  const [mainExpanded, setMainExpanded] = useState(mainDefaultExpanded);
+  const [expandedItemIds, setExpandedItemIds] = useState<Set<string>>(() => getDefaultFaqExpandedIds(items, defaultState));
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  useEffect(() => {
+    setMainExpanded(mainDefaultExpanded);
+  }, [field.id, mainDefaultExpanded]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (debouncedSearchTerm) return;
+    setExpandedItemIds(getDefaultFaqExpandedIds(items, defaultState));
+  }, [items, defaultState, debouncedSearchTerm]);
+
+  const normalizedSearchTerm = debouncedSearchTerm.toLowerCase();
+  const visibleItems = useMemo(() => (
+    normalizedSearchTerm
+      ? items.filter((item) => item.searchableText.includes(normalizedSearchTerm))
+      : items
+  ), [items, normalizedSearchTerm]);
+
+  useEffect(() => {
+    if (!normalizedSearchTerm) return;
+    setExpandedItemIds(new Set(visibleItems.map((item) => item.id)));
+  }, [normalizedSearchTerm, visibleItems]);
+
+  function toggleItem(itemId: string) {
+    setExpandedItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  }
+
+  function expandAll() {
+    setExpandedItemIds(new Set(visibleItems.map((item) => item.id)));
+  }
+
+  function collapseAll() {
+    setExpandedItemIds(new Set());
+  }
+
+  const headerContent = field.label || 'Commonly Asked Questions';
+  const bodyVisible = !mainToggleEnabled || mainExpanded;
+
+  return (
+    <div key={field.id} className="rounded-lg border border-[#D8E3DF] bg-[#F8FAF9] shadow-sm">
+      <button
+        type="button"
+        className={cn(
+          'flex w-full items-center justify-between gap-3 px-4 py-3 text-left',
+          !mainToggleEnabled && 'cursor-default'
+        )}
+        onClick={() => {
+          if (mainToggleEnabled) setMainExpanded((current) => !current);
+        }}
+        aria-expanded={bodyVisible}
+      >
+        <div
+          className="form-rich-render faq-rich-header text-sm text-text-primary"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(headerContent) }}
+        />
+        {mainToggleEnabled && (
+          <ChevronDown className={cn('h-4 w-4 shrink-0 text-text-secondary transition-transform duration-200', bodyVisible && 'rotate-180')} />
+        )}
+      </button>
+
+      {bodyVisible && (
+        <div className="space-y-3 border-t border-border-primary/70 px-4 py-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            {searchEnabled ? (
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search FAQ"
+                className="min-h-10 flex-1 rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary outline-none transition-all duration-150 focus:border-[#294D44] focus:ring-2 focus:ring-[#294D44]/20"
+              />
+            ) : <div />}
+            <div className="flex shrink-0 gap-2">
+              <button
+                type="button"
+                className="rounded border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary"
+                onClick={expandAll}
+              >
+                Expand all
+              </button>
+              <button
+                type="button"
+                className="rounded border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary"
+                onClick={collapseAll}
+              >
+                Collapse all
+              </button>
+            </div>
+          </div>
+
+          {visibleItems.length === 0 ? (
+            <p className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-secondary">
+              No matching questions.
+            </p>
+          ) : (
+            <div className="divide-y divide-border-primary overflow-hidden rounded-lg border border-border-primary bg-background-primary">
+              {visibleItems.map((item) => {
+                const isExpanded = expandedItemIds.has(item.id);
+                return (
+                  <div key={item.id}>
+                    <button
+                      type="button"
+                      className="flex w-full items-start justify-between gap-3 px-3 py-3 text-left hover:bg-background-secondary/70"
+                      onClick={() => toggleItem(item.id)}
+                      aria-expanded={isExpanded}
+                    >
+                      <div
+                        className="form-rich-render faq-rich-header text-sm font-medium text-text-primary"
+                        dangerouslySetInnerHTML={{ __html: highlightRichTextHtml(item.headerHtml, debouncedSearchTerm) }}
+                      />
+                      <ChevronDown className={cn('mt-0.5 h-4 w-4 shrink-0 text-text-secondary transition-transform duration-200', isExpanded && 'rotate-180')} />
+                    </button>
+                    {isExpanded && (
+                      <div
+                        className="form-rich-render px-3 pb-3 text-sm text-text-secondary"
+                        dangerouslySetInnerHTML={{ __html: highlightRichTextHtml(item.bodyHtml, debouncedSearchTerm) }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function hasActiveProgressStopInfoBlock(
   pageFields: PublicField[],
   answersRecord: Record<string, unknown>,
-  repeatCounts: Record<string, number>
+  repeatCounts: Record<string, number>,
+  allFields: PublicField[]
 ): boolean {
   for (let index = 0; index < pageFields.length; index += 1) {
     const field = pageFields[index];
 
     if (isRepeatStartMarker(field)) {
-      const sectionVisible = evaluateCondition(field.condition, answersRecord);
+      const sectionVisible = evaluateCondition(field.condition, answersRecord, { fields: allFields });
       const sectionConfig = getRepeatSectionConfig(field);
       const sectionFields: PublicField[] = [];
       let cursor = index + 1;
@@ -1072,7 +1467,7 @@ function hasActiveProgressStopInfoBlock(
           for (const sectionField of sectionFields) {
             if (
               isProgressStopInfoBlock(sectionField) &&
-              evaluateCondition(sectionField.condition, rowAnswers)
+              evaluateCondition(sectionField.condition, rowAnswers, { fields: sectionFields })
             ) {
               return true;
             }
@@ -1085,7 +1480,7 @@ function hasActiveProgressStopInfoBlock(
     }
 
     if (isRepeatEndMarker(field) || isBlockDivider(field) || field.type === 'PAGE_BREAK') continue;
-    if (isProgressStopInfoBlock(field) && evaluateCondition(field.condition, answersRecord)) {
+    if (isProgressStopInfoBlock(field) && evaluateCondition(field.condition, answersRecord, { fields: allFields })) {
       return true;
     }
   }
@@ -1230,6 +1625,8 @@ export default function PublicFormPage() {
       .map((entry) => entry.field);
   }, [form]);
 
+  const conditionEvaluationOptions = useMemo(() => ({ fields: orderedFields }), [orderedFields]);
+
   const detectedEmailFromForm = useMemo(() => {
     return inferRespondentEmail(orderedFields, answers) ?? '';
   }, [orderedFields, answers]);
@@ -1252,8 +1649,7 @@ export default function PublicFormPage() {
       return null;
     }
 
-    const candidate = answers[activeSignatureFieldKey];
-    return isSignatureDataUrl(candidate) ? candidate.trim() : null;
+    return extractSignatureDataUrl(answers[activeSignatureFieldKey]);
   }, [activeSignatureFieldKey, answers]);
 
   const localizedFieldsById = useMemo(() => {
@@ -1449,7 +1845,11 @@ export default function PublicFormPage() {
   useEffect(() => {
     if (!form || !pendingDraftRestore) return;
 
-    setAnswers(pendingDraftRestore.answers);
+    setAnswers(applyAlwaysDefaultTodayAnswers(
+      orderedFields,
+      pendingDraftRestore.answers,
+      getLocalTodayIsoDate()
+    ));
     setUploadedByFieldKey(pendingDraftRestore.uploadsByFieldKey);
 
     const metadataRepeatCounts = pendingDraftRestore.metadata.repeatSectionCounts;
@@ -1496,9 +1896,27 @@ export default function PublicFormPage() {
             const existingRows = Array.isArray(next[sectionField.key]) ? [...(next[sectionField.key] as unknown[])] : [];
             for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
               const rowValue = existingRows[rowIndex];
-              if (isDateDefaultTodayEnabled(sectionField)) {
-                if (typeof rowValue === 'string' && rowValue.trim().length > 0) continue;
-                existingRows[rowIndex] = todayIso;
+              if (isDateAlwaysDefaultTodayEnabled(sectionField)) {
+                if (rowValue !== todayIso) {
+                  existingRows[rowIndex] = todayIso;
+                  changed = true;
+                }
+                continue;
+              }
+
+              if (!(rowIndex in existingRows)) {
+                const defaultValue = getConfiguredDefaultValue(sectionField, todayIso);
+                if (defaultValue !== null) {
+                  existingRows[rowIndex] = defaultValue;
+                  changed = true;
+                  continue;
+                }
+              }
+
+              if (sectionField.type === 'SINGLE_CHOICE' && isEmptyValue(rowValue)) {
+                const defaultValue = getDefaultSingleChoiceValue(sectionField);
+                if (defaultValue === null) continue;
+                existingRows[rowIndex] = defaultValue;
                 changed = true;
                 continue;
               }
@@ -1507,6 +1925,13 @@ export default function PublicFormPage() {
                 const defaultValue = getDefaultMultipleChoiceValue(sectionField);
                 if (defaultValue.length === 0) continue;
                 existingRows[rowIndex] = defaultValue;
+                changed = true;
+                continue;
+              }
+
+              const nextRequiredValue = ensureRequiredMultipleChoiceValue(sectionField, rowValue);
+              if (nextRequiredValue) {
+                existingRows[rowIndex] = nextRequiredValue;
                 changed = true;
               }
             }
@@ -1522,10 +1947,27 @@ export default function PublicFormPage() {
         if (field.type === 'PAGE_BREAK' || isRepeatEndMarker(field)) continue;
 
         const existingValue = next[field.key];
-        if (isDateDefaultTodayEnabled(field)) {
-          if (typeof existingValue === 'string' && existingValue.trim().length > 0) continue;
+        if (isDateAlwaysDefaultTodayEnabled(field)) {
+          if (existingValue !== todayIso) {
+            next[field.key] = todayIso;
+            changed = true;
+          }
+          continue;
+        }
 
-          next[field.key] = todayIso;
+        if (!(field.key in next)) {
+          const defaultValue = getConfiguredDefaultValue(field, todayIso);
+          if (defaultValue !== null) {
+            next[field.key] = defaultValue;
+            changed = true;
+            continue;
+          }
+        }
+
+        if (field.type === 'SINGLE_CHOICE' && isEmptyValue(existingValue)) {
+          const defaultValue = getDefaultSingleChoiceValue(field);
+          if (defaultValue === null) continue;
+          next[field.key] = defaultValue;
           changed = true;
           continue;
         }
@@ -1534,6 +1976,13 @@ export default function PublicFormPage() {
           const defaultValue = getDefaultMultipleChoiceValue(field);
           if (defaultValue.length === 0) continue;
           next[field.key] = defaultValue;
+          changed = true;
+          continue;
+        }
+
+        const nextRequiredValue = ensureRequiredMultipleChoiceValue(field, existingValue);
+        if (nextRequiredValue) {
+          next[field.key] = nextRequiredValue;
           changed = true;
         }
       }
@@ -1552,7 +2001,7 @@ export default function PublicFormPage() {
         !isBlockDivider(field) &&
         !isRepeatStartMarker(field) &&
         !isRepeatEndMarker(field) &&
-        evaluateCondition(field.condition, answers)
+        evaluateCondition(field.condition, answers, conditionEvaluationOptions)
       ) {
         result.push([]);
       } else {
@@ -1561,7 +2010,7 @@ export default function PublicFormPage() {
     }
 
     return result.filter((page) => page.length > 0);
-  }, [form, orderedFields, answers]);
+  }, [form, orderedFields, answers, conditionEvaluationOptions]);
 
   useEffect(() => {
     if (currentPage < pages.length) return;
@@ -1585,7 +2034,7 @@ export default function PublicFormPage() {
         }
 
         const endMarker = cursor < pageFields.length ? pageFields[cursor] : null;
-        const sectionVisible = evaluateCondition(field.condition, answers);
+        const sectionVisible = evaluateCondition(field.condition, answers, conditionEvaluationOptions);
 
         if (sectionVisible) {
           nextVisible.push(field);
@@ -1604,13 +2053,13 @@ export default function PublicFormPage() {
       }
 
       if (isRepeatEndMarker(field)) continue;
-      if (evaluateCondition(field.condition, answers)) {
+      if (evaluateCondition(field.condition, answers, conditionEvaluationOptions)) {
         nextVisible.push(field);
       }
     }
 
     return nextVisible;
-  }, [pages, currentPage, answers]);
+  }, [pages, currentPage, answers, conditionEvaluationOptions]);
 
   useEffect(() => {
     if (!form) return;
@@ -1622,8 +2071,8 @@ export default function PublicFormPage() {
   }, [form, orderedFields, answers, visibleFields]);
 
   const firstProgressStopPage = useMemo(() => (
-    pages.findIndex((pageFields) => hasActiveProgressStopInfoBlock(pageFields, answers, repeatSectionCounts))
-  ), [pages, answers, repeatSectionCounts]);
+    pages.findIndex((pageFields) => hasActiveProgressStopInfoBlock(pageFields, answers, repeatSectionCounts, orderedFields))
+  ), [pages, answers, repeatSectionCounts, orderedFields]);
 
   const isCurrentPageProgressStopped = firstProgressStopPage === currentPage;
 
@@ -1697,9 +2146,19 @@ export default function PublicFormPage() {
 
           for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
             const rowValue = existingRows[rowIndex];
-            if (isDateDefaultTodayEnabled(sectionField)) {
-              if (typeof rowValue === 'string' && rowValue.trim().length > 0) continue;
-              existingRows[rowIndex] = todayIso;
+            if (!(rowIndex in existingRows)) {
+              const defaultValue = getConfiguredDefaultValue(sectionField, todayIso);
+              if (defaultValue !== null) {
+                existingRows[rowIndex] = defaultValue;
+                sectionChanged = true;
+                continue;
+              }
+            }
+
+            if (sectionField.type === 'SINGLE_CHOICE' && isEmptyValue(rowValue)) {
+              const defaultValue = getDefaultSingleChoiceValue(sectionField);
+              if (defaultValue === null) continue;
+              existingRows[rowIndex] = defaultValue;
               sectionChanged = true;
               continue;
             }
@@ -1708,6 +2167,13 @@ export default function PublicFormPage() {
               const defaultValue = getDefaultMultipleChoiceValue(sectionField);
               if (defaultValue.length === 0) continue;
               existingRows[rowIndex] = defaultValue;
+              sectionChanged = true;
+              continue;
+            }
+
+            const nextRequiredValue = ensureRequiredMultipleChoiceValue(sectionField, rowValue);
+            if (nextRequiredValue) {
+              existingRows[rowIndex] = nextRequiredValue;
               sectionChanged = true;
             }
           }
@@ -1725,9 +2191,19 @@ export default function PublicFormPage() {
       if (field.type === 'PAGE_BREAK' || isRepeatEndMarker(field)) continue;
 
       const existingValue = next[field.key];
-      if (isDateDefaultTodayEnabled(field)) {
-        if (typeof existingValue === 'string' && existingValue.trim().length > 0) continue;
-        next[field.key] = todayIso;
+      if (!(field.key in next)) {
+        const defaultValue = getConfiguredDefaultValue(field, todayIso);
+        if (defaultValue !== null) {
+          next[field.key] = defaultValue;
+          changed = true;
+          continue;
+        }
+      }
+
+      if (field.type === 'SINGLE_CHOICE' && isEmptyValue(existingValue)) {
+        const defaultValue = getDefaultSingleChoiceValue(field);
+        if (defaultValue === null) continue;
+        next[field.key] = defaultValue;
         changed = true;
         continue;
       }
@@ -1736,6 +2212,13 @@ export default function PublicFormPage() {
         const defaultValue = getDefaultMultipleChoiceValue(field);
         if (defaultValue.length === 0) continue;
         next[field.key] = defaultValue;
+        changed = true;
+        continue;
+      }
+
+      const nextRequiredValue = ensureRequiredMultipleChoiceValue(field, existingValue);
+      if (nextRequiredValue) {
+        next[field.key] = nextRequiredValue;
         changed = true;
       }
     }
@@ -1832,7 +2315,11 @@ export default function PublicFormPage() {
     }
 
     if (field.type === 'SIGNATURE') {
-      return isSignatureDataUrl(value);
+      return extractSignatureDataUrl(value) !== null;
+    }
+
+    if (field.type === 'SHORT_TEXT' && field.inputType === 'phone' && isSplitPhoneCountryCodeEnabled(field)) {
+      return parsePhoneParts(value, getPhoneDefaultCountryCode(field)).number.length > 0;
     }
 
     return !isEmptyValue(value);
@@ -1935,7 +2422,7 @@ export default function PublicFormPage() {
       const field = pageFields[index];
 
       if (isRepeatStartMarker(field)) {
-        const sectionVisible = evaluateCondition(field.condition, effectiveAnswers);
+        const sectionVisible = evaluateCondition(field.condition, effectiveAnswers, conditionEvaluationOptions);
         const sectionConfig = getRepeatSectionConfig(field);
         const sectionFields: PublicField[] = [];
         let cursor = index + 1;
@@ -1962,7 +2449,7 @@ export default function PublicFormPage() {
           }
 
           for (const sectionField of sectionFields) {
-            if (!evaluateCondition(sectionField.condition, rowAnswers)) continue;
+            if (!evaluateCondition(sectionField.condition, rowAnswers, { fields: sectionFields })) continue;
             const sectionValue = effectiveAnswers[sectionField.key];
             const value = Array.isArray(sectionValue) ? sectionValue[rowIndex] : undefined;
             const errorKey = getFieldErrorKey(sectionField.key, rowIndex);
@@ -1977,7 +2464,7 @@ export default function PublicFormPage() {
       }
 
       if (isRepeatEndMarker(field) || isBlockDivider(field) || field.type === 'PAGE_BREAK') continue;
-      if (!evaluateCondition(field.condition, effectiveAnswers)) continue;
+      if (!evaluateCondition(field.condition, effectiveAnswers, conditionEvaluationOptions)) continue;
 
       const value = effectiveAnswers[field.key];
       const errorKey = getFieldErrorKey(field.key);
@@ -2200,17 +2687,17 @@ export default function PublicFormPage() {
   }
 
   async function copyResumeLink() {
-    if (!draftSession?.resumeUrl || typeof navigator === 'undefined' || !navigator.clipboard) {
+    if (!draftSession?.resumeUrl) {
       setDraftError(uiLabel('resume_link_unavailable'));
       return;
     }
 
-    try {
-      await navigator.clipboard.writeText(draftSession.resumeUrl);
+    if (await copyTextToClipboard(draftSession.resumeUrl)) {
       setDraftFeedback(uiLabel('resume_link_copied'));
-    } catch {
-      setDraftError(uiLabel('resume_link_copy_failed'));
+      return;
     }
+
+    setDraftError(uiLabel('resume_link_copy_failed'));
   }
 
   async function submitForm() {
@@ -2316,7 +2803,7 @@ export default function PublicFormPage() {
     const targetKeys = result.applyToAll && signatureFieldKeys.length > 1
       ? signatureFieldKeys
       : [activeSignatureFieldKey];
-    const adoptedValue = result.vectorDataUrl ?? result.dataUrl;
+    const adoptedValue = result.dataUrl;
 
     setAnswers((prev) => {
       const next = { ...prev };
@@ -2430,6 +2917,14 @@ export default function PublicFormPage() {
     // Heading blocks
     if (isHeadingInfoBlock(localizedField)) {
       return renderHeadingField(localizedField);
+    }
+
+    if (isFaqField(localizedField)) {
+      return (
+        <div key={field.id} className={cn(widthClass, isLayoutBreakBeforeEnabled(field) && 'md:col-start-1')}>
+          <FaqField field={localizedField} />
+        </div>
+      );
     }
 
     // info_image
@@ -2562,7 +3057,7 @@ export default function PublicFormPage() {
                     <div className="grid grid-cols-[minmax(0,1fr)_1.75rem] items-center gap-2 sm:gap-3">
                       <div className="grid grid-cols-12 gap-3">
                         {sectionFields.map((sectionField) => {
-                      if (!evaluateCondition(sectionField.condition, rowAnswers)) return null;
+                      if (!evaluateCondition(sectionField.condition, rowAnswers, { fields: sectionFields })) return null;
 
                       const localizedSectionField = getLocalizedField(sectionField);
                       const sectionWidthClass = WIDTH_CLASS[sectionField.layoutWidth] || WIDTH_CLASS[100];
@@ -2586,9 +3081,6 @@ export default function PublicFormPage() {
                         ? getChoiceDetailErrorValues(sectionChoiceOptions, sectionValue)
                         : new Set<string>();
                       const sectionHighlightChoiceGroup = !!sectionErrorText && sectionChoiceDetailErrorValues.size === 0;
-                      const sectionDefaultDateValue = sectionUseDateSelector && isDateDefaultTodayEnabled(sectionField)
-                        ? getLocalTodayIsoDate()
-                        : '';
                       const sectionPhoneDefaultCountryCode = sectionUseSplitPhoneInput
                         ? getPhoneDefaultCountryCode(sectionField)
                         : DEFAULT_PHONE_COUNTRY_CODE;
@@ -2600,7 +3092,7 @@ export default function PublicFormPage() {
                         : null;
                       const resolvedSectionDateValue = typeof sectionValue === 'string' && sectionValue.trim().length > 0
                         ? sectionValue
-                        : sectionDefaultDateValue;
+                        : '';
 
                       if (sectionField.type === 'HIDDEN') return null;
 
@@ -2687,6 +3179,7 @@ export default function PublicFormPage() {
                                 placeholder={uiLabel('phone_code_placeholder')}
                                 clearable={false}
                                 showKeyboardHints={false}
+                                popoverMinWidth={300}
                                 containerClassName={cn('h-10', sectionErrorText && ERROR_FIELD_CLASS)}
                                 onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
                               />
@@ -2792,7 +3285,7 @@ export default function PublicFormPage() {
                                                   )}
                                                   className={CHOICE_RADIO_INPUT_CLASS}
                                                 />
-                                                {option.label}
+                                                {getChoiceOptionDisplayLabel(option)}
                                               </label>
                                             );
                                           })}
@@ -2844,7 +3337,7 @@ export default function PublicFormPage() {
                                           )}
                                           className={CHOICE_RADIO_INPUT_CLASS}
                                         />
-                                        {option.label}
+                                        {getChoiceOptionDisplayLabel(option)}
                                       </label>
                                       {option.allowTextInput && isSelected && (
                                         <textarea
@@ -2894,6 +3387,7 @@ export default function PublicFormPage() {
                                                   type="checkbox"
                                                   checked={currentValues.includes(option.value)}
                                                   onChange={(e) => {
+                                                    if (!e.target.checked && option.requiredSelected) return;
                                                     if (e.target.checked) {
                                                       const next = [
                                                         ...currentEntries.filter((candidate) => candidate.value !== option.value),
@@ -2918,7 +3412,7 @@ export default function PublicFormPage() {
                                                   }}
                                                   className={CHOICE_CHECKBOX_INPUT_CLASS}
                                                 />
-                                                {option.label}
+                                                {getChoiceOptionDisplayLabel(option)}
                                               </label>
                                             );
                                           })}
@@ -2973,6 +3467,7 @@ export default function PublicFormPage() {
                                           type="checkbox"
                                           checked={currentValues.includes(option.value)}
                                           onChange={(e) => {
+                                            if (!e.target.checked && option.requiredSelected) return;
                                             if (e.target.checked) {
                                               const next = [
                                                 ...currentEntries.filter((candidate) => candidate.value !== option.value),
@@ -2997,7 +3492,7 @@ export default function PublicFormPage() {
                                           }}
                                           className={CHOICE_CHECKBOX_INPUT_CLASS}
                                         />
-                                        {option.label}
+                                        {getChoiceOptionDisplayLabel(option)}
                                       </label>
                                       {option.allowTextInput && currentValues.includes(option.value) && (
                                         <textarea
@@ -3135,15 +3630,12 @@ export default function PublicFormPage() {
     const allowMultipleFiles = field.type === 'FILE_UPLOAD' && isMultipleFileUploadEnabled(field);
     const uploadStatuses = uploadedByFieldKey[field.key] || [];
     const isUploadDragOver = dragOverUploadFieldKey === field.key;
-    const dateDefaultValue = useDateSelector && isDateDefaultTodayEnabled(field)
-      ? getLocalTodayIsoDate()
-      : '';
     const phoneDefaultCountryCode = useSplitPhoneInput ? getPhoneDefaultCountryCode(field) : DEFAULT_PHONE_COUNTRY_CODE;
     const phoneParts = useSplitPhoneInput ? parsePhoneParts(value, phoneDefaultCountryCode) : null;
     const timeTimezoneParts = useTimeTimezoneInput ? parseTimeTimezoneValue(value, getTimezoneDefault(field)) : null;
     const resolvedDateValue = typeof value === 'string' && value.trim().length > 0
       ? value
-      : dateDefaultValue;
+      : '';
     const renderTooltipTrigger = () => {
       if (!tooltipText) return null;
 
@@ -3205,7 +3697,7 @@ export default function PublicFormPage() {
     ) : null;
     const renderChoiceOptionLabel = (option: (typeof choiceOptions)[number]) => (
       <span className="inline-flex min-w-0 items-center gap-1.5">
-        <span className="min-w-0">{option.label}</span>
+        <span className="min-w-0">{getChoiceOptionDisplayLabel(option)}</span>
         {option.tooltipText && (
           <Tooltip content={<span className="block max-w-xs whitespace-pre-wrap break-words">{option.tooltipText}</span>}>
             <span
@@ -3224,6 +3716,116 @@ export default function PublicFormPage() {
         )}
       </span>
     );
+    const setMultipleChoiceEntries = (nextEntries: ChoiceAnswerEntry[]) => {
+      setFieldValue(field.key, serializeChoiceAnswerEntries(nextEntries));
+    };
+    const addChoiceEntry = (
+      entries: ChoiceAnswerEntry[],
+      option: (typeof choiceOptions)[number]
+    ): ChoiceAnswerEntry[] => {
+      const nextEntry = parseChoiceAnswerEntry(buildChoiceAnswerValue(option));
+      if (!nextEntry) return entries;
+      return [...entries.filter((entry) => entry.value !== option.value), nextEntry];
+    };
+    const updateChoiceDetail = (
+      entries: ChoiceAnswerEntry[],
+      option: (typeof choiceOptions)[number],
+      detailText: string
+    ): ChoiceAnswerEntry[] => entries.map((entry) => (
+      entry.value === option.value ? { ...entry, detailText } : entry
+    ));
+    const toggleNestedChoice = (
+      entries: ChoiceAnswerEntry[],
+      parentOption: (typeof choiceOptions)[number],
+      childOption: (typeof parentOption.childOptions)[number],
+      checked: boolean
+    ): ChoiceAnswerEntry[] => entries.map((entry) => {
+      if (entry.value !== parentOption.value) return entry;
+      if (!checked && childOption.requiredSelected) return entry;
+      if (!checked) {
+        return { ...entry, children: entry.children.filter((child) => child.value !== childOption.value) };
+      }
+      const childEntry = parseChoiceAnswerEntry(buildChoiceAnswerValue(childOption));
+      if (!childEntry) return entry;
+      if (parentOption.childSelectionMode === 'single') {
+        return {
+          ...entry,
+          children: [childEntry],
+        };
+      }
+      return {
+        ...entry,
+        children: [...entry.children.filter((child) => child.value !== childOption.value), childEntry],
+      };
+    });
+    const updateNestedChoiceDetail = (
+      entries: ChoiceAnswerEntry[],
+      parentOption: (typeof choiceOptions)[number],
+      childOption: (typeof parentOption.childOptions)[number],
+      detailText: string
+    ): ChoiceAnswerEntry[] => entries.map((entry) => {
+      if (entry.value !== parentOption.value) return entry;
+      return {
+        ...entry,
+        children: entry.children.map((child) => (
+          child.value === childOption.value ? { ...child, detailText } : child
+        )),
+      };
+    });
+    const renderNestedChoiceOptions = (
+      parentOption: (typeof choiceOptions)[number],
+      parentEntry: ChoiceAnswerEntry | undefined,
+      entries: ChoiceAnswerEntry[]
+    ) => {
+      if (!parentEntry || parentOption.childOptions.length === 0) return null;
+      const isSingleNestedChoice = parentOption.childSelectionMode === 'single';
+      const requiredChild = parentOption.childOptions.find((childOption) => childOption.requiredSelected);
+      return (
+        <div className="ml-7 mt-2 space-y-2 rounded-lg border border-border-primary/40 bg-background-secondary/35 p-3">
+          {parentOption.childOptions.map((childOption, childIndex) => {
+            const childEntry = parentEntry.children.find((entry) => entry.value === childOption.value);
+            const isChildChecked = !!childEntry;
+            const childOptionId = `${fieldDomId}-option-${toDomSafeId(parentOption.value)}-child-${childIndex}-${toDomSafeId(childOption.value)}`;
+            const isDisabledByRequiredChild = !!requiredChild && requiredChild.value !== childOption.value;
+            return (
+              <div key={`${parentOption.value}-${childOption.value}-${childIndex}`} className="space-y-1.5">
+                <label
+                  htmlFor={childOptionId}
+                  className={cn(
+                    'inline-flex cursor-pointer items-center gap-2 text-sm text-text-primary',
+                    isDisabledByRequiredChild && 'cursor-not-allowed opacity-60',
+                    highlightChoiceGroup && 'text-status-error'
+                  )}
+                >
+                  <input
+                    id={childOptionId}
+                    type={isSingleNestedChoice ? 'radio' : 'checkbox'}
+                    name={isSingleNestedChoice ? `${field.key}-${parentOption.value}-children` : undefined}
+                    checked={isChildChecked}
+                    disabled={isDisabledByRequiredChild}
+                    onChange={(e) => setMultipleChoiceEntries(toggleNestedChoice(entries, parentOption, childOption, e.target.checked))}
+                    className={isSingleNestedChoice ? CHOICE_RADIO_INPUT_CLASS : CHOICE_CHECKBOX_INPUT_CLASS}
+                  />
+                  {renderChoiceOptionLabel(childOption)}
+                </label>
+                {childOption.allowTextInput && isChildChecked && (
+                  <textarea
+                    rows={3}
+                    value={childEntry?.detailText || ''}
+                    onChange={(e) => setMultipleChoiceEntries(updateNestedChoiceDetail(entries, parentOption, childOption, e.target.value))}
+                    placeholder={childOption.textInputPlaceholder || childOption.textInputLabel || uiLabel('choice_other_placeholder')}
+                    className={cn(
+                      'w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                      choiceDetailErrorValues.has(childOption.value) && ERROR_FIELD_CLASS
+                    )}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    };
 
     return (
       <React.Fragment key={field.id}>
@@ -3320,6 +3922,7 @@ export default function PublicFormPage() {
                 placeholder={uiLabel('phone_code_placeholder')}
                 clearable={false}
                 showKeyboardHints={false}
+                popoverMinWidth={300}
                 containerClassName={cn('h-10', errorText && ERROR_FIELD_CLASS)}
                 onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
               />
@@ -3548,12 +4151,11 @@ export default function PublicFormPage() {
                                   type="checkbox"
                                   checked={isChecked}
                                   onChange={(e) => {
+                                    if (!e.target.checked && option.requiredSelected) return;
                                     if (e.target.checked) {
-                                      const nextEntries = [...entries.filter((en) => en.value !== option.value), { value: option.value, detailText: '' }];
-                                      setFieldValue(field.key, nextEntries.map((en) => (en.detailText || (option.allowTextInput && en.value === option.value) ? { value: en.value, detailText: en.detailText } : en.value)));
+                                      setMultipleChoiceEntries(addChoiceEntry(entries, option));
                                     } else {
-                                      const nextEntries = entries.filter((en) => en.value !== option.value);
-                                      setFieldValue(field.key, nextEntries.map((en) => (en.detailText ? { value: en.value, detailText: en.detailText } : en.value)));
+                                      setMultipleChoiceEntries(entries.filter((en) => en.value !== option.value));
                                     }
                                   }}
                                   className={CHOICE_CHECKBOX_INPUT_CLASS}
@@ -3567,22 +4169,23 @@ export default function PublicFormPage() {
                       {choiceOptions.map((option, index) => {
                         const isChecked = values.includes(option.value);
                         const optionEntry = entries.find((e) => e.value === option.value);
-                        if (!option.allowTextInput || !isChecked) return null;
+                        if (!isChecked) return null;
                         return (
-                          <textarea
-                            key={`${option.value}-${index}-detail`}
-                            rows={3}
-                            value={optionEntry?.detailText || ''}
-                            onChange={(e) => {
-                              const nextEntries = entries.map((en) => (en.value === option.value ? { ...en, detailText: e.target.value } : en));
-                              setFieldValue(field.key, nextEntries.map((en) => (en.detailText ? { value: en.value, detailText: en.detailText } : en.value)));
-                            }}
-                            placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
-                            className={cn(
-                              'w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
-                              choiceDetailErrorValues.has(option.value) && ERROR_FIELD_CLASS
+                          <React.Fragment key={`${option.value}-${index}-nested`}>
+                            {option.allowTextInput && (
+                              <textarea
+                                rows={3}
+                                value={optionEntry?.detailText || ''}
+                                onChange={(e) => setMultipleChoiceEntries(updateChoiceDetail(entries, option, e.target.value))}
+                                placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
+                                className={cn(
+                                  'w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                                  choiceDetailErrorValues.has(option.value) && ERROR_FIELD_CLASS
+                                )}
+                              />
                             )}
-                          />
+                            {renderNestedChoiceOptions(option, optionEntry, entries)}
+                          </React.Fragment>
                         );
                       })}
                     </>
@@ -3610,12 +4213,11 @@ export default function PublicFormPage() {
                       >
                         <input id={optionId} type="checkbox" checked={isChecked}
                           onChange={(e) => {
+                            if (!e.target.checked && option.requiredSelected) return;
                             if (e.target.checked) {
-                              const nextEntries = [...entries.filter((en) => en.value !== option.value), { value: option.value, detailText: '' }];
-                              setFieldValue(field.key, nextEntries.map((en) => (en.detailText || (option.allowTextInput && en.value === option.value) ? { value: en.value, detailText: en.detailText } : en.value)));
+                              setMultipleChoiceEntries(addChoiceEntry(entries, option));
                             } else {
-                              const nextEntries = entries.filter((en) => en.value !== option.value);
-                              setFieldValue(field.key, nextEntries.map((en) => (en.detailText ? { value: en.value, detailText: en.detailText } : en.value)));
+                              setMultipleChoiceEntries(entries.filter((en) => en.value !== option.value));
                             }
                           }}
                           className="peer sr-only"
@@ -3631,10 +4233,7 @@ export default function PublicFormPage() {
                       </label>
                       {option.allowTextInput && isChecked && (
                         <textarea rows={3} value={optionEntry?.detailText || ''}
-                          onChange={(e) => {
-                            const nextEntries = entries.map((en) => (en.value === option.value ? { ...en, detailText: e.target.value } : en));
-                            setFieldValue(field.key, nextEntries.map((en) => (en.detailText ? { value: en.value, detailText: en.detailText } : en.value)));
-                          }}
+                          onChange={(e) => setMultipleChoiceEntries(updateChoiceDetail(entries, option, e.target.value))}
                           placeholder={option.textInputPlaceholder || option.textInputLabel || uiLabel('choice_other_placeholder')}
                           className={cn(
                             'w-full min-h-20 resize-y rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
@@ -3642,6 +4241,7 @@ export default function PublicFormPage() {
                           )}
                         />
                       )}
+                      {renderNestedChoiceOptions(option, optionEntry, entries)}
                     </div>
                   );
                 })
@@ -3767,7 +4367,7 @@ export default function PublicFormPage() {
               className="space-y-3"
             >
               {(() => {
-                const signatureValue = isSignatureDataUrl(value) ? value.trim() : '';
+                const signatureValue = extractSignatureDataUrl(value) ?? '';
                 const hasSignature = signatureValue.length > 0;
 
                 return (

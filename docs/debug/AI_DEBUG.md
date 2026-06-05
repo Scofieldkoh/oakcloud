@@ -30367,3 +30367,16680 @@ vendor invoice, line item description write as "Bizfile - [company name]"
 
 ---
 
+## AI Request - 2026-05-27T08:26:42.923Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | form_submission_ai_review |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 2 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (16042 chars)</summary>
+
+```
+Analyze this submitted form and return only JSON.
+
+Custom review instructions:
+You are a compliance reviewer AI for Singapore Corporate Service Provider (CSP) KYC/CDD submissions.
+
+====================================================
+1. CORE CONSTRAINTS
+====================================================
+
+• Use ONLY the submitted form answers and attachments.
+• Do NOT access external databases, sanctions lists, or screening tools.
+• Do NOT invent facts.
+
+If a claim cannot be verified from the provided materials, state:
+
+"Cannot verify: <item>"
+
+in the **Issues found** section.
+
+====================================================
+2. REQUIRED OUTPUT (STRICT)
+====================================================
+
+Return JSON ONLY with the exact schema below.
+
+• No extra keys  
+• No commentary  
+• No markdown  
+• No explanations  
+
+Schema:
+
+{
+  "reviewRequired": true,
+  "severity": "medium",
+  "summary": "Short operational summary for staff",
+  "tags": [
+    "short-label"
+  ],
+  "sections": [
+    {
+      "title": "Issues found",
+      "type": "bullet_list",
+      "items": [
+        "Specific finding"
+      ]
+    },
+    {
+      "title": "Recommended actions",
+      "type": "bullet_list",
+      "items": [
+        "Practical next step"
+      ]
+    }
+  ]
+}
+
+====================================================
+3. DECISION RULES
+====================================================
+
+Set **reviewRequired = true** if ANY of the following exist:
+
+• Risk indicators  
+• Inconsistency between form and attachments  
+• Missing / unclear / incomplete / expired / suspicious documents  
+• Unverifiable claim  
+• High-risk jurisdiction  
+• Implausible or unclear source of funds/wealth  
+• PEP / sanctions / adverse media / criminal concern indicated in the materials  
+• Ownership/control structure requiring escalation  
+• Any condition requiring manual review or EDD
+
+Otherwise:
+
+reviewRequired = false
+
+----------------------------------------------------
+
+Severity must be one of:
+
+• "low"  
+• "medium"  
+• "high"  
+• null  
+
+Severity guidance:
+
+LOW  
+• No material issues  
+• Records internally consistent  
+• No meaningful follow-up required
+
+MEDIUM  
+• Minor inconsistencies  
+• Limited risk indicators  
+• Missing clarification or incomplete information
+
+HIGH  
+• PEP indicated in provided materials  
+• Sanctions/adverse/criminal evidence in materials  
+• Suspicious ownership/control  
+• Major inconsistencies  
+• Clear need for escalation or EDD
+
+NULL  
+• Insufficient information to assess
+
+====================================================
+4. RISK-BASED PRINCIPLE
+====================================================
+
+Apply a **risk-based approach consistent with Singapore AML/CFT practices**.
+
+Do NOT generate findings for scenarios that are:
+
+• legally plausible  
+• commonly accepted in standard KYC onboarding  
+• not contradicted by the provided materials  
+
+Only include findings that would reasonably require **CSP compliance follow-up**.
+
+Do NOT include:
+
+• theoretical issues  
+• speculative concerns
+
+====================================================
+5. CHECKS TO PERFORM
+====================================================
+
+Use ONLY the provided materials.
+
+----------------------------------------------------
+A. AML / CFT Risk Indicators
+----------------------------------------------------
+
+Assess:
+
+• plausibility of business activity  
+• transaction purpose  
+• jurisdiction risk
+
+----------------------------------------------------
+B. Identity Cross-Checks
+----------------------------------------------------
+
+Verify internal consistency across:
+
+• name  
+• ID number  
+• date of birth  
+• nationality  
+• address  
+
+----------------------------------------------------
+Singapore ID Guidance
+----------------------------------------------------
+
+NRIC / FIN numbers typically:
+
+• begin with a letter  
+• contain 7 digits  
+• end with a letter  
+
+Important:
+
+• Singapore NRIC may belong to **citizens or permanent residents**  
+• A person may hold **Singapore NRIC while having foreign nationality**
+• Singapore NRIC do not have expiry date, only issuance date
+
+Do NOT flag nationality different from Singapore when NRIC exists unless:
+
+• the form explicitly claims Singapore citizenship
+
+----------------------------------------------------
+C. Document Checks
+----------------------------------------------------
+
+Check for:
+
+• expired IDs  
+• missing mandatory documents  
+• unreadable images  
+• cropped images  
+• altered documents  
+• unsupported document types
+
+Mandatory identity documents:
+
+• Singapore NRIC  
+
+OR
+
+• Passport + Proof of Address
+
+----------------------------------------------------
+D. Source of Funds / Wealth
+----------------------------------------------------
+
+Evaluate plausibility relative to:
+
+• occupation  
+• business activity  
+
+Important rules:
+
+• Documentary proof is NOT required unless risk indicators exist  
+• Do NOT flag missing proof unless the form explicitly claims documents were attached but they are missing
+
+----------------------------------------------------
+E. Ownership / Control
+----------------------------------------------------
+
+Assess for:
+
+• hidden beneficiaries  
+• unclear ultimate control  
+• structures requiring escalation
+
+----------------------------------------------------
+F. Jurisdiction Risk
+----------------------------------------------------
+
+Assess for:
+
+• high-risk jurisdictions  
+• unusual transaction purpose  
+• facts increasing AML risk
+
+====================================================
+6. DO NOT FLAG THE FOLLOWING AS ISSUES
+====================================================
+
+• Foreign nationality with Singapore NRIC (possible PR status)  
+• Absence of source-of-funds documentation where no risk indicator exists  
+• Ordinary employment or business income declarations without supporting documents
+• authenticity of the document, unless there are obvious signs of tamperin
+
+====================================================
+7. OUTPUT COMPOSITION RULES
+====================================================
+
+SUMMARY
+
+• One-line operational summary for staff.
+
+----------------------------------------------------
+
+TAGS
+
+Short stable labels such as:
+
+• id-mismatch  
+• doc-missing  
+• requires-EDD  
+• low-risk  
+• high-risk  
+
+----------------------------------------------------
+
+SECTIONS
+
+The output MUST include these two sections:
+
+1. Issues found  
+   type: bullet_list
+
+   Each item must:
+   • describe a MATERIAL issue, inconsistency, risk indicator, or missing/unclear information that requires compliance follow-up
+   • cite the relevant form field name OR attachment filename  
+   • include "Cannot verify: <item>" only when a claim in the materials cannot be verified
+
+   Do NOT list neutral observations such as:
+   • confirmation that a document exists
+   • confirmation that an attachment was uploaded
+   • presence of an ID document without any issue
+   • statements that something "requires independent verification"
+
+Only include items that represent a genuine issue requiring action.
+
+2. Recommended actions  
+   type: bullet_list
+
+   Each item must be a **practical next step**, for example:
+
+   • request specific document  
+   • ask clarifying question  
+   • escalate to EDD  
+   • reject onboarding  
+   • hold onboarding pending verification
+
+----------------------------------------------------
+
+Additional sections may be included if needed.
+
+Allowed section types only:
+
+• text  
+• bullet_list  
+• key_value
+
+Do NOT create new top-level fields.
+
+====================================================
+8. FORMATTING RULES
+====================================================
+
+Return:
+
+• JSON ONLY  
+• Exact schema above  
+• No markdown  
+• No commentary  
+• No additional keys  
+
+Be concise and token-efficient.
+
+When describing findings:
+
+• reference form field names or attachment filenames  
+• explicitly state when something cannot be verified
+
+End.
+
+Output JSON schema:
+{
+  "reviewRequired": true,
+  "severity": "medium",
+  "summary": "Short overall assessment for staff.",
+  "tags": [
+    "short-label"
+  ],
+  "sections": [
+    {
+      "title": "Issues found",
+      "type": "bullet_list",
+      "items": [
+        "Concrete issue or risk to review"
+      ]
+    }
+  ]
+}
+
+Submission context:
+{
+  "formTitle": "KYC/ CDD Individual Declaration Form",
+  "formDescription": null,
+  "submissionId": "a5805542-d76d-4b36-b32a-72b2fc139ca3",
+  "submittedAt": "2026-05-27T08:26:42.701Z",
+  "respondentName": "Yuly Mirawati",
+  "respondentEmail": "captainballz14@yahoo.com",
+  "answers": [
+    {
+      "key": "full_name",
+      "label": "Full Name",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "Yuly Mirawati"
+    },
+    {
+      "key": "gender",
+      "label": "Gender",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "Female"
+    },
+    {
+      "key": "date_of_birth",
+      "label": "Date of Birth",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "1980-02-28"
+    },
+    {
+      "key": "nationality",
+      "label": "Nationality",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "Indonesian"
+    },
+    {
+      "key": "nric_fin_passport_number",
+      "label": "NRIC/ FIN/ Passport Number",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "S8078571B"
+    },
+    {
+      "key": "issuing_country",
+      "label": "Issuing Country",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "Indonesia"
+    },
+    {
+      "key": "residential_address",
+      "label": "Residential Address",
+      "type": "LONG_TEXT",
+      "required": true,
+      "value": "6 Pavilion Circle Singapre 658476"
+    },
+    {
+      "key": "phone",
+      "label": "Phone (include country code)",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "+65 90667668"
+    },
+    {
+      "key": "email",
+      "label": "Email",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "captainBallz14@yahoo.com"
+    },
+    {
+      "key": "occupation_profession",
+      "label": "Occupation/ Profession",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "Housewife"
+    },
+    {
+      "key": "employer_business_name",
+      "label": "Employer/ Business Name",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "Not employed"
+    },
+    {
+      "key": "nature_of_industry_business",
+      "label": "Nature of Industry/ Business",
+      "type": "LONG_TEXT",
+      "required": true,
+      "value": "Not applicable"
+    },
+    {
+      "key": "highest_education_level",
+      "label": "Highest Education Level",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "Bachelor's Degree"
+    },
+    {
+      "key": "source_of_funds",
+      "label": "Source of Funds",
+      "type": "MULTIPLE_CHOICE",
+      "required": true,
+      "value": "Others (Savings)"
+    },
+    {
+      "key": "criminal_check",
+      "label": "Subject to criminal investigation, prosecution, or conviction, including, but not limited to, offences such as fraud, bribery, corruption, or money laundering",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "bankrupt_check",
+      "label": "Declared bankrupt, adjudged insolvent, or entered into any formal or informal debt settlement arrangement",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "proceeding_check",
+      "label": "Involved in civil or regulatory proceedings or investigations where you were, are, or may be held responsible for misconduct, negligence, or breach of professional or fiduciary duties",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "disciplinary_check",
+      "label": "Subject to disciplinary or enforcement action by any regulatory authority (e.g., MAS, ACRA, IRAS, or foreign equivalents), or having been refused or having had any license, registration, or professional membership revoked",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "sanctions_check",
+      "label": "Listed on any sanctions or watchlist maintained by a government, international body, or regulatory authority (e.g., OFAC, UN, EU)",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "disqualification_check",
+      "label": "Disqualified from acting as a director of a company under the Companies Act or any equivalent legislation in Singapore or any other jurisdiction, whether by court order, statutory disqualification, or voluntary undertaking",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "politically_exposed_person_pep_status",
+      "label": "Politically Exposed Person (PEP) Status",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "I am NOT a Politically Exposed Person."
+    },
+    {
+      "key": "jurisdictional_risk",
+      "label": "Jurisdictional Risk",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "I am NOT a resident or citizen of a high-risk jurisdiction as identified by the FATF."
+    },
+    {
+      "key": "nominee_status",
+      "label": "Nominee Status",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "I am NOT acting as a nominee director or nominee shareholder."
+    },
+    {
+      "key": "supporting_documents",
+      "label": "Supporting documents",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "Singapore NRIC"
+    },
+    {
+      "key": "nric",
+      "label": "NRIC",
+      "type": "FILE_UPLOAD",
+      "required": false,
+      "value": [
+        {
+          "fileName": "NRIC - Yuly Mirawati - 27 May 26.jpg",
+          "originalFileName": "PHOTO-2026-05-27-16-16-31.jpg",
+          "mimeType": "image/jpeg",
+          "sizeBytes": 21878
+        },
+        {
+          "fileName": "NRIC - Yuly Mirawati - 27 May 26-2.jpg",
+          "originalFileName": "PHOTO-2026-05-27-16-17-21.jpg",
+          "mimeType": "image/jpeg",
+          "sizeBytes": 190064
+        }
+      ]
+    },
+    {
+      "key": "signature",
+      "label": "Signature",
+      "type": "SIGNATURE",
+      "required": true,
+      "value": "Provided"
+    },
+    {
+      "key": "full_name_declaration",
+      "label": "Full Name",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "Yuly Mirawati"
+    },
+    {
+      "key": "designation_declaration",
+      "label": "Designation",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "Company Director"
+    },
+    {
+      "key": "date_declaration",
+      "label": "Date",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "2026-05-27"
+    }
+  ],
+  "includedAttachments": [
+    {
+      "fileName": "NRIC - Yuly Mirawati - 27 May 26.jpg",
+      "originalFileName": "PHOTO-2026-05-27-16-16-31.jpg",
+      "mimeType": "image/jpeg",
+      "sizeBytes": 21878,
+      "fieldKey": "nric",
+      "fieldLabel": "NRIC"
+    },
+    {
+      "fileName": "NRIC - Yuly Mirawati - 27 May 26-2.jpg",
+      "originalFileName": "PHOTO-2026-05-27-16-17-21.jpg",
+      "mimeType": "image/jpeg",
+      "sizeBytes": 190064,
+      "fieldKey": "nric",
+      "fieldLabel": "NRIC"
+    }
+  ],
+  "unsupportedAttachmentNames": [],
+  "omittedAttachmentNames": []
+}
+
+Rules:
+- Set reviewRequired to true only when staff follow-up is justified.
+- severity should be low, medium, high, or null if severity is not meaningful for this form.
+- Keep summary concise and operational.
+- tags should be short labels, not full sentences.
+- sections should contain only useful form-specific output. Use only these section types: text, bullet_list, key_value.
+- In issue descriptions, do not mention internal field keys or uploaded file names.
+- Write issue bullets in plain language, for example: "Attachment appears to be a national identification card instead of a passport."
+- If there are no meaningful issues, return reviewRequired=false and keep sections focused and minimal.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 6589ms |
+| Input Tokens | 5589 |
+| Output Tokens | 214 |
+| Total Tokens | 5803 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0052 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1141 chars)</summary>
+
+```json
+{
+  "reviewRequired": true,
+  "severity": "medium",
+  "summary": "Identity details are broadly consistent, but there is a minor address issue and the declaration includes a company director role that should be clarified against the stated occupation.",
+  "tags": [
+    "address-typo",
+    "role-clarification",
+    "id-consistency"
+  ],
+  "sections": [
+    {
+      "title": "Issues found",
+      "type": "bullet_list",
+      "items": [
+        "Residential address is misspelled as \"Singapre\"; cannot verify whether the address was entered correctly and should be confirmed.",
+        "Occupation is stated as \"Housewife\" while the declaration lists \"Company Director\"; this role discrepancy requires clarification.",
+        "Cannot verify the claimed residential address from the provided materials alone."
+      ]
+    },
+    {
+      "title": "Recommended actions",
+      "type": "bullet_list",
+      "items": [
+        "Confirm the residential address and correct any typographical errors before onboarding.",
+        "Clarify whether the respondent is acting in a personal capacity or as a company director and align the occupation/declaration accordingly.",
+        "If the company director role is current, obtain supporting corporate appointment details or escalate for manual review."
+      ]
+    }
+  ]
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-02T01:13:57.090Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | fac30927-0a35-4ac2-8b9e-70a1dbd04f98 |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1997 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: Oaktree Accounting & Corporate Solutions Pte. Ltd.
+- UEN: 202437906H
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 3409ms |
+| Input Tokens | 1647 |
+| Output Tokens | 23 |
+| Total Tokens | 1670 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0013 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (50 chars)</summary>
+
+```json
+{
+  "vendorName": "ACRA",
+  "customerName": "TAN WEI JIE"
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-02T01:13:58.335Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | fac30927-0a35-4ac2-8b9e-70a1dbd04f98 |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1997 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: Oaktree Accounting & Corporate Solutions Pte. Ltd.
+- UEN: 202437906H
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2529ms |
+| Input Tokens | 1661 |
+| Output Tokens | 23 |
+| Total Tokens | 1684 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0013 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (50 chars)</summary>
+
+```json
+{
+  "vendorName": "ACRA",
+  "customerName": "TAN WEI JIE"
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-02T01:13:59.981Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | fac30927-0a35-4ac2-8b9e-70a1dbd04f98 |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1997 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: Oaktree Accounting & Corporate Solutions Pte. Ltd.
+- UEN: 202437906H
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2925ms |
+| Input Tokens | 1415 |
+| Output Tokens | 28 |
+| Total Tokens | 1443 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0012 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (73 chars)</summary>
+
+```json
+{
+  "vendorName": "JIN HEE STATIONERY & OFFICE SUPPLIES",
+  "customerName": null
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-02T01:14:01.300Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | fac30927-0a35-4ac2-8b9e-70a1dbd04f98 |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1997 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: Oaktree Accounting & Corporate Solutions Pte. Ltd.
+- UEN: 202437906H
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2555ms |
+| Input Tokens | 1655 |
+| Output Tokens | 26 |
+| Total Tokens | 1681 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0014 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (91 chars)</summary>
+
+```json
+{
+  "vendorName": "Accounting and Corporate Regulatory Authority",
+  "customerName": "TAN WEI JIE"
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-02T01:14:00.669Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | fac30927-0a35-4ac2-8b9e-70a1dbd04f98 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (23560 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="ACRA".
+Normalized counterparty="ACRA" using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260525004424; documentDate=2026-05-25; currency=SGD; subtotal=5.05; taxAmount=0.45; totalAmount=5.5; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-05-25
+- lineNo=1; description=Bizfile - FOUNDATION JEWELLERS PTE LTD; quantity=1; unitPrice=5.05; amount=5.05; gstAmount=0.45; taxCode=SR; accountCode=7801
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260513000297; documentDate=2026-05-13; currency=SGD; subtotal=60; taxAmount=0; totalAmount=60; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-05-13
+- lineNo=1; description=File annual returns; quantity=1; unitPrice=60; amount=60; gstAmount=0; taxCode=NA; accountCode=7801
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260512004223; documentDate=2026-05-12; currency=SGD; subtotal=5.05; taxAmount=0.45; totalAmount=5.5; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-05-13
+- lineNo=1; description=Bizfile - Kimtan Labs; quantity=1; unitPrice=5.05; amount=5.05; gstAmount=0.45; taxCode=SR; accountCode=7801
+
+Uploading Company: Oaktree Accounting & Corporate Solutions Pte. Ltd.
+Business Nature: Other Financial Service Activities, Except Insurance and Pension Funding Activities N.e.c.
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "Oaktree Accounting & Corporate Solutions Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "Oaktree Accounting & Corporate Solutions Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "Oaktree Accounting & Corporate Solutions Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 5326ms |
+| Input Tokens | 7398 |
+| Output Tokens | 509 |
+| Total Tokens | 7907 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0078 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1495 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.97
+  },
+  "vendorName": {
+    "value": "ACRA",
+    "confidence": 0.99
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "ACRA260601000340",
+    "confidence": 0.98
+  },
+  "documentDate": {
+    "value": "2026-06-01",
+    "confidence": 0.99
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "300.00",
+    "confidence": 0.98
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "300.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M9-0008879-T",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Incorporate new local company",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "300.00",
+        "confidence": 0.98
+      },
+      "amount": {
+        "value": "300.00",
+        "confidence": 0.98
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.96
+      },
+      "accountCode": {
+        "value": "7810",
+        "confidence": 0.72
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-02T01:14:06.050Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | ACRA | 0.99 |
+| Total Amount | 300.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7810 | 0.72 | Incorporate new local company |
+
+---
+
+## AI Request - 2026-06-02T01:14:00.990Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | fac30927-0a35-4ac2-8b9e-70a1dbd04f98 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (23560 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="ACRA".
+Normalized counterparty="ACRA" using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260525004424; documentDate=2026-05-25; currency=SGD; subtotal=5.05; taxAmount=0.45; totalAmount=5.5; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-05-25
+- lineNo=1; description=Bizfile - FOUNDATION JEWELLERS PTE LTD; quantity=1; unitPrice=5.05; amount=5.05; gstAmount=0.45; taxCode=SR; accountCode=7801
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260513000297; documentDate=2026-05-13; currency=SGD; subtotal=60; taxAmount=0; totalAmount=60; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-05-13
+- lineNo=1; description=File annual returns; quantity=1; unitPrice=60; amount=60; gstAmount=0; taxCode=NA; accountCode=7801
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260512004223; documentDate=2026-05-12; currency=SGD; subtotal=5.05; taxAmount=0.45; totalAmount=5.5; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-05-13
+- lineNo=1; description=Bizfile - Kimtan Labs; quantity=1; unitPrice=5.05; amount=5.05; gstAmount=0.45; taxCode=SR; accountCode=7801
+
+Uploading Company: Oaktree Accounting & Corporate Solutions Pte. Ltd.
+Business Nature: Other Financial Service Activities, Except Insurance and Pension Funding Activities N.e.c.
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "Oaktree Accounting & Corporate Solutions Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "Oaktree Accounting & Corporate Solutions Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "Oaktree Accounting & Corporate Solutions Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 6089ms |
+| Input Tokens | 7412 |
+| Output Tokens | 503 |
+| Total Tokens | 7915 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0078 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1472 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "CORPORATE_SECRETARIAL",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "BIZFILE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "ACRA",
+    "confidence": 1
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "ACRA260530000733",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-05-30",
+    "confidence": 0.99
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "5.05",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.45",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "5.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M9-0008879-T",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Business Profile (Co)",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 1
+      },
+      "unitPrice": {
+        "value": "5.05",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "5.05",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.45",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "7801",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-02T01:14:07.133Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | CORPORATE_SECRETARIAL | 0.99 |
+| Vendor | ACRA | 1.00 |
+| Total Amount | 5.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7801 | 0.80 | Business Profile (Co) |
+
+---
+
+## AI Request - 2026-06-02T01:14:03.018Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | fac30927-0a35-4ac2-8b9e-70a1dbd04f98 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (21888 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+Uploading Company: Oaktree Accounting & Corporate Solutions Pte. Ltd.
+Business Nature: Other Financial Service Activities, Except Insurance and Pension Funding Activities N.e.c.
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "Oaktree Accounting & Corporate Solutions Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "Oaktree Accounting & Corporate Solutions Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "Oaktree Accounting & Corporate Solutions Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 5960ms |
+| Input Tokens | 6641 |
+| Output Tokens | 544 |
+| Total Tokens | 7185 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0074 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1573 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.98
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.97
+  },
+  "vendorName": {
+    "value": "JIN HEE STATIONERY & OFFICE SUPPLIES",
+    "confidence": 0.99
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "IV68621",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-05-21",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-05-21",
+    "confidence": 0.98
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.95
+  },
+  "subtotal": {
+    "value": "4.70",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.42",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "5.12",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M9-0364714-J",
+    "confidence": 0.9
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "PHOTO COPY PAPER A4 80GSM PAPER ONE BLUE",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "4.70",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "4.70",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "0.42",
+        "confidence": 0.98
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.97
+      },
+      "accountCode": {
+        "value": "6510",
+        "confidence": 0.82
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-02T01:14:09.029Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.98 |
+| Vendor | JIN HEE STATIONERY & OFFICE SUPPLIES | 0.99 |
+| Total Amount | 5.12 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6510 | 0.82 | PHOTO COPY PAPER A4 80GSM PAPER ONE BLUE |
+
+---
+
+## AI Request - 2026-06-02T01:14:03.982Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | fac30927-0a35-4ac2-8b9e-70a1dbd04f98 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (23601 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="Accounting and Corporate Regulatory Authority".
+Normalized counterparty="ACRA" using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260525004424; documentDate=2026-05-25; currency=SGD; subtotal=5.05; taxAmount=0.45; totalAmount=5.5; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-05-25
+- lineNo=1; description=Bizfile - FOUNDATION JEWELLERS PTE LTD; quantity=1; unitPrice=5.05; amount=5.05; gstAmount=0.45; taxCode=SR; accountCode=7801
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260513000297; documentDate=2026-05-13; currency=SGD; subtotal=60; taxAmount=0; totalAmount=60; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-05-13
+- lineNo=1; description=File annual returns; quantity=1; unitPrice=60; amount=60; gstAmount=0; taxCode=NA; accountCode=7801
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260512004223; documentDate=2026-05-12; currency=SGD; subtotal=5.05; taxAmount=0.45; totalAmount=5.5; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-05-13
+- lineNo=1; description=Bizfile - Kimtan Labs; quantity=1; unitPrice=5.05; amount=5.05; gstAmount=0.45; taxCode=SR; accountCode=7801
+
+Uploading Company: Oaktree Accounting & Corporate Solutions Pte. Ltd.
+Business Nature: Other Financial Service Activities, Except Insurance and Pension Funding Activities N.e.c.
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "Oaktree Accounting & Corporate Solutions Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "Oaktree Accounting & Corporate Solutions Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "Oaktree Accounting & Corporate Solutions Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 5270ms |
+| Input Tokens | 7409 |
+| Output Tokens | 305 |
+| Total Tokens | 7714 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0069 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1062 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.98
+  },
+  "vendorName": {
+    "value": "Accounting and Corporate Regulatory Authority",
+    "confidence": 0.99
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "ACRA260531000293",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-05-31",
+    "confidence": 0.99
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "13.76",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "1.24",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "15.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M9-0008879-T",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Apply for new business entity name",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "13.76",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "13.76",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "1.24",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "7801",
+        "confidence": 0.86
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-02T01:14:09.299Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Accounting and Corporate Regulatory Authority | 0.99 |
+| Total Amount | 15.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7801 | 0.86 | Apply for new business entity name |
+
+---
+
+## AI Request - 2026-06-04T01:22:32.093Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | form_submission_ai_review |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (15613 chars)</summary>
+
+```
+Analyze this submitted form and return only JSON.
+
+Custom review instructions:
+You are a compliance reviewer AI for Singapore Corporate Service Provider (CSP) KYC/CDD submissions.
+
+====================================================
+1. CORE CONSTRAINTS
+====================================================
+
+• Use ONLY the submitted form answers and attachments.
+• Do NOT access external databases, sanctions lists, or screening tools.
+• Do NOT invent facts.
+
+If a claim cannot be verified from the provided materials, state:
+
+"Cannot verify: <item>"
+
+in the **Issues found** section.
+
+====================================================
+2. REQUIRED OUTPUT (STRICT)
+====================================================
+
+Return JSON ONLY with the exact schema below.
+
+• No extra keys  
+• No commentary  
+• No markdown  
+• No explanations  
+
+Schema:
+
+{
+  "reviewRequired": true,
+  "severity": "medium",
+  "summary": "Short operational summary for staff",
+  "tags": [
+    "short-label"
+  ],
+  "sections": [
+    {
+      "title": "Issues found",
+      "type": "bullet_list",
+      "items": [
+        "Specific finding"
+      ]
+    },
+    {
+      "title": "Recommended actions",
+      "type": "bullet_list",
+      "items": [
+        "Practical next step"
+      ]
+    }
+  ]
+}
+
+====================================================
+3. DECISION RULES
+====================================================
+
+Set **reviewRequired = true** if ANY of the following exist:
+
+• Risk indicators  
+• Inconsistency between form and attachments  
+• Missing / unclear / incomplete / expired / suspicious documents  
+• Unverifiable claim  
+• High-risk jurisdiction  
+• Implausible or unclear source of funds/wealth  
+• PEP / sanctions / adverse media / criminal concern indicated in the materials  
+• Ownership/control structure requiring escalation  
+• Any condition requiring manual review or EDD
+
+Otherwise:
+
+reviewRequired = false
+
+----------------------------------------------------
+
+Severity must be one of:
+
+• "low"  
+• "medium"  
+• "high"  
+• null  
+
+Severity guidance:
+
+LOW  
+• No material issues  
+• Records internally consistent  
+• No meaningful follow-up required
+
+MEDIUM  
+• Minor inconsistencies  
+• Limited risk indicators  
+• Missing clarification or incomplete information
+
+HIGH  
+• PEP indicated in provided materials  
+• Sanctions/adverse/criminal evidence in materials  
+• Suspicious ownership/control  
+• Major inconsistencies  
+• Clear need for escalation or EDD
+
+NULL  
+• Insufficient information to assess
+
+====================================================
+4. RISK-BASED PRINCIPLE
+====================================================
+
+Apply a **risk-based approach consistent with Singapore AML/CFT practices**.
+
+Do NOT generate findings for scenarios that are:
+
+• legally plausible  
+• commonly accepted in standard KYC onboarding  
+• not contradicted by the provided materials  
+
+Only include findings that would reasonably require **CSP compliance follow-up**.
+
+Do NOT include:
+
+• theoretical issues  
+• speculative concerns
+
+====================================================
+5. CHECKS TO PERFORM
+====================================================
+
+Use ONLY the provided materials.
+
+----------------------------------------------------
+A. AML / CFT Risk Indicators
+----------------------------------------------------
+
+Assess:
+
+• plausibility of business activity  
+• transaction purpose  
+• jurisdiction risk
+
+----------------------------------------------------
+B. Identity Cross-Checks
+----------------------------------------------------
+
+Verify internal consistency across:
+
+• name  
+• ID number  
+• date of birth  
+• nationality  
+• address  
+
+----------------------------------------------------
+Singapore ID Guidance
+----------------------------------------------------
+
+NRIC / FIN numbers typically:
+
+• begin with a letter  
+• contain 7 digits  
+• end with a letter  
+
+Important:
+
+• Singapore NRIC may belong to **citizens or permanent residents**  
+• A person may hold **Singapore NRIC while having foreign nationality**
+• Singapore NRIC do not have expiry date, only issuance date
+
+Do NOT flag nationality different from Singapore when NRIC exists unless:
+
+• the form explicitly claims Singapore citizenship
+
+----------------------------------------------------
+C. Document Checks
+----------------------------------------------------
+
+Check for:
+
+• expired IDs  
+• missing mandatory documents  
+• unreadable images  
+• cropped images  
+• altered documents  
+• unsupported document types
+
+Mandatory identity documents:
+
+• Singapore NRIC  
+
+OR
+
+• Passport + Proof of Address
+
+----------------------------------------------------
+D. Source of Funds / Wealth
+----------------------------------------------------
+
+Evaluate plausibility relative to:
+
+• occupation  
+• business activity  
+
+Important rules:
+
+• Documentary proof is NOT required unless risk indicators exist  
+• Do NOT flag missing proof unless the form explicitly claims documents were attached but they are missing
+
+----------------------------------------------------
+E. Ownership / Control
+----------------------------------------------------
+
+Assess for:
+
+• hidden beneficiaries  
+• unclear ultimate control  
+• structures requiring escalation
+
+----------------------------------------------------
+F. Jurisdiction Risk
+----------------------------------------------------
+
+Assess for:
+
+• high-risk jurisdictions  
+• unusual transaction purpose  
+• facts increasing AML risk
+
+====================================================
+6. DO NOT FLAG THE FOLLOWING AS ISSUES
+====================================================
+
+• Foreign nationality with Singapore NRIC (possible PR status)  
+• Absence of source-of-funds documentation where no risk indicator exists  
+• Ordinary employment or business income declarations without supporting documents
+• authenticity of the document, unless there are obvious signs of tamperin
+
+====================================================
+7. OUTPUT COMPOSITION RULES
+====================================================
+
+SUMMARY
+
+• One-line operational summary for staff.
+
+----------------------------------------------------
+
+TAGS
+
+Short stable labels such as:
+
+• id-mismatch  
+• doc-missing  
+• requires-EDD  
+• low-risk  
+• high-risk  
+
+----------------------------------------------------
+
+SECTIONS
+
+The output MUST include these two sections:
+
+1. Issues found  
+   type: bullet_list
+
+   Each item must:
+   • describe a MATERIAL issue, inconsistency, risk indicator, or missing/unclear information that requires compliance follow-up
+   • cite the relevant form field name OR attachment filename  
+   • include "Cannot verify: <item>" only when a claim in the materials cannot be verified
+
+   Do NOT list neutral observations such as:
+   • confirmation that a document exists
+   • confirmation that an attachment was uploaded
+   • presence of an ID document without any issue
+   • statements that something "requires independent verification"
+
+Only include items that represent a genuine issue requiring action.
+
+2. Recommended actions  
+   type: bullet_list
+
+   Each item must be a **practical next step**, for example:
+
+   • request specific document  
+   • ask clarifying question  
+   • escalate to EDD  
+   • reject onboarding  
+   • hold onboarding pending verification
+
+----------------------------------------------------
+
+Additional sections may be included if needed.
+
+Allowed section types only:
+
+• text  
+• bullet_list  
+• key_value
+
+Do NOT create new top-level fields.
+
+====================================================
+8. FORMATTING RULES
+====================================================
+
+Return:
+
+• JSON ONLY  
+• Exact schema above  
+• No markdown  
+• No commentary  
+• No additional keys  
+
+Be concise and token-efficient.
+
+When describing findings:
+
+• reference form field names or attachment filenames  
+• explicitly state when something cannot be verified
+
+End.
+
+Output JSON schema:
+{
+  "reviewRequired": true,
+  "severity": "medium",
+  "summary": "Short overall assessment for staff.",
+  "tags": [
+    "short-label"
+  ],
+  "sections": [
+    {
+      "title": "Issues found",
+      "type": "bullet_list",
+      "items": [
+        "Concrete issue or risk to review"
+      ]
+    }
+  ]
+}
+
+Submission context:
+{
+  "formTitle": "KYC/ CDD Individual Declaration Form",
+  "formDescription": null,
+  "submissionId": "23e5abdb-6e4d-4db4-9117-9c245ae688ad",
+  "submittedAt": "2026-06-04T01:22:31.851Z",
+  "respondentName": "Test 1",
+  "respondentEmail": "test@gmail.com",
+  "answers": [
+    {
+      "key": "full_name",
+      "label": "Full Name",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "Test 1"
+    },
+    {
+      "key": "gender",
+      "label": "Gender",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "Female"
+    },
+    {
+      "key": "date_of_birth",
+      "label": "Date of Birth",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "2026-04-01"
+    },
+    {
+      "key": "nationality",
+      "label": "Nationality",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "Vietnamese"
+    },
+    {
+      "key": "nric_fin_passport_number",
+      "label": "NRIC/ FIN/ Passport Number",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "S"
+    },
+    {
+      "key": "issuing_country",
+      "label": "Issuing Country",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "Mauritius"
+    },
+    {
+      "key": "expiry_date_passport_only",
+      "label": "Expiry Date (Passport only)",
+      "type": "SHORT_TEXT",
+      "required": false,
+      "value": "2026-06-07"
+    },
+    {
+      "key": "residential_address",
+      "label": "Residential Address",
+      "type": "LONG_TEXT",
+      "required": true,
+      "value": "a"
+    },
+    {
+      "key": "phone",
+      "label": "Phone (include country code)",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "+971 111"
+    },
+    {
+      "key": "email",
+      "label": "Email",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "test@gmail.com"
+    },
+    {
+      "key": "occupation_profession",
+      "label": "Occupation/ Profession",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "1"
+    },
+    {
+      "key": "employer_business_name",
+      "label": "Employer/ Business Name",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "1"
+    },
+    {
+      "key": "nature_of_industry_business",
+      "label": "Nature of Industry/ Business",
+      "type": "LONG_TEXT",
+      "required": true,
+      "value": "1"
+    },
+    {
+      "key": "highest_education_level",
+      "label": "Highest Education Level",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "Secondary / High School"
+    },
+    {
+      "key": "source_of_funds",
+      "label": "Source of Funds",
+      "type": "MULTIPLE_CHOICE",
+      "required": true,
+      "value": "Employment Income, including business income"
+    },
+    {
+      "key": "criminal_check",
+      "label": "Subject to criminal investigation, prosecution, or conviction, including, but not limited to, offences such as fraud, bribery, corruption, or money laundering",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "bankrupt_check",
+      "label": "Declared bankrupt, adjudged insolvent, or entered into any formal or informal debt settlement arrangement",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "proceeding_check",
+      "label": "Involved in civil or regulatory proceedings or investigations where you were, are, or may be held responsible for misconduct, negligence, or breach of professional or fiduciary duties",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "disciplinary_check",
+      "label": "Subject to disciplinary or enforcement action by any regulatory authority (e.g., MAS, ACRA, IRAS, or foreign equivalents), or having been refused or having had any license, registration, or professional membership revoked",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "sanctions_check",
+      "label": "Listed on any sanctions or watchlist maintained by a government, international body, or regulatory authority (e.g., OFAC, UN, EU)",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "disqualification_check",
+      "label": "Disqualified from acting as a director of a company under the Companies Act or any equivalent legislation in Singapore or any other jurisdiction, whether by court order, statutory disqualification, or voluntary undertaking",
+      "type": "SINGLE_CHOICE",
+      "required": true,
+      "value": "No"
+    },
+    {
+      "key": "politically_exposed_person_pep_status",
+      "label": "Politically Exposed Person (PEP) Status",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "I am NOT a Politically Exposed Person."
+    },
+    {
+      "key": "jurisdictional_risk",
+      "label": "Jurisdictional Risk",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "I am NOT a resident or citizen of a high-risk jurisdiction as identified by the FATF."
+    },
+    {
+      "key": "nominee_status",
+      "label": "Nominee Status",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "I am NOT acting as a nominee director or nominee shareholder."
+    },
+    {
+      "key": "supporting_documents",
+      "label": "Supporting documents",
+      "type": "DROPDOWN",
+      "required": true,
+      "value": "Singapore NRIC"
+    },
+    {
+      "key": "nric",
+      "label": "NRIC",
+      "type": "FILE_UPLOAD",
+      "required": false,
+      "value": [
+        {
+          "fileName": "NRIC - Test 1 - 4 Jun 26.png",
+          "originalFileName": "IMG_3615.png",
+          "mimeType": "image/png",
+          "sizeBytes": 382350
+        }
+      ]
+    },
+    {
+      "key": "signature",
+      "label": "Signature",
+      "type": "SIGNATURE",
+      "required": true,
+      "value": "Provided"
+    },
+    {
+      "key": "full_name_declaration",
+      "label": "Full Name",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "1"
+    },
+    {
+      "key": "designation_declaration",
+      "label": "Designation",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "1"
+    },
+    {
+      "key": "date_declaration",
+      "label": "Date",
+      "type": "SHORT_TEXT",
+      "required": true,
+      "value": "2026-06-04"
+    }
+  ],
+  "includedAttachments": [
+    {
+      "fileName": "NRIC - Test 1 - 4 Jun 26.png",
+      "originalFileName": "IMG_3615.png",
+      "mimeType": "image/png",
+      "sizeBytes": 382350,
+      "fieldKey": "nric",
+      "fieldLabel": "NRIC"
+    }
+  ],
+  "unsupportedAttachmentNames": [],
+  "omittedAttachmentNames": []
+}
+
+Rules:
+- Set reviewRequired to true only when staff follow-up is justified.
+- severity should be low, medium, high, or null if severity is not meaningful for this form.
+- Keep summary concise and operational.
+- tags should be short labels, not full sentences.
+- sections should contain only useful form-specific output. Use only these section types: text, bullet_list, key_value.
+- In issue descriptions, do not mention internal field keys or uploaded file names.
+- Write issue bullets in plain language, for example: "Attachment appears to be a national identification card instead of a passport."
+- If there are no meaningful issues, return reviewRequired=false and keep sections focused and minimal.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 5596ms |
+| Input Tokens | 5661 |
+| Output Tokens | 438 |
+| Total Tokens | 6099 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0062 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (2144 chars)</summary>
+
+```json
+{
+  "reviewRequired": true,
+  "severity": "high",
+  "summary": "Submitted identity and KYC details contain multiple inconsistencies and implausible values that require manual verification before onboarding.",
+  "tags": [
+    "id-mismatch",
+    "doc-missing",
+    "requires-EDD"
+  ],
+  "sections": [
+    {
+      "title": "Issues found",
+      "type": "bullet_list",
+      "items": [
+        "Date of Birth is listed as 2026-04-01, which appears implausible and cannot be verified from the provided materials.",
+        "NRIC/ FIN/ Passport Number is entered as only \"S\", which is not a valid-format identity number and does not match the stated supporting document.",
+        "Supporting documents states Singapore NRIC, but Issuing Country is Mauritius and Nationality is Vietnamese; cannot verify the identity document type from the provided information alone.",
+        "Residential Address is incomplete/unclear and cannot be verified for adequacy from the provided materials.",
+        "Occupation, employer/business name, and nature of industry/business are entered as \"1\", which is not sufficient to assess the stated source of funds.",
+        "The declaration fields for Full Name and Designation are entered as \"1\", which does not align with the submitted respondent identity details and cannot be verified."
+      ]
+    },
+    {
+      "title": "Recommended actions",
+      "type": "bullet_list",
+      "items": [
+        "Request a clear, valid copy of the identity document and verify the identity number, nationality, and issuing country against the document.",
+        "Obtain a corrected date of birth and full residential address, then re-check all identity details for consistency.",
+        "Ask the applicant to provide a meaningful occupation, employer/business name, and nature of business to support the source-of-funds declaration.",
+        "Confirm the declaration signatory details and require resubmission of the form if the declaration fields were entered incorrectly.",
+        "Hold onboarding pending manual review and escalate for EDD if the identity inconsistencies cannot be resolved."
+      ]
+    }
+  ]
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T02:17:20.910Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | fac30927-0a35-4ac2-8b9e-70a1dbd04f98 |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1997 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: Oaktree Accounting & Corporate Solutions Pte. Ltd.
+- UEN: 202437906H
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 3682ms |
+| Input Tokens | 1639 |
+| Output Tokens | 18 |
+| Total Tokens | 1657 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0013 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (41 chars)</summary>
+
+```json
+{
+  "vendorName": "ACRA",
+  "customerName": null
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T02:17:24.774Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | fac30927-0a35-4ac2-8b9e-70a1dbd04f98 |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (23697 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="ACRA".
+Normalized counterparty="ACRA" using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260530000733; documentDate=2026-05-30; currency=SGD; subtotal=5.05; taxAmount=0.45; totalAmount=5.5; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-06-02
+- lineNo=1; description=Bizfile - AWX Investment (Singapore) Pte. Ltd.; quantity=1; unitPrice=5.05; amount=5.05; gstAmount=0.45; taxCode=SR; accountCode=7801
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260531000293; documentDate=2026-05-31; currency=SGD; subtotal=13.76; taxAmount=1.24; totalAmount=15; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-06-02
+- lineNo=1; description=Name reservation - Engterprise Holdings Pte Ltd; quantity=1; unitPrice=13.76; amount=13.76; gstAmount=1.24; taxCode=SR; accountCode=7801
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=ACRA260601000340; documentDate=2026-06-01; currency=SGD; subtotal=300; taxAmount=0; totalAmount=300; supplierGstNo=M9-0008879-T; vendorName=ACRA; customerName=-; approvedAt=2026-06-02
+- lineNo=1; description=Incorporation - Engterprise Holdings Pte Ltd; quantity=1; unitPrice=300; amount=300; gstAmount=0; taxCode=NA; accountCode=7801
+
+Uploading Company: Oaktree Accounting & Corporate Solutions Pte. Ltd.
+Business Nature: Other Financial Service Activities, Except Insurance and Pension Funding Activities N.e.c.
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "Oaktree Accounting & Corporate Solutions Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "Oaktree Accounting & Corporate Solutions Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "Oaktree Accounting & Corporate Solutions Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+account payable vendor invoice- File annual returns - [company name]
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 5532ms |
+| Input Tokens | 7416 |
+| Output Tokens | 504 |
+| Total Tokens | 7920 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0078 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1484 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "CORPORATE_SECRETARIAL",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "ANNUAL_RETURN",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "ACRA",
+    "confidence": 0.99
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "ACRA260604000262",
+    "confidence": 0.98
+  },
+  "documentDate": {
+    "value": "2026-06-04",
+    "confidence": 0.99
+  },
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "60.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "60.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "M9-0008879-T",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "File annual returns",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.95
+      },
+      "unitPrice": {
+        "value": "60.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "60.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": null,
+        "confidence": 0
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.96
+      },
+      "accountCode": {
+        "value": "6650",
+        "confidence": 0.72
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T02:17:30.364Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | CORPORATE_SECRETARIAL | 0.99 |
+| Vendor | ACRA | 0.99 |
+| Total Amount | 60.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6650 | 0.72 | File annual returns |
+
+---
+
+## AI Request - 2026-06-04T04:06:31.652Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 3410ms |
+| Input Tokens | 1073 |
+| Output Tokens | 32 |
+| Total Tokens | 1105 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0009 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (74 chars)</summary>
+
+```json
+{
+  "vendorName": "BEE & DEE PTE. LTD.",
+  "customerName": "GD Carwash Pte. Ltd."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:30.286Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 5176ms |
+| Input Tokens | 1389 |
+| Output Tokens | 32 |
+| Total Tokens | 1421 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0012 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (74 chars)</summary>
+
+```json
+{
+  "vendorName": "BEE & DEE PTE. LTD.",
+  "customerName": "GD Carwash Pte. Ltd."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:33.186Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 3360ms |
+| Input Tokens | 1411 |
+| Output Tokens | 26 |
+| Total Tokens | 1437 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0012 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (71 chars)</summary>
+
+```json
+{
+  "vendorName": "SP Services Ltd.",
+  "customerName": "GD Carwash Pte. Ltd."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:34.394Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2653ms |
+| Input Tokens | 1862 |
+| Output Tokens | 30 |
+| Total Tokens | 1892 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0015 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (83 chars)</summary>
+
+```json
+{
+  "vendorName": "Phoenix Commercial Pte. Ltd.",
+  "customerName": "GD CARWASH PTE. LTD."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:36.044Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2564ms |
+| Input Tokens | 1411 |
+| Output Tokens | 26 |
+| Total Tokens | 1437 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0012 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (66 chars)</summary>
+
+```json
+{
+  "vendorName": "StarHub Ltd",
+  "customerName": "GD Carwash Pte. Ltd."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:37.479Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2895ms |
+| Input Tokens | 1411 |
+| Output Tokens | 26 |
+| Total Tokens | 1437 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0012 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (65 chars)</summary>
+
+```json
+{
+  "vendorName": "PHOENIX COMMERCIAL PTE. LTD.",
+  "customerName": null
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:35.233Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (24785 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="BEE & DEE PTE. LTD.".
+Normalized counterparty="Bee & Dee Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=20; documentDate=2026-04-26; currency=SGD; subtotal=464; taxAmount=41.76; totalAmount=505.76; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=19; documentDate=2026-04-27; currency=SGD; subtotal=1405; taxAmount=126.45; totalAmount=1531.45; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+- lineNo=2; description=BodyGuard Hydrophobic Display Panel unit; quantity=1; unitPrice=400; amount=400; gstAmount=36; taxCode=SR; accountCode=5210
+- lineNo=3; description=IGL EcoCoat Premier water based polysiloxane sealant 500ml; quantity=1; unitPrice=65; amount=65; gstAmount=5.85; taxCode=SR; accountCode=5210
+- lineNo=4; description=Bodyguard Anti Bacteria Spray - Urban Bay; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=5; description=Bodyguard Anti Bacterial Spray - Jewel; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=6; description=Bodyguard Microfiber Coating Applicator 12 pc pkt; quantity=2; unitPrice=19.5; amount=39; gstAmount=3.51; taxCode=SR; accountCode=5210
+- lineNo=7; description=Shine mate foam pad 7" Diamond Green 34117-9; quantity=2; unitPrice=2; amount=4; gstAmount=0.36; taxCode=SR; accountCode=5210
+- lineNo=8; description=Shine mate foam pad 7" Diamond yellow 34117-1; quantity=5; unitPrice=2; amount=10; gstAmount=0.9; taxCode=SR; accountCode=5210
+- 1 additional line items omitted to keep context compact.
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=13; documentDate=2026-03-04; currency=SGD; subtotal=665; taxAmount=59.85; totalAmount=724.85; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-03-12
+- lineNo=1; description=IGL Ecocoat Kenzo Craphene Coating Kit 40ml; quantity=2; unitPrice=220; amount=440; gstAmount=39.6; taxCode=SR; accountCode=5210
+- lineNo=2; description=IGL EcoCoat Leather 30ml; quantity=3; unitPrice=75; amount=225; gstAmount=20.25; taxCode=SR; accountCode=5210
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 5919ms |
+| Input Tokens | 8040 |
+| Output Tokens | 525 |
+| Total Tokens | 8565 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0084 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1531 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "BEE & DEE PTE. LTD.",
+    "confidence": 1
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "22",
+    "confidence": 0.98
+  },
+  "documentDate": {
+    "value": "2026-05-04",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-05-18",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "233.10",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "20.98",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "254.08",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202503947N",
+    "confidence": 1
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Sonax Cleanstar 750ml",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "9",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "25.90",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "233.10",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "20.98",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 1
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.93
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:41.207Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | BEE & DEE PTE. LTD. | 1.00 |
+| Total Amount | 254.08 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 5210 | 0.93 | Sonax Cleanstar 750ml |
+
+---
+
+## AI Request - 2026-06-04T04:06:38.873Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2394ms |
+| Input Tokens | 1411 |
+| Output Tokens | 32 |
+| Total Tokens | 1443 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0012 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (74 chars)</summary>
+
+```json
+{
+  "vendorName": "BEE & DEE PTE. LTD.",
+  "customerName": "GD Carwash Pte. Ltd."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:36.710Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (21748 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 5032ms |
+| Input Tokens | 6623 |
+| Output Tokens | 312 |
+| Total Tokens | 6935 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0064 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1060 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.98
+  },
+  "vendorName": {
+    "value": "SP Services Ltd",
+    "confidence": 0.97
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "8955870749",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-04-28",
+    "confidence": 0.98
+  },
+  "dueDate": {
+    "value": "2026-05-12",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "36.23",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "3.26",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "39.49",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201624565G",
+    "confidence": 0.72
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Water Services (PUB water charges)",
+        "confidence": 0.96
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "36.23",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "36.23",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "3.26",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.88
+      },
+      "accountCode": {
+        "value": "7120",
+        "confidence": 0.94
+      }
+    }
+  ],
+  "overallConfidence": 0.97
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:41.794Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | SP Services Ltd | 0.97 |
+| Total Amount | 39.49 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7120 | 0.94 | Water Services (PUB water charges) |
+
+---
+
+## AI Request - 2026-06-04T04:06:35.571Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (24785 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="BEE & DEE PTE. LTD.".
+Normalized counterparty="Bee & Dee Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=20; documentDate=2026-04-26; currency=SGD; subtotal=464; taxAmount=41.76; totalAmount=505.76; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=19; documentDate=2026-04-27; currency=SGD; subtotal=1405; taxAmount=126.45; totalAmount=1531.45; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+- lineNo=2; description=BodyGuard Hydrophobic Display Panel unit; quantity=1; unitPrice=400; amount=400; gstAmount=36; taxCode=SR; accountCode=5210
+- lineNo=3; description=IGL EcoCoat Premier water based polysiloxane sealant 500ml; quantity=1; unitPrice=65; amount=65; gstAmount=5.85; taxCode=SR; accountCode=5210
+- lineNo=4; description=Bodyguard Anti Bacteria Spray - Urban Bay; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=5; description=Bodyguard Anti Bacterial Spray - Jewel; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=6; description=Bodyguard Microfiber Coating Applicator 12 pc pkt; quantity=2; unitPrice=19.5; amount=39; gstAmount=3.51; taxCode=SR; accountCode=5210
+- lineNo=7; description=Shine mate foam pad 7" Diamond Green 34117-9; quantity=2; unitPrice=2; amount=4; gstAmount=0.36; taxCode=SR; accountCode=5210
+- lineNo=8; description=Shine mate foam pad 7" Diamond yellow 34117-1; quantity=5; unitPrice=2; amount=10; gstAmount=0.9; taxCode=SR; accountCode=5210
+- 1 additional line items omitted to keep context compact.
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=13; documentDate=2026-03-04; currency=SGD; subtotal=665; taxAmount=59.85; totalAmount=724.85; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-03-12
+- lineNo=1; description=IGL Ecocoat Kenzo Craphene Coating Kit 40ml; quantity=2; unitPrice=220; amount=440; gstAmount=39.6; taxCode=SR; accountCode=5210
+- lineNo=2; description=IGL EcoCoat Leather 30ml; quantity=3; unitPrice=75; amount=225; gstAmount=20.25; taxCode=SR; accountCode=5210
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 6321ms |
+| Input Tokens | 8356 |
+| Output Tokens | 559 |
+| Total Tokens | 8915 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0088 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1871 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "BEE & DEE PTE. LTD.",
+    "confidence": 1
+  },
+  "customerName": {
+    "value": "GD Carwash Pte. Ltd.",
+    "confidence": 0.99
+  },
+  "documentNumber": {
+    "value": "21",
+    "confidence": 0.98
+  },
+  "documentDate": {
+    "value": "2026-05-04",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-05-18",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "1536.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "138.24",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "1674.24",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202503947N",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "IGL Ecocoat Kenzo Graphene coating Kit 40ml",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "3",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "232.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "696.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "62.64",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.93
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Scangrip NOVA-UV S Curing Lamp",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "680.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "680.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "61.20",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.9
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "Bodyguard LED Telescoping Work Light With Tripod Stand",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "160.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "160.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "14.40",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.9
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:41.947Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | BEE & DEE PTE. LTD. | 1.00 |
+| Total Amount | 1674.24 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 5210 | 0.93 | IGL Ecocoat Kenzo Graphene coating Kit 40ml |
+| 2 | 5210 | 0.90 | Scangrip NOVA-UV S Curing Lamp |
+| 3 | 5210 | 0.90 | Bodyguard LED Telescoping Work Light With Tripo... |
+
+---
+
+## AI Request - 2026-06-04T04:06:40.254Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2336ms |
+| Input Tokens | 1411 |
+| Output Tokens | 32 |
+| Total Tokens | 1443 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0012 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (74 chars)</summary>
+
+```json
+{
+  "vendorName": "BEE & DEE PTE. LTD.",
+  "customerName": "GD Carwash Pte. Ltd."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:42.359Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2255ms |
+| Input Tokens | 1411 |
+| Output Tokens | 28 |
+| Total Tokens | 1439 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0012 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (75 chars)</summary>
+
+```json
+{
+  "vendorName": "Ministry of Manpower",
+  "customerName": "GD Carwash Pte. Ltd."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:38.765Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (23509 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="StarHub Ltd".
+Normalized counterparty="StarHub Ltd" using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=8004617609402026; documentDate=2026-04-04; currency=SGD; subtotal=20.18; taxAmount=1.82; totalAmount=22; supplierGstNo=199802208C; vendorName=StarHub Ltd; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=Telephone charges / telecommunications services; quantity=1; unitPrice=20.18; amount=20.18; gstAmount=1.82; taxCode=SR; accountCode=6900
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=8004584825032026; documentDate=2026-03-04; currency=SGD; subtotal=20.18; taxAmount=1.82; totalAmount=22; supplierGstNo=199802208C; vendorName=StarHub Ltd; customerName=-; approvedAt=2026-03-12
+- lineNo=1; description=StarHub - Feb 26 (telecommunications/services); quantity=1; unitPrice=20.18; amount=20.18; gstAmount=1.82; taxCode=SR; accountCode=6900
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=8004547789022026; documentDate=2026-02-04; currency=SGD; subtotal=20.18; taxAmount=1.82; totalAmount=22; supplierGstNo=199201892C; vendorName=StarHub Ltd; customerName=-; approvedAt=2026-03-05
+- lineNo=1; description=Telephone charges - Feb 26; quantity=1; unitPrice=20.18; amount=20.18; gstAmount=1.82; taxCode=SR; accountCode=6900
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 5912ms |
+| Input Tokens | 7933 |
+| Output Tokens | 529 |
+| Total Tokens | 8462 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0083 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1566 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.98
+  },
+  "vendorName": {
+    "value": "StarHub Ltd",
+    "confidence": 0.99
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "8004659286052026",
+    "confidence": 0.97
+  },
+  "documentDate": {
+    "value": "2026-05-04",
+    "confidence": 0.98
+  },
+  "dueDate": {
+    "value": "2026-05-18",
+    "confidence": 0.97
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "20.18",
+    "confidence": 0.95
+  },
+  "taxAmount": {
+    "value": "1.82",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "22.00",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "199802208C",
+    "confidence": 0.95
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Telecommunications services / telephone charges",
+        "confidence": 0.91
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "20.18",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "20.18",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "1.82",
+        "confidence": 0.95
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.95
+      }
+    }
+  ],
+  "overallConfidence": 0.97
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:44.731Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | StarHub Ltd | 0.99 |
+| Total Amount | 22.00 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6900 | 0.95 | Telecommunications services / telephone charges |
+
+---
+
+## AI Request - 2026-06-04T04:06:37.155Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (23882 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="Phoenix Commercial Pte. Ltd.".
+Normalized counterparty="Phoenix Commercial Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=1800001124/26; documentDate=2026-04-01; currency=SGD; subtotal=68; taxAmount=6.12; totalAmount=74.12; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=PRM - Internet Subscription #B2-Lot 13 and 14 & 2 Lots GD CARWASH PTE. LTD. / GD Auto Detailing (01-Apr-2026 to 30-Ap...; quantity=1; unitPrice=68; amount=68; gstAmount=6.12; taxCode=SR; accountCode=6900
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=1800001492/26; documentDate=2026-05-01; currency=SGD; subtotal=68; taxAmount=6.12; totalAmount=74.12; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=PRM - Internet Subscription #B2-13 And 14 & 2 Lots GD CARWASH PTE. LTD. / GD Auto Detailing (01-May-2026 to 31-May-2026); quantity=1; unitPrice=68; amount=68; gstAmount=6.12; taxCode=SR; accountCode=6900
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=A120323; documentDate=2026-04-24; currency=SGD; subtotal=188.84; taxAmount=17; totalAmount=205.84; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=Electricity Charges (Meter ID: IB2302776) for 01/03/26 to 31/03/26; quantity=842.84; unitPrice=0.1932; amount=162.84; gstAmount=14.66; taxCode=SR; accountCode=7110
+- lineNo=2; description=Admin Fee; quantity=1; unitPrice=26; amount=26; gstAmount=2.34; taxCode=SR; accountCode=7801
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 7855ms |
+| Input Tokens | 8527 |
+| Output Tokens | 747 |
+| Total Tokens | 9274 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0098 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (2259 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Phoenix Commercial Pte. Ltd.",
+    "confidence": 1
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "1800001491/26",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-05-01",
+    "confidence": 1
+  },
+  "dueDate": {
+    "value": "2026-05-15",
+    "confidence": 1
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 1
+  },
+  "subtotal": {
+    "value": "5060.00",
+    "confidence": 1
+  },
+  "taxAmount": {
+    "value": "455.40",
+    "confidence": 1
+  },
+  "totalAmount": {
+    "value": "5515.40",
+    "confidence": 1
+  },
+  "supplierGstNo": {
+    "value": "201805800K",
+    "confidence": 0.98
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "License Fee for GD CARWASH PTE. LTD. Year 1 (01-May-2026 to 31-May-2026)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "4800.00",
+        "confidence": 1
+      },
+      "amount": {
+        "value": "4800.00",
+        "confidence": 1
+      },
+      "gstAmount": {
+        "value": "432.00",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "7820",
+        "confidence": 0.72
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "License Fee for GD CARWASH PTE. LTD. Carpark Lot (01-May-2026 to 31-May-2026)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "260.00",
+        "confidence": 1
+      },
+      "amount": {
+        "value": "260.00",
+        "confidence": 1
+      },
+      "gstAmount": {
+        "value": "23.40",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "7820",
+        "confidence": 0.66
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:45.066Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Phoenix Commercial Pte. Ltd. | 1.00 |
+| Total Amount | 5515.40 SGD | 1.00 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7820 | 0.72 | License Fee for GD CARWASH PTE. LTD. Year 1 (01... |
+| 2 | 7820 | 0.66 | License Fee for GD CARWASH PTE. LTD. Carpark Lo... |
+
+---
+
+## AI Request - 2026-06-04T04:06:43.824Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2157ms |
+| Input Tokens | 1411 |
+| Output Tokens | 32 |
+| Total Tokens | 1443 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0012 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (74 chars)</summary>
+
+```json
+{
+  "vendorName": "BEE & DEE PTE. LTD.",
+  "customerName": "GD Carwash Pte. Ltd."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:40.467Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (23882 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="PHOENIX COMMERCIAL PTE. LTD.".
+Normalized counterparty="Phoenix Commercial Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=1800001124/26; documentDate=2026-04-01; currency=SGD; subtotal=68; taxAmount=6.12; totalAmount=74.12; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=PRM - Internet Subscription #B2-Lot 13 and 14 & 2 Lots GD CARWASH PTE. LTD. / GD Auto Detailing (01-Apr-2026 to 30-Ap...; quantity=1; unitPrice=68; amount=68; gstAmount=6.12; taxCode=SR; accountCode=6900
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=1800001492/26; documentDate=2026-05-01; currency=SGD; subtotal=68; taxAmount=6.12; totalAmount=74.12; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=PRM - Internet Subscription #B2-13 And 14 & 2 Lots GD CARWASH PTE. LTD. / GD Auto Detailing (01-May-2026 to 31-May-2026); quantity=1; unitPrice=68; amount=68; gstAmount=6.12; taxCode=SR; accountCode=6900
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=A120323; documentDate=2026-04-24; currency=SGD; subtotal=188.84; taxAmount=17; totalAmount=205.84; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=Electricity Charges (Meter ID: IB2302776) for 01/03/26 to 31/03/26; quantity=842.84; unitPrice=0.1932; amount=162.84; gstAmount=14.66; taxCode=SR; accountCode=7110
+- lineNo=2; description=Admin Fee; quantity=1; unitPrice=26; amount=26; gstAmount=2.34; taxCode=SR; accountCode=7801
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 6503ms |
+| Input Tokens | 7301 |
+| Output Tokens | 388 |
+| Total Tokens | 7689 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0072 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1191 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "TREASURY",
+    "confidence": 0.93
+  },
+  "documentSubCategory": {
+    "value": "PAYMENT_VOUCHER",
+    "confidence": 0.86
+  },
+  "vendorName": {
+    "value": "PHOENIX COMMERCIAL PTE. LTD.",
+    "confidence": 0.99
+  },
+  "customerName": null,
+  "documentNumber": null,
+  "documentDate": null,
+  "dueDate": null,
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.98
+  },
+  "subtotal": null,
+  "taxAmount": null,
+  "totalAmount": {
+    "value": "425.10",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Request submitted",
+        "confidence": 0.88
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "425.10",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "425.10",
+        "confidence": 0.99
+      },
+      "gstAmount": null,
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.95
+      },
+      "accountCode": {
+        "value": "7801",
+        "confidence": 0.55
+      }
+    }
+  ],
+  "overallConfidence": 0.88
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:47.027Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | TREASURY | 0.93 |
+| Vendor | PHOENIX COMMERCIAL PTE. LTD. | 0.99 |
+| Total Amount | 425.10 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7801 | 0.55 | Request submitted |
+
+---
+
+## AI Request - 2026-06-04T04:06:45.546Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 1889ms |
+| Input Tokens | 1411 |
+| Output Tokens | 32 |
+| Total Tokens | 1443 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0012 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (74 chars)</summary>
+
+```json
+{
+  "vendorName": "BEE & DEE PTE. LTD.",
+  "customerName": "GD Carwash Pte. Ltd."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:47.090Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 1873ms |
+| Input Tokens | 1073 |
+| Output Tokens | 32 |
+| Total Tokens | 1105 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0009 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (74 chars)</summary>
+
+```json
+{
+  "vendorName": "BEE & DEE PTE. LTD.",
+  "customerName": "GD Carwash Pte. Ltd."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:42.710Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (24785 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="BEE & DEE PTE. LTD.".
+Normalized counterparty="Bee & Dee Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=20; documentDate=2026-04-26; currency=SGD; subtotal=464; taxAmount=41.76; totalAmount=505.76; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=19; documentDate=2026-04-27; currency=SGD; subtotal=1405; taxAmount=126.45; totalAmount=1531.45; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+- lineNo=2; description=BodyGuard Hydrophobic Display Panel unit; quantity=1; unitPrice=400; amount=400; gstAmount=36; taxCode=SR; accountCode=5210
+- lineNo=3; description=IGL EcoCoat Premier water based polysiloxane sealant 500ml; quantity=1; unitPrice=65; amount=65; gstAmount=5.85; taxCode=SR; accountCode=5210
+- lineNo=4; description=Bodyguard Anti Bacteria Spray - Urban Bay; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=5; description=Bodyguard Anti Bacterial Spray - Jewel; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=6; description=Bodyguard Microfiber Coating Applicator 12 pc pkt; quantity=2; unitPrice=19.5; amount=39; gstAmount=3.51; taxCode=SR; accountCode=5210
+- lineNo=7; description=Shine mate foam pad 7" Diamond Green 34117-9; quantity=2; unitPrice=2; amount=4; gstAmount=0.36; taxCode=SR; accountCode=5210
+- lineNo=8; description=Shine mate foam pad 7" Diamond yellow 34117-1; quantity=5; unitPrice=2; amount=10; gstAmount=0.9; taxCode=SR; accountCode=5210
+- 1 additional line items omitted to keep context compact.
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=13; documentDate=2026-03-04; currency=SGD; subtotal=665; taxAmount=59.85; totalAmount=724.85; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-03-12
+- lineNo=1; description=IGL Ecocoat Kenzo Craphene Coating Kit 40ml; quantity=2; unitPrice=220; amount=440; gstAmount=39.6; taxCode=SR; accountCode=5210
+- lineNo=2; description=IGL EcoCoat Leather 30ml; quantity=3; unitPrice=75; amount=225; gstAmount=20.25; taxCode=SR; accountCode=5210
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 6353ms |
+| Input Tokens | 8378 |
+| Output Tokens | 752 |
+| Total Tokens | 9130 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0097 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (2264 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "BEE & DEE PTE. LTD.",
+    "confidence": 1
+  },
+  "customerName": {
+    "value": "GD Carwash Pte. Ltd.",
+    "confidence": 1
+  },
+  "documentNumber": {
+    "value": "24",
+    "confidence": 0.98
+  },
+  "documentDate": {
+    "value": "2026-05-18",
+    "confidence": 0.98
+  },
+  "dueDate": {
+    "value": "2026-05-27",
+    "confidence": 0.98
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "140.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "12.60",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "152.60",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202503947N",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Lutian High Pressure Hose for Panther P4",
+        "confidence": 0.97
+      },
+      "quantity": {
+        "value": "3",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "40.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "120.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "10.80",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.85
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Bodyguard Premium Lumi Lime Green Towel 380gsm 40x40cm",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "20.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "20.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "1.80",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.82
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:49.116Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | BEE & DEE PTE. LTD. | 1.00 |
+| Total Amount | 152.60 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 5210 | 0.85 | Lutian High Pressure Hose for Panther P4 |
+| 2 | 5210 | 0.82 | Bodyguard Premium Lumi Lime Green Towel 380gsm ... |
+
+---
+
+## AI Request - 2026-06-04T04:06:41.412Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (24785 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="BEE & DEE PTE. LTD.".
+Normalized counterparty="Bee & Dee Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=20; documentDate=2026-04-26; currency=SGD; subtotal=464; taxAmount=41.76; totalAmount=505.76; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=19; documentDate=2026-04-27; currency=SGD; subtotal=1405; taxAmount=126.45; totalAmount=1531.45; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+- lineNo=2; description=BodyGuard Hydrophobic Display Panel unit; quantity=1; unitPrice=400; amount=400; gstAmount=36; taxCode=SR; accountCode=5210
+- lineNo=3; description=IGL EcoCoat Premier water based polysiloxane sealant 500ml; quantity=1; unitPrice=65; amount=65; gstAmount=5.85; taxCode=SR; accountCode=5210
+- lineNo=4; description=Bodyguard Anti Bacteria Spray - Urban Bay; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=5; description=Bodyguard Anti Bacterial Spray - Jewel; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=6; description=Bodyguard Microfiber Coating Applicator 12 pc pkt; quantity=2; unitPrice=19.5; amount=39; gstAmount=3.51; taxCode=SR; accountCode=5210
+- lineNo=7; description=Shine mate foam pad 7" Diamond Green 34117-9; quantity=2; unitPrice=2; amount=4; gstAmount=0.36; taxCode=SR; accountCode=5210
+- lineNo=8; description=Shine mate foam pad 7" Diamond yellow 34117-1; quantity=5; unitPrice=2; amount=10; gstAmount=0.9; taxCode=SR; accountCode=5210
+- 1 additional line items omitted to keep context compact.
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=13; documentDate=2026-03-04; currency=SGD; subtotal=665; taxAmount=59.85; totalAmount=724.85; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-03-12
+- lineNo=1; description=IGL Ecocoat Kenzo Craphene Coating Kit 40ml; quantity=2; unitPrice=220; amount=440; gstAmount=39.6; taxCode=SR; accountCode=5210
+- lineNo=2; description=IGL EcoCoat Leather 30ml; quantity=3; unitPrice=75; amount=225; gstAmount=20.25; taxCode=SR; accountCode=5210
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 8656ms |
+| Input Tokens | 8378 |
+| Output Tokens | 1222 |
+| Total Tokens | 9600 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0118 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (4071 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.98
+  },
+  "vendorName": {
+    "value": "BEE & DEE PTE. LTD.",
+    "confidence": 1
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "23",
+    "confidence": 0.96
+  },
+  "documentDate": {
+    "value": "2026-05-13",
+    "confidence": 0.98
+  },
+  "dueDate": {
+    "value": "2026-05-22",
+    "confidence": 0.98
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 1
+  },
+  "subtotal": {
+    "value": "743.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "66.87",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "809.87",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202503947N",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "IGL Ecocoat Arcane 9H Graphene Coating 50ml",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "175.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "175.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "15.75",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.78
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "IGL EcoCoat Leather 30ml",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "2",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "80.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "160.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "14.40",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.78
+      }
+    },
+    {
+      "lineNo": 3,
+      "description": {
+        "value": "IGL Eoclean Blizzard 5 Liter",
+        "confidence": 0.97
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "96.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "96.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "8.64",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.78
+      }
+    },
+    {
+      "lineNo": 4,
+      "description": {
+        "value": "Shine mate foam pad 7 \"Diamond yellow\"",
+        "confidence": 0.95
+      },
+      "quantity": {
+        "value": "4",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "13.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "52.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "4.68",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.75
+      }
+    },
+    {
+      "lineNo": 5,
+      "description": {
+        "value": "Bodyguard Anti Bacterial Spray - Pear & Freesia",
+        "confidence": 0.96
+      },
+      "quantity": {
+        "value": "3",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "28.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "84.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "7.56",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.78
+      }
+    },
+    {
+      "lineNo": 6,
+      "description": {
+        "value": "Bodyguard Anti Bacterial Spray - Urban Bay",
+        "confidence": 0.96
+      },
+      "quantity": {
+        "value": "3",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "28.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "84.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "7.56",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.78
+      }
+    },
+    {
+      "lineNo": 7,
+      "description": {
+        "value": "Bodyguard Buffed Edgeless M/F Towel 380gsm 40x40cm Black",
+        "confidence": 0.97
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "26.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "26.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "2.34",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.74
+      }
+    },
+    {
+      "lineNo": 8,
+      "description": {
+        "value": "Bodyguard Buffed Edgeless M/F Towel 380gsm 40x40cm Red",
+        "confidence": 0.97
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "26.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "26.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "2.34",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.74
+      }
+    },
+    {
+      "lineNo": 9,
+      "description": {
+        "value": "Bodyguard Microfiber Coating Applicator 12 pc pkt",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "2",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "20.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "40.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "3.60",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.76
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:50.124Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | BEE & DEE PTE. LTD. | 1.00 |
+| Total Amount | 809.87 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 5210 | 0.78 | IGL Ecocoat Arcane 9H Graphene Coating 50ml |
+| 2 | 5210 | 0.78 | IGL EcoCoat Leather 30ml |
+| 3 | 5210 | 0.78 | IGL Eoclean Blizzard 5 Liter |
+| 4 | 5210 | 0.75 | Shine mate foam pad 7 "Diamond yellow" |
+| 5 | 5210 | 0.78 | Bodyguard Anti Bacterial Spray - Pear & Freesia |
+| 6 | 5210 | 0.78 | Bodyguard Anti Bacterial Spray - Urban Bay |
+| 7 | 5210 | 0.74 | Bodyguard Buffed Edgeless M/F Towel 380gsm 40x4... |
+| 8 | 5210 | 0.74 | Bodyguard Buffed Edgeless M/F Towel 380gsm 40x4... |
+| 9 | 5210 | 0.76 | Bodyguard Microfiber Coating Applicator 12 pc pkt |
+
+---
+
+## AI Request - 2026-06-04T04:06:48.375Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2064ms |
+| Input Tokens | 1833 |
+| Output Tokens | 30 |
+| Total Tokens | 1863 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0015 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (83 chars)</summary>
+
+```json
+{
+  "vendorName": "Phoenix Commercial Pte. Ltd.",
+  "customerName": "GD CARWASH PTE. LTD."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:44.869Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (23053 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="Ministry of Manpower".
+Normalized counterparty="Ministry of Manpower" using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 2 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=-; documentDate=2026-03-04; currency=SGD; subtotal=400; taxAmount=0; totalAmount=400; supplierGstNo=-; vendorName=Ministry of Manpower; customerName=-; approvedAt=2026-03-12
+- lineNo=1; description=Levy for Feb 2026; quantity=1; unitPrice=400; amount=400; gstAmount=-; taxCode=NA; accountCode=7800
+Record 2: category=TAX_COMPLIANCE; subCategory=OTHERS_TAX_COMPLIANCE; documentNumber=202510716E-PTE-01; documentDate=2026-02-04; currency=SGD; subtotal=400; taxAmount=-; totalAmount=400; supplierGstNo=-; vendorName=Ministry of Manpower; customerName=-; approvedAt=2026-03-05
+- lineNo=1; description=New charges for Jan 2026 - Foreign worker levy; quantity=1; unitPrice=400; amount=400; gstAmount=-; taxCode=NA; accountCode=7320
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 6679ms |
+| Input Tokens | 7767 |
+| Output Tokens | 705 |
+| Total Tokens | 8472 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0090 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (2162 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "PAYROLL",
+    "confidence": 0.98
+  },
+  "documentSubCategory": {
+    "value": "CPF_SUBMISSION",
+    "confidence": 0.97
+  },
+  "vendorName": {
+    "value": "Ministry of Manpower",
+    "confidence": 0.99
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "202510716E-PTE-01",
+    "confidence": 0.98
+  },
+  "documentDate": {
+    "value": "2026-05-06",
+    "confidence": 0.96
+  },
+  "dueDate": {
+    "value": "2026-05-18",
+    "confidence": 0.97
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "414.65",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 0.95
+  },
+  "totalAmount": {
+    "value": "414.65",
+    "confidence": 0.99
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Foreign worker levy - balance before new charges",
+        "confidence": 0.96
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "20.00",
+        "confidence": 0.95
+      },
+      "amount": {
+        "value": "20.00",
+        "confidence": 0.95
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "7320",
+        "confidence": 0.96
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "New charges for Apr 2026 - Foreign worker levy",
+        "confidence": 0.97
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "394.65",
+        "confidence": 0.98
+      },
+      "amount": {
+        "value": "394.65",
+        "confidence": 0.98
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 0.9
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "7320",
+        "confidence": 0.97
+      }
+    }
+  ],
+  "overallConfidence": 0.96
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:51.610Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | PAYROLL | 0.98 |
+| Vendor | Ministry of Manpower | 0.99 |
+| Total Amount | 414.65 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7320 | 0.96 | Foreign worker levy - balance before new charges |
+| 2 | 7320 | 0.97 | New charges for Apr 2026 - Foreign worker levy |
+
+---
+
+## AI Request - 2026-06-04T04:06:46.087Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (24785 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="BEE & DEE PTE. LTD.".
+Normalized counterparty="Bee & Dee Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=20; documentDate=2026-04-26; currency=SGD; subtotal=464; taxAmount=41.76; totalAmount=505.76; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=19; documentDate=2026-04-27; currency=SGD; subtotal=1405; taxAmount=126.45; totalAmount=1531.45; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+- lineNo=2; description=BodyGuard Hydrophobic Display Panel unit; quantity=1; unitPrice=400; amount=400; gstAmount=36; taxCode=SR; accountCode=5210
+- lineNo=3; description=IGL EcoCoat Premier water based polysiloxane sealant 500ml; quantity=1; unitPrice=65; amount=65; gstAmount=5.85; taxCode=SR; accountCode=5210
+- lineNo=4; description=Bodyguard Anti Bacteria Spray - Urban Bay; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=5; description=Bodyguard Anti Bacterial Spray - Jewel; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=6; description=Bodyguard Microfiber Coating Applicator 12 pc pkt; quantity=2; unitPrice=19.5; amount=39; gstAmount=3.51; taxCode=SR; accountCode=5210
+- lineNo=7; description=Shine mate foam pad 7" Diamond Green 34117-9; quantity=2; unitPrice=2; amount=4; gstAmount=0.36; taxCode=SR; accountCode=5210
+- lineNo=8; description=Shine mate foam pad 7" Diamond yellow 34117-1; quantity=5; unitPrice=2; amount=10; gstAmount=0.9; taxCode=SR; accountCode=5210
+- 1 additional line items omitted to keep context compact.
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=13; documentDate=2026-03-04; currency=SGD; subtotal=665; taxAmount=59.85; totalAmount=724.85; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-03-12
+- lineNo=1; description=IGL Ecocoat Kenzo Craphene Coating Kit 40ml; quantity=2; unitPrice=220; amount=440; gstAmount=39.6; taxCode=SR; accountCode=5210
+- lineNo=2; description=IGL EcoCoat Leather 30ml; quantity=3; unitPrice=75; amount=225; gstAmount=20.25; taxCode=SR; accountCode=5210
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 5601ms |
+| Input Tokens | 8378 |
+| Output Tokens | 429 |
+| Total Tokens | 8807 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0082 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1429 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.98
+  },
+  "vendorName": {
+    "value": "BEE & DEE PTE. LTD.",
+    "confidence": 0.99
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "25",
+    "confidence": 0.93
+  },
+  "documentDate": {
+    "value": "2026-05-20",
+    "confidence": 0.98
+  },
+  "dueDate": {
+    "value": "2026-05-30",
+    "confidence": 0.98
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "93.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "8.37",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "101.37",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202503947N",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "IGL Ecoclean Interior 5 liter",
+        "confidence": 0.96
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "60.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "60.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "5.40",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.75
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "Shine Mate 6\" Foam Pad Flat Face Yellow Art",
+        "confidence": 0.92
+      },
+      "quantity": {
+        "value": "3",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "11.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "33.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "2.97",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.75
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:51.756Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | BEE & DEE PTE. LTD. | 0.99 |
+| Total Amount | 101.37 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 5210 | 0.75 | IGL Ecoclean Interior 5 liter |
+| 2 | 5210 | 0.75 | Shine Mate 6" Foam Pad Flat Face Yellow Art |
+
+---
+
+## AI Request - 2026-06-04T04:06:49.877Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2165ms |
+| Input Tokens | 1862 |
+| Output Tokens | 30 |
+| Total Tokens | 1892 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0015 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (83 chars)</summary>
+
+```json
+{
+  "vendorName": "Phoenix Commercial Pte. Ltd.",
+  "customerName": "GD CARWASH PTE. LTD."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:47.549Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (24785 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="BEE & DEE PTE. LTD.".
+Normalized counterparty="Bee & Dee Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=20; documentDate=2026-04-26; currency=SGD; subtotal=464; taxAmount=41.76; totalAmount=505.76; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=19; documentDate=2026-04-27; currency=SGD; subtotal=1405; taxAmount=126.45; totalAmount=1531.45; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+- lineNo=2; description=BodyGuard Hydrophobic Display Panel unit; quantity=1; unitPrice=400; amount=400; gstAmount=36; taxCode=SR; accountCode=5210
+- lineNo=3; description=IGL EcoCoat Premier water based polysiloxane sealant 500ml; quantity=1; unitPrice=65; amount=65; gstAmount=5.85; taxCode=SR; accountCode=5210
+- lineNo=4; description=Bodyguard Anti Bacteria Spray - Urban Bay; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=5; description=Bodyguard Anti Bacterial Spray - Jewel; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=6; description=Bodyguard Microfiber Coating Applicator 12 pc pkt; quantity=2; unitPrice=19.5; amount=39; gstAmount=3.51; taxCode=SR; accountCode=5210
+- lineNo=7; description=Shine mate foam pad 7" Diamond Green 34117-9; quantity=2; unitPrice=2; amount=4; gstAmount=0.36; taxCode=SR; accountCode=5210
+- lineNo=8; description=Shine mate foam pad 7" Diamond yellow 34117-1; quantity=5; unitPrice=2; amount=10; gstAmount=0.9; taxCode=SR; accountCode=5210
+- 1 additional line items omitted to keep context compact.
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=13; documentDate=2026-03-04; currency=SGD; subtotal=665; taxAmount=59.85; totalAmount=724.85; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-03-12
+- lineNo=1; description=IGL Ecocoat Kenzo Craphene Coating Kit 40ml; quantity=2; unitPrice=220; amount=440; gstAmount=39.6; taxCode=SR; accountCode=5210
+- lineNo=2; description=IGL EcoCoat Leather 30ml; quantity=3; unitPrice=75; amount=225; gstAmount=20.25; taxCode=SR; accountCode=5210
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 6994ms |
+| Input Tokens | 8378 |
+| Output Tokens | 543 |
+| Total Tokens | 8921 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0087 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1597 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.98
+  },
+  "vendorName": {
+    "value": "BEE & DEE PTE. LTD.",
+    "confidence": 0.99
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "26",
+    "confidence": 0.97
+  },
+  "documentDate": {
+    "value": "2026-05-20",
+    "confidence": 0.98
+  },
+  "dueDate": {
+    "value": "2026-05-30",
+    "confidence": 0.98
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "50.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "4.50",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "54.50",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202503947N",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Meguiar's's two bucket Car Wash Bucket with Grit Guard Filter Net, Portable Vehicle",
+        "confidence": 0.86
+      },
+      "quantity": {
+        "value": "2",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "25.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "50.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "4.50",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.92
+      }
+    }
+  ],
+  "overallConfidence": 0.98
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:54.591Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | BEE & DEE PTE. LTD. | 0.99 |
+| Total Amount | 54.50 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 5210 | 0.92 | Meguiar's's two bucket Car Wash Bucket with Gri... |
+
+---
+
+## AI Request - 2026-06-04T04:06:52.316Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 2369ms |
+| Input Tokens | 1411 |
+| Output Tokens | 32 |
+| Total Tokens | 1443 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0012 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (81 chars)</summary>
+
+```json
+{
+  "vendorName": "GD CARWASH PTE. LTD.",
+  "customerName": "PHOENIX COMMERCIAL PTE LTD"
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:06:49.191Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (24785 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="BEE & DEE PTE. LTD.".
+Normalized counterparty="Bee & Dee Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=20; documentDate=2026-04-26; currency=SGD; subtotal=464; taxAmount=41.76; totalAmount=505.76; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=19; documentDate=2026-04-27; currency=SGD; subtotal=1405; taxAmount=126.45; totalAmount=1531.45; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=IGL Ecocoat Kenzo Graphene coating Kit 40ml; quantity=2; unitPrice=232; amount=464; gstAmount=41.76; taxCode=SR; accountCode=5210
+- lineNo=2; description=BodyGuard Hydrophobic Display Panel unit; quantity=1; unitPrice=400; amount=400; gstAmount=36; taxCode=SR; accountCode=5210
+- lineNo=3; description=IGL EcoCoat Premier water based polysiloxane sealant 500ml; quantity=1; unitPrice=65; amount=65; gstAmount=5.85; taxCode=SR; accountCode=5210
+- lineNo=4; description=Bodyguard Anti Bacteria Spray - Urban Bay; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=5; description=Bodyguard Anti Bacterial Spray - Jewel; quantity=6; unitPrice=33; amount=198; gstAmount=17.82; taxCode=SR; accountCode=5210
+- lineNo=6; description=Bodyguard Microfiber Coating Applicator 12 pc pkt; quantity=2; unitPrice=19.5; amount=39; gstAmount=3.51; taxCode=SR; accountCode=5210
+- lineNo=7; description=Shine mate foam pad 7" Diamond Green 34117-9; quantity=2; unitPrice=2; amount=4; gstAmount=0.36; taxCode=SR; accountCode=5210
+- lineNo=8; description=Shine mate foam pad 7" Diamond yellow 34117-1; quantity=5; unitPrice=2; amount=10; gstAmount=0.9; taxCode=SR; accountCode=5210
+- 1 additional line items omitted to keep context compact.
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=13; documentDate=2026-03-04; currency=SGD; subtotal=665; taxAmount=59.85; totalAmount=724.85; supplierGstNo=202503947N; vendorName=Bee & Dee Pte. Ltd.; customerName=-; approvedAt=2026-03-12
+- lineNo=1; description=IGL Ecocoat Kenzo Craphene Coating Kit 40ml; quantity=2; unitPrice=220; amount=440; gstAmount=39.6; taxCode=SR; accountCode=5210
+- lineNo=2; description=IGL EcoCoat Leather 30ml; quantity=3; unitPrice=75; amount=225; gstAmount=20.25; taxCode=SR; accountCode=5210
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 5559ms |
+| Input Tokens | 8040 |
+| Output Tokens | 554 |
+| Total Tokens | 8594 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0085 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1595 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "BEE & DEE PTE. LTD.",
+    "confidence": 0.99
+  },
+  "customerName": {
+    "value": "GD Carwash Pte. Ltd.",
+    "confidence": 0.98
+  },
+  "documentNumber": {
+    "value": "27",
+    "confidence": 0.98
+  },
+  "documentDate": {
+    "value": "2026-06-01",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-06-14",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": {
+    "value": "75.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "6.75",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "81.75",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "202503947N",
+    "confidence": 0.99
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Sonax Cleanstar 750ml",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "3",
+        "confidence": 0.99
+      },
+      "unitPrice": {
+        "value": "25.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "75.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "6.75",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.99
+      },
+      "accountCode": {
+        "value": "5210",
+        "confidence": 0.9
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:54.803Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | BEE & DEE PTE. LTD. | 0.99 |
+| Total Amount | 81.75 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 5210 | 0.90 | Sonax Cleanstar 750ml |
+
+---
+
+## AI Request - 2026-06-04T04:06:50.534Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (23882 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="Phoenix Commercial Pte. Ltd.".
+Normalized counterparty="Phoenix Commercial Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=1800001124/26; documentDate=2026-04-01; currency=SGD; subtotal=68; taxAmount=6.12; totalAmount=74.12; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=PRM - Internet Subscription #B2-Lot 13 and 14 & 2 Lots GD CARWASH PTE. LTD. / GD Auto Detailing (01-Apr-2026 to 30-Ap...; quantity=1; unitPrice=68; amount=68; gstAmount=6.12; taxCode=SR; accountCode=6900
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=1800001492/26; documentDate=2026-05-01; currency=SGD; subtotal=68; taxAmount=6.12; totalAmount=74.12; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=PRM - Internet Subscription #B2-13 And 14 & 2 Lots GD CARWASH PTE. LTD. / GD Auto Detailing (01-May-2026 to 31-May-2026); quantity=1; unitPrice=68; amount=68; gstAmount=6.12; taxCode=SR; accountCode=6900
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=A120323; documentDate=2026-04-24; currency=SGD; subtotal=188.84; taxAmount=17; totalAmount=205.84; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=Electricity Charges (Meter ID: IB2302776) for 01/03/26 to 31/03/26; quantity=842.84; unitPrice=0.1932; amount=162.84; gstAmount=14.66; taxCode=SR; accountCode=7110
+- lineNo=2; description=Admin Fee; quantity=1; unitPrice=26; amount=26; gstAmount=2.34; taxCode=SR; accountCode=7801
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 4873ms |
+| Input Tokens | 8498 |
+| Output Tokens | 370 |
+| Total Tokens | 8868 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0080 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1203 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Phoenix Commercial Pte. Ltd.",
+    "confidence": 1
+  },
+  "customerName": {
+    "value": "GD CARWASH PTE. LTD.",
+    "confidence": 0.98
+  },
+  "documentNumber": {
+    "value": "1800001864/26",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-06-01",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-06-15",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 1
+  },
+  "subtotal": {
+    "value": "68.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "6.12",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "74.12",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201805800K",
+    "confidence": 1
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "PRM - Internet Subscription #B2-13 And 14 & 2 Lots GD CARWASH PTE. LTD. / GD Auto Detailing (01-Jun-2026 to 30-Jun-2026)",
+        "confidence": 0.98
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "68.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "68.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "6.12",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 1
+      },
+      "accountCode": {
+        "value": "6900",
+        "confidence": 0.92
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:55.462Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Phoenix Commercial Pte. Ltd. | 1.00 |
+| Total Amount | 74.12 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6900 | 0.92 | PRM - Internet Subscription #B2-13 And 14 & 2 L... |
+
+---
+
+## AI Request - 2026-06-04T04:06:52.141Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (23882 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="Phoenix Commercial Pte. Ltd.".
+Normalized counterparty="Phoenix Commercial Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=1800001124/26; documentDate=2026-04-01; currency=SGD; subtotal=68; taxAmount=6.12; totalAmount=74.12; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=PRM - Internet Subscription #B2-Lot 13 and 14 & 2 Lots GD CARWASH PTE. LTD. / GD Auto Detailing (01-Apr-2026 to 30-Ap...; quantity=1; unitPrice=68; amount=68; gstAmount=6.12; taxCode=SR; accountCode=6900
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=1800001492/26; documentDate=2026-05-01; currency=SGD; subtotal=68; taxAmount=6.12; totalAmount=74.12; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=PRM - Internet Subscription #B2-13 And 14 & 2 Lots GD CARWASH PTE. LTD. / GD Auto Detailing (01-May-2026 to 31-May-2026); quantity=1; unitPrice=68; amount=68; gstAmount=6.12; taxCode=SR; accountCode=6900
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=A120323; documentDate=2026-04-24; currency=SGD; subtotal=188.84; taxAmount=17; totalAmount=205.84; supplierGstNo=201805800K; vendorName=Phoenix Commercial Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=Electricity Charges (Meter ID: IB2302776) for 01/03/26 to 31/03/26; quantity=842.84; unitPrice=0.1932; amount=162.84; gstAmount=14.66; taxCode=SR; accountCode=7110
+- lineNo=2; description=Admin Fee; quantity=1; unitPrice=26; amount=26; gstAmount=2.34; taxCode=SR; accountCode=7801
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 6766ms |
+| Input Tokens | 8527 |
+| Output Tokens | 781 |
+| Total Tokens | 9308 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0099 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (2334 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.99
+  },
+  "vendorName": {
+    "value": "Phoenix Commercial Pte. Ltd.",
+    "confidence": 1
+  },
+  "customerName": {
+    "value": "GD CARWASH PTE. LTD.",
+    "confidence": 1
+  },
+  "documentNumber": {
+    "value": "1800001863/26",
+    "confidence": 0.99
+  },
+  "documentDate": {
+    "value": "2026-06-01",
+    "confidence": 0.99
+  },
+  "dueDate": {
+    "value": "2026-06-15",
+    "confidence": 0.99
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 1
+  },
+  "subtotal": {
+    "value": "5060.00",
+    "confidence": 0.99
+  },
+  "taxAmount": {
+    "value": "455.40",
+    "confidence": 0.99
+  },
+  "totalAmount": {
+    "value": "5515.40",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201805800K",
+    "confidence": 1
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "License Fee for GD CARWASH PTE. LTD. Year 1 (01-Jun-2026 to 30-Jun-2026)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "4800.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "4800.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "432.00",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 1
+      },
+      "accountCode": {
+        "value": "7820",
+        "confidence": 0.78
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "License Fee for GD CARWASH PTE. LTD. Carpark Lot (01-Jun-2026 to 30-Jun-2026)",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "260.00",
+        "confidence": 0.99
+      },
+      "amount": {
+        "value": "260.00",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": "23.40",
+        "confidence": 0.99
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 1
+      },
+      "accountCode": {
+        "value": "7820",
+        "confidence": 0.7
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:06:58.975Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Phoenix Commercial Pte. Ltd. | 1.00 |
+| Total Amount | 5515.40 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7820 | 0.78 | License Fee for GD CARWASH PTE. LTD. Year 1 (01... |
+| 2 | 7820 | 0.70 | License Fee for GD CARWASH PTE. LTD. Carpark Lo... |
+
+---
+
+## AI Request - 2026-06-04T04:06:54.936Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (21748 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+
+All documents are vendor invoices.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 6525ms |
+| Input Tokens | 7402 |
+| Output Tokens | 501 |
+| Total Tokens | 7903 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0078 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (1479 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.98
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.97
+  },
+  "vendorName": {
+    "value": "GD CARWASH PTE. LTD.",
+    "confidence": 0.99
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "A121057",
+    "confidence": 0.96
+  },
+  "documentDate": {
+    "value": "2026-05-22",
+    "confidence": 0.98
+  },
+  "dueDate": {
+    "value": "2026-06-05",
+    "confidence": 0.98
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 0.99
+  },
+  "subtotal": null,
+  "taxAmount": null,
+  "totalAmount": {
+    "value": "236.32",
+    "confidence": 0.99
+  },
+  "supplierGstNo": {
+    "value": "201805800K",
+    "confidence": 0.95
+  },
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "Current charges for period 1 Apr 2026 - 30 Apr 2026",
+        "confidence": 0.86
+      },
+      "quantity": {
+        "value": "1",
+        "confidence": 0.9
+      },
+      "unitPrice": {
+        "value": "236.32",
+        "confidence": 0.97
+      },
+      "amount": {
+        "value": "236.32",
+        "confidence": 0.99
+      },
+      "gstAmount": {
+        "value": null,
+        "confidence": 0
+      },
+      "taxCode": {
+        "value": "SR",
+        "confidence": 0.88
+      },
+      "accountCode": {
+        "value": "7801",
+        "confidence": 0.72
+      }
+    }
+  ],
+  "overallConfidence": 0.93
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:07:01.522Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.98 |
+| Vendor | GD CARWASH PTE. LTD. | 0.99 |
+| Total Amount | 236.32 SGD | 0.99 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 7801 | 0.72 | Current charges for period 1 Apr 2026 - 30 Apr ... |
+
+---
+
+## AI Request - 2026-06-04T04:24:46.505Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_counterparty_hint |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (1967 chars)</summary>
+
+```
+Extract only the counterparty names from the first page of this business document.
+Return JSON with exactly 2 keys: vendorName and customerName.
+Return AT MOST ONE non-null field whenever possible.
+vendorName = the external supplier, seller, issuer, charging party, or service provider organization shown on the document.
+customerName = the buyer, bill-to, ship-to, applicant, account holder, or customer organization shown on the document.
+Prefer the corporate or legal entity name over any contact person name.
+If the same organization appears in abbreviated and expanded form, prefer the expanded legal or corporate name shown on the document.
+Only return the actual accounting counterparty. Ignore product names, plans, packages, subscriptions, service modules, business-profile subjects, searched entities, regulated entities, and reference companies unless they are clearly the buyer or seller on the document.
+If another company is mentioned only as the company profile purchased, searched company, subject company, or service target, do not return it as customerName.
+Use null when a field is not clearly visible.
+Do not infer, explain, or add extra keys.
+
+Current processing company context:
+- Official company name: GD Carwash Pte. Ltd.
+- UEN: 202510716E
+Use this context to disambiguate roles on the document:
+- If a visible organization matches the current company context, treat that as the in-scope company mention.
+- Do not mistake the in-scope company for the external issuer/supplier unless the document clearly shows the in-scope company is the seller or issuer.
+- If the in-scope company appears only as a searched entity, subject company, business-profile target, service target, regulated entity, or reference company, do not return it as customerName.
+- For vendor invoices and receipts issued to the in-scope company, prefer vendorName only.
+- For sales invoices issued by the in-scope company to an external customer, prefer customerName only.
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 3160ms |
+| Input Tokens | 1676 |
+| Output Tokens | 34 |
+| Total Tokens | 1710 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0014 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (106 chars)</summary>
+
+```json
+{
+  "vendorName": "Oaktree Accounting & Corporate Solutions Pte. Ltd.",
+  "customerName": "GD Cashwash Pte. Ltd."
+}
+```
+</details>
+
+---
+
+## AI Request - 2026-06-04T04:24:49.843Z
+
+### Request Details
+| Field | Value |
+|-------|-------|
+| Operation | document_extraction |
+| Model | gpt-5.4-mini |
+| Provider | openai |
+| Tenant | b117cdc7-bdbb-4597-9a79-af14faf67dc4 |
+| User | 1ff281ab-4946-434e-8318-f357dee1661a |
+| Temperature | 0.1 |
+| JSON Mode | true |
+| Images | 1 |
+| COA Context | No |
+
+<details>
+<summary>Prompt (24431 chars)</summary>
+
+```
+You are a document data extraction AI specializing in Singapore business documents. Analyze this document image and extract all relevant information with high accuracy.
+
+## Response Schema (JSON)
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE" | "ACCOUNTS_RECEIVABLE" | "TREASURY" | "TAX_COMPLIANCE" | "PAYROLL" | "CORPORATE_SECRETARIAL" | "CONTRACTS" | "FINANCIAL_REPORTS" | "INSURANCE" | "CORRESPONDENCE" | "OTHER",
+    "confidence": number between 0 and 1
+  },
+  "documentSubCategory": {
+    "value": "(see sub-category list below)",
+    "confidence": number between 0 and 1
+  } | null,
+  "vendorName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "customerName": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentNumber": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "documentDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "dueDate": {
+    "value": "YYYY-MM-DD",
+    "confidence": number
+  } | null,
+  "currency": {
+    "value": "3-letter currency code (e.g., SGD, USD)",
+    "confidence": number
+  },
+  "subtotal": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "taxAmount": {
+    "value": "decimal number as string",
+    "confidence": number
+  } | null,
+  "totalAmount": {
+    "value": "decimal number as string (required)",
+    "confidence": number
+  },
+  "supplierGstNo": {
+    "value": "string",
+    "confidence": number
+  } | null,
+  "homeCurrencyEquivalent": {
+    "currency": "3-letter code (e.g., SGD)",
+    "exchangeRate": "decimal number as string",
+    "subtotal": "decimal number as string" | null,
+    "taxAmount": "decimal number as string" | null,
+    "totalAmount": "decimal number as string",
+    "confidence": number
+  } | null,
+  "lineItems": [
+    {
+      "lineNo": number,
+      "description": { "value": "string", "confidence": number },
+      "quantity": { "value": "decimal string", "confidence": number } | null,
+      "unitPrice": { "value": "decimal string", "confidence": number } | null,
+      "amount": { "value": "decimal string", "confidence": number },
+      "gstAmount": { "value": "decimal string", "confidence": number } | null,
+      "taxCode": { "value": "string (SR, ZR, ES, NA, TX, etc.)", "confidence": number },
+      "accountCode": { "value": "string (e.g., 5000, 6000, 6100)", "confidence": number } | null
+    }
+  ],
+  "overallConfidence": number between 0 and 1
+}
+
+## Counterparty Field Rules (IMPORTANT)
+- For **ACCOUNTS_PAYABLE** documents, extract the supplier into "vendorName".
+- For **ACCOUNTS_RECEIVABLE** documents, extract the buyer into "customerName".
+- Do NOT put a person's name (e.g., "Raymond") unless the counterparty on the document is clearly an individual.
+
+## Singapore GST Tax Codes (REQUIRED for each line item)
+You MUST assign a taxCode to EVERY line item based on these rules:
+- **SR (Standard-Rated 9%)**: Most goods and services in Singapore. ONLY use if supplier has GST registration number.
+- **ZR (Zero-Rated 0%)**: Exports, international services, prescribed goods
+- **ES (Exempt Supply)**: Financial services, residential property sales/rentals, precious metals
+- **NA (Not Applicable)**: Use when supplier is NOT GST registered, or for non-business transactions, private expenses, government fees/fines
+- **TX (Taxable Purchases)**: Standard input tax claimable purchases
+- **BL (Blocked Input Tax)**: Club subscriptions, medical expenses, motor vehicle expenses
+
+**CRITICAL - GST Registration Check:**
+First, look for a GST Registration Number on the document. It typically appears as:
+- "GST Reg No: M12345678X" or "GST No: 12345678X"
+- Usually near the company name, address, or footer
+- Format: 9-10 alphanumeric characters (e.g., M12345678X, 200012345M)
+
+Determination logic:
+1. **If NO GST registration number found** â†’ ALL line items should use **NA** (supplier is not GST registered, no GST claimable)
+2. If GST registration found AND GST/tax amount is shown â†’ SR (9% GST)
+3. If GST registration found but explicitly marked as "0% GST" or "Zero-rated" â†’ ZR
+4. If GST registration found but no GST charged â†’ Could be ZR, ES, or exempt item
+5. If foreign supplier/service â†’ ZR or NA depending on nature
+6. When in doubt AND supplier is GST registered â†’ SR
+
+## Amount Validation Rules (CRITICAL)
+1. **Line Item Calculation**: For each line item, verify: quantity * unitPrice = amount (with small rounding tolerance)
+2. **Subtotal Validation**: Sum of all line item amounts MUST equal subtotal
+3. **Tax Calculation**: taxAmount should be approximately 9% of subtotal for SR items (or sum of line item gstAmounts)
+4. **Total Validation**: subtotal + taxAmount MUST equal totalAmount
+
+**IMPORTANT: For GST-INCLUSIVE documents (see GST-INCLUSIVE section below):**
+- The "amount" field should contain the PRE-GST amount (calculated by dividing inclusive price by 1.09)
+- Do NOT extract the GST-inclusive amount as the line item amount
+- This ensures validation rules work correctly
+
+If the document shows values that don't add up:
+- Extract the values as shown on the document
+- Lower your confidence score for affected fields
+- The document's printed values take precedence over calculations
+
+## Line Item GST Amount Calculation
+For each line item with taxCode = "SR":
+- gstAmount = amount * 0.09 (rounded to 2 decimal places)
+- If the document shows a different GST amount per line, use the document's value
+
+## GST-INCLUSIVE Pricing (CRITICAL - Common in Singapore)
+Many Singapore documents show prices INCLUSIVE of GST. Look for these indicators:
+- "GST inclusive", "GST included", "Inclusive of GST", "Price inclusive of GST"
+- "Inc. GST", "incl. GST", "w/ GST", "Including 9% GST"
+- "All prices are inclusive of GST", "Prices shown include GST"
+- Total amount shown with "GST @ 9% Inclusive" or similar notation
+
+**When amounts are GST-INCLUSIVE, you MUST calculate backwards to get the pre-GST amount:**
+- For 9% GST: Pre-GST Amount = Inclusive Amount / 1.09
+- For 8% GST: Pre-GST Amount = Inclusive Amount / 1.08
+
+**Example (9% GST):**
+- Document shows line item: $205.69 (GST inclusive)
+- Pre-GST amount (what to extract): $205.69 / 1.09 = $188.71
+- GST amount: $205.69 - $188.71 = $16.98 (or $188.71 * 0.09 = $16.98)
+- Extract: amount = "188.71", gstAmount = "16.98"
+
+**Validation for GST-inclusive documents:**
+- amount (pre-GST) * 1.09 should approximately equal the displayed inclusive price
+- Sum of all line item amounts = subtotal (pre-GST)
+- subtotal + taxAmount = totalAmount (which may equal the GST-inclusive total shown)
+
+**How to identify GST-inclusive vs GST-exclusive:**
+1. Look for explicit labels: "incl GST", "excl GST", "before GST", "after GST"
+2. Check if the math works: If line items sum to total without adding GST separately, it's likely inclusive
+3. Look at the GST breakdown section - does it show "GST @ 9% Inclusive" or "Add: GST 9%"?
+4. Singapore retail receipts and some invoices commonly use GST-inclusive pricing
+
+## Negative Amounts (Credits/Refunds) - CRITICAL
+Amounts shown in parentheses like ($17.50) or (17.50) represent NEGATIVE values:
+- Extract as negative decimal: "($17.50)" â†’ "-17.50"
+- Extract as negative decimal: "(17.50)" â†’ "-17.50"
+- These are credits, refunds, discounts, or reversals
+- When calculating subtotal: $25.00 + ($17.50) = $25.00 + (-$17.50) = $7.50
+- The subtotal must be the algebraic SUM of all line items including negatives
+
+## Document Categories and Sub-Categories
+Select the most appropriate category and sub-category based on document content:
+
+**ACCOUNTS_PAYABLE** (Vendor/Purchase Documents):
+- VENDOR_INVOICE: Purchase invoices & debit notes from suppliers
+- VENDOR_CREDIT_NOTE: Credit notes from suppliers
+- PURCHASE_ORDER: Purchase orders issued
+- DELIVERY_NOTE: Goods received notes, delivery receipts
+- VENDOR_STATEMENT: Supplier statements of account
+- VENDOR_QUOTATION: Quotations from suppliers
+- OTHERS_ACCOUNTS_PAYABLE: Other accounts payable documents
+
+**ACCOUNTS_RECEIVABLE** (Customer/Sales Documents):
+- SALES_INVOICE: Invoices & debit notes to customers
+- SALES_CREDIT_NOTE: Credit notes to customers
+- SALES_ORDER: Sales orders & quotations
+- DELIVERY_ORDER: Delivery orders issued
+- CUSTOMER_STATEMENT: Customer statements of account
+- OTHERS_ACCOUNTS_RECEIVABLE: Other accounts receivable documents
+
+**TREASURY** (Banking & Cash Management):
+- BANK_STATEMENT: Monthly/periodic bank statements
+- BANK_ADVICE: Debit/credit advices, TT advices, FD advices
+- PAYMENT_VOUCHER: Payment vouchers, cheques
+- RECEIPT_VOUCHER: Receipt vouchers
+- LOAN_DOCUMENT: Loan agreements, facility letters
+- OTHERS_TREASURY: Other treasury documents
+
+**TAX_COMPLIANCE** (Tax & Regulatory):
+- GST_RETURN: GST F5/F7 returns & assessments
+- INCOME_TAX: Form C/C-S, tax assessments, computations
+- OTHERS_TAX_COMPLIANCE: Other tax & regulatory documents
+
+**PAYROLL** (HR & Payroll):
+- PAYSLIP: Employee payslips
+- CPF_SUBMISSION: CPF contribution records
+- IR8A: Annual IR8A/IR8S forms
+- EXPENSE_CLAIM: Employee expense claims, timesheets
+- OTHERS_PAYROLL: Other payroll documents
+
+**CORPORATE_SECRETARIAL** (Corporate Governance):
+- BIZFILE: ACRA BizFile extracts
+- RESOLUTION: Board/shareholder resolutions
+- REGISTER: Statutory registers (members, directors, charges)
+- INCORPORATION: Constitution, incorporation cert, share certs
+- ANNUAL_RETURN: Annual returns, statutory forms
+- MEETING_MINUTES: AGM, EGM, board meeting minutes
+- OTHERS_CORPORATE_SECRETARIAL: Other corporate secretarial documents
+
+**CONTRACTS** (Legal Agreements):
+- VENDOR_CONTRACT: Supplier/service provider agreements, NDAs
+- CUSTOMER_CONTRACT: Customer/client agreements
+- EMPLOYMENT_CONTRACT: Employment agreements
+- LEASE_AGREEMENT: Property/equipment leases, licenses
+- OTHERS_CONTRACTS: Other contracts and legal agreements
+
+**FINANCIAL_REPORTS** (Reporting & Analysis):
+- FINANCIAL_STATEMENT: Balance sheet, P&L, cash flow
+- MANAGEMENT_REPORT: Trial balance, GL reports, management accounts
+- AUDIT_REPORT: Auditor's report, supporting schedules
+- OTHERS_FINANCIAL_REPORTS: Other financial reports
+
+**INSURANCE** (Risk Management):
+- INSURANCE_POLICY: Policies, certificates, renewals
+- INSURANCE_CLAIM: Claim documents
+- OTHERS_INSURANCE: Other insurance documents
+
+**CORRESPONDENCE** (General Communications):
+- LETTER: Business letters, memos, notices
+- EMAIL: Email correspondence
+- OTHERS_CORRESPONDENCE: Other correspondence
+
+**OTHER** (Uncategorized):
+- MISCELLANEOUS: Documents that don't fit other categories
+- SUPPORTING_DOCUMENT: Supporting/backup documents
+
+## Home Currency Equivalent (IMPORTANT for Singapore Tax)
+Many foreign currency invoices show SGD equivalent amounts for Singapore GST purposes.
+Look for sections labeled:
+- "Tax information", "For GST purposes", "Singapore Tax Information"
+- "Total Charges (excluding GST)" in SGD
+- "Total GST" in SGD
+- "Total charges (including GST)" in SGD
+- Exchange rate or conversion rate shown on document
+
+If you find SGD equivalents on a foreign currency invoice:
+- Extract them in "homeCurrencyEquivalent" object
+- The document's printed exchange rate takes precedence over any calculated rate
+- These amounts should be used for Singapore GST reporting
+
+Example: A USD invoice showing "Total charges (including GST): 507.97 SGD"
+{
+  "homeCurrencyEquivalent": {
+    "currency": "SGD",
+    "exchangeRate": "1.2940",
+    "subtotal": "465.48",
+    "taxAmount": "41.89",
+    "totalAmount": "507.97",
+    "confidence": 0.95
+  }
+}
+
+## Important Rules
+- All monetary values should be decimal numbers as strings (e.g., "1234.56" or "-17.50" for negatives)
+- Amounts in parentheses are NEGATIVE - convert (X) to -X
+- Dates should be in YYYY-MM-DD format
+- If a field is not visible or cannot be determined, use null
+- The totalAmount field is required - estimate if necessary
+- taxCode is REQUIRED for every line item - never leave it null
+- Be precise with numbers - extract exactly as shown, don't round
+- When extracting from Singapore invoices, assume SGD unless otherwise specified
+- Always select both documentCategory AND documentSubCategory when possible
+- If a document clearly belongs to a category but does not fit any listed specific sub-category, use that category's OTHERS_* sub-category
+- ALWAYS look for and extract home currency equivalents on foreign currency invoices
+
+## Line Item Completeness (CRITICAL)
+- For invoices, purchase orders, sales orders, delivery orders, and other structured item tables, extract EVERY visible business row as its own line item
+- There is NO 30-line limit and NO 20-line limit
+- Continue through all pages and continuation tables until all line items are captured
+- If a row wraps across multiple text lines, keep it as one line item
+- The extracted lineItems count should match the visible item-row count whenever possible
+- Only aggregate line items for simple receipts/claims as described below
+
+## Line Item Aggregation (IMPORTANT for Receipts & Claims)
+For certain document types, DO NOT extract every individual item as a separate line item.
+Instead, aggregate items into meaningful categories for accounting purposes.
+
+### CRITICAL: Always Consolidate Minor Adjustments
+The following should NEVER appear as separate line items - always include them in the main line item amount:
+- **Service Charge** - add to the main line item (e.g., F&B total should include service charge)
+- **Rounding Adjustments** - include in the nearest appropriate line item
+- **Discounts** - deduct from the relevant line item, don't show as negative line
+- **Minor fees** (tray return charge, takeaway fee, etc.) - include in main line item
+- **Tips/Gratuity** - include in the service line item unless separately invoiced
+
+**Rationale**: These minor adjustments provide no accounting value when separated. For expense claims and receipts, what matters is the total spent per category, not the breakdown of charges vs adjustments.
+
+### When to Aggregate:
+
+**1. Restaurant/Dining Receipts**
+- Create a SINGLE line item: "Food & Beverage" or "Meals"
+- This amount should include: food, drinks, service charge, rounding, minor fees
+- The line item amount = subtotal before GST (including service charge and adjustments)
+- DO NOT list each food/drink item separately
+- DO NOT create separate lines for service charge, rounding, or discounts
+
+**2. Cafe/Coffee Shop Receipts**
+- Create a SINGLE line: "Refreshments" or "Team Refreshments"
+- Include all drinks, snacks, and any service/adjustment fees
+- DO NOT list individual coffees, pastries, or fees separately
+
+**3. Entertainment/Events**
+- Create minimal lines by major category only: "Event Admission", "F&B", "Merchandise"
+- Include booking fees, service fees, convenience fees in the main category
+- DO NOT create separate lines for fees and adjustments
+
+**4. Supermarket/Grocery Receipts**
+- For office/pantry purchases: SINGLE line as "Office Pantry" or "Office Supplies"
+- Include bag charges, rounding in the total
+- For inventory: AGGREGATE by product category unless specifically for resale
+
+**5. Hotel/Accommodation**
+- Maximum 2-3 lines for major expense types:
+  - "Room Charges" (all room nights + resort fees + service charges)
+  - "Food & Beverage" (all F&B + service charges)
+  - "Other Services" (laundry, internet, parking combined if applicable)
+- DO NOT create separate lines for service charges, tourism taxes, or adjustments
+
+**6. Transport/Parking**
+- SINGLE line: "Parking" or "Transport"
+- Include all fees, surcharges, admin fees in the total
+- DO NOT separate booking fees, platform fees, etc.
+
+**7. Petty Cash Claims/Expense Reports**
+- Group by expense nature: "Office Supplies", "Transport", "Meals"
+- Each category should be a single line with total amount
+
+### When NOT to Aggregate (keep individual items):
+- Official invoices for products/services purchased for resale
+- Capital expenditure items (equipment, assets)
+- Items that need individual tracking for warranty/support
+- Professional services invoices with distinct billable services
+- Inventory purchases for resale where item-level tracking is needed
+
+### Aggregation Guidelines:
+- **Minimize line items**: For receipts/claims, aim for 1-3 lines maximum
+- Use clear, professional descriptions (e.g., "Food & Beverage", not "Various food items")
+- The aggregated amount MUST equal the subtotal before GST (including all adjustments)
+- GST should be calculated on the final aggregated subtotal
+- Set quantity to 1 for aggregated items
+- Set unitPrice equal to the aggregated amount
+- **Never create lines for amounts under $5 that are adjustments/fees** - always consolidate them
+
+## Available Chart of Accounts (for accountCode assignment)
+IMPORTANT: You SHOULD attempt to assign an accountCode to every line item based on the description.
+Even if uncertain, make your best guess - the user can correct it later.
+
+- 4100: Sales revenue (REVENUE)
+- 4110: Product sales (REVENUE)
+- 4120: Sales discounts (REVENUE)
+- 4130: Sales returns (REVENUE)
+- 4200: Service revenue (REVENUE)
+- 4210: Consulting income (REVENUE)
+- 4220: Commission income (REVENUE)
+- 4230: Management fee income (REVENUE)
+- 4300: Interest income (REVENUE)
+- 4400: Other income (REVENUE)
+- 4410: Dividend income (REVENUE)
+- 4420: Rental income (REVENUE)
+- 4430: Foreign exchange gain (REVENUE)
+- 4440: Gain on disposal of assets (REVENUE)
+- 4450: Government grants (REVENUE)
+- 5100: Direct labour (EXPENSE)
+- 5200: Direct materials (EXPENSE)
+- 5210: Purchases (EXPENSE)
+- 5220: Purchase discounts (EXPENSE)
+- 5230: Purchase returns (EXPENSE)
+- 5240: Freight inwards (EXPENSE)
+- 5300: Manufacturing overhead (EXPENSE)
+- 5400: Direct software costs (EXPENSE)
+- 5500: Subcontractor costs (EXPENSE)
+- 5600: Other direct costs (EXPENSE)
+- 6100: Advertising & marketing (EXPENSE)
+- 6110: Website & online marketing (EXPENSE)
+- 6120: Promotional materials (EXPENSE)
+- 6200: Bank charges (EXPENSE)
+- 6210: Merchant fees (EXPENSE)
+- 6300: Depreciation expense (EXPENSE)
+- 6310: Amortisation expense (EXPENSE)
+- 6400: Insurance (EXPENSE)
+- 6410: General insurance (EXPENSE)
+- 6420: Professional indemnity insurance (EXPENSE)
+- 6430: Workman compensation insurance (EXPENSE)
+- 6500: Office supplies (EXPENSE)
+- 6510: Stationery & printing (EXPENSE)
+- 6520: Postage & courier (EXPENSE)
+- 6600: Professional fees (EXPENSE)
+- 6610: Accounting fees (EXPENSE)
+- 6620: Audit fees (EXPENSE)
+- 6630: Legal fees (EXPENSE)
+- 6640: Consulting fees (EXPENSE)
+- 6650: Corporate secretarial fees (EXPENSE)
+- 6660: Tax advisory fees (EXPENSE)
+- 6700: Rent expense (EXPENSE)
+- 6710: Office rent (EXPENSE)
+- 6720: Equipment rental (EXPENSE)
+- 6800: Repairs & maintenance (EXPENSE)
+- 6810: Building maintenance (EXPENSE)
+- 6820: Equipment maintenance (EXPENSE)
+- 6830: IT maintenance (EXPENSE)
+- 6900: Telephone & internet (EXPENSE)
+- 6910: Mobile phone expenses (EXPENSE)
+- 6920: Software subscriptions (EXPENSE)
+- 7000: Travel & entertainment (EXPENSE)
+- 7010: Local transport (EXPENSE)
+- 7020: Overseas travel (EXPENSE)
+- 7030: Staff meals & entertainment (EXPENSE)
+- 7040: Client entertainment (EXPENSE)
+- 7100: Utilities (EXPENSE)
+- 7110: Electricity (EXPENSE)
+- 7120: Water (EXPENSE)
+- 7200: Salaries & wages (EXPENSE)
+- 7210: Director fees (EXPENSE)
+- 7220: Staff salaries (EXPENSE)
+- 7230: Bonus (EXPENSE)
+- 7240: Overtime (EXPENSE)
+- 7250: Commission expense (EXPENSE)
+- 7300: CPF contributions (EXPENSE)
+- 7310: Skills development levy (EXPENSE)
+- 7320: Foreign worker levy (EXPENSE)
+- 7400: Training & development (EXPENSE)
+- 7410: Staff welfare (EXPENSE)
+- 7420: Medical expenses (EXPENSE)
+- 7430: Staff insurance (EXPENSE)
+- 7440: Recruitment expenses (EXPENSE)
+- 7500: Foreign exchange loss (EXPENSE)
+- 7600: Bad debts (EXPENSE)
+- 7610: Provision for doubtful debts (EXPENSE)
+- 7700: Interest expense (EXPENSE)
+- 7710: Loan interest (EXPENSE)
+- 7720: Finance lease interest (EXPENSE)
+- 7800: Government fees & licenses (EXPENSE)
+- 7801: Administrative fees (EXPENSE)
+- 7810: Business registration fees (EXPENSE)
+- 7820: Permit & license fees (EXPENSE)
+- 7830: Property tax (EXPENSE)
+- 7900: Other expenses (EXPENSE)
+- 7910: Donations (EXPENSE)
+- 7920: Fines & penalties (EXPENSE)
+- 7930: Loss on disposal of assets (EXPENSE)
+- 7940: Miscellaneous expenses (EXPENSE)
+- 8100: Income tax expense (EXPENSE)
+- 8200: Deferred tax expense (EXPENSE)
+
+Guidelines for account selection:
+- 4xxx: Revenue accounts (use for sales, service income, other income)
+- 5xxx: Cost of goods sold (use for direct costs, purchases, manufacturing)
+- 6xxx-7xxx: Operating expenses (use for admin, marketing, utilities, rent, professional fees, software, subscriptions, cloud services, etc.)
+- 8xxx: Tax expenses (use for income tax, deferred tax)
+
+Common mappings for vendor invoices (Accounts Payable):
+- Software/SaaS subscriptions (e.g., Wix, Adobe, Microsoft) â†’ 6xxx (IT/Software expenses)
+- Professional services (legal, accounting, consulting) â†’ 6xxx (Professional fees)
+- Office supplies, utilities â†’ 6xxx (Administrative expenses)
+- Inventory purchases â†’ 5xxx (Cost of goods sold)
+- Advertising, marketing â†’ 6xxx (Marketing expenses)
+
+Set lower confidence (0.5-0.7) if the account mapping is a best guess rather than obvious.
+
+## Additional Context
+## Learned Counterparty Context
+Lightweight pass selected vendorName="Oaktree Accounting & Corporate Solutions Pte. Ltd.".
+Normalized counterparty="Oaktree Accounting & Corporate Solutions Pte. Ltd." using ALIAS matching (confidence 1.00).
+Database match mode=CONTACT_ID using 3 recent approved current records.
+Use these records only as consistency hints for naming, sub-category tendencies, line descriptions, taxCode, and accountCode assignment.
+Do not copy document numbers, dates, quantities, or amounts unless they are visible on the current document.
+Record 1: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=INV-1000000323; documentDate=2026-04-01; currency=SGD; subtotal=150; taxAmount=0; totalAmount=150; supplierGstNo=-; vendorName=Oaktree Accounting & Corporate Solutions Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=Childcare leave claims - Jason; quantity=1; unitPrice=150; amount=150; gstAmount=0; taxCode=NA; accountCode=6600
+Record 2: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=INV-1000000337; documentDate=2026-04-17; currency=SGD; subtotal=525; taxAmount=0; totalAmount=525; supplierGstNo=-; vendorName=Oaktree Accounting & Corporate Solutions Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=ACC-MTH, Monthly account services; Period: Mar 2026; quantity=1; unitPrice=300; amount=300; gstAmount=0; taxCode=NA; accountCode=6610
+- lineNo=2; description=PAY-MTH, Monthly payroll services; Period: Mar 2026; quantity=1; unitPrice=225; amount=225; gstAmount=0; taxCode=NA; accountCode=6600
+Record 3: category=ACCOUNTS_PAYABLE; subCategory=VENDOR_INVOICE; documentNumber=INV-1000000340; documentDate=2026-04-22; currency=SGD; subtotal=655; taxAmount=0; totalAmount=655; supplierGstNo=-; vendorName=Oaktree Accounting & Corporate Solutions Pte. Ltd.; customerName=-; approvedAt=2026-05-04
+- lineNo=1; description=PAY-WPA, Work Permit Application Applicant: Kathiravan; quantity=1; unitPrice=250; amount=250; gstAmount=0; taxCode=NA; accountCode=6600
+- lineNo=2; description=PAY-DIS, Disbursement - MOM WP fees Application: Kathiravan; quantity=1; unitPrice=70; amount=70; gstAmount=0; taxCode=NA; accountCode=7800
+- lineNo=3; description=PAY-DIS, Disbursement - MOM WP fees Application: Prashad (Withdrawn); quantity=1; unitPrice=35; amount=35; gstAmount=0; taxCode=NA; accountCode=7800
+- lineNo=4; description=PAY-CCL, Childcare Leave Application Applicant: Dennis; quantity=1; unitPrice=150; amount=150; gstAmount=0; taxCode=NA; accountCode=6600
+- lineNo=5; description=PAY-CCL, Childcare Leave Application Applicant: Emma; quantity=1; unitPrice=150; amount=150; gstAmount=0; taxCode=NA; accountCode=6600
+
+Uploading Company: GD Carwash Pte. Ltd.
+Business Nature: Car washing and related services
+Home Currency: SGD
+
+IMPORTANT BUSINESS CONTEXT:
+- "GD Carwash Pte. Ltd." is uploading this document for processing
+- For ACCOUNTS_PAYABLE (vendor invoices/bills): "GD Carwash Pte. Ltd." is the BUYER/RECIPIENT - the vendor/supplier name must be a DIFFERENT company
+- For ACCOUNTS_RECEIVABLE (sales invoices): "GD Carwash Pte. Ltd." is the SELLER/ISSUER - extract the customer name as the other party
+```
+</details>
+
+### Response
+| Field | Value |
+|-------|-------|
+| Status | ✅ Success |
+| Latency | 8283ms |
+| Input Tokens | 7685 |
+| Output Tokens | 690 |
+| Total Tokens | 8375 |
+| Pricing Mode | Direct |
+| Estimated Cost | $0.0089 |
+| Connector Source | tenant |
+| Connector ID | d7c5cca3-7b9b-43bf-b15c-521d94805f86 |
+| Connector Name | Oaktree |
+
+<details>
+<summary>Response (2161 chars)</summary>
+
+```json
+{
+  "documentCategory": {
+    "value": "ACCOUNTS_PAYABLE",
+    "confidence": 0.99
+  },
+  "documentSubCategory": {
+    "value": "VENDOR_INVOICE",
+    "confidence": 0.98
+  },
+  "vendorName": {
+    "value": "Oaktree Accounting & Corporate Solutions Pte. Ltd.",
+    "confidence": 1
+  },
+  "customerName": null,
+  "documentNumber": {
+    "value": "INV-1000000350",
+    "confidence": 1
+  },
+  "documentDate": {
+    "value": "2026-05-06",
+    "confidence": 1
+  },
+  "dueDate": {
+    "value": "2026-05-20",
+    "confidence": 1
+  },
+  "currency": {
+    "value": "SGD",
+    "confidence": 1
+  },
+  "subtotal": {
+    "value": "480.00",
+    "confidence": 1
+  },
+  "taxAmount": {
+    "value": "0.00",
+    "confidence": 1
+  },
+  "totalAmount": {
+    "value": "480.00",
+    "confidence": 1
+  },
+  "supplierGstNo": null,
+  "homeCurrencyEquivalent": null,
+  "lineItems": [
+    {
+      "lineNo": 1,
+      "description": {
+        "value": "ACC-MTH, Monthly account services; Period: Apr 2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "1.00",
+        "confidence": 1
+      },
+      "unitPrice": {
+        "value": "300.00",
+        "confidence": 1
+      },
+      "amount": {
+        "value": "300.00",
+        "confidence": 1
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 1
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 1
+      },
+      "accountCode": {
+        "value": "6610",
+        "confidence": 0.98
+      }
+    },
+    {
+      "lineNo": 2,
+      "description": {
+        "value": "PAY-MTH, Monthly payroll services; Period: Apr 2026",
+        "confidence": 0.99
+      },
+      "quantity": {
+        "value": "4.00",
+        "confidence": 1
+      },
+      "unitPrice": {
+        "value": "45.00",
+        "confidence": 1
+      },
+      "amount": {
+        "value": "180.00",
+        "confidence": 1
+      },
+      "gstAmount": {
+        "value": "0.00",
+        "confidence": 1
+      },
+      "taxCode": {
+        "value": "NA",
+        "confidence": 1
+      },
+      "accountCode": {
+        "value": "6600",
+        "confidence": 0.93
+      }
+    }
+  ],
+  "overallConfidence": 0.99
+}
+```
+</details>
+
+---
+
+## Extraction Results - 2026-06-04T04:24:58.184Z
+
+### Document Fields
+| Field | Value | Confidence |
+|-------|-------|------------|
+| Document Category | ACCOUNTS_PAYABLE | 0.99 |
+| Vendor | Oaktree Accounting & Corporate Solutions Pte. Ltd. | 1.00 |
+| Total Amount | 480.00 SGD | 1.00 |
+
+### Line Item Account Codes
+| Line | Account Code | Confidence | Description |
+|------|--------------|------------|-------------|
+| 1 | 6610 | 0.98 | ACC-MTH, Monthly account services; Period: Apr ... |
+| 2 | 6600 | 0.93 | PAY-MTH, Monthly payroll services; Period: Apr ... |
+
+---
+

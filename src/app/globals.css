@@ -616,6 +616,10 @@
     content: '\00a0';
   }
 
+  .faq-rich-header p {
+    margin: 0;
+  }
+
   .form-rich-render ul,
   .form-rich-render ol {
     padding-left: 1.25rem;

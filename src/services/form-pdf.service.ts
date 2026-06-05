@@ -3,6 +3,8 @@ import {
   type FormField,
   type FormUpload,
 } from '@/generated/prisma';
+import DOMPurify from 'dompurify';
+import { JSDOM } from 'jsdom';
 import { generatePDF } from '@/services/document-export.service';
 import {
   evaluateCondition,
@@ -15,6 +17,7 @@ import {
   toAnswerRecord,
   toUploadIds,
 } from '@/lib/form-utils';
+import { extractSignatureDataUrl, isSignatureDataUrl } from '@/lib/signature-utils';
 import { prisma } from '@/lib/prisma';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
 import { StorageKeys } from '@/lib/storage';
@@ -28,7 +31,6 @@ import {
 
 const FILE_NAME_TEMPLATE_PATTERN = /\[([a-zA-Z0-9_]+)\]/g;
 const FILE_NAME_INVALID_CHARS_PATTERN = /[<>"/\\|?*\u0000-\u001F]+/g;
-const DATA_IMAGE_URI_PATTERN = /^data:image\/[a-z0-9.+-]+;base64,/i;
 const FILE_NAME_FALLBACK = 'file';
 const FILE_NAME_MAX_LENGTH = 220;
 
@@ -105,7 +107,7 @@ function toFileNameTemplateValue(value: unknown): string {
 
   if (typeof value === 'string') {
     const trimmed = value.trim();
-    if (!trimmed || DATA_IMAGE_URI_PATTERN.test(trimmed)) return '';
+    if (!trimmed || isSignatureDataUrl(trimmed)) return '';
     return normalizeTemplateValue(trimmed, 240);
   }
 
@@ -408,6 +410,60 @@ export function buildSubmissionPdfHtml(input: {
       .replace(/"/g, '&quot;');
   }
 
+  const purify = DOMPurify(new JSDOM('').window);
+
+  function sanitizeRichHtml(value: string): string {
+    const prepared = value
+      .replace(/<p><\/p>/gi, '<p>&nbsp;</p>')
+      .replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '<p>&nbsp;</p>');
+
+    return purify.sanitize(prepared, {
+      ALLOWED_TAGS: [
+        'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike',
+        'ul', 'ol', 'li', 'a', 'span', 'div', 'hr',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+      ],
+      ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class'],
+    });
+  }
+
+  function richTextToPlainText(value: string): string {
+    return value
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#039;/gi, "'")
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  function renderRichText(value: string): string {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    return /<\/?[a-z][\s\S]*>/i.test(trimmed)
+      ? sanitizeRichHtml(trimmed)
+      : `<div style="white-space:pre-wrap">${esc(trimmed)}</div>`;
+  }
+
+  function isHttpUrl(value: string | null | undefined): value is string {
+    if (!value) return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
   // Map layoutWidth (25/33/50/66/75/100) to CSS grid column span out of 12
   function colSpan(layoutWidth: number | null | undefined): number {
     const map: Record<number, number> = { 25: 3, 33: 4, 50: 6, 66: 8, 75: 9, 100: 12 };
@@ -417,6 +473,11 @@ export function buildSubmissionPdfHtml(input: {
   function isChoiceInlineRight(field: FormField): boolean {
     const validation = parseObject(field.validation);
     return validation?.choiceInlineRight === true;
+  }
+
+  function shouldRenderInfoBlockInPdf(field: FormField): boolean {
+    const validation = parseObject(field.validation);
+    return field.type === 'PARAGRAPH' && validation?.infoShowInPdf === true;
   }
 
   function fieldGridStyle(field: FormField, span: number): string {
@@ -440,10 +501,93 @@ export function buildSubmissionPdfHtml(input: {
       </div>`;
   }
 
+  function renderInformationBlock(field: FormField): string {
+    if (!shouldRenderInfoBlockInPdf(field)) return '';
+
+    const span = colSpan(field.layoutWidth);
+    const inputType = field.inputType || 'info_text';
+    const blockStyle = fieldGridStyle(field, span);
+
+    if (inputType === 'info_heading_1' || inputType === 'info_heading_2' || inputType === 'info_heading_3') {
+      const tag = inputType === 'info_heading_1' ? 'h1' : inputType === 'info_heading_2' ? 'h2' : 'h3';
+      const title = richTextToPlainText(field.label || field.subtext || '').trim();
+      const description = field.label ? richTextToPlainText(field.subtext || '').trim() : '';
+      if (!title && !description) return '';
+      return `
+        <div class="info-block info-heading ${tag}" style="${blockStyle}">
+          ${title ? `<${tag}>${esc(title)}</${tag}>` : ''}
+          ${description ? `<p>${esc(description)}</p>` : ''}
+        </div>`;
+    }
+
+    if (inputType === 'info_image') {
+      const imageUrl = field.placeholder?.trim() || '';
+      const caption = field.subtext?.trim() || field.label?.trim() || '';
+      return `
+        <div class="info-block" style="${blockStyle}">
+          <div class="info-box">
+            ${isHttpUrl(imageUrl)
+              ? `<img class="info-image" src="${esc(imageUrl)}" alt="${esc(richTextToPlainText(caption) || 'Information image')}" />`
+              : `<div class="info-muted">Image URL is not available.</div>`}
+            ${caption ? `<div class="info-caption">${esc(richTextToPlainText(caption))}</div>` : ''}
+          </div>
+        </div>`;
+    }
+
+    if (inputType === 'info_url') {
+      const href = field.placeholder?.trim() || '';
+      const label = richTextToPlainText(field.subtext || field.label || href).trim();
+      return `
+        <div class="info-block" style="${blockStyle}">
+          <div class="info-box">
+            ${isHttpUrl(href)
+              ? `<a class="info-link" href="${esc(href)}">${esc(label || href)}</a>`
+              : `<span class="info-muted">URL is not available.</span>`}
+          </div>
+        </div>`;
+    }
+
+    if (inputType === 'info_faq') {
+      const headerHtml = renderRichText(field.label || 'Commonly Asked Questions');
+      const faqItems = parseChoiceOptions(field.options)
+        .map((option, index) => {
+          const questionHtml = renderRichText(option.label || `Question ${index + 1}`);
+          const answerHtml = renderRichText(option.bodyHtml || '');
+          if (!questionHtml && !answerHtml) return '';
+          return `
+            <div class="faq-item">
+              ${questionHtml ? `<div class="faq-question">${questionHtml}</div>` : ''}
+              ${answerHtml ? `<div class="faq-answer">${answerHtml}</div>` : ''}
+            </div>`;
+        })
+        .filter(Boolean)
+        .join('');
+      if (!headerHtml && !faqItems) return '';
+      return `
+        <div class="info-block" style="${blockStyle}">
+          <div class="info-box faq-box">
+            ${headerHtml ? `<div class="faq-main-header">${headerHtml}</div>` : ''}
+            ${faqItems}
+          </div>
+        </div>`;
+    }
+
+    const infoHtml = renderRichText(field.subtext || field.label || '');
+    if (!infoHtml) return '';
+    return `
+      <div class="info-block" style="${blockStyle}">
+        <div class="info-box info-rich">${infoHtml}</div>
+      </div>`;
+  }
+
   function renderFieldValue(field: FormField, value: unknown): string {
     if (field.type === 'SIGNATURE') {
-      if (typeof value === 'string' && value.trim().length > 0) {
-        return `<img src="${esc(value)}" alt="Signature" style="max-height:80px;max-width:240px;object-fit:contain;display:block;" />`;
+      const signatureDataUrl = extractSignatureDataUrl(value);
+      if (signatureDataUrl) {
+        return `
+          <div class="signature-value">
+            <img src="${esc(signatureDataUrl)}" alt="Signature" />
+          </div>`;
       }
       return `<span class="empty">\u2014</span>`;
     }
@@ -476,7 +620,8 @@ export function buildSubmissionPdfHtml(input: {
   }
 
   function renderField(field: FormField, value: unknown): string {
-    if (field.type === 'PARAGRAPH' || field.type === 'HTML' || field.type === 'HIDDEN') return '';
+    if (field.type === 'PARAGRAPH') return renderInformationBlock(field);
+    if (field.type === 'HTML' || field.type === 'HIDDEN') return '';
     const span = colSpan(field.layoutWidth);
 
     // choiceInlineRight: label on left, selected option pills on right
@@ -528,7 +673,7 @@ export function buildSubmissionPdfHtml(input: {
           const v = input.answers[sf.key];
           return Array.isArray(v) ? v.some((item) => !isEmptyValue(item)) : !isEmptyValue(v);
         });
-        if ((evaluateCondition(field.condition, input.answers) || hasData) && sectionFields.length > 0 && rowCount > 0) {
+        if ((evaluateCondition(field.condition, input.answers, { fields: input.fields }) || hasData) && sectionFields.length > 0 && rowCount > 0) {
           items.push({ kind: 'repeat', title: field.label?.trim() || 'Section', hint: field.subtext?.trim() || null, fields: sectionFields, rowCount });
         }
         i = cursor;
@@ -538,7 +683,7 @@ export function buildSubmissionPdfHtml(input: {
     }
 
     if (field.type === 'HIDDEN') continue;
-    if (!evaluateCondition(field.condition, input.answers)) continue;
+    if (!evaluateCondition(field.condition, input.answers, { fields: input.fields })) continue;
     items.push({ kind: 'field', field });
   }
 
@@ -552,7 +697,7 @@ export function buildSubmissionPdfHtml(input: {
         rowAnswers[k] = Array.isArray(v) ? v[rowIndex] : (rowIndex === 0 ? v : undefined);
       }
       const rowFields = item.fields.filter(
-        (f) => f.type !== 'HIDDEN' && evaluateCondition(f.condition, rowAnswers)
+        (f) => f.type !== 'HIDDEN' && evaluateCondition(f.condition, rowAnswers, { fields: item.fields })
       );
       if (rowFields.length === 0) return '';
       return `
@@ -610,6 +755,37 @@ export function buildSubmissionPdfHtml(input: {
   /* --- Misc --- */
   .empty { color: #d1d5db; }
   .file-name { color: #374151; word-break: break-all; }
+  .signature-value {
+    display: flex; align-items: center; justify-content: flex-start;
+    min-height: 88px; background: #fff; border-radius: 4px; padding: 8px;
+  }
+  .signature-value img {
+    display: block; max-height: 72px; max-width: 260px; width: auto; height: auto;
+    object-fit: contain;
+  }
+  .info-block { page-break-inside: avoid; min-width: 0; }
+  .info-box {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 6px;
+    padding: 10px 12px; color: #111827; font-size: 12px; line-height: 1.55;
+  }
+  .info-rich p, .faq-answer p, .faq-main-header p { margin: 0 0 8px; }
+  .info-rich p:last-child, .faq-answer p:last-child, .faq-main-header p:last-child { margin-bottom: 0; }
+  .info-rich ul, .info-rich ol, .faq-answer ul, .faq-answer ol { margin: 6px 0 8px 18px; }
+  .info-heading { padding-top: 4px; }
+  .info-heading h1 { font-size: 18px; margin: 0 0 4px; line-height: 1.3; }
+  .info-heading h2 { font-size: 15px; margin: 0 0 4px; line-height: 1.35; }
+  .info-heading h3 { font-size: 13px; margin: 0 0 4px; line-height: 1.4; }
+  .info-heading p { font-size: 12px; color: #6b7280; margin: 0; white-space: pre-wrap; }
+  .info-image { display: block; max-width: 100%; max-height: 240px; object-fit: contain; margin: 0 auto; }
+  .info-caption { border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 11px; margin-top: 8px; padding-top: 7px; }
+  .info-link { color: #1d4ed8; text-decoration: underline; word-break: break-all; }
+  .info-muted { color: #9ca3af; }
+  .faq-box { padding: 0; overflow: hidden; }
+  .faq-main-header { background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-weight: 700; padding: 10px 12px; }
+  .faq-item { border-top: 1px solid #e5e7eb; padding: 10px 12px; }
+  .faq-item:first-of-type { border-top: 0; }
+  .faq-question { font-weight: 600; color: #111827; margin-bottom: 5px; }
+  .faq-answer { color: #374151; }
   /* --- Repeat sections (full-width within grid) --- */
   .repeat-section { margin-bottom: 20px; grid-column: span 12; }
   .repeat-title { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 4px; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }

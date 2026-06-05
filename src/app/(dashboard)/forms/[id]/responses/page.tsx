@@ -19,10 +19,13 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  CalendarClock,
   ChevronLeft,
+  Copy,
   Download,
   ExternalLink,
   GripVertical,
+  History,
   Paperclip,
   RefreshCw,
   Trash2,
@@ -41,8 +44,11 @@ import { useUpsertUserPreference, useUserPreference } from '@/hooks/use-user-pre
 import {
   useDeleteFormDraft,
   useDeleteFormResponse,
+  useExtendFormDraftExpiry,
   useForm,
+  useFormDraftAuditLogs,
   useFormResponses,
+  useGenerateFormDraftResumeLink,
   type FormResponsesResult,
 } from '@/hooks/use-forms';
 import {
@@ -58,6 +64,7 @@ import {
   parseFormResponseTableSettings,
   sanitizeResponseColumnWidths,
 } from '@/lib/form-utils';
+import { copyTextToClipboard } from '@/lib/clipboard';
 import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 20;
@@ -72,7 +79,7 @@ const SUBMISSION_OPEN_COLUMN_WIDTH = 56;
 const SUBMISSION_ACTION_COLUMN_WIDTH = 64;
 const DRAFT_SELECT_COLUMN_WIDTH = 72;
 const DRAFT_OPEN_COLUMN_WIDTH = 56;
-const DRAFT_ACTION_COLUMN_WIDTH = 64;
+const DRAFT_ACTION_COLUMN_WIDTH = 128;
 const DEFAULT_SUBMISSION_SORT_COLUMN_ID = RESPONSE_COLUMN_SUBMITTED_ID;
 const DEFAULT_DRAFT_SORT_COLUMN_ID = DRAFT_COLUMN_SAVED_ID;
 
@@ -131,6 +138,14 @@ function formatDate(value: string | Date): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function toDateTimeLocalInputValue(value: string | Date): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
 }
 
 function toAnswerRecord(value: unknown): Record<string, unknown> {
@@ -299,6 +314,9 @@ export default function FormResponsesPage() {
   const [draggedDraftColumnId, setDraggedDraftColumnId] = useState<string | null>(null);
   const [submissionToDelete, setSubmissionToDelete] = useState<SubmissionItem | null>(null);
   const [draftToDelete, setDraftToDelete] = useState<DraftItem | null>(null);
+  const [draftToExtend, setDraftToExtend] = useState<DraftItem | null>(null);
+  const [draftAuditTarget, setDraftAuditTarget] = useState<DraftItem | null>(null);
+  const [draftExpiryInput, setDraftExpiryInput] = useState('');
   const [selectedSubmissionIds, setSelectedSubmissionIds] = useState<Set<string>>(new Set());
   const [selectedDraftIds, setSelectedDraftIds] = useState<Set<string>>(new Set());
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
@@ -338,6 +356,13 @@ export default function FormResponsesPage() {
   });
   const deleteResponseMutation = useDeleteFormResponse(formId);
   const deleteDraftMutation = useDeleteFormDraft(formId);
+  const generateDraftResumeLinkMutation = useGenerateFormDraftResumeLink(formId);
+  const extendDraftExpiryMutation = useExtendFormDraftExpiry(formId);
+  const {
+    data: draftAuditLogs,
+    isLoading: isDraftAuditLoading,
+    error: draftAuditError,
+  } = useFormDraftAuditLogs(formId, draftAuditTarget?.id || null, !!draftAuditTarget);
   const { data: tablePreferenceData } = useUserPreference<ResponseTablePreference>(tablePreferenceKey, {
     enabled: !!formId,
   });
@@ -881,6 +906,51 @@ export default function FormResponsesPage() {
       }
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Failed to delete draft');
+    }
+  }
+
+  async function handleCopyDraftResumeLink(draft: DraftItem) {
+    try {
+      const result = await generateDraftResumeLinkMutation.mutateAsync({
+        draftId: draft.id,
+        reason: 'Generated resume link from draft entries',
+      });
+      if (await copyTextToClipboard(result.resumeUrl)) {
+        success('Draft resume link copied');
+        return;
+      }
+
+      showError('Failed to copy draft resume link');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to copy draft resume link');
+    }
+  }
+
+  function openExtendDraftExpiry(draft: DraftItem) {
+    setDraftToExtend(draft);
+    setDraftExpiryInput(toDateTimeLocalInputValue(draft.expiresAt));
+  }
+
+  async function handleExtendDraftExpiry() {
+    if (!draftToExtend) return;
+
+    const expiresAt = new Date(draftExpiryInput);
+    if (!draftExpiryInput || Number.isNaN(expiresAt.getTime())) {
+      showError('Choose a valid expiry date');
+      return;
+    }
+
+    try {
+      await extendDraftExpiryMutation.mutateAsync({
+        draftId: draftToExtend.id,
+        expiresAt: expiresAt.toISOString(),
+        reason: 'Extended draft expiry from draft entries',
+      });
+      success('Draft expiry extended');
+      setDraftToExtend(null);
+      setDraftExpiryInput('');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to extend draft expiry');
     }
   }
 
@@ -1701,8 +1771,7 @@ export default function FormResponsesPage() {
                     className="px-2 py-2 font-medium text-center"
                     style={{ width: `${DRAFT_ACTION_COLUMN_WIDTH}px`, minWidth: `${DRAFT_ACTION_COLUMN_WIDTH}px` }}
                   >
-                    <span className="sr-only">Delete</span>
-                    <Trash2 className="mx-auto h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
+                    <span className="sr-only">Actions</span>
                   </th>
                 </tr>
               </thead>
@@ -1811,7 +1880,48 @@ export default function FormResponsesPage() {
                         className="px-2 py-3.5 align-middle"
                         style={{ width: `${DRAFT_ACTION_COLUMN_WIDTH}px` }}
                       >
-                        <div className="flex justify-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                        <div className="flex justify-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                          <Tooltip content="Copy resume link">
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-text-secondary hover:bg-background-tertiary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleCopyDraftResumeLink(draft);
+                              }}
+                              aria-label="Copy draft resume link"
+                              disabled={generateDraftResumeLinkMutation.isPending}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip content="Extend expiry">
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-text-secondary hover:bg-background-tertiary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openExtendDraftExpiry(draft);
+                              }}
+                              aria-label="Extend draft expiry"
+                              disabled={extendDraftExpiryMutation.isPending}
+                            >
+                              <CalendarClock className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip content="Audit log">
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-text-secondary hover:bg-background-tertiary hover:text-text-primary"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setDraftAuditTarget(draft);
+                              }}
+                              aria-label="View draft audit log"
+                            >
+                              <History className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
                           <Tooltip content="Delete draft">
                             <button
                               type="button"
@@ -1887,6 +1997,115 @@ export default function FormResponsesPage() {
         confirmLabel="Delete draft"
         isLoading={deleteDraftMutation.isPending}
       />
+
+      <Modal
+        isOpen={!!draftToExtend}
+        onClose={() => {
+          setDraftToExtend(null);
+          setDraftExpiryInput('');
+        }}
+        title="Extend draft expiry"
+        description={draftToExtend ? `Set a later expiry date for draft ${draftToExtend.code}.` : undefined}
+        size="sm"
+      >
+        <ModalBody className="space-y-3">
+          <label htmlFor="draft-expiry" className="text-sm font-medium text-text-primary">
+            New expiry date
+          </label>
+          <input
+            id="draft-expiry"
+            type="datetime-local"
+            value={draftExpiryInput}
+            onChange={(event) => setDraftExpiryInput(event.target.value)}
+            className="w-full rounded-md border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-oak-primary"
+          />
+          {draftToExtend && (
+            <p className="text-xs text-text-secondary">
+              Current expiry: {formatDate(draftToExtend.expiresAt)}
+            </p>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setDraftToExtend(null);
+              setDraftExpiryInput('');
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleExtendDraftExpiry}
+            isLoading={extendDraftExpiryMutation.isPending}
+          >
+            Extend expiry
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        isOpen={!!draftAuditTarget}
+        onClose={() => setDraftAuditTarget(null)}
+        title="Draft audit log"
+        description={draftAuditTarget ? `Activity for draft ${draftAuditTarget.code}.` : undefined}
+        size="lg"
+      >
+        <ModalBody className="space-y-3">
+          {isDraftAuditLoading ? (
+            <p className="text-sm text-text-secondary">Loading audit log...</p>
+          ) : draftAuditError instanceof Error ? (
+            <p className="text-sm text-status-error">{draftAuditError.message}</p>
+          ) : !draftAuditLogs || draftAuditLogs.length === 0 ? (
+            <p className="text-sm text-text-secondary">No audit log entries found for this draft.</p>
+          ) : (
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+              {draftAuditLogs.map((log) => {
+                const actor = log.user
+                  ? `${log.user.firstName} ${log.user.lastName}`.trim() || log.user.email
+                  : 'System / public respondent';
+                const metadataText = log.metadata && typeof log.metadata === 'object'
+                  ? JSON.stringify(log.metadata, null, 2)
+                  : '';
+
+                return (
+                  <div key={log.id} className="rounded-lg border border-border-primary bg-background-primary p-3">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-text-primary">{log.summary || log.action}</p>
+                        <p className="text-xs text-text-secondary">{formatDate(log.createdAt)}</p>
+                      </div>
+                      <span className="inline-flex w-fit rounded-full bg-background-tertiary px-2 py-0.5 text-2xs font-medium text-text-secondary">
+                        {log.action}
+                      </span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-1 gap-1 text-xs text-text-secondary sm:grid-cols-2">
+                      <div>Actor: {actor}</div>
+                      <div>IP: {log.ipAddress || '-'}</div>
+                    </div>
+                    {log.reason && (
+                      <p className="mt-2 text-xs text-text-secondary">Reason: {log.reason}</p>
+                    )}
+                    {metadataText && (
+                      <pre className="mt-2 max-h-32 overflow-auto rounded bg-background-elevated p-2 text-2xs text-text-secondary">
+                        {metadataText}
+                      </pre>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" size="sm" onClick={() => setDraftAuditTarget(null)}>
+            Close
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       <Modal
         isOpen={!!attachmentDialog}

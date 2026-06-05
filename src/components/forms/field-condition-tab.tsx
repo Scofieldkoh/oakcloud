@@ -11,6 +11,8 @@ const CONDITION_OPERATORS: Array<{ value: ConditionConfig['operator']; label: st
   { value: 'contains', label: 'Contains' },
   { value: 'is_empty', label: 'Is empty' },
   { value: 'not_empty', label: 'Is not empty' },
+  { value: 'is_visible', label: 'Is visible' },
+  { value: 'is_not_visible', label: 'Is not visible' },
 ];
 
 function isConditionGroup(condition: FieldConditionConfig | null): condition is ConditionGroupConfig {
@@ -233,6 +235,9 @@ export function FieldConditionTab({
                     onChange={(e) => updateRule(groupIndex, ruleIndex, (current) => ({
                       ...current,
                       operator: e.target.value as ConditionConfig['operator'],
+                      value: ['is_empty', 'not_empty', 'is_visible', 'is_not_visible'].includes(e.target.value)
+                        ? undefined
+                        : current.value,
                     }))}
                     className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
                   >
@@ -242,7 +247,7 @@ export function FieldConditionTab({
                   </select>
                 </div>
 
-                {!['is_empty', 'not_empty'].includes(rule.operator) && (
+                {!['is_empty', 'not_empty', 'is_visible', 'is_not_visible'].includes(rule.operator) && (
                   <FormInput
                     label="Conditional value"
                     value={String(rule.value ?? '')}

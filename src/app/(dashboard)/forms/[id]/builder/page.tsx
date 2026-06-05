@@ -69,6 +69,8 @@ import {
 } from '@/lib/form-utils';
 import type { BuilderField } from '@/components/forms/builder-utils';
 
+type I18nOptionTranslation = NonNullable<FormI18nFieldTranslation['options']>[number];
+
 function matchesPresetOptionLabels(options: BuilderField['options'], preset: readonly string[]): boolean {
   return options.length === preset.length && options.every((option, index) => option.label === preset[index]);
 }
@@ -123,6 +125,21 @@ function parseNotificationEmailInput(value: string): { emails: string[]; invalid
 
 function hasValue(value: string | null | undefined): value is string {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function getOptionTranslationLabel(value: I18nOptionTranslation | undefined): string | undefined {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && typeof value.label === 'string') return value.label;
+  return undefined;
+}
+
+function hasOptionTranslationValue(value: I18nOptionTranslation | undefined): boolean {
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (!value || typeof value !== 'object') return false;
+  return (
+    (typeof value.label === 'string' && value.label.trim().length > 0) ||
+    (typeof value.bodyHtml === 'string' && value.bodyHtml.trim().length > 0)
+  );
 }
 
 const LOCALE_DISPLAY_NAMES: Record<string, string> = {
@@ -291,7 +308,7 @@ function getTranslatedValueByKey(
     const [, fieldKey, indexText] = optionMatch;
     const optionIndex = Number.parseInt(indexText, 10);
     if (Number.isNaN(optionIndex) || optionIndex < 0) return undefined;
-    return translation.fields[fieldKey]?.options?.[optionIndex];
+    return getOptionTranslationLabel(translation.fields[fieldKey]?.options?.[optionIndex]);
   }
 
   return undefined;
@@ -1034,7 +1051,7 @@ export default function FormBuilderPage() {
         (nextFieldTranslation.placeholder && nextFieldTranslation.placeholder.trim().length > 0) ||
         (nextFieldTranslation.subtext && nextFieldTranslation.subtext.trim().length > 0) ||
         (nextFieldTranslation.helpText && nextFieldTranslation.helpText.trim().length > 0) ||
-        ((nextFieldTranslation.options || []).some((text) => text.trim().length > 0))
+        ((nextFieldTranslation.options || []).some(hasOptionTranslationValue))
       );
 
       const nextFields = { ...(currentLocaleTranslation.fields || {}) };
@@ -1110,7 +1127,7 @@ export default function FormBuilderPage() {
           if (Number.isNaN(optionIndex) || optionIndex < 0) continue;
           const nextFieldTranslation: FormI18nFieldTranslation = { ...(nextFields[fieldKey] || {}) };
           const nextOptions = [...(nextFieldTranslation.options || [])];
-          if (shouldWriteValue(nextOptions[optionIndex])) {
+          if (shouldWriteValue(getOptionTranslationLabel(nextOptions[optionIndex]))) {
             nextOptions[optionIndex] = translatedText;
           }
           nextFieldTranslation.options = nextOptions;
@@ -2231,7 +2248,7 @@ export default function FormBuilderPage() {
                                           <div className="min-w-0 rounded-lg border border-border-primary bg-background-secondary px-3 py-2">
                                             <input
                                               type="text"
-                                              value={optionTranslations[option.index] || ''}
+                                              value={getOptionTranslationLabel(optionTranslations[option.index]) || ''}
                                               onChange={(e) => {
                                                 const nextOptions = [...optionTranslations];
                                                 nextOptions[option.index] = e.target.value;

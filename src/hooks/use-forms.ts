@@ -17,6 +17,8 @@ import type {
   FormDraftDetailResult,
   FormWarningListItem,
   RecentFormSubmissionItem,
+  GenerateFormDraftResumeLinkResult,
+  ExtendFormDraftExpiryResult,
 } from '@/services/form-builder.service';
 
 export type { FormListItem, FormListResult, FormDetail, FormResponsesResult, FormResponseDetailResult };
@@ -24,6 +26,26 @@ export type { FormListItem, FormListResult, FormDetail, FormResponsesResult, For
 export type RecentFormSubmission = Omit<RecentFormSubmissionItem, 'submittedAt' | 'status'> & {
   submittedAt: string;
   status: string;
+};
+
+export type FormDraftAuditLog = {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  entityName: string | null;
+  summary: string | null;
+  reason: string | null;
+  metadata: unknown;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null;
 };
 
 export type FormWarningSummary = Omit<FormWarningListItem, 'latestSubmittedAt'> & {
@@ -141,6 +163,20 @@ async function fetchFormDraft(
   return response.json();
 }
 
+async function fetchFormDraftAuditLogs(
+  id: string,
+  draftId: string,
+  tenantId?: string | null
+): Promise<FormDraftAuditLog[]> {
+  const response = await fetch(withTenant(`/api/forms/${id}/drafts/${draftId}/audit`, tenantId));
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch draft audit log');
+  }
+
+  return response.json();
+}
+
 async function deleteFormResponseRequest(
   id: string,
   submissionId: string,
@@ -206,6 +242,53 @@ async function deleteFormDraftRequest(
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.error || 'Failed to delete draft');
+  }
+
+  return response.json();
+}
+
+async function generateFormDraftResumeLinkRequest(
+  id: string,
+  draftId: string,
+  tenantId?: string | null,
+  reason?: string
+): Promise<GenerateFormDraftResumeLinkResult> {
+  const params = new URLSearchParams();
+  if (tenantId) params.set('tenantId', tenantId);
+
+  const response = await fetch(`/api/forms/${id}/drafts/${draftId}${params.toString() ? `?${params.toString()}` : ''}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to generate resume link');
+  }
+
+  return response.json();
+}
+
+async function extendFormDraftExpiryRequest(
+  id: string,
+  draftId: string,
+  expiresAt: string,
+  tenantId?: string | null,
+  reason?: string
+): Promise<ExtendFormDraftExpiryResult> {
+  const params = new URLSearchParams();
+  if (tenantId) params.set('tenantId', tenantId);
+
+  const response = await fetch(`/api/forms/${id}/drafts/${draftId}${params.toString() ? `?${params.toString()}` : ''}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expiresAt, reason }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to extend draft expiry');
   }
 
   return response.json();
@@ -321,6 +404,8 @@ export const formKeys = {
     [...formKeys.all, 'response-detail', id, submissionId, tenantId] as const,
   draftDetail: (id: string, draftId: string, tenantId?: string | null) =>
     [...formKeys.all, 'draft-detail', id, draftId, tenantId] as const,
+  draftAudit: (id: string, draftId: string, tenantId?: string | null) =>
+    [...formKeys.all, 'draft-audit', id, draftId, tenantId] as const,
   recentSubmissions: (limit: number, tenantId?: string | null) =>
     [...formKeys.all, 'recent-submissions', limit, tenantId] as const,
   warnings: (limit: number, tenantId?: string | null) =>
@@ -403,6 +488,17 @@ export function useFormDraft(id: string | null, draftId: string | null) {
     queryKey: formKeys.draftDetail(id || '', draftId || '', activeTenantId),
     queryFn: () => fetchFormDraft(id!, draftId!, activeTenantId),
     enabled: !!id && !!draftId && (session?.isSuperAdmin ? !!activeTenantId : true),
+  });
+}
+
+export function useFormDraftAuditLogs(id: string | null, draftId: string | null, enabled: boolean = true) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useQuery({
+    queryKey: formKeys.draftAudit(id || '', draftId || '', activeTenantId),
+    queryFn: () => fetchFormDraftAuditLogs(id!, draftId!, activeTenantId),
+    enabled: enabled && !!id && !!draftId && (session?.isSuperAdmin ? !!activeTenantId : true),
   });
 }
 
@@ -535,6 +631,31 @@ export function useDeleteFormDraft(id: string) {
       deleteFormDraftRequest(id, draftId, activeTenantId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: formKeys.allResponsesForForm(id) });
+    },
+  });
+}
+
+export function useGenerateFormDraftResumeLink(id: string) {
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useMutation({
+    mutationFn: ({ draftId, reason }: { draftId: string; reason?: string }) =>
+      generateFormDraftResumeLinkRequest(id, draftId, activeTenantId, reason),
+  });
+}
+
+export function useExtendFormDraftExpiry(id: string) {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useMutation({
+    mutationFn: ({ draftId, expiresAt, reason }: { draftId: string; expiresAt: string; reason?: string }) =>
+      extendFormDraftExpiryRequest(id, draftId, expiresAt, activeTenantId, reason),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: formKeys.allResponsesForForm(id) });
+      queryClient.invalidateQueries({ queryKey: formKeys.draftDetail(id, variables.draftId, activeTenantId) });
     },
   });
 }

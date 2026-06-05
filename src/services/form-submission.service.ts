@@ -22,6 +22,7 @@ import {
   parseFormAiSettings,
   parseFormNotificationSettings,
   parseFormSubmissionAiReview,
+  parseChoiceOptions,
   parseObject,
   pruneHiddenConditionalAnswers,
   isProgressStopInfoBlock,
@@ -31,6 +32,7 @@ import {
   type PublicFormDefinition,
   type PublicFormField,
 } from '@/lib/form-utils';
+import { SIGNATURE_DATA_URL_MAX_LENGTH, extractSignatureDataUrl } from '@/lib/signature-utils';
 import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
 import { getAppBaseUrl, sendEmail, type EmailAttachment } from '@/lib/email';
@@ -53,7 +55,7 @@ import {
   resolveSubmissionPdfFileName,
   resolveSubmissionUploadFileNames,
 } from './form-pdf.service';
-import { loadDraftByAccess } from './form-draft.service';
+import { loadDraftByAccess, sanitizeDraftMetadataForClient } from './form-draft.service';
 
 export type { PublicFormField, PublicFormDefinition };
 
@@ -600,6 +602,21 @@ function hasItemValue(item: unknown): boolean {
   return true;
 }
 
+function hasRequiredFieldItemValue(field: FormField, item: unknown): boolean {
+  if (
+    field.type === 'SHORT_TEXT' &&
+    field.inputType === 'phone' &&
+    parseObject(field.validation)?.splitPhoneCountryCode === true
+  ) {
+    if (typeof item !== 'string') return false;
+    const trimmed = item.trim();
+    const match = trimmed.match(/^\+\d{1,4}\s*(.*)$/);
+    return (match ? match[1] : trimmed).trim().length > 0;
+  }
+
+  return hasItemValue(item);
+}
+
 function sanitizeTimeTimezoneValue(value: unknown): { time: string; timezone: string } | null {
   const record = parseObject(value);
   if (!record) return null;
@@ -614,7 +631,9 @@ function sanitizeTimeTimezoneValue(value: unknown): { time: string; timezone: st
   };
 }
 
-function sanitizeChoiceEntry(entry: unknown): string | { value: string; detailText?: string } | null {
+type SanitizedChoiceEntry = string | { value: string; detailText?: string; children?: SanitizedChoiceEntry[] };
+
+function sanitizeChoiceEntry(entry: unknown): SanitizedChoiceEntry | null {
   if (typeof entry === 'string') {
     const trimmed = entry.trim();
     if (!trimmed) return null;
@@ -627,14 +646,21 @@ function sanitizeChoiceEntry(entry: unknown): string | { value: string; detailTe
   if (!valueText) return null;
   const detailTextRaw = typeof record.detailText === 'string' ? record.detailText.trim() : '';
   const detailText = detailTextRaw ? detailTextRaw.slice(0, 10_000) : '';
+  const children = Array.isArray(record.children)
+    ? record.children
+      .slice(0, 100)
+      .map((child) => sanitizeChoiceEntry(child))
+      .filter((child): child is SanitizedChoiceEntry => !!child)
+    : [];
 
-  if (!detailText) {
+  if (!detailText && children.length === 0) {
     return { value: valueText.slice(0, 10_000) };
   }
 
   return {
     value: valueText.slice(0, 10_000),
-    detailText,
+    ...(detailText ? { detailText } : {}),
+    ...(children.length > 0 ? { children } : {}),
   };
 }
 
@@ -844,9 +870,70 @@ function validateTimeTimezoneFieldValue(field: FormField, value: unknown): void 
   }
 }
 
+function choiceAnswerValue(entry: unknown): string | null {
+  if (typeof entry === 'string') {
+    const trimmed = entry.trim();
+    return trimmed || null;
+  }
+
+  const record = parseObject(entry);
+  const value = typeof record?.value === 'string' ? record.value.trim() : '';
+  return value || null;
+}
+
+function choiceAnswerChildren(entry: unknown): unknown[] {
+  const record = parseObject(entry);
+  return Array.isArray(record?.children) ? record.children : [];
+}
+
+function validateRequiredSelectedChoiceOptions(field: FormField, value: unknown): void {
+  if (field.type !== 'MULTIPLE_CHOICE') return;
+
+  const options = parseChoiceOptions(field.options);
+  const hasRequiredOption = options.some((option) => option.requiredSelected || option.childOptions.some((childOption) => childOption.requiredSelected));
+  if (!hasRequiredOption) return;
+  if (isEmptyValue(value)) return;
+
+  const validateChoiceEntries = (entries: unknown[], availableOptions: typeof options): void => {
+    const selectedValues = new Set(entries.map(choiceAnswerValue).filter((item): item is string => !!item));
+    const missingOption = availableOptions.find((option) => option.requiredSelected && !selectedValues.has(option.value));
+    if (missingOption) {
+      throw new Error(`${missingOption.label} is required for ${field.label || field.key}.`);
+    }
+
+    for (const entry of entries) {
+      const entryValue = choiceAnswerValue(entry);
+      const option = availableOptions.find((candidate) => candidate.value === entryValue);
+      if (!option || option.childOptions.length === 0) continue;
+      const childEntries = choiceAnswerChildren(entry);
+      if (option.childSelectionMode === 'single' && childEntries.length > 1) {
+        throw new Error(`${option.label} allows only one nested option for ${field.label || field.key}.`);
+      }
+      validateChoiceEntries(childEntries, option.childOptions);
+    }
+  };
+
+  if (!Array.isArray(value)) {
+    validateChoiceEntries([], options);
+    return;
+  }
+
+  const hasNestedRows = value.some(Array.isArray);
+  if (!hasNestedRows) {
+    validateChoiceEntries(value, options);
+    return;
+  }
+
+  for (const rowValue of value) {
+    if (isEmptyValue(rowValue)) continue;
+    validateChoiceEntries(Array.isArray(rowValue) ? rowValue : [], options);
+  }
+}
+
 function validatePublicAnswerConstraints(fields: FormField[], answers: Record<string, unknown>): void {
   for (const field of fields) {
     const value = answers[field.key];
+    validateRequiredSelectedChoiceOptions(field, value);
 
     if (Array.isArray(value)) {
       for (const [index, item] of value.entries()) {
@@ -888,7 +975,7 @@ function hasActiveProgressStopInfoBlock(fields: FormField[], answers: Record<str
     const field = fields[index];
 
     if (isRepeatStartMarker(field)) {
-      const sectionVisible = evaluateCondition(parseObject(field.condition), answers);
+      const sectionVisible = evaluateCondition(parseObject(field.condition), answers, { fields });
       const sectionFields: FormField[] = [];
       let cursor = index + 1;
 
@@ -906,7 +993,7 @@ function hasActiveProgressStopInfoBlock(fields: FormField[], answers: Record<str
           for (const sectionField of sectionFields) {
             if (
               isProgressStopInfoBlock(sectionField) &&
-              evaluateCondition(parseObject(sectionField.condition), rowAnswers)
+              evaluateCondition(parseObject(sectionField.condition), rowAnswers, { fields: sectionFields })
             ) {
               return true;
             }
@@ -921,7 +1008,7 @@ function hasActiveProgressStopInfoBlock(fields: FormField[], answers: Record<str
     if (isRepeatEndMarker(field) || field.type === 'PAGE_BREAK') continue;
     if (
       isProgressStopInfoBlock(field) &&
-      evaluateCondition(parseObject(field.condition), answers)
+      evaluateCondition(parseObject(field.condition), answers, { fields })
     ) {
       return true;
     }
@@ -956,14 +1043,14 @@ function validateRequiredFieldValue(
   }
 
   if (Array.isArray(value)) {
-    const hasAllValues = value.length > 0 && value.every((item) => hasItemValue(item));
+    const hasAllValues = value.length > 0 && value.every((item) => hasRequiredFieldItemValue(field, item));
     if (!hasAllValues) {
       throw new Error(`${field.label || field.key} is required`);
     }
     return;
   }
 
-  if (!hasItemValue(value)) {
+  if (!hasRequiredFieldItemValue(field, value)) {
     throw new Error(`${field.label || field.key} is required`);
   }
 }
@@ -977,7 +1064,7 @@ function validateRequiredPublicAnswers(
     const field = fields[index];
 
     if (isRepeatStartMarker(field)) {
-      const sectionVisible = evaluateCondition(parseObject(field.condition), answers);
+      const sectionVisible = evaluateCondition(parseObject(field.condition), answers, { fields });
       let cursor = index + 1;
 
       while (cursor < fields.length && !isRepeatEndMarker(fields[cursor])) {
@@ -988,7 +1075,7 @@ function validateRequiredPublicAnswers(
           sectionField.type !== 'PARAGRAPH' &&
           sectionField.type !== 'HTML' &&
           sectionField.type !== 'HIDDEN' &&
-          evaluateCondition(parseObject(sectionField.condition), answers)
+          evaluateCondition(parseObject(sectionField.condition), answers, { fields })
         ) {
           validateRequiredFieldValue(sectionField, answers, uploadIdSet);
         }
@@ -1008,7 +1095,7 @@ function validateRequiredPublicAnswers(
       continue;
     }
 
-    if (!evaluateCondition(parseObject(field.condition), answers)) {
+    if (!evaluateCondition(parseObject(field.condition), answers, { fields })) {
       continue;
     }
 
@@ -1091,12 +1178,14 @@ function sanitizePublicAnswers(
         break;
       }
       case 'SIGNATURE':
-        if (typeof value === 'string') {
-          sanitizedAnswers[key] = value.slice(0, 100_000);
-        } else if (Array.isArray(value)) {
-          sanitizedAnswers[key] = value
-            .slice(0, 100)
-            .map((item) => (typeof item === 'string' ? item.slice(0, 100_000) : ''));
+        {
+          const signatureDataUrl = extractSignatureDataUrl(value);
+          if (signatureDataUrl) {
+            if (signatureDataUrl.length > SIGNATURE_DATA_URL_MAX_LENGTH) {
+              throw new Error('Signature image is too large. Please redraw or upload a smaller signature image.');
+            }
+            sanitizedAnswers[key] = signatureDataUrl;
+          }
         }
         break;
       case 'HIDDEN':
@@ -1283,7 +1372,7 @@ export async function getFormResponses(
         id: draft.id,
         code: draft.code,
         answers: toAnswerRecord(draft.answers),
-        metadata: parseObject(draft.metadata) || {},
+        metadata: sanitizeDraftMetadataForClient(draft.metadata),
         expiresAt: draft.expiresAt,
         lastSavedAt: draft.lastSavedAt,
         createdAt: draft.createdAt,
@@ -1448,7 +1537,7 @@ export async function getFormResponses(
       id: draft.id,
       code: draft.code,
       answers: toAnswerRecord(draft.answers),
-      metadata: parseObject(draft.metadata) || {},
+      metadata: sanitizeDraftMetadataForClient(draft.metadata),
       expiresAt: draft.expiresAt,
       lastSavedAt: draft.lastSavedAt,
       createdAt: draft.createdAt,
@@ -1539,7 +1628,7 @@ export async function getFormDraftById(
       id: draft.id,
       code: draft.code,
       answers: toAnswerRecord(draft.answers),
-      metadata: parseObject(draft.metadata) || {},
+      metadata: sanitizeDraftMetadataForClient(draft.metadata),
       expiresAt: draft.expiresAt,
       lastSavedAt: draft.lastSavedAt,
       createdAt: draft.createdAt,
@@ -2116,6 +2205,32 @@ export async function createPublicSubmission(
       submissionResult.obsoleteDraftUploads.map((upload) => storage.delete(upload.storageKey))
     );
   }
+
+  await createAuditLog({
+    tenantId: form.tenantId,
+    action: 'CREATE',
+    entityType: 'FormSubmission',
+    entityId: submissionResult.submission.id,
+    entityName: submissionResult.submission.respondentName
+      || submissionResult.submission.respondentEmail
+      || submissionResult.submission.id,
+    summary: `Submitted public form "${form.title}"`,
+    changeSource: 'SYSTEM',
+    metadata: {
+      event: 'public_form_submitted',
+      formId: form.id,
+      formSlug: form.slug,
+      formTitle: form.title,
+      submissionId: submissionResult.submission.id,
+      respondentName: submissionResult.submission.respondentName,
+      respondentEmail: submissionResult.submission.respondentEmail,
+      draftId: activeDraft?.id ?? null,
+      draftCode: activeDraft?.code ?? input.draftCode ?? null,
+      uploadCount: uploadIds.length,
+    },
+  }).catch((error) => {
+    console.error('Failed to create public form submission audit log', error);
+  });
 
   const submissionUploads = await prisma.formUpload.findMany({
     where: {

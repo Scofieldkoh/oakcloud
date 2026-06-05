@@ -38,6 +38,7 @@ export type ShortInputType =
   | 'info_heading_1'
   | 'info_heading_2'
   | 'info_heading_3'
+  | 'info_faq'
   | 'repeat_start'
   | 'repeat_end'
   | 'block_divider';
@@ -83,7 +84,9 @@ export type ValidationConfig = {
   tooltipInfoPaddingBottomPx?: number;
   tooltipInfoPaddingLeftPx?: number;
   choiceInlineRight?: boolean;
+  defaultValue?: string;
   defaultToday?: boolean;
+  alwaysDefaultToday?: boolean;
   timezoneDefault?: string;
   splitPhoneCountryCode?: boolean;
   phoneDefaultCountryCode?: string;
@@ -96,6 +99,11 @@ export type ValidationConfig = {
   infoInlineCard?: boolean;
   infoBareStyle?: boolean;
   infoStopsProgress?: boolean;
+  infoShowInPdf?: boolean;
+  faqDefaultState?: 'collapsed' | 'expanded' | 'first_expanded';
+  faqSearchEnabled?: boolean;
+  faqMainToggleEnabled?: boolean;
+  faqMainDefaultExpanded?: boolean;
   repeatMinItems?: number;
   repeatMaxItems?: number;
   repeatAddLabel?: string;
@@ -104,16 +112,34 @@ export type ValidationConfig = {
 export type ChoiceOptionConfig = {
   label: string;
   value: string;
+  bodyHtml?: string | null;
   allowTextInput?: boolean;
   textInputLabel?: string | null;
   textInputPlaceholder?: string | null;
   tooltipText?: string | null;
   defaultSelected?: boolean;
+  requiredSelected?: boolean;
+  childSelectionMode?: 'multiple' | 'single';
+  childOptions?: ChoiceOptionConfig[];
+};
+
+type SerializedChoiceOption = {
+  label: string;
+  value: string;
+  bodyHtml?: string;
+  allowTextInput?: true;
+  textInputLabel?: string;
+  textInputPlaceholder?: string;
+  tooltipText?: string;
+  defaultSelected?: true;
+  requiredSelected?: true;
+  childSelectionMode?: 'multiple' | 'single';
+  childOptions?: SerializedChoiceOption[];
 };
 
 export type ConditionConfig = {
   fieldKey: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'is_empty' | 'not_empty';
+  operator: 'equals' | 'not_equals' | 'contains' | 'is_empty' | 'not_empty' | 'is_visible' | 'is_not_visible';
   value?: string | number | boolean | null;
 };
 
@@ -145,6 +171,10 @@ export interface BuilderField {
   position: number;
 }
 
+export function isFaqField(field: Pick<BuilderField, 'type' | 'inputType'>): boolean {
+  return field.type === 'PARAGRAPH' && field.inputType === 'info_faq';
+}
+
 export function newClientId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `tmp_${crypto.randomUUID()}`;
@@ -172,7 +202,9 @@ export function defaultField(type: FormFieldInput['type'], position: number): Bu
         { label: 'Option 2', value: 'Option 2' },
       ]
       : [],
-    validation: type === 'FILE_UPLOAD' ? { maxFileSizeMb: 50 } : null,
+    validation: type === 'FILE_UPLOAD'
+      ? { maxFileSizeMb: 50 }
+      : null,
     condition: null,
     isRequired: false,
     hideLabel: false,
@@ -184,7 +216,7 @@ export function defaultField(type: FormFieldInput['type'], position: number): Bu
 }
 
 
-function parseFieldOptions(value: unknown): ChoiceOptionConfig[] {
+function parseFieldOptions(value: unknown, depth: number = 0): ChoiceOptionConfig[] {
   if (!Array.isArray(value)) return [];
 
   const parsed: ChoiceOptionConfig[] = [];
@@ -207,10 +239,15 @@ function parseFieldOptions(value: unknown): ChoiceOptionConfig[] {
     parsed.push({
       label,
       value,
+      bodyHtml: typeof optionRecord.bodyHtml === 'string' ? optionRecord.bodyHtml.trim() || null : null,
       allowTextInput: optionRecord.allowTextInput === true,
       textInputLabel: typeof optionRecord.textInputLabel === 'string' ? optionRecord.textInputLabel.trim() || null : null,
       textInputPlaceholder: typeof optionRecord.textInputPlaceholder === 'string' ? optionRecord.textInputPlaceholder.trim() || null : null,
+      tooltipText: typeof optionRecord.tooltipText === 'string' ? optionRecord.tooltipText.trim() || null : null,
       defaultSelected: optionRecord.defaultSelected === true,
+      requiredSelected: optionRecord.requiredSelected === true,
+      childSelectionMode: optionRecord.childSelectionMode === 'single' ? 'single' : 'multiple',
+      childOptions: depth < 1 ? parseFieldOptions(optionRecord.childOptions, depth + 1) : [],
     });
   }
 
@@ -230,6 +267,8 @@ function parseConditionRule(value: unknown): ConditionConfig | null {
       && operator !== 'contains'
       && operator !== 'is_empty'
       && operator !== 'not_empty'
+      && operator !== 'is_visible'
+      && operator !== 'is_not_visible'
     )
   ) {
     return null;
@@ -307,6 +346,34 @@ export function fromServerField(field: {
 }
 
 export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
+  const serializeChoiceOption = (
+    option: ChoiceOptionConfig,
+    fieldType: FormFieldInput['type'],
+    depth: number = 0
+  ): SerializedChoiceOption | null => {
+    const label = option.label?.trim();
+    const value = fieldType === 'PARAGRAPH' ? (option.value?.trim() || newClientId()) : label;
+    if (!label || !value) return null;
+    const childOptions: SerializedChoiceOption[] = fieldType === 'MULTIPLE_CHOICE' && depth < 1
+      ? (option.childOptions || [])
+        .map((childOption) => serializeChoiceOption(childOption, fieldType, depth + 1))
+        .filter((childOption): childOption is NonNullable<typeof childOption> => !!childOption)
+      : [];
+    return {
+      label,
+      value,
+      ...(fieldType === 'PARAGRAPH' && option.bodyHtml ? { bodyHtml: option.bodyHtml.trim() } : {}),
+      ...(option.allowTextInput ? { allowTextInput: true } : {}),
+      ...(option.textInputLabel ? { textInputLabel: option.textInputLabel.trim() } : {}),
+      ...(option.textInputPlaceholder ? { textInputPlaceholder: option.textInputPlaceholder.trim() } : {}),
+      ...(option.tooltipText ? { tooltipText: option.tooltipText.trim() } : {}),
+      ...(option.defaultSelected ? { defaultSelected: true } : {}),
+      ...(option.requiredSelected && fieldType === 'MULTIPLE_CHOICE' ? { requiredSelected: true, defaultSelected: true } : {}),
+      ...(fieldType === 'MULTIPLE_CHOICE' && depth === 0 && option.childSelectionMode === 'single' ? { childSelectionMode: 'single' as const } : {}),
+      ...(childOptions.length > 0 ? { childOptions } : {}),
+    };
+  };
+
   return fields.map((field, idx) => ({
     id: field.id,
     type: field.type,
@@ -318,22 +385,13 @@ export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
     inputType: field.type === 'SHORT_TEXT' || field.type === 'PARAGRAPH'
       ? field.inputType
       : (field.type === 'PAGE_BREAK' && (isRepeatMarkerInputType(field.inputType) || isBlockDividerInputType(field.inputType)) ? field.inputType : null),
-    options: (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE')
+    options: isFaqField(field)
       ? field.options
-        .map((option) => {
-          const label = option.label?.trim();
-          const value = label;
-          if (!label || !value) return null;
-          return {
-            label,
-            value,
-            ...(option.allowTextInput ? { allowTextInput: true } : {}),
-            ...(option.textInputLabel ? { textInputLabel: option.textInputLabel.trim() } : {}),
-            ...(option.textInputPlaceholder ? { textInputPlaceholder: option.textInputPlaceholder.trim() } : {}),
-            ...(option.tooltipText ? { tooltipText: option.tooltipText.trim() } : {}),
-            ...(option.defaultSelected && field.type === 'MULTIPLE_CHOICE' ? { defaultSelected: true } : {}),
-          };
-        })
+        .map((option) => serializeChoiceOption(option, field.type))
+        .filter((option): option is NonNullable<typeof option> => !!option)
+      : (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE')
+      ? field.options
+        .map((option) => serializeChoiceOption(option, field.type))
         .filter((option): option is NonNullable<typeof option> => !!option)
       : (field.type === 'DROPDOWN'
         ? field.options

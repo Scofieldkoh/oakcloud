@@ -58,6 +58,7 @@ function getEnabledFieldFlags(field: BuilderField): string[] {
   if (field.hideLabel) flags.push('Hide label');
   if (field.validation?.tooltipEnabled === true) flags.push('Tooltip');
   if (field.type === 'PARAGRAPH' && field.validation?.infoStopsProgress === true) flags.push('Stops progress');
+  if (field.type === 'PARAGRAPH' && field.validation?.infoShowInPdf === true) flags.push('Print PDF');
   if (field.showOnSummary) flags.push('Summary');
 
   return flags;

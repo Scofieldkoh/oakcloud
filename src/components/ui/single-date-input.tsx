@@ -477,6 +477,7 @@ export function SingleDateInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const suppressBlurRef = useRef(false);
+  const suppressFocusOpenRef = useRef(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [mounted, setMounted] = useState(false);
 
@@ -611,6 +612,7 @@ export function SingleDateInput({
         setCommittedValue(isoValue);
         onChange(isoValue);
         setIsOpen(false);
+        suppressFocusOpenRef.current = true;
         inputRef.current?.focus();
       }
     },
@@ -618,6 +620,11 @@ export function SingleDateInput({
   );
 
   const handleInputFocus = useCallback(() => {
+    if (suppressFocusOpenRef.current) {
+      suppressFocusOpenRef.current = false;
+      return;
+    }
+
     setIsEditing(true);
     if (!disabled) {
       setIsOpen(true);

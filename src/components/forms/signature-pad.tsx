@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import SignaturePadEngine from '../../lib/vendor/signature-pad-engine.js';
 import { RotateCcw, Undo2 } from 'lucide-react';
 
+type SignaturePadEngineInstance = InstanceType<typeof SignaturePadEngine>;
+type SignaturePadStrokeData = ReturnType<SignaturePadEngineInstance['toData']>;
+
 interface SignaturePadProps {
   value?: string;
   onChange: (dataUrl: string) => void;
@@ -39,12 +42,12 @@ export function SignaturePad({
   ariaLabel = 'Signature field',
 }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const signaturePadRef = useRef<SignaturePadEngine | null>(null);
+  const signaturePadRef = useRef<SignaturePadEngineInstance | null>(null);
   const onChangeRef = useRef(onChange);
   const onVectorChangeRef = useRef(onVectorChange);
   const loadedImageValueRef = useRef<string | null>(null);
   const lastEmittedValueRef = useRef<string>('');
-  const strokeDataRef = useRef<ReturnType<SignaturePadEngine['toData']>>([]);
+  const strokeDataRef = useRef<SignaturePadStrokeData>([]);
   const [hasSignature, setHasSignature] = useState(false);
 
   useEffect(() => {
@@ -79,7 +82,7 @@ export function SignaturePad({
   }, []);
 
   const restorePadState = useCallback(
-    async (signaturePad: SignaturePadEngine, canvas: HTMLCanvasElement) => {
+    async (signaturePad: SignaturePadEngineInstance, canvas: HTMLCanvasElement) => {
       signaturePad.clear();
 
       if (loadedImageValueRef.current) {

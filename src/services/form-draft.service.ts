@@ -13,6 +13,7 @@ import {
   pruneHiddenConditionalAnswers,
   toAnswerRecord,
 } from '@/lib/form-utils';
+import { SIGNATURE_DATA_URL_MAX_LENGTH, extractSignatureDataUrl } from '@/lib/signature-utils';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
@@ -23,6 +24,19 @@ import { applyDefaultTodayAnswers, toJsonInput } from './form-builder.helpers';
 
 export interface DeleteFormDraftResult {
   id: string;
+}
+
+export interface GenerateFormDraftResumeLinkResult {
+  draftId: string;
+  draftCode: string;
+  resumeUrl: string;
+  expiresAt: Date;
+}
+
+export interface ExtendFormDraftExpiryResult {
+  draftId: string;
+  draftCode: string;
+  expiresAt: Date;
 }
 
 export interface PublicDraftSaveResult {
@@ -51,6 +65,7 @@ const DRAFT_CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy
 const DRAFT_ACCESS_TOKEN_BYTES = 24;
 const MAX_DRAFT_CODE_ATTEMPTS = 20;
 const UPLOAD_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const INTERNAL_DRAFT_RESUME_TOKEN_METADATA_KEY = '__oak_resume_access_token';
 
 // ---------------------------------------------------------------------------
 // Private helpers
@@ -120,6 +135,33 @@ function normalizeDraftMetadata(metadata: unknown): Record<string, unknown> {
   return normalized;
 }
 
+function withInternalDraftResumeAccessToken(
+  metadata: Record<string, unknown>,
+  accessToken: string
+): Record<string, unknown> {
+  return {
+    ...metadata,
+    [INTERNAL_DRAFT_RESUME_TOKEN_METADATA_KEY]: accessToken,
+  };
+}
+
+function getInternalDraftResumeAccessToken(metadata: unknown): string | null {
+  const raw = parseObject(metadata);
+  if (!raw) return null;
+
+  const token = raw[INTERNAL_DRAFT_RESUME_TOKEN_METADATA_KEY];
+  return typeof token === 'string' && token.trim().length > 0 ? token : null;
+}
+
+export function sanitizeDraftMetadataForClient(metadata: unknown): Record<string, unknown> {
+  const raw = parseObject(metadata);
+  if (!raw) return {};
+
+  const sanitized = { ...raw };
+  delete sanitized[INTERNAL_DRAFT_RESUME_TOKEN_METADATA_KEY];
+  return sanitized;
+}
+
 async function createFormDraftRecord(
   tx: Prisma.TransactionClient,
   form: Pick<Form, 'id' | 'tenantId'>,
@@ -133,6 +175,7 @@ async function createFormDraftRecord(
     const accessToken = generateDraftAccessToken();
 
     try {
+      const persistedMetadata = withInternalDraftResumeAccessToken(metadata, accessToken);
       const draft = await tx.formDraft.create({
         data: {
           code,
@@ -140,7 +183,7 @@ async function createFormDraftRecord(
           formId: form.id,
           tenantId: form.tenantId,
           answers: answers as Prisma.InputJsonValue,
-          metadata: toJsonInput(metadata),
+          metadata: toJsonInput(persistedMetadata),
           expiresAt,
           lastSavedAt,
         },
@@ -279,7 +322,9 @@ function buildDraftUploadsByFieldKey(
 
 // sanitizePublicAnswers — a draft-local copy (draft saves don't do full validation,
 // but we still sanitize to keep answers clean before persisting).
-function sanitizeChoiceEntry(entry: unknown): string | { value: string; detailText?: string } | null {
+type SanitizedChoiceEntry = string | { value: string; detailText?: string; children?: SanitizedChoiceEntry[] };
+
+function sanitizeChoiceEntry(entry: unknown): SanitizedChoiceEntry | null {
   if (typeof entry === 'string') {
     const trimmed = entry.trim();
     if (!trimmed) return null;
@@ -292,14 +337,21 @@ function sanitizeChoiceEntry(entry: unknown): string | { value: string; detailTe
   if (!valueText) return null;
   const detailTextRaw = typeof record.detailText === 'string' ? record.detailText.trim() : '';
   const detailText = detailTextRaw ? detailTextRaw.slice(0, 10_000) : '';
+  const children = Array.isArray(record.children)
+    ? record.children
+      .slice(0, 100)
+      .map((child) => sanitizeChoiceEntry(child))
+      .filter((child): child is SanitizedChoiceEntry => !!child)
+    : [];
 
-  if (!detailText) {
+  if (!detailText && children.length === 0) {
     return { value: valueText.slice(0, 10_000) };
   }
 
   return {
     value: valueText.slice(0, 10_000),
-    detailText,
+    ...(detailText ? { detailText } : {}),
+    ...(children.length > 0 ? { children } : {}),
   };
 }
 
@@ -391,12 +443,14 @@ function sanitizePublicAnswers(
         break;
       }
       case 'SIGNATURE':
-        if (typeof value === 'string') {
-          sanitizedAnswers[key] = value.slice(0, 100_000);
-        } else if (Array.isArray(value)) {
-          sanitizedAnswers[key] = value
-            .slice(0, 100)
-            .map((item) => (typeof item === 'string' ? item.slice(0, 100_000) : ''));
+        {
+          const signatureDataUrl = extractSignatureDataUrl(value);
+          if (signatureDataUrl) {
+            if (signatureDataUrl.length > SIGNATURE_DATA_URL_MAX_LENGTH) {
+              throw new Error('Signature image is too large. Please redraw or upload a smaller signature image.');
+            }
+            sanitizedAnswers[key] = signatureDataUrl;
+          }
         }
         break;
       case 'HIDDEN':
@@ -512,7 +566,7 @@ export async function savePublicDraft(
         where: { id: existingDraft.id },
         data: {
           answers: sanitizedAnswers as Prisma.InputJsonValue,
-          metadata: toJsonInput(normalizedMetadata),
+          metadata: toJsonInput(withInternalDraftResumeAccessToken(normalizedMetadata, input.accessToken!)),
           expiresAt,
           lastSavedAt: savedAt,
         },
@@ -638,7 +692,26 @@ export async function getPublicDraftByCode(
   });
 
   const answers = toAnswerRecord(draft.answers);
-  const metadata = parseObject(draft.metadata) || {};
+  const metadata = sanitizeDraftMetadataForClient(draft.metadata);
+
+  await createAuditLog({
+    tenantId: form.tenantId,
+    action: 'UPDATE',
+    entityType: 'FormDraft',
+    entityId: draft.id,
+    entityName: draft.code,
+    summary: `Loaded draft ${draft.code} for public form "${form.title}"`,
+    changeSource: 'SYSTEM',
+    metadata: {
+      event: 'public_form_draft_loaded',
+      formId: form.id,
+      formSlug: form.slug,
+      formTitle: form.title,
+      draftCode: draft.code,
+    },
+  }).catch((error) => {
+    console.error('Failed to create public form draft load audit log', error);
+  });
 
   return {
     draftCode: draft.code,
@@ -709,6 +782,170 @@ export async function deleteFormDraft(
 
   return {
     id: draft.id,
+  };
+}
+
+export async function generateFormDraftResumeLink(
+  formId: string,
+  draftId: string,
+  params: TenantAwareParams,
+  reason?: string
+): Promise<GenerateFormDraftResumeLinkResult> {
+  const form = await prisma.form.findFirst({
+    where: {
+      id: formId,
+      tenantId: params.tenantId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+    const draft = await prisma.formDraft.findFirst({
+      where: {
+        id: draftId,
+        formId,
+        tenantId: params.tenantId,
+      },
+      select: {
+        id: true,
+        code: true,
+        expiresAt: true,
+        accessTokenHash: true,
+        metadata: true,
+      },
+    });
+
+  if (!draft) {
+    throw new Error('Draft not found');
+  }
+
+  if (draft.expiresAt.getTime() <= Date.now()) {
+    throw new Error('Draft has expired. Extend the expiry before copying a resume link.');
+  }
+
+  const storedAccessToken = getInternalDraftResumeAccessToken(draft.metadata);
+  const reusableAccessToken = storedAccessToken && hashDraftAccessToken(storedAccessToken) === draft.accessTokenHash
+    ? storedAccessToken
+    : null;
+  const accessToken = reusableAccessToken ?? generateDraftAccessToken();
+
+  if (!reusableAccessToken) {
+    const metadata = sanitizeDraftMetadataForClient(draft.metadata);
+    await prisma.formDraft.update({
+      where: { id: draft.id },
+      data: {
+        accessTokenHash: hashDraftAccessToken(accessToken),
+        metadata: toJsonInput(withInternalDraftResumeAccessToken(metadata, accessToken)),
+      },
+    });
+  }
+
+  await createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    action: 'UPDATE',
+    entityType: 'FormDraft',
+    entityId: draft.id,
+    entityName: draft.code,
+    summary: `${reusableAccessToken ? 'Copied' : 'Generated'} a resume link for draft ${draft.code} from "${form.title}"`,
+    reason,
+    changeSource: 'MANUAL',
+  });
+
+  return {
+    draftId: draft.id,
+    draftCode: draft.code,
+    resumeUrl: buildDraftResumeUrl(form.slug, draft.code, accessToken),
+    expiresAt: draft.expiresAt,
+  };
+}
+
+export async function extendFormDraftExpiry(
+  formId: string,
+  draftId: string,
+  params: TenantAwareParams,
+  expiresAt: Date,
+  reason?: string
+): Promise<ExtendFormDraftExpiryResult> {
+  if (!(expiresAt instanceof Date) || Number.isNaN(expiresAt.getTime())) {
+    throw new Error('Expiry date is invalid');
+  }
+
+  if (expiresAt.getTime() <= Date.now()) {
+    throw new Error('Expiry date must be in the future');
+  }
+
+  const form = await prisma.form.findFirst({
+    where: {
+      id: formId,
+      tenantId: params.tenantId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      title: true,
+    },
+  });
+
+  if (!form) {
+    throw new Error('Form not found');
+  }
+
+  const draft = await prisma.formDraft.findFirst({
+    where: {
+      id: draftId,
+      formId,
+      tenantId: params.tenantId,
+    },
+    select: {
+      id: true,
+      code: true,
+      expiresAt: true,
+    },
+  });
+
+  if (!draft) {
+    throw new Error('Draft not found');
+  }
+
+  if (draft.expiresAt.getTime() > Date.now() && expiresAt.getTime() <= draft.expiresAt.getTime()) {
+    throw new Error('New expiry date must be later than the current expiry');
+  }
+
+  const updated = await prisma.formDraft.update({
+    where: { id: draft.id },
+    data: { expiresAt },
+    select: {
+      id: true,
+      code: true,
+      expiresAt: true,
+    },
+  });
+
+  await createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    action: 'UPDATE',
+    entityType: 'FormDraft',
+    entityId: updated.id,
+    entityName: updated.code,
+    summary: `Extended draft ${updated.code} expiry for "${form.title}" to ${updated.expiresAt.toISOString()}`,
+    reason,
+    changeSource: 'MANUAL',
+  });
+
+  return {
+    draftId: updated.id,
+    draftCode: updated.code,
+    expiresAt: updated.expiresAt,
   };
 }
 

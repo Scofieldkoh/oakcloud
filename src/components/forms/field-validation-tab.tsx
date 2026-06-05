@@ -26,9 +26,69 @@ export function FieldValidationTab({
   const dateFieldCandidates = allFields.filter(
     (candidate) => candidate.clientId !== field.clientId && candidate.type === 'SHORT_TEXT' && candidate.inputType === 'date'
   );
+  const dropdownDefaultOptions = field.type === 'DROPDOWN'
+    ? field.options.map((option) => option.label.trim()).filter(Boolean)
+    : [];
+  const supportsDefaultValue = (
+    field.type === 'DROPDOWN' ||
+    field.type === 'LONG_TEXT' ||
+    (
+      field.type === 'SHORT_TEXT' &&
+      !['time_timezone', 'info_text', 'info_image', 'info_url', 'info_heading_1', 'info_heading_2', 'info_heading_3', 'repeat_start', 'repeat_end', 'block_divider'].includes(field.inputType)
+    )
+  );
 
   return (
     <>
+      {supportsDefaultValue && (
+        <div className="mb-3 rounded-lg border border-border-primary bg-background-elevated p-3">
+          {field.type === 'DROPDOWN' ? (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-text-secondary">Default value</label>
+              <select
+                value={field.validation?.defaultValue || ''}
+                onChange={(e) => onChange({
+                  ...field,
+                  validation: {
+                    ...(field.validation || {}),
+                    defaultValue: e.target.value || undefined,
+                  },
+                })}
+                className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+              >
+                <option value="">No default</option>
+                {dropdownDefaultOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <FormInput
+              label="Default value"
+              type={field.type === 'SHORT_TEXT' && field.inputType === 'date' ? 'date' : field.type === 'SHORT_TEXT' && field.inputType === 'number' ? 'number' : 'text'}
+              value={field.validation?.defaultValue || ''}
+              onChange={(e) => {
+                const nextDefaultValue = e.target.value;
+                onChange({
+                  ...field,
+                  validation: {
+                    ...(field.validation || {}),
+                    defaultValue: nextDefaultValue.length > 0 ? nextDefaultValue : undefined,
+                    defaultToday: nextDefaultValue.length > 0 && field.inputType === 'date'
+                      ? undefined
+                      : field.validation?.defaultToday,
+                    alwaysDefaultToday: nextDefaultValue.length > 0 && field.inputType === 'date'
+                      ? undefined
+                      : field.validation?.alwaysDefaultToday,
+                  },
+                });
+              }}
+              placeholder={field.type === 'SHORT_TEXT' && field.inputType === 'date' ? 'YYYY-MM-DD' : undefined}
+            />
+          )}
+        </div>
+      )}
+
       {((field.type === 'SHORT_TEXT' && field.inputType !== 'date' && field.inputType !== 'number' && field.inputType !== 'time_timezone') || field.type === 'LONG_TEXT') && (
         <div className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -353,10 +413,27 @@ export function FieldValidationTab({
                 validation: {
                   ...(field.validation || {}),
                   defaultToday: checked ? true : undefined,
+                  defaultValue: checked ? undefined : field.validation?.defaultValue,
                 },
               })}
               label="Default to today's date"
               description="Pre-fill this date field with today's date for new responses."
+              size="sm"
+            />
+          </div>
+          <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
+            <Toggle
+              checked={field.validation?.alwaysDefaultToday === true}
+              onChange={(checked) => onChange({
+                ...field,
+                validation: {
+                  ...(field.validation || {}),
+                  alwaysDefaultToday: checked ? true : undefined,
+                  defaultValue: checked ? undefined : field.validation?.defaultValue,
+                },
+              })}
+              label="Always default to today's date"
+              description="Refresh this date field to today's date whenever the form or a saved draft is loaded."
               size="sm"
             />
           </div>

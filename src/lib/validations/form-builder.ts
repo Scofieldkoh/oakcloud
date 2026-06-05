@@ -48,6 +48,7 @@ export const shortInputTypeSchema = z.enum([
   'info_heading_1',
   'info_heading_2',
   'info_heading_3',
+  'info_faq',
   'repeat_start',
   'repeat_end',
   'block_divider',
@@ -87,7 +88,9 @@ export const fieldValidationSchema = z
     tooltipInfoPaddingBottomPx: z.number().int().min(0).max(80).optional(),
     tooltipInfoPaddingLeftPx: z.number().int().min(0).max(80).optional(),
     choiceInlineRight: z.boolean().optional(),
+    defaultValue: z.string().max(5000).optional(),
     defaultToday: z.boolean().optional(),
+    alwaysDefaultToday: z.boolean().optional(),
     timezoneDefault: z.string().min(1).max(120).optional(),
     splitPhoneCountryCode: z.boolean().optional(),
     phoneDefaultCountryCode: z.string().regex(/^\+\d{1,4}$/).optional(),
@@ -100,6 +103,11 @@ export const fieldValidationSchema = z
     infoInlineCard: z.boolean().optional(),
     infoBareStyle: z.boolean().optional(),
     infoStopsProgress: z.boolean().optional(),
+    infoShowInPdf: z.boolean().optional(),
+    faqDefaultState: z.enum(['collapsed', 'expanded', 'first_expanded']).optional(),
+    faqSearchEnabled: z.boolean().optional(),
+    faqMainToggleEnabled: z.boolean().optional(),
+    faqMainDefaultExpanded: z.boolean().optional(),
     repeatMinItems: z.number().int().min(1).max(50).optional(),
     repeatMaxItems: z.number().int().min(1).max(50).optional(),
     repeatAddLabel: z.string().min(1).max(80).optional(),
@@ -144,7 +152,7 @@ export const fieldValidationSchema = z
 
 export const fieldConditionRuleSchema = z.object({
   fieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH),
-  operator: z.enum(['equals', 'not_equals', 'contains', 'is_empty', 'not_empty']),
+  operator: z.enum(['equals', 'not_equals', 'contains', 'is_empty', 'not_empty', 'is_visible', 'is_not_visible']),
   value: z.union([z.string(), z.number(), z.boolean()]).optional().nullable(),
 });
 
@@ -161,15 +169,19 @@ export const fieldConditionSchema: z.ZodType<FieldConditionInput> = z.lazy(() =>
   }),
 ]));
 
-const choiceOptionSchema = z.object({
-  label: z.string().min(1).max(200),
+const choiceOptionSchema: z.ZodType<Record<string, unknown>> = z.lazy(() => z.object({
+  label: z.string().min(1).max(5000),
   value: z.string().min(1).max(200).optional(),
+  bodyHtml: z.string().max(10000).optional().nullable(),
   allowTextInput: z.boolean().optional(),
   textInputLabel: z.string().max(200).optional().nullable(),
   textInputPlaceholder: z.string().max(200).optional().nullable(),
   tooltipText: z.string().max(500).optional().nullable(),
   defaultSelected: z.boolean().optional(),
-});
+  requiredSelected: z.boolean().optional(),
+  childSelectionMode: z.enum(['multiple', 'single']).optional(),
+  childOptions: z.array(choiceOptionSchema).max(MAX_FIELD_OPTIONS).optional(),
+}));
 
 const layoutWidthSchema = z.union([
   z.literal(25),
@@ -202,6 +214,28 @@ export const formFieldSchema = z.object({
   isReadOnly: z.boolean().optional().default(false),
   layoutWidth: layoutWidthSchema.optional().default(100),
   position: z.number().int().min(0),
+}).superRefine((field, ctx) => {
+  if (field.type !== 'PARAGRAPH' || field.inputType !== 'info_faq') return;
+
+  const options = Array.isArray(field.options) ? field.options : [];
+  if (options.length === 0) {
+    ctx.addIssue({ code: 'custom', message: 'FAQ must include at least one item', path: ['options'] });
+    return;
+  }
+
+  for (let index = 0; index < options.length; index += 1) {
+    const option = options[index];
+    if (!option || typeof option !== 'object' || Array.isArray(option)) {
+      ctx.addIssue({ code: 'custom', message: 'FAQ item must include a header and body', path: ['options', index] });
+      continue;
+    }
+
+    const label = typeof option.label === 'string' ? option.label.trim() : '';
+    const bodyHtml = typeof option.bodyHtml === 'string' ? option.bodyHtml.trim() : '';
+    if (!label) {
+      ctx.addIssue({ code: 'custom', message: 'FAQ item header is required', path: ['options', index, 'label'] });
+    }
+  }
 });
 
 export const createFormSchema = z.object({

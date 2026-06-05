@@ -32,11 +32,15 @@ export interface PublicFormDefinition {
 export interface ChoiceOption {
   label: string;
   value: string;
+  bodyHtml: string | null;
   allowTextInput: boolean;
   textInputLabel: string | null;
   textInputPlaceholder: string | null;
   tooltipText: string | null;
   defaultSelected: boolean;
+  requiredSelected: boolean;
+  childSelectionMode: 'multiple' | 'single';
+  childOptions: ChoiceOption[];
 }
 
 export const WIDTH_CLASS: Record<number, string> = {
@@ -100,18 +104,22 @@ export function parseObject(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
-function normalizeChoiceOption(input: unknown): ChoiceOption | null {
+function normalizeChoiceOption(input: unknown, depth: number = 0): ChoiceOption | null {
   if (typeof input === 'string') {
     const trimmed = input.trim();
     if (!trimmed) return null;
     return {
       label: trimmed,
       value: trimmed,
+      bodyHtml: null,
       allowTextInput: false,
       textInputLabel: null,
       textInputPlaceholder: null,
       tooltipText: null,
       defaultSelected: false,
+      requiredSelected: false,
+      childSelectionMode: 'multiple',
+      childOptions: [],
     };
   }
 
@@ -125,6 +133,7 @@ function normalizeChoiceOption(input: unknown): ChoiceOption | null {
   if (!label || !value) return null;
 
   const allowTextInput = raw.allowTextInput === true;
+  const bodyHtml = typeof raw.bodyHtml === 'string' ? raw.bodyHtml.trim() : '';
   const textInputLabel = typeof raw.textInputLabel === 'string' ? raw.textInputLabel.trim() : '';
   const textInputPlaceholder = typeof raw.textInputPlaceholder === 'string' ? raw.textInputPlaceholder.trim() : '';
   const tooltipText = typeof raw.tooltipText === 'string' ? raw.tooltipText.trim() : '';
@@ -132,11 +141,19 @@ function normalizeChoiceOption(input: unknown): ChoiceOption | null {
   return {
     label,
     value,
+    bodyHtml: bodyHtml || null,
     allowTextInput,
     textInputLabel: textInputLabel || null,
     textInputPlaceholder: textInputPlaceholder || null,
     tooltipText: tooltipText || null,
     defaultSelected: raw.defaultSelected === true,
+    requiredSelected: raw.requiredSelected === true,
+    childSelectionMode: raw.childSelectionMode === 'single' ? 'single' : 'multiple',
+    childOptions: depth < 1 && Array.isArray(raw.childOptions)
+      ? raw.childOptions
+        .map((item) => normalizeChoiceOption(item, depth + 1))
+        .filter((option): option is ChoiceOption => !!option)
+      : [],
   };
 }
 
@@ -156,13 +173,14 @@ export function parseChoiceOptions(value: unknown): ChoiceOption[] {
 type ChoiceAnswerEntry = {
   value: string;
   detailText: string | null;
+  children: ChoiceAnswerEntry[];
 };
 
 function parseChoiceAnswerEntry(input: unknown): ChoiceAnswerEntry | null {
   if (typeof input === 'string') {
     const trimmed = input.trim();
     if (!trimmed) return null;
-    return { value: trimmed, detailText: null };
+    return { value: trimmed, detailText: null, children: [] };
   }
 
   const raw = parseObject(input);
@@ -170,16 +188,24 @@ function parseChoiceAnswerEntry(input: unknown): ChoiceAnswerEntry | null {
   const value = typeof raw.value === 'string' ? raw.value.trim() : '';
   if (!value) return null;
   const detailText = typeof raw.detailText === 'string' ? raw.detailText.trim() : '';
+  const children = Array.isArray(raw.children)
+    ? raw.children
+      .map(parseChoiceAnswerEntry)
+      .filter((entry): entry is ChoiceAnswerEntry => !!entry)
+    : [];
 
   return {
     value,
     detailText: detailText || null,
+    children,
   };
 }
 
 export function formatChoiceAnswer(value: unknown): string | null {
   const formatEntry = (entry: ChoiceAnswerEntry): string => {
-    if (entry.detailText) return `${entry.value} (${entry.detailText})`;
+    const childText = entry.children.map(formatEntry).join(', ');
+    const notes = [entry.detailText, childText].filter(Boolean);
+    if (notes.length > 0) return `${entry.value} (${notes.join('; ')})`;
     return entry.value;
   };
 
@@ -407,7 +433,7 @@ export interface FormI18nFieldTranslation {
   placeholder?: string;
   subtext?: string;
   helpText?: string;
-  options?: string[];
+  options?: Array<string | { label?: string; bodyHtml?: string }>;
 }
 
 export interface FormI18nLocaleTranslation {
@@ -613,12 +639,22 @@ function normalizeI18nText(value: unknown, maxLength: number): string | null {
   return trimmed.slice(0, maxLength);
 }
 
-function normalizeI18nOptionList(value: unknown): string[] {
+function normalizeI18nOptionList(value: unknown): Array<string | { label?: string; bodyHtml?: string }> {
   if (!Array.isArray(value)) return [];
 
   return value
     .slice(0, 500)
-    .map((entry) => (typeof entry === 'string' ? entry.trim().slice(0, 200) : ''));
+    .map((entry) => {
+      if (typeof entry === 'string') return entry.trim().slice(0, 5000);
+      const record = parseObject(entry);
+      if (!record) return '';
+      const label = normalizeI18nText(record.label, 5000);
+      const bodyHtml = normalizeI18nText(record.bodyHtml, 10000);
+      return {
+        ...(label ? { label } : {}),
+        ...(bodyHtml ? { bodyHtml } : {}),
+      };
+    });
 }
 
 function parseI18nFieldTranslations(value: unknown): Record<string, FormI18nFieldTranslation> {
@@ -1127,9 +1163,20 @@ export function isEmptyValue(value: unknown): boolean {
   return false;
 }
 
+type ConditionEvaluationField = {
+  key: string;
+  condition: unknown;
+};
+
+type ConditionEvaluationOptions = {
+  fields?: ConditionEvaluationField[];
+  activeFieldKeys?: Set<string>;
+};
+
 export function evaluateCondition(
   condition: unknown,
-  answers: Record<string, unknown>
+  answers: Record<string, unknown>,
+  options: ConditionEvaluationOptions = {}
 ): boolean {
   if (!condition) return true;
   const cond = isRecord(condition) ? condition : null;
@@ -1142,8 +1189,8 @@ export function evaluateCondition(
 
     const logic = cond.logic === 'or' ? 'or' : 'and';
     return logic === 'or'
-      ? validRules.some((rule) => evaluateCondition(rule, answers))
-      : validRules.every((rule) => evaluateCondition(rule, answers));
+      ? validRules.some((rule) => evaluateCondition(rule, answers, options))
+      : validRules.every((rule) => evaluateCondition(rule, answers, options));
   }
 
   const fieldKey = typeof cond.fieldKey === 'string' ? cond.fieldKey : null;
@@ -1163,6 +1210,23 @@ export function evaluateCondition(
   const expected = cond.value;
 
   switch (operator) {
+    case 'is_visible':
+    case 'is_not_visible': {
+      const targetField = options.fields?.find((field) => field.key === fieldKey);
+      const targetIsVisible = targetField
+        ? (() => {
+          const activeFieldKeys = options.activeFieldKeys || new Set<string>();
+          if (activeFieldKeys.has(fieldKey)) return true;
+          const nextActiveFieldKeys = new Set(activeFieldKeys);
+          nextActiveFieldKeys.add(fieldKey);
+          return evaluateCondition(targetField.condition, answers, {
+            ...options,
+            activeFieldKeys: nextActiveFieldKeys,
+          });
+        })()
+        : true;
+      return operator === 'is_visible' ? targetIsVisible : !targetIsVisible;
+    }
     case 'equals':
       return actual === expected;
     case 'not_equals':
@@ -1279,7 +1343,7 @@ export function pruneHiddenConditionalAnswers<T extends Record<string, unknown>>
           cursor += 1;
         }
 
-        if (!evaluateCondition(field.condition, next)) {
+        if (!evaluateCondition(field.condition, next, { fields })) {
           for (const sectionField of sectionFields) {
             if (isAnswerField(sectionField)) {
               changedThisPass = clearField(sectionField.key) || changedThisPass;
@@ -1294,7 +1358,7 @@ export function pruneHiddenConditionalAnswers<T extends Record<string, unknown>>
           const rowAnswers = getRepeatRowContext(next, rowIndex);
           for (const sectionField of sectionFields) {
             if (!isAnswerField(sectionField)) continue;
-            if (!evaluateCondition(sectionField.condition, rowAnswers)) {
+            if (!evaluateCondition(sectionField.condition, rowAnswers, { fields: sectionFields })) {
               if (clearRepeatFieldRow(sectionField.key, rowIndex)) {
                 rowAnswers[sectionField.key] = undefined;
                 changedThisPass = true;
@@ -1308,7 +1372,7 @@ export function pruneHiddenConditionalAnswers<T extends Record<string, unknown>>
       }
 
       if (!isAnswerField(field)) continue;
-      if (!evaluateCondition(field.condition, next)) {
+      if (!evaluateCondition(field.condition, next, { fields })) {
         changedThisPass = clearField(field.key) || changedThisPass;
       }
     }

@@ -3,9 +3,12 @@ import {
   DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS,
   evaluateCondition,
   isProgressStopInfoBlock,
+  parseChoiceOptions,
+  formatChoiceAnswer,
   parseFormDraftSettings,
   writeFormDraftSettings,
 } from '@/lib/form-utils';
+import { applyDefaultTodayAnswers } from '@/services/form-builder.helpers';
 
 describe('form-utils draft settings', () => {
   it('returns defaults when draft settings are absent', () => {
@@ -95,6 +98,41 @@ describe('form-utils condition evaluation', () => {
     expect(evaluateCondition(condition, { status: 'pending' })).toBe(true);
     expect(evaluateCondition(condition, { status: 'rejected' })).toBe(false);
   });
+
+  it('supports visible and not visible operators from field conditions', () => {
+    const fields = [
+      {
+        key: 'status',
+        condition: null,
+      },
+      {
+        key: 'approval_notes',
+        condition: { fieldKey: 'status', operator: 'equals', value: 'approved' },
+      },
+      {
+        key: 'rejection_reason',
+        condition: { fieldKey: 'approval_notes', operator: 'is_not_visible' },
+      },
+    ];
+
+    expect(evaluateCondition(
+      { fieldKey: 'approval_notes', operator: 'is_visible' },
+      { status: 'approved' },
+      { fields }
+    )).toBe(true);
+
+    expect(evaluateCondition(
+      { fieldKey: 'approval_notes', operator: 'is_not_visible' },
+      { status: 'pending' },
+      { fields }
+    )).toBe(true);
+
+    expect(evaluateCondition(
+      { fieldKey: 'rejection_reason', operator: 'is_visible' },
+      { status: 'pending' },
+      { fields }
+    )).toBe(true);
+  });
 });
 
 describe('form-utils progress stop info blocks', () => {
@@ -114,5 +152,62 @@ describe('form-utils progress stop info blocks', () => {
       type: 'PARAGRAPH',
       validation: { infoStopsProgress: false },
     })).toBe(false);
+  });
+});
+
+describe('form choice options', () => {
+  it('parses default and required option metadata', () => {
+    expect(parseChoiceOptions([
+      { label: 'A', value: 'A', defaultSelected: true },
+      { label: 'B', value: 'B', requiredSelected: true },
+    ])).toMatchObject([
+      { label: 'A', value: 'A', defaultSelected: true, requiredSelected: false },
+      { label: 'B', value: 'B', defaultSelected: false, requiredSelected: true },
+    ]);
+  });
+
+  it('applies single-choice defaults and keeps required multi-choice options selected', () => {
+    const fields = [
+      {
+        key: 'single',
+        type: 'SINGLE_CHOICE',
+        options: [
+          { label: 'Yes', value: 'Yes', defaultSelected: true },
+          { label: 'No', value: 'No' },
+        ],
+      },
+      {
+        key: 'multi',
+        type: 'MULTIPLE_CHOICE',
+        options: [
+          { label: 'Required', value: 'Required', requiredSelected: true },
+          { label: 'Optional', value: 'Optional' },
+        ],
+      },
+    ];
+
+    expect(applyDefaultTodayAnswers(fields as never, { multi: ['Optional'] })).toEqual({
+      single: 'Yes',
+      multi: ['Optional', 'Required'],
+    });
+  });
+
+  it('parses and formats nested choice answers', () => {
+    const [parent] = parseChoiceOptions([
+      {
+        label: 'Parent',
+        value: 'Parent',
+        childOptions: [
+          { label: 'Child', value: 'Child', requiredSelected: true },
+        ],
+        childSelectionMode: 'single',
+      },
+    ]);
+
+    expect(parent.childSelectionMode).toBe('single');
+    expect(parent.childOptions).toMatchObject([
+      { label: 'Child', value: 'Child', requiredSelected: true },
+    ]);
+    expect(formatChoiceAnswer([{ value: 'Parent', children: ['Child'] }])).toBe('Parent (Child)');
   });
 });

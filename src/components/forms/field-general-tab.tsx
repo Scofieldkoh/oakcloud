@@ -6,15 +6,36 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Toggle } from '@/components/ui/toggle';
 import { DROPDOWN_PRESETS } from '@/lib/constants/form-option-presets';
 import { isSummaryEligibleFieldType } from '@/lib/form-utils';
-import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS, normalizeKey, isRepeatMarkerInputType, isBlockDividerInputType } from './builder-utils';
-import type { FormFieldInput } from '@/lib/validations/form-builder';
+import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS, normalizeKey, isRepeatMarkerInputType, isBlockDividerInputType, isFaqField, newClientId } from './builder-utils';
 import type { BuilderField, ShortInputType } from './builder-utils';
 
-const INFO_INPUT_TYPES: ReadonlyArray<ShortInputType> = ['info_text', 'info_image', 'info_url', 'info_heading_1', 'info_heading_2', 'info_heading_3'];
+const INFO_INPUT_TYPES: ReadonlyArray<ShortInputType> = ['info_text', 'info_image', 'info_url', 'info_heading_1', 'info_heading_2', 'info_heading_3', 'info_faq'];
 const PAGE_BREAK_REPEAT_START: ShortInputType = 'repeat_start';
 const PAGE_BREAK_REPEAT_END: ShortInputType = 'repeat_end';
 const PAGE_BREAK_BLOCK_DIVIDER: ShortInputType = 'block_divider';
 const HEX_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+function createFaqOption(index: number) {
+  const label = `Question ${index}`;
+  return {
+    label,
+    value: newClientId(),
+    bodyHtml: '<p>Answer the question here.</p>',
+  };
+}
+
+function normalizeFaqOptions(options: BuilderField['options']): BuilderField['options'] {
+  const normalized = options
+    .map((option, index) => ({
+      label: option.label || `Question ${index + 1}`,
+      value: option.value || newClientId(),
+      bodyHtml: option.bodyHtml || '<p>Answer the question here.</p>',
+    }))
+    .filter((option) => option.label.trim().length > 0);
+
+  return normalized.length > 0 ? normalized : [createFaqOption(1)];
+}
+
 
 function normalizeHexColor(value: string): string | undefined {
   const trimmed = value.trim().toLowerCase();
@@ -71,8 +92,8 @@ export function FieldGeneralTab({
         <select
           value={field.type}
           onChange={(e) => {
-            const nextType = e.target.value as FormFieldInput['type'];
-            const next = { ...field, type: nextType };
+            const nextType = e.target.value as BuilderField['type'];
+            const next: BuilderField = { ...field, type: nextType };
             if (nextType === 'PAGE_BREAK') next.layoutWidth = 100;
             if (nextType === 'SHORT_TEXT' && (!next.inputType || INFO_INPUT_TYPES.includes(next.inputType))) {
               next.inputType = 'text';
@@ -278,7 +299,29 @@ export function FieldGeneralTab({
             <label className="mb-1.5 block text-xs font-medium text-text-secondary">Information type</label>
             <select
               value={INFO_INPUT_TYPES.includes(field.inputType) ? field.inputType : 'info_text'}
-              onChange={(e) => onChange({ ...field, inputType: e.target.value as ShortInputType })}
+              onChange={(e) => {
+                const nextInputType = e.target.value as ShortInputType;
+                if (nextInputType === 'info_faq') {
+                  const nextLabel = field.label && field.label !== 'Untitled field' ? field.label : 'Commonly Asked Questions';
+                  onChange({
+                    ...field,
+                    inputType: 'info_faq',
+                    label: nextLabel,
+                    key: field.key && field.key !== 'untitled_field' ? field.key : normalizeKey(nextLabel),
+                    isRequired: false,
+                    isReadOnly: false,
+                    showOnSummary: false,
+                    options: normalizeFaqOptions(field.options),
+                    validation: {
+                      ...(field.validation || {}),
+                      faqDefaultState: field.validation?.faqDefaultState || 'collapsed',
+                      faqSearchEnabled: field.validation?.faqSearchEnabled ?? true,
+                    },
+                  });
+                  return;
+                }
+                onChange({ ...field, inputType: nextInputType });
+              }}
               className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
             >
               <option value="info_text">Text block</option>
@@ -287,9 +330,28 @@ export function FieldGeneralTab({
               <option value="info_heading_1">Heading 1</option>
               <option value="info_heading_2">Heading 2</option>
               <option value="info_heading_3">Heading 3</option>
+              <option value="info_faq">FAQ</option>
             </select>
           </div>
 
+          <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
+            <Toggle
+              checked={field.validation?.infoShowInPdf === true}
+              onChange={(checked) => onChange({
+                ...field,
+                validation: {
+                  ...(field.validation || {}),
+                  infoShowInPdf: checked ? true : undefined,
+                },
+              })}
+              label="Show in print PDF"
+              description="Include this information block in the generated response PDF. FAQ blocks print fully expanded."
+              size="sm"
+            />
+          </div>
+
+          {!isFaqField(field) && (
+            <>
           {(field.inputType === 'info_text' || !INFO_INPUT_TYPES.includes(field.inputType)) && (
             <div className="space-y-2">
               <label className="mb-1.5 block text-xs font-medium text-text-secondary">Text block content</label>
@@ -510,7 +572,161 @@ export function FieldGeneralTab({
                 </div>
               </div>
             </div>
+            </>
+          )}
         </>
+      )}
+
+      {isFaqField(field) && (
+        <div className="space-y-3">
+          <div className="space-y-2 rounded-lg border border-border-primary bg-background-elevated p-3">
+            <label className="block text-xs font-medium text-text-secondary">Main header</label>
+            <div className="overflow-hidden rounded-lg border border-border-primary">
+              <RichTextEditor
+                value={field.label || ''}
+                onChange={(nextHtml) => onChange({ ...field, label: nextHtml })}
+                minHeight={96}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-text-secondary">FAQ item default state</label>
+              <select
+                value={field.validation?.faqDefaultState || 'collapsed'}
+                onChange={(e) => onChange({
+                  ...field,
+                  validation: {
+                    ...(field.validation || {}),
+                    faqDefaultState: e.target.value as 'collapsed' | 'expanded' | 'first_expanded',
+                  },
+                })}
+                className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+              >
+                <option value="collapsed">All collapsed</option>
+                <option value="expanded">All expanded</option>
+                <option value="first_expanded">First item expanded</option>
+              </select>
+            </div>
+
+            <Toggle
+              checked={field.validation?.faqSearchEnabled !== false}
+              onChange={(checked) => onChange({
+                ...field,
+                validation: {
+                  ...(field.validation || {}),
+                  faqSearchEnabled: checked ? true : false,
+                },
+              })}
+              label="Show search bar"
+              description="Allow respondents to search FAQ headers and body text."
+              size="sm"
+            />
+
+            <Toggle
+              checked={field.validation?.faqMainToggleEnabled === true}
+              onChange={(checked) => onChange({
+                ...field,
+                validation: {
+                  ...(field.validation || {}),
+                  faqMainToggleEnabled: checked ? true : undefined,
+                  faqMainDefaultExpanded: checked ? (field.validation?.faqMainDefaultExpanded ?? false) : undefined,
+                },
+              })}
+              label="Hide FAQ behind main header"
+              description="Show only the main header row until respondents expand it."
+              size="sm"
+            />
+
+            {field.validation?.faqMainToggleEnabled === true && (
+              <Toggle
+                checked={field.validation?.faqMainDefaultExpanded === true}
+                onChange={(checked) => onChange({
+                  ...field,
+                  validation: {
+                    ...(field.validation || {}),
+                    faqMainToggleEnabled: true,
+                    faqMainDefaultExpanded: checked ? true : undefined,
+                  },
+                })}
+                label="Main header expanded by default"
+                description="Open the FAQ section when the form first loads."
+                size="sm"
+              />
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-text-secondary">FAQ items</label>
+            <div className="space-y-2">
+              {field.options.map((option, optionIndex) => (
+                <div key={option.value || `${field.clientId}-faq-${optionIndex}`} className="rounded-lg border border-border-primary bg-background-elevated p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-text-secondary">Item {optionIndex + 1}</span>
+                    <button
+                      type="button"
+                      className="rounded border border-border-primary px-2 py-1 text-xs text-text-secondary hover:text-status-error"
+                      onClick={() => onChange({
+                        ...field,
+                        options: field.options.filter((_, idx) => idx !== optionIndex),
+                      })}
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <label className="block text-xs font-medium text-text-secondary">Header</label>
+                      <div className="overflow-hidden rounded-lg border border-border-primary">
+                        <RichTextEditor
+                          value={option.label || ''}
+                          onChange={(nextHtml) => {
+                            const nextOptions = field.options.map((candidate, idx) => (
+                              idx === optionIndex ? { ...candidate, label: nextHtml } : candidate
+                            ));
+                            onChange({ ...field, options: nextOptions });
+                          }}
+                          minHeight={96}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-xs font-medium text-text-secondary">Body</label>
+                      <div className="overflow-hidden rounded-lg border border-border-primary">
+                        <RichTextEditor
+                          value={option.bodyHtml || ''}
+                          onChange={(nextHtml) => {
+                            const nextOptions = field.options.map((candidate, idx) => (
+                              idx === optionIndex ? { ...candidate, bodyHtml: nextHtml } : candidate
+                            ));
+                            onChange({ ...field, options: nextOptions });
+                          }}
+                          minHeight={140}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="mt-2 rounded border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary"
+              onClick={() => onChange({
+                ...field,
+                options: [
+                  ...field.options,
+                  createFaqOption(field.options.length + 1),
+                ],
+              })}
+            >
+              Add FAQ item
+            </button>
+          </div>
+        </div>
       )}
 
       {(field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') && (
@@ -588,13 +804,15 @@ export function FieldGeneralTab({
                         />
                       </div>
                     )}
-                    {field.type === 'MULTIPLE_CHOICE' && (
+                    {(field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') && (
                       <div className="mt-2 rounded-lg border border-border-primary bg-background-primary p-2.5">
                         <Toggle
                           checked={option.defaultSelected === true}
                           onChange={(checked) => {
                             const nextOptions = field.options.map((candidate, idx) => (
-                              idx === optionIndex ? { ...candidate, defaultSelected: checked } : candidate
+                              idx === optionIndex
+                                ? { ...candidate, defaultSelected: checked || candidate.requiredSelected === true }
+                                : (field.type === 'SINGLE_CHOICE' && checked ? { ...candidate, defaultSelected: false } : candidate)
                             ));
                             onChange({ ...field, options: nextOptions });
                           }}
@@ -602,6 +820,255 @@ export function FieldGeneralTab({
                           description="Pre-select this option for new responses."
                           size="sm"
                         />
+                        {field.type === 'MULTIPLE_CHOICE' && (
+                          <div className="mt-2 border-t border-border-primary pt-2">
+                            <Toggle
+                              checked={option.requiredSelected === true}
+                              onChange={(checked) => {
+                                const nextOptions = field.options.map((candidate, idx) => (
+                                  idx === optionIndex
+                                    ? { ...candidate, requiredSelected: checked, defaultSelected: checked ? true : candidate.defaultSelected }
+                                    : candidate
+                                ));
+                                onChange({ ...field, options: nextOptions });
+                              }}
+                              label="Required option"
+                              description="Keep this option selected for respondents."
+                              size="sm"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {field.type === 'MULTIPLE_CHOICE' && (
+                      <div className="mt-3 rounded-lg border border-border-primary bg-background-primary p-2.5">
+                        <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="text-xs font-medium text-text-secondary">Nested options</div>
+                          <Toggle
+                            checked={option.childSelectionMode === 'single'}
+                            onChange={(checked) => {
+                              const nextOptions = field.options.map((candidate, idx) => {
+                                if (idx !== optionIndex) return candidate;
+                                const childOptions = candidate.childOptions || [];
+                                if (!checked) {
+                                  return { ...candidate, childSelectionMode: 'multiple' as const, childOptions };
+                                }
+
+                                let defaultAssigned = false;
+                                let requiredAssigned = false;
+                                return {
+                                  ...candidate,
+                                  childSelectionMode: 'single' as const,
+                                  childOptions: childOptions.map((childCandidate) => {
+                                    const keepRequired = childCandidate.requiredSelected === true && !requiredAssigned;
+                                    const keepDefault = keepRequired || (childCandidate.defaultSelected === true && !defaultAssigned);
+                                    if (keepRequired) requiredAssigned = true;
+                                    if (keepDefault) defaultAssigned = true;
+                                    return {
+                                      ...childCandidate,
+                                      requiredSelected: keepRequired,
+                                      defaultSelected: keepDefault,
+                                    };
+                                  }),
+                                };
+                              });
+                              onChange({ ...field, options: nextOptions });
+                            }}
+                            label="Single choice"
+                            description="Allow respondents to pick only one nested option."
+                            size="sm"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          {(option.childOptions || []).map((childOption, childIndex) => (
+                            <div key={`${field.clientId}-option-${optionIndex}-child-${childIndex}`} className="rounded border border-border-primary bg-background-elevated p-2">
+                              <div className="flex items-start gap-2">
+                                <div className="min-w-0 flex-1 space-y-2">
+                                  <FormInput
+                                    label={`Nested option ${childIndex + 1}`}
+                                    value={childOption.label}
+                                    onChange={(e) => {
+                                      const nextLabel = e.target.value;
+                                      const nextOptions = field.options.map((candidate, idx) => (
+                                        idx === optionIndex
+                                          ? {
+                                            ...candidate,
+                                            childOptions: (candidate.childOptions || []).map((childCandidate, childCandidateIndex) => (
+                                              childCandidateIndex === childIndex
+                                                ? { ...childCandidate, label: nextLabel, value: nextLabel }
+                                                : childCandidate
+                                            )),
+                                          }
+                                          : candidate
+                                      ));
+                                      onChange({ ...field, options: nextOptions });
+                                    }}
+                                  />
+                                  <Toggle
+                                    checked={childOption.allowTextInput === true}
+                                    onChange={(checked) => {
+                                      const nextOptions = field.options.map((candidate, idx) => (
+                                        idx === optionIndex
+                                          ? {
+                                            ...candidate,
+                                            childOptions: (candidate.childOptions || []).map((childCandidate, childCandidateIndex) => (
+                                              childCandidateIndex === childIndex
+                                                ? {
+                                                  ...childCandidate,
+                                                  allowTextInput: checked,
+                                                  textInputLabel: checked ? childCandidate.textInputLabel : null,
+                                                  textInputPlaceholder: checked ? childCandidate.textInputPlaceholder : null,
+                                                }
+                                                : childCandidate
+                                            )),
+                                          }
+                                          : candidate
+                                      ));
+                                      onChange({ ...field, options: nextOptions });
+                                    }}
+                                    description="Shows a text field when this nested option is selected."
+                                    size="sm"
+                                  />
+                                  <FormInput
+                                    label="Hover tooltip"
+                                    value={childOption.tooltipText || ''}
+                                    onChange={(e) => {
+                                      const nextOptions = field.options.map((candidate, idx) => (
+                                        idx === optionIndex
+                                          ? {
+                                            ...candidate,
+                                            childOptions: (candidate.childOptions || []).map((childCandidate, childCandidateIndex) => (
+                                              childCandidateIndex === childIndex ? { ...childCandidate, tooltipText: e.target.value } : childCandidate
+                                            )),
+                                          }
+                                          : candidate
+                                      ));
+                                      onChange({ ...field, options: nextOptions });
+                                    }}
+                                    placeholder="Optional tooltip for this nested option"
+                                  />
+                                  {childOption.allowTextInput === true && (
+                                    <div className="grid grid-cols-1 gap-2">
+                                      <FormInput
+                                        label="Details field label"
+                                        value={childOption.textInputLabel || ''}
+                                        onChange={(e) => {
+                                          const nextOptions = field.options.map((candidate, idx) => (
+                                            idx === optionIndex
+                                              ? {
+                                                ...candidate,
+                                                childOptions: (candidate.childOptions || []).map((childCandidate, childCandidateIndex) => (
+                                                  childCandidateIndex === childIndex ? { ...childCandidate, textInputLabel: e.target.value } : childCandidate
+                                                )),
+                                              }
+                                              : candidate
+                                          ));
+                                          onChange({ ...field, options: nextOptions });
+                                        }}
+                                        placeholder="Please specify"
+                                      />
+                                      <FormInput
+                                        label="Details placeholder"
+                                        value={childOption.textInputPlaceholder || ''}
+                                        onChange={(e) => {
+                                          const nextOptions = field.options.map((candidate, idx) => (
+                                            idx === optionIndex
+                                              ? {
+                                                ...candidate,
+                                                childOptions: (candidate.childOptions || []).map((childCandidate, childCandidateIndex) => (
+                                                  childCandidateIndex === childIndex ? { ...childCandidate, textInputPlaceholder: e.target.value } : childCandidate
+                                                )),
+                                              }
+                                              : candidate
+                                          ));
+                                          onChange({ ...field, options: nextOptions });
+                                        }}
+                                        placeholder="Enter details"
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="space-y-2 rounded border border-border-primary bg-background-primary p-2">
+                                    <Toggle
+                                      checked={childOption.defaultSelected === true}
+                                      onChange={(checked) => {
+                                        const nextOptions = field.options.map((candidate, idx) => (
+                                          idx === optionIndex
+                                            ? {
+                                              ...candidate,
+                                              childOptions: (candidate.childOptions || []).map((childCandidate, childCandidateIndex) => (
+                                                childCandidateIndex === childIndex
+                                                  ? { ...childCandidate, defaultSelected: checked || childCandidate.requiredSelected === true }
+                                                  : (candidate.childSelectionMode === 'single' && checked ? { ...childCandidate, defaultSelected: false, requiredSelected: false } : childCandidate)
+                                              )),
+                                            }
+                                            : candidate
+                                        ));
+                                        onChange({ ...field, options: nextOptions });
+                                      }}
+                                      label="Selected by default"
+                                      size="sm"
+                                    />
+                                    <Toggle
+                                      checked={childOption.requiredSelected === true}
+                                      onChange={(checked) => {
+                                        const nextOptions = field.options.map((candidate, idx) => (
+                                          idx === optionIndex
+                                            ? {
+                                              ...candidate,
+                                              childOptions: (candidate.childOptions || []).map((childCandidate, childCandidateIndex) => (
+                                                childCandidateIndex === childIndex
+                                                  ? { ...childCandidate, requiredSelected: checked, defaultSelected: checked ? true : childCandidate.defaultSelected }
+                                                  : (candidate.childSelectionMode === 'single' && checked ? { ...childCandidate, defaultSelected: false, requiredSelected: false } : childCandidate)
+                                              )),
+                                            }
+                                            : candidate
+                                        ));
+                                        onChange({ ...field, options: nextOptions });
+                                      }}
+                                      label="Required option"
+                                      size="sm"
+                                    />
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="rounded border border-border-primary px-2 py-1 text-xs text-text-secondary hover:text-status-error"
+                                  onClick={() => {
+                                    const nextOptions = field.options.map((candidate, idx) => (
+                                      idx === optionIndex
+                                        ? { ...candidate, childOptions: (candidate.childOptions || []).filter((_, childCandidateIndex) => childCandidateIndex !== childIndex) }
+                                        : candidate
+                                    ));
+                                    onChange({ ...field, options: nextOptions });
+                                  }}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          className="mt-2 rounded border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary"
+                          onClick={() => {
+                            const nextChildIndex = (option.childOptions || []).length + 1;
+                            const nextOptions = field.options.map((candidate, idx) => (
+                              idx === optionIndex
+                                ? {
+                                  ...candidate,
+                                  childOptions: [
+                                    ...(candidate.childOptions || []),
+                                    { label: `Nested option ${nextChildIndex}`, value: `Nested option ${nextChildIndex}` },
+                                  ],
+                                }
+                                : candidate
+                            ));
+                            onChange({ ...field, options: nextOptions });
+                          }}
+                        >
+                          Add nested option
+                        </button>
                       </div>
                     )}
                   </div>
@@ -705,7 +1172,7 @@ export function FieldGeneralTab({
         </div>
       )}
 
-      {field.type !== 'PAGE_BREAK' && field.type !== 'PARAGRAPH' && (
+      {field.type !== 'PAGE_BREAK' && field.type !== 'PARAGRAPH' && !isFaqField(field) && (
         <>
           <FormInput
             label="Placeholder"
@@ -728,7 +1195,7 @@ export function FieldGeneralTab({
         </>
       )}
 
-      {field.type !== 'PAGE_BREAK' && (
+      {field.type !== 'PAGE_BREAK' && !isFaqField(field) && (
         <>
           <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
             <Toggle checked={field.isRequired} onChange={(checked) => onChange({ ...field, isRequired: checked })} label="Field is required" size="sm" />

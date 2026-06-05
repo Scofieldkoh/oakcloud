@@ -27,6 +27,7 @@ import {
   parseObject,
   type FormSubmissionAiReviewSection,
 } from '@/lib/form-utils';
+import { extractSignatureDataUrl } from '@/lib/signature-utils';
 
 type RepeatSectionConfig = {
   id: string;
@@ -886,15 +887,24 @@ export default function FormResponseDetailPage() {
         )}
 
         {field.type === 'SIGNATURE' && (
-          <div className="rounded-lg border border-border-primary bg-background-primary p-2">
-            {typeof value === 'string' && value.trim().length > 0 ? (
-              // Signature payload is expected to be a data URL produced by the form signer.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={value} alt={`${field.label || field.key} signature`} className="max-h-44 w-full rounded object-contain" />
-            ) : (
-              <div className="py-3 text-center text-sm text-text-muted">No signature provided</div>
-            )}
-          </div>
+          (() => {
+            const signatureDataUrl = extractSignatureDataUrl(value);
+            return (
+              <div className="rounded-lg border border-border-primary bg-white p-3">
+                {signatureDataUrl ? (
+                  // Signature payload is expected to be a data URL produced by the form signer.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={signatureDataUrl}
+                    alt={`${field.label || field.key} signature`}
+                    className="mx-auto max-h-44 w-auto max-w-full rounded object-contain"
+                  />
+                ) : (
+                  <div className="py-3 text-center text-sm text-text-muted">No signature provided</div>
+                )}
+              </div>
+            );
+          })()
         )}
 
         {!['SHORT_TEXT', 'DROPDOWN', 'SINGLE_CHOICE', 'LONG_TEXT', 'MULTIPLE_CHOICE', 'FILE_UPLOAD', 'SIGNATURE'].includes(field.type) && (

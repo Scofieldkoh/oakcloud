@@ -51,6 +51,8 @@ export interface SearchableSelectProps {
   groupBy?: string;
   /** Additional class name for the input container */
   containerClassName?: string;
+  /** Minimum popover width in pixels; useful for narrow triggers with long labels */
+  popoverMinWidth?: number;
   /** Blur callback — fires when focus leaves the select input */
   onBlur?: () => void;
 }
@@ -70,6 +72,7 @@ export function SearchableSelect({
   loading = false,
   groupBy,
   containerClassName,
+  popoverMinWidth,
   onBlur,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -333,6 +336,16 @@ export function SearchableSelect({
   const activeOptionId = filteredOptions[highlightedIndex]
     ? getOptionId(highlightedIndex)
     : undefined;
+  const viewportWidth = mounted && typeof window !== 'undefined' ? window.innerWidth : 0;
+  const popoverWidth = viewportWidth > 0
+    ? Math.min(
+      Math.max(position.width, popoverMinWidth ?? position.width),
+      Math.max(position.width, viewportWidth - 16)
+    )
+    : position.width;
+  const popoverLeft = viewportWidth > 0
+    ? Math.min(Math.max(8, position.left), Math.max(8, viewportWidth - popoverWidth - 8))
+    : position.left;
 
   return (
     <div className={cn('relative', className)}>
@@ -428,8 +441,8 @@ export function SearchableSelect({
                 ? { bottom: window.innerHeight - position.inputTop + 4 }
                 : { top: position.top }
               ),
-              left: position.left,
-              width: position.width,
+              left: popoverLeft,
+              width: popoverWidth,
               maxHeight: 280,
             }}
           >
