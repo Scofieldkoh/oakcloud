@@ -28,12 +28,14 @@ import {
   History,
   Paperclip,
   RefreshCw,
+  Tag,
   Trash2,
 } from 'lucide-react';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Pagination } from '@/components/ui/pagination';
@@ -49,6 +51,7 @@ import {
   useFormDraftAuditLogs,
   useFormResponses,
   useGenerateFormDraftResumeLink,
+  useUpdateFormResponseTags,
   type FormResponsesResult,
 } from '@/hooks/use-forms';
 import {
@@ -67,12 +70,13 @@ import {
 import { copyTextToClipboard } from '@/lib/clipboard';
 import { cn } from '@/lib/utils';
 
-const PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20;
 const DRAFT_COLUMN_CODE_ID = '__draft_code';
 const DRAFT_COLUMN_SAVED_ID = '__draft_saved';
 const DRAFT_COLUMN_EXPIRES_ID = '__draft_expires';
 const DRAFT_COLUMN_LOCALE_ID = '__draft_locale';
 const SUBMISSION_ATTACHMENTS_COLUMN_ID = '__submission_attachments';
+const SUBMISSION_TAGS_COLUMN_ID = '__submission_tags';
 const DRAFT_ATTACHMENTS_COLUMN_ID = '__draft_attachments';
 const SUBMISSION_SELECT_COLUMN_WIDTH = 72;
 const SUBMISSION_OPEN_COLUMN_WIDTH = 56;
@@ -90,6 +94,8 @@ type SubmissionItem = FormResponsesResult['submissions'][number];
 type DraftItem = FormResponsesResult['drafts'][number];
 
 type ResponseTableKind = 'submissions' | 'drafts';
+type ExportScope = 'all' | 'filtered' | 'selected';
+type ExportStatus = 'ALL' | 'COMPLETED' | 'PARTIAL' | 'SPAM' | 'DRAFT' | 'ALL_WITH_DRAFTS';
 
 type ResponseColumnDef = {
   id: string;
@@ -101,7 +107,8 @@ type ResponseColumnDef = {
     | 'draftSaved'
     | 'draftExpires'
     | 'draftLocale'
-    | 'attachments';
+    | 'attachments'
+    | 'tags';
   label: string;
   fieldKey?: string;
   fieldType?: string;
@@ -129,6 +136,20 @@ type AttachmentDialogState = {
   };
 } | null;
 
+type TagDialogState = {
+  submission: SubmissionItem;
+  input: string;
+} | null;
+
+const EXPORT_STATUS_OPTIONS: Array<{ value: ExportStatus; label: string }> = [
+  { value: 'ALL', label: 'All submitted' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'PARTIAL', label: 'Partial' },
+  { value: 'SPAM', label: 'Spam' },
+  { value: 'DRAFT', label: 'Drafts' },
+  { value: 'ALL_WITH_DRAFTS', label: 'Submitted + drafts' },
+];
+
 function formatDate(value: string | Date): string {
   const date = value instanceof Date ? value : new Date(value);
   return date.toLocaleString('en-SG', {
@@ -138,6 +159,42 @@ function formatDate(value: string | Date): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function getExportDateRange(value?: DatePickerValue): { fromDate?: string; toDate?: string } {
+  if (!value) return {};
+
+  if (value.mode === 'single' && value.date) {
+    const from = new Date(value.date);
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(value.date);
+    to.setHours(23, 59, 59, 999);
+    return { fromDate: from.toISOString(), toDate: to.toISOString() };
+  }
+
+  if (value.mode === 'range' && value.range?.from) {
+    const from = new Date(value.range.from);
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(value.range.to || value.range.from);
+    to.setHours(23, 59, 59, 999);
+    return { fromDate: from.toISOString(), toDate: to.toISOString() };
+  }
+
+  return {};
+}
+
+function getDownloadFileName(disposition: string | null, fallback: string): string {
+  if (!disposition) return fallback;
+
+  const encodedMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (encodedMatch?.[1]) {
+    return decodeURIComponent(encodedMatch[1]);
+  }
+
+  const quotedMatch = disposition.match(/filename="([^"]+)"/i);
+  if (quotedMatch?.[1]) return quotedMatch[1];
+
+  return fallback;
 }
 
 function toDateTimeLocalInputValue(value: string | Date): string {
@@ -153,6 +210,39 @@ function toAnswerRecord(value: unknown): Record<string, unknown> {
     return {};
   }
   return value as Record<string, unknown>;
+}
+
+function normalizeResponseTag(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').slice(0, 48);
+}
+
+function normalizeResponseTags(values: string[]): string[] {
+  const seen = new Set<string>();
+  const tags: string[] = [];
+
+  for (const value of values) {
+    const tag = normalizeResponseTag(value);
+    if (!tag) continue;
+
+    const key = tag.toLowerCase();
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    tags.push(tag);
+  }
+
+  return tags.slice(0, 20);
+}
+
+function parseTagInput(value: string): string[] {
+  return normalizeResponseTags(value.split(','));
+}
+
+function getResponseTags(metadata: unknown): string[] {
+  const root = parseObject(metadata);
+  if (!root || !Array.isArray(root.responseTags)) return [];
+
+  return normalizeResponseTags(root.responseTags.filter((tag): tag is string => typeof tag === 'string'));
 }
 
 function formatLocaleValue(value: unknown): string {
@@ -299,7 +389,9 @@ export default function FormResponsesPage() {
   const tablePreferenceKey = useMemo(() => `forms:responses:${formId}:table-layout:v2`, [formId]);
 
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [draftPage, setDraftPage] = useState(1);
+  const [draftPageSize, setDraftPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [submissionSortBy, setSubmissionSortBy] = useState<string>(DEFAULT_SUBMISSION_SORT_COLUMN_ID);
   const [submissionSortOrder, setSubmissionSortOrder] = useState<SubmissionSortOrder>('desc');
   const [draftSortBy, setDraftSortBy] = useState<string>(DEFAULT_DRAFT_SORT_COLUMN_ID);
@@ -324,6 +416,14 @@ export default function FormResponsesPage() {
   const [isBulkDraftDeleteOpen, setIsBulkDraftDeleteOpen] = useState(false);
   const [isBulkDraftDeleting, setIsBulkDraftDeleting] = useState(false);
   const [attachmentDialog, setAttachmentDialog] = useState<AttachmentDialogState>(null);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportScope, setExportScope] = useState<ExportScope>('all');
+  const [exportStatus, setExportStatus] = useState<ExportStatus>('ALL');
+  const [exportDateRange, setExportDateRange] = useState<DatePickerValue | undefined>(undefined);
+  const [exportIncludeTagsInput, setExportIncludeTagsInput] = useState('');
+  const [exportExcludeTagsInput, setExportExcludeTagsInput] = useState('');
+  const [tagDialog, setTagDialog] = useState<TagDialogState>(null);
 
   const submissionColumnOrderRef = useRef<string[]>([]);
   const submissionColumnWidthsRef = useRef<Record<string, number>>({});
@@ -347,14 +447,15 @@ export default function FormResponsesPage() {
     refetch: refetchResponses,
   } = useFormResponses(formId, {
     page,
-    limit: PAGE_SIZE,
+    limit: pageSize,
     draftPage,
-    draftLimit: PAGE_SIZE,
+    draftLimit: draftPageSize,
     submissionSortBy,
     submissionSortOrder,
     submissionFilters: deferredSubmissionFilters,
   });
   const deleteResponseMutation = useDeleteFormResponse(formId);
+  const updateResponseTagsMutation = useUpdateFormResponseTags(formId);
   const deleteDraftMutation = useDeleteFormDraft(formId);
   const generateDraftResumeLinkMutation = useGenerateFormDraftResumeLink(formId);
   const extendDraftExpiryMutation = useExtendFormDraftExpiry(formId);
@@ -442,6 +543,14 @@ export default function FormResponsesPage() {
       label: 'Status',
       minWidth: 120,
       defaultWidth: 130,
+    });
+
+    map.set(SUBMISSION_TAGS_COLUMN_ID, {
+      id: SUBMISSION_TAGS_COLUMN_ID,
+      kind: 'tags',
+      label: 'Tags',
+      minWidth: 160,
+      defaultWidth: 190,
     });
 
     map.set(SUBMISSION_ATTACHMENTS_COLUMN_ID, {
@@ -754,22 +863,88 @@ export default function FormResponsesPage() {
     window.addEventListener('pointerup', onUp);
   }
 
-  async function exportCsv() {
+  async function exportResponses() {
     if (!form) return;
+
+    const hasSelectedRows = selectedSubmissionIds.size > 0 || selectedDraftIds.size > 0;
+    if (exportScope === 'selected' && !hasSelectedRows) {
+      showError('Select at least one response or draft to export.');
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/forms/${formId}/responses/export`);
-      if (!res.ok) throw new Error('Export failed');
+      setIsExporting(true);
+      const params = new URLSearchParams();
+      const { fromDate, toDate } = getExportDateRange(exportDateRange);
+
+      if (form.tenantId) params.set('tenantId', form.tenantId);
+      if (fromDate) params.set('fromDate', fromDate);
+      if (toDate) params.set('toDate', toDate);
+
+      if (exportScope === 'selected') {
+        const submissionIds = Array.from(selectedSubmissionIds);
+        const draftIds = Array.from(selectedDraftIds);
+        if (submissionIds.length > 0) params.set('submissionIds', JSON.stringify(submissionIds));
+        if (draftIds.length > 0) params.set('draftIds', JSON.stringify(draftIds));
+
+        if (draftIds.length > 0 && submissionIds.length > 0) {
+          params.set('status', 'ALL_WITH_DRAFTS');
+        } else if (draftIds.length > 0) {
+          params.set('status', 'DRAFT');
+        } else {
+          params.set('status', exportStatus);
+        }
+      } else {
+        params.set('status', exportStatus);
+      }
+
+      if (exportScope === 'filtered' && hasActiveSubmissionFilters) {
+        params.set('submissionFilters', JSON.stringify(submissionFilters));
+      }
+      const includeTags = parseTagInput(exportIncludeTagsInput);
+      const excludeTags = parseTagInput(exportExcludeTagsInput);
+      if (includeTags.length > 0) params.set('includeTags', JSON.stringify(includeTags));
+      if (excludeTags.length > 0) params.set('excludeTags', JSON.stringify(excludeTags));
+
+      const res = await fetch(`/api/forms/${formId}/responses/export?${params.toString()}`);
+      if (!res.ok) {
+        const errorPayload = await res.json().catch(() => null);
+        const message = errorPayload && typeof errorPayload.error === 'string'
+          ? errorPayload.error
+          : 'Export failed';
+        throw new Error(message);
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'responses.csv';
+      link.download = getDownloadFileName(res.headers.get('Content-Disposition'), 'responses.xlsx');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-    } catch {
-      // Export failure is non-blocking for this page.
+      success('Export downloaded.');
+      setIsExportOpen(false);
+    } catch (exportError) {
+      showError(exportError instanceof Error ? exportError.message : 'Export failed');
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  async function handleSaveResponseTags() {
+    if (!tagDialog) return;
+
+    try {
+      const tags = parseTagInput(tagDialog.input);
+      await updateResponseTagsMutation.mutateAsync({
+        submissionId: tagDialog.submission.id,
+        tags,
+      });
+      success('Response tags updated.');
+      setTagDialog(null);
+    } catch (updateError) {
+      showError(updateError instanceof Error ? updateError.message : 'Failed to update response tags');
     }
   }
 
@@ -1138,6 +1313,12 @@ export default function FormResponsesPage() {
       );
     }
 
+    if (column.kind === 'tags') {
+      const tags = getResponseTags(submission.metadata);
+      if (tags.length === 0) return '';
+      return tags.join(', ');
+    }
+
     const answers = toAnswerRecord(submission.answers);
     const value = answers[column.fieldKey || ''];
     return formatSummaryCellValue(column.fieldType || 'SHORT_TEXT', value);
@@ -1187,8 +1368,8 @@ export default function FormResponsesPage() {
           <Button variant="secondary" size="sm" onClick={() => router.push(`/forms/${form.id}/builder`)}>
             Edit Form
           </Button>
-          <Button variant="primary" size="sm" leftIcon={<Download className="w-4 h-4" />} onClick={exportCsv}>
-            Export CSV
+          <Button variant="primary" size="sm" leftIcon={<Download className="w-4 h-4" />} onClick={() => setIsExportOpen(true)}>
+            Export
           </Button>
         </div>
       </div>
@@ -1506,9 +1687,41 @@ export default function FormResponsesPage() {
                               <span className="text-text-muted">-</span>
                             )
                           ) : (
-                            <span className="line-clamp-2 break-words">
-                              {renderSubmissionCell(submission, column)}
-                            </span>
+                            column.kind === 'tags' ? (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setTagDialog({
+                                    submission,
+                                    input: getResponseTags(submission.metadata).join(', '),
+                                  });
+                                }}
+                                className="flex min-h-8 w-full min-w-0 flex-wrap items-center gap-1 rounded-md border border-transparent px-1.5 py-1 text-left hover:border-border-primary hover:bg-background-primary"
+                                aria-label="Edit response tags"
+                              >
+                                {getResponseTags(submission.metadata).length > 0 ? (
+                                  getResponseTags(submission.metadata).map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="inline-flex max-w-full items-center gap-1 rounded bg-background-tertiary px-2 py-0.5 text-xs text-text-secondary"
+                                    >
+                                      <Tag className="h-3 w-3 shrink-0" />
+                                      <span className="truncate">{tag}</span>
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-xs text-text-muted">
+                                    <Tag className="h-3 w-3" />
+                                    Add tags
+                                  </span>
+                                )}
+                              </button>
+                            ) : (
+                              <span className="line-clamp-2 break-words">
+                                {renderSubmissionCell(submission, column)}
+                              </span>
+                            )
                           )}
                         </td>
                       ))}
@@ -1541,14 +1754,18 @@ export default function FormResponsesPage() {
           </div>
         )}
 
-        {data && data.totalPages > 1 && (
+        {data && data.total > 0 && (
           <Pagination
             page={data.page}
             totalPages={data.totalPages}
             total={data.total}
             limit={data.limit}
             onPageChange={setPage}
-            showPageSize={false}
+            onLimitChange={(nextLimit) => {
+              setPageSize(nextLimit);
+              setPage(1);
+              setSelectedSubmissionIds(new Set());
+            }}
           />
         )}
       </div>
@@ -1561,6 +1778,15 @@ export default function FormResponsesPage() {
         }}
         actions={[
           {
+            id: 'export',
+            label: 'Export',
+            icon: Download,
+            description: selectedDraftIds.size > 0 && selectedSubmissionIds.size > 0
+              ? 'Export selected responses and drafts'
+              : selectedDraftIds.size > 0 ? 'Export selected drafts' : 'Export selected responses',
+            isLoading: isExporting,
+          },
+          {
             id: 'delete',
             label: 'Delete',
             icon: Trash2,
@@ -1570,6 +1796,11 @@ export default function FormResponsesPage() {
           },
         ]}
         onAction={(actionId) => {
+          if (actionId === 'export') {
+            setExportScope('selected');
+            setIsExportOpen(true);
+            return;
+          }
           if (actionId !== 'delete') return;
           if (selectedDraftIds.size > 0) {
             setIsBulkDraftDeleteOpen(true);
@@ -1946,14 +2177,18 @@ export default function FormResponsesPage() {
           </div>
         )}
 
-        {data && data.draftTotalPages > 1 && (
+        {data && data.draftTotal > 0 && (
           <Pagination
             page={data.draftPage}
             totalPages={data.draftTotalPages}
             total={data.draftTotal}
             limit={data.draftLimit}
             onPageChange={setDraftPage}
-            showPageSize={false}
+            onLimitChange={(nextLimit) => {
+              setDraftPageSize(nextLimit);
+              setDraftPage(1);
+              setSelectedDraftIds(new Set());
+            }}
           />
         )}
       </div>
@@ -1997,6 +2232,182 @@ export default function FormResponsesPage() {
         confirmLabel="Delete draft"
         isLoading={deleteDraftMutation.isPending}
       />
+
+      <Modal
+        isOpen={!!tagDialog}
+        onClose={() => {
+          if (!updateResponseTagsMutation.isPending) setTagDialog(null);
+        }}
+        title="Response tags"
+        description="Use comma-separated labels such as old, duplicate, or superseded."
+        size="sm"
+      >
+        <ModalBody className="space-y-3">
+          <label htmlFor="response-tags" className="text-sm font-medium text-text-primary">
+            Tags
+          </label>
+          <input
+            id="response-tags"
+            type="text"
+            value={tagDialog?.input || ''}
+            onChange={(event) => {
+              const value = event.target.value;
+              setTagDialog((previous) => previous ? { ...previous, input: value } : previous);
+            }}
+            placeholder="old, superseded"
+            className="w-full rounded-md border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-oak-primary"
+          />
+          <div className="flex flex-wrap gap-1">
+            {parseTagInput(tagDialog?.input || '').map((tag) => (
+              <span key={tag} className="inline-flex items-center gap-1 rounded bg-background-tertiary px-2 py-0.5 text-xs text-text-secondary">
+                <Tag className="h-3 w-3" />
+                {tag}
+              </span>
+            ))}
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setTagDialog(null)}
+            disabled={updateResponseTagsMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSaveResponseTags}
+            isLoading={updateResponseTagsMutation.isPending}
+          >
+            Save tags
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        isOpen={isExportOpen}
+        onClose={() => {
+          if (!isExporting) setIsExportOpen(false);
+        }}
+        title="Export responses"
+        size="md"
+      >
+        <ModalBody className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-primary">Export scope</label>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {([
+                { value: 'all' as const, label: 'All' },
+                { value: 'filtered' as const, label: 'Current filters' },
+                { value: 'selected' as const, label: 'Selected' },
+              ]).map((option) => {
+                const selectedCount = selectedSubmissionIds.size + selectedDraftIds.size;
+                const isDisabled = option.value === 'selected' && selectedCount === 0;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setExportScope(option.value)}
+                    disabled={isDisabled}
+                    className={cn(
+                      'rounded-md border px-3 py-2 text-sm transition-colors',
+                      exportScope === option.value
+                        ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
+                        : 'border-border-primary bg-background-primary text-text-secondary hover:text-text-primary',
+                      isDisabled && 'cursor-not-allowed opacity-50'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="space-y-1.5">
+              <span className="text-sm font-medium text-text-primary">Status</span>
+              <select
+                value={exportStatus}
+                onChange={(event) => setExportStatus(event.target.value as ExportStatus)}
+                disabled={exportScope === 'selected' && selectedDraftIds.size > 0 && selectedSubmissionIds.size === 0}
+                className="w-full rounded-md border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-oak-primary disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {EXPORT_STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <DatePicker
+              label="Date range"
+              value={exportDateRange}
+              onChange={setExportDateRange}
+              placeholder="All dates"
+              defaultTab="range"
+              size="sm"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="space-y-1.5">
+              <span className="text-sm font-medium text-text-primary">Include tags</span>
+              <input
+                type="text"
+                value={exportIncludeTagsInput}
+                onChange={(event) => setExportIncludeTagsInput(event.target.value)}
+                placeholder="duplicate, superseded"
+                className="w-full rounded-md border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-oak-primary"
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-sm font-medium text-text-primary">Exclude tags</span>
+              <input
+                type="text"
+                value={exportExcludeTagsInput}
+                onChange={(event) => setExportExcludeTagsInput(event.target.value)}
+                placeholder="old"
+                className="w-full rounded-md border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-oak-primary"
+              />
+            </label>
+          </div>
+
+          <div className="rounded-md border border-border-primary bg-background-primary p-3 text-sm text-text-secondary">
+            <div className="flex items-center justify-between gap-3">
+              <span>Selected responses</span>
+              <span className="font-medium text-text-primary">{selectedSubmissionIds.size}</span>
+            </div>
+            <div className="mt-1 flex items-center justify-between gap-3">
+              <span>Selected drafts</span>
+              <span className="font-medium text-text-primary">{selectedDraftIds.size}</span>
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsExportOpen(false)}
+            disabled={isExporting}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Download className="w-4 h-4" />}
+            onClick={exportResponses}
+            isLoading={isExporting}
+          >
+            Export Excel
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       <Modal
         isOpen={!!draftToExtend}

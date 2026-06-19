@@ -19,6 +19,7 @@ import type {
   RecentFormSubmissionItem,
   GenerateFormDraftResumeLinkResult,
   ExtendFormDraftExpiryResult,
+  UpdateFormResponseTagsResult,
 } from '@/services/form-builder.service';
 
 export type { FormListItem, FormListResult, FormDetail, FormResponsesResult, FormResponseDetailResult };
@@ -194,6 +195,29 @@ async function deleteFormResponseRequest(
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.error || 'Failed to delete response');
+  }
+
+  return response.json();
+}
+
+async function updateFormResponseTagsRequest(
+  id: string,
+  submissionId: string,
+  tags: string[],
+  tenantId?: string | null
+): Promise<UpdateFormResponseTagsResult> {
+  const params = new URLSearchParams();
+  if (tenantId) params.set('tenantId', tenantId);
+
+  const response = await fetch(`/api/forms/${id}/responses/${submissionId}${params.toString() ? `?${params.toString()}` : ''}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tags }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to update response tags');
   }
 
   return response.json();
@@ -600,6 +624,23 @@ export function useDeleteFormResponse(id: string) {
       queryClient.invalidateQueries({ queryKey: formKeys.allResponsesForForm(id) });
       queryClient.invalidateQueries({ queryKey: formKeys.detail(id, activeTenantId) });
       queryClient.removeQueries({
+        queryKey: formKeys.responseDetail(id, variables.submissionId, activeTenantId),
+      });
+    },
+  });
+}
+
+export function useUpdateFormResponseTags(id: string) {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useMutation({
+    mutationFn: ({ submissionId, tags }: { submissionId: string; tags: string[] }) =>
+      updateFormResponseTagsRequest(id, submissionId, tags, activeTenantId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: formKeys.allResponsesForForm(id) });
+      queryClient.invalidateQueries({
         queryKey: formKeys.responseDetail(id, variables.submissionId, activeTenantId),
       });
     },
