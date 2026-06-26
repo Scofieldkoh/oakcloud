@@ -82,6 +82,24 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
     setHighlightedIndex(0);
   }, [options.length]);
 
+  // Keep the displayed selected item in sync when the parent controls value
+  // from query results or default selections.
+  useEffect(() => {
+    if (!value) {
+      setSelectedItem(null);
+      return;
+    }
+
+    if (selectedItem?.id === value) {
+      return;
+    }
+
+    const matchingOption = options.find((item) => item.id === value);
+    if (matchingOption) {
+      setSelectedItem(matchingOption);
+    }
+  }, [options, selectedItem?.id, value]);
+
   // Update position when opening
   useEffect(() => {
     if (isOpen && containerRef.current) {

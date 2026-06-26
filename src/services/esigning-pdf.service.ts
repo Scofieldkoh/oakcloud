@@ -13,7 +13,6 @@ import {
 } from '@/lib/esigning-session';
 import {
   buildEsigningEventLabel,
-  formatEsigningAccessModeLabel,
   summarizeEsigningUserAgent,
 } from '@/services/esigning-evidence';
 import {
@@ -41,46 +40,6 @@ function toPdfBounds(input: {
   const y = input.pageHeight - input.pageHeight * input.yPercent - height;
 
   return { x, y, width, height };
-}
-
-function drawMultilineText(input: {
-  page: PDFPage;
-  text: string;
-  x: number;
-  y: number;
-  maxWidth: number;
-  size: number;
-  color?: ReturnType<typeof rgb>;
-  font: Awaited<ReturnType<PDFDocument['embedFont']>>;
-}) {
-  const words = input.text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = '';
-
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    const width = input.font.widthOfTextAtSize(candidate, input.size);
-    if (width > input.maxWidth && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = candidate;
-    }
-  }
-
-  if (current) {
-    lines.push(current);
-  }
-
-  lines.forEach((line, index) => {
-    input.page.drawText(line, {
-      x: input.x,
-      y: input.y - index * (input.size + 4),
-      size: input.size,
-      font: input.font,
-      color: input.color ?? rgb(0.13, 0.16, 0.2),
-    });
-  });
 }
 
 function drawEventIcon(

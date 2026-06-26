@@ -227,7 +227,7 @@ export type TemplatePartialWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"TemplatePartial"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"TemplatePartial"> | Date | string | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
 }
 
 export type TemplatePartialOrderByWithRelationInput = {
@@ -243,7 +243,7 @@ export type TemplatePartialOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdBy?: Prisma.UserOrderByWithRelationInput
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
 }
 
 export type TemplatePartialWhereUniqueInput = Prisma.AtLeast<{
@@ -263,7 +263,7 @@ export type TemplatePartialWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"TemplatePartial"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"TemplatePartial"> | Date | string | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
 }, "id" | "tenantId_name">
 
 export type TemplatePartialOrderByWithAggregationInput = {
@@ -311,7 +311,7 @@ export type TemplatePartialCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedPartialsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutTemplatePartialsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutTemplatePartialsInput
 }
 
 export type TemplatePartialUncheckedCreateInput = {
@@ -339,7 +339,7 @@ export type TemplatePartialUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedPartialsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutTemplatePartialsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutTemplatePartialsNestedInput
 }
 
 export type TemplatePartialUncheckedUpdateInput = {
@@ -614,7 +614,7 @@ export type TemplatePartialCreateWithoutCreatedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutTemplatePartialsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutTemplatePartialsInput
 }
 
 export type TemplatePartialUncheckedCreateWithoutCreatedByInput = {
@@ -731,7 +731,7 @@ export type TemplatePartialUpdateWithoutCreatedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutTemplatePartialsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutTemplatePartialsNestedInput
 }
 
 export type TemplatePartialUncheckedUpdateWithoutCreatedByInput = {
@@ -775,7 +775,7 @@ export type TemplatePartialSelect<ExtArgs extends runtime.Types.Extensions.Inter
   updatedAt?: boolean
   deletedAt?: boolean
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["templatePartial"]>
 
 export type TemplatePartialSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -791,7 +791,7 @@ export type TemplatePartialSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   updatedAt?: boolean
   deletedAt?: boolean
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["templatePartial"]>
 
 export type TemplatePartialSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -807,7 +807,7 @@ export type TemplatePartialSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   updatedAt?: boolean
   deletedAt?: boolean
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["templatePartial"]>
 
 export type TemplatePartialSelectScalar = {
@@ -827,22 +827,22 @@ export type TemplatePartialSelectScalar = {
 export type TemplatePartialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "displayName" | "description" | "content" | "placeholders" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["templatePartial"]>
 export type TemplatePartialInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type TemplatePartialIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type TemplatePartialIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 
 export type $TemplatePartialPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "TemplatePartial"
   objects: {
     createdBy: Prisma.$UserPayload<ExtArgs>
-    tenant: Prisma.$TenantPayload<ExtArgs>
+    tenant: Prisma.$WorkspacePayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1251,7 +1251,7 @@ readonly fields: TemplatePartialFieldRefs;
 export interface Prisma__TemplatePartialClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   createdBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

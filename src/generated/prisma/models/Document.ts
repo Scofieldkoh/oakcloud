@@ -358,7 +358,7 @@ export type DocumentWhereInput = {
   officers?: Prisma.CompanyOfficerListRelationFilter
   shareholders?: Prisma.CompanyShareholderListRelationFilter
   company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   uploadedBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   processingDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
   shareCapital?: Prisma.ShareCapitalListRelationFilter
@@ -394,7 +394,7 @@ export type DocumentOrderByWithRelationInput = {
   officers?: Prisma.CompanyOfficerOrderByRelationAggregateInput
   shareholders?: Prisma.CompanyShareholderOrderByRelationAggregateInput
   company?: Prisma.CompanyOrderByWithRelationInput
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
   uploadedBy?: Prisma.UserOrderByWithRelationInput
   processingDocument?: Prisma.ProcessingDocumentOrderByWithRelationInput
   shareCapital?: Prisma.ShareCapitalOrderByRelationAggregateInput
@@ -433,7 +433,7 @@ export type DocumentWhereUniqueInput = Prisma.AtLeast<{
   officers?: Prisma.CompanyOfficerListRelationFilter
   shareholders?: Prisma.CompanyShareholderListRelationFilter
   company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   uploadedBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   processingDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
   shareCapital?: Prisma.ShareCapitalListRelationFilter
@@ -524,7 +524,7 @@ export type DocumentCreateInput = {
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
@@ -590,7 +590,7 @@ export type DocumentUpdateInput = {
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
@@ -1201,7 +1201,7 @@ export type DocumentCreateWithoutUploadedByInput = {
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutDocumentsInput
@@ -1290,7 +1290,7 @@ export type DocumentCreateWithoutCompanyInput = {
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
@@ -1380,7 +1380,7 @@ export type DocumentCreateWithoutFormerNamesInput = {
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
@@ -1460,7 +1460,7 @@ export type DocumentUpdateWithoutFormerNamesInput = {
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
@@ -1524,7 +1524,7 @@ export type DocumentCreateWithoutAddressesInput = {
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
@@ -1604,7 +1604,7 @@ export type DocumentUpdateWithoutAddressesInput = {
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
@@ -1668,7 +1668,7 @@ export type DocumentCreateWithoutOfficersInput = {
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
@@ -1748,7 +1748,7 @@ export type DocumentUpdateWithoutOfficersInput = {
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
@@ -1813,7 +1813,7 @@ export type DocumentCreateWithoutShareCapitalInput = {
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutDocumentsInput
@@ -1893,7 +1893,7 @@ export type DocumentUpdateWithoutShareCapitalInput = {
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutDocumentsNestedInput
@@ -1956,7 +1956,7 @@ export type DocumentCreateWithoutShareholdersInput = {
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
@@ -2036,7 +2036,7 @@ export type DocumentUpdateWithoutShareholdersInput = {
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
@@ -2100,7 +2100,7 @@ export type DocumentCreateWithoutChargesInput = {
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
@@ -2180,7 +2180,7 @@ export type DocumentUpdateWithoutChargesInput = {
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
@@ -2245,7 +2245,7 @@ export type DocumentCreateWithoutProcessingDocumentInput = {
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutDocumentsInput
@@ -2325,7 +2325,7 @@ export type DocumentUpdateWithoutProcessingDocumentInput = {
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutDocumentsNestedInput
@@ -2389,7 +2389,7 @@ export type DocumentCreateWithoutWorkflow_artifactsInput = {
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
@@ -2469,7 +2469,7 @@ export type DocumentUpdateWithoutWorkflow_artifactsInput = {
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
@@ -2669,7 +2669,7 @@ export type DocumentUpdateWithoutUploadedByInput = {
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutDocumentsNestedInput
@@ -2780,7 +2780,7 @@ export type DocumentUpdateWithoutCompanyInput = {
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
@@ -2957,7 +2957,7 @@ export type DocumentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   officers?: boolean | Prisma.Document$officersArgs<ExtArgs>
   shareholders?: boolean | Prisma.Document$shareholdersArgs<ExtArgs>
   company?: boolean | Prisma.Document$companyArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   uploadedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   processingDocument?: boolean | Prisma.Document$processingDocumentArgs<ExtArgs>
   shareCapital?: boolean | Prisma.Document$shareCapitalArgs<ExtArgs>
@@ -2989,7 +2989,7 @@ export type DocumentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   createdAt?: boolean
   updatedAt?: boolean
   company?: boolean | Prisma.Document$companyArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   uploadedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["document"]>
 
@@ -3017,7 +3017,7 @@ export type DocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   createdAt?: boolean
   updatedAt?: boolean
   company?: boolean | Prisma.Document$companyArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   uploadedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["document"]>
 
@@ -3054,7 +3054,7 @@ export type DocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArg
   officers?: boolean | Prisma.Document$officersArgs<ExtArgs>
   shareholders?: boolean | Prisma.Document$shareholdersArgs<ExtArgs>
   company?: boolean | Prisma.Document$companyArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   uploadedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   processingDocument?: boolean | Prisma.Document$processingDocumentArgs<ExtArgs>
   shareCapital?: boolean | Prisma.Document$shareCapitalArgs<ExtArgs>
@@ -3063,12 +3063,12 @@ export type DocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArg
 }
 export type DocumentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   company?: boolean | Prisma.Document$companyArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   uploadedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 export type DocumentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   company?: boolean | Prisma.Document$companyArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   uploadedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 
@@ -3081,7 +3081,7 @@ export type $DocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     officers: Prisma.$CompanyOfficerPayload<ExtArgs>[]
     shareholders: Prisma.$CompanyShareholderPayload<ExtArgs>[]
     company: Prisma.$CompanyPayload<ExtArgs> | null
-    tenant: Prisma.$TenantPayload<ExtArgs>
+    tenant: Prisma.$WorkspacePayload<ExtArgs>
     uploadedBy: Prisma.$UserPayload<ExtArgs>
     processingDocument: Prisma.$ProcessingDocumentPayload<ExtArgs> | null
     shareCapital: Prisma.$ShareCapitalPayload<ExtArgs>[]
@@ -3510,7 +3510,7 @@ export interface Prisma__DocumentClient<T, Null = never, ExtArgs extends runtime
   officers<T extends Prisma.Document$officersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$officersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyOfficerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   shareholders<T extends Prisma.Document$shareholdersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$shareholdersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyShareholderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   company<T extends Prisma.Document$companyArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$companyArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   uploadedBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   processingDocument<T extends Prisma.Document$processingDocumentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$processingDocumentArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   shareCapital<T extends Prisma.Document$shareCapitalArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$shareCapitalArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShareCapitalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>

@@ -40,7 +40,7 @@ export async function GET(
 ) {
   try {
     const session = await requireAuth();
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const { id: userId } = await params;
@@ -76,7 +76,7 @@ export async function POST(
 ) {
   try {
     const session = await requireAuth();
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const { id: userId } = await params;
@@ -121,7 +121,7 @@ export async function PATCH(
 ) {
   try {
     const session = await requireAuth();
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const body = await request.json();
@@ -164,7 +164,7 @@ export async function DELETE(
 ) {
   try {
     const session = await requireAuth();
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const body = await request.json();

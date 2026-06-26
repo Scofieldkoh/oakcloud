@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { resolveTenantId, createErrorResponse } from '@/lib/api-helpers';
+import { resolveWorkspaceId, createErrorResponse } from '@/lib/api-helpers';
 import { getFormResponses } from '@/services/form-builder.service';
 
 interface RouteParams {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'read');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const page = Math.max(1, Number(searchParams.get('page') || '1'));
     const limit = Math.min(200, Math.max(1, Number(searchParams.get('limit') || '20')));
     const draftPage = Math.max(1, Number(searchParams.get('draftPage') || '1'));

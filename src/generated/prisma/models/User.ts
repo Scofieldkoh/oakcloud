@@ -279,7 +279,7 @@ export type UserWhereInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
   preferences?: Prisma.UserPreferenceListRelationFilter
   roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   workflow_artifacts?: Prisma.Workflow_artifactsListRelationFilter
   workflow_billing_states?: Prisma.Workflow_billing_statesListRelationFilter
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.Workflow_blockersListRelationFilter
@@ -339,7 +339,7 @@ export type UserOrderByWithRelationInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentOrderByRelationAggregateInput
   preferences?: Prisma.UserPreferenceOrderByRelationAggregateInput
   roleAssignments?: Prisma.UserRoleAssignmentOrderByRelationAggregateInput
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
   workflow_artifacts?: Prisma.workflow_artifactsOrderByRelationAggregateInput
   workflow_billing_states?: Prisma.workflow_billing_statesOrderByRelationAggregateInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersOrderByRelationAggregateInput
@@ -402,7 +402,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   companyAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
   preferences?: Prisma.UserPreferenceListRelationFilter
   roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   workflow_artifacts?: Prisma.Workflow_artifactsListRelationFilter
   workflow_billing_states?: Prisma.Workflow_billing_statesListRelationFilter
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.Workflow_blockersListRelationFilter
@@ -503,7 +503,7 @@ export type UserCreateInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -621,7 +621,7 @@ export type UserUpdateInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -1682,7 +1682,7 @@ export type UserCreateWithoutRoleAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -1814,7 +1814,7 @@ export type UserUpdateWithoutRoleAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -1930,7 +1930,7 @@ export type UserCreateWithoutPreferencesInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -2062,7 +2062,7 @@ export type UserUpdateWithoutPreferencesInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -2178,7 +2178,7 @@ export type UserCreateWithoutCompanyAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -2310,7 +2310,7 @@ export type UserUpdateWithoutCompanyAssignmentsInput = {
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -2426,7 +2426,7 @@ export type UserCreateWithoutUploadedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -2558,7 +2558,7 @@ export type UserUpdateWithoutUploadedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -2674,7 +2674,7 @@ export type UserCreateWithoutAuditLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -2806,7 +2806,7 @@ export type UserUpdateWithoutAuditLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -2922,7 +2922,7 @@ export type UserCreateWithoutConnectorUsageLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -3054,7 +3054,7 @@ export type UserUpdateWithoutConnectorUsageLogsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -3170,7 +3170,7 @@ export type UserCreateWithoutCreatedTemplatesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -3302,7 +3302,7 @@ export type UserUpdateWithoutCreatedTemplatesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -3418,7 +3418,7 @@ export type UserCreateWithoutCreatedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -3539,7 +3539,7 @@ export type UserCreateWithoutFinalizedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -3671,7 +3671,7 @@ export type UserUpdateWithoutCreatedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -3798,7 +3798,7 @@ export type UserUpdateWithoutFinalizedDocumentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -3914,7 +3914,7 @@ export type UserCreateWithoutCreatedSharesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -4046,7 +4046,7 @@ export type UserUpdateWithoutCreatedSharesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -4162,7 +4162,7 @@ export type UserCreateWithoutHiddenCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -4283,7 +4283,7 @@ export type UserCreateWithoutResolvedCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -4404,7 +4404,7 @@ export type UserCreateWithoutAuthoredCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -4536,7 +4536,7 @@ export type UserUpdateWithoutHiddenCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -4663,7 +4663,7 @@ export type UserUpdateWithoutResolvedCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -4790,7 +4790,7 @@ export type UserUpdateWithoutAuthoredCommentsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -4906,7 +4906,7 @@ export type UserCreateWithoutDocumentDraftsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -5038,7 +5038,7 @@ export type UserUpdateWithoutDocumentDraftsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -5154,7 +5154,7 @@ export type UserCreateWithoutCreatedPartialsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -5286,7 +5286,7 @@ export type UserUpdateWithoutCreatedPartialsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -5402,7 +5402,7 @@ export type UserCreateWithoutAiConversationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -5534,7 +5534,7 @@ export type UserUpdateWithoutAiConversationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -5650,7 +5650,7 @@ export type UserCreateWithoutCreatedEsigningEnvelopesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -5782,7 +5782,7 @@ export type UserUpdateWithoutCreatedEsigningEnvelopesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -5899,7 +5899,7 @@ export type UserCreateWithoutWorkflow_artifactsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
   workflow_blockers_workflow_blockers_raised_byTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_raised_byTousersInput
@@ -6031,7 +6031,7 @@ export type UserUpdateWithoutWorkflow_artifactsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
   workflow_blockers_workflow_blockers_raised_byTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_raised_byTousersNestedInput
@@ -6147,7 +6147,7 @@ export type UserCreateWithoutWorkflow_billing_statesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
   workflow_blockers_workflow_blockers_raised_byTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_raised_byTousersInput
@@ -6279,7 +6279,7 @@ export type UserUpdateWithoutWorkflow_billing_statesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
   workflow_blockers_workflow_blockers_raised_byTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_raised_byTousersNestedInput
@@ -6395,7 +6395,7 @@ export type UserCreateWithoutWorkflow_blockers_workflow_blockers_owner_idTousers
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_raised_byTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_raised_byTousersInput
@@ -6516,7 +6516,7 @@ export type UserCreateWithoutWorkflow_blockers_workflow_blockers_raised_byTouser
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -6637,7 +6637,7 @@ export type UserCreateWithoutWorkflow_blockers_workflow_blockers_resolved_byTous
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -6769,7 +6769,7 @@ export type UserUpdateWithoutWorkflow_blockers_workflow_blockers_owner_idTousers
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_raised_byTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_raised_byTousersNestedInput
@@ -6896,7 +6896,7 @@ export type UserUpdateWithoutWorkflow_blockers_workflow_blockers_raised_byTouser
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -7023,7 +7023,7 @@ export type UserUpdateWithoutWorkflow_blockers_workflow_blockers_resolved_byTous
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -7139,7 +7139,7 @@ export type UserCreateWithoutWorkflow_communication_log_entriesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -7271,7 +7271,7 @@ export type UserUpdateWithoutWorkflow_communication_log_entriesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -7387,7 +7387,7 @@ export type UserCreateWithoutWorkflow_cross_dependenciesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -7519,7 +7519,7 @@ export type UserUpdateWithoutWorkflow_cross_dependenciesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -7635,7 +7635,7 @@ export type UserCreateWithoutWorkflow_deviationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -7767,7 +7767,7 @@ export type UserUpdateWithoutWorkflow_deviationsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -7883,7 +7883,7 @@ export type UserCreateWithoutWorkflow_engagements_workflow_engagements_created_b
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -8004,7 +8004,7 @@ export type UserCreateWithoutWorkflow_engagements_workflow_engagements_director_
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -8136,7 +8136,7 @@ export type UserUpdateWithoutWorkflow_engagements_workflow_engagements_created_b
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -8263,7 +8263,7 @@ export type UserUpdateWithoutWorkflow_engagements_workflow_engagements_director_
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -8379,7 +8379,7 @@ export type UserCreateWithoutWorkflow_instances_workflow_instances_assigned_owne
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -8500,7 +8500,7 @@ export type UserCreateWithoutWorkflow_instances_workflow_instances_cancelled_byT
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -8621,7 +8621,7 @@ export type UserCreateWithoutWorkflow_instances_workflow_instances_created_byTou
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -8753,7 +8753,7 @@ export type UserUpdateWithoutWorkflow_instances_workflow_instances_assigned_owne
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -8880,7 +8880,7 @@ export type UserUpdateWithoutWorkflow_instances_workflow_instances_cancelled_byT
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -9007,7 +9007,7 @@ export type UserUpdateWithoutWorkflow_instances_workflow_instances_created_byTou
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -9123,7 +9123,7 @@ export type UserCreateWithoutWorkflow_milestones_workflow_milestones_completed_b
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -9244,7 +9244,7 @@ export type UserCreateWithoutWorkflow_milestones_workflow_milestones_owner_idTou
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -9365,7 +9365,7 @@ export type UserCreateWithoutWorkflow_milestones_workflow_milestones_reviewed_by
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -9497,7 +9497,7 @@ export type UserUpdateWithoutWorkflow_milestones_workflow_milestones_completed_b
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -9624,7 +9624,7 @@ export type UserUpdateWithoutWorkflow_milestones_workflow_milestones_owner_idTou
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -9751,7 +9751,7 @@ export type UserUpdateWithoutWorkflow_milestones_workflow_milestones_reviewed_by
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -9867,7 +9867,7 @@ export type UserCreateWithoutWorkflow_notification_logInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -9999,7 +9999,7 @@ export type UserUpdateWithoutWorkflow_notification_logInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -10115,7 +10115,7 @@ export type UserCreateWithoutWorkflow_program_requirementsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -10247,7 +10247,7 @@ export type UserUpdateWithoutWorkflow_program_requirementsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -10363,7 +10363,7 @@ export type UserCreateWithoutWorkflow_scheduled_instances_queue_workflow_schedul
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -10484,7 +10484,7 @@ export type UserCreateWithoutWorkflow_scheduled_instances_queue_workflow_schedul
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -10616,7 +10616,7 @@ export type UserUpdateWithoutWorkflow_scheduled_instances_queue_workflow_schedul
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -10743,7 +10743,7 @@ export type UserUpdateWithoutWorkflow_scheduled_instances_queue_workflow_schedul
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -10859,7 +10859,7 @@ export type UserCreateWithoutWorkflow_service_definitionsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -10991,7 +10991,7 @@ export type UserUpdateWithoutWorkflow_service_definitionsInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -11107,7 +11107,7 @@ export type UserCreateWithoutWorkflow_task_dependenciesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -11239,7 +11239,7 @@ export type UserUpdateWithoutWorkflow_task_dependenciesInput = {
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -11355,7 +11355,7 @@ export type UserCreateWithoutWorkflow_task_items_workflow_task_items_completed_b
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -11476,7 +11476,7 @@ export type UserCreateWithoutWorkflow_task_items_workflow_task_items_owner_idTou
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutUsersInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
   workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
@@ -11608,7 +11608,7 @@ export type UserUpdateWithoutWorkflow_task_items_workflow_task_items_completed_b
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -11735,7 +11735,7 @@ export type UserUpdateWithoutWorkflow_task_items_workflow_task_items_owner_idTou
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutUsersNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
   workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
   workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
@@ -12550,7 +12550,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     companyAssignments: Prisma.$UserCompanyAssignmentPayload<ExtArgs>[]
     preferences: Prisma.$UserPreferencePayload<ExtArgs>[]
     roleAssignments: Prisma.$UserRoleAssignmentPayload<ExtArgs>[]
-    tenant: Prisma.$TenantPayload<ExtArgs> | null
+    tenant: Prisma.$WorkspacePayload<ExtArgs> | null
     workflow_artifacts: Prisma.$workflow_artifactsPayload<ExtArgs>[]
     workflow_billing_states: Prisma.$workflow_billing_statesPayload<ExtArgs>[]
     workflow_blockers_workflow_blockers_owner_idTousers: Prisma.$workflow_blockersPayload<ExtArgs>[]
@@ -13003,7 +13003,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   companyAssignments<T extends Prisma.User$companyAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$companyAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserCompanyAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   preferences<T extends Prisma.User$preferencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$preferencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPreferencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   roleAssignments<T extends Prisma.User$roleAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$roleAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserRoleAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  tenant<T extends Prisma.User$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$tenantArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.User$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$tenantArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   workflow_artifacts<T extends Prisma.User$workflow_artifactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$workflow_artifactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_artifactsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   workflow_billing_states<T extends Prisma.User$workflow_billing_statesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$workflow_billing_statesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_billing_statesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   workflow_blockers_workflow_blockers_owner_idTousers<T extends Prisma.User$workflow_blockers_workflow_blockers_owner_idTousersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$workflow_blockers_workflow_blockers_owner_idTousersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_blockersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -13880,18 +13880,18 @@ export type User$roleAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.In
  */
 export type User$tenantArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Tenant
+   * Select specific fields to fetch from the Workspace
    */
-  select?: Prisma.TenantSelect<ExtArgs> | null
+  select?: Prisma.WorkspaceSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Tenant
+   * Omit specific fields from the Workspace
    */
-  omit?: Prisma.TenantOmit<ExtArgs> | null
+  omit?: Prisma.WorkspaceOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.TenantInclude<ExtArgs> | null
-  where?: Prisma.TenantWhereInput
+  include?: Prisma.WorkspaceInclude<ExtArgs> | null
+  where?: Prisma.WorkspaceWhereInput
 }
 
 /**

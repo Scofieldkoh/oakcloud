@@ -384,13 +384,14 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
-  Tenant: 'Tenant',
+  Workspace: 'Workspace',
   Role: 'Role',
   Permission: 'Permission',
   RolePermission: 'RolePermission',
   UserRoleAssignment: 'UserRoleAssignment',
   User: 'User',
   UserPreference: 'UserPreference',
+  PerformanceMeasurement: 'PerformanceMeasurement',
   UserCompanyAssignment: 'UserCompanyAssignment',
   Company: 'Company',
   CompanyFormerName: 'CompanyFormerName',
@@ -405,7 +406,7 @@ export const ModelName = {
   Document: 'Document',
   AuditLog: 'AuditLog',
   Connector: 'Connector',
-  TenantConnectorAccess: 'TenantConnectorAccess',
+  WorkspaceConnectorAccess: 'WorkspaceConnectorAccess',
   ConnectorUsageLog: 'ConnectorUsageLog',
   ConnectorModelConfig: 'ConnectorModelConfig',
   NoteTab: 'NoteTab',
@@ -413,7 +414,7 @@ export const ModelName = {
   GeneratedDocument: 'GeneratedDocument',
   DocumentSection: 'DocumentSection',
   DocumentShare: 'DocumentShare',
-  TenantLetterhead: 'TenantLetterhead',
+  WorkspaceLetterhead: 'WorkspaceLetterhead',
   DocumentComment: 'DocumentComment',
   DocumentDraft: 'DocumentDraft',
   TemplatePartial: 'TemplatePartial',
@@ -459,7 +460,7 @@ export const ModelName = {
   AccountingIntegration: 'AccountingIntegration',
   ExternalPosting: 'ExternalPosting',
   FieldMapping: 'FieldMapping',
-  TenantBackup: 'TenantBackup',
+  WorkspaceBackup: 'WorkspaceBackup',
   BackupSchedule: 'BackupSchedule',
   ChartOfAccount: 'ChartOfAccount',
   ChartOfAccountsMapping: 'ChartOfAccountsMapping',
@@ -500,81 +501,81 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "tenantConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "tenantLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "tenantBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
-    Tenant: {
-      payload: Prisma.$TenantPayload<ExtArgs>
-      fields: Prisma.TenantFieldRefs
+    Workspace: {
+      payload: Prisma.$WorkspacePayload<ExtArgs>
+      fields: Prisma.WorkspaceFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.TenantFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload> | null
+          args: Prisma.WorkspaceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspacePayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.TenantFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+          args: Prisma.WorkspaceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspacePayload>
         }
         findFirst: {
-          args: Prisma.TenantFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload> | null
+          args: Prisma.WorkspaceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspacePayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.TenantFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+          args: Prisma.WorkspaceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspacePayload>
         }
         findMany: {
-          args: Prisma.TenantFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>[]
+          args: Prisma.WorkspaceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspacePayload>[]
         }
         create: {
-          args: Prisma.TenantCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+          args: Prisma.WorkspaceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspacePayload>
         }
         createMany: {
-          args: Prisma.TenantCreateManyArgs<ExtArgs>
+          args: Prisma.WorkspaceCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.TenantCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>[]
+          args: Prisma.WorkspaceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspacePayload>[]
         }
         delete: {
-          args: Prisma.TenantDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+          args: Prisma.WorkspaceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspacePayload>
         }
         update: {
-          args: Prisma.TenantUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+          args: Prisma.WorkspaceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspacePayload>
         }
         deleteMany: {
-          args: Prisma.TenantDeleteManyArgs<ExtArgs>
+          args: Prisma.WorkspaceDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.TenantUpdateManyArgs<ExtArgs>
+          args: Prisma.WorkspaceUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.TenantUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>[]
+          args: Prisma.WorkspaceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspacePayload>[]
         }
         upsert: {
-          args: Prisma.TenantUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantPayload>
+          args: Prisma.WorkspaceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspacePayload>
         }
         aggregate: {
-          args: Prisma.TenantAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateTenant>
+          args: Prisma.WorkspaceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWorkspace>
         }
         groupBy: {
-          args: Prisma.TenantGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TenantGroupByOutputType>[]
+          args: Prisma.WorkspaceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkspaceGroupByOutputType>[]
         }
         count: {
-          args: Prisma.TenantCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TenantCountAggregateOutputType> | number
+          args: Prisma.WorkspaceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkspaceCountAggregateOutputType> | number
         }
       }
     }
@@ -1019,6 +1020,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserPreferenceCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserPreferenceCountAggregateOutputType> | number
+        }
+      }
+    }
+    PerformanceMeasurement: {
+      payload: Prisma.$PerformanceMeasurementPayload<ExtArgs>
+      fields: Prisma.PerformanceMeasurementFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PerformanceMeasurementFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PerformanceMeasurementPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PerformanceMeasurementFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PerformanceMeasurementPayload>
+        }
+        findFirst: {
+          args: Prisma.PerformanceMeasurementFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PerformanceMeasurementPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PerformanceMeasurementFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PerformanceMeasurementPayload>
+        }
+        findMany: {
+          args: Prisma.PerformanceMeasurementFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PerformanceMeasurementPayload>[]
+        }
+        create: {
+          args: Prisma.PerformanceMeasurementCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PerformanceMeasurementPayload>
+        }
+        createMany: {
+          args: Prisma.PerformanceMeasurementCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PerformanceMeasurementCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PerformanceMeasurementPayload>[]
+        }
+        delete: {
+          args: Prisma.PerformanceMeasurementDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PerformanceMeasurementPayload>
+        }
+        update: {
+          args: Prisma.PerformanceMeasurementUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PerformanceMeasurementPayload>
+        }
+        deleteMany: {
+          args: Prisma.PerformanceMeasurementDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PerformanceMeasurementUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PerformanceMeasurementUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PerformanceMeasurementPayload>[]
+        }
+        upsert: {
+          args: Prisma.PerformanceMeasurementUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PerformanceMeasurementPayload>
+        }
+        aggregate: {
+          args: Prisma.PerformanceMeasurementAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePerformanceMeasurement>
+        }
+        groupBy: {
+          args: Prisma.PerformanceMeasurementGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PerformanceMeasurementGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PerformanceMeasurementCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PerformanceMeasurementCountAggregateOutputType> | number
         }
       }
     }
@@ -2058,77 +2133,77 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    TenantConnectorAccess: {
-      payload: Prisma.$TenantConnectorAccessPayload<ExtArgs>
-      fields: Prisma.TenantConnectorAccessFieldRefs
+    WorkspaceConnectorAccess: {
+      payload: Prisma.$WorkspaceConnectorAccessPayload<ExtArgs>
+      fields: Prisma.WorkspaceConnectorAccessFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.TenantConnectorAccessFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantConnectorAccessPayload> | null
+          args: Prisma.WorkspaceConnectorAccessFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceConnectorAccessPayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.TenantConnectorAccessFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantConnectorAccessPayload>
+          args: Prisma.WorkspaceConnectorAccessFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceConnectorAccessPayload>
         }
         findFirst: {
-          args: Prisma.TenantConnectorAccessFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantConnectorAccessPayload> | null
+          args: Prisma.WorkspaceConnectorAccessFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceConnectorAccessPayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.TenantConnectorAccessFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantConnectorAccessPayload>
+          args: Prisma.WorkspaceConnectorAccessFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceConnectorAccessPayload>
         }
         findMany: {
-          args: Prisma.TenantConnectorAccessFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantConnectorAccessPayload>[]
+          args: Prisma.WorkspaceConnectorAccessFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceConnectorAccessPayload>[]
         }
         create: {
-          args: Prisma.TenantConnectorAccessCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantConnectorAccessPayload>
+          args: Prisma.WorkspaceConnectorAccessCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceConnectorAccessPayload>
         }
         createMany: {
-          args: Prisma.TenantConnectorAccessCreateManyArgs<ExtArgs>
+          args: Prisma.WorkspaceConnectorAccessCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.TenantConnectorAccessCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantConnectorAccessPayload>[]
+          args: Prisma.WorkspaceConnectorAccessCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceConnectorAccessPayload>[]
         }
         delete: {
-          args: Prisma.TenantConnectorAccessDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantConnectorAccessPayload>
+          args: Prisma.WorkspaceConnectorAccessDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceConnectorAccessPayload>
         }
         update: {
-          args: Prisma.TenantConnectorAccessUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantConnectorAccessPayload>
+          args: Prisma.WorkspaceConnectorAccessUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceConnectorAccessPayload>
         }
         deleteMany: {
-          args: Prisma.TenantConnectorAccessDeleteManyArgs<ExtArgs>
+          args: Prisma.WorkspaceConnectorAccessDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.TenantConnectorAccessUpdateManyArgs<ExtArgs>
+          args: Prisma.WorkspaceConnectorAccessUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.TenantConnectorAccessUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantConnectorAccessPayload>[]
+          args: Prisma.WorkspaceConnectorAccessUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceConnectorAccessPayload>[]
         }
         upsert: {
-          args: Prisma.TenantConnectorAccessUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantConnectorAccessPayload>
+          args: Prisma.WorkspaceConnectorAccessUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceConnectorAccessPayload>
         }
         aggregate: {
-          args: Prisma.TenantConnectorAccessAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateTenantConnectorAccess>
+          args: Prisma.WorkspaceConnectorAccessAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWorkspaceConnectorAccess>
         }
         groupBy: {
-          args: Prisma.TenantConnectorAccessGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TenantConnectorAccessGroupByOutputType>[]
+          args: Prisma.WorkspaceConnectorAccessGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkspaceConnectorAccessGroupByOutputType>[]
         }
         count: {
-          args: Prisma.TenantConnectorAccessCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TenantConnectorAccessCountAggregateOutputType> | number
+          args: Prisma.WorkspaceConnectorAccessCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkspaceConnectorAccessCountAggregateOutputType> | number
         }
       }
     }
@@ -2650,77 +2725,77 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    TenantLetterhead: {
-      payload: Prisma.$TenantLetterheadPayload<ExtArgs>
-      fields: Prisma.TenantLetterheadFieldRefs
+    WorkspaceLetterhead: {
+      payload: Prisma.$WorkspaceLetterheadPayload<ExtArgs>
+      fields: Prisma.WorkspaceLetterheadFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.TenantLetterheadFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantLetterheadPayload> | null
+          args: Prisma.WorkspaceLetterheadFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceLetterheadPayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.TenantLetterheadFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantLetterheadPayload>
+          args: Prisma.WorkspaceLetterheadFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceLetterheadPayload>
         }
         findFirst: {
-          args: Prisma.TenantLetterheadFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantLetterheadPayload> | null
+          args: Prisma.WorkspaceLetterheadFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceLetterheadPayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.TenantLetterheadFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantLetterheadPayload>
+          args: Prisma.WorkspaceLetterheadFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceLetterheadPayload>
         }
         findMany: {
-          args: Prisma.TenantLetterheadFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantLetterheadPayload>[]
+          args: Prisma.WorkspaceLetterheadFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceLetterheadPayload>[]
         }
         create: {
-          args: Prisma.TenantLetterheadCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantLetterheadPayload>
+          args: Prisma.WorkspaceLetterheadCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceLetterheadPayload>
         }
         createMany: {
-          args: Prisma.TenantLetterheadCreateManyArgs<ExtArgs>
+          args: Prisma.WorkspaceLetterheadCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.TenantLetterheadCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantLetterheadPayload>[]
+          args: Prisma.WorkspaceLetterheadCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceLetterheadPayload>[]
         }
         delete: {
-          args: Prisma.TenantLetterheadDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantLetterheadPayload>
+          args: Prisma.WorkspaceLetterheadDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceLetterheadPayload>
         }
         update: {
-          args: Prisma.TenantLetterheadUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantLetterheadPayload>
+          args: Prisma.WorkspaceLetterheadUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceLetterheadPayload>
         }
         deleteMany: {
-          args: Prisma.TenantLetterheadDeleteManyArgs<ExtArgs>
+          args: Prisma.WorkspaceLetterheadDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.TenantLetterheadUpdateManyArgs<ExtArgs>
+          args: Prisma.WorkspaceLetterheadUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.TenantLetterheadUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantLetterheadPayload>[]
+          args: Prisma.WorkspaceLetterheadUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceLetterheadPayload>[]
         }
         upsert: {
-          args: Prisma.TenantLetterheadUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantLetterheadPayload>
+          args: Prisma.WorkspaceLetterheadUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceLetterheadPayload>
         }
         aggregate: {
-          args: Prisma.TenantLetterheadAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateTenantLetterhead>
+          args: Prisma.WorkspaceLetterheadAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWorkspaceLetterhead>
         }
         groupBy: {
-          args: Prisma.TenantLetterheadGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TenantLetterheadGroupByOutputType>[]
+          args: Prisma.WorkspaceLetterheadGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkspaceLetterheadGroupByOutputType>[]
         }
         count: {
-          args: Prisma.TenantLetterheadCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TenantLetterheadCountAggregateOutputType> | number
+          args: Prisma.WorkspaceLetterheadCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkspaceLetterheadCountAggregateOutputType> | number
         }
       }
     }
@@ -6054,77 +6129,77 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    TenantBackup: {
-      payload: Prisma.$TenantBackupPayload<ExtArgs>
-      fields: Prisma.TenantBackupFieldRefs
+    WorkspaceBackup: {
+      payload: Prisma.$WorkspaceBackupPayload<ExtArgs>
+      fields: Prisma.WorkspaceBackupFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.TenantBackupFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload> | null
+          args: Prisma.WorkspaceBackupFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceBackupPayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.TenantBackupFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+          args: Prisma.WorkspaceBackupFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceBackupPayload>
         }
         findFirst: {
-          args: Prisma.TenantBackupFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload> | null
+          args: Prisma.WorkspaceBackupFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceBackupPayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.TenantBackupFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+          args: Prisma.WorkspaceBackupFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceBackupPayload>
         }
         findMany: {
-          args: Prisma.TenantBackupFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>[]
+          args: Prisma.WorkspaceBackupFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceBackupPayload>[]
         }
         create: {
-          args: Prisma.TenantBackupCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+          args: Prisma.WorkspaceBackupCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceBackupPayload>
         }
         createMany: {
-          args: Prisma.TenantBackupCreateManyArgs<ExtArgs>
+          args: Prisma.WorkspaceBackupCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.TenantBackupCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>[]
+          args: Prisma.WorkspaceBackupCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceBackupPayload>[]
         }
         delete: {
-          args: Prisma.TenantBackupDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+          args: Prisma.WorkspaceBackupDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceBackupPayload>
         }
         update: {
-          args: Prisma.TenantBackupUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+          args: Prisma.WorkspaceBackupUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceBackupPayload>
         }
         deleteMany: {
-          args: Prisma.TenantBackupDeleteManyArgs<ExtArgs>
+          args: Prisma.WorkspaceBackupDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.TenantBackupUpdateManyArgs<ExtArgs>
+          args: Prisma.WorkspaceBackupUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.TenantBackupUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>[]
+          args: Prisma.WorkspaceBackupUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceBackupPayload>[]
         }
         upsert: {
-          args: Prisma.TenantBackupUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantBackupPayload>
+          args: Prisma.WorkspaceBackupUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceBackupPayload>
         }
         aggregate: {
-          args: Prisma.TenantBackupAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateTenantBackup>
+          args: Prisma.WorkspaceBackupAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWorkspaceBackup>
         }
         groupBy: {
-          args: Prisma.TenantBackupGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TenantBackupGroupByOutputType>[]
+          args: Prisma.WorkspaceBackupGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkspaceBackupGroupByOutputType>[]
         }
         count: {
-          args: Prisma.TenantBackupCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.TenantBackupCountAggregateOutputType> | number
+          args: Prisma.WorkspaceBackupCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkspaceBackupCountAggregateOutputType> | number
         }
       }
     }
@@ -8017,7 +8092,7 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
-export const TenantScalarFieldEnum = {
+export const WorkspaceScalarFieldEnum = {
   id: 'id',
   name: 'name',
   slug: 'slug',
@@ -8039,7 +8114,7 @@ export const TenantScalarFieldEnum = {
   suspendReason: 'suspendReason'
 } as const
 
-export type TenantScalarFieldEnum = (typeof TenantScalarFieldEnum)[keyof typeof TenantScalarFieldEnum]
+export type WorkspaceScalarFieldEnum = (typeof WorkspaceScalarFieldEnum)[keyof typeof WorkspaceScalarFieldEnum]
 
 
 export const RoleScalarFieldEnum = {
@@ -8120,6 +8195,20 @@ export const UserPreferenceScalarFieldEnum = {
 export type UserPreferenceScalarFieldEnum = (typeof UserPreferenceScalarFieldEnum)[keyof typeof UserPreferenceScalarFieldEnum]
 
 
+export const PerformanceMeasurementScalarFieldEnum = {
+  id: 'id',
+  route: 'route',
+  metricType: 'metricType',
+  value: 'value',
+  unit: 'unit',
+  metadata: 'metadata',
+  userAgent: 'userAgent',
+  createdAt: 'createdAt'
+} as const
+
+export type PerformanceMeasurementScalarFieldEnum = (typeof PerformanceMeasurementScalarFieldEnum)[keyof typeof PerformanceMeasurementScalarFieldEnum]
+
+
 export const UserCompanyAssignmentScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -8163,6 +8252,11 @@ export const CompanyScalarFieldEnum = {
   issuedCapitalCurrency: 'issuedCapitalCurrency',
   issuedCapitalAmount: 'issuedCapitalAmount',
   hasCharges: 'hasCharges',
+  currentOfficerCount: 'currentOfficerCount',
+  currentShareholderCount: 'currentShareholderCount',
+  activeChargeCount: 'activeChargeCount',
+  documentCount: 'documentCount',
+  hasPoc: 'hasPoc',
   isGstRegistered: 'isGstRegistered',
   gstRegistrationNumber: 'gstRegistrationNumber',
   gstRegistrationDate: 'gstRegistrationDate',
@@ -8439,7 +8533,7 @@ export const ConnectorScalarFieldEnum = {
 export type ConnectorScalarFieldEnum = (typeof ConnectorScalarFieldEnum)[keyof typeof ConnectorScalarFieldEnum]
 
 
-export const TenantConnectorAccessScalarFieldEnum = {
+export const WorkspaceConnectorAccessScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   connectorId: 'connectorId',
@@ -8448,7 +8542,7 @@ export const TenantConnectorAccessScalarFieldEnum = {
   updatedAt: 'updatedAt'
 } as const
 
-export type TenantConnectorAccessScalarFieldEnum = (typeof TenantConnectorAccessScalarFieldEnum)[keyof typeof TenantConnectorAccessScalarFieldEnum]
+export type WorkspaceConnectorAccessScalarFieldEnum = (typeof WorkspaceConnectorAccessScalarFieldEnum)[keyof typeof WorkspaceConnectorAccessScalarFieldEnum]
 
 
 export const ConnectorUsageLogScalarFieldEnum = {
@@ -8582,7 +8676,7 @@ export const DocumentShareScalarFieldEnum = {
 export type DocumentShareScalarFieldEnum = (typeof DocumentShareScalarFieldEnum)[keyof typeof DocumentShareScalarFieldEnum]
 
 
-export const TenantLetterheadScalarFieldEnum = {
+export const WorkspaceLetterheadScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   headerHtml: 'headerHtml',
@@ -8596,7 +8690,7 @@ export const TenantLetterheadScalarFieldEnum = {
   updatedAt: 'updatedAt'
 } as const
 
-export type TenantLetterheadScalarFieldEnum = (typeof TenantLetterheadScalarFieldEnum)[keyof typeof TenantLetterheadScalarFieldEnum]
+export type WorkspaceLetterheadScalarFieldEnum = (typeof WorkspaceLetterheadScalarFieldEnum)[keyof typeof WorkspaceLetterheadScalarFieldEnum]
 
 
 export const DocumentCommentScalarFieldEnum = {
@@ -9501,7 +9595,7 @@ export const FieldMappingScalarFieldEnum = {
 export type FieldMappingScalarFieldEnum = (typeof FieldMappingScalarFieldEnum)[keyof typeof FieldMappingScalarFieldEnum]
 
 
-export const TenantBackupScalarFieldEnum = {
+export const WorkspaceBackupScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   name: 'name',
@@ -9527,7 +9621,7 @@ export const TenantBackupScalarFieldEnum = {
   deletedAt: 'deletedAt'
 } as const
 
-export type TenantBackupScalarFieldEnum = (typeof TenantBackupScalarFieldEnum)[keyof typeof TenantBackupScalarFieldEnum]
+export type WorkspaceBackupScalarFieldEnum = (typeof WorkspaceBackupScalarFieldEnum)[keyof typeof WorkspaceBackupScalarFieldEnum]
 
 
 export const BackupScheduleScalarFieldEnum = {
@@ -10111,16 +10205,16 @@ export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMod
 
 
 /**
- * Reference to a field of type 'TenantStatus'
+ * Reference to a field of type 'WorkspaceStatus'
  */
-export type EnumTenantStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TenantStatus'>
+export type EnumWorkspaceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkspaceStatus'>
     
 
 
 /**
- * Reference to a field of type 'TenantStatus[]'
+ * Reference to a field of type 'WorkspaceStatus[]'
  */
-export type ListEnumTenantStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TenantStatus[]'>
+export type ListEnumWorkspaceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkspaceStatus[]'>
     
 
 
@@ -10174,6 +10268,20 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'Decimal'
+ */
+export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+/**
+ * Reference to a field of type 'Decimal[]'
+ */
+export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+/**
  * Reference to a field of type 'EntityType'
  */
 export type EnumEntityTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EntityType'>
@@ -10198,20 +10306,6 @@ export type EnumCompanyStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
  * Reference to a field of type 'CompanyStatus[]'
  */
 export type ListEnumCompanyStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CompanyStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Decimal'
- */
-export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
-    
-
-
-/**
- * Reference to a field of type 'Decimal[]'
- */
-export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
     
 
 
@@ -11555,13 +11649,14 @@ export type PrismaClientOptions = ({
   comments?: runtime.SqlCommenterPlugin[]
 }
 export type GlobalOmitConfig = {
-  tenant?: Prisma.TenantOmit
+  workspace?: Prisma.WorkspaceOmit
   role?: Prisma.RoleOmit
   permission?: Prisma.PermissionOmit
   rolePermission?: Prisma.RolePermissionOmit
   userRoleAssignment?: Prisma.UserRoleAssignmentOmit
   user?: Prisma.UserOmit
   userPreference?: Prisma.UserPreferenceOmit
+  performanceMeasurement?: Prisma.PerformanceMeasurementOmit
   userCompanyAssignment?: Prisma.UserCompanyAssignmentOmit
   company?: Prisma.CompanyOmit
   companyFormerName?: Prisma.CompanyFormerNameOmit
@@ -11576,7 +11671,7 @@ export type GlobalOmitConfig = {
   document?: Prisma.DocumentOmit
   auditLog?: Prisma.AuditLogOmit
   connector?: Prisma.ConnectorOmit
-  tenantConnectorAccess?: Prisma.TenantConnectorAccessOmit
+  workspaceConnectorAccess?: Prisma.WorkspaceConnectorAccessOmit
   connectorUsageLog?: Prisma.ConnectorUsageLogOmit
   connectorModelConfig?: Prisma.ConnectorModelConfigOmit
   noteTab?: Prisma.NoteTabOmit
@@ -11584,7 +11679,7 @@ export type GlobalOmitConfig = {
   generatedDocument?: Prisma.GeneratedDocumentOmit
   documentSection?: Prisma.DocumentSectionOmit
   documentShare?: Prisma.DocumentShareOmit
-  tenantLetterhead?: Prisma.TenantLetterheadOmit
+  workspaceLetterhead?: Prisma.WorkspaceLetterheadOmit
   documentComment?: Prisma.DocumentCommentOmit
   documentDraft?: Prisma.DocumentDraftOmit
   templatePartial?: Prisma.TemplatePartialOmit
@@ -11630,7 +11725,7 @@ export type GlobalOmitConfig = {
   accountingIntegration?: Prisma.AccountingIntegrationOmit
   externalPosting?: Prisma.ExternalPostingOmit
   fieldMapping?: Prisma.FieldMappingOmit
-  tenantBackup?: Prisma.TenantBackupOmit
+  workspaceBackup?: Prisma.WorkspaceBackupOmit
   backupSchedule?: Prisma.BackupScheduleOmit
   chartOfAccount?: Prisma.ChartOfAccountOmit
   chartOfAccountsMapping?: Prisma.ChartOfAccountsMappingOmit

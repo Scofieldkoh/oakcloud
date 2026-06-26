@@ -14,9 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { cn } from '@/lib/utils';
-import { useSession } from '@/hooks/use-auth';
 import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
 import { DraftRecoveryPrompt } from '@/components/documents/draft-recovery-prompt';
 
@@ -59,13 +57,6 @@ export default function DocumentEditPage() {
   const documentId = params.id as string;
   const { success, error: toastError } = useToast();
   const editorRef = useRef<A4PageEditorRef>(null);
-  const { data: session } = useSession();
-
-  // Tenant selection for SUPER_ADMIN
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   // State
   const [document, setDocument] = useState<GeneratedDocument | null>(null);
@@ -89,19 +80,10 @@ export default function DocumentEditPage() {
       setError(null);
 
       try {
-        // Build URL with tenantId for SUPER_ADMIN
-        const urlParams = new URLSearchParams();
-        if (session?.isSuperAdmin && activeTenantId) {
-          urlParams.set('tenantId', activeTenantId);
-        }
-        const queryString = urlParams.toString();
-        const docUrl = `/api/generated-documents/${documentId}${queryString ? `?${queryString}` : ''}`;
-        const draftUrl = `/api/generated-documents/${documentId}/draft${queryString ? `?${queryString}` : ''}`;
-
         // Fetch document and draft in parallel
         const [docResponse, draftResponse] = await Promise.all([
-          fetch(docUrl),
-          fetch(draftUrl),
+          fetch(`/api/generated-documents/${documentId}`),
+          fetch(`/api/generated-documents/${documentId}/draft`),
         ]);
 
         if (!docResponse.ok) {
@@ -140,7 +122,7 @@ export default function DocumentEditPage() {
     };
 
     fetchData();
-  }, [documentId, router, session?.isSuperAdmin, activeTenantId]);
+  }, [documentId, router]);
 
   // Handle content change
   const handleContentChange = useCallback((html: string) => {
@@ -152,20 +134,16 @@ export default function DocumentEditPage() {
   const _handleAutoSave = useCallback(
     async (html: string) => {
       try {
-        const body: Record<string, unknown> = { content: html };
-        if (session?.isSuperAdmin && activeTenantId) {
-          body.tenantId = activeTenantId;
-        }
         await fetch(`/api/generated-documents/${documentId}/draft`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+          body: JSON.stringify({ content: html }),
         });
       } catch (err) {
         console.error('Auto-save error:', err);
       }
     },
-    [documentId, session?.isSuperAdmin, activeTenantId]
+    [documentId]
   );
 
   // Handle save
@@ -180,9 +158,6 @@ export default function DocumentEditPage() {
         content: html,
         useLetterhead: includeLetterhead,
       };
-      if (session?.isSuperAdmin && activeTenantId) {
-        body.tenantId = activeTenantId;
-      }
 
       const response = await fetch(`/api/generated-documents/${documentId}`, {
         method: 'PUT',
@@ -200,11 +175,7 @@ export default function DocumentEditPage() {
       setLastSaved(new Date());
 
       // Clean up drafts
-      const deleteParams = new URLSearchParams();
-      if (session?.isSuperAdmin && activeTenantId) {
-        deleteParams.set('tenantId', activeTenantId);
-      }
-      await fetch(`/api/generated-documents/${documentId}/draft${deleteParams.toString() ? `?${deleteParams}` : ''}`, {
+      await fetch(`/api/generated-documents/${documentId}/draft`, {
         method: 'DELETE',
       });
 
@@ -215,7 +186,7 @@ export default function DocumentEditPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [documentId, includeLetterhead, success, toastError, session?.isSuperAdmin, activeTenantId]);
+  }, [documentId, includeLetterhead, success, toastError]);
 
   // Handle draft recovery
   const _handleRecoverDraft = useCallback(() => {
@@ -229,18 +200,14 @@ export default function DocumentEditPage() {
 
   const _handleDiscardDraft = useCallback(async () => {
     try {
-      const deleteParams = new URLSearchParams();
-      if (session?.isSuperAdmin && activeTenantId) {
-        deleteParams.set('tenantId', activeTenantId);
-      }
-      await fetch(`/api/generated-documents/${documentId}/draft${deleteParams.toString() ? `?${deleteParams}` : ''}`, {
+      await fetch(`/api/generated-documents/${documentId}/draft`, {
         method: 'DELETE',
       });
     } catch (err) {
       console.error('Discard draft error:', err);
     }
     setShowDraftPrompt(false);
-  }, [documentId, session?.isSuperAdmin, activeTenantId]);
+  }, [documentId]);
 
   // Warn before leaving with unsaved changes
   useEffect(() => {

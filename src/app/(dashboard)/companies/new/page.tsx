@@ -11,7 +11,7 @@ import { useCreateCompany } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { ENTITY_TYPES } from '@/lib/constants';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
@@ -51,7 +51,7 @@ export default function NewCompanyPage() {
 
   // SUPER_ADMIN tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
 
   const {
     register,

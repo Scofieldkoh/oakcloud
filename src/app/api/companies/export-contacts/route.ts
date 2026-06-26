@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { requireWorkspaceContext } from '@/lib/api-helpers';
 import { getContactDetailsForExport } from '@/services/contact-detail.service';
 import { exportContactDetailsSchema } from '@/lib/validations/contact-detail';
 import { ZodError } from 'zod';
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     exportContactDetailsSchema.parse({ companyIds });
 
     // Resolve tenant context - SUPER_ADMIN can specify via body
-    const tenantResult = await requireTenantContext(session, bodyTenantId);
+    const tenantResult = await requireWorkspaceContext(session, bodyTenantId);
     if (tenantResult.error) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 

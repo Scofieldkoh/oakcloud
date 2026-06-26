@@ -2,13 +2,13 @@
  * Authentication & Authorization
  *
  * Provides JWT-based authentication with secure HTTP-only cookies.
- * Fully integrated with multi-tenancy support.
+ * Fully integrated with workspace scoping support.
  */
 
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { prisma } from './prisma';
-import type { TenantStatus } from '@/generated/prisma';
+import type { Prisma, WorkspaceStatus } from '@/generated/prisma';
 import { logAuthEvent } from './audit';
 import {
   AUTH_COOKIE_NAME,
@@ -54,6 +54,7 @@ export interface JWTPayload {
   userId: string;
   email: string;
   tenantId?: string | null;
+  workspaceId?: string | null;
 }
 
 export interface SessionUser {
@@ -62,21 +63,26 @@ export interface SessionUser {
   firstName: string;
   lastName: string;
   tenantId: string | null;
-  // Computed from role assignments (authoritative source)
+  workspaceId?: string | null;
+  internalRole?: 'ADMIN' | 'MANAGER' | 'STAFF';
+  isAdmin?: boolean;
+  isManager?: boolean;
+  isStaff?: boolean;
+  // Deprecated aliases kept for compatibility while callers move to internalRole.
   isSuperAdmin: boolean;
-  isTenantAdmin: boolean;
+  isWorkspaceAdmin: boolean;
   // True if user has any role with "All Companies" scope (companyId = null)
   hasAllCompaniesAccess: boolean;
   // All company IDs the user has access to via role assignments (excludes "All Companies" assignments)
   companyIds: string[];
 }
 
-export interface SessionWithTenant extends SessionUser {
-  tenant: {
+export interface SessionWithWorkspace extends SessionUser {
+  workspace: {
     id: string;
     name: string;
     slug: string;
-    status: TenantStatus;
+    status: WorkspaceStatus;
   } | null;
 }
 
@@ -132,6 +138,70 @@ function parseExpiration(exp: string): string {
 // Session Management
 // ============================================================================
 
+type RoleAssignmentForSession = {
+  companyId: string | null;
+  role: { systemRoleType: string | null };
+};
+
+function normalizeSystemRole(systemRoleType: string | null | undefined): 'ADMIN' | 'MANAGER' | 'STAFF' | null {
+  if (systemRoleType === 'ADMIN' || systemRoleType === 'SUPER_ADMIN' || systemRoleType === 'TENANT_ADMIN') {
+    return 'ADMIN';
+  }
+  if (systemRoleType === 'MANAGER' || systemRoleType === 'COMPANY_ADMIN') {
+    return 'MANAGER';
+  }
+  if (systemRoleType === 'STAFF' || systemRoleType === 'COMPANY_USER') {
+    return 'STAFF';
+  }
+  return null;
+}
+
+function deriveInternalRole(roleAssignments: RoleAssignmentForSession[]): 'ADMIN' | 'MANAGER' | 'STAFF' {
+  const roles = roleAssignments.map((assignment) => normalizeSystemRole(assignment.role.systemRoleType));
+  if (roles.includes('ADMIN')) return 'ADMIN';
+  if (roles.includes('MANAGER')) return 'MANAGER';
+  return 'STAFF';
+}
+
+function hasAllCompanyScope(roleAssignments: RoleAssignmentForSession[]): boolean {
+  return roleAssignments.some((assignment) => assignment.companyId === null);
+}
+
+type SessionWorkspaceSummary = {
+  id: string;
+  name: string;
+  slug: string;
+  status: WorkspaceStatus;
+};
+
+export async function getDefaultWorkspaceForAdmin(): Promise<SessionWorkspaceSummary | null> {
+  const select = {
+    id: true,
+    name: true,
+    slug: true,
+    status: true,
+  } satisfies Prisma.WorkspaceSelect;
+
+  const activeWorkspace = await prisma.workspace.findFirst({
+    where: {
+      deletedAt: null,
+      status: TENANT_STATUSES.ACTIVE,
+    },
+    select,
+    orderBy: { createdAt: 'asc' },
+  });
+
+  if (activeWorkspace) {
+    return activeWorkspace;
+  }
+
+  return prisma.workspace.findFirst({
+    where: { deletedAt: null },
+    select,
+    orderBy: { createdAt: 'asc' },
+  });
+}
+
 /**
  * Get current session from cookies (basic user info)
  */
@@ -169,18 +239,13 @@ export async function getSession(): Promise<SessionUser | null> {
 
   if (!user || !user.isActive || user.deletedAt) return null;
 
-  // Compute flags from role assignments (authoritative source)
-  const isSuperAdmin = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
-  );
-  const isTenantAdmin = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
-  );
+  const internalRole = deriveInternalRole(user.roleAssignments);
+  const isAdminRole = internalRole === 'ADMIN';
+  const isManagerRole = internalRole === 'MANAGER';
+  const fallbackWorkspace = isAdminRole && !user.tenantId ? await getDefaultWorkspaceForAdmin() : null;
+  const effectiveWorkspaceId = user.tenantId ?? fallbackWorkspace?.id ?? null;
 
-  // Check if user has any "All Companies" role assignment (companyId = null)
-  const hasAllCompaniesAccess = user.roleAssignments.some(
-    (a) => a.companyId === null && a.role.systemRoleType !== 'SUPER_ADMIN' && a.role.systemRoleType !== 'TENANT_ADMIN'
-  );
+  const hasAllCompaniesAccess = isAdminRole || hasAllCompanyScope(user.roleAssignments);
 
   // Get all unique company IDs from role assignments (excludes null/"All Companies")
   const companyIds = [
@@ -196,18 +261,23 @@ export async function getSession(): Promise<SessionUser | null> {
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
-    tenantId: user.tenantId,
-    isSuperAdmin,
-    isTenantAdmin,
+    tenantId: effectiveWorkspaceId,
+    workspaceId: effectiveWorkspaceId,
+    internalRole,
+    isAdmin: isAdminRole,
+    isManager: isManagerRole,
+    isStaff: internalRole === 'STAFF',
+    isSuperAdmin: isAdminRole,
+    isWorkspaceAdmin: isAdminRole,
     hasAllCompaniesAccess,
     companyIds,
   };
 }
 
 /**
- * Get session with full tenant information
+ * Get session with full workspace information
  */
-export async function getSessionWithTenant(): Promise<SessionWithTenant | null> {
+export async function getSessionWithWorkspace(): Promise<SessionWithWorkspace | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
@@ -249,23 +319,19 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
 
   if (!user || !user.isActive || user.deletedAt) return null;
 
-  // Compute flags from role assignments (authoritative source)
-  const isSuperAdmin = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
-  );
-  const isTenantAdmin = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
-  );
+  const internalRole = deriveInternalRole(user.roleAssignments);
+  const isAdminRole = internalRole === 'ADMIN';
+  const isManagerRole = internalRole === 'MANAGER';
+  const fallbackWorkspace = isAdminRole && !user.tenantId ? await getDefaultWorkspaceForAdmin() : null;
+  const effectiveWorkspace = user.tenant ?? fallbackWorkspace;
+  const effectiveWorkspaceId = user.tenantId ?? fallbackWorkspace?.id ?? null;
 
-  // Check tenant is active (for non-SUPER_ADMIN)
-  if (user.tenant && user.tenant.status !== TENANT_STATUSES.ACTIVE && !isSuperAdmin) {
+  // Check workspace is active for non-admin users.
+  if (effectiveWorkspace && effectiveWorkspace.status !== TENANT_STATUSES.ACTIVE && !isAdminRole) {
     return null;
   }
 
-  // Check if user has any "All Companies" role assignment (companyId = null)
-  const hasAllCompaniesAccess = user.roleAssignments.some(
-    (a) => a.companyId === null && a.role.systemRoleType !== 'SUPER_ADMIN' && a.role.systemRoleType !== 'TENANT_ADMIN'
-  );
+  const hasAllCompaniesAccess = isAdminRole || hasAllCompanyScope(user.roleAssignments);
 
   // Get all unique company IDs from role assignments (excludes null/"All Companies")
   const companyIds = [
@@ -281,10 +347,15 @@ export async function getSessionWithTenant(): Promise<SessionWithTenant | null> 
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
-    tenantId: user.tenantId,
-    tenant: user.tenant,
-    isSuperAdmin,
-    isTenantAdmin,
+    tenantId: effectiveWorkspaceId,
+    workspaceId: effectiveWorkspaceId,
+    workspace: effectiveWorkspace,
+    internalRole,
+    isAdmin: isAdminRole,
+    isManager: isManagerRole,
+    isStaff: internalRole === 'STAFF',
+    isSuperAdmin: isAdminRole,
+    isWorkspaceAdmin: isAdminRole,
     hasAllCompaniesAccess,
     companyIds,
   };
@@ -306,10 +377,10 @@ export async function requireAuth(): Promise<SessionUser> {
 }
 
 /**
- * Require authentication with tenant info - throws if not authenticated
+ * Require authentication with workspace info - throws if not authenticated
  */
-export async function requireAuthWithTenant(): Promise<SessionWithTenant> {
-  const session = await getSessionWithTenant();
+export async function requireAuthWithWorkspace(): Promise<SessionWithWorkspace> {
+  const session = await getSessionWithWorkspace();
   if (!session) {
     throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
   }
@@ -317,17 +388,20 @@ export async function requireAuthWithTenant(): Promise<SessionWithTenant> {
 }
 
 /**
- * Require tenant membership - throws if user doesn't belong to a tenant
+ * Require workspace membership - throws if user doesn't belong to a workspace
  */
-export async function requireTenant(): Promise<SessionWithTenant & { tenantId: string }> {
-  const session = await getSessionWithTenant();
+export async function requireWorkspace(): Promise<SessionWithWorkspace & { workspaceId: string }> {
+  const session = await getSessionWithWorkspace();
   if (!session) {
     throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
   }
   if (!session.tenantId && !session.isSuperAdmin) {
     throw new Error(ERROR_MESSAGES.NO_TENANT_ASSOCIATION);
   }
-  return session as SessionWithTenant & { tenantId: string };
+  return {
+    ...session,
+    workspaceId: session.tenantId,
+  } as SessionWithWorkspace & { workspaceId: string };
 }
 
 // ============================================================================
@@ -342,17 +416,17 @@ export function isSuperAdmin(user: SessionUser): boolean {
 }
 
 /**
- * Check if user is a tenant admin (uses computed flag from role assignments)
+ * Check if user is a workspace admin (uses computed flag from role assignments)
  */
-export function isTenantAdmin(user: SessionUser): boolean {
-  return user.isTenantAdmin;
+export function isWorkspaceAdmin(user: SessionUser): boolean {
+  return user.isWorkspaceAdmin;
 }
 
 /**
- * Check if user has admin privileges (super or tenant admin)
+ * Check if user has admin privileges (super or workspace admin)
  */
 export function isAdmin(user: SessionUser): boolean {
-  return user.isSuperAdmin || user.isTenantAdmin;
+  return user.isSuperAdmin || user.isWorkspaceAdmin;
 }
 
 // ============================================================================
@@ -360,26 +434,26 @@ export function isAdmin(user: SessionUser): boolean {
 // ============================================================================
 
 /**
- * Check if user can access a specific tenant
+ * Check if user can access a specific workspace
  */
-export function canAccessTenant(user: SessionUser, tenantId: string): boolean {
+export function canAccessWorkspace(user: SessionUser, workspaceId: string): boolean {
   if (isSuperAdmin(user)) return true;
-  return user.tenantId === tenantId;
+  return user.tenantId === workspaceId;
 }
 
 /**
  * Check if user can access a specific company
  * This function verifies:
  * 1. SUPER_ADMIN can access any company
- * 2. TENANT_ADMIN can only access companies within their tenant
- * 3. Users with "All Companies" role can access any company in their tenant
+ * 2. TENANT_ADMIN can only access companies within their workspace
+ * 3. Users with "All Companies" role can access any company in their workspace
  * 4. Regular users can only access companies they have role assignments for
  */
 export async function canAccessCompany(user: SessionUser, companyId: string): Promise<boolean> {
   if (user.isSuperAdmin) return true;
 
-  // For TENANT_ADMIN, verify company belongs to their tenant
-  if (user.isTenantAdmin) {
+  // For TENANT_ADMIN, verify company belongs to their workspace
+  if (user.isWorkspaceAdmin) {
     if (!user.tenantId) return false;
     const company = await prisma.company.findUnique({
       where: { id: companyId },
@@ -388,7 +462,7 @@ export async function canAccessCompany(user: SessionUser, companyId: string): Pr
     return company?.tenantId === user.tenantId;
   }
 
-  // For users with "All Companies" access, verify company belongs to their tenant
+  // For users with "All Companies" access, verify company belongs to their workspace
   if (user.hasAllCompaniesAccess) {
     if (!user.tenantId) return false;
     const company = await prisma.company.findUnique({
@@ -403,28 +477,28 @@ export async function canAccessCompany(user: SessionUser, companyId: string): Pr
 }
 
 /**
- * Check if user can manage tenant settings
+ * Check if user can manage workspace settings
  */
-export function canManageTenant(user: SessionUser, tenantId: string): boolean {
+export function canManageWorkspace(user: SessionUser, workspaceId: string): boolean {
   if (user.isSuperAdmin) return true;
-  if (!user.isTenantAdmin) return false;
-  return user.tenantId === tenantId;
+  if (!user.isWorkspaceAdmin) return false;
+  return user.tenantId === workspaceId;
 }
 
 /**
- * Check if user can manage users within a tenant
+ * Check if user can manage users within a workspace
  */
 export function canManageUsers(user: SessionUser): boolean {
-  return user.isSuperAdmin || user.isTenantAdmin;
+  return user.isSuperAdmin || user.isWorkspaceAdmin;
 }
 
 /**
- * Check if user can manage companies within a tenant
+ * Check if user can manage companies within a workspace
  */
 export function canManageCompanies(user: SessionUser): boolean {
-  // Super admin and tenant admin can manage all companies
+  // Super admin and workspace admin can manage all companies
   // Company admin status now determined by per-company role assignments
-  return user.isSuperAdmin || user.isTenantAdmin;
+  return user.isSuperAdmin || user.isWorkspaceAdmin;
 }
 
 // ============================================================================
@@ -468,17 +542,15 @@ export async function performLogin(
     throw new Error(ERROR_MESSAGES.INVALID_CREDENTIALS);
   }
 
-  // Compute flags from role assignments (authoritative source)
-  const isSuperAdmin = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
-  );
-  const isTenantAdmin = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
-  );
+  const internalRole = deriveInternalRole(user.roleAssignments);
+  const isAdminRole = internalRole === 'ADMIN';
+  const isManagerRole = internalRole === 'MANAGER';
+  const fallbackWorkspace = isAdminRole && !user.tenantId ? await getDefaultWorkspaceForAdmin() : null;
+  const effectiveWorkspaceId = user.tenantId ?? fallbackWorkspace?.id ?? null;
 
-  // Check tenant status (for non-SUPER_ADMIN)
-  if (user.tenant && user.tenant.status !== TENANT_STATUSES.ACTIVE && !isSuperAdmin) {
-    await logAuthEvent('LOGIN_FAILED', user.id, { reason: 'Tenant not active', tenantStatus: user.tenant.status });
+  // Check workspace status for non-admin users.
+  if (user.tenant && user.tenant.status !== TENANT_STATUSES.ACTIVE && !isAdminRole) {
+    await logAuthEvent('LOGIN_FAILED', user.id, { reason: 'Workspace not active', WorkspaceStatus: user.tenant.status });
     throw new Error(ERROR_MESSAGES.ACCOUNT_ACCESS_RESTRICTED);
   }
 
@@ -498,7 +570,8 @@ export async function performLogin(
   const token = await createToken({
     userId: user.id,
     email: user.email,
-    tenantId: user.tenantId,
+    tenantId: effectiveWorkspaceId,
+    workspaceId: effectiveWorkspaceId,
   });
 
   // Set cookie
@@ -510,12 +583,9 @@ export async function performLogin(
   });
 
   // Log successful login
-  await logAuthEvent('LOGIN', user.id, { tenantId: user.tenantId });
+  await logAuthEvent('LOGIN', user.id, { workspaceId: effectiveWorkspaceId });
 
-  // Check if user has any "All Companies" role assignment (companyId = null)
-  const hasAllCompaniesAccess = user.roleAssignments.some(
-    (a) => a.companyId === null && a.role.systemRoleType !== 'SUPER_ADMIN' && a.role.systemRoleType !== 'TENANT_ADMIN'
-  );
+  const hasAllCompaniesAccess = isAdminRole || hasAllCompanyScope(user.roleAssignments);
 
   // Get all unique company IDs from role assignments (excludes null/"All Companies")
   const companyIds = [
@@ -531,9 +601,14 @@ export async function performLogin(
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
-    tenantId: user.tenantId,
-    isSuperAdmin,
-    isTenantAdmin,
+    tenantId: effectiveWorkspaceId,
+    workspaceId: effectiveWorkspaceId,
+    internalRole,
+    isAdmin: isAdminRole,
+    isManager: isManagerRole,
+    isStaff: internalRole === 'STAFF',
+    isSuperAdmin: isAdminRole,
+    isWorkspaceAdmin: isAdminRole,
     hasAllCompaniesAccess,
     companyIds,
   };
@@ -554,16 +629,16 @@ export async function performLogout(): Promise<void> {
 }
 
 // ============================================================================
-// Tenant-Scoped Session Helpers
+// Workspace-Scoped Session Helpers
 // ============================================================================
 
 /**
- * Get the tenant ID from session (throws if no tenant and not SUPER_ADMIN)
+ * Get the workspace ID from session (throws if no workspace and not SUPER_ADMIN)
  */
-export async function getSessionTenantId(): Promise<string | null> {
+export async function getSessionWorkspaceId(): Promise<string | null> {
   const session = await requireAuth();
 
-  // SUPER_ADMIN doesn't need a tenant
+  // SUPER_ADMIN doesn't need a workspace
   if (isSuperAdmin(session)) {
     return null;
   }
@@ -576,12 +651,12 @@ export async function getSessionTenantId(): Promise<string | null> {
 }
 
 /**
- * Validate that user belongs to the specified tenant
+ * Validate that user belongs to the specified workspace
  */
-export async function validateTenantAccess(tenantId: string): Promise<SessionUser> {
+export async function validateWorkspaceAccess(workspaceId: string): Promise<SessionUser> {
   const session = await requireAuth();
 
-  if (!canAccessTenant(session, tenantId)) {
+  if (!canAccessWorkspace(session, workspaceId)) {
     throw new Error(ERROR_MESSAGES.FORBIDDEN);
   }
 
@@ -594,7 +669,7 @@ export async function validateTenantAccess(tenantId: string): Promise<SessionUse
 export async function validateCompanyAccess(companyId: string): Promise<SessionUser> {
   const session = await requireAuth();
 
-  // Get company to check tenant
+  // Get company to check workspace
   const company = await prisma.company.findUnique({
     where: { id: companyId },
     select: { tenantId: true },
@@ -604,8 +679,8 @@ export async function validateCompanyAccess(companyId: string): Promise<SessionU
     throw new Error(ERROR_MESSAGES.COMPANY_NOT_FOUND);
   }
 
-  // Check tenant access first
-  if (!canAccessTenant(session, company.tenantId)) {
+  // Check workspace access first
+  if (!canAccessWorkspace(session, company.tenantId)) {
     throw new Error(ERROR_MESSAGES.FORBIDDEN);
   }
 

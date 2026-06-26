@@ -139,8 +139,8 @@ async function triggerSync(params?: SyncParams): Promise<SyncResult> {
 
 async function fetchTenantRatePreference(tenantId?: string): Promise<TenantRatePreference> {
   const url = tenantId
-    ? `/api/admin/exchange-rates/tenant-preference?tenantId=${tenantId}`
-    : '/api/admin/exchange-rates/tenant-preference';
+    ? `/api/admin/exchange-rates/workspace-preference?tenantId=${tenantId}`
+    : '/api/admin/exchange-rates/workspace-preference';
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -151,11 +151,11 @@ async function fetchTenantRatePreference(tenantId?: string): Promise<TenantRateP
   return response.json();
 }
 
-async function updateTenantRatePreference(
+async function updateWorkspaceRatePreference(
   preference: 'MONTHLY' | 'DAILY',
   tenantId?: string
 ): Promise<TenantRatePreference> {
-  const response = await fetch('/api/admin/exchange-rates/tenant-preference', {
+  const response = await fetch('/api/admin/exchange-rates/workspace-preference', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ preferredRateType: preference, tenantId }),
@@ -311,7 +311,7 @@ export function useSyncMASMonthly() {
  * Get tenant's rate preference.
  * @param tenantId - Optional tenant ID (for SUPER_ADMIN using tenant selector)
  */
-export function useTenantRatePreference(tenantId?: string) {
+export function useWorkspaceRatePreference(tenantId?: string) {
   return useQuery({
     queryKey: ['tenant-rate-preference', tenantId],
     queryFn: () => fetchTenantRatePreference(tenantId),
@@ -324,12 +324,12 @@ export function useTenantRatePreference(tenantId?: string) {
  * Update tenant's rate preference.
  * @param tenantId - Optional tenant ID (for SUPER_ADMIN using tenant selector)
  */
-export function useUpdateTenantRatePreference(tenantId?: string) {
+export function useUpdateWorkspaceRatePreference(tenantId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (preference: 'MONTHLY' | 'DAILY') =>
-      updateTenantRatePreference(preference, tenantId),
+      updateWorkspaceRatePreference(preference, tenantId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-rate-preference', tenantId] });
     },

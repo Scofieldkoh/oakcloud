@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { validateForGeneration } from '@/services/document-validation.service';
 
 // Validation schema for validation request
@@ -10,7 +11,6 @@ const validateSchema = z.object({
   companyId: z.string().uuid().optional(),
   contactIds: z.array(z.string().uuid()).optional(),
   customData: z.record(z.unknown()).optional(),
-  tenantId: z.string().uuid().optional(), // For SUPER_ADMIN
 });
 
 /**
@@ -27,15 +27,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = validateSchema.parse(body);
 
-    // Determine tenant ID
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && data.tenantId) {
-      tenantId = data.tenantId;
-    }
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
     // Run validation
     const result = await validateForGeneration(tenantId, {

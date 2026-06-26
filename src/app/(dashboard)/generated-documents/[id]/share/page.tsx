@@ -24,9 +24,7 @@ import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
-import { useSession } from '@/hooks/use-auth';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 
@@ -68,13 +66,6 @@ export default function ShareManagementPage() {
   const params = useParams();
   const documentId = params.id as string;
   const { success, error: toastError } = useToast();
-  const { data: session } = useSession();
-
-  // Tenant selection for SUPER_ADMIN
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   // State
   const [document, setDocument] = useState<DocumentInfo | null>(null);
@@ -104,15 +95,8 @@ export default function ShareManagementPage() {
       setError(null);
 
       try {
-        // Build URL params for SUPER_ADMIN
-        const queryParams = new URLSearchParams();
-        if (session?.isSuperAdmin && activeTenantId) {
-          queryParams.set('tenantId', activeTenantId);
-        }
-        const queryString = queryParams.toString() ? `?${queryParams}` : '';
-
         // Fetch document info
-        const docResponse = await fetch(`/api/generated-documents/${documentId}${queryString}`);
+        const docResponse = await fetch(`/api/generated-documents/${documentId}`);
         if (!docResponse.ok) {
           if (docResponse.status === 404) {
             throw new Error('Document not found');
@@ -123,7 +107,7 @@ export default function ShareManagementPage() {
         setDocument({ id: docData.id, title: docData.title, status: docData.status });
 
         // Fetch shares
-        const sharesResponse = await fetch(`/api/generated-documents/${documentId}/share${queryString}`);
+        const sharesResponse = await fetch(`/api/generated-documents/${documentId}/share`);
         if (sharesResponse.ok) {
           const sharesData = await sharesResponse.json();
           setShares(sharesData);
@@ -137,7 +121,7 @@ export default function ShareManagementPage() {
     };
 
     fetchData();
-  }, [documentId, session?.isSuperAdmin, activeTenantId]);
+  }, [documentId]);
 
   // Get share URL
   const getShareUrl = (token: string) => {
@@ -176,10 +160,6 @@ export default function ShareManagementPage() {
 
       if (newShareExpiry) {
         body.expiresAt = new Date(newShareExpiry).toISOString();
-      }
-
-      if (session?.isSuperAdmin && activeTenantId) {
-        body.tenantId = activeTenantId;
       }
 
       const response = await fetch(`/api/generated-documents/${documentId}/share`, {
@@ -223,9 +203,6 @@ export default function ShareManagementPage() {
     try {
       const queryParams = new URLSearchParams();
       queryParams.set('shareId', shareToRevoke);
-      if (session?.isSuperAdmin && activeTenantId) {
-        queryParams.set('tenantId', activeTenantId);
-      }
 
       const response = await fetch(
         `/api/generated-documents/${documentId}/share?${queryParams}`,

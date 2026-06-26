@@ -10,66 +10,44 @@ export interface CompanyOption {
   homeCurrency?: string | null;
 }
 
-interface CompaniesPageResponse {
-  companies: Array<{
-    id: string;
-    name: string;
-    uen?: string | null;
-    primarySsicDescription?: string | null;
-    homeCurrency?: string | null;
-  }>;
-  totalPages: number;
+interface CompanyOptionsResponse {
+  options: CompanyOption[];
 }
 
-const PAGE_LIMIT = 200;
+interface UseAllCompanyOptionsOptions {
+  enabled?: boolean;
+}
 
-export function useAllCompanyOptions(tenantId?: string | null) {
+/**
+ * Compatibility hook for older imports.
+ *
+ * This intentionally uses the capped `/api/companies/options` endpoint instead
+ * of paginating through the full `/api/companies` list.
+ */
+export function useAllCompanyOptions(
+  tenantId?: string | null,
+  options: UseAllCompanyOptionsOptions = {}
+) {
   return useQuery({
-    queryKey: ['all-company-options', tenantId ?? null],
+    queryKey: ['company-options', tenantId ?? null, 'compat'],
     queryFn: async ({ signal }): Promise<CompanyOption[]> => {
-      const params = new URLSearchParams({
-        limit: String(PAGE_LIMIT),
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
+      const params = new URLSearchParams({ limit: '50' });
 
       if (tenantId) {
         params.set('tenantId', tenantId);
       }
 
-      const byId = new Map<string, Omit<CompanyOption, 'id'>>();
-      let page = 1;
-      let totalPages = 1;
+      const response = await fetch(`/api/companies/options?${params.toString()}`, { signal });
 
-      while (page <= totalPages) {
-        params.set('page', String(page));
-        const response = await fetch(`/api/companies?${params.toString()}`, { signal });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch company filter options');
-        }
-
-        const payload = await response.json() as CompaniesPageResponse;
-
-        for (const company of payload.companies) {
-          byId.set(company.id, {
-            name: company.name,
-            uen: company.uen,
-            primarySsicDescription: company.primarySsicDescription,
-            homeCurrency: company.homeCurrency,
-          });
-        }
-
-        totalPages = Math.max(payload.totalPages || 1, 1);
-        page += 1;
+      if (!response.ok) {
+        throw new Error('Failed to fetch company options');
       }
 
-      return Array.from(byId.entries())
-        .map(([id, data]) => ({ id, ...data }))
-        .sort((left, right) => left.name.localeCompare(right.name));
+      const payload = await response.json() as CompanyOptionsResponse;
+      return payload.options;
     },
+    enabled: options.enabled ?? true,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 }
-

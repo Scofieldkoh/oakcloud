@@ -1033,49 +1033,6 @@ export async function listProcessingDocumentsPaged(options: {
     throw new Error('Tenant ID is required for processing documents list');
   }
 
-  // Backfill `currentRevisionId` for existing unapproved documents that already have revisions
-  // (e.g., extracted drafts). This keeps list sorting and bulk actions consistent with what is displayed.
-  if (tenantId && !skipTenantFilter) {
-    try {
-      // Validate companyIds are UUIDs to prevent SQL injection
-      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const validCompanyIds = companyIds?.filter(id => UUID_REGEX.test(id)) ?? [];
-
-      const companyScopeSql =
-        validCompanyIds.length > 0
-          ? Prisma.sql`AND d."companyId" IN (${Prisma.join(validCompanyIds)})`
-          : Prisma.empty;
-
-      await prisma.$executeRaw`
-        WITH latest AS (
-          SELECT
-            pd."id" AS pd_id,
-            (
-              SELECT dr."id"
-              FROM "document_revisions" dr
-              WHERE dr."processing_document_id" = pd."id"
-              ORDER BY dr."revision_number" DESC
-              LIMIT 1
-            ) AS rev_id
-          FROM "processing_documents" pd
-          JOIN "documents" d ON d."id" = pd."document_id"
-          WHERE pd."current_revision_id" IS NULL
-            AND pd."deleted_at" IS NULL
-            AND d."tenantId" = ${tenantId}
-            ${companyScopeSql}
-        )
-        UPDATE "processing_documents" pd
-        SET "current_revision_id" = latest.rev_id
-        FROM latest
-        WHERE pd."id" = latest.pd_id
-          AND latest.rev_id IS NOT NULL
-      `;
-    } catch (e) {
-      // Best-effort only; do not fail listing due to backfill issues.
-      log.warn('Failed to backfill currentRevisionId for processing documents', e);
-    }
-  }
-
   // Build document filter - companyIds is optional
   const documentFilter: Prisma.DocumentWhereInput = {};
 
@@ -1483,6 +1440,94 @@ export async function listProcessingDocumentsPaged(options: {
     page,
     limit,
     totalPages,
+  };
+}
+
+export async function getProcessingDocumentSummary(options: {
+  tenantId: string | null;
+  companyIds?: string[];
+  skipTenantFilter?: boolean;
+}): Promise<{
+  total: number;
+  byPipelineStatus: Record<string, number>;
+  byDuplicateStatus: Record<string, number>;
+  byRevisionStatus: Record<string, number>;
+  needsReview: number;
+}> {
+  const { tenantId, companyIds, skipTenantFilter = false } = options;
+
+  if (!tenantId && !skipTenantFilter) {
+    throw new Error('Tenant ID is required for processing document summary');
+  }
+
+  const documentFilter: Prisma.DocumentWhereInput = {};
+  if (tenantId && !skipTenantFilter) {
+    documentFilter.tenantId = tenantId;
+  }
+  if (companyIds?.length) {
+    documentFilter.companyId = { in: companyIds };
+  }
+
+  const where: Prisma.ProcessingDocumentWhereInput = {
+    deletedAt: null,
+    document: documentFilter,
+  };
+
+  const [total, byPipelineStatus, byDuplicateStatus, byRevisionPointer, needsReview] =
+    await Promise.all([
+      prisma.processingDocument.count({ where }),
+      prisma.processingDocument.groupBy({
+        by: ['pipelineStatus'],
+        where,
+        _count: true,
+      }),
+      prisma.processingDocument.groupBy({
+        by: ['duplicateStatus'],
+        where,
+        _count: true,
+      }),
+      prisma.processingDocument.groupBy({
+        by: ['currentRevisionId'],
+        where: {
+          ...where,
+          currentRevision: { isNot: null },
+        },
+        _count: true,
+      }),
+      prisma.processingDocument.count({
+        where: {
+          ...where,
+          currentRevision: { status: 'DRAFT' },
+        },
+      }),
+    ]);
+
+  const revisionIds = byRevisionPointer
+    .map((row) => row.currentRevisionId)
+    .filter((id): id is string => Boolean(id));
+  const revisions = revisionIds.length
+    ? await prisma.documentRevision.findMany({
+        where: { id: { in: revisionIds } },
+        select: { id: true, status: true },
+      })
+    : [];
+  const revisionStatusById = new Map(revisions.map((revision) => [revision.id, revision.status]));
+
+  return {
+    total,
+    byPipelineStatus: Object.fromEntries(
+      byPipelineStatus.map((row) => [row.pipelineStatus, row._count])
+    ),
+    byDuplicateStatus: Object.fromEntries(
+      byDuplicateStatus.map((row) => [row.duplicateStatus, row._count])
+    ),
+    byRevisionStatus: byRevisionPointer.reduce<Record<string, number>>((acc, row) => {
+      const status = row.currentRevisionId ? revisionStatusById.get(row.currentRevisionId) : undefined;
+      if (!status) return acc;
+      acc[status] = (acc[status] ?? 0) + row._count;
+      return acc;
+    }, {}),
+    needsReview,
   };
 }
 

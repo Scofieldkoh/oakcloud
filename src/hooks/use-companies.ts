@@ -14,7 +14,7 @@ import type { Company, CompanyStatus, EntityType } from '@/generated/prisma';
 import type { CreateCompanyInput, UpdateCompanyInput } from '@/lib/validations/company';
 import type { CompanyWithRelations, CompanyStats, CompanyLinkInfo } from '@/services/company/types';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 
 interface CompanySearchParams {
   query?: string;
@@ -49,7 +49,17 @@ interface CompanySearchResult {
   totalPages: number;
 }
 
-function withTenantId(url: string, tenantId?: string): string {
+interface CompanyPageBootstrapResult {
+  companies: CompanySearchResult;
+  stats: CompanyStats | null;
+  preferences: Record<string, {
+    key: string;
+    value: unknown | null;
+    updatedAt: string | null;
+  }>;
+}
+
+function withWorkspaceId(url: string, tenantId?: string): string {
   if (!tenantId) return url;
   const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}tenantId=${encodeURIComponent(tenantId)}`;
@@ -64,7 +74,7 @@ async function fetchCompanies(params: CompanySearchParams): Promise<CompanySearc
     }
   });
 
-  const response = await fetch(`/api/companies?${searchParams}`);
+  const response = await fetch(`/api/companies/list?${searchParams}`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch companies');
@@ -72,8 +82,32 @@ async function fetchCompanies(params: CompanySearchParams): Promise<CompanySearc
   return response.json();
 }
 
+async function fetchCompaniesPageBootstrap(
+  params: CompanySearchParams,
+  preferenceKeys: string[]
+): Promise<CompanyPageBootstrapResult> {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      searchParams.set(key, String(value));
+    }
+  });
+
+  if (preferenceKeys.length > 0) {
+    searchParams.set('preferenceKeys', Array.from(new Set(preferenceKeys)).join(','));
+  }
+
+  const response = await fetch(`/api/page-bootstrap/companies?${searchParams}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch companies page bootstrap');
+  }
+  return response.json();
+}
+
 async function fetchCompany(id: string, tenantId?: string): Promise<CompanyWithRelations> {
-  const response = await fetch(withTenantId(`/api/companies/${id}?full=true`, tenantId));
+  const response = await fetch(withWorkspaceId(`/api/companies/${id}/detail?full=true`, tenantId));
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch company');
@@ -107,7 +141,7 @@ async function createCompany(data: CreateCompanyInput & { tenantId?: string }): 
 }
 
 async function updateCompany(id: string, data: UpdateCompanyInput, tenantId?: string): Promise<Company> {
-  const response = await fetch(withTenantId(`/api/companies/${id}`, tenantId), {
+  const response = await fetch(withWorkspaceId(`/api/companies/${id}`, tenantId), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -120,7 +154,7 @@ async function updateCompany(id: string, data: UpdateCompanyInput, tenantId?: st
 }
 
 async function deleteCompany(id: string, reason: string, tenantId?: string): Promise<Company> {
-  const response = await fetch(withTenantId(`/api/companies/${id}`, tenantId), {
+  const response = await fetch(withWorkspaceId(`/api/companies/${id}`, tenantId), {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ reason }),
@@ -175,6 +209,35 @@ export function useCompanies(params: CompanySearchParams = {}) {
   });
 }
 
+export function useCompaniesPageBootstrap(
+  params: CompanySearchParams = {},
+  preferenceKeys: string[] = []
+) {
+  const queryClient = useQueryClient();
+  const uniquePreferenceKeys = Array.from(new Set(preferenceKeys.filter(Boolean))).sort();
+
+  return useQuery({
+    queryKey: ['companies-page-bootstrap', params, uniquePreferenceKeys],
+    queryFn: async () => {
+      const result = await fetchCompaniesPageBootstrap(params, uniquePreferenceKeys);
+
+      queryClient.setQueryData(['companies', params], result.companies);
+      if (result.stats) {
+        queryClient.setQueryData(['company-stats', params.tenantId], result.stats);
+      }
+      for (const [key, preference] of Object.entries(result.preferences)) {
+        queryClient.setQueryData(['user-preference', key], preference);
+      }
+
+      return result;
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
 /**
  * Hook to fetch a single company with all relations
  *
@@ -191,7 +254,7 @@ export function useCompanies(params: CompanySearchParams = {}) {
  */
 export function useCompany(id: string) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -242,7 +305,7 @@ export function useCompanyStats(tenantId?: string, options?: { enabled?: boolean
 export function usePrefetchCompany() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -323,7 +386,7 @@ export function useCreateCompany() {
 export function useUpdateCompany() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -360,7 +423,7 @@ export function useUpdateCompany() {
 export function useDeleteCompany() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -759,7 +822,7 @@ export interface FYERetrievalResult {
 }
 
 async function retrieveFYE(companyId: string, tenantId?: string): Promise<FYERetrievalResult> {
-  const res = await fetch(withTenantId(`/api/companies/${companyId}/retrieve-fye`, tenantId));
+  const res = await fetch(withWorkspaceId(`/api/companies/${companyId}/retrieve-fye`, tenantId));
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error.error || 'Failed to retrieve FYE from ACRA');
@@ -788,7 +851,7 @@ async function retrieveFYE(companyId: string, tenantId?: string): Promise<FYERet
  */
 export function useRetrieveFYE(companyId: string) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );

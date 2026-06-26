@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { canAccessCompany, requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { getTenantById } from '@/services/tenant.service';
 import {
   createWorkflowProject,
   searchWorkflowProjects,
@@ -56,16 +55,7 @@ export async function GET(request: NextRequest) {
     await requirePermission(session, 'company', 'read');
 
     const { searchParams } = new URL(request.url);
-    const tenantIdParam = searchParams.get('tenantId');
-
-    let effectiveTenantId = session.tenantId;
-    if (session.isSuperAdmin && tenantIdParam) {
-      const tenant = await getTenantById(tenantIdParam);
-      if (!tenant) {
-        return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
-      }
-      effectiveTenantId = tenantIdParam;
-    }
+    const effectiveTenantId = session.tenantId;
 
     const params: WorkflowProjectSearchParams = {
       query: searchParams.get('q') || undefined,
@@ -99,7 +89,7 @@ export async function GET(request: NextRequest) {
     const page = params.page ?? 1;
     const limit = params.limit ?? 20;
 
-    if (!session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin && !session.hasAllCompaniesAccess) {
       if (!session.companyIds || session.companyIds.length === 0) {
         return NextResponse.json(createEmptyResult(page, limit));
       }
@@ -108,10 +98,9 @@ export async function GET(request: NextRequest) {
     const result = await searchWorkflowProjects(params, {
       tenantId: effectiveTenantId,
       companyIds:
-        !session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess
+        !session.isSuperAdmin && !session.isWorkspaceAdmin && !session.hasAllCompaniesAccess
           ? session.companyIds
           : undefined,
-      skipTenantFilter: session.isSuperAdmin && !effectiveTenantId,
     });
 
     return NextResponse.json(result);
@@ -147,7 +136,6 @@ export async function POST(request: NextRequest) {
 
     const detail = await createWorkflowProject(payload, {
       tenantId: session.tenantId,
-      skipTenantFilter: session.isSuperAdmin && !session.tenantId,
     });
 
     return NextResponse.json(detail, { status: 201 });

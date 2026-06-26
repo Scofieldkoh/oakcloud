@@ -32,7 +32,7 @@ interface AccountFormModalProps {
   onSuccess?: () => void;
   // For scope selection
   isSuperAdmin?: boolean;
-  isTenantAdmin?: boolean;
+  isWorkspaceAdmin?: boolean;
   tenantOptions?: SelectOption[];
 }
 
@@ -45,7 +45,7 @@ export function AccountFormModal({
   companyId,
   onSuccess,
   isSuperAdmin,
-  isTenantAdmin,
+  isWorkspaceAdmin,
   tenantOptions = [],
 }: AccountFormModalProps) {
   const isEditing = !!account;
@@ -188,7 +188,7 @@ export function AccountFormModal({
 
   // Scope options for SUPER_ADMIN
   const scopeOptions: SelectOption[] = [
-    { value: 'system', label: 'System (All Tenants)' },
+    { value: 'system', label: 'System (All Workspaces)' },
     ...tenantOptions,
   ];
 
@@ -292,15 +292,15 @@ export function AccountFormModal({
               disabled={isLoading}
             />
             <p className="text-xs text-text-muted">
-              System accounts are available to all tenants. Tenant accounts are only visible within the selected tenant.
+              System accounts are available to all workspaces. Workspace accounts are only visible within the current workspace.
             </p>
           </div>
         )}
 
-        {/* Tenant Admin info */}
-        {isTenantAdmin && !isEditing && (
+        {/* Workspace admin info */}
+        {isWorkspaceAdmin && !isEditing && (
           <p className="text-xs text-text-muted">
-            This account will be created at the tenant level and only visible within your tenant.
+            This account will be created at the workspace level and only visible within your workspace.
           </p>
         )}
 

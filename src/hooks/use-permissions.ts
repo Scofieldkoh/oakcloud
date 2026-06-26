@@ -1,27 +1,48 @@
 'use client';
 
-import { useQuery, useQueries } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 interface PermissionsResponse {
   permissions: string[];
   isSuperAdmin: boolean;
-  isTenantAdmin: boolean;
+  isWorkspaceAdmin: boolean;
 }
 
-async function fetchPermissions(companyId?: string): Promise<PermissionsResponse> {
-  const url = companyId
-    ? `/api/auth/permissions?companyId=${companyId}`
-    : '/api/auth/permissions';
+interface SessionWithPermissionsCache extends PermissionsResponse {
+  user: unknown;
+}
 
-  const response = await fetch(url);
+async function fetchSessionPermissions(): Promise<SessionWithPermissionsCache | null> {
+  const response = await fetch('/api/auth/session');
   if (!response.ok) {
     if (response.status === 401) {
-      return { permissions: [], isSuperAdmin: false, isTenantAdmin: false };
+      return null;
     }
     throw new Error('Failed to fetch permissions');
   }
   return response.json();
+}
+
+async function fetchPermissions(companyId: string): Promise<PermissionsResponse> {
+  const response = await fetch(`/api/auth/session?companyId=${companyId}`);
+  if (!response.ok) {
+    if (response.status === 401) {
+      return { permissions: [], isSuperAdmin: false, isWorkspaceAdmin: false };
+    }
+    throw new Error('Failed to fetch permissions');
+  }
+  return response.json();
+}
+
+function toPermissionsResponse(
+  data: PermissionsResponse | SessionWithPermissionsCache | null | undefined
+): PermissionsResponse {
+  return {
+    permissions: data?.permissions ?? [],
+    isSuperAdmin: data?.isSuperAdmin ?? false,
+    isWorkspaceAdmin: data?.isWorkspaceAdmin ?? false,
+  };
 }
 
 /**
@@ -31,9 +52,21 @@ async function fetchPermissions(companyId?: string): Promise<PermissionsResponse
  * @returns Object with permissions array and helper functions
  */
 export function usePermissions(companyId?: string) {
+  const queryClient = useQueryClient();
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['permissions', companyId],
-    queryFn: () => fetchPermissions(companyId),
+    queryKey: companyId ? ['permissions', companyId] : ['session-with-permissions'],
+    queryFn: () => companyId ? fetchPermissions(companyId) : fetchSessionPermissions(),
+    initialData: () => {
+      if (companyId) return undefined;
+
+      const session = queryClient.getQueryData<SessionWithPermissionsCache | null>(
+        ['session-with-permissions']
+      );
+
+      return session ?? undefined;
+    },
+    select: toPermissionsResponse,
     staleTime: 15 * 60 * 1000, // 15 minutes - permissions rarely change
     gcTime: 30 * 60 * 1000, // 30 minutes
     retry: false,
@@ -41,14 +74,14 @@ export function usePermissions(companyId?: string) {
 
   const permissions = data?.permissions || [];
   const isSuperAdmin = data?.isSuperAdmin || false;
-  const isTenantAdmin = data?.isTenantAdmin || false;
+  const isWorkspaceAdmin = data?.isWorkspaceAdmin || false;
 
   /**
    * Check if user has a specific permission
    * Format: "resource:action" (e.g., "company:create", "document:delete")
    */
   const hasPermission = (resource: string, action: string): boolean => {
-    if (isSuperAdmin || isTenantAdmin) return true;
+    if (isSuperAdmin || isWorkspaceAdmin) return true;
     return permissions.includes(`${resource}:${action}`) || permissions.includes(`${resource}:manage`);
   };
 
@@ -56,7 +89,7 @@ export function usePermissions(companyId?: string) {
    * Check if user has any of the specified permissions
    */
   const hasAnyPermission = (checks: Array<{ resource: string; action: string }>): boolean => {
-    if (isSuperAdmin || isTenantAdmin) return true;
+    if (isSuperAdmin || isWorkspaceAdmin) return true;
     return checks.some(({ resource, action }) => hasPermission(resource, action));
   };
 
@@ -64,7 +97,7 @@ export function usePermissions(companyId?: string) {
    * Check if user has all of the specified permissions
    */
   const hasAllPermissions = (checks: Array<{ resource: string; action: string }>): boolean => {
-    if (isSuperAdmin || isTenantAdmin) return true;
+    if (isSuperAdmin || isWorkspaceAdmin) return true;
     return checks.every(({ resource, action }) => hasPermission(resource, action));
   };
 
@@ -124,7 +157,7 @@ export function usePermissions(companyId?: string) {
 
     // Tenant permissions
     readTenant: hasPermission('tenant', 'read'),
-    updateTenant: hasPermission('tenant', 'update'),
+    updateWorkspace: hasPermission('tenant', 'update'),
 
     // Audit log permissions
     readAuditLog: hasPermission('audit_log', 'read'),
@@ -134,7 +167,7 @@ export function usePermissions(companyId?: string) {
   return {
     permissions,
     isSuperAdmin,
-    isTenantAdmin,
+    isWorkspaceAdmin,
     isLoading,
     error,
     hasPermission,
@@ -152,24 +185,21 @@ export function usePermissions(companyId?: string) {
  * @returns Object with permission check functions per company
  */
 export function useCompanyPermissions(companyIds: string[]) {
-  // First get base permissions (for SUPER_ADMIN/TENANT_ADMIN check)
-  const { isSuperAdmin, isTenantAdmin, isLoading: baseLoading } = usePermissions();
+  const { permissions, isSuperAdmin, isWorkspaceAdmin, isLoading } = usePermissions();
 
-  // Fetch permissions for each company
-  const queries = useQueries({
-    queries: companyIds.map((companyId) => ({
-      queryKey: ['permissions', companyId],
-      queryFn: () => fetchPermissions(companyId),
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: false,
-      // Skip fetching if user is admin (they have all permissions)
-      enabled: !isSuperAdmin && !isTenantAdmin,
-    })),
-  });
+  const canEdit = isSuperAdmin || isWorkspaceAdmin ||
+    permissions.includes('company:update') ||
+    permissions.includes('company:manage');
+  const canDelete = isSuperAdmin || isWorkspaceAdmin ||
+    permissions.includes('company:delete') ||
+    permissions.includes('company:manage');
+  const canRead = isSuperAdmin || isWorkspaceAdmin ||
+    permissions.includes('company:read') ||
+    permissions.includes('company:manage');
+  const canExport = isSuperAdmin || isWorkspaceAdmin ||
+    permissions.includes('company:export') ||
+    permissions.includes('company:manage');
 
-  const isLoading = baseLoading || queries.some((q) => q.isLoading);
-
-  // Build permission map: companyId -> { canEdit, canDelete, ... }
   const permissionsByCompany = useMemo(() => {
     const map: Record<string, {
       canEdit: boolean;
@@ -178,53 +208,33 @@ export function useCompanyPermissions(companyIds: string[]) {
       canExport: boolean;
     }> = {};
 
-    companyIds.forEach((companyId, index) => {
-      // Admins have all permissions
-      if (isSuperAdmin || isTenantAdmin) {
-        map[companyId] = {
-          canEdit: true,
-          canDelete: true,
-          canRead: true,
-          canExport: true,
-        };
-        return;
-      }
-
-      const queryResult = queries[index];
-      const permissions = queryResult.data?.permissions || [];
-
-      const hasPermission = (resource: string, action: string): boolean => {
-        return permissions.includes(`${resource}:${action}`) || permissions.includes(`${resource}:manage`);
-      };
-
+    companyIds.forEach((companyId) => {
       map[companyId] = {
-        canEdit: hasPermission('company', 'update'),
-        canDelete: hasPermission('company', 'delete'),
-        canRead: hasPermission('company', 'read'),
-        canExport: hasPermission('company', 'export'),
+        canEdit,
+        canDelete,
+        canRead,
+        canExport,
       };
     });
 
     return map;
-  }, [companyIds, queries, isSuperAdmin, isTenantAdmin]);
+  }, [canDelete, canEdit, canExport, canRead, companyIds]);
 
   /**
    * Check if user can perform an action on a specific company
    */
   const canEditCompany = (companyId: string): boolean => {
-    if (isSuperAdmin || isTenantAdmin) return true;
     return permissionsByCompany[companyId]?.canEdit ?? false;
   };
 
   const canDeleteCompany = (companyId: string): boolean => {
-    if (isSuperAdmin || isTenantAdmin) return true;
     return permissionsByCompany[companyId]?.canDelete ?? false;
   };
 
   return {
     isLoading,
     isSuperAdmin,
-    isTenantAdmin,
+    isWorkspaceAdmin,
     permissionsByCompany,
     canEditCompany,
     canDeleteCompany,

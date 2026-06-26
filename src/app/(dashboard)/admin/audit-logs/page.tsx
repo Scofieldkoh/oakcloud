@@ -377,7 +377,7 @@ export default function AuditLogsPage() {
 
   const canViewAuditLogs =
     session?.isSuperAdmin ||
-    session?.isTenantAdmin;
+    session?.isWorkspaceAdmin;
 
   if (!canViewAuditLogs) {
     return (

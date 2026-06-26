@@ -9,9 +9,7 @@ const prismaLogger = createLogger('prisma');
 const SLOW_QUERY_THRESHOLD = parseInt(process.env.SLOW_QUERY_THRESHOLD || '100', 10);
 
 declare global {
-  // eslint-disable-next-line no-var
   var __prisma: PrismaClient | undefined;
-  // eslint-disable-next-line no-var
   var __prismaPool: Pool | undefined;
 }
 

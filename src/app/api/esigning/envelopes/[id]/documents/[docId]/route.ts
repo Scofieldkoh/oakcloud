@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import { reorderEsigningDocumentSchema } from '@/lib/validations/esigning';
 import {
   deleteEsigningEnvelopeDocument,
@@ -20,7 +20,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'esigning', 'update');
 
     const body = await request.json();
-    const tenantId = resolveTenantId(session, body.tenantId);
+    const tenantId = resolveWorkspaceId(session, body.tenantId);
     const parsed = reorderEsigningDocumentSchema.parse(body);
 
     const result = await reorderEsigningEnvelopeDocument(session, tenantId, id, docId, parsed.sortOrder);
@@ -41,7 +41,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'esigning', 'update');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
 
     const result = await deleteEsigningEnvelopeDocument(session, tenantId, id, docId);
     return NextResponse.json(result);

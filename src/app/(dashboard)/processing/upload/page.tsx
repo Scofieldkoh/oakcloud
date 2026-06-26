@@ -22,10 +22,10 @@ import {
   Copy,
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
-import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useCompanySearch } from '@/hooks/use-company-search';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
-import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
+import { AsyncSearchSelect } from '@/components/ui/async-search-select';
 import { Toggle } from '@/components/ui/toggle';
 import { useToast } from '@/components/ui/toast';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
@@ -80,11 +80,8 @@ export default function ProcessingUploadPage() {
 
   // Get active tenant and company
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
   const activeCompanyId = useActiveCompanyId();
-
-  // Fetch companies for selection
-  const { data: companies = [], isLoading: isLoadingCompanies } = useAllCompanyOptions(activeTenantId);
 
   // State
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
@@ -100,6 +97,14 @@ export default function ProcessingUploadPage() {
   const [aiContext, setAiContext] = useState(''); // User's additional context
   const [selectedStandardContexts, setSelectedStandardContexts] = useState<string[]>([]);
   const previousBatchProviderRef = useRef<'mistral' | 'openai' | null>(null);
+  const {
+    searchQuery: companySearchQuery,
+    setSearchQuery: setCompanySearchQuery,
+    options: companyOptions,
+    isLoading: isLoadingCompanies,
+    selectedCompany,
+    setSelectedCompany,
+  } = useCompanySearch({ minChars: 0, limit: 50 });
 
   // Clear extraction-specific fields when extraction is disabled
   useEffect(() => {
@@ -124,20 +129,28 @@ export default function ProcessingUploadPage() {
     previousBatchProviderRef.current = batchProvider;
   }, [selectedModelId]);
 
-  // Update selected company when activeCompanyId changes or companies load
+  // Update selected company when activeCompanyId changes or the initial option page loads.
   useEffect(() => {
-    if (activeCompanyId && companies.some(c => c.id === activeCompanyId)) {
+    if (selectedCompanyId) return;
+
+    const activeCompany = activeCompanyId
+      ? companyOptions.find((company) => company.id === activeCompanyId)
+      : null;
+
+    if (activeCompany && activeCompanyId) {
       setSelectedCompanyId(activeCompanyId);
-    } else if (companies.length === 1) {
+      setSelectedCompany(activeCompany);
+    } else if (companyOptions.length === 1) {
       // Auto-select if only one company
-      setSelectedCompanyId(companies[0].id);
+      setSelectedCompanyId(companyOptions[0].id);
+      setSelectedCompany(companyOptions[0]);
     }
-  }, [activeCompanyId, companies]);
+  }, [activeCompanyId, companyOptions, selectedCompanyId, setSelectedCompany]);
 
   // Auto-populate company context when company is selected (separate from user's additional context)
   useEffect(() => {
     if (selectedCompanyId) {
-      const company = companies.find(c => c.id === selectedCompanyId);
+      const company = selectedCompany?.id === selectedCompanyId ? selectedCompany : null;
       if (company) {
         const contextParts: string[] = [];
 
@@ -162,11 +175,13 @@ export default function ProcessingUploadPage() {
         contextParts.push(`- For ACCOUNTS_RECEIVABLE (sales invoices): "${company.name}" is the SELLER/ISSUER - extract the customer name as the other party`);
 
         setCompanyContext(contextParts.join('\n'));
+      } else {
+        setCompanyContext('');
       }
     } else {
       setCompanyContext('');
     }
-  }, [selectedCompanyId, companies]);
+  }, [selectedCompanyId, selectedCompany]);
 
   // Check files for duplicates against server
   const checkFilesForDuplicates = useCallback(async (files: QueuedFile[]) => {
@@ -649,21 +664,29 @@ export default function ProcessingUploadPage() {
           </div>
         ) : (
           <>
-            <CompanySearchableSelect
-              companies={companies}
+            <AsyncSearchSelect
               value={selectedCompanyId}
-              onChange={setSelectedCompanyId}
+              onChange={(companyId, company) => {
+                setSelectedCompanyId(companyId);
+                setSelectedCompany(company);
+              }}
               placeholder="Select a company..."
-              disabled={isUploading || companies.length === 0}
-              loading={isLoadingCompanies}
+              disabled={isUploading}
+              options={companyOptions}
+              isLoading={isLoadingCompanies}
+              searchQuery={companySearchQuery}
+              onSearchChange={setCompanySearchQuery}
+              icon={<Building2 className="w-4 h-4" />}
+              emptySearchText="Type to search companies"
+              noResultsText="No companies found"
               className="w-full max-w-md"
             />
-            {!selectedCompanyId && companies.length > 0 && (
+            {!selectedCompanyId && companyOptions.length > 0 && (
               <p className="text-xs text-status-warning mt-1.5">
                 Please select a company to upload documents
               </p>
             )}
-            {companies.length === 0 && activeTenantId && (
+            {companyOptions.length === 0 && activeTenantId && !isLoadingCompanies && (
               <p className="text-sm text-text-tertiary mt-2">
                 No companies found.{' '}
                 <Link href="/companies/new" className="text-oak-light hover:underline">

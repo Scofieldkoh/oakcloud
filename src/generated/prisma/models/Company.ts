@@ -31,6 +31,10 @@ export type CompanyAvgAggregateOutputType = {
   financialYearEndMonth: number | null
   paidUpCapitalAmount: runtime.Decimal | null
   issuedCapitalAmount: runtime.Decimal | null
+  currentOfficerCount: number | null
+  currentShareholderCount: number | null
+  activeChargeCount: number | null
+  documentCount: number | null
   annualReceiptsOrExpenditure: runtime.Decimal | null
 }
 
@@ -39,6 +43,10 @@ export type CompanySumAggregateOutputType = {
   financialYearEndMonth: number | null
   paidUpCapitalAmount: runtime.Decimal | null
   issuedCapitalAmount: runtime.Decimal | null
+  currentOfficerCount: number | null
+  currentShareholderCount: number | null
+  activeChargeCount: number | null
+  documentCount: number | null
   annualReceiptsOrExpenditure: runtime.Decimal | null
 }
 
@@ -73,6 +81,11 @@ export type CompanyMinAggregateOutputType = {
   issuedCapitalCurrency: string | null
   issuedCapitalAmount: runtime.Decimal | null
   hasCharges: boolean | null
+  currentOfficerCount: number | null
+  currentShareholderCount: number | null
+  activeChargeCount: number | null
+  documentCount: number | null
+  hasPoc: boolean | null
   isGstRegistered: boolean | null
   gstRegistrationNumber: string | null
   gstRegistrationDate: Date | null
@@ -120,6 +133,11 @@ export type CompanyMaxAggregateOutputType = {
   issuedCapitalCurrency: string | null
   issuedCapitalAmount: runtime.Decimal | null
   hasCharges: boolean | null
+  currentOfficerCount: number | null
+  currentShareholderCount: number | null
+  activeChargeCount: number | null
+  documentCount: number | null
+  hasPoc: boolean | null
   isGstRegistered: boolean | null
   gstRegistrationNumber: string | null
   gstRegistrationDate: Date | null
@@ -167,6 +185,11 @@ export type CompanyCountAggregateOutputType = {
   issuedCapitalCurrency: number
   issuedCapitalAmount: number
   hasCharges: number
+  currentOfficerCount: number
+  currentShareholderCount: number
+  activeChargeCount: number
+  documentCount: number
+  hasPoc: number
   isGstRegistered: number
   gstRegistrationNumber: number
   gstRegistrationDate: number
@@ -190,6 +213,10 @@ export type CompanyAvgAggregateInputType = {
   financialYearEndMonth?: true
   paidUpCapitalAmount?: true
   issuedCapitalAmount?: true
+  currentOfficerCount?: true
+  currentShareholderCount?: true
+  activeChargeCount?: true
+  documentCount?: true
   annualReceiptsOrExpenditure?: true
 }
 
@@ -198,6 +225,10 @@ export type CompanySumAggregateInputType = {
   financialYearEndMonth?: true
   paidUpCapitalAmount?: true
   issuedCapitalAmount?: true
+  currentOfficerCount?: true
+  currentShareholderCount?: true
+  activeChargeCount?: true
+  documentCount?: true
   annualReceiptsOrExpenditure?: true
 }
 
@@ -232,6 +263,11 @@ export type CompanyMinAggregateInputType = {
   issuedCapitalCurrency?: true
   issuedCapitalAmount?: true
   hasCharges?: true
+  currentOfficerCount?: true
+  currentShareholderCount?: true
+  activeChargeCount?: true
+  documentCount?: true
+  hasPoc?: true
   isGstRegistered?: true
   gstRegistrationNumber?: true
   gstRegistrationDate?: true
@@ -279,6 +315,11 @@ export type CompanyMaxAggregateInputType = {
   issuedCapitalCurrency?: true
   issuedCapitalAmount?: true
   hasCharges?: true
+  currentOfficerCount?: true
+  currentShareholderCount?: true
+  activeChargeCount?: true
+  documentCount?: true
+  hasPoc?: true
   isGstRegistered?: true
   gstRegistrationNumber?: true
   gstRegistrationDate?: true
@@ -326,6 +367,11 @@ export type CompanyCountAggregateInputType = {
   issuedCapitalCurrency?: true
   issuedCapitalAmount?: true
   hasCharges?: true
+  currentOfficerCount?: true
+  currentShareholderCount?: true
+  activeChargeCount?: true
+  documentCount?: true
+  hasPoc?: true
   isGstRegistered?: true
   gstRegistrationNumber?: true
   gstRegistrationDate?: true
@@ -460,6 +506,11 @@ export type CompanyGroupByOutputType = {
   issuedCapitalCurrency: string | null
   issuedCapitalAmount: runtime.Decimal | null
   hasCharges: boolean
+  currentOfficerCount: number
+  currentShareholderCount: number
+  activeChargeCount: number
+  documentCount: number
+  hasPoc: boolean
   isGstRegistered: boolean
   gstRegistrationNumber: string | null
   gstRegistrationDate: Date | null
@@ -530,6 +581,11 @@ export type CompanyWhereInput = {
   issuedCapitalCurrency?: Prisma.StringNullableFilter<"Company"> | string | null
   issuedCapitalAmount?: Prisma.DecimalNullableFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFilter<"Company"> | boolean
+  currentOfficerCount?: Prisma.IntFilter<"Company"> | number
+  currentShareholderCount?: Prisma.IntFilter<"Company"> | number
+  activeChargeCount?: Prisma.IntFilter<"Company"> | number
+  documentCount?: Prisma.IntFilter<"Company"> | number
+  hasPoc?: Prisma.BoolFilter<"Company"> | boolean
   isGstRegistered?: Prisma.BoolFilter<"Company"> | boolean
   gstRegistrationNumber?: Prisma.StringNullableFilter<"Company"> | string | null
   gstRegistrationDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
@@ -547,7 +603,7 @@ export type CompanyWhereInput = {
   auditLogs?: Prisma.AuditLogListRelationFilter
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   accountMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   addresses?: Prisma.CompanyAddressListRelationFilter
   charges?: Prisma.CompanyChargeListRelationFilter
   contacts?: Prisma.CompanyContactListRelationFilter
@@ -602,6 +658,11 @@ export type CompanyOrderByWithRelationInput = {
   issuedCapitalCurrency?: Prisma.SortOrderInput | Prisma.SortOrder
   issuedCapitalAmount?: Prisma.SortOrderInput | Prisma.SortOrder
   hasCharges?: Prisma.SortOrder
+  currentOfficerCount?: Prisma.SortOrder
+  currentShareholderCount?: Prisma.SortOrder
+  activeChargeCount?: Prisma.SortOrder
+  documentCount?: Prisma.SortOrder
+  hasPoc?: Prisma.SortOrder
   isGstRegistered?: Prisma.SortOrder
   gstRegistrationNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   gstRegistrationDate?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -619,7 +680,7 @@ export type CompanyOrderByWithRelationInput = {
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
   chartOfAccounts?: Prisma.ChartOfAccountOrderByRelationAggregateInput
   accountMappings?: Prisma.ChartOfAccountsMappingOrderByRelationAggregateInput
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
   addresses?: Prisma.CompanyAddressOrderByRelationAggregateInput
   charges?: Prisma.CompanyChargeOrderByRelationAggregateInput
   contacts?: Prisma.CompanyContactOrderByRelationAggregateInput
@@ -678,6 +739,11 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   issuedCapitalCurrency?: Prisma.StringNullableFilter<"Company"> | string | null
   issuedCapitalAmount?: Prisma.DecimalNullableFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFilter<"Company"> | boolean
+  currentOfficerCount?: Prisma.IntFilter<"Company"> | number
+  currentShareholderCount?: Prisma.IntFilter<"Company"> | number
+  activeChargeCount?: Prisma.IntFilter<"Company"> | number
+  documentCount?: Prisma.IntFilter<"Company"> | number
+  hasPoc?: Prisma.BoolFilter<"Company"> | boolean
   isGstRegistered?: Prisma.BoolFilter<"Company"> | boolean
   gstRegistrationNumber?: Prisma.StringNullableFilter<"Company"> | string | null
   gstRegistrationDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
@@ -695,7 +761,7 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   auditLogs?: Prisma.AuditLogListRelationFilter
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   accountMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   addresses?: Prisma.CompanyAddressListRelationFilter
   charges?: Prisma.CompanyChargeListRelationFilter
   contacts?: Prisma.CompanyContactListRelationFilter
@@ -750,6 +816,11 @@ export type CompanyOrderByWithAggregationInput = {
   issuedCapitalCurrency?: Prisma.SortOrderInput | Prisma.SortOrder
   issuedCapitalAmount?: Prisma.SortOrderInput | Prisma.SortOrder
   hasCharges?: Prisma.SortOrder
+  currentOfficerCount?: Prisma.SortOrder
+  currentShareholderCount?: Prisma.SortOrder
+  activeChargeCount?: Prisma.SortOrder
+  documentCount?: Prisma.SortOrder
+  hasPoc?: Prisma.SortOrder
   isGstRegistered?: Prisma.SortOrder
   gstRegistrationNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   gstRegistrationDate?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -805,6 +876,11 @@ export type CompanyScalarWhereWithAggregatesInput = {
   issuedCapitalCurrency?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
   issuedCapitalAmount?: Prisma.DecimalNullableWithAggregatesFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolWithAggregatesFilter<"Company"> | boolean
+  currentOfficerCount?: Prisma.IntWithAggregatesFilter<"Company"> | number
+  currentShareholderCount?: Prisma.IntWithAggregatesFilter<"Company"> | number
+  activeChargeCount?: Prisma.IntWithAggregatesFilter<"Company"> | number
+  documentCount?: Prisma.IntWithAggregatesFilter<"Company"> | number
+  hasPoc?: Prisma.BoolWithAggregatesFilter<"Company"> | boolean
   isGstRegistered?: Prisma.BoolWithAggregatesFilter<"Company"> | boolean
   gstRegistrationNumber?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
   gstRegistrationDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
@@ -851,6 +927,11 @@ export type CompanyCreateInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -868,7 +949,7 @@ export type CompanyCreateInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -923,6 +1004,11 @@ export type CompanyUncheckedCreateInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -993,6 +1079,11 @@ export type CompanyUpdateInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1010,7 +1101,7 @@ export type CompanyUpdateInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -1065,6 +1156,11 @@ export type CompanyUncheckedUpdateInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1136,6 +1232,11 @@ export type CompanyCreateManyInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -1182,6 +1283,11 @@ export type CompanyUpdateManyMutationInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1229,6 +1335,11 @@ export type CompanyUncheckedUpdateManyInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1301,6 +1412,11 @@ export type CompanyCountOrderByAggregateInput = {
   issuedCapitalCurrency?: Prisma.SortOrder
   issuedCapitalAmount?: Prisma.SortOrder
   hasCharges?: Prisma.SortOrder
+  currentOfficerCount?: Prisma.SortOrder
+  currentShareholderCount?: Prisma.SortOrder
+  activeChargeCount?: Prisma.SortOrder
+  documentCount?: Prisma.SortOrder
+  hasPoc?: Prisma.SortOrder
   isGstRegistered?: Prisma.SortOrder
   gstRegistrationNumber?: Prisma.SortOrder
   gstRegistrationDate?: Prisma.SortOrder
@@ -1322,6 +1438,10 @@ export type CompanyAvgOrderByAggregateInput = {
   financialYearEndMonth?: Prisma.SortOrder
   paidUpCapitalAmount?: Prisma.SortOrder
   issuedCapitalAmount?: Prisma.SortOrder
+  currentOfficerCount?: Prisma.SortOrder
+  currentShareholderCount?: Prisma.SortOrder
+  activeChargeCount?: Prisma.SortOrder
+  documentCount?: Prisma.SortOrder
   annualReceiptsOrExpenditure?: Prisma.SortOrder
 }
 
@@ -1356,6 +1476,11 @@ export type CompanyMaxOrderByAggregateInput = {
   issuedCapitalCurrency?: Prisma.SortOrder
   issuedCapitalAmount?: Prisma.SortOrder
   hasCharges?: Prisma.SortOrder
+  currentOfficerCount?: Prisma.SortOrder
+  currentShareholderCount?: Prisma.SortOrder
+  activeChargeCount?: Prisma.SortOrder
+  documentCount?: Prisma.SortOrder
+  hasPoc?: Prisma.SortOrder
   isGstRegistered?: Prisma.SortOrder
   gstRegistrationNumber?: Prisma.SortOrder
   gstRegistrationDate?: Prisma.SortOrder
@@ -1403,6 +1528,11 @@ export type CompanyMinOrderByAggregateInput = {
   issuedCapitalCurrency?: Prisma.SortOrder
   issuedCapitalAmount?: Prisma.SortOrder
   hasCharges?: Prisma.SortOrder
+  currentOfficerCount?: Prisma.SortOrder
+  currentShareholderCount?: Prisma.SortOrder
+  activeChargeCount?: Prisma.SortOrder
+  documentCount?: Prisma.SortOrder
+  hasPoc?: Prisma.SortOrder
   isGstRegistered?: Prisma.SortOrder
   gstRegistrationNumber?: Prisma.SortOrder
   gstRegistrationDate?: Prisma.SortOrder
@@ -1424,6 +1554,10 @@ export type CompanySumOrderByAggregateInput = {
   financialYearEndMonth?: Prisma.SortOrder
   paidUpCapitalAmount?: Prisma.SortOrder
   issuedCapitalAmount?: Prisma.SortOrder
+  currentOfficerCount?: Prisma.SortOrder
+  currentShareholderCount?: Prisma.SortOrder
+  activeChargeCount?: Prisma.SortOrder
+  documentCount?: Prisma.SortOrder
   annualReceiptsOrExpenditure?: Prisma.SortOrder
 }
 
@@ -1877,6 +2011,11 @@ export type CompanyCreateWithoutTenantInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -1947,6 +2086,11 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -2047,6 +2191,11 @@ export type CompanyScalarWhereInput = {
   issuedCapitalCurrency?: Prisma.StringNullableFilter<"Company"> | string | null
   issuedCapitalAmount?: Prisma.DecimalNullableFilter<"Company"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFilter<"Company"> | boolean
+  currentOfficerCount?: Prisma.IntFilter<"Company"> | number
+  currentShareholderCount?: Prisma.IntFilter<"Company"> | number
+  activeChargeCount?: Prisma.IntFilter<"Company"> | number
+  documentCount?: Prisma.IntFilter<"Company"> | number
+  hasPoc?: Prisma.BoolFilter<"Company"> | boolean
   isGstRegistered?: Prisma.BoolFilter<"Company"> | boolean
   gstRegistrationNumber?: Prisma.StringNullableFilter<"Company"> | string | null
   gstRegistrationDate?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
@@ -2093,6 +2242,11 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -2110,7 +2264,7 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -2164,6 +2318,11 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -2249,6 +2408,11 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2266,7 +2430,7 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -2320,6 +2484,11 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2389,6 +2558,11 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -2406,7 +2580,7 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -2460,6 +2634,11 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -2545,6 +2724,11 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2562,7 +2746,7 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -2616,6 +2800,11 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2685,6 +2874,11 @@ export type CompanyCreateWithoutFormerNamesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -2702,7 +2896,7 @@ export type CompanyCreateWithoutFormerNamesInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -2756,6 +2950,11 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -2841,6 +3040,11 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2858,7 +3062,7 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -2912,6 +3116,11 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2981,6 +3190,11 @@ export type CompanyCreateWithoutAddressesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -2998,7 +3212,7 @@ export type CompanyCreateWithoutAddressesInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
@@ -3052,6 +3266,11 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -3137,6 +3356,11 @@ export type CompanyUpdateWithoutAddressesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3154,7 +3378,7 @@ export type CompanyUpdateWithoutAddressesInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
@@ -3208,6 +3432,11 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3277,6 +3506,11 @@ export type CompanyCreateWithoutContactsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -3294,7 +3528,7 @@ export type CompanyCreateWithoutContactsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
@@ -3348,6 +3582,11 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -3433,6 +3672,11 @@ export type CompanyUpdateWithoutContactsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3450,7 +3694,7 @@ export type CompanyUpdateWithoutContactsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
@@ -3504,6 +3748,11 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3573,6 +3822,11 @@ export type CompanyCreateWithoutContactDetailsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -3590,7 +3844,7 @@ export type CompanyCreateWithoutContactDetailsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -3644,6 +3898,11 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -3729,6 +3988,11 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3746,7 +4010,7 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -3800,6 +4064,11 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3869,6 +4138,11 @@ export type CompanyCreateWithoutOfficersInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -3886,7 +4160,7 @@ export type CompanyCreateWithoutOfficersInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -3940,6 +4214,11 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -4025,6 +4304,11 @@ export type CompanyUpdateWithoutOfficersInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4042,7 +4326,7 @@ export type CompanyUpdateWithoutOfficersInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -4096,6 +4380,11 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4165,6 +4454,11 @@ export type CompanyCreateWithoutShareCapitalInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -4182,7 +4476,7 @@ export type CompanyCreateWithoutShareCapitalInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -4236,6 +4530,11 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -4321,6 +4620,11 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4338,7 +4642,7 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -4392,6 +4696,11 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4461,6 +4770,11 @@ export type CompanyCreateWithoutShareholdersInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -4478,7 +4792,7 @@ export type CompanyCreateWithoutShareholdersInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -4532,6 +4846,11 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -4617,6 +4936,11 @@ export type CompanyUpdateWithoutShareholdersInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4634,7 +4958,7 @@ export type CompanyUpdateWithoutShareholdersInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -4688,6 +5012,11 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4757,6 +5086,11 @@ export type CompanyCreateWithoutChargesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -4774,7 +5108,7 @@ export type CompanyCreateWithoutChargesInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
@@ -4828,6 +5162,11 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -4913,6 +5252,11 @@ export type CompanyUpdateWithoutChargesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4930,7 +5274,7 @@ export type CompanyUpdateWithoutChargesInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
@@ -4984,6 +5328,11 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5053,6 +5402,11 @@ export type CompanyCreateWithoutDocumentsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -5070,7 +5424,7 @@ export type CompanyCreateWithoutDocumentsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -5124,6 +5478,11 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -5209,6 +5568,11 @@ export type CompanyUpdateWithoutDocumentsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5226,7 +5590,7 @@ export type CompanyUpdateWithoutDocumentsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -5280,6 +5644,11 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5349,6 +5718,11 @@ export type CompanyCreateWithoutAuditLogsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -5365,7 +5739,7 @@ export type CompanyCreateWithoutAuditLogsInput = {
   deletedReason?: string | null
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -5420,6 +5794,11 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -5505,6 +5884,11 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5521,7 +5905,7 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -5576,6 +5960,11 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5645,6 +6034,11 @@ export type CompanyCreateWithoutNoteTabsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -5662,7 +6056,7 @@ export type CompanyCreateWithoutNoteTabsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -5716,6 +6110,11 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -5801,6 +6200,11 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5818,7 +6222,7 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -5872,6 +6276,11 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -5941,6 +6350,11 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -5958,7 +6372,7 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -6012,6 +6426,11 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -6097,6 +6516,11 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6114,7 +6538,7 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -6168,6 +6592,11 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6237,6 +6666,11 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -6254,7 +6688,7 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -6308,6 +6742,11 @@ export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -6393,6 +6832,11 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6410,7 +6854,7 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -6464,6 +6908,11 @@ export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6533,6 +6982,11 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -6550,7 +7004,7 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -6604,6 +7058,11 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -6689,6 +7148,11 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6706,7 +7170,7 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -6760,6 +7224,11 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -6829,6 +7298,11 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -6845,7 +7319,7 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   deletedReason?: string | null
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -6900,6 +7374,11 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -6985,6 +7464,11 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7001,7 +7485,7 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -7056,6 +7540,11 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7125,6 +7614,11 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -7141,7 +7635,7 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   deletedReason?: string | null
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -7196,6 +7690,11 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -7281,6 +7780,11 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7297,7 +7801,7 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -7352,6 +7856,11 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7421,6 +7930,11 @@ export type CompanyCreateWithoutWorkflow_client_group_membersInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -7438,7 +7952,7 @@ export type CompanyCreateWithoutWorkflow_client_group_membersInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -7492,6 +8006,11 @@ export type CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -7577,6 +8096,11 @@ export type CompanyUpdateWithoutWorkflow_client_group_membersInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7594,7 +8118,7 @@ export type CompanyUpdateWithoutWorkflow_client_group_membersInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -7648,6 +8172,11 @@ export type CompanyUncheckedUpdateWithoutWorkflow_client_group_membersInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7717,6 +8246,11 @@ export type CompanyCreateWithoutWorkflow_engagementsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -7734,7 +8268,7 @@ export type CompanyCreateWithoutWorkflow_engagementsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -7788,6 +8322,11 @@ export type CompanyUncheckedCreateWithoutWorkflow_engagementsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -7873,6 +8412,11 @@ export type CompanyUpdateWithoutWorkflow_engagementsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7890,7 +8434,7 @@ export type CompanyUpdateWithoutWorkflow_engagementsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -7944,6 +8488,11 @@ export type CompanyUncheckedUpdateWithoutWorkflow_engagementsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8013,6 +8562,11 @@ export type CompanyCreateWithoutWorkflow_instancesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -8030,7 +8584,7 @@ export type CompanyCreateWithoutWorkflow_instancesInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -8084,6 +8638,11 @@ export type CompanyUncheckedCreateWithoutWorkflow_instancesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -8169,6 +8728,11 @@ export type CompanyUpdateWithoutWorkflow_instancesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8186,7 +8750,7 @@ export type CompanyUpdateWithoutWorkflow_instancesInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -8240,6 +8804,11 @@ export type CompanyUncheckedUpdateWithoutWorkflow_instancesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8309,6 +8878,11 @@ export type CompanyCreateWithoutWorkflow_project_instancesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -8326,7 +8900,7 @@ export type CompanyCreateWithoutWorkflow_project_instancesInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -8380,6 +8954,11 @@ export type CompanyUncheckedCreateWithoutWorkflow_project_instancesInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -8465,6 +9044,11 @@ export type CompanyUpdateWithoutWorkflow_project_instancesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8482,7 +9066,7 @@ export type CompanyUpdateWithoutWorkflow_project_instancesInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -8536,6 +9120,11 @@ export type CompanyUncheckedUpdateWithoutWorkflow_project_instancesInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8605,6 +9194,11 @@ export type CompanyCreateWithoutWorkflow_project_settingsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -8622,7 +9216,7 @@ export type CompanyCreateWithoutWorkflow_project_settingsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -8676,6 +9270,11 @@ export type CompanyUncheckedCreateWithoutWorkflow_project_settingsInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -8761,6 +9360,11 @@ export type CompanyUpdateWithoutWorkflow_project_settingsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8778,7 +9382,7 @@ export type CompanyUpdateWithoutWorkflow_project_settingsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -8832,6 +9436,11 @@ export type CompanyUncheckedUpdateWithoutWorkflow_project_settingsInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8901,6 +9510,11 @@ export type CompanyCreateWithoutWorkflow_scheduled_instances_queueInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -8918,7 +9532,7 @@ export type CompanyCreateWithoutWorkflow_scheduled_instances_queueInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.TenantCreateNestedOneWithoutCompaniesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -8972,6 +9586,11 @@ export type CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -9057,6 +9676,11 @@ export type CompanyUpdateWithoutWorkflow_scheduled_instances_queueInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9074,7 +9698,7 @@ export type CompanyUpdateWithoutWorkflow_scheduled_instances_queueInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutCompaniesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -9128,6 +9752,11 @@ export type CompanyUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9197,6 +9826,11 @@ export type CompanyCreateManyTenantInput = {
   issuedCapitalCurrency?: string | null
   issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: string | null
   gstRegistrationDate?: Date | string | null
@@ -9243,6 +9877,11 @@ export type CompanyUpdateWithoutTenantInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9313,6 +9952,11 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9383,6 +10027,11 @@ export type CompanyUncheckedUpdateManyWithoutTenantInput = {
   issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
   gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9659,6 +10308,11 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   issuedCapitalCurrency?: boolean
   issuedCapitalAmount?: boolean
   hasCharges?: boolean
+  currentOfficerCount?: boolean
+  currentShareholderCount?: boolean
+  activeChargeCount?: boolean
+  documentCount?: boolean
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: boolean
   gstRegistrationDate?: boolean
@@ -9676,7 +10330,7 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   auditLogs?: boolean | Prisma.Company$auditLogsArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
   accountMappings?: boolean | Prisma.Company$accountMappingsArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   addresses?: boolean | Prisma.Company$addressesArgs<ExtArgs>
   charges?: boolean | Prisma.Company$chargesArgs<ExtArgs>
   contacts?: boolean | Prisma.Company$contactsArgs<ExtArgs>
@@ -9732,6 +10386,11 @@ export type CompanySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   issuedCapitalCurrency?: boolean
   issuedCapitalAmount?: boolean
   hasCharges?: boolean
+  currentOfficerCount?: boolean
+  currentShareholderCount?: boolean
+  activeChargeCount?: boolean
+  documentCount?: boolean
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: boolean
   gstRegistrationDate?: boolean
@@ -9746,7 +10405,7 @@ export type CompanySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   updatedAt?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
 export type CompanySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -9780,6 +10439,11 @@ export type CompanySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   issuedCapitalCurrency?: boolean
   issuedCapitalAmount?: boolean
   hasCharges?: boolean
+  currentOfficerCount?: boolean
+  currentShareholderCount?: boolean
+  activeChargeCount?: boolean
+  documentCount?: boolean
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: boolean
   gstRegistrationDate?: boolean
@@ -9794,7 +10458,7 @@ export type CompanySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   updatedAt?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
 export type CompanySelectScalar = {
@@ -9828,6 +10492,11 @@ export type CompanySelectScalar = {
   issuedCapitalCurrency?: boolean
   issuedCapitalAmount?: boolean
   hasCharges?: boolean
+  currentOfficerCount?: boolean
+  currentShareholderCount?: boolean
+  activeChargeCount?: boolean
+  documentCount?: boolean
+  hasPoc?: boolean
   isGstRegistered?: boolean
   gstRegistrationNumber?: boolean
   gstRegistrationDate?: boolean
@@ -9844,12 +10513,12 @@ export type CompanySelectScalar = {
   deletedReason?: boolean
 }
 
-export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "nextAgmDueDate" | "nextArDueDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["company"]>
+export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "nextAgmDueDate" | "nextArDueDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "currentOfficerCount" | "currentShareholderCount" | "activeChargeCount" | "documentCount" | "hasPoc" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["company"]>
 export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   auditLogs?: boolean | Prisma.Company$auditLogsArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
   accountMappings?: boolean | Prisma.Company$accountMappingsArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   addresses?: boolean | Prisma.Company$addressesArgs<ExtArgs>
   charges?: boolean | Prisma.Company$chargesArgs<ExtArgs>
   contacts?: boolean | Prisma.Company$contactsArgs<ExtArgs>
@@ -9874,10 +10543,10 @@ export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CompanyIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type CompanyIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 
 export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -9886,7 +10555,7 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
     chartOfAccounts: Prisma.$ChartOfAccountPayload<ExtArgs>[]
     accountMappings: Prisma.$ChartOfAccountsMappingPayload<ExtArgs>[]
-    tenant: Prisma.$TenantPayload<ExtArgs>
+    tenant: Prisma.$WorkspacePayload<ExtArgs>
     addresses: Prisma.$CompanyAddressPayload<ExtArgs>[]
     charges: Prisma.$CompanyChargePayload<ExtArgs>[]
     contacts: Prisma.$CompanyContactPayload<ExtArgs>[]
@@ -9940,6 +10609,11 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     issuedCapitalCurrency: string | null
     issuedCapitalAmount: runtime.Decimal | null
     hasCharges: boolean
+    currentOfficerCount: number
+    currentShareholderCount: number
+    activeChargeCount: number
+    documentCount: number
+    hasPoc: boolean
     isGstRegistered: boolean
     gstRegistrationNumber: string | null
     gstRegistrationDate: Date | null
@@ -10351,7 +11025,7 @@ export interface Prisma__CompanyClient<T, Null = never, ExtArgs extends runtime.
   auditLogs<T extends Prisma.Company$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   chartOfAccounts<T extends Prisma.Company$chartOfAccountsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$chartOfAccountsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   accountMappings<T extends Prisma.Company$accountMappingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$accountMappingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountsMappingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   addresses<T extends Prisma.Company$addressesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$addressesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyAddressPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   charges<T extends Prisma.Company$chargesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$chargesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyChargePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   contacts<T extends Prisma.Company$contactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$contactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyContactPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -10432,6 +11106,11 @@ export interface CompanyFieldRefs {
   readonly issuedCapitalCurrency: Prisma.FieldRef<"Company", 'String'>
   readonly issuedCapitalAmount: Prisma.FieldRef<"Company", 'Decimal'>
   readonly hasCharges: Prisma.FieldRef<"Company", 'Boolean'>
+  readonly currentOfficerCount: Prisma.FieldRef<"Company", 'Int'>
+  readonly currentShareholderCount: Prisma.FieldRef<"Company", 'Int'>
+  readonly activeChargeCount: Prisma.FieldRef<"Company", 'Int'>
+  readonly documentCount: Prisma.FieldRef<"Company", 'Int'>
+  readonly hasPoc: Prisma.FieldRef<"Company", 'Boolean'>
   readonly isGstRegistered: Prisma.FieldRef<"Company", 'Boolean'>
   readonly gstRegistrationNumber: Prisma.FieldRef<"Company", 'String'>
   readonly gstRegistrationDate: Prisma.FieldRef<"Company", 'DateTime'>

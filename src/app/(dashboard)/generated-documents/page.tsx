@@ -6,10 +6,8 @@ import Link from 'next/link';
 import { Plus, AlertCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useSession } from '@/hooks/use-auth';
 import { DocumentTable, type GeneratedDocument } from '@/components/documents/document-table';
 import { Pagination } from '@/components/ui/pagination';
 
@@ -33,13 +31,6 @@ export default function GeneratedDocumentsPage() {
   const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
   const { can } = usePermissions();
-  const { data: session } = useSession();
-
-  // Tenant selection (from centralized store for SUPER_ADMIN)
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   // Permission checks
   const canCreate = can.createDocument;
@@ -70,14 +61,6 @@ export default function GeneratedDocumentsPage() {
 
   // Fetch documents
   const fetchDocuments = useCallback(async () => {
-    // Don't fetch if SUPER_ADMIN hasn't selected a tenant
-    if (session?.isSuperAdmin && !activeTenantId) {
-      setDocuments([]);
-      setTotal(0);
-      setIsLoading(false);
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
@@ -88,10 +71,6 @@ export default function GeneratedDocumentsPage() {
       if (companyFilter) params.set('companyName', companyFilter);
       params.set('page', page.toString());
       params.set('limit', limit.toString());
-      // Add tenantId for SUPER_ADMIN
-      if (session?.isSuperAdmin && activeTenantId) {
-        params.set('tenantId', activeTenantId);
-      }
 
       const response = await fetch(`/api/generated-documents?${params}`);
       if (!response.ok) {
@@ -107,7 +86,7 @@ export default function GeneratedDocumentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, statusFilter, companyFilter, page, session?.isSuperAdmin, activeTenantId]);
+  }, [searchQuery, statusFilter, companyFilter, page]);
 
   useEffect(() => {
     fetchDocuments();
@@ -118,12 +97,8 @@ export default function GeneratedDocumentsPage() {
     if (!documentToDelete || !reason) return;
 
     try {
-      // Build URL with tenantId for SUPER_ADMIN and reason
       const params = new URLSearchParams();
       params.set('reason', reason);
-      if (session?.isSuperAdmin && activeTenantId) {
-        params.set('tenantId', activeTenantId);
-      }
       const url = `/api/generated-documents/${documentToDelete}?${params}`;
 
       const response = await fetch(url, { method: 'DELETE' });
@@ -155,14 +130,7 @@ export default function GeneratedDocumentsPage() {
   // Handle export
   const handleExport = async (documentId: string) => {
     try {
-      // Build URL with tenantId for SUPER_ADMIN
-      const params = new URLSearchParams();
-      if (session?.isSuperAdmin && activeTenantId) {
-        params.set('tenantId', activeTenantId);
-      }
-      const url = `/api/generated-documents/${documentId}/export/pdf${params.toString() ? `?${params}` : ''}`;
-
-      const response = await fetch(url);
+      const response = await fetch(`/api/generated-documents/${documentId}/export/pdf`);
       if (!response.ok) {
         throw new Error('Failed to export document');
       }
@@ -195,15 +163,6 @@ export default function GeneratedDocumentsPage() {
           </p>
         </div>
       </div>
-
-      {/* Tenant context info for SUPER_ADMIN */}
-      {session?.isSuperAdmin && !activeTenantId && (
-        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <p className="text-sm text-amber-800 dark:text-amber-200">
-            Please select a tenant from the sidebar to view documents.
-          </p>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -250,7 +209,7 @@ export default function GeneratedDocumentsPage() {
 
         <div className="flex-1" />
 
-        {canCreate && activeTenantId && (
+        {canCreate && (
           <Link href="/generated-documents/generate">
             <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
               Generate Document
@@ -283,7 +242,7 @@ export default function GeneratedDocumentsPage() {
           canDelete={canDelete}
           canExport={canExport}
           canShare={canUpdate}
-          canCreate={canCreate && !!activeTenantId}
+          canCreate={canCreate}
         />
       </div>
 

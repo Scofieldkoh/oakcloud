@@ -104,7 +104,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'chart_of_accounts', 'update', companyId);
 
     // Additional check for company-scoped users
-    if (!session.isSuperAdmin && !session.isTenantAdmin && !(await canAccessCompany(session, companyId))) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin && !(await canAccessCompany(session, companyId))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -193,7 +193,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'chart_of_accounts', 'delete', companyId);
 
     // Additional check for company-scoped users
-    if (!session.isSuperAdmin && !session.isTenantAdmin && !(await canAccessCompany(session, companyId))) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin && !(await canAccessCompany(session, companyId))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -4,7 +4,7 @@ import { requirePermission } from '@/lib/rbac';
 import { createAuditContext } from '@/lib/audit';
 import { parseIdParams } from '@/lib/validations/params';
 import { prisma } from '@/lib/prisma';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { requireWorkspaceContext } from '@/lib/api-helpers';
 import {
   updateNoteTab,
   deleteNoteTab,
@@ -28,7 +28,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { id, tabId } = await parseIdParams(params);
     const { searchParams } = new URL(request.url);
-    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    const tenantResult = await requireWorkspaceContext(session, searchParams.get('tenantId'));
     if ('error' in tenantResult) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 
@@ -98,7 +98,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { id, tabId } = await parseIdParams(params);
     const { searchParams } = new URL(request.url);
-    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    const tenantResult = await requireWorkspaceContext(session, searchParams.get('tenantId'));
     if ('error' in tenantResult) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 

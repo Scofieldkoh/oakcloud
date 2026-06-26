@@ -7,7 +7,7 @@ import {
   getLatestDraft,
   getGeneratedDocumentById,
 } from '@/services/document-generator.service';
-import { createErrorResponse } from '@/lib/api-helpers';
+import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -17,7 +17,7 @@ interface RouteParams {
  * GET /api/generated-documents/[id]/draft
  * Get the latest draft for a document
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id } = await params;
@@ -25,18 +25,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Check read permission
     await requirePermission(session, 'document', 'read');
 
-    // For SUPER_ADMIN, allow specifying tenantId via query param
-    const { searchParams } = new URL(request.url);
-    const tenantIdParam = searchParams.get('tenantId');
-    const effectiveTenantId =
-      session.isSuperAdmin && tenantIdParam ? tenantIdParam : session.tenantId;
+    const tenantId = requireSessionWorkspaceId(session);
 
-    if (!effectiveTenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
-
-    // Verify document exists and belongs to tenant
-    const document = await getGeneratedDocumentById(id, effectiveTenantId);
+    // Verify document exists and belongs to the current workspace.
+    const document = await getGeneratedDocumentById(id, tenantId);
     if (!document) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
@@ -81,15 +73,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const data = saveDraftSchema.parse({ ...body, documentId: id });
 
-    // Determine tenant ID
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && body.tenantId) {
-      tenantId = body.tenantId;
-    }
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
     await saveDraft(data, { tenantId, userId: session.id });
 
@@ -103,7 +87,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
  * DELETE /api/generated-documents/[id]/draft
  * Discard the current draft
  */
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { id } = await params;
@@ -111,16 +95,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     // Check update permission
     await requirePermission(session, 'document', 'update');
 
-    const { searchParams } = new URL(request.url);
-    const tenantIdParam = searchParams.get('tenantId');
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && tenantIdParam) {
-      tenantId = tenantIdParam;
-    }
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
     // Verify document exists
     const document = await getGeneratedDocumentById(id, tenantId);

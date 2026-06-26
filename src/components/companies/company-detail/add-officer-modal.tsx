@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
@@ -51,29 +51,12 @@ export function AddOfficerModal({ isOpen, onClose, companyId, companyName }: Add
     }
   }, [isOpen]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F1') {
-        e.preventDefault();
-        if (selectedContactId && !linkContactMutation.isPending) {
-          handleSubmit();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedContactId, linkContactMutation.isPending]);
-
   const handleContactChange = (contactId: string, contact: Contact | null) => {
     setSelectedContactId(contactId);
     setSelectedContact(contact);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!selectedContactId) {
       toastError('Please select a contact');
       return;
@@ -91,7 +74,24 @@ export function AddOfficerModal({ isOpen, onClose, companyId, companyName }: Add
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to add officer');
     }
-  };
+  }, [appointmentDate, companyId, linkContactMutation, onClose, role, selectedContact?.fullName, selectedContactId, success, toastError]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        if (selectedContactId && !linkContactMutation.isPending) {
+          handleSubmit();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleSubmit, isOpen, selectedContactId, linkContactMutation.isPending]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add Officer" size="lg">

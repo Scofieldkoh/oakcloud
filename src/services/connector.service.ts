@@ -493,7 +493,7 @@ export async function searchConnectors(
  *
  * Resolution logic:
  * 1. Check tenant-specific connector â†’ use if exists & enabled
- * 2. Check TenantConnectorAccess for system connector â†’ blocked if isEnabled=false
+ * 2. Check WorkspaceConnectorAccess for system connector â†’ blocked if isEnabled=false
  * 3. Check system connector â†’ use if exists & enabled
  * 4. No connector â†’ return null
  */
@@ -542,9 +542,9 @@ export async function resolveConnector(
     return null;
   }
 
-  // Step 3: Check TenantConnectorAccess if tenant is specified
+  // Step 3: Check WorkspaceConnectorAccess if tenant is specified
   if (tenantId) {
-    const access = await prisma.tenantConnectorAccess.findUnique({
+    const access = await prisma.workspaceConnectorAccess.findUnique({
       where: {
         tenantId_connectorId: {
           tenantId,
@@ -925,12 +925,12 @@ export async function getTenantAccess(
   }
 
   // Get all tenants with their access status
-  const tenants = await prisma.tenant.findMany({
+  const tenants = await prisma.workspace.findMany({
     where: { deletedAt: null, status: 'ACTIVE' },
     orderBy: { name: 'asc' },
   });
 
-  const accessRecords = await prisma.tenantConnectorAccess.findMany({
+  const accessRecords = await prisma.workspaceConnectorAccess.findMany({
     where: { connectorId },
   });
 
@@ -970,7 +970,7 @@ export async function updateTenantAccess(
 
   // Upsert access records
   for (const access of data.tenantAccess) {
-    await prisma.tenantConnectorAccess.upsert({
+    await prisma.workspaceConnectorAccess.upsert({
       where: {
         tenantId_connectorId: {
           tenantId: access.tenantId,
@@ -988,7 +988,7 @@ export async function updateTenantAccess(
     });
 
     // Log the change
-    const tenant = await prisma.tenant.findUnique({ where: { id: access.tenantId } });
+    const tenant = await prisma.workspace.findUnique({ where: { id: access.tenantId } });
     await createAuditLog({
       tenantId: access.tenantId,
       userId: params.userId,

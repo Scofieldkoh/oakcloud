@@ -34,12 +34,6 @@ export interface ContactInlineFilters {
   companiesMax?: number;
 }
 
-/** Filter options for the name dropdown */
-export interface ContactFilterOption {
-  id: string;
-  name: string;
-}
-
 interface ContactTableProps {
   contacts: ContactWithCount[];
   onDelete?: (id: string) => void;
@@ -70,8 +64,6 @@ interface ContactTableProps {
   inlineFilters?: ContactInlineFilters;
   /** Handler for inline filter changes */
   onInlineFilterChange?: (filters: Partial<ContactInlineFilters>) => void;
-  /** Options for name filter dropdown */
-  contactFilterOptions?: ContactFilterOption[];
   /** Persisted column widths */
   columnWidths?: Record<string, number>;
   /** Handler for column width changes */
@@ -215,7 +207,6 @@ export function ContactTable({
   onSort,
   inlineFilters = {},
   onInlineFilterChange,
-  contactFilterOptions = [],
   columnWidths: externalColumnWidths,
   onColumnWidthChange,
 }: ContactTableProps) {
@@ -361,18 +352,24 @@ export function ContactTable({
 
       case 'name':
         return (
-          <SearchableSelect
-            options={[
-              { value: '', label: 'All' },
-              ...contactFilterOptions.map(c => ({ value: c.name, label: c.name }))
-            ]}
-            value={inlineFilters.fullName || ''}
-            onChange={(value) => onInlineFilterChange({ fullName: value || undefined })}
-            placeholder="All"
-            className="text-xs w-full min-w-0"
-            showChevron={false}
-            showKeyboardHints={false}
-          />
+          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
+            <input
+              type="text"
+              value={inlineFilters.fullName || ''}
+              onChange={(e) => onInlineFilterChange({ fullName: e.target.value || undefined })}
+              placeholder="All"
+              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
+            />
+            {inlineFilters.fullName && (
+              <button
+                type="button"
+                onClick={() => onInlineFilterChange({ fullName: undefined })}
+                className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
+              >
+                <X className="w-3.5 h-3.5 text-text-muted" />
+              </button>
+            )}
+          </div>
         );
 
       case 'type':

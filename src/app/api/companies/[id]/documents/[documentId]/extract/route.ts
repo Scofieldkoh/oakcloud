@@ -6,7 +6,7 @@ import { extractBizFileData, processBizFileExtraction } from '@/services/bizfile
 import { calculateUsageCost, formatCost, type AIModel } from '@/lib/ai';
 import { storage } from '@/lib/storage';
 import { parseIdParams } from '@/lib/validations/params';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { requireWorkspaceContext } from '@/lib/api-helpers';
 
 // Lazy load pdf-parse to reduce initial bundle size
 async function parsePdf(buffer: Buffer) {
@@ -31,7 +31,7 @@ export async function POST(
     } catch {
       // No body or invalid JSON - use default model
     }
-    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    const tenantResult = await requireWorkspaceContext(session, searchParams.get('tenantId'));
     if ('error' in tenantResult) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 
@@ -175,7 +175,7 @@ export async function GET(
     const session = await requireAuth();
     const { id: companyId, documentId } = await parseIdParams(params);
     const { searchParams } = new URL(request.url);
-    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    const tenantResult = await requireWorkspaceContext(session, searchParams.get('tenantId'));
     if ('error' in tenantResult) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 

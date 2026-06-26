@@ -28,7 +28,6 @@ import {
   pruneHiddenConditionalAnswers,
   isProgressStopInfoBlock,
   toAnswerRecord,
-  toUploadIds,
   type FormSubmissionAiReview,
   type PublicFormDefinition,
   type PublicFormField,
@@ -38,7 +37,6 @@ import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
 import { getAppBaseUrl, sendEmail, type EmailAttachment } from '@/lib/email';
 import { createLogger } from '@/lib/logger';
-import { generateFormSubmissionAiReview } from '@/services/form-ai.service';
 import type { TenantAwareParams } from '@/lib/types';
 import { evaluateArithmeticExpression } from '@/lib/safe-math';
 import { incrementViewCount } from '@/lib/view-count-buffer';
@@ -512,7 +510,7 @@ export async function sendCompletionNotificationEmailInternal(input: {
     const aiReview = parseFormSubmissionAiReview(input.submission.metadata);
     const aiReviewRequired = aiReview?.status === 'completed' && aiReview.reviewRequired;
     const aiReviewFailed = aiSettings.enabled && aiReview?.status === 'failed';
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await prisma.workspace.findUnique({
       where: { id: input.form.tenantId },
       select: { logoUrl: true, name: true },
     });
@@ -1696,7 +1694,7 @@ export async function updateFormResponseTags(
     data: {
       metadata: Object.keys(nextMetadata).length > 0
         ? nextMetadata as Prisma.InputJsonValue
-        : null,
+        : Prisma.NullableJsonNullValueInput.JsonNull,
     },
   });
 
@@ -2538,7 +2536,7 @@ function applyWorksheetStyle(worksheet: ExcelJS.Worksheet): void {
 
   worksheet.columns.forEach((column) => {
     let maxLength = 12;
-    column.eachCell({ includeEmpty: true }, (cell) => {
+    column.eachCell?.({ includeEmpty: true }, (cell) => {
       const value = cell.value;
       const text = value instanceof Date
         ? 'yyyy-mm-dd hh:mm'

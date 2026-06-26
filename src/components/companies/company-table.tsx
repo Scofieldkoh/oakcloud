@@ -28,7 +28,7 @@ interface CompanyWithRelations extends Company {
     charges: number;
   };
   /** Whether any linked contact is marked as Point of Contact */
-  hasPoc?: boolean;
+  hasPoc: boolean;
 }
 
 /** Month names for FYE filter */
@@ -139,12 +139,6 @@ const DEFAULT_COLUMN_WIDTHS: Partial<Record<ColumnId, number>> = {
   actions: 50,
 };
 
-/** Option for company filter dropdown */
-export interface CompanyFilterOption {
-  id: string;
-  name: string;
-}
-
 interface CompanyTableProps {
   companies: CompanyWithRelations[];
   onDelete?: (id: string) => void;
@@ -181,8 +175,6 @@ interface CompanyTableProps {
   columnWidths?: Partial<Record<ColumnId, number>>;
   /** Handler for column width changes */
   onColumnWidthChange?: (columnId: ColumnId, width: number) => void;
-  /** Available companies for filter dropdown (dynamic search) */
-  companyFilterOptions?: CompanyFilterOption[];
 }
 
 /** Sortable column header component with resize handle */
@@ -353,7 +345,6 @@ export function CompanyTable({
   onInlineFilterChange,
   columnWidths: externalColumnWidths,
   onColumnWidthChange,
-  companyFilterOptions = [],
 }: CompanyTableProps) {
   // Internal column widths state (used if external not provided)
   const [internalColumnWidths, setInternalColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
@@ -448,18 +439,24 @@ export function CompanyTable({
 
       case 'company':
         return (
-          <SearchableSelect
-            options={[
-              { value: '', label: 'All' },
-              ...companyFilterOptions.map(c => ({ value: c.name, label: c.name }))
-            ]}
-            value={inlineFilters.companyName || ''}
-            onChange={(value) => onInlineFilterChange({ companyName: value || undefined })}
-            placeholder="All"
-            className="text-xs w-full min-w-0"
-            showChevron={false}
-            showKeyboardHints={false}
-          />
+          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
+            <input
+              type="text"
+              value={inlineFilters.companyName || ''}
+              onChange={(e) => onInlineFilterChange({ companyName: e.target.value || undefined })}
+              placeholder="All"
+              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
+            />
+            {inlineFilters.companyName && (
+              <button
+                type="button"
+                onClick={() => onInlineFilterChange({ companyName: undefined })}
+                className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
+              >
+                <X className="w-3.5 h-3.5 text-text-muted" />
+              </button>
+            )}
+          </div>
         );
 
       case 'address':

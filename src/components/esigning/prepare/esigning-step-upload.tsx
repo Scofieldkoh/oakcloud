@@ -39,7 +39,7 @@ import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
 import { useCreateContact } from '@/hooks/use-contacts';
 import type { ReorderEsigningRecipientsPayload } from '@/hooks/use-esigning';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { cn } from '@/lib/utils';
 import type { EsigningSigningOrder } from '@/generated/prisma';
 
@@ -556,7 +556,7 @@ export function EsigningStepUpload({
   const queryClient = useQueryClient();
   const createContactMutation = useCreateContact();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastSyncedEnvelopeIdRef = useRef<string | null>(null);
   const persistedSignerGroupsRef = useRef<string[][]>([]);
@@ -1054,7 +1054,7 @@ export function EsigningStepUpload({
     }
 
     if (session?.isSuperAdmin && !activeTenantId) {
-      toast.error('Select a tenant before creating a contact');
+      toast.error('Workspace context is required before creating a contact');
       return;
     }
 

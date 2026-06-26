@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { resolveTenantId, createErrorResponse, buildContentDispositionHeader } from '@/lib/api-helpers';
+import { resolveWorkspaceId, createErrorResponse, buildContentDispositionHeader } from '@/lib/api-helpers';
 import { storage } from '@/lib/storage';
 import { deleteFormResponseUpload, getSubmissionUploadById } from '@/services/form-builder.service';
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'read');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const disposition = searchParams.get('disposition') === 'inline' ? 'inline' : 'attachment';
 
     const upload = await getSubmissionUploadById(id, submissionId, uploadId, tenantId);
@@ -50,7 +50,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'delete');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const reason = searchParams.get('reason') || undefined;
 
     const result = await deleteFormResponseUpload(

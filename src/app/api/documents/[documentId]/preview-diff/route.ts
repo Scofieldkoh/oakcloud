@@ -85,7 +85,7 @@ export async function POST(
     }
 
     // Verify user can update this company (admin or document uploader)
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       const canUpdate = session.companyIds?.includes(companyId);
       if (!canUpdate) {
         return NextResponse.json(

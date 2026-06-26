@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import { requirePermission } from '@/lib/rbac';
 import { getFormById, getFormResponseById } from '@/services/form-builder.service';
 import { diagnoseFormSubmissionAiAttachments } from '@/services/form-ai.service';
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'update');
 
     const body = await request.json().catch(() => ({}));
-    const tenantId = resolveTenantId(session, typeof body.tenantId === 'string' ? body.tenantId : null);
+    const tenantId = resolveWorkspaceId(session, typeof body.tenantId === 'string' ? body.tenantId : null);
 
     const [form, responseDetail] = await Promise.all([
       getFormById(id, tenantId),

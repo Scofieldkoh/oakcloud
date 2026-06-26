@@ -22,7 +22,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import {
   useCreateForm,
   useDeleteForm,
@@ -55,7 +55,7 @@ export default function FormsPage() {
   const router = useRouter();
   const { success, error: showError } = useToast();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<FormStatus | undefined>(undefined);
@@ -176,16 +176,16 @@ export default function FormsPage() {
           size="sm"
           leftIcon={<Plus className="w-4 h-4" />}
           onClick={() => setIsCreateOpen(true)}
-          disabled={session?.isSuperAdmin && !activeTenantId}
+          disabled={!activeTenantId}
         >
           New Form
         </Button>
       </div>
 
-      {session?.isSuperAdmin && !activeTenantId && (
+      {!activeTenantId && (
         <div className="mb-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-2">
           <p className="text-sm text-amber-800 dark:text-amber-200">
-            Select a tenant from the sidebar to access forms.
+            Workspace context is required to access forms.
           </p>
         </div>
       )}

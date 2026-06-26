@@ -707,18 +707,9 @@ export async function getGeneratedDocumentById(
 // Search Documents
 // ============================================================================
 
-export interface SearchGeneratedDocumentsOptions {
-  /**
-   * Skip tenant filter - ONLY for SUPER_ADMIN operations that require
-   * cross-tenant access. Regular operations MUST always provide tenantId.
-   */
-  skipTenantFilter?: boolean;
-}
-
 export async function searchGeneratedDocuments(
   params: SearchGeneratedDocumentsInput,
-  tenantId: string | null,
-  options: SearchGeneratedDocumentsOptions = {}
+  tenantId: string
 ): Promise<{
   documents: GeneratedDocumentWithRelations[];
   total: number;
@@ -726,21 +717,15 @@ export async function searchGeneratedDocuments(
   limit: number;
   totalPages: number;
 }> {
-  const { skipTenantFilter = false } = options;
-
-  // SECURITY: Tenant ID is required to prevent cross-tenant data access unless explicitly skipped for SUPER_ADMIN
-  if (!tenantId && !skipTenantFilter) {
+  // SECURITY: Tenant ID is required to prevent cross-workspace data access.
+  if (!tenantId) {
     throw new Error('Tenant ID is required for generated documents search');
   }
 
   const where: Prisma.GeneratedDocumentWhereInput = {
     deletedAt: null,
+    tenantId,
   };
-
-  // Tenant scope (skip for SUPER_ADMIN cross-tenant operations)
-  if (tenantId && !skipTenantFilter) {
-    where.tenantId = tenantId;
-  }
 
   // Text search
   if (params.query) {

@@ -667,7 +667,7 @@ export async function listLatestTenantCommunications(
   });
 }
 
-export async function deleteTenantCommunication(input: {
+export async function deleteWorkspaceCommunication(input: {
   tenantId: string;
   userId: string;
   communicationId: string;
@@ -715,7 +715,7 @@ export async function deleteTenantCommunication(input: {
   });
 }
 
-export async function deleteTenantCommunicationsBulk(input: {
+export async function deleteWorkspaceCommunicationsBulk(input: {
   tenantId: string;
   userId: string;
   communicationIds: string[];

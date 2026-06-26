@@ -5,21 +5,20 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Building2, AlertCircle, FileUp, Trash2, Download, RefreshCw } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
-import { useCompanies, useCompanyStats, useDeleteCompany, useBulkDeleteCompanies } from '@/hooks/use-companies';
+import { useCompaniesPageBootstrap, useDeleteCompany, useBulkDeleteCompanies } from '@/hooks/use-companies';
 import { useExportContactDetails } from '@/hooks/use-contact-details';
 import { usePermissions, useCompanyPermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
-import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useSelection } from '@/hooks/use-selection';
-import { CompanyTable, type CompanyInlineFilters, type CompanyFilterOption } from '@/components/companies/company-table';
+import { CompanyTable, type CompanyInlineFilters } from '@/components/companies/company-table';
 import { CompanyFilters, type FilterValues } from '@/components/companies/company-filters';
 import { Pagination } from '@/components/ui/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { useToast } from '@/components/ui/toast';
-import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
+import { useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { getEntityTypeLabel, getCompanyStatusLabel } from '@/lib/constants';
 import type { EntityType, CompanyStatus } from '@/generated/prisma';
@@ -35,7 +34,7 @@ export default function CompaniesPage() {
   const { data: session } = useSession();
 
   // Get active tenant ID (from store for SUPER_ADMIN, from session for others)
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -64,18 +63,19 @@ export default function CompaniesPage() {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   // Pass tenantId to filter companies by selected tenant (for SUPER_ADMIN)
-  const { data, isLoading, isFetching, error, refetch } = useCompanies({
+  const companiesQueryParams = {
     ...params,
     tenantId: activeTenantId,
-  });
-
-  // OPTIMIZED: Defer stats loading until after main list has loaded
-  // This prevents stats query from competing with the primary companies query
-  const shouldLoadStats = !isLoading && !!data;
-  const { data: allCompanyOptions = [] } = useAllCompanyOptions(activeTenantId);
-  const { data: stats, error: statsError, isFetching: isStatsFetching, refetch: refetchStats } = useCompanyStats(activeTenantId, {
-    enabled: shouldLoadStats,
-  });
+  };
+  const {
+    data: bootstrapData,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useCompaniesPageBootstrap(companiesQueryParams, [COLUMN_PREF_KEY]);
+  const data = bootstrapData?.companies;
+  const stats = bootstrapData?.stats;
   const deleteCompany = useDeleteCompany();
   const bulkDeleteCompanies = useBulkDeleteCompanies();
   const exportContactDetails = useExportContactDetails();
@@ -99,7 +99,7 @@ export default function CompaniesPage() {
   const { canEditCompany, canDeleteCompany } = useCompanyPermissions(companyIds);
 
   // Column width persistence
-  const { data: columnPref } = useUserPreference<Record<string, number>>(COLUMN_PREF_KEY);
+  const columnPref = bootstrapData?.preferences[COLUMN_PREF_KEY];
   const saveColumnPref = useUpsertUserPreference<Record<string, number>>();
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
 
@@ -117,10 +117,7 @@ export default function CompaniesPage() {
 
   const handleRefresh = useCallback(() => {
     refetch();
-    if (shouldLoadStats) {
-      refetchStats();
-    }
-  }, [refetch, refetchStats, shouldLoadStats]);
+  }, [refetch]);
 
   const focusSearchInput = useCallback(() => {
     if (typeof document === 'undefined') return;
@@ -502,11 +499,6 @@ export default function CompaniesPage() {
     }));
   }, []);
 
-  // Company filter options are loaded across all pages for inline dropdown search
-  const companyFilterOptions: CompanyFilterOption[] = useMemo(() => {
-    return allCompanyOptions;
-  }, [allCompanyOptions]);
-
   const handleSort = (field: string) => {
     setParams((prev) => {
       if (prev.sortBy === field) {
@@ -578,7 +570,7 @@ export default function CompaniesPage() {
     }
   };
 
-  const isRefreshing = isFetching || isStatsFetching;
+  const isRefreshing = isFetching;
 
   useKeyboardShortcuts([
     {
@@ -646,7 +638,7 @@ export default function CompaniesPage() {
       </div>
 
       {/* Stats Cards */}
-      {stats && !statsError && (
+      {stats && (
         <MobileCollapsibleSection title="Statistics" count={4} className="mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="card card-compact sm:p-4">
@@ -795,7 +787,6 @@ export default function CompaniesPage() {
           onSort={handleSort}
           inlineFilters={inlineFilters}
           onInlineFilterChange={handleInlineFilterChange}
-          companyFilterOptions={companyFilterOptions}
           columnWidths={columnWidths}
           onColumnWidthChange={handleColumnWidthChange}
         />

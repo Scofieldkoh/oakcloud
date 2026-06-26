@@ -1,8 +1,8 @@
 'use client';
 
 import { forwardRef, useState, type InputHTMLAttributes } from 'react';
-import { Box, Input } from '@chakra-ui/react';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
@@ -14,68 +14,53 @@ export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
 }
 
 const sizeConfig = {
-  xs: { h: '7', fontSize: 'xs', px: '3', iconSize: 14, iconClass: 'w-3.5 h-3.5', iconPadding: '8' },
-  sm: { h: '8', fontSize: 'sm', px: '3', iconSize: 16, iconClass: 'w-4 h-4', iconPadding: '9' },
-  md: { h: '9', fontSize: 'sm', px: '3.5', iconSize: 16, iconClass: 'w-4 h-4', iconPadding: '10' },
-  lg: { h: '10', fontSize: 'md', px: '4', iconSize: 20, iconClass: 'w-5 h-5', iconPadding: '11' },
+  xs: { input: 'h-7 px-3 text-xs', iconSize: 14, iconClass: 'w-3.5 h-3.5', leftPadding: 'pl-8', rightPadding: 'pr-8' },
+  sm: { input: 'h-8 px-3 text-sm', iconSize: 16, iconClass: 'w-4 h-4', leftPadding: 'pl-9', rightPadding: 'pr-9' },
+  md: { input: 'h-9 px-3.5 text-sm', iconSize: 16, iconClass: 'w-4 h-4', leftPadding: 'pl-10', rightPadding: 'pr-10' },
+  lg: { input: 'h-10 px-4 text-base', iconSize: 20, iconClass: 'w-5 h-5', leftPadding: 'pl-11', rightPadding: 'pr-11' },
 };
 
 export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
-  ({ label, error, hint, inputSize = 'sm', leftIcon, rightIcon, id, type, ...props }, ref) => {
+  ({ label, error, hint, inputSize = 'sm', leftIcon, rightIcon, id, type, className, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === 'password';
     const inputType = isPassword && showPassword ? 'text' : type;
-
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
     const config = sizeConfig[inputSize];
 
     return (
-      <Box display="flex" flexDirection="column" gap="2">
+      <div className="flex flex-col gap-2">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="text-xs font-medium text-text-secondary block"
-          >
+          <label htmlFor={inputId} className="block text-xs font-medium text-text-secondary">
             {label}
           </label>
         )}
-        <Box position="relative">
+        <div className="relative">
           {leftIcon && (
-            <Box
-              position="absolute"
-              left="3"
-              top="50%"
-              transform="translateY(-50%)"
-              pointerEvents="none"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              zIndex="1"
-              className={`text-text-muted ${config.iconClass}`}
+            <span
+              className={cn(
+                'pointer-events-none absolute left-3 top-1/2 z-[1] flex -translate-y-1/2 items-center justify-center text-text-muted',
+                config.iconClass
+              )}
             >
               {leftIcon}
-            </Box>
+            </span>
           )}
-          <Input
+          <input
             ref={ref}
             id={inputId}
             type={inputType}
-            h={config.h}
-            fontSize={config.fontSize}
-            px={config.px}
-            pl={leftIcon ? config.iconPadding : config.px}
-            pr={(rightIcon || isPassword) ? config.iconPadding : config.px}
-            borderWidth="1px"
-            borderRadius="lg"
-            _placeholder={{ color: 'var(--text-muted)', fontSize: config.fontSize }}
-            className={`
-              bg-background-primary dark:bg-background-secondary
-              border-border-primary
-              text-text-primary
-              hover:border-border-secondary
-              focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/30 focus:ring-offset-2 focus:outline-none
-              ${error ? 'border-status-error hover:border-status-error focus:border-status-error focus:ring-status-error/30' : ''}
-            `}
+            className={cn(
+              'w-full rounded-lg border border-border-primary bg-background-primary text-text-primary',
+              'placeholder:text-text-muted hover:border-border-secondary',
+              'focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 focus:ring-offset-2',
+              'dark:bg-background-secondary',
+              config.input,
+              leftIcon && config.leftPadding,
+              (rightIcon || isPassword) && config.rightPadding,
+              error && 'border-status-error hover:border-status-error focus:border-status-error focus:ring-status-error/30',
+              className
+            )}
             aria-invalid={error ? 'true' : 'false'}
             aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
             {...props}
@@ -83,50 +68,40 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
           {isPassword && (
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowPassword((value) => !value)}
               tabIndex={-1}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center bg-transparent border-none cursor-pointer text-text-muted hover:text-text-secondary transition-colors ${config.iconClass}`}
+              className={cn(
+                'absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center text-text-muted transition-colors hover:text-text-secondary',
+                config.iconClass
+              )}
             >
               {showPassword ? <EyeOff size={config.iconSize} /> : <Eye size={config.iconSize} />}
             </button>
           )}
           {rightIcon && !isPassword && (
-            <Box
-              position="absolute"
-              right="3"
-              top="50%"
-              transform="translateY(-50%)"
-              pointerEvents="none"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              zIndex="1"
-              className={`text-text-muted ${config.iconClass}`}
+            <span
+              className={cn(
+                'pointer-events-none absolute right-3 top-1/2 z-[1] flex -translate-y-1/2 items-center justify-center text-text-muted',
+                config.iconClass
+              )}
             >
               {rightIcon}
-            </Box>
+            </span>
           )}
-        </Box>
+        </div>
         {error && (
-          <Box
-            id={`${inputId}-error`}
-            display="flex"
-            alignItems="center"
-            gap="1.5"
-            fontSize="xs"
-            color="red.400"
-          >
-            <AlertCircle size={14} style={{ flexShrink: 0 }} />
+          <div id={`${inputId}-error`} className="flex items-center gap-1.5 text-xs text-red-400">
+            <AlertCircle size={14} className="flex-shrink-0" />
             {error}
-          </Box>
+          </div>
         )}
         {hint && !error && (
-          <Box id={`${inputId}-hint`} fontSize="xs" className="text-text-muted">
+          <div id={`${inputId}-hint`} className="text-xs text-text-muted">
             {hint}
-          </Box>
+          </div>
         )}
-      </Box>
+      </div>
     );
   }
 );

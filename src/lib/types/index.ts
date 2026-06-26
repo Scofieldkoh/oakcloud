@@ -2,4 +2,4 @@
  * Shared type definitions
  */
 
-export * from './tenant';
+export * from './workspace';

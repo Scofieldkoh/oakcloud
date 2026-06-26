@@ -302,8 +302,8 @@ export type ConnectorWhereInput = {
   deletedAt?: Prisma.DateTimeNullableFilter<"Connector"> | Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigListRelationFilter
   usageLogs?: Prisma.ConnectorUsageLogListRelationFilter
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
-  tenantAccess?: Prisma.TenantConnectorAccessListRelationFilter
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
+  tenantAccess?: Prisma.WorkspaceConnectorAccessListRelationFilter
 }
 
 export type ConnectorOrderByWithRelationInput = {
@@ -325,8 +325,8 @@ export type ConnectorOrderByWithRelationInput = {
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   modelConfigs?: Prisma.ConnectorModelConfigOrderByRelationAggregateInput
   usageLogs?: Prisma.ConnectorUsageLogOrderByRelationAggregateInput
-  tenant?: Prisma.TenantOrderByWithRelationInput
-  tenantAccess?: Prisma.TenantConnectorAccessOrderByRelationAggregateInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessOrderByRelationAggregateInput
 }
 
 export type ConnectorWhereUniqueInput = Prisma.AtLeast<{
@@ -352,8 +352,8 @@ export type ConnectorWhereUniqueInput = Prisma.AtLeast<{
   deletedAt?: Prisma.DateTimeNullableFilter<"Connector"> | Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigListRelationFilter
   usageLogs?: Prisma.ConnectorUsageLogListRelationFilter
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
-  tenantAccess?: Prisma.TenantConnectorAccessListRelationFilter
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
+  tenantAccess?: Prisma.WorkspaceConnectorAccessListRelationFilter
 }, "id" | "tenantId_provider_deletedAt">
 
 export type ConnectorOrderByWithAggregationInput = {
@@ -420,8 +420,8 @@ export type ConnectorCreateInput = {
   deletedAt?: Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigCreateNestedManyWithoutConnectorInput
   usageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutConnectorInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutConnectorsInput
-  tenantAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutConnectorInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutConnectorsInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorUncheckedCreateInput = {
@@ -443,7 +443,7 @@ export type ConnectorUncheckedCreateInput = {
   deletedAt?: Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedCreateNestedManyWithoutConnectorInput
   usageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutConnectorInput
-  tenantAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorUpdateInput = {
@@ -464,8 +464,8 @@ export type ConnectorUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUpdateManyWithoutConnectorNestedInput
   usageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutConnectorNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutConnectorsNestedInput
-  tenantAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutConnectorNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutConnectorsNestedInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorUncheckedUpdateInput = {
@@ -487,7 +487,7 @@ export type ConnectorUncheckedUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedUpdateManyWithoutConnectorNestedInput
   usageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutConnectorNestedInput
-  tenantAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorCreateManyInput = {
@@ -740,7 +740,7 @@ export type ConnectorCreateWithoutTenantInput = {
   deletedAt?: Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigCreateNestedManyWithoutConnectorInput
   usageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutConnectorInput
-  tenantAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutConnectorInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorUncheckedCreateWithoutTenantInput = {
@@ -761,7 +761,7 @@ export type ConnectorUncheckedCreateWithoutTenantInput = {
   deletedAt?: Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedCreateNestedManyWithoutConnectorInput
   usageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutConnectorInput
-  tenantAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorCreateOrConnectWithoutTenantInput = {
@@ -830,7 +830,7 @@ export type ConnectorCreateWithoutTenantAccessInput = {
   deletedAt?: Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigCreateNestedManyWithoutConnectorInput
   usageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutConnectorInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutConnectorsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutConnectorsInput
 }
 
 export type ConnectorUncheckedCreateWithoutTenantAccessInput = {
@@ -888,7 +888,7 @@ export type ConnectorUpdateWithoutTenantAccessInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUpdateManyWithoutConnectorNestedInput
   usageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutConnectorNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutConnectorsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutConnectorsNestedInput
 }
 
 export type ConnectorUncheckedUpdateWithoutTenantAccessInput = {
@@ -929,8 +929,8 @@ export type ConnectorCreateWithoutUsageLogsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigCreateNestedManyWithoutConnectorInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutConnectorsInput
-  tenantAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutConnectorInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutConnectorsInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorUncheckedCreateWithoutUsageLogsInput = {
@@ -951,7 +951,7 @@ export type ConnectorUncheckedCreateWithoutUsageLogsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedCreateNestedManyWithoutConnectorInput
-  tenantAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorCreateOrConnectWithoutUsageLogsInput = {
@@ -987,8 +987,8 @@ export type ConnectorUpdateWithoutUsageLogsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUpdateManyWithoutConnectorNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutConnectorsNestedInput
-  tenantAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutConnectorNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutConnectorsNestedInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorUncheckedUpdateWithoutUsageLogsInput = {
@@ -1009,7 +1009,7 @@ export type ConnectorUncheckedUpdateWithoutUsageLogsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedUpdateManyWithoutConnectorNestedInput
-  tenantAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorCreateWithoutModelConfigsInput = {
@@ -1029,8 +1029,8 @@ export type ConnectorCreateWithoutModelConfigsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   usageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutConnectorInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutConnectorsInput
-  tenantAccess?: Prisma.TenantConnectorAccessCreateNestedManyWithoutConnectorInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutConnectorsInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorUncheckedCreateWithoutModelConfigsInput = {
@@ -1051,7 +1051,7 @@ export type ConnectorUncheckedCreateWithoutModelConfigsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   usageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutConnectorInput
-  tenantAccess?: Prisma.TenantConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutConnectorInput
 }
 
 export type ConnectorCreateOrConnectWithoutModelConfigsInput = {
@@ -1087,8 +1087,8 @@ export type ConnectorUpdateWithoutModelConfigsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   usageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutConnectorNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutConnectorsNestedInput
-  tenantAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutConnectorNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutConnectorsNestedInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorUncheckedUpdateWithoutModelConfigsInput = {
@@ -1109,7 +1109,7 @@ export type ConnectorUncheckedUpdateWithoutModelConfigsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   usageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutConnectorNestedInput
-  tenantAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorCreateManyTenantInput = {
@@ -1148,7 +1148,7 @@ export type ConnectorUpdateWithoutTenantInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUpdateManyWithoutConnectorNestedInput
   usageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutConnectorNestedInput
-  tenantAccess?: Prisma.TenantConnectorAccessUpdateManyWithoutConnectorNestedInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorUncheckedUpdateWithoutTenantInput = {
@@ -1169,7 +1169,7 @@ export type ConnectorUncheckedUpdateWithoutTenantInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   modelConfigs?: Prisma.ConnectorModelConfigUncheckedUpdateManyWithoutConnectorNestedInput
   usageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutConnectorNestedInput
-  tenantAccess?: Prisma.TenantConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
+  tenantAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInput
 }
 
 export type ConnectorUncheckedUpdateManyWithoutTenantInput = {
@@ -1235,7 +1235,7 @@ export type ConnectorCountOutputTypeCountUsageLogsArgs<ExtArgs extends runtime.T
  * ConnectorCountOutputType without action
  */
 export type ConnectorCountOutputTypeCountTenantAccessArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.TenantConnectorAccessWhereInput
+  where?: Prisma.WorkspaceConnectorAccessWhereInput
 }
 
 
@@ -1342,8 +1342,8 @@ export type $ConnectorPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   objects: {
     modelConfigs: Prisma.$ConnectorModelConfigPayload<ExtArgs>[]
     usageLogs: Prisma.$ConnectorUsageLogPayload<ExtArgs>[]
-    tenant: Prisma.$TenantPayload<ExtArgs> | null
-    tenantAccess: Prisma.$TenantConnectorAccessPayload<ExtArgs>[]
+    tenant: Prisma.$WorkspacePayload<ExtArgs> | null
+    tenantAccess: Prisma.$WorkspaceConnectorAccessPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1758,8 +1758,8 @@ export interface Prisma__ConnectorClient<T, Null = never, ExtArgs extends runtim
   readonly [Symbol.toStringTag]: "PrismaPromise"
   modelConfigs<T extends Prisma.Connector$modelConfigsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Connector$modelConfigsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConnectorModelConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   usageLogs<T extends Prisma.Connector$usageLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Connector$usageLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConnectorUsageLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  tenant<T extends Prisma.Connector$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Connector$tenantArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  tenantAccess<T extends Prisma.Connector$tenantAccessArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Connector$tenantAccessArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantConnectorAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  tenant<T extends Prisma.Connector$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Connector$tenantArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  tenantAccess<T extends Prisma.Connector$tenantAccessArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Connector$tenantAccessArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkspaceConnectorAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2253,18 +2253,18 @@ export type Connector$usageLogsArgs<ExtArgs extends runtime.Types.Extensions.Int
  */
 export type Connector$tenantArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Tenant
+   * Select specific fields to fetch from the Workspace
    */
-  select?: Prisma.TenantSelect<ExtArgs> | null
+  select?: Prisma.WorkspaceSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Tenant
+   * Omit specific fields from the Workspace
    */
-  omit?: Prisma.TenantOmit<ExtArgs> | null
+  omit?: Prisma.WorkspaceOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.TenantInclude<ExtArgs> | null
-  where?: Prisma.TenantWhereInput
+  include?: Prisma.WorkspaceInclude<ExtArgs> | null
+  where?: Prisma.WorkspaceWhereInput
 }
 
 /**
@@ -2272,23 +2272,23 @@ export type Connector$tenantArgs<ExtArgs extends runtime.Types.Extensions.Intern
  */
 export type Connector$tenantAccessArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the TenantConnectorAccess
+   * Select specific fields to fetch from the WorkspaceConnectorAccess
    */
-  select?: Prisma.TenantConnectorAccessSelect<ExtArgs> | null
+  select?: Prisma.WorkspaceConnectorAccessSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the TenantConnectorAccess
+   * Omit specific fields from the WorkspaceConnectorAccess
    */
-  omit?: Prisma.TenantConnectorAccessOmit<ExtArgs> | null
+  omit?: Prisma.WorkspaceConnectorAccessOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.TenantConnectorAccessInclude<ExtArgs> | null
-  where?: Prisma.TenantConnectorAccessWhereInput
-  orderBy?: Prisma.TenantConnectorAccessOrderByWithRelationInput | Prisma.TenantConnectorAccessOrderByWithRelationInput[]
-  cursor?: Prisma.TenantConnectorAccessWhereUniqueInput
+  include?: Prisma.WorkspaceConnectorAccessInclude<ExtArgs> | null
+  where?: Prisma.WorkspaceConnectorAccessWhereInput
+  orderBy?: Prisma.WorkspaceConnectorAccessOrderByWithRelationInput | Prisma.WorkspaceConnectorAccessOrderByWithRelationInput[]
+  cursor?: Prisma.WorkspaceConnectorAccessWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.TenantConnectorAccessScalarFieldEnum | Prisma.TenantConnectorAccessScalarFieldEnum[]
+  distinct?: Prisma.WorkspaceConnectorAccessScalarFieldEnum | Prisma.WorkspaceConnectorAccessScalarFieldEnum[]
 }
 
 /**

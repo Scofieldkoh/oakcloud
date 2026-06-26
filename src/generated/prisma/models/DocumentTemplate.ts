@@ -293,7 +293,7 @@ export type DocumentTemplateWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"DocumentTemplate"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"DocumentTemplate"> | Date | string | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
 }
 
@@ -314,7 +314,7 @@ export type DocumentTemplateOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdBy?: Prisma.UserOrderByWithRelationInput
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
   generatedDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
 }
 
@@ -338,7 +338,7 @@ export type DocumentTemplateWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"DocumentTemplate"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"DocumentTemplate"> | Date | string | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   generatedDocuments?: Prisma.GeneratedDocumentListRelationFilter
 }, "id">
 
@@ -401,7 +401,7 @@ export type DocumentTemplateCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedTemplatesInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentTemplatesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTemplateInput
 }
 
@@ -439,7 +439,7 @@ export type DocumentTemplateUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedTemplatesNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentTemplatesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTemplateNestedInput
 }
 
@@ -790,7 +790,7 @@ export type DocumentTemplateCreateWithoutCreatedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentTemplatesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
   generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTemplateInput
 }
 
@@ -853,7 +853,7 @@ export type DocumentTemplateCreateWithoutGeneratedDocumentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedTemplatesInput
-  tenant: Prisma.TenantCreateNestedOneWithoutDocumentTemplatesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentTemplatesInput
 }
 
 export type DocumentTemplateUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -905,7 +905,7 @@ export type DocumentTemplateUpdateWithoutGeneratedDocumentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedTemplatesNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentTemplatesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
 }
 
 export type DocumentTemplateUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -1027,7 +1027,7 @@ export type DocumentTemplateUpdateWithoutCreatedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutDocumentTemplatesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput
   generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTemplateNestedInput
 }
 
@@ -1114,7 +1114,7 @@ export type DocumentTemplateSelect<ExtArgs extends runtime.Types.Extensions.Inte
   updatedAt?: boolean
   deletedAt?: boolean
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocuments?: boolean | Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentTemplateCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentTemplate"]>
@@ -1136,7 +1136,7 @@ export type DocumentTemplateSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   updatedAt?: boolean
   deletedAt?: boolean
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentTemplate"]>
 
 export type DocumentTemplateSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1156,7 +1156,7 @@ export type DocumentTemplateSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   updatedAt?: boolean
   deletedAt?: boolean
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentTemplate"]>
 
 export type DocumentTemplateSelectScalar = {
@@ -1180,24 +1180,24 @@ export type DocumentTemplateSelectScalar = {
 export type DocumentTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "description" | "category" | "content" | "contentJson" | "placeholders" | "isActive" | "defaultShareExpiryHours" | "version" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["documentTemplate"]>
 export type DocumentTemplateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocuments?: boolean | Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentTemplateCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DocumentTemplateIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type DocumentTemplateIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 
 export type $DocumentTemplatePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "DocumentTemplate"
   objects: {
     createdBy: Prisma.$UserPayload<ExtArgs>
-    tenant: Prisma.$TenantPayload<ExtArgs>
+    tenant: Prisma.$WorkspacePayload<ExtArgs>
     generatedDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1611,7 +1611,7 @@ readonly fields: DocumentTemplateFieldRefs;
 export interface Prisma__DocumentTemplateClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   createdBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   generatedDocuments<T extends Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentTemplate$generatedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.

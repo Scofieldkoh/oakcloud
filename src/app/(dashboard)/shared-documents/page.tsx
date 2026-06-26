@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
 import { Pagination } from '@/components/ui/pagination';
@@ -117,7 +117,7 @@ export default function SharedDocumentsPage() {
   const { data: session } = useSession();
 
   // Tenant selection for SUPER_ADMIN
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );

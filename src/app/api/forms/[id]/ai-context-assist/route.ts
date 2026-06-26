@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import { callAIWithConnector, getDefaultModelId, stripMarkdownCodeBlocks } from '@/lib/ai';
 import { getFormById } from '@/services/form-builder.service';
 
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const body = await request.json();
     const parsed = requestSchema.parse(body);
-    const tenantId = resolveTenantId(session, parsed.tenantId);
+    const tenantId = resolveWorkspaceId(session, parsed.tenantId);
 
     const form = await getFormById(id, tenantId);
     if (!form) {

@@ -51,13 +51,14 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  Tenant: 'Tenant',
+  Workspace: 'Workspace',
   Role: 'Role',
   Permission: 'Permission',
   RolePermission: 'RolePermission',
   UserRoleAssignment: 'UserRoleAssignment',
   User: 'User',
   UserPreference: 'UserPreference',
+  PerformanceMeasurement: 'PerformanceMeasurement',
   UserCompanyAssignment: 'UserCompanyAssignment',
   Company: 'Company',
   CompanyFormerName: 'CompanyFormerName',
@@ -72,7 +73,7 @@ export const ModelName = {
   Document: 'Document',
   AuditLog: 'AuditLog',
   Connector: 'Connector',
-  TenantConnectorAccess: 'TenantConnectorAccess',
+  WorkspaceConnectorAccess: 'WorkspaceConnectorAccess',
   ConnectorUsageLog: 'ConnectorUsageLog',
   ConnectorModelConfig: 'ConnectorModelConfig',
   NoteTab: 'NoteTab',
@@ -80,7 +81,7 @@ export const ModelName = {
   GeneratedDocument: 'GeneratedDocument',
   DocumentSection: 'DocumentSection',
   DocumentShare: 'DocumentShare',
-  TenantLetterhead: 'TenantLetterhead',
+  WorkspaceLetterhead: 'WorkspaceLetterhead',
   DocumentComment: 'DocumentComment',
   DocumentDraft: 'DocumentDraft',
   TemplatePartial: 'TemplatePartial',
@@ -126,7 +127,7 @@ export const ModelName = {
   AccountingIntegration: 'AccountingIntegration',
   ExternalPosting: 'ExternalPosting',
   FieldMapping: 'FieldMapping',
-  TenantBackup: 'TenantBackup',
+  WorkspaceBackup: 'WorkspaceBackup',
   BackupSchedule: 'BackupSchedule',
   ChartOfAccount: 'ChartOfAccount',
   ChartOfAccountsMapping: 'ChartOfAccountsMapping',
@@ -170,7 +171,7 @@ export const TransactionIsolationLevel = {
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
-export const TenantScalarFieldEnum = {
+export const WorkspaceScalarFieldEnum = {
   id: 'id',
   name: 'name',
   slug: 'slug',
@@ -192,7 +193,7 @@ export const TenantScalarFieldEnum = {
   suspendReason: 'suspendReason'
 } as const
 
-export type TenantScalarFieldEnum = (typeof TenantScalarFieldEnum)[keyof typeof TenantScalarFieldEnum]
+export type WorkspaceScalarFieldEnum = (typeof WorkspaceScalarFieldEnum)[keyof typeof WorkspaceScalarFieldEnum]
 
 
 export const RoleScalarFieldEnum = {
@@ -273,6 +274,20 @@ export const UserPreferenceScalarFieldEnum = {
 export type UserPreferenceScalarFieldEnum = (typeof UserPreferenceScalarFieldEnum)[keyof typeof UserPreferenceScalarFieldEnum]
 
 
+export const PerformanceMeasurementScalarFieldEnum = {
+  id: 'id',
+  route: 'route',
+  metricType: 'metricType',
+  value: 'value',
+  unit: 'unit',
+  metadata: 'metadata',
+  userAgent: 'userAgent',
+  createdAt: 'createdAt'
+} as const
+
+export type PerformanceMeasurementScalarFieldEnum = (typeof PerformanceMeasurementScalarFieldEnum)[keyof typeof PerformanceMeasurementScalarFieldEnum]
+
+
 export const UserCompanyAssignmentScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -316,6 +331,11 @@ export const CompanyScalarFieldEnum = {
   issuedCapitalCurrency: 'issuedCapitalCurrency',
   issuedCapitalAmount: 'issuedCapitalAmount',
   hasCharges: 'hasCharges',
+  currentOfficerCount: 'currentOfficerCount',
+  currentShareholderCount: 'currentShareholderCount',
+  activeChargeCount: 'activeChargeCount',
+  documentCount: 'documentCount',
+  hasPoc: 'hasPoc',
   isGstRegistered: 'isGstRegistered',
   gstRegistrationNumber: 'gstRegistrationNumber',
   gstRegistrationDate: 'gstRegistrationDate',
@@ -592,7 +612,7 @@ export const ConnectorScalarFieldEnum = {
 export type ConnectorScalarFieldEnum = (typeof ConnectorScalarFieldEnum)[keyof typeof ConnectorScalarFieldEnum]
 
 
-export const TenantConnectorAccessScalarFieldEnum = {
+export const WorkspaceConnectorAccessScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   connectorId: 'connectorId',
@@ -601,7 +621,7 @@ export const TenantConnectorAccessScalarFieldEnum = {
   updatedAt: 'updatedAt'
 } as const
 
-export type TenantConnectorAccessScalarFieldEnum = (typeof TenantConnectorAccessScalarFieldEnum)[keyof typeof TenantConnectorAccessScalarFieldEnum]
+export type WorkspaceConnectorAccessScalarFieldEnum = (typeof WorkspaceConnectorAccessScalarFieldEnum)[keyof typeof WorkspaceConnectorAccessScalarFieldEnum]
 
 
 export const ConnectorUsageLogScalarFieldEnum = {
@@ -735,7 +755,7 @@ export const DocumentShareScalarFieldEnum = {
 export type DocumentShareScalarFieldEnum = (typeof DocumentShareScalarFieldEnum)[keyof typeof DocumentShareScalarFieldEnum]
 
 
-export const TenantLetterheadScalarFieldEnum = {
+export const WorkspaceLetterheadScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   headerHtml: 'headerHtml',
@@ -749,7 +769,7 @@ export const TenantLetterheadScalarFieldEnum = {
   updatedAt: 'updatedAt'
 } as const
 
-export type TenantLetterheadScalarFieldEnum = (typeof TenantLetterheadScalarFieldEnum)[keyof typeof TenantLetterheadScalarFieldEnum]
+export type WorkspaceLetterheadScalarFieldEnum = (typeof WorkspaceLetterheadScalarFieldEnum)[keyof typeof WorkspaceLetterheadScalarFieldEnum]
 
 
 export const DocumentCommentScalarFieldEnum = {
@@ -1654,7 +1674,7 @@ export const FieldMappingScalarFieldEnum = {
 export type FieldMappingScalarFieldEnum = (typeof FieldMappingScalarFieldEnum)[keyof typeof FieldMappingScalarFieldEnum]
 
 
-export const TenantBackupScalarFieldEnum = {
+export const WorkspaceBackupScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   name: 'name',
@@ -1680,7 +1700,7 @@ export const TenantBackupScalarFieldEnum = {
   deletedAt: 'deletedAt'
 } as const
 
-export type TenantBackupScalarFieldEnum = (typeof TenantBackupScalarFieldEnum)[keyof typeof TenantBackupScalarFieldEnum]
+export type WorkspaceBackupScalarFieldEnum = (typeof WorkspaceBackupScalarFieldEnum)[keyof typeof WorkspaceBackupScalarFieldEnum]
 
 
 export const BackupScheduleScalarFieldEnum = {

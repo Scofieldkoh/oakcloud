@@ -414,7 +414,7 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
  * 2. A system connector with tenant access
  * 3. Environment variable configuration
  */
-export async function getAvailableProvidersForTenant(
+export async function getAvailableProvidersForWorkspace(
   tenantId: string | null
 ): Promise<AIProvider[]> {
   const { getAvailableConnectors } = await import('@/services/connector.service');
@@ -457,11 +457,11 @@ export async function getAvailableProvidersForTenant(
 /**
  * Check if a specific provider is available for a tenant
  */
-export async function isProviderAvailableForTenant(
+export async function isProviderAvailableForWorkspace(
   tenantId: string | null,
   provider: AIProvider
 ): Promise<boolean> {
-  const availableProviders = await getAvailableProvidersForTenant(tenantId);
+  const availableProviders = await getAvailableProvidersForWorkspace(tenantId);
   return availableProviders.includes(provider);
 }
 
@@ -469,10 +469,10 @@ export async function isProviderAvailableForTenant(
  * Get the best available model for a tenant
  * Checks both connector and environment configurations
  */
-export async function getBestAvailableModelForTenant(
+export async function getBestAvailableModelForWorkspace(
   tenantId: string | null
 ): Promise<AIModel | null> {
-  const availableProviders = await getAvailableProvidersForTenant(tenantId);
+  const availableProviders = await getAvailableProvidersForWorkspace(tenantId);
 
   if (availableProviders.length === 0) {
     return null;

@@ -9,9 +9,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import {
-  getTenantTag,
+  getWorkspaceTag,
   updateTenantTag,
-  deleteTenantTag,
+  deleteWorkspaceTag,
 } from '@/services/document-tag.service';
 import { updateTagSchema } from '@/lib/validations/document-tag';
 import { createAuditLog } from '@/lib/audit';
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Tenant not found' }, { status: 400 });
     }
 
-    const tag = await getTenantTag(tagId, { tenantId: session.tenantId });
+    const tag = await getWorkspaceTag(tagId, { tenantId: session.tenantId });
 
     if (!tag) {
       return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
@@ -63,7 +63,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Only SUPER_ADMIN or TENANT_ADMIN can update tenant tags
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json(
         { error: 'Only administrators can update shared tags' },
         { status: 403 }
@@ -118,7 +118,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Only SUPER_ADMIN or TENANT_ADMIN can delete tenant tags
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json(
         { error: 'Only administrators can delete shared tags' },
         { status: 403 }
@@ -126,12 +126,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get tag info for audit log before deletion
-    const tag = await getTenantTag(tagId, { tenantId: session.tenantId });
+    const tag = await getWorkspaceTag(tagId, { tenantId: session.tenantId });
     if (!tag) {
       return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
     }
 
-    await deleteTenantTag(tagId, { tenantId: session.tenantId });
+    await deleteWorkspaceTag(tagId, { tenantId: session.tenantId });
 
     // Audit log
     await createAuditLog({

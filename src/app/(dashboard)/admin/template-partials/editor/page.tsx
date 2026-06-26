@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { useToast } from '@/components/ui/toast';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { AISidebar, useAISidebar, type DocumentCategory } from '@/components/documents/ai-sidebar';
 import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
 import { cn } from '@/lib/utils';
@@ -331,17 +331,17 @@ interface DetailsTabProps {
 function DetailsTab({ formData, onChange, isSuperAdmin, activeTenantId, tenantName }: DetailsTabProps) {
   return (
     <div className="p-4 space-y-4">
-      {/* Tenant context info for SUPER_ADMIN */}
+      {/* Workspace context info for SUPER_ADMIN */}
       {isSuperAdmin && (
         <div>
-          <label className="text-xs font-medium text-text-secondary block mb-1.5">Tenant</label>
+          <label className="text-xs font-medium text-text-secondary block mb-1.5">Workspace</label>
           {activeTenantId ? (
             <div className="px-3 py-1.5 text-xs bg-accent-primary/10 text-accent-primary rounded-md border border-accent-primary/20">
-              {tenantName || activeTenantId}
+              {tenantName || 'Current Workspace'}
             </div>
           ) : (
             <div className="px-3 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-md border border-amber-200 dark:border-amber-800">
-              Select a tenant from the sidebar
+              Workspace context is required
             </div>
           )}
         </div>
@@ -433,17 +433,17 @@ function PartialDetailsTab({ formData, onChange, isSuperAdmin, activeTenantId, t
 
   return (
     <div className="p-4 space-y-4">
-      {/* Tenant context info for SUPER_ADMIN */}
+      {/* Workspace context info for SUPER_ADMIN */}
       {isSuperAdmin && (
         <div>
-          <label className="text-xs font-medium text-text-secondary block mb-1.5">Tenant</label>
+          <label className="text-xs font-medium text-text-secondary block mb-1.5">Workspace</label>
           {activeTenantId ? (
             <div className="px-3 py-1.5 text-xs bg-accent-primary/10 text-accent-primary rounded-md border border-accent-primary/20">
-              {tenantName || activeTenantId}
+              {tenantName || 'Current Workspace'}
             </div>
           ) : (
             <div className="px-3 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-md border border-amber-200 dark:border-amber-800">
-              Select a tenant from the sidebar
+              Workspace context is required
             </div>
           )}
         </div>
@@ -1213,7 +1213,7 @@ function TestDataTab({
                 </div>
               ) : companies.length === 0 ? (
                 <div className="text-xs text-text-muted py-2 italic">
-                  {selectedCompanyId === '' ? 'Select a tenant in Details tab to load companies' : 'No companies found'}
+                  {selectedCompanyId === '' ? 'Workspace context is required to load companies' : 'No companies found'}
                 </div>
               ) : (
                 <select
@@ -1583,9 +1583,7 @@ function TemplateEditorContent() {
   const isEditMode = !!itemId;
   const isPartialMode = editorType === 'partial';
 
-  // Tenant selection (from centralized store for SUPER_ADMIN)
-  const { selectedTenantName } = useTenantSelection();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -1633,7 +1631,6 @@ function TemplateEditorContent() {
     templateCategory: formData.category as DocumentCategory,
     templateName: formData.name,
     tenantId: activeTenantId,
-    tenantName: selectedTenantName || undefined,
   });
 
   // Fetch existing template if editing (template mode)
@@ -1677,9 +1674,21 @@ function TemplateEditorContent() {
     queryKey: ['companies-list', activeTenantId],
     queryFn: async () => {
       if (!activeTenantId) return { companies: [] };
-      const res = await fetch(`/api/companies?tenantId=${activeTenantId}&limit=100`);
+      const params = new URLSearchParams({ tenantId: activeTenantId, limit: '50' });
+      const res = await fetch(`/api/companies/options?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch companies');
-      return res.json();
+      const data = await res.json();
+      return {
+        companies: (data.options || []).map((company: {
+          id: string;
+          name: string;
+          uen?: string | null;
+        }) => ({
+          id: company.id,
+          name: company.name,
+          uen: company.uen || '',
+        })),
+      };
     },
     enabled: !!activeTenantId,
   });
@@ -2691,7 +2700,7 @@ function TemplateEditorContent() {
                       onChange={handlePartialFormChange}
                       isSuperAdmin={session?.isSuperAdmin}
                       activeTenantId={activeTenantId}
-                      tenantName={selectedTenantName || undefined}
+                      tenantName={undefined}
                     />
                   ) : (
                     <DetailsTab
@@ -2699,7 +2708,7 @@ function TemplateEditorContent() {
                       onChange={handleFormChange}
                       isSuperAdmin={session?.isSuperAdmin}
                       activeTenantId={activeTenantId}
-                      tenantName={selectedTenantName || undefined}
+                      tenantName={undefined}
                     />
                   )
                 )}

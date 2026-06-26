@@ -26,7 +26,7 @@ export function normalizeTenantTimeZone(value: unknown): string {
 }
 
 export async function getTenantTimeZone(tenantId: string): Promise<string> {
-  const tenant = await prisma.tenant.findUnique({
+  const tenant = await prisma.workspace.findUnique({
     where: { id: tenantId },
     select: { settings: true },
   });

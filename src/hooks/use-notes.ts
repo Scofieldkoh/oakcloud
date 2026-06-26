@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 
 // ============================================================================
 // Types
@@ -29,7 +29,7 @@ interface UpdateNoteTabInput {
   content?: string;
 }
 
-function withTenantId(url: string, tenantId?: string): string {
+function withWorkspaceId(url: string, tenantId?: string): string {
   if (!tenantId) return url;
   const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}tenantId=${encodeURIComponent(tenantId)}`;
@@ -45,7 +45,7 @@ async function fetchNoteTabs(
   tenantId?: string
 ): Promise<NoteTab[]> {
   const baseUrl = entityType === 'company' ? 'companies' : 'contacts';
-  const response = await fetch(withTenantId(`/api/${baseUrl}/${entityId}/notes`, tenantId));
+  const response = await fetch(withWorkspaceId(`/api/${baseUrl}/${entityId}/notes`, tenantId));
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -62,7 +62,7 @@ async function createNoteTab(
   tenantId?: string
 ): Promise<NoteTab> {
   const baseUrl = entityType === 'company' ? 'companies' : 'contacts';
-  const response = await fetch(withTenantId(`/api/${baseUrl}/${entityId}/notes`, tenantId), {
+  const response = await fetch(withWorkspaceId(`/api/${baseUrl}/${entityId}/notes`, tenantId), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -84,7 +84,7 @@ async function updateNoteTab(
   tenantId?: string
 ): Promise<NoteTab> {
   const baseUrl = entityType === 'company' ? 'companies' : 'contacts';
-  const response = await fetch(withTenantId(`/api/${baseUrl}/${entityId}/notes/${tabId}`, tenantId), {
+  const response = await fetch(withWorkspaceId(`/api/${baseUrl}/${entityId}/notes/${tabId}`, tenantId), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -105,7 +105,7 @@ async function deleteNoteTab(
   tenantId?: string
 ): Promise<void> {
   const baseUrl = entityType === 'company' ? 'companies' : 'contacts';
-  const response = await fetch(withTenantId(`/api/${baseUrl}/${entityId}/notes/${tabId}`, tenantId), {
+  const response = await fetch(withWorkspaceId(`/api/${baseUrl}/${entityId}/notes/${tabId}`, tenantId), {
     method: 'DELETE',
   });
 
@@ -124,7 +124,7 @@ async function deleteNoteTab(
  */
 export function useNoteTabs(entityType: EntityType, entityId: string) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -142,7 +142,7 @@ export function useNoteTabs(entityType: EntityType, entityId: string) {
 export function useCreateNoteTab(entityType: EntityType, entityId: string) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -164,7 +164,7 @@ export function useCreateNoteTab(entityType: EntityType, entityId: string) {
 export function useUpdateNoteTab(entityType: EntityType, entityId: string) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -186,7 +186,7 @@ export function useUpdateNoteTab(entityType: EntityType, entityId: string) {
 export function useDeleteNoteTab(entityType: EntityType, entityId: string) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );

@@ -123,7 +123,7 @@ export async function createTag(
 /**
  * Create a new tenant-level (shared) tag
  */
-export async function createTenantTag(
+export async function createWorkspaceTag(
   input: { name: string; color?: TagColor; description?: string },
   params: TenantOnlyParams
 ): Promise<TagResult> {
@@ -291,7 +291,7 @@ export async function deleteTag(
 /**
  * Delete a tenant (shared) tag (soft delete)
  */
-export async function deleteTenantTag(
+export async function deleteWorkspaceTag(
   tagId: string,
   params: { tenantId: string }
 ): Promise<void> {
@@ -343,7 +343,7 @@ export async function getTag(
 /**
  * Get a single tenant (shared) tag by ID
  */
-export async function getTenantTag(
+export async function getWorkspaceTag(
   tagId: string,
   params: { tenantId: string }
 ): Promise<TagResult | null> {
@@ -396,7 +396,7 @@ export async function getAnyTag(
 /**
  * Get all tenant (shared) tags
  */
-export async function getTenantTags(tenantId: string): Promise<TagResult[]> {
+export async function getWorkspaceTags(tenantId: string): Promise<TagResult[]> {
   const tags = await prisma.documentTag.findMany({
     where: { tenantId, companyId: null, deletedAt: null },
     orderBy: { name: 'asc' },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { requireWorkspaceContext } from '@/lib/api-helpers';
 import { listCommunicationsSchema } from '@/lib/validations/communication';
 import {
   getOutlookConnectorStatus,
@@ -10,7 +10,7 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAuth();
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit') || undefined,
     });
 
-    const tenantResult = await requireTenantContext(session, params.tenantId);
+    const tenantResult = await requireWorkspaceContext(session, params.tenantId);
     if (tenantResult.error) return tenantResult.error;
 
     const [connector, communications] = await Promise.all([

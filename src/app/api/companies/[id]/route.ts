@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { requireWorkspaceContext } from '@/lib/api-helpers';
 import { updateCompanySchema, deleteCompanySchema } from '@/lib/validations/company';
 import { parseIdParams } from '@/lib/validations/params';
 import {
@@ -23,7 +23,7 @@ export async function GET(
     // SECURITY: Validate ID format before any database operations
     const { id } = await parseIdParams(params);
     const { searchParams } = new URL(request.url);
-    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    const tenantResult = await requireWorkspaceContext(session, searchParams.get('tenantId'));
     if ('error' in tenantResult) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 
@@ -79,7 +79,7 @@ export async function PATCH(
 
     const body = await request.json();
     const data = updateCompanySchema.parse({ ...body, id });
-    const tenantResult = await requireTenantContext(
+    const tenantResult = await requireWorkspaceContext(
       session,
       typeof body.tenantId === 'string' ? body.tenantId : searchParams.get('tenantId')
     );
@@ -133,7 +133,7 @@ export async function DELETE(
     // Check permission - allows SUPER_ADMIN and TENANT_ADMIN
     await requirePermission(session, 'company', 'delete', id);
 
-    const tenantResult = await requireTenantContext(
+    const tenantResult = await requireWorkspaceContext(
       session,
       searchParams.get('tenantId')
     );
@@ -204,7 +204,7 @@ export async function PUT(
     await requirePermission(session, 'company', 'update', id);
 
     const { searchParams } = new URL(request.url);
-    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    const tenantResult = await requireWorkspaceContext(session, searchParams.get('tenantId'));
     if ('error' in tenantResult) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
     const action = searchParams.get('action');

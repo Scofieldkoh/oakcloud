@@ -3,7 +3,6 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createCompanySchema, companySearchSchema } from '@/lib/validations/company';
 import { createCompany, searchCompanies, getCompanyByUen } from '@/services/company.service';
-import { getTenantById } from '@/services/tenant.service';
 import { migrateBizFileToProcessing } from '@/services/document-processing.service';
 import { createLogger, sanitizeError } from '@/lib/logger';
 
@@ -68,7 +67,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Company-scoped users can only see companies they have role assignments for
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       // Check if user has "All Companies" access (role with null companyId)
       if (session.hasAllCompaniesAccess && session.tenantId) {
         // User has a role for "All Companies" - return all companies in tenant
@@ -95,27 +94,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // For SUPER_ADMIN, allow specifying tenantId via query param
-    // This ensures companies dropdown in user management is scoped to selected tenant
-    const tenantIdParam = searchParams.get('tenantId');
-    let effectiveTenantId = session.tenantId;
-
-    if (session.isSuperAdmin && tenantIdParam) {
-      // Validate that the tenant exists before using it
-      const tenant = await getTenantById(tenantIdParam);
-      if (!tenant) {
-        return NextResponse.json(
-          { error: 'Tenant not found' },
-          { status: 404 }
-        );
-      }
-      effectiveTenantId = tenantIdParam;
-    }
+    const effectiveTenantId = session.tenantId;
 
     const result = await searchCompanies(
       params,
       effectiveTenantId,
-      { skipTenantFilter: session.isSuperAdmin && !effectiveTenantId }
+      {}
     );
 
     return NextResponse.json(result);
@@ -148,14 +132,9 @@ export async function POST(request: NextRequest) {
     await requirePermission(session, 'company', 'create');
 
     const body = await request.json();
-    const { tenantId: bodyTenantId, ...companyData } = body;
-    const data = createCompanySchema.parse(companyData);
+    const data = createCompanySchema.parse(body);
 
-    // Determine tenant ID: SUPER_ADMIN can specify tenantId, others use session
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && bodyTenantId) {
-      tenantId = bodyTenantId;
-    }
+    const tenantId = session.tenantId;
 
     if (!tenantId) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });

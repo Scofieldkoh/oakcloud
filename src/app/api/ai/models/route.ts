@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import {
-  getBestAvailableModelForTenant,
-  getAvailableProvidersForTenant,
+  getBestAvailableModelForWorkspace,
+  getAvailableProvidersForWorkspace,
   PROVIDER_NAMES,
   getDefaultModelId,
   AI_MODELS,
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get available providers for this tenant (includes both connectors and env vars)
-    const availableProviders = await getAvailableProvidersForTenant(tenantId);
+    const availableProviders = await getAvailableProvidersForWorkspace(tenantId);
 
     // Resolve active connector per provider (if any), so model overrides can be applied.
     const providerList: AIProvider[] = ['openai', 'anthropic', 'google', 'openrouter'];
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // Get best available model for this tenant and reconcile with connector model overrides
-    const bestAvailableModel = await getBestAvailableModelForTenant(tenantId);
+    const bestAvailableModel = await getBestAvailableModelForWorkspace(tenantId);
     const configuredDefault = getDefaultModelId();
     const availableModelIds = new Set(models.filter((m) => m.available).map((m) => m.id));
 

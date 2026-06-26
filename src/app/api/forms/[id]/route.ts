@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { resolveTenantId, createErrorResponse } from '@/lib/api-helpers';
+import { resolveWorkspaceId, createErrorResponse } from '@/lib/api-helpers';
 import {
   saveFormFieldsSchema,
   updateFormSchema,
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'read');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
 
     const form = await getFormById(id, tenantId);
     if (!form) {
@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'update');
 
     const body = await request.json();
-    const tenantId = resolveTenantId(session, body.tenantId);
+    const tenantId = resolveWorkspaceId(session, body.tenantId);
     const reason = typeof body.reason === 'string' ? body.reason : undefined;
 
     let updatedAny = false;
@@ -112,7 +112,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const { searchParams } = new URL(request.url);
     const reason = searchParams.get('reason') || undefined;
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
 
     const form = await deleteForm(
       id,

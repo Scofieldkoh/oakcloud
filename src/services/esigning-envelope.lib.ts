@@ -62,7 +62,7 @@ export async function resolveEsigningActorScope(
     throw new Error('Forbidden');
   }
 
-  if (session.isSuperAdmin || session.isTenantAdmin) {
+  if (session.isSuperAdmin || session.isWorkspaceAdmin) {
     return {
       tenantId,
       canCreate: true,

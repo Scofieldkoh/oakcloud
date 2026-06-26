@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import type {
   CreateEsigningEnvelopeInput,
   EsigningFieldDefinitionInput,
@@ -383,7 +383,7 @@ async function resendEnvelopeRequest(
 
 function useEsigningTenant() {
   const { data: session } = useSession();
-  return useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  return useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 }
 
 function invalidateEnvelopeQueries(queryClient: ReturnType<typeof useQueryClient>, tenantId?: string | null) {

@@ -235,6 +235,9 @@ export const formFieldSchema = z.object({
     if (!label) {
       ctx.addIssue({ code: 'custom', message: 'FAQ item header is required', path: ['options', index, 'label'] });
     }
+    if (!bodyHtml) {
+      ctx.addIssue({ code: 'custom', message: 'FAQ item body is required', path: ['options', index, 'bodyHtml'] });
+    }
   }
 });
 

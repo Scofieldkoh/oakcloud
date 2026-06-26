@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
         );
       }
       // Verify tenant exists
-      const tenant = await prisma.tenant.findUnique({
+      const tenant = await prisma.workspace.findUnique({
         where: { id: tenantIdFromForm },
       });
       if (!tenant || tenant.deletedAt) {

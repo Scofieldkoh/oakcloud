@@ -92,7 +92,6 @@ export async function GET(
 
     const companyId = await resolveWorkflowProjectCompanyId(id, {
       tenantId: session.tenantId,
-      skipTenantFilter: session.isSuperAdmin && !session.tenantId,
     });
 
     if (!companyId) {
@@ -107,7 +106,6 @@ export async function GET(
 
     const detail = await getWorkflowProjectDetail(id, {
       tenantId: session.tenantId,
-      skipTenantFilter: session.isSuperAdmin && !session.tenantId,
     });
 
     if (!detail) {
@@ -140,7 +138,6 @@ export async function PATCH(
 
     const companyId = await resolveWorkflowProjectCompanyId(id, {
       tenantId: session.tenantId,
-      skipTenantFilter: session.isSuperAdmin && !session.tenantId,
     });
 
     if (!companyId) {
@@ -161,7 +158,6 @@ export async function PATCH(
 
     const detail = await updateWorkflowProjectSettings(id, payload, {
       tenantId: session.tenantId,
-      skipTenantFilter: session.isSuperAdmin && !session.tenantId,
     });
 
     if (!detail) {
@@ -197,7 +193,6 @@ export async function DELETE(
 
     const companyId = await resolveWorkflowProjectCompanyId(id, {
       tenantId: session.tenantId,
-      skipTenantFilter: session.isSuperAdmin && !session.tenantId,
     });
 
     if (!companyId) {
@@ -212,7 +207,6 @@ export async function DELETE(
 
     const deleted = await deleteWorkflowProject(id, {
       tenantId: session.tenantId,
-      skipTenantFilter: session.isSuperAdmin && !session.tenantId,
     });
 
     if (!deleted) {

@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Form, FormStatus } from '@/generated/prisma';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import type { CreateFormInput, FormFieldInput, UpdateFormInput } from '@/lib/validations/form-builder';
 import type {
   DeleteFormDraftResult,
@@ -438,7 +438,7 @@ export const formKeys = {
 
 export function useForms(params: FormListParams = {}) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   const normalizedParams: FormListParams = {
     page: params.page ?? 1,
@@ -459,7 +459,7 @@ export function useForms(params: FormListParams = {}) {
 
 export function useForm(id: string | null) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useQuery({
     queryKey: formKeys.detail(id || '', activeTenantId),
@@ -473,7 +473,7 @@ export function useFormResponses(
   params: FormResponsesParams = {}
 ) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   const normalizedParams: FormResponsesParams = {
     page: params.page ?? 1,
@@ -495,7 +495,7 @@ export function useFormResponses(
 
 export function useFormResponse(id: string | null, submissionId: string | null) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useQuery({
     queryKey: formKeys.responseDetail(id || '', submissionId || '', activeTenantId),
@@ -506,7 +506,7 @@ export function useFormResponse(id: string | null, submissionId: string | null) 
 
 export function useFormDraft(id: string | null, draftId: string | null) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useQuery({
     queryKey: formKeys.draftDetail(id || '', draftId || '', activeTenantId),
@@ -517,7 +517,7 @@ export function useFormDraft(id: string | null, draftId: string | null) {
 
 export function useFormDraftAuditLogs(id: string | null, draftId: string | null, enabled: boolean = true) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useQuery({
     queryKey: formKeys.draftAudit(id || '', draftId || '', activeTenantId),
@@ -528,7 +528,7 @@ export function useFormDraftAuditLogs(id: string | null, draftId: string | null,
 
 export function useRecentFormSubmissions(limit: number = 8) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useQuery({
     queryKey: formKeys.recentSubmissions(limit, activeTenantId),
@@ -540,7 +540,7 @@ export function useRecentFormSubmissions(limit: number = 8) {
 
 export function useFormsWithWarnings(limit: number = 8) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useQuery({
     queryKey: formKeys.warnings(limit, activeTenantId),
@@ -553,7 +553,7 @@ export function useFormsWithWarnings(limit: number = 8) {
 export function useCreateForm() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useMutation({
     mutationFn: (data: CreateFormInput) =>
@@ -570,7 +570,7 @@ export function useCreateForm() {
 export function useUpdateForm(id: string) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useMutation({
     mutationFn: (data: UpdateFormInput & { fields?: FormFieldInput[]; reason?: string }) =>
@@ -588,7 +588,7 @@ export function useUpdateForm(id: string) {
 export function useDuplicateForm() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useMutation({
     mutationFn: ({ id, title }: { id: string; title?: string }) => duplicateFormRequest(id, title, activeTenantId),
@@ -601,7 +601,7 @@ export function useDuplicateForm() {
 export function useDeleteForm() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) => deleteFormRequest(id, activeTenantId, reason),
@@ -615,7 +615,7 @@ export function useDeleteForm() {
 export function useDeleteFormResponse(id: string) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useMutation({
     mutationFn: ({ submissionId, reason }: { submissionId: string; reason?: string }) =>
@@ -633,7 +633,7 @@ export function useDeleteFormResponse(id: string) {
 export function useUpdateFormResponseTags(id: string) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useMutation({
     mutationFn: ({ submissionId, tags }: { submissionId: string; tags: string[] }) =>
@@ -650,7 +650,7 @@ export function useUpdateFormResponseTags(id: string) {
 export function useDeleteFormResponseUpload(id: string, submissionId: string) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useMutation({
     mutationFn: ({ uploadId, reason }: { uploadId: string; reason?: string }) =>
@@ -665,7 +665,7 @@ export function useDeleteFormResponseUpload(id: string, submissionId: string) {
 export function useDeleteFormDraft(id: string) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useMutation({
     mutationFn: ({ draftId, reason }: { draftId: string; reason?: string }) =>
@@ -678,7 +678,7 @@ export function useDeleteFormDraft(id: string) {
 
 export function useGenerateFormDraftResumeLink(id: string) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useMutation({
     mutationFn: ({ draftId, reason }: { draftId: string; reason?: string }) =>
@@ -689,7 +689,7 @@ export function useGenerateFormDraftResumeLink(id: string) {
 export function useExtendFormDraftExpiry(id: string) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useMutation({
     mutationFn: ({ draftId, expiresAt, reason }: { draftId: string; expiresAt: string; reason?: string }) =>

@@ -183,7 +183,7 @@ export type workflow_client_groupsWhereInput = {
   created_at?: Prisma.DateTimeFilter<"workflow_client_groups"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"workflow_client_groups"> | Date | string
   workflow_client_group_members?: Prisma.Workflow_client_group_membersListRelationFilter
-  tenants?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenants?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
 }
 
 export type workflow_client_groupsOrderByWithRelationInput = {
@@ -193,7 +193,7 @@ export type workflow_client_groupsOrderByWithRelationInput = {
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   workflow_client_group_members?: Prisma.workflow_client_group_membersOrderByRelationAggregateInput
-  tenants?: Prisma.TenantOrderByWithRelationInput
+  tenants?: Prisma.WorkspaceOrderByWithRelationInput
 }
 
 export type workflow_client_groupsWhereUniqueInput = Prisma.AtLeast<{
@@ -206,7 +206,7 @@ export type workflow_client_groupsWhereUniqueInput = Prisma.AtLeast<{
   created_at?: Prisma.DateTimeFilter<"workflow_client_groups"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"workflow_client_groups"> | Date | string
   workflow_client_group_members?: Prisma.Workflow_client_group_membersListRelationFilter
-  tenants?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenants?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
 }, "id">
 
 export type workflow_client_groupsOrderByWithAggregationInput = {
@@ -237,7 +237,7 @@ export type workflow_client_groupsCreateInput = {
   created_at?: Date | string
   updated_at: Date | string
   workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutWorkflow_client_groupsInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_client_groupsInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_client_groupsInput
 }
 
 export type workflow_client_groupsUncheckedCreateInput = {
@@ -255,7 +255,7 @@ export type workflow_client_groupsUpdateInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutWorkflow_client_groupsNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_client_groupsNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_client_groupsNestedInput
 }
 
 export type workflow_client_groupsUncheckedUpdateInput = {
@@ -443,7 +443,7 @@ export type workflow_client_groupsCreateWithoutWorkflow_client_group_membersInpu
   name: string
   created_at?: Date | string
   updated_at: Date | string
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_client_groupsInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_client_groupsInput
 }
 
 export type workflow_client_groupsUncheckedCreateWithoutWorkflow_client_group_membersInput = {
@@ -475,7 +475,7 @@ export type workflow_client_groupsUpdateWithoutWorkflow_client_group_membersInpu
   name?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_client_groupsNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_client_groupsNestedInput
 }
 
 export type workflow_client_groupsUncheckedUpdateWithoutWorkflow_client_group_membersInput = {
@@ -554,7 +554,7 @@ export type workflow_client_groupsSelect<ExtArgs extends runtime.Types.Extension
   created_at?: boolean
   updated_at?: boolean
   workflow_client_group_members?: boolean | Prisma.workflow_client_groups$workflow_client_group_membersArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.Workflow_client_groupsCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_client_groups"]>
 
@@ -564,7 +564,7 @@ export type workflow_client_groupsSelectCreateManyAndReturn<ExtArgs extends runt
   name?: boolean
   created_at?: boolean
   updated_at?: boolean
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_client_groups"]>
 
 export type workflow_client_groupsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -573,7 +573,7 @@ export type workflow_client_groupsSelectUpdateManyAndReturn<ExtArgs extends runt
   name?: boolean
   created_at?: boolean
   updated_at?: boolean
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_client_groups"]>
 
 export type workflow_client_groupsSelectScalar = {
@@ -587,21 +587,21 @@ export type workflow_client_groupsSelectScalar = {
 export type workflow_client_groupsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenant_id" | "name" | "created_at" | "updated_at", ExtArgs["result"]["workflow_client_groups"]>
 export type workflow_client_groupsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   workflow_client_group_members?: boolean | Prisma.workflow_client_groups$workflow_client_group_membersArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.Workflow_client_groupsCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type workflow_client_groupsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type workflow_client_groupsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 
 export type $workflow_client_groupsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "workflow_client_groups"
   objects: {
     workflow_client_group_members: Prisma.$workflow_client_group_membersPayload<ExtArgs>[]
-    tenants: Prisma.$TenantPayload<ExtArgs>
+    tenants: Prisma.$WorkspacePayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1004,7 +1004,7 @@ readonly fields: workflow_client_groupsFieldRefs;
 export interface Prisma__workflow_client_groupsClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   workflow_client_group_members<T extends Prisma.workflow_client_groups$workflow_client_group_membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_client_groups$workflow_client_group_membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_client_group_membersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  tenants<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenants<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

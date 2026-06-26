@@ -17,10 +17,9 @@ import { createLogger } from '@/lib/logger';
 
 const log = createLogger('admin-purge');
 
-export type PurgeableEntity = 'tenant' | 'user' | 'company' | 'contact' | 'generatedDocument' | 'processingDocument';
+export type PurgeableEntity = 'user' | 'company' | 'contact' | 'generatedDocument' | 'processingDocument';
 
 interface PurgeStats {
-  tenants: number;
   users: number;
   companies: number;
   contacts: number;
@@ -39,24 +38,7 @@ export async function GET() {
     }
 
     // Get counts of soft-deleted records
-    const [tenants, users, companies, contacts, generatedDocuments, processingDocuments] = await Promise.all([
-      prisma.tenant.findMany({
-        where: { deletedAt: { not: null } },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          deletedAt: true,
-          deletedReason: true,
-          _count: {
-            select: {
-              users: true,
-              companies: true,
-            },
-          },
-        },
-        orderBy: { deletedAt: 'desc' },
-      }),
+    const [users, companies, contacts, generatedDocuments, processingDocuments] = await Promise.all([
       prisma.user.findMany({
         where: { deletedAt: { not: null } },
         select: {
@@ -149,7 +131,6 @@ export async function GET() {
     ]);
 
     const stats: PurgeStats = {
-      tenants: tenants.length,
       users: users.length,
       companies: companies.length,
       contacts: contacts.length,
@@ -160,7 +141,6 @@ export async function GET() {
     return NextResponse.json({
       stats,
       records: {
-        tenants,
         users,
         companies,
         contacts,
@@ -200,9 +180,9 @@ export async function POST(request: NextRequest) {
     };
 
     // Validate inputs
-    if (!entityType || !['tenant', 'user', 'company', 'contact', 'generatedDocument', 'processingDocument'].includes(entityType)) {
+    if (!entityType || !['user', 'company', 'contact', 'generatedDocument', 'processingDocument'].includes(entityType)) {
       return NextResponse.json(
-        { error: 'Invalid entity type. Must be tenant, user, company, contact, generatedDocument, or processingDocument' },
+        { error: 'Invalid entity type. Must be user, company, contact, generatedDocument, or processingDocument' },
         { status: 400 }
       );
     }
@@ -226,108 +206,6 @@ export async function POST(request: NextRequest) {
     const failedRecords: { id: string; name: string; error: string }[] = [];
 
     switch (entityType) {
-      case 'tenant':
-        // Get tenant info before deletion for audit
-        const tenantsToDelete = await prisma.tenant.findMany({
-          where: {
-            id: { in: entityIds },
-            deletedAt: { not: null },
-          },
-          select: { id: true, name: true, slug: true },
-        });
-
-        if (tenantsToDelete.length === 0) {
-          return NextResponse.json(
-            { error: 'No soft-deleted tenants found with the provided IDs' },
-            { status: 404 }
-          );
-        }
-
-        // Delete in order: roles, documents, companies, users, then tenant
-        // Each tenant deletion is wrapped in its own transaction with error handling
-        for (const tenant of tenantsToDelete) {
-          try {
-            await prisma.$transaction(async (tx) => {
-              // Delete role assignments and roles
-              await tx.userRoleAssignment.deleteMany({
-                where: { role: { tenantId: tenant.id } },
-              });
-              await tx.rolePermission.deleteMany({
-                where: { role: { tenantId: tenant.id } },
-              });
-              await tx.role.deleteMany({
-                where: { tenantId: tenant.id },
-              });
-
-              // Delete user company assignments
-              await tx.userCompanyAssignment.deleteMany({
-                where: { user: { tenantId: tenant.id } },
-              });
-
-              // Delete company-related data
-              await tx.companyCharge.deleteMany({
-                where: { company: { tenantId: tenant.id } },
-              });
-              await tx.companyShareholder.deleteMany({
-                where: { company: { tenantId: tenant.id } },
-              });
-              await tx.shareCapital.deleteMany({
-                where: { company: { tenantId: tenant.id } },
-              });
-              await tx.companyOfficer.deleteMany({
-                where: { company: { tenantId: tenant.id } },
-              });
-              await tx.companyAddress.deleteMany({
-                where: { company: { tenantId: tenant.id } },
-              });
-              await tx.companyFormerName.deleteMany({
-                where: { company: { tenantId: tenant.id } },
-              });
-              await tx.companyContact.deleteMany({
-                where: { company: { tenantId: tenant.id } },
-              });
-
-              // Delete documents
-              await tx.document.deleteMany({
-                where: { tenantId: tenant.id },
-              });
-
-              // Delete companies
-              await tx.company.deleteMany({
-                where: { tenantId: tenant.id },
-              });
-
-              // Delete contacts
-              await tx.contact.deleteMany({
-                where: { tenantId: tenant.id },
-              });
-
-              // Delete users
-              await tx.user.deleteMany({
-                where: { tenantId: tenant.id },
-              });
-
-              // Delete audit logs for this tenant
-              await tx.auditLog.deleteMany({
-                where: { tenantId: tenant.id },
-              });
-
-              // Finally delete the tenant
-              await tx.tenant.delete({
-                where: { id: tenant.id },
-              });
-            });
-
-            deletedRecords.push({ id: tenant.id, name: tenant.name });
-            deletedCount++;
-          } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-            console.error(`Failed to purge tenant ${tenant.id}:`, err);
-            failedRecords.push({ id: tenant.id, name: tenant.name, error: errorMessage });
-          }
-        }
-        break;
-
       case 'user':
         const usersToDelete = await prisma.user.findMany({
           where: {
@@ -860,9 +738,9 @@ export async function PATCH(request: NextRequest) {
     };
 
     // Validate inputs
-    if (!entityType || !['tenant', 'user', 'company', 'contact', 'generatedDocument', 'processingDocument'].includes(entityType)) {
+    if (!entityType || !['user', 'company', 'contact', 'generatedDocument', 'processingDocument'].includes(entityType)) {
       return NextResponse.json(
-        { error: 'Invalid entity type. Must be tenant, user, company, contact, generatedDocument, or processingDocument' },
+        { error: 'Invalid entity type. Must be user, company, contact, generatedDocument, or processingDocument' },
         { status: 400 }
       );
     }
@@ -878,59 +756,6 @@ export async function PATCH(request: NextRequest) {
     const restoredRecords: { id: string; name: string }[] = [];
 
     switch (entityType) {
-      case 'tenant':
-        const tenantsToRestore = await prisma.tenant.findMany({
-          where: {
-            id: { in: entityIds },
-            deletedAt: { not: null },
-          },
-          select: { id: true, name: true },
-        });
-
-        if (tenantsToRestore.length === 0) {
-          return NextResponse.json(
-            { error: 'No soft-deleted tenants found with the provided IDs' },
-            { status: 404 }
-          );
-        }
-
-        // Cascade restore: tenant + all associated users, companies, contacts
-        for (const tenant of tenantsToRestore) {
-          await prisma.$transaction(async (tx) => {
-            // Restore all users belonging to this tenant
-            await tx.user.updateMany({
-              where: { tenantId: tenant.id, deletedAt: { not: null } },
-              data: { deletedAt: null, isActive: false },
-            });
-
-            // Restore all companies belonging to this tenant
-            await tx.company.updateMany({
-              where: { tenantId: tenant.id, deletedAt: { not: null } },
-              data: { deletedAt: null, deletedReason: null },
-            });
-
-            // Restore all contacts belonging to this tenant
-            await tx.contact.updateMany({
-              where: { tenantId: tenant.id, deletedAt: { not: null } },
-              data: { deletedAt: null },
-            });
-
-            // Restore the tenant - set to SUSPENDED so admin can review before activating
-            await tx.tenant.update({
-              where: { id: tenant.id },
-              data: {
-                deletedAt: null,
-                deletedReason: null,
-                status: 'SUSPENDED',
-              },
-            });
-          });
-
-          restoredRecords.push({ id: tenant.id, name: tenant.name });
-        }
-        restoredCount = tenantsToRestore.length;
-        break;
-
       case 'user':
         const usersToRestore = await prisma.user.findMany({
           where: {
@@ -947,17 +772,17 @@ export async function PATCH(request: NextRequest) {
           );
         }
 
-        // Check if parent tenant is active
+        // Check if parent workspace is active
         for (const user of usersToRestore) {
           if (!user.tenantId) continue;
-          const tenant = await prisma.tenant.findUnique({
+          const workspace = await prisma.workspace.findUnique({
             where: { id: user.tenantId },
             select: { deletedAt: true, status: true },
           });
 
-          if (tenant?.deletedAt) {
+          if (workspace?.deletedAt) {
             return NextResponse.json(
-              { error: `Cannot restore user "${user.firstName} ${user.lastName}" - parent tenant is deleted. Restore the tenant first.` },
+              { error: `Cannot restore user "${user.firstName} ${user.lastName}" - parent workspace is deleted. Restore the workspace first.` },
               { status: 400 }
             );
           }
@@ -993,17 +818,17 @@ export async function PATCH(request: NextRequest) {
           );
         }
 
-        // Check if parent tenant is active
+        // Check if parent workspace is active
         for (const company of companiesToRestore) {
           if (!company.tenantId) continue;
-          const tenant = await prisma.tenant.findUnique({
+          const workspace = await prisma.workspace.findUnique({
             where: { id: company.tenantId },
             select: { deletedAt: true },
           });
 
-          if (tenant?.deletedAt) {
+          if (workspace?.deletedAt) {
             return NextResponse.json(
-              { error: `Cannot restore company "${company.name}" - parent tenant is deleted. Restore the tenant first.` },
+              { error: `Cannot restore company "${company.name}" - parent workspace is deleted. Restore the workspace first.` },
               { status: 400 }
             );
           }
@@ -1039,17 +864,17 @@ export async function PATCH(request: NextRequest) {
           );
         }
 
-        // Check if parent tenant is active
+        // Check if parent workspace is active
         for (const contact of contactsToRestore) {
           if (!contact.tenantId) continue;
-          const tenant = await prisma.tenant.findUnique({
+          const workspace = await prisma.workspace.findUnique({
             where: { id: contact.tenantId },
             select: { deletedAt: true },
           });
 
-          if (tenant?.deletedAt) {
+          if (workspace?.deletedAt) {
             return NextResponse.json(
-              { error: `Cannot restore contact "${contact.fullName}" - parent tenant is deleted. Restore the tenant first.` },
+              { error: `Cannot restore contact "${contact.fullName}" - parent workspace is deleted. Restore the workspace first.` },
               { status: 400 }
             );
           }
@@ -1084,17 +909,17 @@ export async function PATCH(request: NextRequest) {
           );
         }
 
-        // Check if parent tenant is active
+        // Check if parent workspace is active
         for (const doc of documentsToRestore) {
           if (!doc.tenantId) continue;
-          const tenant = await prisma.tenant.findUnique({
+          const workspace = await prisma.workspace.findUnique({
             where: { id: doc.tenantId },
             select: { deletedAt: true },
           });
 
-          if (tenant?.deletedAt) {
+          if (workspace?.deletedAt) {
             return NextResponse.json(
-              { error: `Cannot restore document "${doc.title}" - parent tenant is deleted. Restore the tenant first.` },
+              { error: `Cannot restore document "${doc.title}" - parent workspace is deleted. Restore the workspace first.` },
               { status: 400 }
             );
           }
@@ -1137,11 +962,11 @@ export async function PATCH(request: NextRequest) {
           );
         }
 
-        // Check if parent tenant is active
+        // Check if parent workspace is active
         for (const procDoc of processingDocsToRestore) {
           if (procDoc.document?.tenant?.deletedAt) {
             return NextResponse.json(
-              { error: `Cannot restore document "${procDoc.document?.fileName || procDoc.id}" - parent tenant is deleted. Restore the tenant first.` },
+              { error: `Cannot restore document "${procDoc.document?.fileName || procDoc.id}" - parent workspace is deleted. Restore the workspace first.` },
               { status: 400 }
             );
           }

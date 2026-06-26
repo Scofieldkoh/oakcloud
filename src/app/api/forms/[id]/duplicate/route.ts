@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { resolveTenantId, createErrorResponse } from '@/lib/api-helpers';
+import { resolveWorkspaceId, createErrorResponse } from '@/lib/api-helpers';
 import { duplicateFormSchema } from '@/lib/validations/form-builder';
 import { duplicateForm } from '@/services/form-builder.service';
 
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'create');
 
     const body = await request.json().catch(() => ({}));
-    const tenantId = resolveTenantId(session, body?.tenantId);
+    const tenantId = resolveWorkspaceId(session, body?.tenantId);
     const payload = duplicateFormSchema.parse(body ?? {});
 
     const form = await duplicateForm(id, { tenantId, userId: session.id }, payload.title);

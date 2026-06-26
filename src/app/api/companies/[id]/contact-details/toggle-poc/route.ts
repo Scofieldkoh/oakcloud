@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { requireWorkspaceContext } from '@/lib/api-helpers';
 import { toggleContactPoc } from '@/services/contact-detail.service';
 
 type RouteParams = {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Resolve tenant context
     const body = await request.json();
     const { contactId, isPoc, tenantId: bodyTenantId } = body;
-    const tenantResult = await requireTenantContext(session, bodyTenantId);
+    const tenantResult = await requireWorkspaceContext(session, bodyTenantId);
     if (tenantResult.error) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 

@@ -45,10 +45,11 @@ import {
   useCreateRevision,
   useDocumentExport,
   usePrefetchNextDocument,
+  useReconcileProcessingDocument,
 } from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -281,7 +282,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   const { data: session } = useSession();
 
   // Get active tenant ID (from store for SUPER_ADMIN, from session for others)
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -322,6 +323,22 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     } : null,
   } : undefined, [viewData]);
 
+  const { mutateAsync: reconcilePendingExtraction } = useReconcileProcessingDocument();
+  const refreshDocument = useCallback(async () => {
+    const isExtracting = data?.document?.pipelineStatus === 'QUEUED' ||
+      data?.document?.pipelineStatus === 'PROCESSING';
+
+    if (isExtracting) {
+      try {
+        await reconcilePendingExtraction(id);
+      } catch (err) {
+        console.warn('Failed to reconcile pending extraction before refresh:', err);
+      }
+    }
+
+    await refetch();
+  }, [data?.document?.pipelineStatus, id, reconcilePendingExtraction, refetch]);
+
   // Only fetch revision history when needed (when dropdown is shown or might be shown)
   // Always fetch if document has DRAFT status (user might need to see history)
   const shouldFetchHistory = showHistoryDropdown || data?.currentRevision?.status === 'DRAFT';
@@ -346,12 +363,12 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
 
     if (isExtracting) {
       const interval = setInterval(() => {
-        refetch();
+        void refreshDocument();
       }, 10000); // 10 seconds
 
       return () => clearInterval(interval);
     }
-  }, [data?.document?.pipelineStatus, refetch]);
+  }, [data?.document?.pipelineStatus, refreshDocument]);
 
   // Prefetch next document for faster navigation during approval workflow
   const prefetchNextDocument = usePrefetchNextDocument();
@@ -1505,7 +1522,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       // Ctrl+R - Refresh document view
       if ((e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R')) {
         e.preventDefault();
-        refetch();
+        refreshDocument();
         return;
       }
 
@@ -1566,7 +1583,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     showApproveDialog,
     approveRevision.isPending,
     handleApproveRevision,
-    refetch,
+    refreshDocument,
     router,
   ]);
 
@@ -1966,7 +1983,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               <Trash2 className="w-4 h-4" />
             </button>
           )}
-          <button onClick={() => refetch()} className="btn-ghost btn-sm p-2" title="Refresh (Ctrl+R)">
+          <button onClick={() => refreshDocument()} className="btn-ghost btn-sm p-2" title="Refresh (Ctrl+R)">
             <RefreshCw className="w-4 h-4" />
           </button>
           </div>

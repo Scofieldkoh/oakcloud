@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useSession } from '@/hooks/use-auth';
-import { useTenants } from '@/hooks/use-admin';
 import {
   useBackups,
   useCreateBackup,
@@ -17,7 +16,7 @@ import {
   getBackupStatusLabel,
   describeCronPattern,
   type BackupStatus,
-  type TenantBackup,
+  type WorkspaceBackup,
   type BackupSchedule,
 } from '@/hooks/use-backup';
 import { Button } from '@/components/ui/button';
@@ -63,19 +62,17 @@ export default function BackupPage() {
   // Backup list state
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
-  const [selectedTenantId, setSelectedTenantId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<BackupStatus | ''>('');
 
   // Create backup modal state
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [newBackupTenantId, setNewBackupTenantId] = useState('');
   const [newBackupName, setNewBackupName] = useState('');
   const [newBackupRetention, setNewBackupRetention] = useState('');
 
   // Restore/delete dialog state
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedBackup, setSelectedBackup] = useState<TenantBackup | null>(null);
+  const [selectedBackup, setSelectedBackup] = useState<WorkspaceBackup | null>(null);
   const [restoreMode, setRestoreMode] = useState<'merge' | 'clean'>('merge');
 
   // Schedule state
@@ -86,7 +83,6 @@ export default function BackupPage() {
   const [selectedSchedule, setSelectedSchedule] = useState<BackupSchedule | null>(null);
 
   // Schedule form state
-  const [scheduleTenantId, setScheduleTenantId] = useState('');
   const [_scheduleCron, setScheduleCron] = useState('0 2 * * *');
   const [scheduleEnabled, setScheduleEnabled] = useState(true);
   const [scheduleTimezone, setScheduleTimezone] = useState('Asia/Singapore');
@@ -136,10 +132,12 @@ export default function BackupPage() {
     }
   };
 
+  const workspaceId = session?.tenantId || '';
+  const workspaceName = 'Current Workspace';
+
   // Queries
-  const { data: tenantsData } = useTenants({ limit: 200 });
   const { data: backupsData, isLoading: backupsLoading, error: backupsError, refetch: refetchBackups } = useBackups({
-    tenantId: selectedTenantId || undefined,
+    workspaceId: workspaceId || undefined,
     status: (statusFilter as BackupStatus) || undefined,
     page,
     limit,
@@ -176,20 +174,19 @@ export default function BackupPage() {
 
   // Handler functions
   const handleCreateBackup = async () => {
-    if (!newBackupTenantId) {
-      showError('Please select a tenant');
+    if (!workspaceId) {
+      showError('Workspace context is required');
       return;
     }
 
     try {
       const result = await createMutation.mutateAsync({
-        tenantId: newBackupTenantId,
+        workspaceId,
         name: newBackupName || undefined,
         retentionDays: newBackupRetention ? parseInt(newBackupRetention) : undefined,
       });
       success(`Backup started successfully (ID: ${result.backupId.slice(0, 8)}...)`);
       setCreateModalOpen(false);
-      setNewBackupTenantId('');
       setNewBackupName('');
       setNewBackupRetention('');
     } catch (err) {
@@ -228,8 +225,8 @@ export default function BackupPage() {
   };
 
   const handleSaveSchedule = async () => {
-    if (!editingSchedule && !scheduleTenantId) {
-      showError('Please select a tenant');
+    if (!workspaceId) {
+      showError('Workspace context is required');
       return;
     }
 
@@ -238,7 +235,7 @@ export default function BackupPage() {
     try {
       if (editingSchedule) {
         await updateScheduleMutation.mutateAsync({
-          tenantId: editingSchedule.tenantId,
+          workspaceId: editingSchedule.tenantId,
           cronPattern,
           isEnabled: scheduleEnabled,
           timezone: scheduleTimezone,
@@ -248,7 +245,7 @@ export default function BackupPage() {
         success('Schedule updated successfully');
       } else {
         await createScheduleMutation.mutateAsync({
-          tenantId: scheduleTenantId,
+          workspaceId,
           cronPattern,
           isEnabled: true, // Always enabled by default when creating
           timezone: scheduleTimezone,
@@ -279,7 +276,7 @@ export default function BackupPage() {
   const handleToggleSchedule = async (schedule: BackupSchedule) => {
     try {
       await updateScheduleMutation.mutateAsync({
-        tenantId: schedule.tenantId,
+        workspaceId: schedule.tenantId,
         isEnabled: !schedule.isEnabled,
       });
       success(`Schedule ${schedule.isEnabled ? 'disabled' : 'enabled'}`);
@@ -304,7 +301,6 @@ export default function BackupPage() {
   const openScheduleModal = (schedule?: BackupSchedule) => {
     if (schedule) {
       setEditingSchedule(schedule);
-      setScheduleTenantId(schedule.tenantId);
       setScheduleCron(schedule.cronPattern);
       setScheduleEnabled(schedule.isEnabled);
       setScheduleTimezone(schedule.timezone);
@@ -313,7 +309,6 @@ export default function BackupPage() {
       parseCronToBuilder(schedule.cronPattern);
     } else {
       setEditingSchedule(null);
-      setScheduleTenantId('');
       setScheduleCron('0 2 * * *');
       setScheduleEnabled(true);
       setScheduleTimezone('Asia/Singapore');
@@ -332,7 +327,6 @@ export default function BackupPage() {
   const closeScheduleModal = () => {
     setScheduleModalOpen(false);
     setEditingSchedule(null);
-    setScheduleTenantId('');
     setScheduleCron('0 2 * * *');
     setScheduleEnabled(true);
     setScheduleTimezone('Asia/Singapore');
@@ -374,9 +368,6 @@ export default function BackupPage() {
     failed: backups.filter((b) => b.status === 'FAILED').length,
   };
 
-  // Get tenants that already have schedules
-  const tenantsWithSchedules = new Set(schedules.map((s) => s.tenantId));
-
   return (
     <div className="p-4 sm:p-6">
       {/* Header */}
@@ -386,7 +377,7 @@ export default function BackupPage() {
             Backup & Restore
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            Create and manage tenant backups for disaster recovery
+            Create and manage workspace backups for disaster recovery
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -518,21 +509,6 @@ export default function BackupPage() {
           {/* Filters */}
           <div className="flex flex-wrap gap-3 mb-4">
             <select
-              value={selectedTenantId}
-              onChange={(e) => {
-                setSelectedTenantId(e.target.value);
-                setPage(1);
-              }}
-              className="px-3 py-1.5 text-sm rounded-md border border-border-primary bg-background-primary text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
-            >
-              <option value="">All Tenants</option>
-              {tenantsData?.tenants.map((tenant) => (
-                <option key={tenant.id} value={tenant.id}>
-                  {tenant.name}
-                </option>
-              ))}
-            </select>
-            <select
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value as BackupStatus | '');
@@ -571,7 +547,6 @@ export default function BackupPage() {
               </div>
             ) : (
               backups.map((backup) => {
-                const tenant = tenantsData?.tenants.find((t) => t.id === backup.tenantId);
                 return (
                   <MobileCard
                     key={backup.id}
@@ -661,11 +636,11 @@ export default function BackupPage() {
                         )}
                         <CardDetailsGrid>
                           <CardDetailItem
-                            label="Tenant"
+                            label="Workspace"
                             value={
                               <div className="flex items-center gap-1.5">
                                 <Building className="w-3.5 h-3.5 text-text-tertiary" />
-                                <span className="truncate">{tenant?.name || backup.tenantId.slice(0, 8) + '...'}</span>
+                                <span className="truncate">{workspaceName}</span>
                               </div>
                             }
                           />
@@ -714,7 +689,7 @@ export default function BackupPage() {
                       Backup
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                      Tenant
+                      Workspace
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Status
@@ -753,7 +728,6 @@ export default function BackupPage() {
                     </tr>
                   ) : (
                     backups.map((backup) => {
-                      const tenant = tenantsData?.tenants.find((t) => t.id === backup.tenantId);
                       return (
                         <tr
                           key={backup.id}
@@ -773,7 +747,7 @@ export default function BackupPage() {
                             <div className="flex items-center gap-2">
                               <Building className="w-4 h-4 text-text-tertiary" />
                               <span className="text-sm text-text-primary">
-                                {tenant?.name || backup.tenantId.slice(0, 8) + '...'}
+                                {workspaceName}
                               </span>
                             </div>
                           </td>
@@ -931,7 +905,7 @@ export default function BackupPage() {
                     <div className="flex items-center gap-2">
                       <Building className="w-4 h-4 text-text-tertiary" />
                       <span className="font-medium text-text-primary">
-                        {schedule.tenant?.name || schedule.tenantId.slice(0, 8) + '...'}
+                        {workspaceName}
                       </span>
                     </div>
                   }
@@ -1039,7 +1013,7 @@ export default function BackupPage() {
                 <thead>
                   <tr className="border-b border-border-primary bg-background-tertiary">
                     <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                      Tenant
+                      Workspace
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Schedule
@@ -1086,7 +1060,7 @@ export default function BackupPage() {
                           <div className="flex items-center gap-2">
                             <Building className="w-4 h-4 text-text-tertiary" />
                             <span className="text-sm text-text-primary">
-                              {schedule.tenant?.name || schedule.tenantId.slice(0, 8) + '...'}
+                              {workspaceName}
                             </span>
                           </div>
                         </td>
@@ -1196,7 +1170,6 @@ export default function BackupPage() {
         isOpen={createModalOpen}
         onClose={() => {
           setCreateModalOpen(false);
-          setNewBackupTenantId('');
           setNewBackupName('');
           setNewBackupRetention('');
         }}
@@ -1207,22 +1180,12 @@ export default function BackupPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">
-                Tenant <span className="text-status-error">*</span>
+                Workspace
               </label>
-              <select
-                value={newBackupTenantId}
-                onChange={(e) => setNewBackupTenantId(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-md border border-border-primary bg-background-primary text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
-              >
-                <option value="">Select a tenant...</option>
-                {tenantsData?.tenants
-                  .filter((t) => t.status === 'ACTIVE')
-                  .map((tenant) => (
-                    <option key={tenant.id} value={tenant.id}>
-                      {tenant.name}
-                    </option>
-                  ))}
-              </select>
+              <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-border-primary bg-background-tertiary text-text-primary">
+                <Building className="w-4 h-4 text-text-tertiary" />
+                {workspaceName}
+              </div>
             </div>
             <FormInput
               label="Backup Name"
@@ -1247,7 +1210,6 @@ export default function BackupPage() {
             size="sm"
             onClick={() => {
               setCreateModalOpen(false);
-              setNewBackupTenantId('');
               setNewBackupName('');
               setNewBackupRetention('');
             }}
@@ -1258,7 +1220,7 @@ export default function BackupPage() {
             variant="primary"
             size="sm"
             onClick={handleCreateBackup}
-            disabled={!newBackupTenantId || createMutation.isPending}
+            disabled={!workspaceId || createMutation.isPending}
             isLoading={createMutation.isPending}
           >
             <Plus className="w-4 h-4 mr-1" />
@@ -1276,41 +1238,13 @@ export default function BackupPage() {
       >
         <ModalBody>
           <div className="space-y-4">
-            {!editingSchedule && (
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  Tenant <span className="text-status-error">*</span>
-                </label>
-                <select
-                  value={scheduleTenantId}
-                  onChange={(e) => setScheduleTenantId(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-md border border-border-primary bg-background-primary text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
-                >
-                  <option value="">Select a tenant...</option>
-                  {tenantsData?.tenants
-                    .filter((t) => t.status === 'ACTIVE' && !tenantsWithSchedules.has(t.id))
-                    .map((tenant) => (
-                      <option key={tenant.id} value={tenant.id}>
-                        {tenant.name}
-                      </option>
-                    ))}
-                </select>
-                {tenantsWithSchedules.size > 0 && (
-                  <p className="text-xs text-text-tertiary mt-1">
-                    Tenants with existing schedules are hidden
-                  </p>
-                )}
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">Workspace</label>
+              <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-border-primary bg-background-tertiary text-text-primary">
+                <Building className="w-4 h-4 text-text-tertiary" />
+                {workspaceName}
               </div>
-            )}
-            {editingSchedule && (
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">Tenant</label>
-                <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-border-primary bg-background-tertiary text-text-primary">
-                  <Building className="w-4 h-4 text-text-tertiary" />
-                  {editingSchedule.tenant?.name || editingSchedule.tenantId}
-                </div>
-              </div>
-            )}
+            </div>
             {/* Frequency Selection */}
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1">Frequency</label>
@@ -1474,7 +1408,7 @@ export default function BackupPage() {
             size="sm"
             onClick={handleSaveSchedule}
             disabled={
-              (!editingSchedule && !scheduleTenantId) ||
+              !workspaceId ||
               createScheduleMutation.isPending ||
               updateScheduleMutation.isPending
             }
@@ -1504,7 +1438,7 @@ export default function BackupPage() {
               <strong className="text-text-primary">
                 {selectedBackup?.name || selectedBackup?.id.slice(0, 8) + '...'}
               </strong>{' '}
-              to tenant.
+              to the current workspace.
             </p>
 
             {/* Restore Mode Selection */}
@@ -1564,7 +1498,7 @@ export default function BackupPage() {
                     <AlertTriangle className="w-3.5 h-3.5 text-status-warning" />
                   </div>
                   <div className="text-xs text-text-secondary mt-0.5">
-                    Deletes all existing tenant data and files, then restores from backup.
+                    Deletes all existing workspace data and files, then restores from backup.
                     Data created after this backup will be permanently lost.
                   </div>
                 </div>
@@ -1574,7 +1508,7 @@ export default function BackupPage() {
             {/* Warning for clean restore */}
             {restoreMode === 'clean' && (
               <Alert variant="warning" compact>
-                <strong>Warning:</strong> This will permanently delete all current tenant data
+                <strong>Warning:</strong> This will permanently delete all current workspace data
                 including documents, companies, users, and files created after this backup.
               </Alert>
             )}
@@ -1640,7 +1574,7 @@ export default function BackupPage() {
         description={
           <span>
             Are you sure you want to delete the backup schedule for{' '}
-            <strong>{selectedSchedule?.tenant?.name || selectedSchedule?.tenantId}</strong>?
+            <strong>{workspaceName}</strong>?
             This will not affect existing backups.
           </span>
         }

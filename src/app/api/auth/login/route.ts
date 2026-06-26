@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import { createToken } from '@/lib/auth';
+import { createToken, getDefaultWorkspaceForAdmin } from '@/lib/auth';
 import { logAuthEvent } from '@/lib/audit';
 import { createLogger, safeErrorMessage } from '@/lib/logger';
 import { verifyPassword, hashPassword } from '@/lib/encryption';
@@ -23,6 +23,19 @@ import {
 } from '@/lib/constants/application';
 
 const log = createLogger('auth:login');
+
+function normalizeSystemRole(systemRoleType: string | null | undefined): 'ADMIN' | 'MANAGER' | 'STAFF' | null {
+  if (systemRoleType === 'ADMIN' || systemRoleType === 'SUPER_ADMIN' || systemRoleType === 'TENANT_ADMIN') {
+    return 'ADMIN';
+  }
+  if (systemRoleType === 'MANAGER' || systemRoleType === 'COMPANY_ADMIN') {
+    return 'MANAGER';
+  }
+  if (systemRoleType === 'STAFF' || systemRoleType === 'COMPANY_USER') {
+    return 'STAFF';
+  }
+  return null;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -96,23 +109,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Compute role flags from role assignments (authoritative source)
-    const isSuperAdmin = user.roleAssignments.some(
-      (a) => a.role.systemRoleType === 'SUPER_ADMIN'
-    );
-    const isTenantAdmin = user.roleAssignments.some(
-      (a) => a.role.systemRoleType === 'TENANT_ADMIN'
-    );
+    // Compute role flags from role assignments (authoritative source).
+    // ADMIN is the canonical migrated system role; legacy labels are aliases.
+    const internalRole = user.roleAssignments.some((a) => normalizeSystemRole(a.role.systemRoleType) === 'ADMIN')
+      ? 'ADMIN'
+      : user.roleAssignments.some((a) => normalizeSystemRole(a.role.systemRoleType) === 'MANAGER')
+        ? 'MANAGER'
+        : 'STAFF';
+    const isAdmin = internalRole === 'ADMIN';
+    const isSuperAdmin = isAdmin;
+    const isWorkspaceAdmin = isAdmin;
+    const fallbackWorkspace = isAdmin && !user.tenantId ? await getDefaultWorkspaceForAdmin() : null;
+    const effectiveWorkspaceId = user.tenantId ?? fallbackWorkspace?.id ?? null;
+    const effectiveWorkspaceName = user.tenant?.name ?? fallbackWorkspace?.name;
 
-    // Check tenant status (skip for SUPER_ADMIN who may not have a tenant)
-    if (user.tenant) {
+    // Check workspace status for non-admin users.
+    if (user.tenant && !isAdmin) {
       if (user.tenant.status === TENANT_STATUSES.SUSPENDED) {
         await logAuthEvent('LOGIN_FAILED', user.id, {
           email: user.email,
           userName: `${user.firstName} ${user.lastName}`,
-          reason: 'Tenant suspended',
-          tenantId: user.tenantId,
-          tenantName: user.tenant.name,
+          reason: 'Workspace suspended',
+          workspaceId: user.tenantId,
+          workspaceName: user.tenant.name,
         });
         return NextResponse.json(
           { error: 'Your organization has been suspended. Please contact support.' },
@@ -123,9 +142,9 @@ export async function POST(request: NextRequest) {
         await logAuthEvent('LOGIN_FAILED', user.id, {
           email: user.email,
           userName: `${user.firstName} ${user.lastName}`,
-          reason: 'Tenant deactivated',
-          tenantId: user.tenantId,
-          tenantName: user.tenant.name,
+          reason: 'Workspace deactivated',
+          workspaceId: user.tenantId,
+          workspaceName: user.tenant.name,
         });
         return NextResponse.json(
           { error: 'Your organization has been deactivated. Please contact support.' },
@@ -136,9 +155,9 @@ export async function POST(request: NextRequest) {
         await logAuthEvent('LOGIN_FAILED', user.id, {
           email: user.email,
           userName: `${user.firstName} ${user.lastName}`,
-          reason: 'Tenant pending setup',
-          tenantId: user.tenantId,
-          tenantName: user.tenant.name,
+          reason: 'Workspace pending setup',
+          workspaceId: user.tenantId,
+          workspaceName: user.tenant.name,
         });
         return NextResponse.json(
           { error: 'Your organization setup is not complete. Please contact your administrator.' },
@@ -189,9 +208,9 @@ export async function POST(request: NextRequest) {
       email: user.email,
       userName: `${user.firstName} ${user.lastName}`,
       isSuperAdmin,
-      isTenantAdmin,
-      tenantId: user.tenantId,
-      tenantName: user.tenant?.name,
+      isWorkspaceAdmin,
+      workspaceId: effectiveWorkspaceId,
+      workspaceName: effectiveWorkspaceName,
     });
 
     // Successful login resets failure counters.
@@ -202,7 +221,8 @@ export async function POST(request: NextRequest) {
     const token = await createToken({
       userId: user.id,
       email: user.email,
-      tenantId: user.tenantId,
+      tenantId: effectiveWorkspaceId,
+      workspaceId: effectiveWorkspaceId,
     });
 
     // Set cookie
@@ -219,9 +239,14 @@ export async function POST(request: NextRequest) {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        tenantId: user.tenantId,
+        tenantId: effectiveWorkspaceId,
+        workspaceId: effectiveWorkspaceId,
+        internalRole,
+        isAdmin,
+        isManager: internalRole === 'MANAGER',
+        isStaff: internalRole === 'STAFF',
         isSuperAdmin,
-        isTenantAdmin,
+        isWorkspaceAdmin,
       },
       mustChangePassword: user.mustChangePassword,
       message: 'Login successful',

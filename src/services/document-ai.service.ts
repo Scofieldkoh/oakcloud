@@ -9,7 +9,7 @@
  * - Document review
  */
 
-import { callAIWithConnector, getBestAvailableModelForTenant } from '@/lib/ai';
+import { callAIWithConnector, getBestAvailableModelForWorkspace } from '@/lib/ai';
 import type { AIModel } from '@/lib/ai';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma';
@@ -216,7 +216,7 @@ export async function sendAIChatMessage(params: AIChatParams): Promise<AIChatRes
   const { tenantId, userId, message, context, model, conversationId, conversationHistory = [] } = params;
 
   // Get best available model if not specified
-  const selectedModel = model || (await getBestAvailableModelForTenant(tenantId));
+  const selectedModel = model || (await getBestAvailableModelForWorkspace(tenantId));
   if (!selectedModel) {
     throw new Error('No AI model available. Please configure an AI provider.');
   }

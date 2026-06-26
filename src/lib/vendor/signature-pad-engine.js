@@ -3,6 +3,7 @@
  * (c) 2025 Szymon Nowak | Released under the MIT license
  */
 
+/* eslint-disable @typescript-eslint/no-this-alias */
 
 // src/point.ts
 var Point = class {

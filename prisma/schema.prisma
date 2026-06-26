@@ -7,11 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
-model Tenant {
+model Workspace {
   id                                 String                               @id @default(uuid())
   name                               String
   slug                               String                               @unique
-  status                             TenantStatus                         @default(PENDING_SETUP)
+  status                             WorkspaceStatus                      @default(PENDING_SETUP)
   contactEmail                       String?
   contactPhone                       String?
   settings                           Json?
@@ -48,9 +48,9 @@ model Tenant {
   esigningEnvelopes                  EsigningEnvelope[]
   roles                              Role[]
   templatePartials                   TemplatePartial[]
-  backups                            TenantBackup[]
-  connectorAccess                    TenantConnectorAccess[]
-  letterhead                         TenantLetterhead?
+  backups                            WorkspaceBackup[]
+  connectorAccess                    WorkspaceConnectorAccess[]
+  letterhead                         WorkspaceLetterhead?
   users                              User[]
   workflow_client_groups             workflow_client_groups[]
   workflow_engagements               workflow_engagements[]
@@ -77,7 +77,7 @@ model Role {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   permissions    RolePermission[]
-  tenant         Tenant?              @relation(fields: [tenantId], references: [id])
+  tenant         Workspace?           @relation(fields: [tenantId], references: [id])
   users          UserRoleAssignment[]
 
   @@unique([tenantId, name])
@@ -163,7 +163,7 @@ model User {
   companyAssignments                                                                             UserCompanyAssignment[]
   preferences                                                                                    UserPreference[]
   roleAssignments                                                                                UserRoleAssignment[]
-  tenant                                                                                         Tenant?                              @relation(fields: [tenantId], references: [id])
+  tenant                                                                                         Workspace?                           @relation(fields: [tenantId], references: [id])
   workflow_artifacts                                                                             workflow_artifacts[]
   workflow_billing_states                                                                        workflow_billing_states[]
   workflow_blockers_workflow_blockers_owner_idTousers                                            workflow_blockers[]                  @relation("workflow_blockers_owner_idTousers")
@@ -209,6 +209,21 @@ model UserPreference {
   @@unique([userId, key])
   @@index([userId])
   @@map("user_preferences")
+}
+
+model PerformanceMeasurement {
+  id              String   @id @default(uuid())
+  route           String
+  metricType      String   @map("metric_type")
+  value           Decimal  @db.Decimal(18, 4)
+  unit            String
+  metadata        Json?
+  userAgent       String?  @map("user_agent")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([route, metricType, createdAt])
+  @@index([createdAt])
+  @@map("performance_measurements")
 }
 
 model UserCompanyAssignment {
@@ -258,6 +273,11 @@ model Company {
   issuedCapitalCurrency              String?                              @default("SGD")
   issuedCapitalAmount                Decimal?                             @db.Decimal(18, 2)
   hasCharges                         Boolean                              @default(false)
+  currentOfficerCount                Int                                  @default(0) @map("current_officer_count")
+  currentShareholderCount            Int                                  @default(0) @map("current_shareholder_count")
+  activeChargeCount                  Int                                  @default(0) @map("active_charge_count")
+  documentCount                      Int                                  @default(0) @map("document_count")
+  hasPoc                             Boolean                              @default(false) @map("has_poc")
   isGstRegistered                    Boolean                              @default(false)
   gstRegistrationNumber              String?
   gstRegistrationDate                DateTime?
@@ -275,7 +295,7 @@ model Company {
   auditLogs                          AuditLog[]
   chartOfAccounts                    ChartOfAccount[]
   accountMappings                    ChartOfAccountsMapping[]
-  tenant                             Tenant                               @relation(fields: [tenantId], references: [id])
+  tenant                             Workspace                            @relation(fields: [tenantId], references: [id])
   addresses                          CompanyAddress[]
   charges                            CompanyCharge[]
   contacts                           CompanyContact[]
@@ -310,6 +330,11 @@ model Company {
   @@index([nextArDueDate])
   @@index([status, nextArDueDate])
   @@index([tenantId, status])
+  @@index([tenantId, currentOfficerCount])
+  @@index([tenantId, currentShareholderCount])
+  @@index([tenantId, activeChargeCount])
+  @@index([tenantId, documentCount])
+  @@index([tenantId, hasPoc])
   @@map("companies")
 }
 
@@ -381,7 +406,7 @@ model Contact {
   officerPositions                   CompanyOfficer[]
   shareholdings                      CompanyShareholder[]
   contactDetails                     ContactDetail[]
-  tenant                             Tenant                               @relation(fields: [tenantId], references: [id])
+  tenant                             Workspace                            @relation(fields: [tenantId], references: [id])
   noteTabs                           NoteTab[]
   workflow_communication_log_entries workflow_communication_log_entries[]
   workflow_milestones                workflow_milestones[]
@@ -432,7 +457,7 @@ model ContactDetail {
   deletedAt    DateTime?
   company      Company?          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   contact      Contact?          @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  tenant       Tenant            @relation(fields: [tenantId], references: [id])
+  tenant       Workspace         @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId])
   @@index([contactId])
@@ -588,7 +613,7 @@ model Document {
   officers           CompanyOfficer[]
   shareholders       CompanyShareholder[]
   company            Company?             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  tenant             Tenant               @relation(fields: [tenantId], references: [id])
+  tenant             Workspace            @relation(fields: [tenantId], references: [id])
   uploadedBy         User                 @relation(fields: [uploadedById], references: [id])
   processingDocument ProcessingDocument?
   shareCapital       ShareCapital[]
@@ -624,7 +649,7 @@ model AuditLog {
   sessionId    String?
   createdAt    DateTime     @default(now())
   company      Company?     @relation(fields: [companyId], references: [id])
-  tenant       Tenant?      @relation(fields: [tenantId], references: [id])
+  tenant       Workspace?   @relation(fields: [tenantId], references: [id])
   user         User?        @relation(fields: [userId], references: [id])
 
   @@index([tenantId])
@@ -658,8 +683,8 @@ model Connector {
   deletedAt      DateTime?
   modelConfigs   ConnectorModelConfig[]
   usageLogs      ConnectorUsageLog[]
-  tenant         Tenant?                 @relation(fields: [tenantId], references: [id])
-  tenantAccess   TenantConnectorAccess[]
+  tenant         Workspace?              @relation(fields: [tenantId], references: [id])
+  tenantAccess   WorkspaceConnectorAccess[]
 
   @@unique([tenantId, provider, deletedAt])
   @@index([tenantId])
@@ -670,7 +695,7 @@ model Connector {
   @@map("connectors")
 }
 
-model TenantConnectorAccess {
+model WorkspaceConnectorAccess {
   id          String    @id @default(uuid())
   tenantId    String
   connectorId String
@@ -678,7 +703,7 @@ model TenantConnectorAccess {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   connector   Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Workspace @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, connectorId])
   @@index([tenantId])
@@ -704,7 +729,7 @@ model ConnectorUsageLog {
   metadata     Json?
   createdAt    DateTime  @default(now())
   connector    Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
-  tenant       Tenant?   @relation(fields: [tenantId], references: [id])
+  tenant       Workspace? @relation(fields: [tenantId], references: [id])
   user         User?     @relation(fields: [userId], references: [id])
 
   @@index([connectorId])
@@ -765,7 +790,7 @@ model DocumentTemplate {
   updatedAt               DateTime                 @updatedAt @map("updated_at")
   deletedAt               DateTime?                @map("deleted_at")
   createdBy               User                     @relation("TemplateCreator", fields: [createdById], references: [id])
-  tenant                  Tenant                   @relation(fields: [tenantId], references: [id])
+  tenant                  Workspace                @relation(fields: [tenantId], references: [id])
   generatedDocuments      GeneratedDocument[]
 
   @@index([tenantId])
@@ -804,7 +829,7 @@ model GeneratedDocument {
   createdBy          User                    @relation("DocumentCreator", fields: [createdById], references: [id])
   finalizedBy        User?                   @relation("DocumentFinalizer", fields: [finalizedById], references: [id])
   template           DocumentTemplate?       @relation(fields: [templateId], references: [id])
-  tenant             Tenant                  @relation(fields: [tenantId], references: [id])
+  tenant             Workspace               @relation(fields: [tenantId], references: [id])
   workflow_artifacts workflow_artifacts[]
 
   @@index([tenantId])
@@ -861,7 +886,7 @@ model DocumentShare {
   @@map("document_shares")
 }
 
-model TenantLetterhead {
+model WorkspaceLetterhead {
   id             String   @id @default(uuid())
   tenantId       String   @unique @map("tenant_id")
   headerHtml     String?  @map("header_html")
@@ -873,7 +898,7 @@ model TenantLetterhead {
   isEnabled      Boolean  @default(true) @map("is_enabled")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
-  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  tenant         Workspace @relation(fields: [tenantId], references: [id])
 
   @@map("tenant_letterheads")
 }
@@ -946,7 +971,7 @@ model TemplatePartial {
   updatedAt    DateTime  @updatedAt @map("updated_at")
   deletedAt    DateTime? @map("deleted_at")
   createdBy    User      @relation("PartialCreator", fields: [createdById], references: [id])
-  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  tenant       Workspace @relation(fields: [tenantId], references: [id])
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -962,7 +987,7 @@ model AiConversation {
   messages    Json     @default("[]")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenant      Workspace @relation(fields: [tenantId], references: [id])
   user        User     @relation("ConversationOwner", fields: [userId], references: [id])
 
   @@index([tenantId, userId])
@@ -999,7 +1024,7 @@ model EsigningEnvelope {
   deletedAt                 DateTime?
   company                   Company?                          @relation(fields: [companyId], references: [id])
   createdBy                 User                              @relation("EsigningEnvelopeCreatedBy", fields: [createdById], references: [id])
-  tenant                    Tenant                            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant                    Workspace                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   documents                 EsigningEnvelopeDocument[]
   events                    EsigningEnvelopeEvent[]
   fieldDefinitions          EsigningDocumentFieldDefinition[]
@@ -1604,7 +1629,7 @@ model ExchangeRate {
   sourceHash       String?          @map("source_hash")
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
-  tenant           Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant           Workspace?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, sourceCurrency, targetCurrency, rateDate, rateType])
   @@index([tenantId])
@@ -1742,7 +1767,7 @@ model Form {
   fields           FormField[]
   drafts           FormDraft[]
   submissions      FormSubmission[]
-  tenant           Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant           Workspace        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploads          FormUpload[]
 
   @@index([tenantId, status, deletedAt])
@@ -1773,7 +1798,7 @@ model FormField {
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   form        Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
-  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Workspace     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([formId, key])
   @@index([formId, position])
@@ -1797,7 +1822,7 @@ model FormSubmission {
   updatedAt              DateTime             @updatedAt @map("updated_at")
   deletedAt              DateTime?            @map("deleted_at")
   form                   Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
-  tenant                 Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant                 Workspace            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploads                FormUpload[]
 
   @@index([formId, submittedAt])
@@ -1820,7 +1845,7 @@ model FormDraft {
   createdAt       DateTime     @default(now()) @map("created_at")
   updatedAt       DateTime     @updatedAt @map("updated_at")
   form            Form         @relation(fields: [formId], references: [id], onDelete: Cascade)
-  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant          Workspace    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploads         FormUpload[]
 
   @@index([formId, expiresAt])
@@ -1845,7 +1870,7 @@ model FormUpload {
   draft            FormDraft?      @relation(fields: [draftId], references: [id], onDelete: Cascade)
   form             Form            @relation(fields: [formId], references: [id], onDelete: Cascade)
   submission       FormSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
-  tenant           Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant           Workspace       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([draftId])
   @@index([formId, createdAt])
@@ -1983,7 +2008,7 @@ model FieldMapping {
   @@map("field_mappings")
 }
 
-model TenantBackup {
+model WorkspaceBackup {
   id                String       @id @default(uuid())
   tenantId          String       @map("tenant_id")
   name              String?
@@ -2007,7 +2032,7 @@ model TenantBackup {
   createdAt         DateTime     @default(now()) @map("created_at")
   completedAt       DateTime?    @map("completed_at")
   deletedAt         DateTime?    @map("deleted_at")
-  tenant            Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant            Workspace    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([status])
@@ -2032,7 +2057,7 @@ model BackupSchedule {
   consecutiveFailures Int       @default(0) @map("consecutive_failures")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
-  tenant              Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant              Workspace @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("backup_schedules")
 }
@@ -2058,7 +2083,7 @@ model ChartOfAccount {
   company          Company?                 @relation(fields: [companyId], references: [id])
   parent           ChartOfAccount?          @relation("AccountHierarchy", fields: [parentId], references: [id])
   children         ChartOfAccount[]         @relation("AccountHierarchy")
-  tenant           Tenant?                  @relation(fields: [tenantId], references: [id])
+  tenant           Workspace?               @relation(fields: [tenantId], references: [id])
   externalMappings ChartOfAccountsMapping[]
 
   @@unique([tenantId, companyId, code])
@@ -2205,7 +2230,7 @@ model workflow_client_groups {
   created_at                    DateTime                        @default(now())
   updated_at                    DateTime
   workflow_client_group_members workflow_client_group_members[]
-  tenants                       Tenant                          @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  tenants                       Workspace                       @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 
   @@index([tenant_id])
 }
@@ -2316,7 +2341,7 @@ model workflow_engagements {
   companies                                         Company                         @relation(fields: [company_id], references: [id], onDelete: Cascade)
   users_workflow_engagements_created_byTousers      User                            @relation("workflow_engagements_created_byTousers", fields: [created_by], references: [id])
   users_workflow_engagements_director_poc_idTousers User?                           @relation("workflow_engagements_director_poc_idTousers", fields: [director_poc_id], references: [id])
-  tenants                                           Tenant                          @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  tenants                                           Workspace                       @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   workflow_instances                                workflow_instances[]
   workflow_program_requirements                     workflow_program_requirements[]
 
@@ -2366,7 +2391,7 @@ model workflow_instances {
   workflow_engagements                                                                                workflow_engagements                 @relation(fields: [engagement_id], references: [id])
   workflow_engagement_services                                                                        workflow_engagement_services         @relation(fields: [engagement_service_id], references: [id])
   workflow_service_definitions                                                                        workflow_service_definitions         @relation(fields: [service_definition_id], references: [id])
-  tenants                                                                                             Tenant                               @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  tenants                                                                                             Workspace                            @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   workflow_milestones                                                                                 workflow_milestones[]
   workflow_scheduled_instances_queue                                                                  workflow_scheduled_instances_queue[]
 
@@ -2464,7 +2489,7 @@ model workflow_notification_log {
   created_at          DateTime                    @default(now())
   read_at             DateTime?
   users               User                        @relation(fields: [recipient_user_id], references: [id], onDelete: Cascade)
-  tenants             Tenant                      @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  tenants             Workspace                   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 
   @@index([notification_type, created_at])
   @@index([tenant_id, recipient_user_id, read_at])
@@ -2512,7 +2537,7 @@ model workflow_project_instances {
   companies                        Company                      @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   workflow_project_instances       workflow_project_instances?  @relation("workflow_project_instancesToworkflow_project_instances", fields: [source_instance_id], references: [id], onUpdate: NoAction)
   other_workflow_project_instances workflow_project_instances[] @relation("workflow_project_instancesToworkflow_project_instances")
-  tenants                          Tenant                       @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenants                          Workspace                    @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([company_id, start_date, due_date], map: "workflow_project_instances_company_window_key")
 }
@@ -2533,7 +2558,7 @@ model workflow_project_settings {
   billing_tiered_pricing Json?
   workspace_state        Json?
   companies              Company   @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tenants                Tenant    @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenants                Workspace @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model workflow_scheduled_instances_queue {
@@ -2564,7 +2589,7 @@ model workflow_scheduled_instances_queue {
   workflow_engagement_services                                      workflow_engagement_services @relation(fields: [engagement_service_id], references: [id], onDelete: Cascade)
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers User?                        @relation("workflow_scheduled_instances_queue_proposed_owner_idTousers", fields: [proposed_owner_id], references: [id])
   workflow_service_definitions                                      workflow_service_definitions @relation(fields: [service_definition_id], references: [id])
-  tenants                                                           Tenant                       @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  tenants                                                           Workspace                    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   workflow_instances                                                workflow_instances?          @relation(fields: [workflow_instance_id], references: [id])
 
   @@index([company_id, status])
@@ -2596,7 +2621,7 @@ model workflow_service_definitions {
   workflow_milestone_templates       workflow_milestone_templates[]
   workflow_scheduled_instances_queue workflow_scheduled_instances_queue[]
   users                              User                                 @relation(fields: [created_by], references: [id])
-  tenants                            Tenant                               @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  tenants                            Workspace                            @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 
   @@index([tenant_id, is_active])
   @@index([tenant_id, name])
@@ -2668,11 +2693,12 @@ model workflow_task_templates {
   @@unique([milestone_template_id, display_order])
 }
 
-enum TenantStatus {
+enum WorkspaceStatus {
   ACTIVE
   SUSPENDED
   PENDING_SETUP
   DEACTIVATED
+  @@map("TenantStatus")
 }
 
 enum EntityType {

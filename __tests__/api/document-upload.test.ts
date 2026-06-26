@@ -91,7 +91,7 @@ vi.mock('@/lib/auth', () => ({
     email: 'test@example.com',
     tenantId: 'tenant-abc',
     isSuperAdmin: false,
-    isTenantAdmin: false,
+    isWorkspaceAdmin: false,
     companyIds: ['company-456'],
   }),
   canAccessCompany: vi.fn().mockResolvedValue(true),

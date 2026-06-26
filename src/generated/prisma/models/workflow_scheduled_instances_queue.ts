@@ -323,7 +323,7 @@ export type workflow_scheduled_instances_queueWhereInput = {
   workflow_engagement_services?: Prisma.XOR<Prisma.Workflow_engagement_servicesScalarRelationFilter, Prisma.workflow_engagement_servicesWhereInput>
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   workflow_service_definitions?: Prisma.XOR<Prisma.Workflow_service_definitionsScalarRelationFilter, Prisma.workflow_service_definitionsWhereInput>
-  tenants?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenants?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   workflow_instances?: Prisma.XOR<Prisma.Workflow_instancesNullableScalarRelationFilter, Prisma.workflow_instancesWhereInput> | null
 }
 
@@ -355,7 +355,7 @@ export type workflow_scheduled_instances_queueOrderByWithRelationInput = {
   workflow_engagement_services?: Prisma.workflow_engagement_servicesOrderByWithRelationInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserOrderByWithRelationInput
   workflow_service_definitions?: Prisma.workflow_service_definitionsOrderByWithRelationInput
-  tenants?: Prisma.TenantOrderByWithRelationInput
+  tenants?: Prisma.WorkspaceOrderByWithRelationInput
   workflow_instances?: Prisma.workflow_instancesOrderByWithRelationInput
 }
 
@@ -390,7 +390,7 @@ export type workflow_scheduled_instances_queueWhereUniqueInput = Prisma.AtLeast<
   workflow_engagement_services?: Prisma.XOR<Prisma.Workflow_engagement_servicesScalarRelationFilter, Prisma.workflow_engagement_servicesWhereInput>
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   workflow_service_definitions?: Prisma.XOR<Prisma.Workflow_service_definitionsScalarRelationFilter, Prisma.workflow_service_definitionsWhereInput>
-  tenants?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenants?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   workflow_instances?: Prisma.XOR<Prisma.Workflow_instancesNullableScalarRelationFilter, Prisma.workflow_instancesWhereInput> | null
 }, "id" | "unique_key">
 
@@ -471,7 +471,7 @@ export type workflow_scheduled_instances_queueCreateInput = {
   workflow_engagement_services: Prisma.workflow_engagement_servicesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersInput
   workflow_service_definitions: Prisma.workflow_service_definitionsCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
 }
 
@@ -521,7 +521,7 @@ export type workflow_scheduled_instances_queueUpdateInput = {
   workflow_engagement_services?: Prisma.workflow_engagement_servicesUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersNestedInput
   workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateOneWithoutWorkflow_scheduled_instances_queueNestedInput
 }
 
@@ -1123,7 +1123,7 @@ export type workflow_scheduled_instances_queueCreateWithoutUsers_workflow_schedu
   workflow_engagement_services: Prisma.workflow_engagement_servicesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersInput
   workflow_service_definitions: Prisma.workflow_service_definitionsCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
 }
 
@@ -1181,7 +1181,7 @@ export type workflow_scheduled_instances_queueCreateWithoutUsers_workflow_schedu
   users_workflow_scheduled_instances_queue_confirmed_byTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_confirmed_byTousersInput
   workflow_engagement_services: Prisma.workflow_engagement_servicesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   workflow_service_definitions: Prisma.workflow_service_definitionsCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
 }
 
@@ -1271,7 +1271,7 @@ export type workflow_scheduled_instances_queueCreateWithoutCompaniesInput = {
   workflow_engagement_services: Prisma.workflow_engagement_servicesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersInput
   workflow_service_definitions: Prisma.workflow_service_definitionsCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
 }
 
@@ -1345,7 +1345,7 @@ export type workflow_scheduled_instances_queueCreateWithoutWorkflow_engagement_s
   users_workflow_scheduled_instances_queue_confirmed_byTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_confirmed_byTousersInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersInput
   workflow_service_definitions: Prisma.workflow_service_definitionsCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
 }
 
@@ -1420,7 +1420,7 @@ export type workflow_scheduled_instances_queueCreateWithoutWorkflow_instancesInp
   workflow_engagement_services: Prisma.workflow_engagement_servicesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersInput
   workflow_service_definitions: Prisma.workflow_service_definitionsCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
 }
 
 export type workflow_scheduled_instances_queueUncheckedCreateWithoutWorkflow_instancesInput = {
@@ -1493,7 +1493,7 @@ export type workflow_scheduled_instances_queueCreateWithoutWorkflow_service_defi
   users_workflow_scheduled_instances_queue_confirmed_byTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_confirmed_byTousersInput
   workflow_engagement_services: Prisma.workflow_engagement_servicesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput
 }
 
@@ -1711,7 +1711,7 @@ export type workflow_scheduled_instances_queueUpdateWithoutUsers_workflow_schedu
   workflow_engagement_services?: Prisma.workflow_engagement_servicesUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersNestedInput
   workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateOneWithoutWorkflow_scheduled_instances_queueNestedInput
 }
 
@@ -1783,7 +1783,7 @@ export type workflow_scheduled_instances_queueUpdateWithoutUsers_workflow_schedu
   users_workflow_scheduled_instances_queue_confirmed_byTousers?: Prisma.UserUpdateOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_confirmed_byTousersNestedInput
   workflow_engagement_services?: Prisma.workflow_engagement_servicesUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateOneWithoutWorkflow_scheduled_instances_queueNestedInput
 }
 
@@ -1879,7 +1879,7 @@ export type workflow_scheduled_instances_queueUpdateWithoutCompaniesInput = {
   workflow_engagement_services?: Prisma.workflow_engagement_servicesUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersNestedInput
   workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateOneWithoutWorkflow_scheduled_instances_queueNestedInput
 }
 
@@ -1975,7 +1975,7 @@ export type workflow_scheduled_instances_queueUpdateWithoutWorkflow_engagement_s
   users_workflow_scheduled_instances_queue_confirmed_byTousers?: Prisma.UserUpdateOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_confirmed_byTousersNestedInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersNestedInput
   workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateOneWithoutWorkflow_scheduled_instances_queueNestedInput
 }
 
@@ -2072,7 +2072,7 @@ export type workflow_scheduled_instances_queueUpdateWithoutWorkflow_instancesInp
   workflow_engagement_services?: Prisma.workflow_engagement_servicesUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersNestedInput
   workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
 }
 
 export type workflow_scheduled_instances_queueUncheckedUpdateWithoutWorkflow_instancesInput = {
@@ -2167,7 +2167,7 @@ export type workflow_scheduled_instances_queueUpdateWithoutWorkflow_service_defi
   users_workflow_scheduled_instances_queue_confirmed_byTousers?: Prisma.UserUpdateOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_confirmed_byTousersNestedInput
   workflow_engagement_services?: Prisma.workflow_engagement_servicesUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousersNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateOneWithoutWorkflow_scheduled_instances_queueNestedInput
 }
 
@@ -2249,7 +2249,7 @@ export type workflow_scheduled_instances_queueSelect<ExtArgs extends runtime.Typ
   workflow_engagement_services?: boolean | Prisma.workflow_engagement_servicesDefaultArgs<ExtArgs>
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: boolean | Prisma.workflow_scheduled_instances_queue$users_workflow_scheduled_instances_queue_proposed_owner_idTousersArgs<ExtArgs>
   workflow_service_definitions?: boolean | Prisma.workflow_service_definitionsDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   workflow_instances?: boolean | Prisma.workflow_scheduled_instances_queue$workflow_instancesArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_scheduled_instances_queue"]>
 
@@ -2281,7 +2281,7 @@ export type workflow_scheduled_instances_queueSelectCreateManyAndReturn<ExtArgs 
   workflow_engagement_services?: boolean | Prisma.workflow_engagement_servicesDefaultArgs<ExtArgs>
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: boolean | Prisma.workflow_scheduled_instances_queue$users_workflow_scheduled_instances_queue_proposed_owner_idTousersArgs<ExtArgs>
   workflow_service_definitions?: boolean | Prisma.workflow_service_definitionsDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   workflow_instances?: boolean | Prisma.workflow_scheduled_instances_queue$workflow_instancesArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_scheduled_instances_queue"]>
 
@@ -2313,7 +2313,7 @@ export type workflow_scheduled_instances_queueSelectUpdateManyAndReturn<ExtArgs 
   workflow_engagement_services?: boolean | Prisma.workflow_engagement_servicesDefaultArgs<ExtArgs>
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: boolean | Prisma.workflow_scheduled_instances_queue$users_workflow_scheduled_instances_queue_proposed_owner_idTousersArgs<ExtArgs>
   workflow_service_definitions?: boolean | Prisma.workflow_service_definitionsDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   workflow_instances?: boolean | Prisma.workflow_scheduled_instances_queue$workflow_instancesArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_scheduled_instances_queue"]>
 
@@ -2349,7 +2349,7 @@ export type workflow_scheduled_instances_queueInclude<ExtArgs extends runtime.Ty
   workflow_engagement_services?: boolean | Prisma.workflow_engagement_servicesDefaultArgs<ExtArgs>
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: boolean | Prisma.workflow_scheduled_instances_queue$users_workflow_scheduled_instances_queue_proposed_owner_idTousersArgs<ExtArgs>
   workflow_service_definitions?: boolean | Prisma.workflow_service_definitionsDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   workflow_instances?: boolean | Prisma.workflow_scheduled_instances_queue$workflow_instancesArgs<ExtArgs>
 }
 export type workflow_scheduled_instances_queueIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2358,7 +2358,7 @@ export type workflow_scheduled_instances_queueIncludeCreateManyAndReturn<ExtArgs
   workflow_engagement_services?: boolean | Prisma.workflow_engagement_servicesDefaultArgs<ExtArgs>
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: boolean | Prisma.workflow_scheduled_instances_queue$users_workflow_scheduled_instances_queue_proposed_owner_idTousersArgs<ExtArgs>
   workflow_service_definitions?: boolean | Prisma.workflow_service_definitionsDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   workflow_instances?: boolean | Prisma.workflow_scheduled_instances_queue$workflow_instancesArgs<ExtArgs>
 }
 export type workflow_scheduled_instances_queueIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2367,7 +2367,7 @@ export type workflow_scheduled_instances_queueIncludeUpdateManyAndReturn<ExtArgs
   workflow_engagement_services?: boolean | Prisma.workflow_engagement_servicesDefaultArgs<ExtArgs>
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers?: boolean | Prisma.workflow_scheduled_instances_queue$users_workflow_scheduled_instances_queue_proposed_owner_idTousersArgs<ExtArgs>
   workflow_service_definitions?: boolean | Prisma.workflow_service_definitionsDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   workflow_instances?: boolean | Prisma.workflow_scheduled_instances_queue$workflow_instancesArgs<ExtArgs>
 }
 
@@ -2379,7 +2379,7 @@ export type $workflow_scheduled_instances_queuePayload<ExtArgs extends runtime.T
     workflow_engagement_services: Prisma.$workflow_engagement_servicesPayload<ExtArgs>
     users_workflow_scheduled_instances_queue_proposed_owner_idTousers: Prisma.$UserPayload<ExtArgs> | null
     workflow_service_definitions: Prisma.$workflow_service_definitionsPayload<ExtArgs>
-    tenants: Prisma.$TenantPayload<ExtArgs>
+    tenants: Prisma.$WorkspacePayload<ExtArgs>
     workflow_instances: Prisma.$workflow_instancesPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -2804,7 +2804,7 @@ export interface Prisma__workflow_scheduled_instances_queueClient<T, Null = neve
   workflow_engagement_services<T extends Prisma.workflow_engagement_servicesDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_engagement_servicesDefaultArgs<ExtArgs>>): Prisma.Prisma__workflow_engagement_servicesClient<runtime.Types.Result.GetResult<Prisma.$workflow_engagement_servicesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   users_workflow_scheduled_instances_queue_proposed_owner_idTousers<T extends Prisma.workflow_scheduled_instances_queue$users_workflow_scheduled_instances_queue_proposed_owner_idTousersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_scheduled_instances_queue$users_workflow_scheduled_instances_queue_proposed_owner_idTousersArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   workflow_service_definitions<T extends Prisma.workflow_service_definitionsDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_service_definitionsDefaultArgs<ExtArgs>>): Prisma.Prisma__workflow_service_definitionsClient<runtime.Types.Result.GetResult<Prisma.$workflow_service_definitionsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  tenants<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenants<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   workflow_instances<T extends Prisma.workflow_scheduled_instances_queue$workflow_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_scheduled_instances_queue$workflow_instancesArgs<ExtArgs>>): Prisma.Prisma__workflow_instancesClient<runtime.Types.Result.GetResult<Prisma.$workflow_instancesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.

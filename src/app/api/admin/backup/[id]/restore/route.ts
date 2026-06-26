@@ -21,7 +21,7 @@ type RouteParams = { params: Promise<{ id: string }> };
  *
  * Body:
  * - dryRun: boolean (default: false) - Validate without restoring
- * - overwriteExisting: boolean (default: false) - Overwrite existing tenant data
+ * - overwriteExisting: boolean (default: false) - Overwrite existing workspace data
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const options = restoreBackupSchema.parse(body);
 
-    const result = await backupService.restoreTenantBackup(id, session.id, {
+    const result = await backupService.restoreWorkspaceBackup(id, session.id, {
       dryRun: options.dryRun,
       overwriteExisting: options.overwriteExisting,
     });

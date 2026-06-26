@@ -16,7 +16,7 @@ import { useRouter } from 'next/navigation';
 /**
  * Authenticated user information from session
  */
-interface User {
+export interface User {
   /** Unique user ID */
   id: string;
   /** User's email address */
@@ -25,12 +25,18 @@ interface User {
   firstName: string;
   /** User's last name */
   lastName: string;
-  /** Tenant ID (null for SUPER_ADMIN) */
+  /** Workspace tenant ID */
   tenantId?: string | null;
-  /** Whether user has super admin privileges */
+  /** Workspace ID, currently backed by tenantId during the workspace migration */
+  workspaceId?: string | null;
+  internalRole: 'ADMIN' | 'MANAGER' | 'STAFF';
+  isAdmin: boolean;
+  isManager: boolean;
+  isStaff: boolean;
+  /** Deprecated admin alias */
   isSuperAdmin: boolean;
-  /** Whether user has tenant admin privileges */
-  isTenantAdmin: boolean;
+  /** Deprecated admin alias */
+  isWorkspaceAdmin: boolean;
   /** Array of company IDs the user has access to */
   companyIds: string[];
 }
@@ -46,29 +52,17 @@ interface LoginCredentials {
 }
 
 /**
- * Fetch current session from the server
- * @returns User object or null if not authenticated
- */
-async function fetchSession(): Promise<User | null> {
-  const response = await fetch('/api/auth/me');
-  if (!response.ok) {
-    if (response.status === 401) {
-      return null;
-    }
-    throw new Error('Failed to fetch session');
-  }
-  const data = await response.json();
-  return data.user;
-}
-
-/**
  * Combined session + permissions response
  */
-interface SessionWithPermissions {
+export interface SessionWithPermissions {
   user: User;
   permissions: string[];
+  internalRole: 'ADMIN' | 'MANAGER' | 'STAFF';
+  isAdmin: boolean;
+  isManager: boolean;
+  isStaff: boolean;
   isSuperAdmin: boolean;
-  isTenantAdmin: boolean;
+  isWorkspaceAdmin: boolean;
 }
 
 /**
@@ -133,9 +127,10 @@ async function logout(): Promise<void> {
  * ```
  */
 export function useSession() {
-  return useQuery({
-    queryKey: ['session'],
-    queryFn: fetchSession,
+  return useQuery<SessionWithPermissions | null, Error, User | null>({
+    queryKey: ['session-with-permissions'],
+    queryFn: fetchSessionWithPermissions,
+    select: (data) => data?.user ?? null,
     staleTime: 10 * 60 * 1000, // 10 minutes - session rarely changes
     gcTime: 30 * 60 * 1000, // 30 minutes
     retry: false,
@@ -162,13 +157,28 @@ export function useSession() {
  * ```
  */
 export function useSessionWithPermissions() {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const query = useQuery({
     queryKey: ['session-with-permissions'],
     queryFn: fetchSessionWithPermissions,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
     retry: false,
   });
+
+  useEffect(() => {
+    if (query.data === undefined) return;
+
+    queryClient.setQueryData(['permissions', undefined], query.data
+      ? {
+          permissions: query.data.permissions,
+          isSuperAdmin: query.data.isSuperAdmin,
+          isWorkspaceAdmin: query.data.isWorkspaceAdmin,
+        }
+      : { permissions: [], isSuperAdmin: false, isWorkspaceAdmin: false });
+  }, [query.data, queryClient]);
+
+  return query;
 }
 
 /**
@@ -199,6 +209,7 @@ export function useLogin() {
     mutationFn: login,
     onSuccess: (response) => {
       queryClient.setQueryData(['session'], response.user);
+      queryClient.removeQueries({ queryKey: ['session-with-permissions'] });
 
       // Redirect to password change if required
       if (response.mustChangePassword) {
@@ -233,6 +244,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: logout,
     onSuccess: () => {
+      queryClient.setQueryData(['session-with-permissions'], null);
       queryClient.setQueryData(['session'], null);
       queryClient.clear();
       router.push('/login');

@@ -311,6 +311,18 @@ async function triggerExtraction(options: TriggerExtractionOptions): Promise<{
   return result.data;
 }
 
+async function reconcileProcessingDocument(documentId: string): Promise<{ status: string }> {
+  const response = await fetch(`/api/processing-documents/${documentId}/reconcile`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to reconcile document');
+  }
+  const result = await response.json();
+  return result.data;
+}
+
 async function acquireLock(
   documentId: string,
   lockVersion: number
@@ -580,6 +592,19 @@ export function useTriggerExtraction() {
     onSuccess: (_, options) => {
       queryClient.invalidateQueries({ queryKey: ['processing-document', options.documentId] });
       queryClient.invalidateQueries({ queryKey: ['processing-document-view', options.documentId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-documents'] });
+    },
+  });
+}
+
+export function useReconcileProcessingDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (documentId: string) => reconcileProcessingDocument(documentId),
+    onSuccess: (_, documentId) => {
+      queryClient.invalidateQueries({ queryKey: ['processing-document', documentId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-document-view', documentId] });
       queryClient.invalidateQueries({ queryKey: ['processing-documents'] });
     },
   });

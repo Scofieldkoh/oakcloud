@@ -1,4 +1,5 @@
 import { evaluateArithmeticExpression } from '@/lib/safe-math';
+import { describe, expect, it } from 'vitest';
 
 describe('evaluateArithmeticExpression', () => {
   describe('basic arithmetic', () => {

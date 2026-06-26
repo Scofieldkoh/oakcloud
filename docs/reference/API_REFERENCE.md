@@ -73,7 +73,7 @@ Authenticate a user and create a session.
     "lastName": "string",
     "tenantId": "string | null",
     "isSuperAdmin": "boolean",
-    "isTenantAdmin": "boolean"
+    "isWorkspaceAdmin": "boolean"
   },
   "requiresPasswordChange": "boolean"
 }
@@ -93,8 +93,8 @@ Log out the current user and clear session.
 
 ---
 
-### GET /api/auth/me
-Get the current authenticated user's session.
+### GET /api/auth/session
+Get the current authenticated user's session and effective permissions in one response. Pass `companyId` as a query parameter only when a company-scoped permission view is required.
 
 **Response:** `200 OK`
 ```json
@@ -106,22 +106,12 @@ Get the current authenticated user's session.
     "lastName": "string",
     "tenantId": "string | null",
     "isSuperAdmin": "boolean",
-    "isTenantAdmin": "boolean",
+    "isWorkspaceAdmin": "boolean",
     "companyIds": ["string"]
-  }
-}
-```
-
----
-
-### GET /api/auth/permissions
-Get the current user's permissions.
-
-**Response:** `200 OK`
-```json
-{
+  },
   "permissions": ["string"],
-  "role": "string"
+  "isSuperAdmin": "boolean",
+  "isWorkspaceAdmin": "boolean"
 }
 ```
 
@@ -321,7 +311,7 @@ List users assigned to a role.
 ## Company Endpoints
 
 ### GET /api/companies
-List companies accessible to the user.
+Compatibility list endpoint for companies accessible to the user. New list-page reads should use `/api/companies/list`.
 
 **Query Parameters:**
 - `page` (number, default: 1)
@@ -331,6 +321,27 @@ List companies accessible to the user.
 - `status` (string, optional)
 - `sortBy` (string, default: 'name')
 - `sortOrder` ('asc' | 'desc', default: 'asc')
+
+---
+
+### GET /api/companies/list
+Lean paginated company table endpoint.
+
+**Query Parameters:**
+- `page` (number, default: 1)
+- `limit` (number, default: 20)
+- `query` / `q` (string, optional)
+- `uen`, `address`, `entityType`, `status`, `hasCharges` (optional filters)
+- `sortBy`, `sortOrder` (optional sorting)
+
+---
+
+### GET /api/companies/options
+Searchable capped company option endpoint for selectors.
+
+**Query Parameters:**
+- `q` / `query` (string, optional)
+- `limit` (number, max: 50)
 
 ---
 
@@ -356,8 +367,18 @@ Get company statistics for the tenant.
 
 ---
 
+### GET /api/companies/summary
+Get company summary counts for list/dashboard surfaces.
+
+---
+
 ### GET /api/companies/[id]
-Get a specific company with relations.
+Compatibility detail endpoint. New read callers should use `/api/companies/[id]/detail`.
+
+---
+
+### GET /api/companies/[id]/detail
+Get a specific company. Pass `full=true` for full detail relations.
 
 ---
 
@@ -1709,10 +1730,71 @@ Update user's company assignments.
 ## User Preference Endpoints
 
 ### GET /api/user-preferences
-Get a single user preference value.
+Get a single user preference value, or batch multiple values.
 
 **Query Parameters:**
-- `key` (string, required)
+- `key` (string, required for single preference)
+- `keys` (comma-separated string, optional for batch preference reads)
+
+---
+
+## Page Bootstrap Endpoints
+
+### GET /api/page-bootstrap/companies
+Return company list data, optional company stats, and requested user preferences in one startup payload.
+
+**Query Parameters:**
+- All `/api/companies/list` query parameters
+- `preferenceKeys` (comma-separated string, optional)
+
+---
+
+### GET /api/page-bootstrap/processing
+Return processing summary counts and requested user preferences in one startup payload.
+
+**Query Parameters:**
+- `companyId` (string, optional)
+- `preferenceKeys` (comma-separated string, optional)
+
+---
+
+## Public Bootstrap Endpoints
+
+### GET /api/public-bootstrap/forms/[slug]
+Return the compact public form startup payload.
+
+---
+
+### GET /api/public-bootstrap/share/[token]
+Return the compact shared-document startup payload. Password-protected shares still require `X-Verification-Token`.
+
+---
+
+### GET /api/public-bootstrap/esigning/session
+Return the compact public e-signing session startup payload.
+
+---
+
+### GET /api/public-bootstrap/verify/[certificateId]
+Return the compact certificate verification startup payload.
+
+---
+
+## Performance Measurement Endpoints
+
+### POST /api/performance/measurements
+Persist a live performance measurement.
+
+**Request Body:**
+```json
+{
+  "route": "/companies",
+  "metricType": "startup_request_count | response_payload_kb | server_timing_ms | database_timing_ms | first_load_js_kb",
+  "value": 123,
+  "unit": "count | kb | ms",
+  "metadata": {}
+}
+```
 
 ---
 

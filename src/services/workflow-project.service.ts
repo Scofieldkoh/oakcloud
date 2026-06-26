@@ -999,7 +999,7 @@ async function getWorkflowProjectSettingsMap(
 
   await ensureWorkflowProjectStorageTables();
 
-  const tenantFilter = !scope.skipTenantFilter && scope.tenantId
+  const workspaceFilter = !scope.skipTenantFilter && scope.tenantId
     ? Prisma.sql`AND tenant_id = ${scope.tenantId}`
     : Prisma.empty;
 
@@ -1018,7 +1018,7 @@ async function getWorkflowProjectSettingsMap(
       workspace_state AS "workspaceState"
     FROM ${Prisma.raw(WORKFLOW_PROJECT_SETTINGS_TABLE)}
     WHERE company_id IN (${Prisma.join(companyIds)})
-    ${tenantFilter}
+    ${workspaceFilter}
   `);
 
   const map = new Map<string, WorkflowProjectSetting>();
@@ -1067,7 +1067,7 @@ async function getWorkflowProjectInstancesMap(
 
   await ensureWorkflowProjectStorageTables();
 
-  const tenantFilter = !scope.skipTenantFilter && scope.tenantId
+  const workspaceFilter = !scope.skipTenantFilter && scope.tenantId
     ? Prisma.sql`AND tenant_id = ${scope.tenantId}`
     : Prisma.empty;
 
@@ -1083,7 +1083,7 @@ async function getWorkflowProjectInstancesMap(
       source_instance_id::text AS "sourceInstanceId"
     FROM ${Prisma.raw(WORKFLOW_PROJECT_INSTANCES_TABLE)}
     WHERE company_id IN (${Prisma.join(companyIds)})
-    ${tenantFilter}
+    ${workspaceFilter}
     ORDER BY company_id, start_date, due_date, created_at
   `);
 
@@ -1884,7 +1884,7 @@ async function getWorkflowProjectInstanceById(
 ): Promise<WorkflowProjectInstance | null> {
   await ensureWorkflowProjectStorageTables();
 
-  const tenantFilter = !scope.skipTenantFilter && scope.tenantId
+  const workspaceFilter = !scope.skipTenantFilter && scope.tenantId
     ? Prisma.sql`AND tenant_id = ${scope.tenantId}`
     : Prisma.empty;
 
@@ -1900,7 +1900,7 @@ async function getWorkflowProjectInstanceById(
       source_instance_id::text AS "sourceInstanceId"
     FROM ${Prisma.raw(WORKFLOW_PROJECT_INSTANCES_TABLE)}
     WHERE id = ${projectId}
-    ${tenantFilter}
+    ${workspaceFilter}
     LIMIT 1
   `);
 

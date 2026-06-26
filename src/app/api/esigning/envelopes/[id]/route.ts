@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import { updateEsigningEnvelopeSchema } from '@/lib/validations/esigning';
 import {
   deleteDraftEsigningEnvelope,
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'esigning', 'read');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
 
     const result = await getEsigningEnvelopeDetail(session, tenantId, id);
     return NextResponse.json(result);
@@ -37,7 +37,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'esigning', 'update');
 
     const body = await request.json();
-    const tenantId = resolveTenantId(session, body.tenantId);
+    const tenantId = resolveWorkspaceId(session, body.tenantId);
     const { tenantId: _tenantId, ...payload } = body;
     const parsed = updateEsigningEnvelopeSchema.parse(payload);
 
@@ -59,7 +59,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'esigning', 'delete');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
 
     await deleteDraftEsigningEnvelope(session, tenantId, id);
     return NextResponse.json({ success: true });

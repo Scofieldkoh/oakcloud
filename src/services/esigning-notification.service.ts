@@ -68,10 +68,6 @@ function fallbackLink(url: string): string {
     </p>`;
 }
 
-function divider(): string {
-  return `<hr style="border:none;border-top:1px solid ${BORDER};margin:24px 0;">`;
-}
-
 function tag(text: string, color: string, bg: string): string {
   return `<span style="display:inline-block;padding:3px 10px;border-radius:20px;
     font-size:11px;font-weight:bold;letter-spacing:0.05em;color:${color};background:${bg};"

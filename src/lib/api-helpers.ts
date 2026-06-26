@@ -10,7 +10,7 @@ import { Prisma } from '@/generated/prisma';
 import type { SessionUser } from './auth';
 import { prisma } from './prisma';
 import { HTTP_STATUS } from './constants/application';
-import { ApiError } from './errors';
+import { ApiError, BadRequestError } from './errors';
 
 // ============================================================================
 // Tenant Context Helpers
@@ -28,27 +28,27 @@ import { ApiError } from './errors';
  * @param requestedTenantId - Optional tenant ID from request
  * @returns Effective tenant ID or null
  */
-export async function resolveEffectiveTenantId(
+export async function resolveEffectiveWorkspaceId(
   session: SessionUser,
   requestedTenantId?: string | null
 ): Promise<{ tenantId: string | null; error?: string }> {
   // Regular users always use their session tenant
   if (!session.isSuperAdmin) {
     if (!session.tenantId) {
-      return { tenantId: null, error: 'Tenant context required' };
+      return { tenantId: null, error: 'Workspace context required' };
     }
     return { tenantId: session.tenantId };
   }
 
   // SUPER_ADMIN with requested tenant ID - validate it exists
   if (requestedTenantId) {
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await prisma.workspace.findUnique({
       where: { id: requestedTenantId, deletedAt: null },
       select: { id: true, status: true },
     });
 
     if (!tenant) {
-      return { tenantId: null, error: 'Tenant not found' };
+      return { tenantId: null, error: 'Workspace not found' };
     }
 
     return { tenantId: tenant.id };
@@ -66,11 +66,11 @@ export async function resolveEffectiveTenantId(
 /**
  * Require tenant context - returns error response if not available
  */
-export async function requireTenantContext(
+export async function requireWorkspaceContext(
   session: SessionUser,
   requestedTenantId?: string | null
 ): Promise<{ tenantId: string; error?: never } | { tenantId?: never; error: NextResponse }> {
-  const result = await resolveEffectiveTenantId(session, requestedTenantId);
+  const result = await resolveEffectiveWorkspaceId(session, requestedTenantId);
 
   if (result.error) {
     return {
@@ -84,7 +84,7 @@ export async function requireTenantContext(
   if (!result.tenantId) {
     return {
       error: NextResponse.json(
-        { error: 'Tenant context required' },
+        { error: 'Workspace context required' },
         { status: HTTP_STATUS.BAD_REQUEST }
       ),
     };
@@ -97,20 +97,34 @@ export async function requireTenantContext(
  * Synchronous tenant ID resolver for API routes.
  * Throws on missing tenant context (handled by createErrorResponse).
  */
-export function resolveTenantId(
+export function resolveWorkspaceId(
   session: SessionUser,
   requestedTenantId?: string | null
 ): string {
   if (session.isSuperAdmin) {
     const tenantId = requestedTenantId || session.tenantId;
     if (!tenantId) {
-      throw new Error('Tenant context required');
+      throw new Error('Workspace context required');
     }
     return tenantId;
   }
 
   if (!session.tenantId) {
-    throw new Error('Tenant context required');
+    throw new Error('Workspace context required');
+  }
+
+  return session.tenantId;
+}
+
+/**
+ * Require the workspace attached to the authenticated session.
+ *
+ * Internal generated-document routes should not accept caller-supplied
+ * workspace IDs; the authenticated session is the sole scope source.
+ */
+export function requireSessionWorkspaceId(session: SessionUser): string {
+  if (!session.tenantId) {
+    throw new BadRequestError('Workspace context required');
   }
 
   return session.tenantId;

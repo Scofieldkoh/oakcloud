@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import { getEsigningEnvelopeDetail } from '@/services/esigning-envelope.service';
 
 interface RouteParams {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'esigning', 'read');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
 
     const result = await getEsigningEnvelopeDetail(session, tenantId, id);
     return NextResponse.json({ events: result.events });

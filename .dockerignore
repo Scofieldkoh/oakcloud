@@ -3,3 +3,8 @@ node_modules
 .git
 *.log
 .env.local
+docker-data
+tmp
+uploads
+tsconfig.tsbuildinfo
+tsc-output*.txt

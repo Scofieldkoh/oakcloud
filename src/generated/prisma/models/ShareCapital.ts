@@ -593,14 +593,6 @@ export type ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput = {
   deleteMany?: Prisma.ShareCapitalScalarWhereInput | Prisma.ShareCapitalScalarWhereInput[]
 }
 
-export type DecimalFieldUpdateOperationsInput = {
-  set?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
-}
-
 export type ShareCapitalCreateNestedManyWithoutDocumentInput = {
   create?: Prisma.XOR<Prisma.ShareCapitalCreateWithoutDocumentInput, Prisma.ShareCapitalUncheckedCreateWithoutDocumentInput> | Prisma.ShareCapitalCreateWithoutDocumentInput[] | Prisma.ShareCapitalUncheckedCreateWithoutDocumentInput[]
   connectOrCreate?: Prisma.ShareCapitalCreateOrConnectWithoutDocumentInput | Prisma.ShareCapitalCreateOrConnectWithoutDocumentInput[]

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { resolveTenantId, createErrorResponse } from '@/lib/api-helpers';
+import { resolveWorkspaceId, createErrorResponse } from '@/lib/api-helpers';
 import {
   createFormSchema,
   listFormsQuerySchema,
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     await requirePermission(session, 'document', 'read');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
 
     const query = listFormsQuerySchema.parse({
       query: searchParams.get('query') || undefined,
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     await requirePermission(session, 'document', 'create');
 
     const body = await request.json();
-    const tenantId = resolveTenantId(session, body.tenantId);
+    const tenantId = resolveWorkspaceId(session, body.tenantId);
     const payload = createFormSchema.parse(body);
 
     const form = await createForm(payload, {

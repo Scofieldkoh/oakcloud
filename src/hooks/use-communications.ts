@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 
 export interface CommunicationConnectorStatus {
   configured: boolean;
@@ -64,7 +64,7 @@ export interface BulkDeleteCommunicationsInput {
 
 export function useCommunications(limit: number = 100) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -92,7 +92,7 @@ export function useCommunications(limit: number = 100) {
 export function useIngestCommunications() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -124,7 +124,7 @@ export function useIngestCommunications() {
 export function useUpdateCommunicationMailboxes() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -160,7 +160,7 @@ export function useUpdateCommunicationMailboxes() {
 export function useDeleteCommunication() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -191,7 +191,7 @@ export function useDeleteCommunication() {
 export function useBulkDeleteCommunications() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );

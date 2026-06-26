@@ -5,7 +5,7 @@ import { requirePermission } from '@/lib/rbac';
 import {
   buildContentDispositionHeader,
   createErrorResponse,
-  resolveTenantId,
+  resolveWorkspaceId,
 } from '@/lib/api-helpers';
 import { getEsigningEnvelopeDetail } from '@/services/esigning-envelope.service';
 import { downloadEsigningEnvelopePackage } from '@/services/esigning-pdf.service';
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       tenantId: searchParams.get('tenantId') ?? undefined,
       variant: searchParams.get('variant') ?? undefined,
     });
-    const tenantId = resolveTenantId(session, parsed.tenantId);
+    const tenantId = resolveWorkspaceId(session, parsed.tenantId);
 
     await getEsigningEnvelopeDetail(session, tenantId, id);
     const result = await downloadEsigningEnvelopePackage({

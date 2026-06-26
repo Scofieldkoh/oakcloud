@@ -18,7 +18,6 @@ import {
   Moon,
   Shield,
   Activity,
-  Building,
   UserCog,
   Trash2,
   Plug,
@@ -43,7 +42,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { getSidebarWidth as getSidebarWidthFn } from '@/lib/constants/layout';
-import { SidebarTenantButton } from '@/components/ui/tenant-selector';
 import { SidebarCompanyButton } from '@/components/ui/company-selector';
 import { Dropdown, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, DropdownTrigger } from '@/components/ui/dropdown';
 
@@ -103,7 +101,6 @@ const adminNavGroups: NavGroup[] = [
     name: 'Security',
     icon: Lock,
     items: [
-      { name: 'Tenants', href: '/admin/tenants', icon: Building, superAdminOnly: true },
       { name: 'Users', href: '/admin/users', icon: UserCog, adminOnly: true },
       { name: 'Roles', href: '/admin/roles', icon: Shield, adminOnly: true },
       { name: 'Backup & Restore', href: '/admin/backup', icon: HardDrive, superAdminOnly: true },
@@ -121,7 +118,8 @@ const adminNavGroups: NavGroup[] = [
   },
 ];
 
-// Navigation link component with route prefetching
+// Navigation link component. Sidebar routes are intentionally not prefetched
+// because this menu renders many links on every dashboard page.
 function NavLink({
   item,
   collapsed,
@@ -140,7 +138,7 @@ function NavLink({
     <Link
       key={item.name}
       href={isDisabled ? '#' : item.href}
-      prefetch={!isDisabled} // Enable Next.js route prefetching
+      prefetch={false}
       onClick={(e) => {
         if (isDisabled) {
           e.preventDefault();
@@ -244,6 +242,7 @@ function CollapsedNavPopover({
                 <Link
                   key={item.name}
                   href={item.href}
+                  prefetch={false}
                   onClick={() => {
                     setIsOpen(false);
                     onNavigate?.();
@@ -368,7 +367,7 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
   const canSeeItem = useCallback(
     (item: NavItem): boolean => {
       if (item.superAdminOnly) return !!user?.isSuperAdmin;
-      if (item.adminOnly) return !!user && (user.isSuperAdmin || user.isTenantAdmin);
+      if (item.adminOnly) return !!user && (user.isSuperAdmin || user.isWorkspaceAdmin);
       return true;
     },
     [user]
@@ -381,7 +380,7 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
   const filteredUngroupedItems = ungroupedAdminItems.filter((item) => {
     if (!user) return false;
     if (item.superAdminOnly) return user.isSuperAdmin;
-    if (item.adminOnly) return user.isSuperAdmin || user.isTenantAdmin;
+    if (item.adminOnly) return user.isSuperAdmin || user.isWorkspaceAdmin;
     return true;
   });
 
@@ -392,7 +391,7 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
       items: group.items.filter((item) => {
         if (!user) return false;
         if (item.superAdminOnly) return user.isSuperAdmin;
-        if (item.adminOnly) return user.isSuperAdmin || user.isTenantAdmin;
+        if (item.adminOnly) return user.isSuperAdmin || user.isWorkspaceAdmin;
         return true;
       }),
     }))
@@ -596,11 +595,6 @@ function UserSection({ collapsed, isMobile = false }: { collapsed: boolean; isMo
     )}>
       {/* All items use consistent p-2.5 with space-y-1 for uniform spacing */}
       <div className="p-2.5 space-y-1">
-        {/* Tenant selector for SUPER_ADMIN */}
-        {user?.isSuperAdmin && (
-          <SidebarTenantButton collapsed={collapsed} />
-        )}
-
         {/* Company selector - available to all users */}
         <SidebarCompanyButton collapsed={collapsed} />
 

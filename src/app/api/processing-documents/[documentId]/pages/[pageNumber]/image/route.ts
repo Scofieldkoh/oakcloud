@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, canAccessCompany, canAccessTenant } from '@/lib/auth';
+import { requireAuth, canAccessCompany, canAccessWorkspace } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
 
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     } else if (tenantId) {
       // For unassigned documents, check tenant access
-      if (!canAccessTenant(session, tenantId)) {
+      if (!canAccessWorkspace(session, tenantId)) {
         return NextResponse.json(
           {
             success: false,

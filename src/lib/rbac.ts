@@ -14,8 +14,8 @@ import type { SessionUser } from './auth';
 
 interface CachedPermissions {
   permissions: Set<string>;
-  isSuperAdmin: boolean;
-  hasScopedTenantAdminAccess: boolean;
+  isAdmin: boolean;
+  hasScopedWorkspaceAdminAccess: boolean;
   timestamp: number;
 }
 
@@ -43,18 +43,22 @@ export function clearPermissionCache(userId: string): void {
 }
 
 /**
- * Resolve whether a TENANT_ADMIN role applies in the current scope.
+ * Resolve whether an ADMIN role applies in the current scope.
  */
-async function hasTenantAdminAccessForScope(
-  hasTenantAdminRole: boolean,
+async function hasAdminAccessForScope(
+  hasAdminRole: boolean,
   userTenantId: string | null,
   companyId?: string
 ): Promise<boolean> {
-  if (!hasTenantAdminRole || !userTenantId) {
+  if (!hasAdminRole) {
     return false;
   }
 
   if (!companyId) {
+    return true;
+  }
+
+  if (!userTenantId) {
     return true;
   }
 
@@ -64,6 +68,19 @@ async function hasTenantAdminAccessForScope(
   });
 
   return company?.tenantId === userTenantId;
+}
+
+function normalizeSystemRole(systemRoleType: string | null | undefined): 'ADMIN' | 'MANAGER' | 'STAFF' | null {
+  if (systemRoleType === 'ADMIN' || systemRoleType === 'SUPER_ADMIN' || systemRoleType === 'TENANT_ADMIN') {
+    return 'ADMIN';
+  }
+  if (systemRoleType === 'MANAGER' || systemRoleType === 'COMPANY_ADMIN') {
+    return 'MANAGER';
+  }
+  if (systemRoleType === 'STAFF' || systemRoleType === 'COMPANY_USER') {
+    return 'STAFF';
+  }
+  return null;
 }
 
 /**
@@ -122,9 +139,9 @@ export type PermissionString = `${Resource}:${Action}`;
  * Default system roles with their permissions
  */
 export const SYSTEM_ROLES = {
-  TENANT_ADMIN: {
-    name: 'Tenant Admin',
-    description: 'Full access to all tenant resources',
+  ADMIN: {
+    name: 'Admin',
+    description: 'Full internal staff administration access',
     permissions: [
       'tenant:read',
       'tenant:update',
@@ -182,9 +199,9 @@ export const SYSTEM_ROLES = {
       'contract:delete',
     ] as PermissionString[],
   },
-  COMPANY_ADMIN: {
-    name: 'Company Admin',
-    description: 'Manage assigned company and its data',
+  MANAGER: {
+    name: 'Manager',
+    description: 'Manage assigned companies and operational workflows',
     permissions: [
       'company:read',
       'company:update',
@@ -217,9 +234,9 @@ export const SYSTEM_ROLES = {
       'contract:delete',
     ] as PermissionString[],
   },
-  COMPANY_USER: {
-    name: 'Company User',
-    description: 'View-only access to assigned company',
+  STAFF: {
+    name: 'Staff',
+    description: 'Read and work on assigned companies',
     permissions: [
       'company:read',
       'contact:read',
@@ -341,10 +358,10 @@ export async function hasPermission(
   const cached = permissionCache.get(cacheKey);
   if (cached && (now - cached.timestamp) < PERMISSION_CACHE_TTL) {
     // Fast path: use cached permissions
-    if (cached.isSuperAdmin) {
+    if (cached.isAdmin) {
       return true;
     }
-    if (cached.hasScopedTenantAdminAccess) {
+    if (cached.hasScopedWorkspaceAdminAccess) {
       return true;
     }
     // Check if permission exists in cached set
@@ -377,17 +394,23 @@ export async function hasPermission(
   }
 
   // Check for system role types via role assignments
-  const hasSuperAdminRole = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+  const hasAdminRole = user.roleAssignments.some(
+    (a) => normalizeSystemRole(a.role.systemRoleType) === 'ADMIN'
   );
-  const hasTenantAdminRole = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
-  );
-  const hasScopedTenantAdminAccess = await hasTenantAdminAccessForScope(
-    hasTenantAdminRole,
+  const hasScopedWorkspaceAdminAccess = await hasAdminAccessForScope(
+    hasAdminRole,
     user.tenantId,
     companyId
   );
+  if (hasAdminRole && companyId && !hasScopedWorkspaceAdminAccess) {
+    permissionCache.set(cacheKey, {
+      permissions: new Set(),
+      isAdmin: false,
+      hasScopedWorkspaceAdminAccess: false,
+      timestamp: now,
+    });
+    return false;
+  }
 
   // Build permission set for caching
   const permissionSet = new Set<string>();
@@ -401,18 +424,16 @@ export async function hasPermission(
   // Cache the permissions
   permissionCache.set(cacheKey, {
     permissions: permissionSet,
-    isSuperAdmin: hasSuperAdminRole,
-    hasScopedTenantAdminAccess,
+    isAdmin: hasAdminRole,
+    hasScopedWorkspaceAdminAccess,
     timestamp: now,
   });
 
-  // SUPER_ADMIN has all permissions everywhere
-  if (hasSuperAdminRole) {
+  if (hasAdminRole) {
     return true;
   }
 
-  // TENANT_ADMIN has all permissions within their tenant
-  if (hasScopedTenantAdminAccess) {
+  if (hasScopedWorkspaceAdminAccess) {
     return true;
   }
 
@@ -514,7 +535,7 @@ export async function getUserPermissions(
   const cached = permissionCache.get(cacheKey);
   if (cached && (now - cached.timestamp) < PERMISSION_CACHE_TTL) {
     // Fast path: return cached permissions
-    if (cached.isSuperAdmin || cached.hasScopedTenantAdminAccess) {
+    if (cached.isAdmin || cached.hasScopedWorkspaceAdminAccess) {
       const allPermissions: PermissionString[] = [];
       for (const resource of RESOURCES) {
         for (const action of ACTIONS) {
@@ -561,18 +582,23 @@ export async function getUserPermissions(
     return [];
   }
 
-  // Check for system role types via role assignments
-  const hasSuperAdminRole = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+  const hasAdminRole = user.roleAssignments.some(
+    (a) => normalizeSystemRole(a.role.systemRoleType) === 'ADMIN'
   );
-  const hasTenantAdminRole = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
-  );
-  const hasScopedTenantAdminAccess = await hasTenantAdminAccessForScope(
-    hasTenantAdminRole,
+  const hasScopedWorkspaceAdminAccess = await hasAdminAccessForScope(
+    hasAdminRole,
     user.tenantId,
     companyId
   );
+  if (hasAdminRole && companyId && !hasScopedWorkspaceAdminAccess) {
+    permissionCache.set(cacheKey, {
+      permissions: new Set(),
+      isAdmin: false,
+      hasScopedWorkspaceAdminAccess: false,
+      timestamp: now,
+    });
+    return [];
+  }
 
   // Get effective role assignments using specificity priority
   const effectiveAssignments = getEffectiveRoleAssignments(user.roleAssignments, companyId);
@@ -587,13 +613,12 @@ export async function getUserPermissions(
   // Cache the permissions for future calls
   permissionCache.set(cacheKey, {
     permissions: permissionSet,
-    isSuperAdmin: hasSuperAdminRole,
-    hasScopedTenantAdminAccess,
+    isAdmin: hasAdminRole,
+    hasScopedWorkspaceAdminAccess,
     timestamp: now,
   });
 
-  // SUPER_ADMIN and in-scope TENANT_ADMIN have all permissions
-  if (hasSuperAdminRole || hasScopedTenantAdminAccess) {
+  if (hasAdminRole || hasScopedWorkspaceAdminAccess) {
     const allPermissions: PermissionString[] = [];
     for (const resource of RESOURCES) {
       for (const action of ACTIONS) {
@@ -661,7 +686,7 @@ export async function requireAnyPermission(
 /**
  * Get all roles for a tenant
  */
-export async function getTenantRoles(tenantId: string) {
+export async function getWorkspaceRoles(tenantId: string) {
   return prisma.role.findMany({
     where: { tenantId },
     include: {
@@ -785,7 +810,7 @@ export async function initializePermissions(): Promise<void> {
  * Create system roles for a tenant
  * Should be called when a new tenant is created
  */
-export async function createSystemRolesForTenant(tenantId: string): Promise<void> {
+export async function createSystemRolesForWorkspace(tenantId: string): Promise<void> {
   // Get all permissions
   const allPermissions = await prisma.permission.findMany();
   const permissionMap = new Map(
@@ -831,14 +856,14 @@ export async function createSystemRolesForTenant(tenantId: string): Promise<void
   }
 
   // Create default custom roles
-  await createDefaultCustomRolesForTenant(tenantId, permissionMap);
+  await createDefaultCustomRolesForWorkspace(tenantId, permissionMap);
 }
 
 /**
  * Create default custom roles for a tenant
  * These are non-system roles that can be modified or deleted
  */
-export async function createDefaultCustomRolesForTenant(
+export async function createDefaultCustomRolesForWorkspace(
   tenantId: string,
   permissionMap?: Map<string, string>
 ): Promise<void> {
@@ -921,7 +946,7 @@ export async function getSystemRoleId(
  */
 export function canReadCompanies(session: SessionUser): boolean {
   // Super admin and tenant admin can always read
-  if (session.isSuperAdmin || session.isTenantAdmin) return true;
+  if (session.isSuperAdmin || session.isWorkspaceAdmin) return true;
   // All authenticated users can read companies (via role assignments for specific permissions)
   return true;
 }
@@ -931,7 +956,7 @@ export function canReadCompanies(session: SessionUser): boolean {
  * Uses computed flags from session
  */
 export function canCreateCompanies(session: SessionUser): boolean {
-  return session.isSuperAdmin || session.isTenantAdmin;
+  return session.isSuperAdmin || session.isWorkspaceAdmin;
 }
 
 /**
@@ -939,7 +964,7 @@ export function canCreateCompanies(session: SessionUser): boolean {
  * Uses computed flags from session
  */
 export function canManageUsers(session: SessionUser): boolean {
-  return session.isSuperAdmin || session.isTenantAdmin;
+  return session.isSuperAdmin || session.isWorkspaceAdmin;
 }
 
 /**
@@ -947,7 +972,7 @@ export function canManageUsers(session: SessionUser): boolean {
  * Uses computed flags from session
  */
 export function canManageRoles(session: SessionUser): boolean {
-  return session.isSuperAdmin || session.isTenantAdmin;
+  return session.isSuperAdmin || session.isWorkspaceAdmin;
 }
 
 /**
@@ -959,7 +984,7 @@ export function canManageRoles(session: SessionUser): boolean {
  */
 export function canAccessAuditLogs(session: SessionUser): boolean {
   // Super admin and tenant admin can always access
-  if (session.isSuperAdmin || session.isTenantAdmin) return true;
+  if (session.isSuperAdmin || session.isWorkspaceAdmin) return true;
   // Regular users need explicit permission - this should be checked via hasPermission
   // in the calling code for more granular control
   return false;
@@ -971,7 +996,7 @@ export function canAccessAuditLogs(session: SessionUser): boolean {
  */
 export function canExportData(session: SessionUser): boolean {
   // Super admin and tenant admin can always export
-  if (session.isSuperAdmin || session.isTenantAdmin) return true;
+  if (session.isSuperAdmin || session.isWorkspaceAdmin) return true;
   // Other users need specific permissions (checked via hasPermission)
   return false;
 }

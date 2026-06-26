@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import {
   deleteFormDraft,
   extendFormDraftExpiry,
@@ -23,7 +23,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'delete');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const reason = searchParams.get('reason') || undefined;
 
     const result = await deleteFormDraft(
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'read');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
 
     const result = await getFormDraftById(id, draftId, tenantId);
     return NextResponse.json(result);
@@ -65,7 +65,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'update');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const payload = await request.json().catch(() => ({}));
     const expiresAtValue = typeof payload.expiresAt === 'string' ? payload.expiresAt : '';
     const reason = typeof payload.reason === 'string' ? payload.reason : undefined;
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'update');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const payload = await request.json().catch(() => ({}));
     const reason = typeof payload.reason === 'string' ? payload.reason : undefined;
 

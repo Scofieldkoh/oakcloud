@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Only admins can access
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only admins can create rates
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

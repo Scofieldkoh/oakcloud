@@ -308,7 +308,7 @@ export type ExchangeRateWhereInput = {
   sourceHash?: Prisma.StringNullableFilter<"ExchangeRate"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ExchangeRate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ExchangeRate"> | Date | string
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
 }
 
 export type ExchangeRateOrderByWithRelationInput = {
@@ -328,7 +328,7 @@ export type ExchangeRateOrderByWithRelationInput = {
   sourceHash?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
 }
 
 export type ExchangeRateWhereUniqueInput = Prisma.AtLeast<{
@@ -352,7 +352,7 @@ export type ExchangeRateWhereUniqueInput = Prisma.AtLeast<{
   sourceHash?: Prisma.StringNullableFilter<"ExchangeRate"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ExchangeRate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ExchangeRate"> | Date | string
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
 }, "id" | "tenantId_sourceCurrency_targetCurrency_rateDate_rateType">
 
 export type ExchangeRateOrderByWithAggregationInput = {
@@ -417,7 +417,7 @@ export type ExchangeRateCreateInput = {
   sourceHash?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  tenant?: Prisma.TenantCreateNestedOneWithoutExchangeRatesInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutExchangeRatesInput
 }
 
 export type ExchangeRateUncheckedCreateInput = {
@@ -455,7 +455,7 @@ export type ExchangeRateUpdateInput = {
   sourceHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tenant?: Prisma.TenantUpdateOneWithoutExchangeRatesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutExchangeRatesNestedInput
 }
 
 export type ExchangeRateUncheckedUpdateInput = {
@@ -915,7 +915,7 @@ export type ExchangeRateIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types
 export type $ExchangeRatePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ExchangeRate"
   objects: {
-    tenant: Prisma.$TenantPayload<ExtArgs> | null
+    tenant: Prisma.$WorkspacePayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1328,7 +1328,7 @@ readonly fields: ExchangeRateFieldRefs;
  */
 export interface Prisma__ExchangeRateClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  tenant<T extends Prisma.ExchangeRate$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ExchangeRate$tenantArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.ExchangeRate$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ExchangeRate$tenantArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1774,18 +1774,18 @@ export type ExchangeRateDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
  */
 export type ExchangeRate$tenantArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Tenant
+   * Select specific fields to fetch from the Workspace
    */
-  select?: Prisma.TenantSelect<ExtArgs> | null
+  select?: Prisma.WorkspaceSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Tenant
+   * Omit specific fields from the Workspace
    */
-  omit?: Prisma.TenantOmit<ExtArgs> | null
+  omit?: Prisma.WorkspaceOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.TenantInclude<ExtArgs> | null
-  where?: Prisma.TenantWhereInput
+  include?: Prisma.WorkspaceInclude<ExtArgs> | null
+  where?: Prisma.WorkspaceWhereInput
 }
 
 /**

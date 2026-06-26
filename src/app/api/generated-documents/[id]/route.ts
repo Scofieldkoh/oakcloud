@@ -8,7 +8,7 @@ import {
   deleteGeneratedDocument,
   archiveDocument,
 } from '@/services/document-generator.service';
-import { createErrorResponse } from '@/lib/api-helpers';
+import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -26,21 +26,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Check read permission
     await requirePermission(session, 'document', 'read');
 
-    // For SUPER_ADMIN, allow specifying tenantId via query param
     const { searchParams } = new URL(request.url);
-    const tenantIdParam = searchParams.get('tenantId');
-    const effectiveTenantId =
-      session.isSuperAdmin && tenantIdParam ? tenantIdParam : session.tenantId;
+    const tenantId = requireSessionWorkspaceId(session);
 
-    if (!effectiveTenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
-
-    const includeDeleted = searchParams.get('includeDeleted') === 'true' && session.isTenantAdmin;
+    const includeDeleted = searchParams.get('includeDeleted') === 'true' && session.isWorkspaceAdmin;
     const includeShares = searchParams.get('includeShares') === 'true';
     const includeComments = searchParams.get('includeComments') === 'true';
 
-    const document = await getGeneratedDocumentById(id, effectiveTenantId, {
+    const document = await getGeneratedDocumentById(id, tenantId, {
       includeDeleted,
       includeShares,
       includeComments,
@@ -71,15 +64,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const data = updateGeneratedDocumentSchema.parse({ ...body, id });
 
-    // Determine tenant ID
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && body.tenantId) {
-      tenantId = body.tenantId;
-    }
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
     const document = await updateGeneratedDocument(data, { tenantId, userId: session.id }, body.reason);
 
@@ -111,16 +96,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Determine tenant ID
-    const tenantIdParam = searchParams.get('tenantId');
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && tenantIdParam) {
-      tenantId = tenantIdParam;
-    }
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
     const document = await deleteGeneratedDocument(id, { tenantId, userId: session.id }, reason);
 
@@ -155,15 +131,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Determine tenant ID
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && body.tenantId) {
-      tenantId = body.tenantId;
-    }
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
     const document = await archiveDocument(id, { tenantId, userId: session.id }, body.reason);
 

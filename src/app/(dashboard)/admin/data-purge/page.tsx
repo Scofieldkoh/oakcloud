@@ -7,7 +7,6 @@ import {
   usePurgeRecords,
   useRestoreRecords,
   type PurgeableEntity,
-  type PurgeableTenant,
   type PurgeableUser,
   type PurgeableCompany,
   type PurgeableContact,
@@ -24,7 +23,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Trash2,
   AlertTriangle,
-  Building,
   Users,
   Building2,
   Contact,
@@ -38,10 +36,9 @@ import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/res
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-type TabType = 'tenants' | 'users' | 'companies' | 'contacts' | 'generatedDocuments' | 'processingDocuments';
+type TabType = 'users' | 'companies' | 'contacts' | 'generatedDocuments' | 'processingDocuments';
 
 const TABS: { id: TabType; label: string; icon: React.ReactNode; entityType: PurgeableEntity }[] = [
-  { id: 'tenants', label: 'Tenants', icon: <Building className="w-4 h-4" />, entityType: 'tenant' },
   { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" />, entityType: 'user' },
   { id: 'companies', label: 'Companies', icon: <Building2 className="w-4 h-4" />, entityType: 'company' },
   { id: 'contacts', label: 'Contacts', icon: <Contact className="w-4 h-4" />, entityType: 'contact' },
@@ -53,7 +50,7 @@ export default function DataPurgePage() {
   const { data: session } = useSession();
   const { success, error: showError } = useToast();
 
-  const [activeTab, setActiveTab] = useState<TabType>('tenants');
+  const [activeTab, setActiveTab] = useState<TabType>('users');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -72,7 +69,7 @@ export default function DataPurgePage() {
     );
   }
 
-  const currentEntityType = TABS.find((t) => t.id === activeTab)?.entityType || 'tenant';
+  const currentEntityType = TABS.find((t) => t.id === activeTab)?.entityType || 'user';
   const allRecords = data?.records?.[activeTab] || [];
 
   // Client-side pagination
@@ -171,8 +168,8 @@ export default function DataPurgePage() {
           <div>
             <p className="font-medium">Permanent Deletion Warning</p>
             <p className="text-sm mt-1">
-              Records purged from this page will be permanently deleted from the database. This includes all related
-              data (documents, assignments, audit logs for tenants). This action cannot be reversed.
+              Records purged from this page will be permanently deleted from the database. This includes related data
+              such as documents, assignments, and audit logs. This action cannot be reversed.
             </p>
           </div>
         </div>
@@ -259,7 +256,6 @@ export default function DataPurgePage() {
                   selectable
                   onToggle={() => toggleSelection(record.id)}
                   title={
-                    activeTab === 'tenants' ? (record as PurgeableTenant).name :
                     activeTab === 'users' ? `${(record as PurgeableUser).firstName} ${(record as PurgeableUser).lastName}` :
                     activeTab === 'companies' ? (record as PurgeableCompany).name :
                     activeTab === 'contacts' ? (record as PurgeableContact).fullName :
@@ -284,28 +280,16 @@ export default function DataPurgePage() {
                   }
                   details={
                     <CardDetailsGrid>
-                      {activeTab === 'tenants' && (
-                        <>
-                          <CardDetailItem label="Slug" value={(record as PurgeableTenant).slug} />
-                          <CardDetailItem
-                            label="Related"
-                            value={`${(record as PurgeableTenant)._count.users} users, ${(record as PurgeableTenant)._count.companies} companies`}
-                          />
-                          {(record as PurgeableTenant).deletedReason && (
-                            <CardDetailItem label="Reason" value={(record as PurgeableTenant).deletedReason} fullWidth />
-                          )}
-                        </>
-                      )}
                       {activeTab === 'users' && (
                         <>
                           <CardDetailItem label="Email" value={(record as PurgeableUser).email} fullWidth />
-                          <CardDetailItem label="Tenant" value={(record as PurgeableUser).tenant?.name || '—'} />
+                          <CardDetailItem label="Workspace" value={(record as PurgeableUser).tenant?.name || '—'} />
                         </>
                       )}
                       {activeTab === 'companies' && (
                         <>
                           <CardDetailItem label="UEN" value={(record as PurgeableCompany).uen} />
-                          <CardDetailItem label="Tenant" value={(record as PurgeableCompany).tenant?.name || '—'} />
+                          <CardDetailItem label="Workspace" value={(record as PurgeableCompany).tenant?.name || '—'} />
                           <CardDetailItem
                             label="Related"
                             value={`${(record as PurgeableCompany)._count.documents} docs, ${(record as PurgeableCompany)._count.officers} officers`}
@@ -316,7 +300,7 @@ export default function DataPurgePage() {
                       {activeTab === 'contacts' && (
                         <>
                           <CardDetailItem label="Email" value={(record as PurgeableContact).email || '—'} fullWidth />
-                          <CardDetailItem label="Tenant" value={(record as PurgeableContact).tenant?.name || '—'} />
+                          <CardDetailItem label="Workspace" value={(record as PurgeableContact).tenant?.name || '—'} />
                         </>
                       )}
                       {activeTab === 'generatedDocuments' && (
@@ -327,7 +311,7 @@ export default function DataPurgePage() {
                             label="Created By"
                             value={`${(record as PurgeableGeneratedDocument).createdBy.firstName} ${(record as PurgeableGeneratedDocument).createdBy.lastName}`}
                           />
-                          <CardDetailItem label="Tenant" value={(record as PurgeableGeneratedDocument).tenant?.name || '—'} />
+                          <CardDetailItem label="Workspace" value={(record as PurgeableGeneratedDocument).tenant?.name || '—'} />
                         </>
                       )}
                       {activeTab === 'processingDocuments' && (
@@ -380,21 +364,12 @@ export default function DataPurgePage() {
                       aria-label="Select all records"
                     />
                   </th>
-                  {activeTab === 'tenants' && (
-                    <>
-                      <th>Tenant</th>
-                      <th>Slug</th>
-                      <th>Related Data</th>
-                      <th>Reason</th>
-                      <th>Deleted At</th>
-                    </>
-                  )}
                   {activeTab === 'users' && (
                     <>
                       <th>User</th>
                       <th>Email</th>
                       <th>Role</th>
-                      <th>Tenant</th>
+                      <th>Workspace</th>
                       <th>Deleted At</th>
                     </>
                   )}
@@ -403,7 +378,7 @@ export default function DataPurgePage() {
                       <th>Company</th>
                       <th>UEN</th>
                       <th>Related Data</th>
-                      <th>Tenant</th>
+                      <th>Workspace</th>
                       <th>Deleted At</th>
                     </>
                   )}
@@ -411,7 +386,7 @@ export default function DataPurgePage() {
                     <>
                       <th>Contact</th>
                       <th>Email</th>
-                      <th>Tenant</th>
+                      <th>Workspace</th>
                       <th>Deleted At</th>
                     </>
                   )}
@@ -421,7 +396,7 @@ export default function DataPurgePage() {
                       <th>Template</th>
                       <th>Company</th>
                       <th>Created By</th>
-                      <th>Tenant</th>
+                      <th>Workspace</th>
                       <th>Deleted At</th>
                     </>
                   )}
@@ -458,27 +433,6 @@ export default function DataPurgePage() {
                           aria-label={`Select record`}
                         />
                       </td>
-
-                      {activeTab === 'tenants' && (
-                        <>
-                          <td className="font-medium text-text-primary">
-                            {(record as PurgeableTenant).name}
-                          </td>
-                          <td className="font-mono text-sm text-text-secondary">
-                            {(record as PurgeableTenant).slug}
-                          </td>
-                          <td className="text-sm text-text-secondary">
-                            {(record as PurgeableTenant)._count.users} users,{' '}
-                            {(record as PurgeableTenant)._count.companies} companies
-                          </td>
-                          <td className="text-sm text-text-secondary max-w-xs truncate" title={(record as PurgeableTenant).deletedReason || ''}>
-                            {(record as PurgeableTenant).deletedReason || '—'}
-                          </td>
-                          <td className="text-sm text-text-secondary">
-                            {format(new Date(record.deletedAt), 'MMM d, yyyy HH:mm')}
-                          </td>
-                        </>
-                      )}
 
                       {activeTab === 'users' && (
                         <>

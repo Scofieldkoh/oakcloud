@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import { voidEsigningEnvelope } from '@/services/esigning-envelope.service';
 
 const voidEnvelopeSchema = z.object({
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'esigning', 'update');
 
     const body = voidEnvelopeSchema.parse(await request.json().catch(() => ({})));
-    const tenantId = resolveTenantId(session, body.tenantId);
+    const tenantId = resolveWorkspaceId(session, body.tenantId);
 
     const result = await voidEsigningEnvelope(session, tenantId, id, body.reason ?? null);
     return NextResponse.json(result);

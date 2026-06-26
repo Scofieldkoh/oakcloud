@@ -8,7 +8,7 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import { Prisma } from '@/generated/prisma';
-import type { TenantLetterhead } from '@/generated/prisma';
+import type { WorkspaceLetterhead } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 
 // ============================================================================
@@ -50,8 +50,8 @@ const DEFAULT_MARGINS: PageMargins = {
 /**
  * Get letterhead configuration for a tenant
  */
-export async function getLetterhead(tenantId: string): Promise<TenantLetterhead | null> {
-  return prisma.tenantLetterhead.findUnique({
+export async function getLetterhead(tenantId: string): Promise<WorkspaceLetterhead | null> {
+  return prisma.workspaceLetterhead.findUnique({
     where: { tenantId },
   });
 }
@@ -61,8 +61,8 @@ export async function getLetterhead(tenantId: string): Promise<TenantLetterhead 
  */
 export async function getLetterheadWithMargins(
   tenantId: string
-): Promise<(TenantLetterhead & { parsedMargins: PageMargins }) | null> {
-  const letterhead = await prisma.tenantLetterhead.findUnique({
+): Promise<(WorkspaceLetterhead & { parsedMargins: PageMargins }) | null> {
+  const letterhead = await prisma.workspaceLetterhead.findUnique({
     where: { tenantId },
   });
 
@@ -84,14 +84,14 @@ export async function getLetterheadWithMargins(
 export async function upsertLetterhead(
   input: LetterheadInput,
   params: TenantAwareParams
-): Promise<TenantLetterhead> {
+): Promise<WorkspaceLetterhead> {
   const { tenantId, userId } = params;
 
-  const existing = await prisma.tenantLetterhead.findUnique({
+  const existing = await prisma.workspaceLetterhead.findUnique({
     where: { tenantId },
   });
 
-  const data: Prisma.TenantLetterheadUpdateInput = {
+  const data: Prisma.WorkspaceLetterheadUpdateInput = {
     headerHtml: input.headerHtml,
     footerHtml: input.footerHtml,
     headerImageUrl: input.headerImageUrl,
@@ -104,21 +104,21 @@ export async function upsertLetterhead(
     data.pageMargins = input.pageMargins as unknown as Prisma.InputJsonValue;
   }
 
-  let letterhead: TenantLetterhead;
+  let letterhead: WorkspaceLetterhead;
 
   if (existing) {
-    letterhead = await prisma.tenantLetterhead.update({
+    letterhead = await prisma.workspaceLetterhead.update({
       where: { tenantId },
       data,
     });
 
     // Compute changes for audit log
-    const trackedFields: (keyof TenantLetterhead)[] = ['headerHtml', 'footerHtml', 'headerImageUrl', 'footerImageUrl', 'logoUrl', 'isEnabled', 'pageMargins'];
+    const trackedFields: (keyof WorkspaceLetterhead)[] = ['headerHtml', 'footerHtml', 'headerImageUrl', 'footerImageUrl', 'logoUrl', 'isEnabled', 'pageMargins'];
     const changes = computeChanges(existing, letterhead, trackedFields);
 
     await createAuditLog({
       action: 'UPDATE',
-      entityType: 'TenantLetterhead',
+      entityType: 'WorkspaceLetterhead',
       entityId: letterhead.id,
       entityName: 'Letterhead',
       summary: 'Updated letterhead configuration',
@@ -127,7 +127,7 @@ export async function upsertLetterhead(
       tenantId,
     });
   } else {
-    letterhead = await prisma.tenantLetterhead.create({
+    letterhead = await prisma.workspaceLetterhead.create({
       data: {
         tenantId,
         headerHtml: input.headerHtml,
@@ -142,7 +142,7 @@ export async function upsertLetterhead(
 
     await createAuditLog({
       action: 'CREATE',
-      entityType: 'TenantLetterhead',
+      entityType: 'WorkspaceLetterhead',
       entityId: letterhead.id,
       entityName: 'Letterhead',
       summary: 'Created letterhead configuration',
@@ -160,10 +160,10 @@ export async function upsertLetterhead(
 export async function updateHeaderImage(
   imageUrl: string | null,
   params: TenantAwareParams
-): Promise<TenantLetterhead> {
+): Promise<WorkspaceLetterhead> {
   const { tenantId, userId } = params;
 
-  const existing = await prisma.tenantLetterhead.findUnique({
+  const existing = await prisma.workspaceLetterhead.findUnique({
     where: { tenantId },
   });
 
@@ -172,14 +172,14 @@ export async function updateHeaderImage(
     return upsertLetterhead({ headerImageUrl: imageUrl }, params);
   }
 
-  const letterhead = await prisma.tenantLetterhead.update({
+  const letterhead = await prisma.workspaceLetterhead.update({
     where: { tenantId },
     data: { headerImageUrl: imageUrl },
   });
 
   await createAuditLog({
     action: 'UPDATE',
-    entityType: 'TenantLetterhead',
+    entityType: 'WorkspaceLetterhead',
     entityId: letterhead.id,
     entityName: 'Letterhead',
     summary: imageUrl ? 'Updated header image' : 'Removed header image',
@@ -199,10 +199,10 @@ export async function updateHeaderImage(
 export async function updateFooterImage(
   imageUrl: string | null,
   params: TenantAwareParams
-): Promise<TenantLetterhead> {
+): Promise<WorkspaceLetterhead> {
   const { tenantId, userId } = params;
 
-  const existing = await prisma.tenantLetterhead.findUnique({
+  const existing = await prisma.workspaceLetterhead.findUnique({
     where: { tenantId },
   });
 
@@ -210,14 +210,14 @@ export async function updateFooterImage(
     return upsertLetterhead({ footerImageUrl: imageUrl }, params);
   }
 
-  const letterhead = await prisma.tenantLetterhead.update({
+  const letterhead = await prisma.workspaceLetterhead.update({
     where: { tenantId },
     data: { footerImageUrl: imageUrl },
   });
 
   await createAuditLog({
     action: 'UPDATE',
-    entityType: 'TenantLetterhead',
+    entityType: 'WorkspaceLetterhead',
     entityId: letterhead.id,
     entityName: 'Letterhead',
     summary: imageUrl ? 'Updated footer image' : 'Removed footer image',
@@ -237,10 +237,10 @@ export async function updateFooterImage(
 export async function updateLogoImage(
   imageUrl: string | null,
   params: TenantAwareParams
-): Promise<TenantLetterhead> {
+): Promise<WorkspaceLetterhead> {
   const { tenantId, userId } = params;
 
-  const existing = await prisma.tenantLetterhead.findUnique({
+  const existing = await prisma.workspaceLetterhead.findUnique({
     where: { tenantId },
   });
 
@@ -248,14 +248,14 @@ export async function updateLogoImage(
     return upsertLetterhead({ logoUrl: imageUrl }, params);
   }
 
-  const letterhead = await prisma.tenantLetterhead.update({
+  const letterhead = await prisma.workspaceLetterhead.update({
     where: { tenantId },
     data: { logoUrl: imageUrl },
   });
 
   await createAuditLog({
     action: 'UPDATE',
-    entityType: 'TenantLetterhead',
+    entityType: 'WorkspaceLetterhead',
     entityId: letterhead.id,
     entityName: 'Letterhead',
     summary: imageUrl ? 'Updated logo' : 'Removed logo',
@@ -275,10 +275,10 @@ export async function updateLogoImage(
 export async function toggleLetterhead(
   isEnabled: boolean,
   params: TenantAwareParams
-): Promise<TenantLetterhead> {
+): Promise<WorkspaceLetterhead> {
   const { tenantId, userId } = params;
 
-  const existing = await prisma.tenantLetterhead.findUnique({
+  const existing = await prisma.workspaceLetterhead.findUnique({
     where: { tenantId },
   });
 
@@ -286,14 +286,14 @@ export async function toggleLetterhead(
     return upsertLetterhead({ isEnabled }, params);
   }
 
-  const letterhead = await prisma.tenantLetterhead.update({
+  const letterhead = await prisma.workspaceLetterhead.update({
     where: { tenantId },
     data: { isEnabled },
   });
 
   await createAuditLog({
     action: 'UPDATE',
-    entityType: 'TenantLetterhead',
+    entityType: 'WorkspaceLetterhead',
     entityId: letterhead.id,
     entityName: 'Letterhead',
     summary: isEnabled ? 'Enabled letterhead' : 'Disabled letterhead',
@@ -313,7 +313,7 @@ export async function toggleLetterhead(
 export async function deleteLetterhead(params: TenantAwareParams): Promise<void> {
   const { tenantId, userId } = params;
 
-  const existing = await prisma.tenantLetterhead.findUnique({
+  const existing = await prisma.workspaceLetterhead.findUnique({
     where: { tenantId },
   });
 
@@ -321,13 +321,13 @@ export async function deleteLetterhead(params: TenantAwareParams): Promise<void>
     return;
   }
 
-  await prisma.tenantLetterhead.delete({
+  await prisma.workspaceLetterhead.delete({
     where: { tenantId },
   });
 
   await createAuditLog({
     action: 'DELETE',
-    entityType: 'TenantLetterhead',
+    entityType: 'WorkspaceLetterhead',
     entityId: existing.id,
     entityName: 'Letterhead',
     summary: 'Deleted letterhead configuration',
@@ -359,7 +359,7 @@ function parsePageMargins(margins: Prisma.JsonValue): PageMargins {
 /**
  * Build complete header HTML for PDF generation
  */
-export function buildHeaderHtml(letterhead: TenantLetterhead | null): string {
+export function buildHeaderHtml(letterhead: WorkspaceLetterhead | null): string {
   if (!letterhead || !letterhead.isEnabled) {
     return '';
   }
@@ -395,7 +395,7 @@ export function buildHeaderHtml(letterhead: TenantLetterhead | null): string {
 /**
  * Build complete footer HTML for PDF generation
  */
-export function buildFooterHtml(letterhead: TenantLetterhead | null): string {
+export function buildFooterHtml(letterhead: WorkspaceLetterhead | null): string {
   if (!letterhead || !letterhead.isEnabled) {
     // Default footer with page numbers
     return `
@@ -436,10 +436,10 @@ export function buildFooterHtml(letterhead: TenantLetterhead | null): string {
  */
 export async function getOrCreateLetterhead(
   params: TenantAwareParams
-): Promise<TenantLetterhead> {
+): Promise<WorkspaceLetterhead> {
   const { tenantId } = params;
 
-  const existing = await prisma.tenantLetterhead.findUnique({
+  const existing = await prisma.workspaceLetterhead.findUnique({
     where: { tenantId },
   });
 
@@ -447,7 +447,7 @@ export async function getOrCreateLetterhead(
     return existing;
   }
 
-  return prisma.tenantLetterhead.create({
+  return prisma.workspaceLetterhead.create({
     data: {
       tenantId,
       pageMargins: DEFAULT_MARGINS as unknown as Prisma.InputJsonValue,

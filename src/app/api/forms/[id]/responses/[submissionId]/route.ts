@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { resolveTenantId, createErrorResponse } from '@/lib/api-helpers';
+import { resolveWorkspaceId, createErrorResponse } from '@/lib/api-helpers';
 import { deleteFormResponse, getFormResponseById, updateFormResponseTags } from '@/services/form-builder.service';
 
 interface RouteParams {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'read');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
 
     const response = await getFormResponseById(id, submissionId, tenantId);
     return NextResponse.json(response);
@@ -34,7 +34,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'update');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const body = await request.json().catch(() => ({}));
     const tags = Array.isArray(body.tags)
       ? body.tags.filter((tag: unknown): tag is string => typeof tag === 'string')
@@ -63,7 +63,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'delete');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const reason = searchParams.get('reason') || undefined;
 
     const result = await deleteFormResponse(

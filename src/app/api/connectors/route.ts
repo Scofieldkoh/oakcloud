@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const session = await requireAuth();
 
     // Only admins can access connectors
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth();
 
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

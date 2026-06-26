@@ -7,7 +7,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, computeChanges } from '@/lib/audit';
-import { canAddCompany, assertTenantOwned } from '@/lib/tenant';
+import { canAddCompany, assertWorkspaceOwned } from '@/lib/workspace';
 import { NotFoundError, ValidationError } from '@/lib/errors';
 import type {
   CreateCompanyInput,
@@ -88,7 +88,7 @@ export interface CompanyWithRelations extends Company {
     charges: number;
   };
   /** Whether any linked contact is marked as Point of Contact */
-  hasPoc?: boolean;
+  hasPoc: boolean;
 }
 
 // Re-export shared type for backwards compatibility
@@ -656,7 +656,7 @@ export async function getCompanyById(
 
   // Require tenantId unless explicitly skipping for SUPER_ADMIN
   if (!tenantId && !skipTenantFilter) {
-    throw new Error('tenantId is required for company queries');
+    throw new Error('Workspace context is required for company queries');
   }
 
   const where: Prisma.CompanyWhereInput = { id };
@@ -784,7 +784,7 @@ export async function getCompanyByUen(
 
   // Require tenantId unless explicitly skipping for SUPER_ADMIN
   if (!tenantId && !skipTenantFilter) {
-    throw new Error('tenantId is required for company queries');
+    throw new Error('Workspace context is required for company queries');
   }
 
   const where: Prisma.CompanyWhereInput = { uen: uen.toUpperCase() };
@@ -832,7 +832,7 @@ export async function searchCompanies(
 
   // Require tenantId unless explicitly skipping for SUPER_ADMIN
   if (!tenantId && !skipTenantFilter) {
-    throw new Error('tenantId is required for company queries');
+    throw new Error('Workspace context is required for company queries');
   }
 
   const where: Prisma.CompanyWhereInput = {
@@ -959,26 +959,23 @@ export async function searchCompanies(
     }
   }
 
-  // Officers and shareholders count filters using relation count
   if (params.officersMin !== undefined || params.officersMax !== undefined) {
-    where.officers = {
-      ...((where.officers as object) || {}),
-    };
+    where.currentOfficerCount = {};
     if (params.officersMin !== undefined) {
-      (where as Prisma.CompanyWhereInput).officers = {
-        some: { isCurrent: true },
-      };
+      where.currentOfficerCount.gte = params.officersMin;
+    }
+    if (params.officersMax !== undefined) {
+      where.currentOfficerCount.lte = params.officersMax;
     }
   }
 
   if (params.shareholdersMin !== undefined || params.shareholdersMax !== undefined) {
-    where.shareholders = {
-      ...((where.shareholders as object) || {}),
-    };
+    where.currentShareholderCount = {};
     if (params.shareholdersMin !== undefined) {
-      (where as Prisma.CompanyWhereInput).shareholders = {
-        some: { isCurrent: true },
-      };
+      where.currentShareholderCount.gte = params.shareholdersMin;
+    }
+    if (params.shareholdersMax !== undefined) {
+      where.currentShareholderCount.lte = params.shareholdersMax;
     }
   }
 
@@ -987,17 +984,9 @@ export async function searchCompanies(
   let sortByAddress = false;
 
   if (params.sortBy === 'officersCount') {
-    orderBy = {
-      officers: {
-        _count: params.sortOrder,
-      },
-    };
+    orderBy = { currentOfficerCount: params.sortOrder };
   } else if (params.sortBy === 'shareholdersCount') {
-    orderBy = {
-      shareholders: {
-        _count: params.sortOrder,
-      },
-    };
+    orderBy = { currentShareholderCount: params.sortOrder };
   } else if (params.sortBy === 'address') {
     // Address sorting will be done post-query since it's on a related table
     orderBy = { name: params.sortOrder }; // Fallback sort
@@ -1009,8 +998,7 @@ export async function searchCompanies(
   // Pagination
   const skip = (params.page - 1) * params.limit;
 
-  // eslint-disable-next-line prefer-const -- total may be reassigned for post-query filtering
-  let [companiesRaw, total] = await Promise.all([
+  const [companiesRaw, total] = await Promise.all([
     prisma.company.findMany({
       where,
       include: {
@@ -1024,19 +1012,6 @@ export async function searchCompanies(
             isCurrent: true,
           },
         },
-        contacts: {
-          where: { isPoc: true, deletedAt: null },
-          take: 1,
-          select: { id: true },
-        },
-        _count: {
-          select: {
-            documents: true,
-            officers: { where: { isCurrent: true } },
-            shareholders: { where: { isCurrent: true } },
-            charges: { where: { isFullyDischarged: false } },
-          },
-        },
       },
       orderBy,
       skip,
@@ -1045,29 +1020,15 @@ export async function searchCompanies(
     prisma.company.count({ where }),
   ]);
 
-  // Map to add hasPoc field and remove contacts from response
-  let companies = companiesRaw.map(({ contacts, ...company }) => ({
+  let companies = companiesRaw.map((company) => ({
     ...company,
-    hasPoc: contacts && contacts.length > 0,
+    _count: {
+      documents: company.documentCount,
+      charges: company.activeChargeCount,
+      officers: company.currentOfficerCount,
+      shareholders: company.currentShareholderCount,
+    },
   }));
-
-  // Post-query filtering for count ranges (Prisma doesn't support this in WHERE)
-  if (params.officersMin !== undefined || params.officersMax !== undefined ||
-      params.shareholdersMin !== undefined || params.shareholdersMax !== undefined) {
-    companies = companies.filter((c) => {
-      const officerCount = c._count?.officers || 0;
-      const shareholderCount = c._count?.shareholders || 0;
-
-      if (params.officersMin !== undefined && officerCount < params.officersMin) return false;
-      if (params.officersMax !== undefined && officerCount > params.officersMax) return false;
-      if (params.shareholdersMin !== undefined && shareholderCount < params.shareholdersMin) return false;
-      if (params.shareholdersMax !== undefined && shareholderCount > params.shareholdersMax) return false;
-
-      return true;
-    });
-    // Adjust total for filtered results (approximate - could be improved with raw query)
-    total = companies.length < params.limit ? skip + companies.length : total;
-  }
 
   // Post-query sorting by address (since it's on a related table)
   if (sortByAddress) {
@@ -1101,7 +1062,7 @@ export async function getCompanyFullDetails(
 
   // Require tenantId unless explicitly skipping for SUPER_ADMIN
   if (!tenantId && !skipTenantFilter) {
-    throw new Error('tenantId is required for company queries');
+    throw new Error('Workspace context is required for company queries');
   }
 
   const where: Prisma.CompanyWhereInput = { id, deletedAt: null };
@@ -1262,7 +1223,7 @@ export async function getCompanyStats(
 
   // Require tenantId unless explicitly skipping for SUPER_ADMIN
   if (!tenantId && !skipTenantFilter) {
-    throw new Error('tenantId is required for company statistics');
+    throw new Error('Workspace context is required for company statistics');
   }
 
   const baseWhere: Prisma.CompanyWhereInput = { deletedAt: null };
@@ -1310,6 +1271,59 @@ export async function getCompanyStats(
     recentlyAdded,
     withOverdueFilings,
   };
+}
+
+export async function refreshCompanySummaryCounts(companyId?: string): Promise<{ updated: number }> {
+  const companyFilter = companyId
+    ? Prisma.sql`c2."id" = ${companyId} AND`
+    : Prisma.empty;
+
+  const updated = await prisma.$executeRaw`
+    UPDATE "companies" c
+    SET
+      "current_officer_count" = COALESCE(o.count, 0),
+      "current_shareholder_count" = COALESCE(s.count, 0),
+      "active_charge_count" = COALESCE(ch.count, 0),
+      "document_count" = COALESCE(d.count, 0),
+      "has_poc" = COALESCE(p.has_poc, false)
+    FROM "companies" c2
+    LEFT JOIN (
+      SELECT "companyId", COUNT(*)::INTEGER AS count
+      FROM "company_officers"
+      WHERE "isCurrent" = true
+      GROUP BY "companyId"
+    ) o ON o."companyId" = c2."id"
+    LEFT JOIN (
+      SELECT "companyId", COUNT(*)::INTEGER AS count
+      FROM "company_shareholders"
+      WHERE "isCurrent" = true
+      GROUP BY "companyId"
+    ) s ON s."companyId" = c2."id"
+    LEFT JOIN (
+      SELECT "companyId", COUNT(*)::INTEGER AS count
+      FROM "company_charges"
+      WHERE "isFullyDischarged" = false
+      GROUP BY "companyId"
+    ) ch ON ch."companyId" = c2."id"
+    LEFT JOIN (
+      SELECT "companyId", COUNT(*)::INTEGER AS count
+      FROM "documents"
+      WHERE "deleted_at" IS NULL
+      GROUP BY "companyId"
+    ) d ON d."companyId" = c2."id"
+    LEFT JOIN (
+      SELECT "companyId", true AS has_poc
+      FROM "company_contacts"
+      WHERE "isPoc" = true AND "deletedAt" IS NULL
+      GROUP BY "companyId"
+    ) p ON p."companyId" = c2."id"
+    WHERE ${companyFilter} c."id" = c2."id"
+  `;
+
+  await prisma.$executeRawUnsafe('REFRESH MATERIALIZED VIEW company_summary_counts');
+  await prisma.$executeRawUnsafe('REFRESH MATERIALIZED VIEW processing_document_summary_counts');
+
+  return { updated };
 }
 
 // ============================================================================
@@ -1390,7 +1404,7 @@ export async function updateOfficer(
     where: { id: officerId, companyId },
     include: COMPANY_SCOPE_INCLUDE,
   });
-  assertTenantOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
+  assertWorkspaceOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
 
   const oldValues = {
     appointmentDate: officer.appointmentDate,
@@ -1465,7 +1479,7 @@ export async function linkOfficerToContact(
     where: { id: officerId },
     include: COMPANY_SCOPE_INCLUDE,
   });
-  assertTenantOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
+  assertWorkspaceOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
 
   const contact = await prisma.contact.findFirst({
     where: { id: contactId, tenantId, deletedAt: null },
@@ -1515,7 +1529,7 @@ export async function unlinkOfficerFromContact(
       contact: { select: { id: true, fullName: true } },
     },
   });
-  assertTenantOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
+  assertWorkspaceOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
 
   if (!officer.contactId) {
     throw new ValidationError('Officer is not linked to any contact');
@@ -1561,7 +1575,7 @@ export async function removeOfficer(
     where: { id: officerId, companyId },
     include: COMPANY_SCOPE_INCLUDE,
   });
-  assertTenantOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
+  assertWorkspaceOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
 
   // Mark as ceased
   await prisma.companyOfficer.update({
@@ -1607,7 +1621,7 @@ export async function deleteOfficer(
     where: { id: officerId, companyId },
     include: COMPANY_SCOPE_INCLUDE,
   });
-  assertTenantOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
+  assertWorkspaceOwned(officer, officer?.company.tenantId, tenantId, 'Officer not found');
 
   await prisma.companyOfficer.delete({
     where: { id: officerId },
@@ -1649,7 +1663,7 @@ export async function updateShareholder(
     where: { id: shareholderId, companyId },
     include: COMPANY_SCOPE_INCLUDE,
   });
-  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
+  assertWorkspaceOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
   const oldValues = {
     numberOfShares: shareholder.numberOfShares,
@@ -1756,7 +1770,7 @@ export async function linkShareholderToContact(
     where: { id: shareholderId },
     include: COMPANY_SCOPE_INCLUDE,
   });
-  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
+  assertWorkspaceOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
   const contact = await prisma.contact.findFirst({
     where: { id: contactId, tenantId, deletedAt: null },
@@ -1806,7 +1820,7 @@ export async function unlinkShareholderFromContact(
       contact: { select: { id: true, fullName: true } },
     },
   });
-  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
+  assertWorkspaceOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
   if (!shareholder.contactId) {
     throw new ValidationError('Shareholder is not linked to any contact');
@@ -1853,7 +1867,7 @@ export async function removeShareholder(
     where: { id: shareholderId, companyId },
     include: COMPANY_SCOPE_INCLUDE,
   });
-  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
+  assertWorkspaceOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
   // Use transaction to ensure atomicity of removal and percentage recalculation
   await prisma.$transaction(async (tx) => {
@@ -1923,7 +1937,7 @@ export async function reactivateShareholder(
     where: { id: shareholderId, companyId },
     include: COMPANY_SCOPE_INCLUDE,
   });
-  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
+  assertWorkspaceOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
   if (shareholder.isCurrent) {
     throw new ValidationError('Shareholder is already active');
@@ -1995,7 +2009,7 @@ export async function deleteShareholder(
     where: { id: shareholderId, companyId },
     include: COMPANY_SCOPE_INCLUDE,
   });
-  assertTenantOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
+  assertWorkspaceOwned(shareholder, shareholder?.company.tenantId, tenantId, 'Shareholder not found');
 
   await prisma.companyShareholder.delete({
     where: { id: shareholderId },

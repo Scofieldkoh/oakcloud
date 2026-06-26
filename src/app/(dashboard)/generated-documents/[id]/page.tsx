@@ -27,10 +27,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
-import { useSession } from '@/hooks/use-auth';
 import { A4PageEditor } from '@/components/documents/a4-page-editor';
 
 // ============================================================================
@@ -170,13 +168,6 @@ export default function DocumentViewPage() {
   const params = useParams();
   const documentId = params.id as string;
   const { success, error: toastError } = useToast();
-  const { data: session } = useSession();
-
-  // Tenant selection for SUPER_ADMIN
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   // State
   const [docData, setDocData] = useState<GeneratedDocument | null>(null);
@@ -198,19 +189,10 @@ export default function DocumentViewPage() {
       setError(null);
 
       try {
-        // Build URL with tenantId for SUPER_ADMIN
-        const urlParams = new URLSearchParams();
-        if (session?.isSuperAdmin && activeTenantId) {
-          urlParams.set('tenantId', activeTenantId);
-        }
-        const queryString = urlParams.toString();
-        const docUrl = `/api/generated-documents/${documentId}${queryString ? `?${queryString}` : ''}`;
-        const commentsUrl = `/api/generated-documents/${documentId}/comments${queryString ? `?${queryString}` : ''}`;
-
         // Fetch document and comments in parallel
         const [docResponse, commentsResponse] = await Promise.all([
-          fetch(docUrl),
-          fetch(commentsUrl),
+          fetch(`/api/generated-documents/${documentId}`),
+          fetch(`/api/generated-documents/${documentId}/comments`),
         ]);
 
         if (!docResponse.ok) {
@@ -238,23 +220,18 @@ export default function DocumentViewPage() {
     };
 
     fetchData();
-  }, [documentId, session?.isSuperAdmin, activeTenantId]);
+  }, [documentId]);
 
   // Handle finalize
   const handleFinalize = async () => {
     setIsProcessing(true);
     try {
-      const body: Record<string, unknown> = {};
-      if (session?.isSuperAdmin && activeTenantId) {
-        body.tenantId = activeTenantId;
-      }
-
       const response = await fetch(
         `/api/generated-documents/${documentId}/finalize`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+          body: JSON.stringify({}),
         }
       );
 
@@ -278,12 +255,8 @@ export default function DocumentViewPage() {
   const handleUnfinalize = async () => {
     setIsProcessing(true);
     try {
-      // Build URL with reason and tenantId as query params
       const params = new URLSearchParams();
       params.set('reason', 'User requested to edit document');
-      if (session?.isSuperAdmin && activeTenantId) {
-        params.set('tenantId', activeTenantId);
-      }
 
       const response = await fetch(
         `/api/generated-documents/${documentId}/finalize?${params}`,
@@ -317,9 +290,6 @@ export default function DocumentViewPage() {
         action: 'archive',
         reason: 'User requested to archive document',
       };
-      if (session?.isSuperAdmin && activeTenantId) {
-        body.tenantId = activeTenantId;
-      }
 
       const response = await fetch(`/api/generated-documents/${documentId}`, {
         method: 'PATCH',
@@ -348,9 +318,6 @@ export default function DocumentViewPage() {
     try {
       const params = new URLSearchParams();
       params.set('letterhead', String(includeLetterhead));
-      if (session?.isSuperAdmin && activeTenantId) {
-        params.set('tenantId', activeTenantId);
-      }
 
       const response = await fetch(
         `/api/generated-documents/${documentId}/export/pdf?${params}`
@@ -381,17 +348,12 @@ export default function DocumentViewPage() {
   // Handle clone
   const handleClone = async () => {
     try {
-      const body: Record<string, unknown> = {};
-      if (session?.isSuperAdmin && activeTenantId) {
-        body.tenantId = activeTenantId;
-      }
-
       const response = await fetch(
         `/api/generated-documents/${documentId}/clone`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+          body: JSON.stringify({}),
         }
       );
 

@@ -58,7 +58,7 @@ async function fetchTenantTags(tenantId?: string): Promise<Tag[]> {
   return result.tags;
 }
 
-async function createTenantTagApi(data: {
+async function createWorkspaceTagApi(data: {
   name: string;
   color?: TagColor;
   description?: string;
@@ -94,7 +94,7 @@ async function updateTenantTagApi(
   return result.tag;
 }
 
-async function deleteTenantTagApi(tagId: string): Promise<void> {
+async function deleteWorkspaceTagApi(tagId: string): Promise<void> {
   const response = await fetch(`/api/tags/${tagId}`, {
     method: 'DELETE',
   });
@@ -286,7 +286,7 @@ export function useTenantTags(tenantId?: string | null) {
 /**
  * Create a tenant (shared) tag - admin only
  */
-export function useCreateTenantTag() {
+export function useCreateWorkspaceTag() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -300,7 +300,7 @@ export function useCreateTenantTag() {
       color?: TagColor;
       description?: string;
       tenantId?: string;
-    }) => createTenantTagApi({ name, color, description, tenantId }),
+    }) => createWorkspaceTagApi({ name, color, description, tenantId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-tags'] });
       queryClient.invalidateQueries({ queryKey: ['available-tags'] });
@@ -337,11 +337,11 @@ export function useUpdateTenantTag() {
 /**
  * Delete a tenant (shared) tag - admin only
  */
-export function useDeleteTenantTag() {
+export function useDeleteWorkspaceTag() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ tagId }: { tagId: string }) => deleteTenantTagApi(tagId),
+    mutationFn: ({ tagId }: { tagId: string }) => deleteWorkspaceTagApi(tagId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-tags'] });
       queryClient.invalidateQueries({ queryKey: ['available-tags'] });

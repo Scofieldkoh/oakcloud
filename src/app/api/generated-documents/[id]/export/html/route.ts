@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { exportToHTML } from '@/services/document-export.service';
 import { getGeneratedDocumentById } from '@/services/document-generator.service';
 
@@ -21,14 +22,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'read');
 
     const { searchParams } = new URL(request.url);
-
-    // Determine tenant ID
-    const tenantIdParam = searchParams.get('tenantId');
-    const tenantId = session.isSuperAdmin && tenantIdParam ? tenantIdParam : session.tenantId;
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
     // Verify document exists
     const document = await getGeneratedDocumentById(id, tenantId);

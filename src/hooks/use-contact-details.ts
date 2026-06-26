@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import type { ContactDetailType } from '@/generated/prisma';
 
 // ============================================================================
@@ -122,7 +122,7 @@ export const contactDetailKeys = {
  */
 export function useCompanyContactDetails(companyId: string | null) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -150,7 +150,7 @@ export function useCompanyContactDetails(companyId: string | null) {
  */
 export function usePrefetchCompanyContactDetails(companyId: string | null, enabled: boolean = true) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -181,7 +181,7 @@ export function useCreateContactDetail(companyId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -221,7 +221,7 @@ export function useUpdateContactDetail(companyId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -255,7 +255,7 @@ export function useDeleteContactDetail(companyId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -291,7 +291,7 @@ export function useToggleContactPoc(companyId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -325,7 +325,7 @@ export function useCreateContactWithDetails(companyId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -360,7 +360,7 @@ export function useCreateContactWithDetails(companyId: string) {
 export function useExportContactDetails() {
   const { error } = useToast();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -438,7 +438,7 @@ export interface GroupedContactDetailsResponse {
  */
 export function useContactDetails(contactId: string | null) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -466,7 +466,7 @@ export function useContactDetails(contactId: string | null) {
  */
 export function useContactDetailsGrouped(contactId: string | null) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -495,7 +495,7 @@ export function useCreateContactLevelDetail(contactId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -533,7 +533,7 @@ export function useUpdateContactLevelDetail(contactId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -568,7 +568,7 @@ export function useDeleteContactLevelDetail(contactId: string) {
   const queryClient = useQueryClient();
   const { error } = useToast();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );

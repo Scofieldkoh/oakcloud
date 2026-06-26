@@ -9,7 +9,7 @@ import {
   callAI,
   callAIWithConnector,
   getBestAvailableModel,
-  getBestAvailableModelForTenant,
+  getBestAvailableModelForWorkspace,
   getModelConfig,
   stripMarkdownCodeBlocks,
 } from '@/lib/ai';
@@ -232,7 +232,7 @@ async function resolveBizFileModel(
   options?: BizFileExtractionOptions
 ): Promise<AIModel | null> {
   if (options?.tenantId !== undefined) {
-    return options.modelId || (await getBestAvailableModelForTenant(options.tenantId));
+    return options.modelId || (await getBestAvailableModelForWorkspace(options.tenantId));
   }
 
   return options?.modelId || getBestAvailableModel();

@@ -309,11 +309,14 @@ export async function deleteComment(
     },
   });
 
-  const isTenantAdmin = user?.roleAssignments.some(
-    (ra: { role: { systemRoleType: string | null } }) => ra.role.systemRoleType === 'TENANT_ADMIN'
+  const isWorkspaceAdmin = user?.roleAssignments.some(
+    (ra: { role: { systemRoleType: string | null } }) =>
+      ra.role.systemRoleType === 'ADMIN' ||
+      ra.role.systemRoleType === 'TENANT_ADMIN' ||
+      ra.role.systemRoleType === 'SUPER_ADMIN'
   );
 
-  if (!isAuthor && !isTenantAdmin) {
+  if (!isAuthor && !isWorkspaceAdmin) {
     throw new Error('Only the author or admin can delete this comment');
   }
 

@@ -282,7 +282,7 @@ export type workflow_engagementsWhereInput = {
   companies?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   users_workflow_engagements_created_byTousers?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   users_workflow_engagements_director_poc_idTousers?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-  tenants?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenants?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   workflow_instances?: Prisma.Workflow_instancesListRelationFilter
   workflow_program_requirements?: Prisma.Workflow_program_requirementsListRelationFilter
 }
@@ -309,7 +309,7 @@ export type workflow_engagementsOrderByWithRelationInput = {
   companies?: Prisma.CompanyOrderByWithRelationInput
   users_workflow_engagements_created_byTousers?: Prisma.UserOrderByWithRelationInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserOrderByWithRelationInput
-  tenants?: Prisma.TenantOrderByWithRelationInput
+  tenants?: Prisma.WorkspaceOrderByWithRelationInput
   workflow_instances?: Prisma.workflow_instancesOrderByRelationAggregateInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsOrderByRelationAggregateInput
 }
@@ -339,7 +339,7 @@ export type workflow_engagementsWhereUniqueInput = Prisma.AtLeast<{
   companies?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   users_workflow_engagements_created_byTousers?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   users_workflow_engagements_director_poc_idTousers?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-  tenants?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenants?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   workflow_instances?: Prisma.Workflow_instancesListRelationFilter
   workflow_program_requirements?: Prisma.Workflow_program_requirementsListRelationFilter
 }, "id">
@@ -408,7 +408,7 @@ export type workflow_engagementsCreateInput = {
   companies: Prisma.CompanyCreateNestedOneWithoutWorkflow_engagementsInput
   users_workflow_engagements_created_byTousers: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_created_byTousersInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_engagementsInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_engagementsInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutWorkflow_engagementsInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsCreateNestedManyWithoutWorkflow_engagementsInput
 }
@@ -454,7 +454,7 @@ export type workflow_engagementsUpdateInput = {
   companies?: Prisma.CompanyUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   users_workflow_engagements_created_byTousers?: Prisma.UserUpdateOneRequiredWithoutWorkflow_engagements_workflow_engagements_created_byTousersNestedInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutWorkflow_engagementsNestedInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsUpdateManyWithoutWorkflow_engagementsNestedInput
 }
@@ -937,7 +937,7 @@ export type workflow_engagementsCreateWithoutUsers_workflow_engagements_created_
   workflow_engagement_services?: Prisma.workflow_engagement_servicesCreateNestedManyWithoutWorkflow_engagementsInput
   companies: Prisma.CompanyCreateNestedOneWithoutWorkflow_engagementsInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_engagementsInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_engagementsInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutWorkflow_engagementsInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsCreateNestedManyWithoutWorkflow_engagementsInput
 }
@@ -991,7 +991,7 @@ export type workflow_engagementsCreateWithoutUsers_workflow_engagements_director
   workflow_engagement_services?: Prisma.workflow_engagement_servicesCreateNestedManyWithoutWorkflow_engagementsInput
   companies: Prisma.CompanyCreateNestedOneWithoutWorkflow_engagementsInput
   users_workflow_engagements_created_byTousers: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_created_byTousersInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_engagementsInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_engagementsInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutWorkflow_engagementsInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsCreateNestedManyWithoutWorkflow_engagementsInput
 }
@@ -1077,7 +1077,7 @@ export type workflow_engagementsCreateWithoutCompaniesInput = {
   workflow_engagement_services?: Prisma.workflow_engagement_servicesCreateNestedManyWithoutWorkflow_engagementsInput
   users_workflow_engagements_created_byTousers: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_created_byTousersInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_engagementsInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_engagementsInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutWorkflow_engagementsInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsCreateNestedManyWithoutWorkflow_engagementsInput
 }
@@ -1147,7 +1147,7 @@ export type workflow_engagementsCreateWithoutWorkflow_engagement_servicesInput =
   companies: Prisma.CompanyCreateNestedOneWithoutWorkflow_engagementsInput
   users_workflow_engagements_created_byTousers: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_created_byTousersInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_engagementsInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_engagementsInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutWorkflow_engagementsInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsCreateNestedManyWithoutWorkflow_engagementsInput
 }
@@ -1207,7 +1207,7 @@ export type workflow_engagementsUpdateWithoutWorkflow_engagement_servicesInput =
   companies?: Prisma.CompanyUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   users_workflow_engagements_created_byTousers?: Prisma.UserUpdateOneRequiredWithoutWorkflow_engagements_workflow_engagements_created_byTousersNestedInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutWorkflow_engagementsNestedInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsUpdateManyWithoutWorkflow_engagementsNestedInput
 }
@@ -1252,7 +1252,7 @@ export type workflow_engagementsCreateWithoutWorkflow_instancesInput = {
   companies: Prisma.CompanyCreateNestedOneWithoutWorkflow_engagementsInput
   users_workflow_engagements_created_byTousers: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_created_byTousersInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_engagementsInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_engagementsInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsCreateNestedManyWithoutWorkflow_engagementsInput
 }
 
@@ -1312,7 +1312,7 @@ export type workflow_engagementsUpdateWithoutWorkflow_instancesInput = {
   companies?: Prisma.CompanyUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   users_workflow_engagements_created_byTousers?: Prisma.UserUpdateOneRequiredWithoutWorkflow_engagements_workflow_engagements_created_byTousersNestedInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsUpdateManyWithoutWorkflow_engagementsNestedInput
 }
 
@@ -1356,7 +1356,7 @@ export type workflow_engagementsCreateWithoutWorkflow_program_requirementsInput 
   companies: Prisma.CompanyCreateNestedOneWithoutWorkflow_engagementsInput
   users_workflow_engagements_created_byTousers: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_created_byTousersInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserCreateNestedOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_engagementsInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_engagementsInput
   workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutWorkflow_engagementsInput
 }
 
@@ -1416,7 +1416,7 @@ export type workflow_engagementsUpdateWithoutWorkflow_program_requirementsInput 
   companies?: Prisma.CompanyUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   users_workflow_engagements_created_byTousers?: Prisma.UserUpdateOneRequiredWithoutWorkflow_engagements_workflow_engagements_created_byTousersNestedInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutWorkflow_engagementsNestedInput
 }
 
@@ -1579,7 +1579,7 @@ export type workflow_engagementsUpdateWithoutUsers_workflow_engagements_created_
   workflow_engagement_services?: Prisma.workflow_engagement_servicesUpdateManyWithoutWorkflow_engagementsNestedInput
   companies?: Prisma.CompanyUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutWorkflow_engagementsNestedInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsUpdateManyWithoutWorkflow_engagementsNestedInput
 }
@@ -1642,7 +1642,7 @@ export type workflow_engagementsUpdateWithoutUsers_workflow_engagements_director
   workflow_engagement_services?: Prisma.workflow_engagement_servicesUpdateManyWithoutWorkflow_engagementsNestedInput
   companies?: Prisma.CompanyUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   users_workflow_engagements_created_byTousers?: Prisma.UserUpdateOneRequiredWithoutWorkflow_engagements_workflow_engagements_created_byTousersNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutWorkflow_engagementsNestedInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsUpdateManyWithoutWorkflow_engagementsNestedInput
 }
@@ -1724,7 +1724,7 @@ export type workflow_engagementsUpdateWithoutCompaniesInput = {
   workflow_engagement_services?: Prisma.workflow_engagement_servicesUpdateManyWithoutWorkflow_engagementsNestedInput
   users_workflow_engagements_created_byTousers?: Prisma.UserUpdateOneRequiredWithoutWorkflow_engagements_workflow_engagements_created_byTousersNestedInput
   users_workflow_engagements_director_poc_idTousers?: Prisma.UserUpdateOneWithoutWorkflow_engagements_workflow_engagements_director_poc_idTousersNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_engagementsNestedInput
   workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutWorkflow_engagementsNestedInput
   workflow_program_requirements?: Prisma.workflow_program_requirementsUpdateManyWithoutWorkflow_engagementsNestedInput
 }
@@ -1841,7 +1841,7 @@ export type workflow_engagementsSelect<ExtArgs extends runtime.Types.Extensions.
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   users_workflow_engagements_created_byTousers?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   users_workflow_engagements_director_poc_idTousers?: boolean | Prisma.workflow_engagements$users_workflow_engagements_director_poc_idTousersArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   workflow_instances?: boolean | Prisma.workflow_engagements$workflow_instancesArgs<ExtArgs>
   workflow_program_requirements?: boolean | Prisma.workflow_engagements$workflow_program_requirementsArgs<ExtArgs>
   _count?: boolean | Prisma.Workflow_engagementsCountOutputTypeDefaultArgs<ExtArgs>
@@ -1868,7 +1868,7 @@ export type workflow_engagementsSelectCreateManyAndReturn<ExtArgs extends runtim
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   users_workflow_engagements_created_byTousers?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   users_workflow_engagements_director_poc_idTousers?: boolean | Prisma.workflow_engagements$users_workflow_engagements_director_poc_idTousersArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_engagements"]>
 
 export type workflow_engagementsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1892,7 +1892,7 @@ export type workflow_engagementsSelectUpdateManyAndReturn<ExtArgs extends runtim
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   users_workflow_engagements_created_byTousers?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   users_workflow_engagements_director_poc_idTousers?: boolean | Prisma.workflow_engagements$users_workflow_engagements_director_poc_idTousersArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_engagements"]>
 
 export type workflow_engagementsSelectScalar = {
@@ -1921,7 +1921,7 @@ export type workflow_engagementsInclude<ExtArgs extends runtime.Types.Extensions
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   users_workflow_engagements_created_byTousers?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   users_workflow_engagements_director_poc_idTousers?: boolean | Prisma.workflow_engagements$users_workflow_engagements_director_poc_idTousersArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   workflow_instances?: boolean | Prisma.workflow_engagements$workflow_instancesArgs<ExtArgs>
   workflow_program_requirements?: boolean | Prisma.workflow_engagements$workflow_program_requirementsArgs<ExtArgs>
   _count?: boolean | Prisma.Workflow_engagementsCountOutputTypeDefaultArgs<ExtArgs>
@@ -1930,13 +1930,13 @@ export type workflow_engagementsIncludeCreateManyAndReturn<ExtArgs extends runti
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   users_workflow_engagements_created_byTousers?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   users_workflow_engagements_director_poc_idTousers?: boolean | Prisma.workflow_engagements$users_workflow_engagements_director_poc_idTousersArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type workflow_engagementsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   users_workflow_engagements_created_byTousers?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   users_workflow_engagements_director_poc_idTousers?: boolean | Prisma.workflow_engagements$users_workflow_engagements_director_poc_idTousersArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 
 export type $workflow_engagementsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1946,7 +1946,7 @@ export type $workflow_engagementsPayload<ExtArgs extends runtime.Types.Extension
     companies: Prisma.$CompanyPayload<ExtArgs>
     users_workflow_engagements_created_byTousers: Prisma.$UserPayload<ExtArgs>
     users_workflow_engagements_director_poc_idTousers: Prisma.$UserPayload<ExtArgs> | null
-    tenants: Prisma.$TenantPayload<ExtArgs>
+    tenants: Prisma.$WorkspacePayload<ExtArgs>
     workflow_instances: Prisma.$workflow_instancesPayload<ExtArgs>[]
     workflow_program_requirements: Prisma.$workflow_program_requirementsPayload<ExtArgs>[]
   }
@@ -2366,7 +2366,7 @@ export interface Prisma__workflow_engagementsClient<T, Null = never, ExtArgs ext
   companies<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   users_workflow_engagements_created_byTousers<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   users_workflow_engagements_director_poc_idTousers<T extends Prisma.workflow_engagements$users_workflow_engagements_director_poc_idTousersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_engagements$users_workflow_engagements_director_poc_idTousersArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  tenants<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenants<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   workflow_instances<T extends Prisma.workflow_engagements$workflow_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_engagements$workflow_instancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_instancesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   workflow_program_requirements<T extends Prisma.workflow_engagements$workflow_program_requirementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_engagements$workflow_program_requirementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_program_requirementsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**

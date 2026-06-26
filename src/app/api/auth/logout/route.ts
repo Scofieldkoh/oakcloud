@@ -18,7 +18,7 @@ export async function POST() {
         email: session.email,
         userName: `${session.firstName} ${session.lastName}`,
         isSuperAdmin: session.isSuperAdmin,
-        isTenantAdmin: session.isTenantAdmin,
+        isWorkspaceAdmin: session.isWorkspaceAdmin,
         tenantId: session.tenantId,
       });
     }

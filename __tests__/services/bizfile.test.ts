@@ -11,7 +11,7 @@ vi.mock('@/lib/ai', () => ({
   callAI: vi.fn(),
   callAIWithConnector: vi.fn(),
   getBestAvailableModel: vi.fn(() => 'gpt-4o'),
-  getBestAvailableModelForTenant: vi.fn(() => Promise.resolve('gpt-4o')),
+  getBestAvailableModelForWorkspace: vi.fn(() => Promise.resolve('gpt-4o')),
   getModelConfig: vi.fn(() => ({ name: 'GPT-4o', provider: 'openai' })),
 }));
 

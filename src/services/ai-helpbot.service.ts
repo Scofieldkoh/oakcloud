@@ -7,7 +7,7 @@ import { requirePermission } from '@/lib/rbac';
 import {
   AI_MODELS,
   callAIWithConnector,
-  getBestAvailableModelForTenant,
+  getBestAvailableModelForWorkspace,
   stripMarkdownCodeBlocks,
   type AIModel,
 } from '@/lib/ai';
@@ -804,7 +804,7 @@ export async function respondAssistant(
     heading: chunk.heading,
   }));
 
-  const selectedModel = getModelId(input.model) || (await getBestAvailableModelForTenant(tenantId));
+  const selectedModel = getModelId(input.model) || (await getBestAvailableModelForWorkspace(tenantId));
   if (!selectedModel) {
     throw new Error('No AI model available. Configure a connector first.');
   }

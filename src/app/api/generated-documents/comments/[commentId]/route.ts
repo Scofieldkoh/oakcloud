@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { z } from 'zod';
 import {
   getComment,
@@ -34,18 +35,16 @@ const actionSchema = z.object({
 // Get a single comment
 // ============================================================================
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { commentId } = await params;
 
     await requirePermission(session, 'document', 'read');
 
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
-    const comment = await getComment(session.tenantId, commentId);
+    const comment = await getComment(tenantId, commentId);
 
     if (!comment) {
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
@@ -76,9 +75,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { commentId } = await params;
 
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
     const body = await request.json();
 
@@ -91,16 +88,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       let result;
       switch (action) {
         case 'resolve':
-          result = await resolveComment(session.tenantId, session.id, commentId);
+          result = await resolveComment(tenantId, session.id, commentId);
           break;
         case 'reopen':
-          result = await reopenComment(session.tenantId, session.id, commentId);
+          result = await reopenComment(tenantId, session.id, commentId);
           break;
         case 'hide':
-          result = await hideComment(session.tenantId, session.id, commentId, reason);
+          result = await hideComment(tenantId, session.id, commentId, reason);
           break;
         case 'unhide':
-          result = await unhideComment(session.tenantId, session.id, commentId);
+          result = await unhideComment(tenantId, session.id, commentId);
           break;
       }
 
@@ -112,7 +109,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { content } = updateCommentSchema.parse(body);
 
-    const updated = await updateComment(session.tenantId, session.id, commentId, { content });
+    const updated = await updateComment(tenantId, session.id, commentId, { content });
 
     return NextResponse.json(updated);
   } catch (error) {
@@ -144,18 +141,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 // Delete a comment
 // ============================================================================
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const { commentId } = await params;
 
     await requirePermission(session, 'document', 'update');
 
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
-    await deleteComment(session.tenantId, session.id, commentId);
+    await deleteComment(tenantId, session.id, commentId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

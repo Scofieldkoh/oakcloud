@@ -127,7 +127,7 @@ export const exchangeRateSourceSchema = z.enum(['MAS_DAILY', 'MAS_MONTHLY', 'MAN
 export type ExchangeRateSourceType = z.infer<typeof exchangeRateSourceSchema>;
 
 /**
- * Rate preference options for tenant settings.
+ * Rate preference options for workspace settings.
  * MONTHLY = Use MAS monthly end-of-period rates (default)
  * DAILY = Use MAS daily rates
  */
@@ -253,13 +253,13 @@ export const exchangeRateSyncSchema = z.object({
 export type ExchangeRateSyncInput = z.infer<typeof exchangeRateSyncSchema>;
 
 /**
- * Schema for tenant rate preference update.
+ * Schema for workspace rate preference update.
  */
-export const tenantRatePreferenceSchema = z.object({
+export const workspaceRatePreferenceSchema = z.object({
   preferredRateType: ratePreferenceSchema,
 });
 
-export type TenantRatePreferenceInput = z.infer<typeof tenantRatePreferenceSchema>;
+export type WorkspaceRatePreferenceInput = z.infer<typeof workspaceRatePreferenceSchema>;
 
 // ============================================================================
 // HELPER FUNCTIONS

@@ -283,13 +283,13 @@ export function EsigningVerifyPage() {
     async function loadVerification() {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/esigning/verify/${encodeURIComponent(certificateId)}`);
+        const response = await fetch(`/api/public-bootstrap/verify/${encodeURIComponent(certificateId)}`);
         const result = await response.json().catch(() => ({}));
         if (!response.ok) {
           throw new Error(result.error || 'Certificate not found');
         }
         if (!cancelled) {
-          setData(result);
+          setData(result.certificate ?? result);
           setError(null);
         }
       } catch (loadError) {

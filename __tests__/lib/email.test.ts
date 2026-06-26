@@ -5,10 +5,7 @@ const ORIGINAL_ENV = { ...process.env };
 async function loadGetAppBaseUrl(): Promise<() => string> {
   vi.resetModules();
   const mod = await import('@/lib/email');
-  if ('getAppBaseUrl' in mod && typeof mod.getAppBaseUrl === 'function') {
-    return mod.getAppBaseUrl;
-  }
-  return mod.default.getAppBaseUrl as () => string;
+  return mod.getAppBaseUrl;
 }
 
 describe('getAppBaseUrl', () => {
@@ -17,7 +14,7 @@ describe('getAppBaseUrl', () => {
   });
 
   it('honors EMAIL_APP_URL even when it points to localhost', async () => {
-    process.env.NODE_ENV = 'development';
+    vi.stubEnv('NODE_ENV', 'development');
     process.env.EMAIL_APP_URL = 'http://localhost:3001/';
     process.env.NEXT_PUBLIC_APP_URL = 'https://service.oakcloud.app';
 
@@ -27,7 +24,7 @@ describe('getAppBaseUrl', () => {
   });
 
   it('allows localhost NEXT_PUBLIC_APP_URL in development', async () => {
-    process.env.NODE_ENV = 'development';
+    vi.stubEnv('NODE_ENV', 'development');
     delete process.env.EMAIL_APP_URL;
     process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3001/';
 
@@ -37,7 +34,7 @@ describe('getAppBaseUrl', () => {
   });
 
   it('falls back to the production domain for localhost public URLs outside development', async () => {
-    process.env.NODE_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'production');
     delete process.env.EMAIL_APP_URL;
     process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3001/';
 

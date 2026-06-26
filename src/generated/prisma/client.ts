@@ -29,8 +29,8 @@ export * from "./enums"
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Tenants
- * const tenants = await prisma.tenant.findMany()
+ * // Fetch zero or more Workspaces
+ * const workspaces = await prisma.workspace.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -40,10 +40,10 @@ export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts exten
 export { Prisma }
 
 /**
- * Model Tenant
+ * Model Workspace
  * 
  */
-export type Tenant = Prisma.TenantModel
+export type Workspace = Prisma.WorkspaceModel
 /**
  * Model Role
  * 
@@ -74,6 +74,11 @@ export type User = Prisma.UserModel
  * 
  */
 export type UserPreference = Prisma.UserPreferenceModel
+/**
+ * Model PerformanceMeasurement
+ * 
+ */
+export type PerformanceMeasurement = Prisma.PerformanceMeasurementModel
 /**
  * Model UserCompanyAssignment
  * 
@@ -145,10 +150,10 @@ export type AuditLog = Prisma.AuditLogModel
  */
 export type Connector = Prisma.ConnectorModel
 /**
- * Model TenantConnectorAccess
+ * Model WorkspaceConnectorAccess
  * 
  */
-export type TenantConnectorAccess = Prisma.TenantConnectorAccessModel
+export type WorkspaceConnectorAccess = Prisma.WorkspaceConnectorAccessModel
 /**
  * Model ConnectorUsageLog
  * 
@@ -185,10 +190,10 @@ export type DocumentSection = Prisma.DocumentSectionModel
  */
 export type DocumentShare = Prisma.DocumentShareModel
 /**
- * Model TenantLetterhead
+ * Model WorkspaceLetterhead
  * 
  */
-export type TenantLetterhead = Prisma.TenantLetterheadModel
+export type WorkspaceLetterhead = Prisma.WorkspaceLetterheadModel
 /**
  * Model DocumentComment
  * 
@@ -415,10 +420,10 @@ export type ExternalPosting = Prisma.ExternalPostingModel
  */
 export type FieldMapping = Prisma.FieldMappingModel
 /**
- * Model TenantBackup
+ * Model WorkspaceBackup
  * 
  */
-export type TenantBackup = Prisma.TenantBackupModel
+export type WorkspaceBackup = Prisma.WorkspaceBackupModel
 /**
  * Model BackupSchedule
  * 

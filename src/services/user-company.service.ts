@@ -435,15 +435,15 @@ export async function checkUserCompanyAccess(
     return false;
   }
 
-  // SUPER_ADMIN and TENANT_ADMIN have access to all companies in their tenant
+  // Admin roles have access to all companies in their workspace.
   const isSuperAdmin = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+    (a) => a.role.systemRoleType === 'ADMIN' || a.role.systemRoleType === 'SUPER_ADMIN'
   );
-  const isTenantAdmin = user.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
+  const isWorkspaceAdmin = user.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'ADMIN' || a.role.systemRoleType === 'TENANT_ADMIN'
   );
 
-  if (isSuperAdmin || isTenantAdmin) {
+  if (isSuperAdmin || isWorkspaceAdmin) {
     return true;
   }
 
@@ -476,15 +476,15 @@ export async function getUserAccessibleCompanies(
     },
   });
 
-  // SUPER_ADMIN and TENANT_ADMIN can access all companies
+  // Admin roles can access all companies.
   const isSuperAdmin = user?.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'SUPER_ADMIN'
+    (a) => a.role.systemRoleType === 'ADMIN' || a.role.systemRoleType === 'SUPER_ADMIN'
   );
-  const isTenantAdmin = user?.roleAssignments.some(
-    (a) => a.role.systemRoleType === 'TENANT_ADMIN'
+  const isWorkspaceAdmin = user?.roleAssignments.some(
+    (a) => a.role.systemRoleType === 'ADMIN' || a.role.systemRoleType === 'TENANT_ADMIN'
   );
 
-  if (isSuperAdmin || isTenantAdmin) {
+  if (isSuperAdmin || isWorkspaceAdmin) {
     const companies = await prisma.company.findMany({
       where: { tenantId, deletedAt: null },
       select: { id: true, name: true, uen: true },

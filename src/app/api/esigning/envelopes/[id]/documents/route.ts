@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import { uploadEsigningEnvelopeDocument } from '@/services/esigning-envelope.service';
 
 interface RouteParams {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const formData = await request.formData();
     const file = formData.get('file');
-    const tenantId = resolveTenantId(session, formData.get('tenantId')?.toString());
+    const tenantId = resolveWorkspaceId(session, formData.get('tenantId')?.toString());
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });

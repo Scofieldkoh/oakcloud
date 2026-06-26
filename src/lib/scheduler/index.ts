@@ -62,6 +62,8 @@ import {
   exchangeRateSyncTask,
   formAiReviewTask,
   formCountReconciliationTask,
+  processingRevisionBackfillTask,
+  summaryCountRefreshTask,
 } from './tasks';
 import { startViewCountFlush, stopViewCountFlush } from '@/lib/view-count-buffer';
 
@@ -80,6 +82,8 @@ export async function initializeScheduler(): Promise<void> {
   scheduler.registerTask(exchangeRateSyncTask);
   scheduler.registerTask(formAiReviewTask);
   scheduler.registerTask(formCountReconciliationTask);
+  scheduler.registerTask(processingRevisionBackfillTask);
+  scheduler.registerTask(summaryCountRefreshTask);
 
   // Initialize and start the scheduler
   await scheduler.initialize();

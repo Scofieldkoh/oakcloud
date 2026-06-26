@@ -3,11 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, AlertCircle, FileText } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
 import { useToast } from '@/components/ui/toast';
-import { useSession } from '@/hooks/use-auth';
 import {
   DocumentGenerationWizard,
   type GenerateDocumentData,
@@ -36,13 +34,6 @@ interface Company {
 export default function GenerateDocumentPage() {
   const router = useRouter();
   const { success } = useToast();
-  const { data: session } = useSession();
-
-  // Tenant selection (from centralized store for SUPER_ADMIN)
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
 
   // State
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
@@ -54,33 +45,17 @@ export default function GenerateDocumentPage() {
   // Fetch templates, companies, and partials
   useEffect(() => {
     const fetchData = async () => {
-      // Don't fetch if SUPER_ADMIN hasn't selected a tenant
-      if (session?.isSuperAdmin && !activeTenantId) {
-        setTemplates([]);
-        setCompanies([]);
-        setPartials([]);
-        setIsLoading(false);
-        return;
-      }
-
       setIsLoading(true);
       setError(null);
 
       try {
-        // Build query params with tenantId for SUPER_ADMIN
         const templatesParams = new URLSearchParams({ isActive: 'true', limit: '100' });
-        const companiesParams = new URLSearchParams({ limit: '100', sortBy: 'name', sortOrder: 'asc' });
+        const companiesParams = new URLSearchParams({ limit: '50' });
         const partialsParams = new URLSearchParams({ all: 'true' });
-
-        if (session?.isSuperAdmin && activeTenantId) {
-          templatesParams.set('tenantId', activeTenantId);
-          companiesParams.set('tenantId', activeTenantId);
-          partialsParams.set('tenantId', activeTenantId);
-        }
 
         const [templatesRes, companiesRes, partialsRes] = await Promise.all([
           fetch(`/api/document-templates?${templatesParams}`),
-          fetch(`/api/companies?${companiesParams}`),
+          fetch(`/api/companies/options?${companiesParams}`),
           fetch(`/api/template-partials?${partialsParams}`),
         ]);
 
@@ -96,7 +71,16 @@ export default function GenerateDocumentPage() {
         const partialsData = partialsRes.ok ? await partialsRes.json() : { partials: [] };
 
         setTemplates(templatesData.templates || []);
-        setCompanies(companiesData.companies || []);
+        setCompanies((companiesData.options || []).map((company: {
+          id: string;
+          name: string;
+          uen?: string | null;
+        }) => ({
+          id: company.id,
+          name: company.name,
+          uen: company.uen || '',
+          status: '',
+        })));
         setPartials(partialsData.partials || []);
       } catch (err) {
         console.error('Fetch error:', err);
@@ -107,7 +91,7 @@ export default function GenerateDocumentPage() {
     };
 
     fetchData();
-  }, [session?.isSuperAdmin, activeTenantId]);
+  }, []);
 
   // Handle document generation
   const handleGenerate = useCallback(
@@ -122,11 +106,6 @@ export default function GenerateDocumentPage() {
         editedContent: data.editedContent,
         status: 'FINALIZED', // Set as finalized by default
       };
-
-      // Add tenantId for SUPER_ADMIN
-      if (session?.isSuperAdmin && activeTenantId) {
-        requestBody.tenantId = activeTenantId;
-      }
 
       const response = await fetch('/api/generated-documents', {
         method: 'POST',
@@ -153,7 +132,7 @@ export default function GenerateDocumentPage() {
         missingPlaceholders: result.metadata?.missingPlaceholders,
       };
     },
-    [success, session?.isSuperAdmin, activeTenantId, router]
+    [success, router]
   );
 
   // Handle template preview
@@ -171,11 +150,6 @@ export default function GenerateDocumentPage() {
           companyId,
           customData,
         };
-
-        // Add tenantId for SUPER_ADMIN
-        if (session?.isSuperAdmin && activeTenantId) {
-          requestBody.tenantId = activeTenantId;
-        }
 
         const response = await fetch('/api/generated-documents/validate', {
           method: 'POST',
@@ -197,7 +171,7 @@ export default function GenerateDocumentPage() {
         };
       }
     },
-    [session?.isSuperAdmin, activeTenantId]
+    []
   );
 
   return (
@@ -216,21 +190,8 @@ export default function GenerateDocumentPage() {
 
       {/* Content */}
       <div>
-        {/* Tenant context info for SUPER_ADMIN */}
-        {session?.isSuperAdmin && !activeTenantId && (
-          <div className="py-16 text-center">
-            <FileText className="w-16 h-16 mx-auto text-text-muted opacity-50 mb-4" />
-            <h3 className="text-lg font-medium text-text-primary mb-2">
-              Select a Tenant
-            </h3>
-            <p className="text-text-muted">
-              Please select a tenant from the sidebar to generate documents
-            </p>
-          </div>
-        )}
-
         {/* Loading state */}
-        {activeTenantId && isLoading && (
+        {isLoading && (
           <div className="flex flex-col items-center justify-center py-16">
             <Loader2 className="w-10 h-10 animate-spin text-accent-primary mb-4" />
             <p className="text-text-muted">Loading templates and companies...</p>
@@ -238,7 +199,7 @@ export default function GenerateDocumentPage() {
         )}
 
         {/* Error state */}
-        {activeTenantId && error && (
+        {error && (
           <div className="card border-status-error bg-status-error/5 mb-4">
             <div className="flex items-center gap-3 text-status-error">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -258,7 +219,7 @@ export default function GenerateDocumentPage() {
         )}
 
         {/* No templates */}
-        {activeTenantId && !isLoading && !error && templates.length === 0 && (
+        {!isLoading && !error && templates.length === 0 && (
           <div className="py-16 text-center">
             <AlertCircle className="w-12 h-12 mx-auto text-amber-500 mb-4" />
             <h3 className="text-lg font-medium text-text-primary mb-2">
@@ -274,12 +235,11 @@ export default function GenerateDocumentPage() {
         )}
 
         {/* Wizard */}
-        {activeTenantId && !isLoading && !error && templates.length > 0 && (
+        {!isLoading && !error && templates.length > 0 && (
           <DocumentGenerationWizard
             templates={templates}
             companies={companies}
             partials={partials}
-            tenantId={activeTenantId}
             onGenerate={handleGenerate}
             onPreviewTemplate={handlePreviewTemplate}
             onValidate={handleValidate}

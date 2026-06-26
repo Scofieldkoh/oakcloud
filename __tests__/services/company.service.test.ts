@@ -31,7 +31,7 @@ vi.mock('@/lib/audit', () => ({
 }));
 
 // Mock tenant utilities
-vi.mock('@/lib/tenant', () => ({
+vi.mock('@/lib/workspace', () => ({
   canAddCompany: vi.fn(() => Promise.resolve(true)),
 }));
 
@@ -53,7 +53,7 @@ describe('Company Service', () => {
     it('should require tenantId for non-admin queries', async () => {
       await expect(
         getCompanyById('company-1', null)
-      ).rejects.toThrow('tenantId is required');
+      ).rejects.toThrow('Workspace context is required for company queries');
     });
 
     it('should allow skipTenantFilter for SUPER_ADMIN', async () => {

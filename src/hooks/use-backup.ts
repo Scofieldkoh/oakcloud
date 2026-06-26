@@ -1,5 +1,5 @@
 /**
- * Backup hooks for tenant backup and restore operations
+ * Backup hooks for workspace backup and restore operations
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +19,7 @@ export type BackupStatus =
 
 export type BackupType = 'MANUAL' | 'SCHEDULED';
 
-export interface TenantBackup {
+export interface WorkspaceBackup {
   id: string;
   tenantId: string;
   name: string | null;
@@ -66,7 +66,7 @@ export interface BackupManifest {
 }
 
 export interface BackupsResponse {
-  backups: TenantBackup[];
+  backups: WorkspaceBackup[];
   totalCount: number;
   page: number;
   limit: number;
@@ -74,14 +74,14 @@ export interface BackupsResponse {
 }
 
 export interface BackupsParams {
-  tenantId?: string;
+  workspaceId?: string;
   status?: BackupStatus;
   page?: number;
   limit?: number;
 }
 
 export interface CreateBackupData {
-  tenantId: string;
+  workspaceId: string;
   name?: string;
   retentionDays?: number;
   includeAuditLogs?: boolean;
@@ -109,7 +109,7 @@ export function useBackups(params?: BackupsParams) {
     queryKey: ['backups', params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
-      if (params?.tenantId) searchParams.set('tenantId', params.tenantId);
+      if (params?.workspaceId) searchParams.set('tenantId', params.workspaceId);
       if (params?.status) searchParams.set('status', params.status);
       if (params?.page) searchParams.set('page', params.page.toString());
       if (params?.limit) searchParams.set('limit', params.limit.toString());
@@ -135,7 +135,7 @@ export function useBackups(params?: BackupsParams) {
  * Fetch single backup details
  */
 export function useBackup(id: string | undefined) {
-  return useQuery<TenantBackup>({
+  return useQuery<WorkspaceBackup>({
     queryKey: ['backup', id],
     queryFn: async () => {
       if (!id) throw new Error('Backup ID required');
@@ -165,10 +165,14 @@ export function useCreateBackup() {
 
   return useMutation({
     mutationFn: async (data: CreateBackupData) => {
+      const { workspaceId, ...requestData } = data;
       const res = await fetch('/api/admin/backup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...requestData,
+          tenantId: workspaceId,
+        }),
       });
       if (!res.ok) {
         const error = await res.json();
@@ -203,7 +207,6 @@ export function useRestoreBackup() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['backups'] });
-      queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
   });
 }
@@ -329,7 +332,7 @@ export interface BackupSchedulesParams {
 }
 
 export interface CreateBackupScheduleData {
-  tenantId: string;
+  workspaceId: string;
   cronPattern: string;
   isEnabled?: boolean;
   timezone?: string;
@@ -371,14 +374,14 @@ export function useBackupSchedules(params?: BackupSchedulesParams) {
 }
 
 /**
- * Fetch single backup schedule by tenant ID
+ * Fetch single backup schedule by workspace ID
  */
-export function useBackupSchedule(tenantId: string | undefined) {
+export function useBackupSchedule(workspaceId: string | undefined) {
   return useQuery<BackupSchedule>({
-    queryKey: ['backup-schedule', tenantId],
+    queryKey: ['backup-schedule', workspaceId],
     queryFn: async () => {
-      if (!tenantId) throw new Error('Tenant ID required');
-      const res = await fetch(`/api/admin/backup/schedule/${tenantId}`);
+      if (!workspaceId) throw new Error('Workspace ID required');
+      const res = await fetch(`/api/admin/backup/schedule/${workspaceId}`);
       if (!res.ok) {
         if (res.status === 404) return null;
         const error = await res.json();
@@ -386,7 +389,7 @@ export function useBackupSchedule(tenantId: string | undefined) {
       }
       return res.json();
     },
-    enabled: !!tenantId,
+    enabled: !!workspaceId,
   });
 }
 
@@ -398,10 +401,14 @@ export function useCreateBackupSchedule() {
 
   return useMutation({
     mutationFn: async (data: CreateBackupScheduleData) => {
+      const { workspaceId, ...requestData } = data;
       const res = await fetch('/api/admin/backup/schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...requestData,
+          tenantId: workspaceId,
+        }),
       });
       if (!res.ok) {
         const error = await res.json();
@@ -422,8 +429,8 @@ export function useUpdateBackupSchedule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ tenantId, ...data }: { tenantId: string } & UpdateBackupScheduleData) => {
-      const res = await fetch(`/api/admin/backup/schedule/${tenantId}`, {
+    mutationFn: async ({ workspaceId, ...data }: { workspaceId: string } & UpdateBackupScheduleData) => {
+      const res = await fetch(`/api/admin/backup/schedule/${workspaceId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -436,7 +443,7 @@ export function useUpdateBackupSchedule() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['backup-schedules'] });
-      queryClient.invalidateQueries({ queryKey: ['backup-schedule', variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['backup-schedule', variables.workspaceId] });
     },
   });
 }
@@ -448,8 +455,8 @@ export function useDeleteBackupSchedule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (tenantId: string) => {
-      const res = await fetch(`/api/admin/backup/schedule/${tenantId}`, { method: 'DELETE' });
+    mutationFn: async (workspaceId: string) => {
+      const res = await fetch(`/api/admin/backup/schedule/${workspaceId}`, { method: 'DELETE' });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || 'Failed to delete backup schedule');

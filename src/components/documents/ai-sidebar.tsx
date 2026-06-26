@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { AIModelSelector, useAIModels } from '@/components/ui/ai-model-selector';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { cn } from '@/lib/utils';
 
 // Document category type (string union for flexibility)
@@ -150,7 +150,7 @@ export function AISidebar({
   // Resolve tenant context for connector-aware model selection/calls.
   // For SUPER_ADMIN, fall back to the active tenant store selection.
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
   const effectiveTenantId = context.tenantId || activeTenantId;
 
   // Hooks - pass resolved tenantId for connector-aware model availability

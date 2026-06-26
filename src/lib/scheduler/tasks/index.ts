@@ -13,3 +13,5 @@ export { esigningRemindersTask } from './esigning-reminders.task';
 export { exchangeRateSyncTask } from './exchange-rate-sync.task';
 export { formAiReviewTask } from './form-ai-review.task';
 export { formCountReconciliationTask } from './form-count-reconciliation.task';
+export { processingRevisionBackfillTask } from './processing-revision-backfill.task';
+export { summaryCountRefreshTask } from './summary-count-refresh.task';

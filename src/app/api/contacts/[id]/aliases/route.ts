@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 // Schema for creating an alias
-// companyId is optional - if not provided, creates a tenant-wide alias
+// companyId is optional - if not provided, creates a workspace-wide alias
 const createAliasSchema = z.object({
   type: z.enum(['vendor', 'customer']),
   companyId: z.string().uuid().optional().nullable(),
@@ -120,7 +120,7 @@ export async function GET(
       orderBy: { createdAt: 'desc' },
     });
 
-    // Get unique company IDs to fetch company names (filter out nulls for tenant-wide)
+    // Get unique company IDs to fetch company names (filter out nulls for workspace-wide)
     const companyIds = [
       ...new Set([
         ...vendorAliases.map((a) => a.companyId).filter((id): id is string => id !== null),
@@ -139,7 +139,7 @@ export async function GET(
     const companyMap = new Map(companies.map((c) => [c.id, c.name]));
 
     // Format response with company names
-    // companyId = null means tenant-wide alias
+    // companyId = null means workspace-wide alias
     const formattedVendorAliases = vendorAliases.map((a) => ({
       ...a,
       companyName: a.companyId ? (companyMap.get(a.companyId) || 'Unknown Company') : null,
@@ -223,7 +223,7 @@ export async function POST(
       }
     }
 
-    // Create the alias (companyId = null for tenant-wide)
+    // Create the alias (companyId = null for workspace-wide)
     if (type === 'vendor') {
       // Check if alias already exists (same rawName + same scope)
       const existingAliases = await prisma.vendorAlias.findMany({
@@ -233,7 +233,7 @@ export async function POST(
           deletedAt: null,
         },
       });
-      // Filter in JS for the correct scope (companyId match or both null for tenant-wide)
+      // Filter in JS for the correct scope (companyId match or both null for workspace-wide)
       const existing = existingAliases.find((a) =>
         companyId ? a.companyId === companyId : a.companyId === null
       );
@@ -269,7 +269,7 @@ export async function POST(
           deletedAt: null,
         },
       });
-      // Filter in JS for the correct scope (companyId match or both null for tenant-wide)
+      // Filter in JS for the correct scope (companyId match or both null for workspace-wide)
       const existing = existingAliases.find((a) =>
         companyId ? a.companyId === companyId : a.companyId === null
       );

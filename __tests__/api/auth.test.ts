@@ -171,7 +171,7 @@ describe('Authentication API', () => {
         lastName: 'User',
         tenantId: 'tenant-1',
         isSuperAdmin: false,
-        isTenantAdmin: false,
+        isWorkspaceAdmin: false,
         companyIds: ['company-1'],
         hasAllCompaniesAccess: false,
       };
@@ -201,7 +201,7 @@ describe('Authentication API', () => {
         lastName: 'User',
         tenantId: 'tenant-1',
         isSuperAdmin: false,
-        isTenantAdmin: false,
+        isWorkspaceAdmin: false,
         companyIds: ['company-1', 'company-2'],
         hasAllCompaniesAccess: false,
       };
@@ -222,7 +222,7 @@ describe('Authentication API', () => {
         lastName: 'Admin',
         tenantId: null,
         isSuperAdmin: true,
-        isTenantAdmin: false,
+        isWorkspaceAdmin: false,
         companyIds: [],
         hasAllCompaniesAccess: true,
       };
@@ -243,7 +243,7 @@ describe('Authentication API', () => {
         lastName: 'Admin',
         tenantId: 'tenant-1',
         isSuperAdmin: false,
-        isTenantAdmin: true,
+        isWorkspaceAdmin: true,
         companyIds: [],
         hasAllCompaniesAccess: true,
       };
@@ -252,7 +252,7 @@ describe('Authentication API', () => {
 
       const session = await getSession();
 
-      expect(session?.isTenantAdmin).toBe(true);
+      expect(session?.isWorkspaceAdmin).toBe(true);
       expect(session?.hasAllCompaniesAccess).toBe(true);
     });
   });

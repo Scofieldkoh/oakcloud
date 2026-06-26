@@ -87,7 +87,7 @@ export async function POST(
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
     }
 
-    // Validate contact exists and belongs to tenant
+    // Validate contact exists and belongs to the current workspace.
     const contact = await prisma.contact.findFirst({
       where: { id, tenantId, deletedAt: null },
     });

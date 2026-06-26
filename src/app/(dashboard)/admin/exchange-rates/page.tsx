@@ -8,8 +8,8 @@ import {
   useSyncMASMonthly,
   useCreateManualRate,
   useDeleteRate,
-  useTenantRatePreference,
-  useUpdateTenantRatePreference,
+  useWorkspaceRatePreference,
+  useUpdateWorkspaceRatePreference,
   type ExchangeRateSearchParams,
 } from '@/hooks/use-exchange-rates';
 import {
@@ -50,7 +50,6 @@ import {
 } from 'lucide-react';
 import { isMASApiKeyExpiringSoon, getDaysUntilMASApiKeyExpiry } from '@/lib/external/mas-api';
 import { cn } from '@/lib/utils';
-import { useTenantStore } from '@/stores/tenant-store';
 
 // ============================================================================
 // Helper Components
@@ -241,23 +240,19 @@ function APIKeyExpiryWarning({ isSuperAdmin }: { isSuperAdmin: boolean }) {
 
 function RatePreferenceCard({
   isSuperAdmin,
-  isTenantAdmin,
+  isWorkspaceAdmin,
   tenantId,
 }: {
   isSuperAdmin: boolean;
-  isTenantAdmin: boolean;
+  isWorkspaceAdmin: boolean;
   tenantId?: string;
 }) {
   const { success, error } = useToast();
 
-  // For SUPER_ADMINs, use the central tenant selector
-  const { selectedTenantId, selectedTenantName } = useTenantStore();
+  const effectiveTenantId = tenantId;
 
-  // Effective tenant ID: session tenantId for tenant admins, selected tenant for super admins
-  const effectiveTenantId = tenantId || (isSuperAdmin ? selectedTenantId : undefined);
-
-  const { data: preference, isLoading } = useTenantRatePreference(effectiveTenantId);
-  const updateMutation = useUpdateTenantRatePreference(effectiveTenantId);
+  const { data: preference, isLoading } = useWorkspaceRatePreference(effectiveTenantId);
+  const updateMutation = useUpdateWorkspaceRatePreference(effectiveTenantId);
 
   const handlePreferenceChange = async (newPref: 'MONTHLY' | 'DAILY') => {
     try {
@@ -269,27 +264,11 @@ function RatePreferenceCard({
   };
 
   // Must be an admin to see this card
-  if (!isTenantAdmin && !isSuperAdmin) {
+  if (!isWorkspaceAdmin && !isSuperAdmin) {
     return null;
   }
 
-  // For SUPER_ADMINs without a selected tenant, show a prompt
-  if (isSuperAdmin && !tenantId && !selectedTenantId) {
-    return (
-      <div className="mb-6 p-4 bg-background-secondary border border-border-primary rounded-lg">
-        <div className="flex items-center gap-2 mb-3">
-          <Settings className="w-5 h-5 text-text-secondary" />
-          <h2 className="text-sm font-semibold text-text-primary">Exchange Rate Preference</h2>
-        </div>
-        <p className="text-xs text-text-muted">
-          Select a tenant from the tenant selector to manage their exchange rate preference.
-        </p>
-      </div>
-    );
-  }
-
-  // For tenant admins without tenant context
-  if (isTenantAdmin && !tenantId) {
+  if (!effectiveTenantId) {
     return null;
   }
 
@@ -300,11 +279,6 @@ function RatePreferenceCard({
       <div className="flex items-center gap-2 mb-3">
         <Settings className="w-5 h-5 text-text-secondary" />
         <h2 className="text-sm font-semibold text-text-primary">Exchange Rate Preference</h2>
-        {isSuperAdmin && selectedTenantName && (
-          <span className="text-xs text-text-muted">
-            — {selectedTenantName}
-          </span>
-        )}
       </div>
       <p className="text-xs text-text-muted mb-4">
         Choose the default exchange rate source used for home currency conversion
@@ -385,7 +359,7 @@ export default function ExchangeRatesPage() {
   const { data: session } = useSession();
   const { success, error } = useToast();
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const isTenantAdmin = session?.isTenantAdmin ?? false;
+  const isWorkspaceAdmin = session?.isWorkspaceAdmin ?? false;
 
   // Filter state
   const [filters, setFilters] = useState<ExchangeRateSearchParams>({
@@ -620,7 +594,7 @@ export default function ExchangeRatesPage() {
       {/* Rate Preference Card (for tenant admins and super admins) */}
       <RatePreferenceCard
         isSuperAdmin={isSuperAdmin}
-        isTenantAdmin={isTenantAdmin}
+        isWorkspaceAdmin={isWorkspaceAdmin}
         tenantId={session?.tenantId ?? undefined}
       />
 

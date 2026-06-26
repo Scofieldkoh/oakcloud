@@ -279,7 +279,7 @@ export type AuditLogWhereInput = {
   sessionId?: Prisma.StringNullableFilter<"AuditLog"> | string | null
   createdAt?: Prisma.DateTimeFilter<"AuditLog"> | Date | string
   company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }
 
@@ -303,7 +303,7 @@ export type AuditLogOrderByWithRelationInput = {
   sessionId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   company?: Prisma.CompanyOrderByWithRelationInput
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
 }
 
@@ -330,7 +330,7 @@ export type AuditLogWhereUniqueInput = Prisma.AtLeast<{
   sessionId?: Prisma.StringNullableFilter<"AuditLog"> | string | null
   createdAt?: Prisma.DateTimeFilter<"AuditLog"> | Date | string
   company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }, "id">
 
@@ -399,7 +399,7 @@ export type AuditLogCreateInput = {
   sessionId?: string | null
   createdAt?: Date | string
   company?: Prisma.CompanyCreateNestedOneWithoutAuditLogsInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutAuditLogsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutAuditLogsInput
   user?: Prisma.UserCreateNestedOneWithoutAuditLogsInput
 }
 
@@ -441,7 +441,7 @@ export type AuditLogUpdateInput = {
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   company?: Prisma.CompanyUpdateOneWithoutAuditLogsNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutAuditLogsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutAuditLogsNestedInput
   user?: Prisma.UserUpdateOneWithoutAuditLogsNestedInput
 }
 
@@ -836,7 +836,7 @@ export type AuditLogCreateWithoutUserInput = {
   sessionId?: string | null
   createdAt?: Date | string
   company?: Prisma.CompanyCreateNestedOneWithoutAuditLogsInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutAuditLogsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutAuditLogsInput
 }
 
 export type AuditLogUncheckedCreateWithoutUserInput = {
@@ -901,7 +901,7 @@ export type AuditLogCreateWithoutCompanyInput = {
   requestId?: string | null
   sessionId?: string | null
   createdAt?: Date | string
-  tenant?: Prisma.TenantCreateNestedOneWithoutAuditLogsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutAuditLogsInput
   user?: Prisma.UserCreateNestedOneWithoutAuditLogsInput
 }
 
@@ -1068,7 +1068,7 @@ export type AuditLogUpdateWithoutUserInput = {
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   company?: Prisma.CompanyUpdateOneWithoutAuditLogsNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutAuditLogsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutAuditLogsNestedInput
 }
 
 export type AuditLogUncheckedUpdateWithoutUserInput = {
@@ -1147,7 +1147,7 @@ export type AuditLogUpdateWithoutCompanyInput = {
   requestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tenant?: Prisma.TenantUpdateOneWithoutAuditLogsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutAuditLogsNestedInput
   user?: Prisma.UserUpdateOneWithoutAuditLogsNestedInput
 }
 
@@ -1307,7 +1307,7 @@ export type $AuditLogPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   name: "AuditLog"
   objects: {
     company: Prisma.$CompanyPayload<ExtArgs> | null
-    tenant: Prisma.$TenantPayload<ExtArgs> | null
+    tenant: Prisma.$WorkspacePayload<ExtArgs> | null
     user: Prisma.$UserPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1724,7 +1724,7 @@ readonly fields: AuditLogFieldRefs;
 export interface Prisma__AuditLogClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   company<T extends Prisma.AuditLog$companyArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AuditLog$companyArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  tenant<T extends Prisma.AuditLog$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AuditLog$tenantArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.AuditLog$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AuditLog$tenantArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.AuditLog$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AuditLog$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2192,18 +2192,18 @@ export type AuditLog$companyArgs<ExtArgs extends runtime.Types.Extensions.Intern
  */
 export type AuditLog$tenantArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Tenant
+   * Select specific fields to fetch from the Workspace
    */
-  select?: Prisma.TenantSelect<ExtArgs> | null
+  select?: Prisma.WorkspaceSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Tenant
+   * Omit specific fields from the Workspace
    */
-  omit?: Prisma.TenantOmit<ExtArgs> | null
+  omit?: Prisma.WorkspaceOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.TenantInclude<ExtArgs> | null
-  where?: Prisma.TenantWhereInput
+  include?: Prisma.WorkspaceInclude<ExtArgs> | null
+  where?: Prisma.WorkspaceWhereInput
 }
 
 /**

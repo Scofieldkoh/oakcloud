@@ -59,9 +59,9 @@ const MANUALLY_HANDLED_MODEL_DELEGATES = new Set([
   'documentComment',
   'documentDraft',
   'templatePartial',
-  'tenantLetterhead',
+  'WorkspaceLetterhead',
   'connector',
-  'tenantConnectorAccess',
+  'WorkspaceConnectorAccess',
   'connectorUsageLog',
   'noteTab',
   'fieldMapping',
@@ -76,7 +76,7 @@ const MANUALLY_HANDLED_MODEL_DELEGATES = new Set([
   'auditLog',
 ]);
 
-const EXCLUDED_DYNAMIC_DELEGATES = new Set(['permission', 'tenantBackup', 'backupSchedule']);
+const EXCLUDED_DYNAMIC_DELEGATES = new Set(['permission', 'WorkspaceBackup', 'backupSchedule']);
 
 // ============================================================================
 // Types
@@ -345,13 +345,13 @@ class BackupService {
   /**
    * Create a backup for a tenant
    */
-  async createTenantBackup(
+  async createWorkspaceBackup(
     tenantId: string,
     userId: string,
     options: BackupOptions = {}
   ): Promise<{ backupId: string }> {
     // 1. Validate tenant exists
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await prisma.workspace.findUnique({
       where: { id: tenantId },
       select: { id: true, name: true, slug: true, deletedAt: true },
     });
@@ -365,7 +365,7 @@ class BackupService {
     }
 
     // 2. Check for existing in-progress backups
-    const existingBackup = await prisma.tenantBackup.findFirst({
+    const existingBackup = await prisma.workspaceBackup.findFirst({
       where: {
         tenantId,
         status: { in: ['PENDING', 'IN_PROGRESS'] },
@@ -382,7 +382,7 @@ class BackupService {
     const storageKey = StorageKeys.backupPrefix(backupId);
     const now = new Date();
 
-    const backup = await prisma.tenantBackup.create({
+    const backup = await prisma.workspaceBackup.create({
       data: {
         id: backupId,
         tenantId,
@@ -411,7 +411,7 @@ class BackupService {
       tenantId,
       userId,
       action: 'BACKUP_CREATED',
-      entityType: 'TenantBackup',
+      entityType: 'WorkspaceBackup',
       entityId: backupId,
       entityName: backup.name || undefined,
       summary: `Started backup for tenant "${tenant.name}"`,
@@ -505,7 +505,7 @@ class BackupService {
       const filesSizeBytes = files.reduce((sum, f) => sum + f.size, 0);
       const totalSizeBytes = compressedBuffer.length + filesSizeBytes + manifestBuffer.length;
 
-      await prisma.tenantBackup.update({
+      await prisma.workspaceBackup.update({
         where: { id: backupId },
         data: {
           status: 'COMPLETED',
@@ -525,7 +525,7 @@ class BackupService {
         tenantId,
         userId: userId || undefined,
         action: 'BACKUP_COMPLETED',
-        entityType: 'TenantBackup',
+        entityType: 'WorkspaceBackup',
         entityId: backupId,
         summary: `Backup completed: ${files.length} files, ${formatBytes(totalSizeBytes)}`,
         changeSource: userId ? 'MANUAL' : 'SYSTEM',
@@ -600,7 +600,7 @@ class BackupService {
       chartOfAccounts,
       chartOfAccountsMappings,
     ] = await Promise.all([
-      prisma.tenant.findUnique({ where: { id: tenantId } }),
+      prisma.workspace.findUnique({ where: { id: tenantId } }),
       prisma.user.findMany({ where: { tenantId } }),
       prisma.role.findMany({ where: { tenantId } }),
       prisma.rolePermission.findMany({ where: { role: { tenantId } } }),
@@ -652,9 +652,9 @@ class BackupService {
       prisma.documentComment.findMany({ where: { document: { tenantId } } }),
       prisma.documentDraft.findMany({ where: { document: { tenantId } } }),
       prisma.templatePartial.findMany({ where: { tenantId } }),
-      prisma.tenantLetterhead.findUnique({ where: { tenantId } }),
+      prisma.workspaceLetterhead.findUnique({ where: { tenantId } }),
       prisma.connector.findMany({ where: { tenantId } }),
-      prisma.tenantConnectorAccess.findMany({ where: { tenantId } }),
+      prisma.workspaceConnectorAccess.findMany({ where: { tenantId } }),
       prisma.connectorUsageLog.findMany({ where: { tenantId } }),
       prisma.noteTab.findMany({
         where: { OR: [{ company: { tenantId } }, { contact: { tenantId } }] },
@@ -799,7 +799,7 @@ class BackupService {
     progress: number,
     currentStep: string
   ): Promise<void> {
-    await prisma.tenantBackup.update({
+    await prisma.workspaceBackup.update({
       where: { id: backupId },
       data: { status, progress, currentStep },
     });
@@ -812,7 +812,7 @@ class BackupService {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorDetails = error instanceof Error ? { stack: error.stack } : undefined;
 
-    await prisma.tenantBackup.update({
+    await prisma.workspaceBackup.update({
       where: { id: backupId },
       data: {
         status: 'FAILED',
@@ -823,7 +823,7 @@ class BackupService {
     });
 
     // Get tenant ID for audit log
-    const backup = await prisma.tenantBackup.findUnique({
+    const backup = await prisma.workspaceBackup.findUnique({
       where: { id: backupId },
       select: { tenantId: true, createdById: true },
     });
@@ -833,7 +833,7 @@ class BackupService {
         tenantId: backup.tenantId,
         userId: backup.createdById ?? undefined,
         action: 'BACKUP_FAILED',
-        entityType: 'TenantBackup',
+        entityType: 'WorkspaceBackup',
         entityId: backupId,
         summary: `Backup failed: ${errorMessage}`,
         changeSource: 'SYSTEM',
@@ -845,25 +845,25 @@ class BackupService {
    * List available backups
    */
   async listBackups(params: ListBackupsParams = {}): Promise<{
-    backups: Awaited<ReturnType<typeof prisma.tenantBackup.findMany>>;
+    backups: Awaited<ReturnType<typeof prisma.workspaceBackup.findMany>>;
     totalCount: number;
   }> {
     const { tenantId, status, page = 1, limit = 20 } = params;
 
-    const where: Prisma.TenantBackupWhereInput = {
+    const where: Prisma.WorkspaceBackupWhereInput = {
       deletedAt: null,
       ...(tenantId && { tenantId }),
       ...(status && { status }),
     };
 
     const [backups, totalCount] = await Promise.all([
-      prisma.tenantBackup.findMany({
+      prisma.workspaceBackup.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.tenantBackup.count({ where }),
+      prisma.workspaceBackup.count({ where }),
     ]);
 
     return { backups, totalCount };
@@ -873,7 +873,7 @@ class BackupService {
    * Get backup details
    */
   async getBackupDetails(backupId: string) {
-    const backup = await prisma.tenantBackup.findUnique({
+    const backup = await prisma.workspaceBackup.findUnique({
       where: { id: backupId, deletedAt: null },
     });
 
@@ -913,7 +913,7 @@ class BackupService {
   /**
    * Restore a backup
    */
-  async restoreTenantBackup(
+  async restoreWorkspaceBackup(
     backupId: string,
     userId: string,
     options: RestoreOptions = {}
@@ -925,7 +925,7 @@ class BackupService {
     }
 
     // Check if tenant already exists and is not deleted
-    const existingTenant = await prisma.tenant.findUnique({
+    const existingTenant = await prisma.workspace.findUnique({
       where: { id: backup.tenantId },
       select: { id: true, name: true, deletedAt: true },
     });
@@ -947,7 +947,7 @@ class BackupService {
     }
 
     // Update backup status
-    await prisma.tenantBackup.update({
+    await prisma.workspaceBackup.update({
       where: { id: backupId },
       data: { status: 'RESTORING', currentStep: 'Starting restore...' },
     });
@@ -957,7 +957,7 @@ class BackupService {
       tenantId: backup.tenantId,
       userId,
       action: 'BACKUP_RESTORE_STARTED',
-      entityType: 'TenantBackup',
+      entityType: 'WorkspaceBackup',
       entityId: backupId,
       summary: `Started restoring backup for tenant`,
       changeSource: 'MANUAL',
@@ -971,7 +971,7 @@ class BackupService {
 
       // 2. If overwriting, delete existing tenant data first
       if (existingTenant && !existingTenant.deletedAt && options.overwriteExisting) {
-        await this.deleteTenantData(backup.tenantId);
+        await this.deleteWorkspaceData(backup.tenantId);
       }
 
       // 3. Restore database data (in transaction)
@@ -981,7 +981,7 @@ class BackupService {
       await this.restoreFiles(backupId, backup.tenantId, manifest.files);
 
       // 5. Update backup status
-      await prisma.tenantBackup.update({
+      await prisma.workspaceBackup.update({
         where: { id: backupId },
         data: {
           status: 'RESTORED',
@@ -996,7 +996,7 @@ class BackupService {
         tenantId: backup.tenantId,
         userId,
         action: 'BACKUP_RESTORE_COMPLETED',
-        entityType: 'TenantBackup',
+        entityType: 'WorkspaceBackup',
         entityId: backupId,
         summary: `Restored backup for tenant`,
         changeSource: 'MANUAL',
@@ -1007,7 +1007,7 @@ class BackupService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      await prisma.tenantBackup.update({
+      await prisma.workspaceBackup.update({
         where: { id: backupId },
         data: {
           status: 'COMPLETED', // Revert to COMPLETED so it can be retried
@@ -1020,7 +1020,7 @@ class BackupService {
         tenantId: backup.tenantId,
         userId,
         action: 'BACKUP_RESTORE_FAILED',
-        entityType: 'TenantBackup',
+        entityType: 'WorkspaceBackup',
         entityId: backupId,
         summary: `Restore failed: ${errorMessage}`,
         changeSource: 'SYSTEM',
@@ -1080,7 +1080,7 @@ class BackupService {
    * Delete all data for a tenant (used before restore)
    * Deletes both database records and S3 files
    */
-  private async deleteTenantData(tenantId: string): Promise<void> {
+  private async deleteWorkspaceData(tenantId: string): Promise<void> {
     log.info(`Deleting existing data for tenant ${tenantId} before restore`);
 
     // 1. Delete all tenant files from storage first
@@ -1151,7 +1151,7 @@ class BackupService {
       await tx.generatedDocument.deleteMany({ where: { tenantId } });
       await tx.templatePartial.deleteMany({ where: { tenantId } });
       await tx.documentTemplate.deleteMany({ where: { tenantId } });
-      await tx.tenantLetterhead.deleteMany({ where: { tenantId } });
+      await tx.workspaceLetterhead.deleteMany({ where: { tenantId } });
 
       // Delete documents
       await tx.document.deleteMany({ where: { tenantId } });
@@ -1182,7 +1182,7 @@ class BackupService {
 
       // Delete connectors
       await tx.connectorUsageLog.deleteMany({ where: { tenantId } });
-      await tx.tenantConnectorAccess.deleteMany({ where: { tenantId } });
+      await tx.workspaceConnectorAccess.deleteMany({ where: { tenantId } });
       await tx.connector.deleteMany({ where: { tenantId } });
 
       // Delete AI conversations
@@ -1219,10 +1219,10 @@ class BackupService {
       // 1. Tenant (upsert to handle existing tenant)
       if (data.tenant) {
         const tenant = data.tenant as Record<string, unknown>;
-        await tx.tenant.upsert({
+        await tx.workspace.upsert({
           where: { id: tenant.id as string },
-          create: tenant as Prisma.TenantCreateInput,
-          update: tenant as Prisma.TenantUpdateInput,
+          create: tenant as Prisma.WorkspaceCreateInput,
+          update: tenant as Prisma.WorkspaceUpdateInput,
         });
       }
 
@@ -1501,10 +1501,10 @@ class BackupService {
       // 25. Tenant Letterhead
       if (data.letterhead) {
         const letterhead = data.letterhead as Record<string, unknown>;
-        await tx.tenantLetterhead.upsert({
+        await tx.workspaceLetterhead.upsert({
           where: { tenantId: letterhead.tenantId as string },
-          create: letterhead as Prisma.TenantLetterheadCreateInput,
-          update: letterhead as Prisma.TenantLetterheadUpdateInput,
+          create: letterhead as Prisma.WorkspaceLetterheadCreateInput,
+          update: letterhead as Prisma.WorkspaceLetterheadUpdateInput,
         });
       }
 
@@ -1558,8 +1558,8 @@ class BackupService {
 
       // 32. Connector Access
       if (Array.isArray(data.connectorAccess) && data.connectorAccess.length > 0) {
-        await tx.tenantConnectorAccess.createMany({
-          data: data.connectorAccess as Prisma.TenantConnectorAccessCreateManyInput[],
+        await tx.workspaceConnectorAccess.createMany({
+          data: data.connectorAccess as Prisma.WorkspaceConnectorAccessCreateManyInput[],
           skipDuplicates: true,
         });
       }
@@ -1737,7 +1737,7 @@ class BackupService {
     }
 
     // Soft delete the backup record
-    await prisma.tenantBackup.update({
+    await prisma.workspaceBackup.update({
       where: { id: backupId },
       data: { deletedAt: new Date(), status: 'DELETED' },
     });
@@ -1747,7 +1747,7 @@ class BackupService {
       tenantId: backup.tenantId,
       userId,
       action: 'BACKUP_DELETED',
-      entityType: 'TenantBackup',
+      entityType: 'WorkspaceBackup',
       entityId: backupId,
       entityName: backup.name || undefined,
       summary: `Deleted backup ${backup.name || backupId}`,
@@ -1807,7 +1807,7 @@ class BackupService {
     nextRunAt: Date | null;
   }> {
     // Validate tenant exists
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await prisma.workspace.findUnique({
       where: { id: tenantId },
       select: { id: true, deletedAt: true },
     });
@@ -2018,7 +2018,7 @@ class BackupService {
     tenantId: string,
     retentionDays: number
   ): Promise<{ backupId: string }> {
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await prisma.workspace.findUnique({
       where: { id: tenantId },
       select: { id: true, name: true, slug: true },
     });
@@ -2028,7 +2028,7 @@ class BackupService {
     }
 
     // Check for existing in-progress backups
-    const existingBackup = await prisma.tenantBackup.findFirst({
+    const existingBackup = await prisma.workspaceBackup.findFirst({
       where: {
         tenantId,
         status: { in: ['PENDING', 'IN_PROGRESS'] },
@@ -2046,7 +2046,7 @@ class BackupService {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + retentionDays * 24 * 60 * 60 * 1000);
 
-    const backup = await prisma.tenantBackup.create({
+    const backup = await prisma.workspaceBackup.create({
       data: {
         id: backupId,
         tenantId,
@@ -2077,7 +2077,7 @@ class BackupService {
       tenantId,
       userId: undefined, // System action
       action: 'BACKUP_CREATED',
-      entityType: 'TenantBackup',
+      entityType: 'WorkspaceBackup',
       entityId: backupId,
       entityName: backup.name || undefined,
       summary: `Scheduled backup initiated`,
@@ -2092,7 +2092,7 @@ class BackupService {
    */
   private async enforceMaxBackups(tenantId: string, maxBackups: number): Promise<void> {
     // Get all completed SCHEDULED backups for this tenant, ordered by creation date
-    const backups = await prisma.tenantBackup.findMany({
+    const backups = await prisma.workspaceBackup.findMany({
       where: {
         tenantId,
         backupType: 'SCHEDULED',
@@ -2192,7 +2192,7 @@ class BackupService {
     log.info(`Starting expired backup cleanup${dryRun ? ' (DRY RUN)' : ''}`);
 
     // Find all expired backups that haven't been deleted yet
-    const expiredBackups = await prisma.tenantBackup.findMany({
+    const expiredBackups = await prisma.workspaceBackup.findMany({
       where: {
         expiresAt: { lte: now },
         deletedAt: null,
@@ -2245,7 +2245,7 @@ class BackupService {
         }
 
         // Soft delete the backup record
-        await prisma.tenantBackup.update({
+        await prisma.workspaceBackup.update({
           where: { id: backup.id },
           data: {
             deletedAt: now,
@@ -2258,7 +2258,7 @@ class BackupService {
           tenantId: backup.tenantId,
           userId: undefined, // System action
           action: 'BACKUP_DELETED',
-          entityType: 'TenantBackup',
+          entityType: 'WorkspaceBackup',
           entityId: backup.id,
           entityName: backup.name || undefined,
           summary: `Auto-deleted expired backup ${backup.name || backup.id}`,
@@ -2303,7 +2303,7 @@ class BackupService {
     log.info(`Checking for backups stuck since before ${staleThreshold.toISOString()}`);
 
     // Find stale backups
-    const staleBackups = await prisma.tenantBackup.findMany({
+    const staleBackups = await prisma.workspaceBackup.findMany({
       where: {
         status: { in: ['PENDING', 'IN_PROGRESS', 'RESTORING'] },
         createdAt: { lte: staleThreshold },
@@ -2330,7 +2330,7 @@ class BackupService {
 
     for (const backup of staleBackups) {
       try {
-        await prisma.tenantBackup.update({
+        await prisma.workspaceBackup.update({
           where: { id: backup.id },
           data: {
             status: 'FAILED',
@@ -2349,7 +2349,7 @@ class BackupService {
           tenantId: backup.tenantId,
           userId: undefined, // System action
           action: 'BACKUP_FAILED',
-          entityType: 'TenantBackup',
+          entityType: 'WorkspaceBackup',
           entityId: backup.id,
           entityName: backup.name || undefined,
           summary: `Backup marked as failed due to stale status`,

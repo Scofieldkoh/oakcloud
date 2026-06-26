@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { getTenantTags, createTenantTag } from '@/services/document-tag.service';
+import { getWorkspaceTags, createWorkspaceTag } from '@/services/document-tag.service';
 import { createTagSchema } from '@/lib/validations/document-tag';
 import { createAuditLog } from '@/lib/audit';
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const tags = await getTenantTags(tenantId);
+    const tags = await getWorkspaceTags(tenantId);
 
     return NextResponse.json({ tags });
   } catch (error) {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only SUPER_ADMIN or TENANT_ADMIN can create tenant tags
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json(
         { error: 'Only administrators can create shared tags' },
         { status: 403 }
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const input = createTagSchema.parse(body);
 
-    const tag = await createTenantTag(input, {
+    const tag = await createWorkspaceTag(input, {
       tenantId,
       userId: session.id,
     });

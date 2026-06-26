@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { getAvailableProvidersForTenant } from '@/lib/ai';
+import { getAvailableProvidersForWorkspace } from '@/lib/ai';
 import { AI_MODELS, PROVIDER_NAMES } from '@/lib/ai/models';
 import type { AIProvider } from '@/lib/ai/types';
 
@@ -11,7 +11,7 @@ import type { AIProvider } from '@/lib/ai/types';
 export async function GET() {
   try {
     const session = await requireAuth();
-    const availableProviders = await getAvailableProvidersForTenant(session.tenantId);
+    const availableProviders = await getAvailableProvidersForWorkspace(session.tenantId);
 
     // Filter models to only those with available providers
     const availableModels = Object.values(AI_MODELS)

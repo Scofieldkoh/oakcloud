@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import { duplicateEsigningEnvelope } from '@/services/esigning-envelope.service';
 
 const duplicateEnvelopeSchema = z.object({
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'esigning', 'create');
 
     const body = duplicateEnvelopeSchema.parse(await request.json().catch(() => ({})));
-    const tenantId = resolveTenantId(session, body.tenantId);
+    const tenantId = resolveWorkspaceId(session, body.tenantId);
 
     const result = await duplicateEsigningEnvelope(session, tenantId, id);
     return NextResponse.json(result);

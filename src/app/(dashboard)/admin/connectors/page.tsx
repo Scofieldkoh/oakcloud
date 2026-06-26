@@ -35,7 +35,7 @@ import { Alert } from '@/components/ui/alert';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/toast';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ScopeBadge } from '@/components/ui/scope-badge';
@@ -221,10 +221,8 @@ export default function ConnectorsPage() {
   const { data: session } = useSession();
   const { success, error: showError } = useToast();
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const isTenantAdmin = session?.isTenantAdmin ?? false;
+  const isWorkspaceAdmin = session?.isWorkspaceAdmin ?? false;
 
-  // State - tenant selection from centralized store
-  const { selectedTenantId } = useTenantSelection();
   const [typeFilter, setTypeFilter] = useState<ConnectorType | ''>('');
   const [providerFilter, setProviderFilter] = useState<ConnectorProvider | ''>('');
   const [page, setPage] = useState(1);
@@ -259,11 +257,11 @@ export default function ConnectorsPage() {
   const [showSetupGuide, setShowSetupGuide] = useState<'SHAREPOINT' | 'ONEDRIVE' | null>(null);
 
   // Active tenant - using centralized hook
-  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
 
   // Build search params
   const searchParams: ConnectorSearchParams = {
-    ...(isSuperAdmin && selectedTenantId ? { tenantId: selectedTenantId } : {}),
+    ...(activeTenantId ? { tenantId: activeTenantId } : {}),
     ...(typeFilter ? { type: typeFilter } : {}),
     ...(providerFilter ? { provider: providerFilter } : {}),
     includeSystem: true,
@@ -321,7 +319,7 @@ export default function ConnectorsPage() {
   const usageUnitLabel = usageConnector?.provider === 'MISTRAL' ? 'Pages' : 'Tokens';
 
   // Access control
-  if (!isSuperAdmin && !isTenantAdmin) {
+  if (!isSuperAdmin && !isWorkspaceAdmin) {
     return (
       <div className="p-6">
         <Alert variant="error">You do not have permission to access this page.</Alert>
@@ -726,13 +724,6 @@ export default function ConnectorsPage() {
           Add Connector
         </Button>
       </div>
-
-      {/* Tenant context info for SUPER_ADMIN */}
-      {isSuperAdmin && selectedTenantId && (
-        <div className="mb-4 text-sm text-text-secondary">
-          Showing connectors for selected tenant. System connectors are always visible.
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">

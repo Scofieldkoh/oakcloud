@@ -55,7 +55,6 @@ export interface GenerationWizardProps {
   templates: DocumentTemplate[];
   companies: Company[];
   partials?: TemplatePartial[];
-  tenantId?: string;
   onGenerate: (data: GenerateDocumentData) => Promise<GeneratedDocumentResult>;
   onPreviewTemplate?: (template: DocumentTemplate) => void;
   onValidate?: (templateId: string, companyId: string | undefined, customData: Record<string, string>) => Promise<ValidationResult>;
@@ -657,7 +656,6 @@ export function DocumentGenerationWizard({
   templates,
   companies,
   partials = [],
-  tenantId,
   onGenerate,
   onPreviewTemplate,
   onValidate,
@@ -770,11 +768,6 @@ export function DocumentGenerationWizard({
         companyId: state.selectedCompany?.id,
         customData: state.customData,
       };
-
-      // Add tenantId if provided (for SUPER_ADMIN)
-      if (tenantId) {
-        requestBody.tenantId = tenantId;
-      }
 
       // Call preview API
       const response = await fetch('/api/generated-documents/preview', {

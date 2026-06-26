@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import { parseQueryParams } from '@/lib/validations/query-params';
 import {
   createEsigningEnvelopeSchema,
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     await requirePermission(session, 'esigning', 'read');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const query = parseQueryParams(searchParams, esigningListQuerySchema);
 
     const result = await listEsigningEnvelopes(session, tenantId, query);
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     await requirePermission(session, 'esigning', 'create');
 
     const body = await request.json();
-    const tenantId = resolveTenantId(session, body.tenantId);
+    const tenantId = resolveWorkspaceId(session, body.tenantId);
     const payload = createEsigningEnvelopeSchema.parse(body);
 
     const result = await createEsigningEnvelope(session, tenantId, payload);

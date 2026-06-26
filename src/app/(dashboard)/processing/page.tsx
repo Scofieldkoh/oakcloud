@@ -25,6 +25,7 @@ import {
   CheckSquare,
   MinusSquare,
   X,
+  Building2,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import {
@@ -36,29 +37,28 @@ import {
 } from '@/hooks/use-processing-documents';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { BulkActionsToolbar } from '@/components/processing/bulk-actions-toolbar';
 import { ProcessingFilters, type ProcessingFilterValues } from '@/components/processing/processing-filters';
 import { ProcessingToolbar } from '@/components/processing/processing-toolbar';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { AsyncSearchSelect } from '@/components/ui/async-search-select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
 import { Pagination } from '@/components/ui/pagination';
 import { FilterChip } from '@/components/ui/filter-chip';
-import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
+import { useCompanySearch } from '@/hooks/use-company-search';
 import { useAvailableTags } from '@/hooks/use-document-tags';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
-import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
+import { useUserPreferences, useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus, DocumentCategory, DocumentSubCategory } from '@/generated/prisma';
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '@/lib/document-categories';
 import { cn } from '@/lib/utils';
-import { TAG_COLORS, type TagColor } from '@/lib/validations/document-tag';
 import { DocumentTags } from '@/components/processing/document-tags';
-import { TagChip } from '@/components/processing/document-tags';
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
 
 /**
@@ -295,7 +295,7 @@ export default function ProcessingDocumentsPage() {
   const { data: session } = useSession();
 
   // Get active tenant ID (from store for SUPER_ADMIN, from session for others)
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -443,8 +443,12 @@ export default function ProcessingDocumentsPage() {
   // If sidebar has "All Companies" selected (activeCompanyId is undefined), show all companies
   const effectiveCompanyId = params.companyId || activeCompanyId;
 
-  const { data: columnPref } = useUserPreference<Record<string, number>>(COLUMN_PREF_KEY);
-  const { data: visibilityPref } = useUserPreference<Record<string, boolean>>(COLUMN_VISIBILITY_PREF_KEY);
+  const { data: preferenceMap } = useUserPreferences([
+    COLUMN_PREF_KEY,
+    COLUMN_VISIBILITY_PREF_KEY,
+  ]);
+  const columnPref = preferenceMap?.[COLUMN_PREF_KEY];
+  const visibilityPref = preferenceMap?.[COLUMN_VISIBILITY_PREF_KEY];
   const saveColumnPref = useUpsertUserPreference<Record<string, number | boolean>>();
   const selectAllFilteredDocuments = useSelectAllProcessingDocuments();
   const [columnWidths, setColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
@@ -795,8 +799,12 @@ export default function ProcessingDocumentsPage() {
   );
   const pendingApprovalCount = pendingNavData?.total ?? 0;
 
-  // Fetch company options across all pages for inline company filter search
-  const { data: allCompanyOptions = [] } = useAllCompanyOptions(activeTenantId);
+  const {
+    searchQuery: inlineCompanySearchQuery,
+    setSearchQuery: setInlineCompanySearchQuery,
+    options: inlineCompanyOptions,
+    isLoading: inlineCompaniesLoading,
+  } = useCompanySearch({ limit: 20 });
 
   // Fetch tags for filter dropdown (uses effectiveCompanyId if available, otherwise just tenant tags)
   const { data: tagsData } = useAvailableTags(effectiveCompanyId, activeTenantId);
@@ -2044,17 +2052,18 @@ export default function ProcessingDocumentsPage() {
                           )}
                         </div>
                       ) : columnId === 'company' ? (
-                        <SearchableSelect
-                          options={[
-                            { value: '', label: 'All' },
-                            ...allCompanyOptions.map((company) => ({ value: company.id, label: company.name })),
-                          ]}
+                        <AsyncSearchSelect
                           value={params.companyId || ''}
                           onChange={(value) => handleFiltersChange({ companyId: value || undefined })}
+                          options={inlineCompanyOptions}
+                          isLoading={inlineCompaniesLoading}
+                          searchQuery={inlineCompanySearchQuery}
+                          onSearchChange={setInlineCompanySearchQuery}
                           placeholder="All"
+                          emptySearchText="Type to search companies"
+                          noResultsText="No companies found"
+                          icon={<Building2 className="w-4 h-4" />}
                           className="text-xs"
-                          showChevron={false}
-                          showKeyboardHints={false}
                         />
                       ) : columnId === 'pipeline' ? (
                         <SearchableSelect
@@ -2553,4 +2562,3 @@ export default function ProcessingDocumentsPage() {
     </div>
   );
 }
-

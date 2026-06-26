@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from '@/hooks/use-auth';
 import {
-  useCurrentTenantUsers,
-  useTenantUsers,
+  useCurrentWorkspaceUsers,
   useInviteUser,
   useUpdateUser,
   useDeleteUser,
@@ -13,20 +12,20 @@ import {
   useAssignUserToCompany,
   useRemoveCompanyAssignment,
   useRemoveUserRoleAssignment,
-  useCurrentTenantRoles,
-  useTenantRoles,
-  type TenantUser,
+  useCurrentWorkspaceRoles,
+  type WorkspaceUser,
   type Role,
 } from '@/hooks/use-admin';
-import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
+import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
+import { AsyncSearchSelect } from '@/components/ui/async-search-select';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Alert } from '@/components/ui/alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Pagination } from '@/components/ui/pagination';
 import { useToast } from '@/components/ui/toast';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import {
   Plus,
   Search,
@@ -53,10 +52,22 @@ import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/res
 
 // System roles that are always available for selection
 const SYSTEM_ROLES = [
-  { value: 'TENANT_ADMIN', label: 'Tenant Admin', description: 'Full access to all tenant resources', isSystem: true },
-  { value: 'COMPANY_ADMIN', label: 'Company Admin', description: 'Manage assigned companies', isSystem: true },
-  { value: 'COMPANY_USER', label: 'Company User', description: 'View-only access to assigned companies', isSystem: true },
+  { value: 'ADMIN', label: 'Workspace Admin', description: 'Full access to all workspace resources', isSystem: true },
+  { value: 'MANAGER', label: 'Manager', description: 'Manage assigned companies', isSystem: true },
+  { value: 'STAFF', label: 'Staff', description: 'View-only access to assigned companies', isSystem: true },
 ];
+
+function isAdminRoleType(systemRoleType: string | null | undefined): boolean {
+  return systemRoleType === 'ADMIN' || systemRoleType === 'TENANT_ADMIN' || systemRoleType === 'SUPER_ADMIN';
+}
+
+const ALL_COMPANIES_OPTION: CompanySearchOption = {
+  id: '__all__',
+  name: 'All Companies',
+  label: 'All Companies',
+  description: 'Workspace-wide access',
+  uen: null,
+};
 
 interface RoleAssignment {
   roleId: string;
@@ -137,10 +148,10 @@ export default function UsersPage() {
 
   // Modal states
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<TenantUser | null>(null);
+  const [editingUser, setEditingUser] = useState<WorkspaceUser | null>(null);
   const [managingUserId, setManagingUserId] = useState<string | null>(null); // Store ID only, get fresh data from query
-  const [deletingUser, setDeletingUser] = useState<TenantUser | null>(null);
-  const [resetPasswordUser, setResetPasswordUser] = useState<TenantUser | null>(null);
+  const [deletingUser, setDeletingUser] = useState<WorkspaceUser | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<WorkspaceUser | null>(null);
 
   // Company assignment state (for invite)
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
@@ -149,14 +160,11 @@ export default function UsersPage() {
   const [selectedRoleId, setSelectedRoleId] = useState('');
   const [selectedRoleCompanyId, setSelectedRoleCompanyId] = useState<string | null>(null); // null = "All Companies"
   const [inviteRoleAssignments, setInviteRoleAssignments] = useState<RoleAssignment[]>([]);
-  const [isTenantAdminInvite, setIsTenantAdminInvite] = useState(false); // Only for SUPER_ADMIN
+  const [isWorkspaceAdminInvite, setIsWorkspaceAdminInvite] = useState(false); // Only for SUPER_ADMIN
 
-  // For SUPER_ADMIN: tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const { selectedTenantId } = useTenantSelection();
 
-  // Get active tenant ID using the centralized hook
-  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
+  const activeWorkspaceId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
 
   // Invite form state
   const [inviteFormData, setInviteFormData] = useState({
@@ -174,41 +182,14 @@ export default function UsersPage() {
     isActive: true,
   });
 
-  // Fetch roles for tenant - use activeTenantId to ensure proper tenant scoping
-  // For SUPER_ADMIN: only fetch roles when a tenant is selected
-  // For others: use their session tenant
-  const { data: currentTenantRolesData } = useCurrentTenantRoles();
-  const { data: selectedTenantRolesData } = useTenantRoles(
-    isSuperAdmin && selectedTenantId ? selectedTenantId : undefined
-  );
-  // SUPER_ADMIN must have a tenant selected to see roles; others use their tenant's roles
-  const rolesData = isSuperAdmin
-    ? (selectedTenantId ? selectedTenantRolesData : undefined)
-    : currentTenantRolesData;
-
-  // Use tenant-specific users query for SUPER_ADMIN, otherwise current tenant users
-  const {
-    data: tenantUsersData,
-    isLoading: tenantUsersLoading,
-    error: tenantUsersError,
-  } = useTenantUsers(
-    isSuperAdmin ? selectedTenantId : undefined,
-    {
-      query: search || undefined,
-      role: roleFilter || undefined,
-      company: companyFilter || undefined,
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-    }
-  );
+  const { data: currentWorkspaceRolesData } = useCurrentWorkspaceRoles();
+  const rolesData = currentWorkspaceRolesData;
 
   const {
-    data: currentTenantData,
-    isLoading: currentTenantLoading,
-    error: currentTenantError,
-  } = useCurrentTenantUsers({
+    data,
+    isLoading,
+    error,
+  } = useCurrentWorkspaceUsers({
     query: search || undefined,
     role: roleFilter || undefined,
     company: companyFilter || undefined,
@@ -218,24 +199,38 @@ export default function UsersPage() {
     sortOrder,
   });
 
-  // Use the appropriate data based on role
-  const data = isSuperAdmin ? tenantUsersData : currentTenantData;
-  const isLoading = isSuperAdmin ? tenantUsersLoading : currentTenantLoading;
-  const error = isSuperAdmin ? tenantUsersError : currentTenantError;
-
   // Get fresh user data from query results (ensures modal shows updated data after mutations)
   const managingUser = managingUserId
-    ? data?.users.find((u: TenantUser) => u.id === managingUserId) || null
+    ? data?.users.find((u: WorkspaceUser) => u.id === managingUserId) || null
     : null;
 
-  // Fetch all companies scoped to selected tenant for SUPER_ADMIN
-  const { data: allCompanies = [] } = useAllCompanyOptions(
-    isSuperAdmin ? selectedTenantId || undefined : undefined
+  const {
+    searchQuery: inviteCompanySearchQuery,
+    setSearchQuery: setInviteCompanySearchQuery,
+    options: inviteCompanyOptions,
+    isLoading: isInviteCompanyLoading,
+    selectedCompany: selectedInviteCompany,
+    setSelectedCompany: setSelectedInviteCompany,
+  } = useCompanySearch({ enabled: isInviteModalOpen, minChars: 0, limit: 50 });
+  const {
+    searchQuery: manageCompanySearchQuery,
+    setSearchQuery: setManageCompanySearchQuery,
+    options: manageCompanyOptions,
+    isLoading: isManageCompanyLoading,
+    setSelectedCompany: setSelectedManageCompany,
+  } = useCompanySearch({ enabled: Boolean(managingUserId), minChars: 0, limit: 50 });
+  const inviteRoleCompanyOptions = useMemo(
+    () => [ALL_COMPANIES_OPTION, ...inviteCompanyOptions],
+    [inviteCompanyOptions]
   );
-  const inviteUser = useInviteUser(activeTenantId || undefined);
-  const updateUser = useUpdateUser(activeTenantId || undefined, editingUser?.id);
-  const deleteUser = useDeleteUser(activeTenantId || undefined);
-  const sendPasswordReset = useSendPasswordReset(activeTenantId || undefined, resetPasswordUser?.id);
+  const manageRoleCompanyOptions = useMemo(
+    () => [ALL_COMPANIES_OPTION, ...manageCompanyOptions],
+    [manageCompanyOptions]
+  );
+  const inviteUser = useInviteUser(activeWorkspaceId || undefined);
+  const updateUser = useUpdateUser(activeWorkspaceId || undefined, editingUser?.id);
+  const deleteUser = useDeleteUser(activeWorkspaceId || undefined);
+  const sendPasswordReset = useSendPasswordReset(activeWorkspaceId || undefined, resetPasswordUser?.id);
 
   // Company management hooks
   const { data: assignmentsData } = useUserCompanyAssignments(
@@ -243,7 +238,7 @@ export default function UsersPage() {
   );
   const assignCompany = useAssignUserToCompany(managingUserId || undefined);
   const _removeAssignment = useRemoveCompanyAssignment(managingUserId || undefined);
-  const removeUserRole = useRemoveUserRoleAssignment(activeTenantId || undefined);
+  const removeUserRole = useRemoveUserRoleAssignment(activeWorkspaceId || undefined);
 
   // Initialize edit form when editing user changes
   useEffect(() => {
@@ -277,7 +272,7 @@ export default function UsersPage() {
 
   // Helper to filter role assignments based on active filters
   // When filtering by role or company, only show matching assignments in the table
-  const getFilteredRoleAssignments = (user: TenantUser) => {
+  const getFilteredRoleAssignments = (user: WorkspaceUser) => {
     if (!user.roleAssignments) return [];
 
     let filtered = user.roleAssignments;
@@ -313,7 +308,7 @@ export default function UsersPage() {
     }
 
     // Validate role assignments
-    if (!isTenantAdminInvite && inviteRoleAssignments.length === 0) {
+    if (!isWorkspaceAdminInvite && inviteRoleAssignments.length === 0) {
       setFormError('Please assign at least one role');
       return;
     }
@@ -321,16 +316,16 @@ export default function UsersPage() {
     try {
       let roleAssignments: Array<{ roleId: string; companyId: string | null }>;
 
-      if (isTenantAdminInvite) {
-        // Find the TENANT_ADMIN system role
-        const tenantAdminRole = (rolesData as Role[] | undefined)?.find(
-          (r) => r.systemRoleType === 'TENANT_ADMIN'
+      if (isWorkspaceAdminInvite) {
+        // Find the canonical workspace admin system role, with legacy aliases for migrated data.
+        const WorkspaceAdminRole = (rolesData as Role[] | undefined)?.find(
+          (r) => isAdminRoleType(r.systemRoleType)
         );
-        if (!tenantAdminRole) {
-          setFormError('Tenant Admin role not found');
+        if (!WorkspaceAdminRole) {
+          setFormError('Workspace Admin role not found');
           return;
         }
-        roleAssignments = [{ roleId: tenantAdminRole.id, companyId: null }];
+        roleAssignments = [{ roleId: WorkspaceAdminRole.id, companyId: null }];
       } else {
         roleAssignments = inviteRoleAssignments.map((ra) => ({
           roleId: ra.roleId,
@@ -353,7 +348,7 @@ export default function UsersPage() {
         lastName: '',
       });
       setInviteRoleAssignments([]);
-      setIsTenantAdminInvite(false);
+      setIsWorkspaceAdminInvite(false);
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Failed to invite user');
     }
@@ -402,7 +397,7 @@ export default function UsersPage() {
 
   // Handle password reset
   const handlePasswordReset = async () => {
-    if (!resetPasswordUser || !activeTenantId) return;
+    if (!resetPasswordUser || !activeWorkspaceId) return;
 
     try {
       await sendPasswordReset.mutateAsync();
@@ -419,10 +414,6 @@ export default function UsersPage() {
     const role = (rolesData as Role[] | undefined)?.find((r) => r.id === selectedRoleId);
     if (!role) return;
 
-    const company = selectedRoleCompanyId
-      ? allCompanies.find((c) => c.id === selectedRoleCompanyId)
-      : null;
-
     // Check for duplicate
     const isDuplicate = inviteRoleAssignments.some(
       (ra) => ra.roleId === selectedRoleId && ra.companyId === selectedRoleCompanyId
@@ -436,7 +427,9 @@ export default function UsersPage() {
       roleId: selectedRoleId,
       companyId: selectedRoleCompanyId,
       roleName: role.name,
-      companyName: company?.name || 'All Companies',
+      companyName: selectedRoleCompanyId
+        ? selectedInviteCompany?.label || 'Selected company'
+        : 'All Companies',
     };
 
     setInviteRoleAssignments([...inviteRoleAssignments, newAssignment]);
@@ -452,7 +445,7 @@ export default function UsersPage() {
   };
 
   // Check permissions using computed flags from role assignments
-  const canManageUsers = session?.isSuperAdmin || session?.isTenantAdmin;
+  const canManageUsers = session?.isSuperAdmin || session?.isWorkspaceAdmin;
 
   if (!canManageUsers) {
     return (
@@ -477,20 +470,10 @@ export default function UsersPage() {
           size="sm"
           leftIcon={<Plus className="w-4 h-4" />}
           onClick={() => setIsInviteModalOpen(true)}
-          disabled={isSuperAdmin && !selectedTenantId}
         >
           Invite User
         </Button>
       </div>
-
-      {/* Tenant context info for SUPER_ADMIN */}
-      {isSuperAdmin && !selectedTenantId && (
-        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <p className="text-sm text-amber-800 dark:text-amber-200">
-            Please select a tenant from the sidebar to manage users.
-          </p>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -504,7 +487,6 @@ export default function UsersPage() {
             }}
             leftIcon={<Search className="w-4 h-4" />}
             inputSize="sm"
-            disabled={isSuperAdmin && !selectedTenantId}
           />
         </div>
         <select
@@ -514,7 +496,6 @@ export default function UsersPage() {
             setPage(1);
           }}
           className="input input-sm w-full sm:w-48"
-          disabled={isSuperAdmin && !selectedTenantId}
         >
           <option value="">All Roles</option>
           {availableRoles.map((role) => (
@@ -533,7 +514,6 @@ export default function UsersPage() {
             }}
             leftIcon={<Building2 className="w-4 h-4" />}
             inputSize="sm"
-            disabled={isSuperAdmin && !selectedTenantId}
           />
         </div>
       </div>
@@ -550,19 +530,8 @@ export default function UsersPage() {
         <div className="text-center py-12 text-text-secondary">Loading users...</div>
       )}
 
-      {/* No Tenant Selected (SUPER_ADMIN only) */}
-      {isSuperAdmin && !selectedTenantId && !isLoading && (
-        <div className="card p-8 text-center">
-          <Building2 className="w-12 h-12 mx-auto text-text-muted mb-4" />
-          <h3 className="text-lg font-medium text-text-primary mb-2">Select a Tenant</h3>
-          <p className="text-sm text-text-secondary max-w-md mx-auto">
-            As a Super Admin, please select a tenant from the sidebar to view and manage its users.
-          </p>
-        </div>
-      )}
-
       {/* Users Table */}
-      {data && (!isSuperAdmin || selectedTenantId) && (
+      {data && (
         <>
           {/* Mobile Card View */}
           <div className="md:hidden space-y-3">
@@ -571,7 +540,7 @@ export default function UsersPage() {
                 No users found
               </div>
             ) : (
-              data.users.map((user: TenantUser) => {
+              data.users.map((user: WorkspaceUser) => {
                 const filteredAssignments = getFilteredRoleAssignments(user);
                 const totalAssignments = user.roleAssignments?.length || 0;
 
@@ -659,7 +628,7 @@ export default function UsersPage() {
                                       <span
                                         className={cn(
                                           'badge text-xs',
-                                          ra.role.systemRoleType === 'TENANT_ADMIN'
+                                          isAdminRoleType(ra.role.systemRoleType)
                                             ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                                             : 'bg-oak-primary/10 text-oak-primary dark:bg-oak-primary/20'
                                         )}
@@ -727,7 +696,7 @@ export default function UsersPage() {
                       </td>
                     </tr>
                   ) : (
-                    data.users.map((user: TenantUser) => (
+                    data.users.map((user: WorkspaceUser) => (
                       <tr key={user.id}>
                         <td>
                           <div className="flex items-center gap-3">
@@ -766,11 +735,9 @@ export default function UsersPage() {
                                         <span
                                           className={cn(
                                             'badge text-xs',
-                                            ra.role.systemRoleType === 'TENANT_ADMIN'
+                                            isAdminRoleType(ra.role.systemRoleType)
                                               ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                                              : ra.role.systemRoleType === 'SUPER_ADMIN'
-                                                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                                                : 'bg-oak-primary/10 text-oak-primary dark:bg-oak-primary/20'
+                                              : 'bg-oak-primary/10 text-oak-primary dark:bg-oak-primary/20'
                                           )}
                                         >
                                           <Shield className="w-2.5 h-2.5 mr-0.5" />
@@ -911,7 +878,7 @@ export default function UsersPage() {
           setInviteRoleAssignments([]);
           setSelectedRoleId('');
           setSelectedRoleCompanyId(null);
-          setIsTenantAdminInvite(false);
+          setIsWorkspaceAdminInvite(false);
           setFormError('');
         }}
         title="Invite User"
@@ -956,34 +923,34 @@ export default function UsersPage() {
                 leftIcon={<Mail className="w-4 h-4" />}
               />
 
-              {/* Tenant Admin Toggle - Only for SUPER_ADMIN */}
+              {/* Workspace Admin Toggle - Only for SUPER_ADMIN */}
               {isSuperAdmin && (
                 <div className="border-t border-border-primary pt-4">
                   <div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-background-secondary">
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium text-text-primary">Tenant Admin</span>
+                      <span className="text-sm font-medium text-text-primary">Workspace Admin</span>
                       <span className="text-xs text-text-tertiary">
-                        {isTenantAdminInvite ? 'Full administrative access to this tenant' : 'Standard user with role-based access'}
+                        {isWorkspaceAdminInvite ? 'Full administrative access to this workspace' : 'Standard user with role-based access'}
                       </span>
                     </div>
                     <button
                       type="button"
                       role="switch"
-                      aria-checked={isTenantAdminInvite}
+                      aria-checked={isWorkspaceAdminInvite}
                       onClick={() => {
-                        const newValue = !isTenantAdminInvite;
-                        setIsTenantAdminInvite(newValue);
+                        const newValue = !isWorkspaceAdminInvite;
+                        setIsWorkspaceAdminInvite(newValue);
                         if (newValue) {
-                          setInviteRoleAssignments([]); // Clear role assignments when becoming tenant admin
+                          setInviteRoleAssignments([]); // Clear role assignments when becoming workspace admin
                         }
                       }}
                       className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${
-                        isTenantAdminInvite ? 'bg-status-success' : 'bg-background-tertiary'
+                        isWorkspaceAdminInvite ? 'bg-status-success' : 'bg-background-tertiary'
                       }`}
                     >
                       <span
                         className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          isTenantAdminInvite ? 'translate-x-5' : 'translate-x-0'
+                          isWorkspaceAdminInvite ? 'translate-x-5' : 'translate-x-0'
                         }`}
                       />
                     </button>
@@ -991,13 +958,13 @@ export default function UsersPage() {
                 </div>
               )}
 
-              {/* Role Assignments Section - Hidden when Tenant Admin is checked */}
-              {!isTenantAdminInvite && (
+              {/* Role Assignments Section - Hidden when Workspace Admin is checked */}
+              {!isWorkspaceAdminInvite && (
               <>
               <div className="border-t border-border-primary pt-4">
                 <h4 className="text-sm font-medium text-text-primary mb-2">Role Assignments <span className="text-red-500">*</span></h4>
                 <p className="text-xs text-text-muted mb-3">
-                  Assign roles to this user. Use &quot;All Companies&quot; for tenant-wide access or select a specific company.
+                  Assign roles to this user. Use &quot;All Companies&quot; for workspace-wide access or select a specific company.
                 </p>
 
                 {/* Current role assignments */}
@@ -1044,9 +1011,8 @@ export default function UsersPage() {
                       <option value="">Select a role...</option>
                       {(rolesData as Role[] | undefined)
                         ?.filter((role) =>
-                          // Exclude TENANT_ADMIN and SUPER_ADMIN (assigned separately)
-                          // Keep COMPANY_ADMIN, COMPANY_USER, and custom roles
-                          role.systemRoleType !== 'TENANT_ADMIN' && role.systemRoleType !== 'SUPER_ADMIN'
+                          // Exclude admin roles (assigned separately).
+                          !isAdminRoleType(role.systemRoleType)
                         )
                         .map((role) => (
                         <option key={role.id} value={role.id}>
@@ -1056,18 +1022,26 @@ export default function UsersPage() {
                     </select>
                   </div>
                   <div className="flex-1">
-                    <select
-                      value={selectedRoleCompanyId || ''}
-                      onChange={(e) => setSelectedRoleCompanyId(e.target.value || null)}
-                      className="input input-sm w-full"
-                    >
-                      <option value="">All Companies</option>
-                      {allCompanies.map((company) => (
-                        <option key={company.id} value={company.id}>
-                          {company.name}
-                        </option>
-                      ))}
-                    </select>
+                    <AsyncSearchSelect<CompanySearchOption>
+                      value={selectedRoleCompanyId ?? ''}
+                      onChange={(companyId, company) => {
+                        if (companyId === ALL_COMPANIES_OPTION.id) {
+                          setSelectedRoleCompanyId(null);
+                          setSelectedInviteCompany(null);
+                          return;
+                        }
+                        setSelectedRoleCompanyId(companyId || null);
+                        setSelectedInviteCompany(company);
+                      }}
+                      placeholder="Search companies..."
+                      options={inviteRoleCompanyOptions}
+                      isLoading={isInviteCompanyLoading}
+                      searchQuery={inviteCompanySearchQuery}
+                      onSearchChange={setInviteCompanySearchQuery}
+                      icon={<Building2 className="w-4 h-4" />}
+                      emptySearchText="Type to search companies, or leave blank for all companies"
+                      noResultsText="No companies found"
+                    />
                   </div>
                   <Button
                     type="button"
@@ -1102,7 +1076,7 @@ export default function UsersPage() {
                 setInviteRoleAssignments([]);
                 setSelectedRoleId('');
                 setSelectedRoleCompanyId(null);
-                setIsTenantAdminInvite(false);
+                setIsWorkspaceAdminInvite(false);
                 setFormError('');
               }}
             >
@@ -1240,7 +1214,7 @@ export default function UsersPage() {
                           <span
                             className={cn(
                               'badge text-xs',
-                              ra.role.systemRoleType === 'TENANT_ADMIN'
+                              isAdminRoleType(ra.role.systemRoleType)
                                 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                                 : 'bg-oak-primary/10 text-oak-primary dark:bg-oak-primary/20'
                             )}
@@ -1290,20 +1264,23 @@ export default function UsersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label text-xs mb-1">Company</label>
-                  <select
+                  <AsyncSearchSelect<CompanySearchOption>
                     value={selectedCompanyId}
-                    onChange={(e) => setSelectedCompanyId(e.target.value)}
-                    className="input input-sm w-full"
-                  >
-                    <option value="">Select company...</option>
-                    <option value="__all__">All Companies</option>
-                    {allCompanies
-                      .map((company) => (
-                        <option key={company.id} value={company.id}>
-                          {company.name}
-                        </option>
-                      ))}
-                  </select>
+                    onChange={(companyId, company) => {
+                      setSelectedCompanyId(companyId);
+                      setSelectedManageCompany(
+                        companyId === ALL_COMPANIES_OPTION.id ? null : company
+                      );
+                    }}
+                    placeholder="Search companies..."
+                    options={manageRoleCompanyOptions}
+                    isLoading={isManageCompanyLoading}
+                    searchQuery={manageCompanySearchQuery}
+                    onSearchChange={setManageCompanySearchQuery}
+                    icon={<Building2 className="w-4 h-4" />}
+                    emptySearchText="Type to search companies"
+                    noResultsText="No companies found"
+                  />
                 </div>
                 <div>
                   <label className="label text-xs mb-1">Role</label>
@@ -1315,9 +1292,8 @@ export default function UsersPage() {
                     <option value="">Select role...</option>
                     {(rolesData as Role[] | undefined)
                       ?.filter((role) =>
-                        // Exclude TENANT_ADMIN and SUPER_ADMIN (not company-scoped)
-                        // Keep COMPANY_ADMIN, COMPANY_USER, and custom roles
-                        role.systemRoleType !== 'TENANT_ADMIN' && role.systemRoleType !== 'SUPER_ADMIN'
+                        // Exclude admin roles (not company-scoped).
+                        !isAdminRoleType(role.systemRoleType)
                       )
                       .map((role) => (
                         <option key={role.id} value={role.id}>
@@ -1342,7 +1318,7 @@ export default function UsersPage() {
                       companyId: companyIdToAssign,
                       roleId: selectedRoleId,
                       isPrimary: !assignmentsData?.assignments?.length,
-                      tenantId: activeTenantId || undefined, // Pass tenantId for SUPER_ADMIN
+                      workspaceId: activeWorkspaceId || undefined,
                     });
                     setSelectedCompanyId('');
                     setSelectedRoleId('');

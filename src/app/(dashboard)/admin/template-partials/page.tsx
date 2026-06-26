@@ -8,7 +8,7 @@ import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useToast } from '@/components/ui/toast';
 import { Pagination } from '@/components/ui/pagination';
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
@@ -1012,14 +1012,12 @@ export default function TemplatesPage() {
     }
   }, [searchParams]);
 
-  // Tenant selection (from centralized store for SUPER_ADMIN)
-  const { selectedTenantId } = useTenantSelection();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
 
-  const canManage = session?.isSuperAdmin || session?.isTenantAdmin || false;
+  const canManage = session?.isSuperAdmin || session?.isWorkspaceAdmin || false;
 
   return (
     <div className="p-4 sm:p-6">
@@ -1034,25 +1032,6 @@ export default function TemplatesPage() {
           </p>
         </div>
       </div>
-
-      {/* Tenant context info for SUPER_ADMIN */}
-      {session?.isSuperAdmin && !selectedTenantId && (
-        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <p className="text-sm text-amber-800 dark:text-amber-200">
-            Please select a tenant from the sidebar to manage templates.
-          </p>
-        </div>
-      )}
-
-      {/* No tenant selected */}
-      {session?.isSuperAdmin && !activeTenantId && (
-        <div className="flex flex-col items-center justify-center py-12">
-          <FileText className="w-12 h-12 mb-3 opacity-50 text-text-muted" />
-          <p className="text-sm text-text-muted">
-            Please select a tenant from the sidebar to manage their templates
-          </p>
-        </div>
-      )}
 
       {/* Tabs and Content */}
       {activeTenantId && (

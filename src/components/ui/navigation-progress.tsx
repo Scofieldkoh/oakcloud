@@ -1,15 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useNavigationProgress } from '@/hooks/use-navigation-progress';
-import { useIsMobile } from '@/hooks/use-media-query';
 
 export function NavigationProgress() {
   const { isNavigating } = useNavigationProgress();
-  const isMobile = useIsMobile();
-  const animationSize = isMobile ? 720 : 450;
   const [showOverlay, setShowOverlay] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -30,9 +25,9 @@ export function NavigationProgress() {
         clearTimeout(t3);
         clearTimeout(t4);
       };
-    } else if (progress > 0) {
+    } else {
       // Complete the bar
-      setProgress(100);
+      setProgress((current) => (current > 0 ? 100 : current));
       const t = setTimeout(() => setProgress(0), 200);
       return () => clearTimeout(t);
     }
@@ -60,25 +55,16 @@ export function NavigationProgress() {
         </div>
       )}
 
-      {/* Lottie overlay */}
-      <AnimatePresence>
-        {showOverlay && isNavigating && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-40 flex items-center justify-center bg-background-primary/60 backdrop-blur-sm"
-          >
-            <DotLottieReact
-              src="/animations/loading.lottie"
-              loop
-              autoplay
-              style={{ width: animationSize, height: animationSize }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Delayed lightweight overlay for slower route transitions. */}
+      {showOverlay && isNavigating && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-background-primary/60 backdrop-blur-sm animate-fade-in">
+          <div
+            className="h-10 w-10 rounded-full border-2 border-border-primary border-t-oak-primary animate-spin"
+            role="status"
+            aria-label="Loading"
+          />
+        </div>
+      )}
     </>
   );
 }

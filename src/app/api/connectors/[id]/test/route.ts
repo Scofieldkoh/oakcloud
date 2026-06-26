@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { id } = await params;
 
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

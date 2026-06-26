@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { requireWorkspaceContext } from '@/lib/api-helpers';
 import { parseIdParams } from '@/lib/validations/params';
 import {
   retrieveFYEFromACRA,
@@ -18,7 +18,7 @@ export async function GET(
     const session = await requireAuth();
     const { id } = await parseIdParams(params);
     const { searchParams } = new URL(request.url);
-    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    const tenantResult = await requireWorkspaceContext(session, searchParams.get('tenantId'));
     if ('error' in tenantResult) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 

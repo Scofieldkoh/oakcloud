@@ -33,26 +33,16 @@ export async function GET(request: NextRequest) {
       sortOrder: searchParams.get('sortOrder') || undefined,
     });
 
-    // For SUPER_ADMIN, allow specifying tenantId via query param or viewing all contacts
-    const tenantIdParam = searchParams.get('tenantId');
-    let effectiveTenantId: string | null = session.tenantId;
-
-    if (session.isSuperAdmin && tenantIdParam) {
-      effectiveTenantId = tenantIdParam;
-    } else if (session.isSuperAdmin && !session.tenantId) {
-      // SUPER_ADMIN without tenant context - will show all contacts across tenants
-      effectiveTenantId = null;
-    }
+    const effectiveTenantId = session.tenantId;
 
     // For company-scoped users, filter by their assigned companies
     // SUPER_ADMIN, TENANT_ADMIN, and users with "All Companies" access see all contacts in their tenant
-    const companyIds = (!session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess)
+    const companyIds = (!session.isSuperAdmin && !session.isWorkspaceAdmin && !session.hasAllCompaniesAccess)
       ? session.companyIds
       : undefined;
 
     const result = await searchContactsWithCounts(params, effectiveTenantId, {
       companyIds,
-      skipTenantFilter: session.isSuperAdmin && !effectiveTenantId,
     });
 
     return NextResponse.json(result);
@@ -78,15 +68,10 @@ export async function POST(request: NextRequest) {
     await requirePermission(session, 'contact', 'create');
 
     const body = await request.json();
-    const { tenantId: bodyTenantId, ...contactData } = body;
-    const data = createContactWithDetailsSchema.parse(contactData);
+    const data = createContactWithDetailsSchema.parse(body);
     const { contactDetails = [], ...createData } = data;
 
-    // Determine tenant ID: SUPER_ADMIN can specify tenantId, others use session
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && bodyTenantId) {
-      tenantId = bodyTenantId;
-    }
+    const tenantId = session.tenantId;
 
     if (!tenantId) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });

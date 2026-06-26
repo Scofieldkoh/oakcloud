@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     // Allow both SUPER_ADMIN (global stats) and TENANT_ADMIN (tenant-scoped stats)
     const session = await requireAuth();
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     if (session.isSuperAdmin && tenantIdParam) {
       // Trust the tenantId param - validation happens in getCompanyStats
-      // Removing the blocking getTenantById() call for performance
+      // Removing the blocking getWorkspaceById() call for performance
       effectiveTenantId = tenantIdParam;
     }
 

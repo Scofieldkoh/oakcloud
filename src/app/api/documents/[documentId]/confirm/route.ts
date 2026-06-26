@@ -34,7 +34,7 @@ export async function POST(
     if (
       document.uploadedById !== session.id &&
       !session.isSuperAdmin &&
-      !session.isTenantAdmin
+      !session.isWorkspaceAdmin
     ) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

@@ -315,7 +315,7 @@ export type ChartOfAccountWhereInput = {
   company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
   parent?: Prisma.XOR<Prisma.ChartOfAccountNullableScalarRelationFilter, Prisma.ChartOfAccountWhereInput> | null
   children?: Prisma.ChartOfAccountListRelationFilter
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   externalMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
 }
 
@@ -340,7 +340,7 @@ export type ChartOfAccountOrderByWithRelationInput = {
   company?: Prisma.CompanyOrderByWithRelationInput
   parent?: Prisma.ChartOfAccountOrderByWithRelationInput
   children?: Prisma.ChartOfAccountOrderByRelationAggregateInput
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
   externalMappings?: Prisma.ChartOfAccountsMappingOrderByRelationAggregateInput
 }
 
@@ -369,7 +369,7 @@ export type ChartOfAccountWhereUniqueInput = Prisma.AtLeast<{
   company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
   parent?: Prisma.XOR<Prisma.ChartOfAccountNullableScalarRelationFilter, Prisma.ChartOfAccountWhereInput> | null
   children?: Prisma.ChartOfAccountListRelationFilter
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   externalMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
 }, "id" | "tenantId_companyId_code">
 
@@ -439,7 +439,7 @@ export type ChartOfAccountCreateInput = {
   company?: Prisma.CompanyCreateNestedOneWithoutChartOfAccountsInput
   parent?: Prisma.ChartOfAccountCreateNestedOneWithoutChildrenInput
   children?: Prisma.ChartOfAccountCreateNestedManyWithoutParentInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutChartOfAccountsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutChartOfAccountsInput
   externalMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutAccountInput
 }
 
@@ -483,7 +483,7 @@ export type ChartOfAccountUpdateInput = {
   company?: Prisma.CompanyUpdateOneWithoutChartOfAccountsNestedInput
   parent?: Prisma.ChartOfAccountUpdateOneWithoutChildrenNestedInput
   children?: Prisma.ChartOfAccountUpdateManyWithoutParentNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutChartOfAccountsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutChartOfAccountsNestedInput
   externalMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutAccountNestedInput
 }
 
@@ -932,7 +932,7 @@ export type ChartOfAccountCreateWithoutCompanyInput = {
   deletedAt?: Date | string | null
   parent?: Prisma.ChartOfAccountCreateNestedOneWithoutChildrenInput
   children?: Prisma.ChartOfAccountCreateNestedManyWithoutParentInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutChartOfAccountsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutChartOfAccountsInput
   externalMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutAccountInput
 }
 
@@ -1000,7 +1000,7 @@ export type ChartOfAccountCreateWithoutChildrenInput = {
   deletedAt?: Date | string | null
   company?: Prisma.CompanyCreateNestedOneWithoutChartOfAccountsInput
   parent?: Prisma.ChartOfAccountCreateNestedOneWithoutChildrenInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutChartOfAccountsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutChartOfAccountsInput
   externalMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutAccountInput
 }
 
@@ -1047,7 +1047,7 @@ export type ChartOfAccountCreateWithoutParentInput = {
   deletedAt?: Date | string | null
   company?: Prisma.CompanyCreateNestedOneWithoutChartOfAccountsInput
   children?: Prisma.ChartOfAccountCreateNestedManyWithoutParentInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutChartOfAccountsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutChartOfAccountsInput
   externalMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutAccountInput
 }
 
@@ -1110,7 +1110,7 @@ export type ChartOfAccountUpdateWithoutChildrenInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   company?: Prisma.CompanyUpdateOneWithoutChartOfAccountsNestedInput
   parent?: Prisma.ChartOfAccountUpdateOneWithoutChildrenNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutChartOfAccountsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutChartOfAccountsNestedInput
   externalMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutAccountNestedInput
 }
 
@@ -1169,7 +1169,7 @@ export type ChartOfAccountCreateWithoutExternalMappingsInput = {
   company?: Prisma.CompanyCreateNestedOneWithoutChartOfAccountsInput
   parent?: Prisma.ChartOfAccountCreateNestedOneWithoutChildrenInput
   children?: Prisma.ChartOfAccountCreateNestedManyWithoutParentInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutChartOfAccountsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutChartOfAccountsInput
 }
 
 export type ChartOfAccountUncheckedCreateWithoutExternalMappingsInput = {
@@ -1227,7 +1227,7 @@ export type ChartOfAccountUpdateWithoutExternalMappingsInput = {
   company?: Prisma.CompanyUpdateOneWithoutChartOfAccountsNestedInput
   parent?: Prisma.ChartOfAccountUpdateOneWithoutChildrenNestedInput
   children?: Prisma.ChartOfAccountUpdateManyWithoutParentNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutChartOfAccountsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutChartOfAccountsNestedInput
 }
 
 export type ChartOfAccountUncheckedUpdateWithoutExternalMappingsInput = {
@@ -1367,7 +1367,7 @@ export type ChartOfAccountUpdateWithoutCompanyInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   parent?: Prisma.ChartOfAccountUpdateOneWithoutChildrenNestedInput
   children?: Prisma.ChartOfAccountUpdateManyWithoutParentNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutChartOfAccountsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutChartOfAccountsNestedInput
   externalMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutAccountNestedInput
 }
 
@@ -1447,7 +1447,7 @@ export type ChartOfAccountUpdateWithoutParentInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   company?: Prisma.CompanyUpdateOneWithoutChartOfAccountsNestedInput
   children?: Prisma.ChartOfAccountUpdateManyWithoutParentNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutChartOfAccountsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutChartOfAccountsNestedInput
   externalMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutAccountNestedInput
 }
 
@@ -1649,7 +1649,7 @@ export type $ChartOfAccountPayload<ExtArgs extends runtime.Types.Extensions.Inte
     company: Prisma.$CompanyPayload<ExtArgs> | null
     parent: Prisma.$ChartOfAccountPayload<ExtArgs> | null
     children: Prisma.$ChartOfAccountPayload<ExtArgs>[]
-    tenant: Prisma.$TenantPayload<ExtArgs> | null
+    tenant: Prisma.$WorkspacePayload<ExtArgs> | null
     externalMappings: Prisma.$ChartOfAccountsMappingPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -2067,7 +2067,7 @@ export interface Prisma__ChartOfAccountClient<T, Null = never, ExtArgs extends r
   company<T extends Prisma.ChartOfAccount$companyArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChartOfAccount$companyArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   parent<T extends Prisma.ChartOfAccount$parentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChartOfAccount$parentArgs<ExtArgs>>): Prisma.Prisma__ChartOfAccountClient<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   children<T extends Prisma.ChartOfAccount$childrenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChartOfAccount$childrenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  tenant<T extends Prisma.ChartOfAccount$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChartOfAccount$tenantArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.ChartOfAccount$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChartOfAccount$tenantArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   externalMappings<T extends Prisma.ChartOfAccount$externalMappingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChartOfAccount$externalMappingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountsMappingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2577,18 +2577,18 @@ export type ChartOfAccount$childrenArgs<ExtArgs extends runtime.Types.Extensions
  */
 export type ChartOfAccount$tenantArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Tenant
+   * Select specific fields to fetch from the Workspace
    */
-  select?: Prisma.TenantSelect<ExtArgs> | null
+  select?: Prisma.WorkspaceSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Tenant
+   * Omit specific fields from the Workspace
    */
-  omit?: Prisma.TenantOmit<ExtArgs> | null
+  omit?: Prisma.WorkspaceOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.TenantInclude<ExtArgs> | null
-  where?: Prisma.TenantWhereInput
+  include?: Prisma.WorkspaceInclude<ExtArgs> | null
+  where?: Prisma.WorkspaceWhereInput
 }
 
 /**

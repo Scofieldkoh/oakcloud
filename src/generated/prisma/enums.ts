@@ -9,14 +9,14 @@
 * 🟢 You can import this file directly.
 */
 
-export const TenantStatus = {
+export const WorkspaceStatus = {
   ACTIVE: 'ACTIVE',
   SUSPENDED: 'SUSPENDED',
   PENDING_SETUP: 'PENDING_SETUP',
   DEACTIVATED: 'DEACTIVATED'
 } as const
 
-export type TenantStatus = (typeof TenantStatus)[keyof typeof TenantStatus]
+export type WorkspaceStatus = (typeof WorkspaceStatus)[keyof typeof WorkspaceStatus]
 
 
 export const EntityType = {

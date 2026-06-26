@@ -11,7 +11,6 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
-import { getTenantById } from '@/services/tenant.service';
 import {
   uploadDocument,
   prepareDocumentPages,
@@ -25,15 +24,11 @@ import {
 } from '@/services/duplicate-detection.service';
 import {
   extractFields,
-  reconcilePendingBatchExtraction,
 } from '@/services/document-extraction.service';
 import { storage, StorageKeys } from '@/lib/storage';
 import type { ProcessingPriority, UploadSource, PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
 
-function getTenantTimezone(settings: unknown): string {
-  const tz = (settings as Record<string, unknown> | null | undefined)?.timezone;
-  return typeof tz === 'string' && tz.trim() ? tz : 'Asia/Singapore';
-}
+const INTERNAL_DEFAULT_TIME_ZONE = 'Asia/Singapore';
 
 function getTimeZoneOffsetMinutes(date: Date, timeZone: string): number {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -156,24 +151,7 @@ export async function GET(request: NextRequest) {
     const isContainer =
       isContainerStr === 'true' ? true : isContainerStr === 'false' ? false : undefined;
 
-    // For SUPER_ADMIN, allow specifying tenantId via query param
-    const tenantIdParam = searchParams.get('tenantId');
-    let effectiveTenantId: string | null = session.tenantId;
-
-    if (session.isSuperAdmin && tenantIdParam) {
-      // Validate that the tenant exists before using it
-      const tenant = await getTenantById(tenantIdParam);
-      if (!tenant) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: { code: 'RESOURCE_NOT_FOUND', message: 'Tenant not found' },
-          },
-          { status: 404 }
-        );
-      }
-      effectiveTenantId = tenantIdParam;
-    }
+    const effectiveTenantId: string | null = session.tenantId;
 
     // Determine accessible company IDs
     let companyIds: string[] | undefined;
@@ -190,17 +168,15 @@ export async function GET(request: NextRequest) {
         );
       }
       companyIds = [companyId];
-    } else if (!session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess) {
+    } else if (!session.isSuperAdmin && !session.isWorkspaceAdmin && !session.hasAllCompaniesAccess) {
       // Company-scoped users: filter by their assigned companies
       companyIds = session.companyIds;
     }
     // SUPER_ADMIN, TENANT_ADMIN, and users with hasAllCompaniesAccess see all documents in the tenant
 
-    // Tenant timezone for "today" and date-only filters
-    const tenantForTimezone = effectiveTenantId
-      ? await prisma.tenant.findUnique({ where: { id: effectiveTenantId }, select: { settings: true } })
-      : null;
-    const timeZone = getTenantTimezone(tenantForTimezone?.settings);
+    // Internal app date filters use the default workspace timezone. Avoid a
+    // tenant settings lookup on every processing list request.
+    const timeZone = INTERNAL_DEFAULT_TIME_ZONE;
 
     // For TIMESTAMP fields (createdAt/uploadDate): convert using tenant timezone
     const parseTimestampFrom = (value: string | null): Date | undefined => {
@@ -270,7 +246,6 @@ export async function GET(request: NextRequest) {
       limit,
       sortBy,
       sortOrder,
-      skipTenantFilter: session.isSuperAdmin && !effectiveTenantId,
       // New filter parameters
       uploadDateFrom: effectiveUploadDateFrom,
       uploadDateTo: effectiveUploadDateTo,
@@ -308,47 +283,9 @@ export async function GET(request: NextRequest) {
         homeTotalTo: parseAmount(homeTotalTo),
       });
 
-    // Get documents with paged results
-    let result = await loadPagedDocuments();
-
-    if (effectiveTenantId) {
-      const pendingDocs = result.documents.filter(
-        (doc) =>
-          (doc.pipelineStatus === 'QUEUED' || doc.pipelineStatus === 'PROCESSING') &&
-          Boolean(doc.document.companyId)
-      );
-
-      if (pendingDocs.length > 0) {
-        const reconciliationResults = await Promise.all(
-          pendingDocs.map((doc) =>
-            reconcilePendingBatchExtraction(
-              doc.id,
-              effectiveTenantId,
-              doc.document.companyId as string,
-              session.id
-            ).catch((error) => {
-              console.warn(
-                `Failed to reconcile pending batch extraction for ${doc.id}:`,
-                error
-              );
-              return { status: 'NOT_PENDING' as const };
-            })
-          )
-        );
-
-        const hasStateChange = reconciliationResults.some(
-          (reconciliation) =>
-            reconciliation.status === 'SUCCESS' ||
-            reconciliation.status === 'FAILED' ||
-            reconciliation.status === 'TIMEOUT_EXCEEDED' ||
-            reconciliation.status === 'CANCELLED'
-        );
-
-        if (hasStateChange) {
-          result = await loadPagedDocuments();
-        }
-      }
-    }
+    // Get documents with paged results. Reconciliation is intentionally not
+    // performed during list reads; use the explicit reconcile endpoint instead.
+    const result = await loadPagedDocuments();
 
     // Transform for API response (convert Decimal to string, Date to ISO string)
     const documents = result.documents.map((doc) => ({

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createErrorResponse, resolveTenantId, buildContentDispositionHeader } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId, buildContentDispositionHeader } from '@/lib/api-helpers';
 import { storage } from '@/lib/storage';
 import { getDraftUploadById } from '@/services/form-builder.service';
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'read');
 
     const { searchParams } = new URL(request.url);
-    const tenantId = resolveTenantId(session, searchParams.get('tenantId'));
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const disposition = searchParams.get('disposition') === 'inline' ? 'inline' : 'attachment';
 
     const upload = await getDraftUploadById(id, draftId, uploadId, tenantId);

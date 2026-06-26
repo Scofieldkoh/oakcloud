@@ -313,7 +313,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get tenant name
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await prisma.workspace.findUnique({
       where: { id: tenantId },
       select: { name: true },
     });

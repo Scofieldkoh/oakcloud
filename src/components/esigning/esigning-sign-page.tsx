@@ -392,7 +392,7 @@ export function EsigningSignPage() {
       const { recordView = false, preserveDrafts = false } = options ?? {};
       const currentDraftValues = latestDraftValuesRef.current;
 
-      const loadResponse = await fetch('/api/esigning/sign/session/load');
+      const loadResponse = await fetch('/api/public-bootstrap/esigning/session');
       const loadResult = await loadResponse.json().catch(() => ({}));
       if (!loadResponse.ok) {
         throw new Error(
@@ -400,7 +400,9 @@ export function EsigningSignPage() {
         );
       }
 
-      const nextSession = loadResult as EsigningSigningSessionDto;
+      const nextSession =
+        (loadResult as { session?: EsigningSigningSessionDto }).session ??
+        (loadResult as EsigningSigningSessionDto);
       setSession(nextSession);
       setDraftValues(
         preserveDrafts

@@ -64,7 +64,7 @@ function createMockSession(overrides: Partial<SessionUser> = {}): SessionUser {
     lastName: 'User',
     tenantId: 'tenant-1',
     isSuperAdmin: false,
-    isTenantAdmin: false,
+    isWorkspaceAdmin: false,
     companyIds: [],
     hasAllCompaniesAccess: false,
     ...overrides,
@@ -133,7 +133,7 @@ describe('RBAC', () => {
     });
 
     it('should allow TENANT_ADMIN to access audit logs', () => {
-      const session = createMockSession({ isTenantAdmin: true, hasAllCompaniesAccess: true });
+      const session = createMockSession({ isWorkspaceAdmin: true, hasAllCompaniesAccess: true });
       expect(canAccessAuditLogs(session)).toBe(true);
     });
 
@@ -150,7 +150,7 @@ describe('RBAC', () => {
     });
 
     it('should allow TENANT_ADMIN to create companies', () => {
-      const session = createMockSession({ isTenantAdmin: true });
+      const session = createMockSession({ isWorkspaceAdmin: true });
       expect(canCreateCompanies(session)).toBe(true);
     });
 
@@ -167,7 +167,7 @@ describe('RBAC', () => {
     });
 
     it('should allow TENANT_ADMIN to manage users', () => {
-      const session = createMockSession({ isTenantAdmin: true });
+      const session = createMockSession({ isWorkspaceAdmin: true });
       expect(canManageUsers(session)).toBe(true);
     });
 
@@ -184,7 +184,7 @@ describe('RBAC', () => {
     });
 
     it('should allow TENANT_ADMIN to manage roles', () => {
-      const session = createMockSession({ isTenantAdmin: true });
+      const session = createMockSession({ isWorkspaceAdmin: true });
       expect(canManageRoles(session)).toBe(true);
     });
 
@@ -201,7 +201,7 @@ describe('RBAC', () => {
     });
 
     it('should allow TENANT_ADMIN to export data', () => {
-      const session = createMockSession({ isTenantAdmin: true });
+      const session = createMockSession({ isWorkspaceAdmin: true });
       expect(canExportData(session)).toBe(true);
     });
 
@@ -218,7 +218,7 @@ describe('RBAC', () => {
     });
 
     it('should allow TENANT_ADMIN to read companies', () => {
-      const session = createMockSession({ isTenantAdmin: true });
+      const session = createMockSession({ isWorkspaceAdmin: true });
       expect(canReadCompanies(session)).toBe(true);
     });
 
@@ -453,7 +453,7 @@ describe('RBAC', () => {
       const session = createMockSession({
         id: 'user-1',
         tenantId: 'tenant-1',
-        isTenantAdmin: true,
+        isWorkspaceAdmin: true,
       });
       const mockUser = createMockUserWithRoles({
         systemRoleType: 'TENANT_ADMIN',
@@ -531,26 +531,26 @@ describe('RBAC', () => {
   // ============================================================================
 
   describe('SYSTEM_ROLES', () => {
-    it('should define TENANT_ADMIN with expected permissions', () => {
-      expect(SYSTEM_ROLES.TENANT_ADMIN.permissions).toContain('company:create');
-      expect(SYSTEM_ROLES.TENANT_ADMIN.permissions).toContain('user:create');
-      expect(SYSTEM_ROLES.TENANT_ADMIN.permissions).toContain('role:create');
-      expect(SYSTEM_ROLES.TENANT_ADMIN.permissions).toContain('audit_log:read');
+    it('should define ADMIN with expected permissions', () => {
+      expect(SYSTEM_ROLES.ADMIN.permissions).toContain('company:create');
+      expect(SYSTEM_ROLES.ADMIN.permissions).toContain('user:create');
+      expect(SYSTEM_ROLES.ADMIN.permissions).toContain('role:create');
+      expect(SYSTEM_ROLES.ADMIN.permissions).toContain('audit_log:read');
     });
 
-    it('should define COMPANY_ADMIN with limited permissions', () => {
-      expect(SYSTEM_ROLES.COMPANY_ADMIN.permissions).toContain('company:read');
-      expect(SYSTEM_ROLES.COMPANY_ADMIN.permissions).toContain('company:update');
-      expect(SYSTEM_ROLES.COMPANY_ADMIN.permissions).not.toContain('company:create');
-      expect(SYSTEM_ROLES.COMPANY_ADMIN.permissions).not.toContain('company:delete');
-      expect(SYSTEM_ROLES.COMPANY_ADMIN.permissions).not.toContain('user:create');
+    it('should define MANAGER with limited permissions', () => {
+      expect(SYSTEM_ROLES.MANAGER.permissions).toContain('company:read');
+      expect(SYSTEM_ROLES.MANAGER.permissions).toContain('company:update');
+      expect(SYSTEM_ROLES.MANAGER.permissions).not.toContain('company:create');
+      expect(SYSTEM_ROLES.MANAGER.permissions).not.toContain('company:delete');
+      expect(SYSTEM_ROLES.MANAGER.permissions).not.toContain('user:create');
     });
 
-    it('should define COMPANY_USER with read-only permissions', () => {
-      expect(SYSTEM_ROLES.COMPANY_USER.permissions).toContain('company:read');
-      expect(SYSTEM_ROLES.COMPANY_USER.permissions).toContain('document:read');
-      expect(SYSTEM_ROLES.COMPANY_USER.permissions).not.toContain('company:update');
-      expect(SYSTEM_ROLES.COMPANY_USER.permissions).not.toContain('document:create');
+    it('should define STAFF with read-only permissions', () => {
+      expect(SYSTEM_ROLES.STAFF.permissions).toContain('company:read');
+      expect(SYSTEM_ROLES.STAFF.permissions).toContain('document:read');
+      expect(SYSTEM_ROLES.STAFF.permissions).not.toContain('company:update');
+      expect(SYSTEM_ROLES.STAFF.permissions).not.toContain('document:create');
     });
   });
 

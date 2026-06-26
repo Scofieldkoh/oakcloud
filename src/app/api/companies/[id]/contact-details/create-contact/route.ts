@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { requireWorkspaceContext } from '@/lib/api-helpers';
 import { prisma } from '@/lib/prisma';
 import { createContact, linkContactToCompany } from '@/services/contact.service';
 import { createContactDetail } from '@/services/contact-detail.service';
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Resolve tenant context - SUPER_ADMIN can specify via body
     const { tenantId: bodyTenantId, ...contactData } = body;
-    const tenantResult = await requireTenantContext(session, bodyTenantId);
+    const tenantResult = await requireWorkspaceContext(session, bodyTenantId);
     if (tenantResult.error) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 

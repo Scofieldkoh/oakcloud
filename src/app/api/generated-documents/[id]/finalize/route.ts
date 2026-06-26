@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { finalizeDocument, unfinalizeDocument } from '@/services/document-generator.service';
-import { createErrorResponse } from '@/lib/api-helpers';
+import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -20,17 +20,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Check update permission
     await requirePermission(session, 'document', 'update');
 
-    const body = await request.json().catch(() => ({}));
-
-    // Determine tenant ID
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && body.tenantId) {
-      tenantId = body.tenantId;
-    }
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    await request.json().catch(() => ({}));
+    const tenantId = requireSessionWorkspaceId(session);
 
     const document = await finalizeDocument(id, { tenantId, userId: session.id });
 
@@ -62,16 +53,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Determine tenant ID
-    const tenantIdParam = searchParams.get('tenantId');
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && tenantIdParam) {
-      tenantId = tenantIdParam;
-    }
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
     const document = await unfinalizeDocument(id, { tenantId, userId: session.id }, reason);
 

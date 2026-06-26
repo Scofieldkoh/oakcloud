@@ -317,7 +317,7 @@ export type ConnectorUsageLogWhereInput = {
   metadata?: Prisma.JsonNullableFilter<"ConnectorUsageLog">
   createdAt?: Prisma.DateTimeFilter<"ConnectorUsageLog"> | Date | string
   connector?: Prisma.XOR<Prisma.ConnectorScalarRelationFilter, Prisma.ConnectorWhereInput>
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }
 
@@ -339,7 +339,7 @@ export type ConnectorUsageLogOrderByWithRelationInput = {
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   connector?: Prisma.ConnectorOrderByWithRelationInput
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
 }
 
@@ -364,7 +364,7 @@ export type ConnectorUsageLogWhereUniqueInput = Prisma.AtLeast<{
   metadata?: Prisma.JsonNullableFilter<"ConnectorUsageLog">
   createdAt?: Prisma.DateTimeFilter<"ConnectorUsageLog"> | Date | string
   connector?: Prisma.XOR<Prisma.ConnectorScalarRelationFilter, Prisma.ConnectorWhereInput>
-  tenant?: Prisma.XOR<Prisma.TenantNullableScalarRelationFilter, Prisma.TenantWhereInput> | null
+  tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }, "id">
 
@@ -429,7 +429,7 @@ export type ConnectorUsageLogCreateInput = {
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   connector: Prisma.ConnectorCreateNestedOneWithoutUsageLogsInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutConnectorUsageLogsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutConnectorUsageLogsInput
   user?: Prisma.UserCreateNestedOneWithoutConnectorUsageLogsInput
 }
 
@@ -467,7 +467,7 @@ export type ConnectorUsageLogUpdateInput = {
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   connector?: Prisma.ConnectorUpdateOneRequiredWithoutUsageLogsNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutConnectorUsageLogsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutConnectorUsageLogsNestedInput
   user?: Prisma.UserUpdateOneWithoutConnectorUsageLogsNestedInput
 }
 
@@ -850,7 +850,7 @@ export type ConnectorUsageLogCreateWithoutUserInput = {
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   connector: Prisma.ConnectorCreateNestedOneWithoutUsageLogsInput
-  tenant?: Prisma.TenantCreateNestedOneWithoutConnectorUsageLogsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutConnectorUsageLogsInput
 }
 
 export type ConnectorUsageLogUncheckedCreateWithoutUserInput = {
@@ -911,7 +911,7 @@ export type ConnectorUsageLogCreateWithoutConnectorInput = {
   errorMessage?: string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
-  tenant?: Prisma.TenantCreateNestedOneWithoutConnectorUsageLogsInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutConnectorUsageLogsInput
   user?: Prisma.UserCreateNestedOneWithoutConnectorUsageLogsInput
 }
 
@@ -1064,7 +1064,7 @@ export type ConnectorUsageLogUpdateWithoutUserInput = {
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   connector?: Prisma.ConnectorUpdateOneRequiredWithoutUsageLogsNestedInput
-  tenant?: Prisma.TenantUpdateOneWithoutConnectorUsageLogsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutConnectorUsageLogsNestedInput
 }
 
 export type ConnectorUsageLogUncheckedUpdateWithoutUserInput = {
@@ -1135,7 +1135,7 @@ export type ConnectorUsageLogUpdateWithoutConnectorInput = {
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tenant?: Prisma.TenantUpdateOneWithoutConnectorUsageLogsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutConnectorUsageLogsNestedInput
   user?: Prisma.UserUpdateOneWithoutConnectorUsageLogsNestedInput
 }
 
@@ -1283,7 +1283,7 @@ export type $ConnectorUsageLogPayload<ExtArgs extends runtime.Types.Extensions.I
   name: "ConnectorUsageLog"
   objects: {
     connector: Prisma.$ConnectorPayload<ExtArgs>
-    tenant: Prisma.$TenantPayload<ExtArgs> | null
+    tenant: Prisma.$WorkspacePayload<ExtArgs> | null
     user: Prisma.$UserPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1698,7 +1698,7 @@ readonly fields: ConnectorUsageLogFieldRefs;
 export interface Prisma__ConnectorUsageLogClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   connector<T extends Prisma.ConnectorDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ConnectorDefaultArgs<ExtArgs>>): Prisma.Prisma__ConnectorClient<runtime.Types.Result.GetResult<Prisma.$ConnectorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  tenant<T extends Prisma.ConnectorUsageLog$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ConnectorUsageLog$tenantArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.ConnectorUsageLog$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ConnectorUsageLog$tenantArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.ConnectorUsageLog$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ConnectorUsageLog$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2145,18 +2145,18 @@ export type ConnectorUsageLogDeleteManyArgs<ExtArgs extends runtime.Types.Extens
  */
 export type ConnectorUsageLog$tenantArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Tenant
+   * Select specific fields to fetch from the Workspace
    */
-  select?: Prisma.TenantSelect<ExtArgs> | null
+  select?: Prisma.WorkspaceSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Tenant
+   * Omit specific fields from the Workspace
    */
-  omit?: Prisma.TenantOmit<ExtArgs> | null
+  omit?: Prisma.WorkspaceOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.TenantInclude<ExtArgs> | null
-  where?: Prisma.TenantWhereInput
+  include?: Prisma.WorkspaceInclude<ExtArgs> | null
+  where?: Prisma.WorkspaceWhereInput
 }
 
 /**

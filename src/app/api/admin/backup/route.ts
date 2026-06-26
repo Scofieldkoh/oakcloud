@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = createBackupSchema.parse(body);
 
-    const result = await backupService.createTenantBackup(data.tenantId, session.id, {
+    const result = await backupService.createWorkspaceBackup(data.tenantId, session.id, {
       name: data.name,
       retentionDays: data.retentionDays,
       includeAuditLogs: data.includeAuditLogs,

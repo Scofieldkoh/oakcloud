@@ -296,7 +296,7 @@ export type BackupScheduleWhereInput = {
   consecutiveFailures?: Prisma.IntFilter<"BackupSchedule"> | number
   createdAt?: Prisma.DateTimeFilter<"BackupSchedule"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"BackupSchedule"> | Date | string
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
 }
 
 export type BackupScheduleOrderByWithRelationInput = {
@@ -314,7 +314,7 @@ export type BackupScheduleOrderByWithRelationInput = {
   consecutiveFailures?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
 }
 
 export type BackupScheduleWhereUniqueInput = Prisma.AtLeast<{
@@ -335,7 +335,7 @@ export type BackupScheduleWhereUniqueInput = Prisma.AtLeast<{
   consecutiveFailures?: Prisma.IntFilter<"BackupSchedule"> | number
   createdAt?: Prisma.DateTimeFilter<"BackupSchedule"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"BackupSchedule"> | Date | string
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
 }, "id" | "tenantId">
 
 export type BackupScheduleOrderByWithAggregationInput = {
@@ -394,7 +394,7 @@ export type BackupScheduleCreateInput = {
   consecutiveFailures?: number
   createdAt?: Date | string
   updatedAt?: Date | string
-  tenant: Prisma.TenantCreateNestedOneWithoutBackupScheduleInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutBackupScheduleInput
 }
 
 export type BackupScheduleUncheckedCreateInput = {
@@ -428,7 +428,7 @@ export type BackupScheduleUpdateInput = {
   consecutiveFailures?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutBackupScheduleNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutBackupScheduleNestedInput
 }
 
 export type BackupScheduleUncheckedUpdateInput = {
@@ -695,7 +695,7 @@ export type BackupScheduleSelect<ExtArgs extends runtime.Types.Extensions.Intern
   consecutiveFailures?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["backupSchedule"]>
 
 export type BackupScheduleSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -713,7 +713,7 @@ export type BackupScheduleSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   consecutiveFailures?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["backupSchedule"]>
 
 export type BackupScheduleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -731,7 +731,7 @@ export type BackupScheduleSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   consecutiveFailures?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["backupSchedule"]>
 
 export type BackupScheduleSelectScalar = {
@@ -753,19 +753,19 @@ export type BackupScheduleSelectScalar = {
 
 export type BackupScheduleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "cronPattern" | "isEnabled" | "timezone" | "retentionDays" | "maxBackups" | "lastRunAt" | "lastBackupId" | "nextRunAt" | "lastError" | "consecutiveFailures" | "createdAt" | "updatedAt", ExtArgs["result"]["backupSchedule"]>
 export type BackupScheduleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type BackupScheduleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type BackupScheduleIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 
 export type $BackupSchedulePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "BackupSchedule"
   objects: {
-    tenant: Prisma.$TenantPayload<ExtArgs>
+    tenant: Prisma.$WorkspacePayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1176,7 +1176,7 @@ readonly fields: BackupScheduleFieldRefs;
  */
 export interface Prisma__BackupScheduleClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

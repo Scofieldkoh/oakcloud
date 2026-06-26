@@ -3,7 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { cloneDocumentSchema } from '@/lib/validations/generated-document';
 import { cloneDocument } from '@/services/document-generator.service';
-import { createErrorResponse } from '@/lib/api-helpers';
+import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -24,15 +24,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const data = cloneDocumentSchema.parse({ ...body, id });
 
-    // Determine tenant ID
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && body.tenantId) {
-      tenantId = body.tenantId;
-    }
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
     const document = await cloneDocument(data, { tenantId, userId: session.id });
 

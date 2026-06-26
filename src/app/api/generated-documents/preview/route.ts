@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
+import { requireSessionWorkspaceId } from '@/lib/api-helpers';
 import {
   resolvePlaceholders,
   prepareCompanyContext,
@@ -17,7 +18,6 @@ const previewSchema = z.object({
   companyId: z.string().uuid().optional(),
   contactIds: z.array(z.string().uuid()).optional(),
   customData: z.record(z.unknown()).optional(),
-  tenantId: z.string().uuid().optional(), // For SUPER_ADMIN
 });
 
 /**
@@ -34,15 +34,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = previewSchema.parse(body);
 
-    // Determine tenant ID
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && data.tenantId) {
-      tenantId = data.tenantId;
-    }
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const tenantId = requireSessionWorkspaceId(session);
 
     // Fetch template
     const template = await prisma.documentTemplate.findFirst({
@@ -215,7 +207,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get tenant name for system context
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await prisma.workspace.findUnique({
       where: { id: tenantId },
       select: { name: true },
     });

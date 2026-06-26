@@ -8,12 +8,11 @@ import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import { useContacts, useDeleteContact, useBulkDeleteContacts } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
-import { useAllContactOptions } from '@/hooks/use-all-contact-options';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useSelection } from '@/hooks/use-selection';
 import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
-import { ContactTable, type ContactInlineFilters, type ContactFilterOption } from '@/components/contacts/contact-table';
+import { ContactTable, type ContactInlineFilters } from '@/components/contacts/contact-table';
 import { ContactFilters, type FilterValues } from '@/components/contacts/contact-filters';
 import { Pagination } from '@/components/ui/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -59,7 +58,7 @@ export default function ContactsPage() {
   const { data: session } = useSession();
 
   // Get active tenant ID (from store for SUPER_ADMIN, from session for others)
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -109,7 +108,6 @@ export default function ContactsPage() {
     ...params,
     tenantId: activeTenantId,
   });
-  const { data: allContactOptions = [] } = useAllContactOptions(activeTenantId);
   const deleteContact = useDeleteContact();
   const bulkDeleteContacts = useBulkDeleteContacts();
 
@@ -137,20 +135,6 @@ export default function ContactsPage() {
       withCompanies,
     };
   }, [data]);
-
-  // Generate contact filter options for the name dropdown
-  const contactFilterOptions: ContactFilterOption[] = useMemo(() => {
-    const seenNames = new Set<string>();
-
-    return allContactOptions.filter((option) => {
-      if (seenNames.has(option.name)) {
-        return false;
-      }
-
-      seenNames.add(option.name);
-      return true;
-    });
-  }, [allContactOptions]);
 
   // Memoize URL construction
   const targetUrl = useMemo(() => {
@@ -594,7 +578,6 @@ export default function ContactsPage() {
           onSort={handleSort}
           inlineFilters={inlineFilters}
           onInlineFilterChange={handleInlineFilterChange}
-          contactFilterOptions={contactFilterOptions}
           columnWidths={columnWidths}
           onColumnWidthChange={handleColumnWidthChange}
         />

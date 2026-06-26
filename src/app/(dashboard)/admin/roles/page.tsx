@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from '@/hooks/use-auth';
 import {
-  useTenantRoles,
+  useWorkspaceRoles,
   usePermissions,
   useCreateRole,
   useUpdateRole,
@@ -18,7 +18,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Alert } from '@/components/ui/alert';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
-import { useActiveTenantId, useTenantSelection } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import {
   Shield,
   Users,
@@ -39,7 +39,7 @@ import { cn } from '@/lib/utils';
 // ============================================================================
 
 const RESOURCE_LABELS: Record<string, string> = {
-  tenant: 'Tenant Settings',
+  tenant: 'Workspace Settings',
   user: 'User Management',
   role: 'Role Management',
   company: 'Companies',
@@ -352,24 +352,21 @@ export default function RolesPage() {
   const { data: session } = useSession();
   const { success, error: showError } = useToast();
 
-  // For SUPER_ADMIN: tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const { selectedTenantId } = useTenantSelection();
 
-  // Get active tenant ID using the centralized hook
-  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
+  const activeWorkspaceId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
 
-  // Data fetching - use activeTenantId
-  const { data: roles, isLoading, error } = useTenantRoles(activeTenantId);
+  // Data fetching - use active workspace context
+  const { data: roles, isLoading, error } = useWorkspaceRoles(activeWorkspaceId);
   const { data: permissionsData } = usePermissions();
 
-  // Get active tenant ID for mutations
-  const tenantId = activeTenantId;
+  // Get active workspace ID for mutations
+  const workspaceId = activeWorkspaceId;
 
   // Mutations
-  const createRole = useCreateRole(tenantId);
-  const deleteRole = useDeleteRole(tenantId);
-  const duplicateRole = useDuplicateRole(tenantId);
+  const createRole = useCreateRole(workspaceId);
+  const deleteRole = useDeleteRole(workspaceId);
+  const duplicateRole = useDuplicateRole(workspaceId);
 
   // Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -406,7 +403,7 @@ export default function RolesPage() {
   }, [editingRole]);
 
   // Update role mutation
-  const updateRole = useUpdateRole(tenantId, editingRole?.id);
+  const updateRole = useUpdateRole(workspaceId, editingRole?.id);
 
   // Handlers
   const handleCreate = async (e: React.FormEvent) => {
@@ -482,7 +479,7 @@ export default function RolesPage() {
   };
 
   // Permission check
-  const canManageRoles = session?.isSuperAdmin || session?.isTenantAdmin;
+  const canManageRoles = session?.isSuperAdmin || session?.isWorkspaceAdmin;
 
   if (!canManageRoles) {
     return (
@@ -509,20 +506,10 @@ export default function RolesPage() {
           size="sm"
           leftIcon={<Plus className="w-4 h-4" />}
           onClick={() => setIsCreateModalOpen(true)}
-          disabled={isSuperAdmin && !selectedTenantId}
         >
           Create Role
         </Button>
       </div>
-
-      {/* Tenant context info for SUPER_ADMIN */}
-      {isSuperAdmin && !selectedTenantId && (
-        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <p className="text-sm text-amber-800 dark:text-amber-200">
-            Please select a tenant from the sidebar to manage roles.
-          </p>
-        </div>
-      )}
 
       {/* Error State */}
       {error && (
@@ -531,23 +518,15 @@ export default function RolesPage() {
         </Alert>
       )}
 
-      {/* Loading State */}
-      {isLoading && activeTenantId && (
+      {isLoading && (
         <div className="text-center py-12 text-text-secondary">Loading roles...</div>
       )}
 
-      {/* No Tenant Selected State for SUPER_ADMIN */}
-      {isSuperAdmin && !selectedTenantId && (
-        <div className="text-center py-12 text-text-muted">
-          Select a tenant from the sidebar to view and manage roles.
-        </div>
-      )}
-
       {/* Roles List */}
-      {roles && activeTenantId && (
+      {roles && (
         <div className="space-y-4">
           {roles.length === 0 ? (
-            <div className="text-center py-12 text-text-secondary">No roles found for this tenant</div>
+            <div className="text-center py-12 text-text-secondary">No roles found for this workspace</div>
           ) : (
             roles.map((role: Role) => (
               <RoleCard
@@ -566,7 +545,7 @@ export default function RolesPage() {
       )}
 
       {/* Permission Legend */}
-      {activeTenantId && (
+      {activeWorkspaceId && (
         <div className="mt-8 card">
           <h3 className="text-sm font-medium text-text-primary mb-3">Permission Actions</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">

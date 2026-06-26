@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     const data = createBackupScheduleSchema.parse(body);
 
     // Check if tenant exists
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await prisma.workspace.findUnique({
       where: { id: data.tenantId },
       select: { id: true, name: true, deletedAt: true },
     });

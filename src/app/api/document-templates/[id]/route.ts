@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
 
-    const includeDeleted = searchParams.get('includeDeleted') === 'true' && session.isTenantAdmin;
+    const includeDeleted = searchParams.get('includeDeleted') === 'true' && session.isWorkspaceAdmin;
 
     const template = await getDocumentTemplateById(id, effectiveTenantId, { includeDeleted });
 

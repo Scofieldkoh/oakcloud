@@ -51,7 +51,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // For company-scoped users, filter company relationships by accessible companies
-    const isCompanyScoped = !session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess;
+    const isCompanyScoped = !session.isSuperAdmin && !session.isWorkspaceAdmin && !session.hasAllCompaniesAccess;
     const companyIds = isCompanyScoped ? session.companyIds : undefined;
 
     const contact = full

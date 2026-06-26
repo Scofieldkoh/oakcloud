@@ -1,5 +1,5 @@
 /**
- * Admin hooks for user, tenant, role, and audit log management
+ * Admin hooks for user, workspace role, and audit log management
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -35,7 +35,7 @@ export interface UserCompanyAssignment {
   };
 }
 
-export interface TenantUser {
+export interface WorkspaceUser {
   id: string;
   email: string;
   firstName: string;
@@ -52,35 +52,8 @@ export interface TenantUser {
   companyAssignments?: UserCompanyAssignment[];
 }
 
-export interface TenantUsersResponse {
-  users: TenantUser[];
-  totalCount: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface Tenant {
-  id: string;
-  name: string;
-  slug: string;
-  status: string;
-  contactEmail: string | null;
-  contactPhone: string | null;
-  logoUrl: string | null;
-  settings?: Record<string, unknown> | null;
-  maxUsers: number;
-  maxCompanies: number;
-  maxStorageMb: number;
-  createdAt: string;
-  _count?: {
-    users: number;
-    companies: number;
-  };
-}
-
-export interface TenantsResponse {
-  tenants: Tenant[];
+export interface WorkspaceUsersResponse {
+  users: WorkspaceUser[];
   totalCount: number;
   page: number;
   limit: number;
@@ -190,14 +163,14 @@ export interface UpdateUserData {
 // User Management Hooks
 // ============================================================================
 
-export function useTenantUsers(
-  tenantId: string | undefined,
+export function useWorkspaceUsers(
+  workspaceId: string | undefined,
   params?: { query?: string; role?: string; company?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }
 ) {
-  return useQuery<TenantUsersResponse>({
-    queryKey: ['tenant-users', tenantId, params],
+  return useQuery<WorkspaceUsersResponse>({
+    queryKey: ['workspace-users', workspaceId, params],
     queryFn: async () => {
-      if (!tenantId) throw new Error('Tenant ID required');
+      if (!workspaceId) throw new Error('Workspace context required');
 
       const searchParams = new URLSearchParams();
       if (params?.query) searchParams.set('query', params.query);
@@ -208,30 +181,30 @@ export function useTenantUsers(
       if (params?.sortBy) searchParams.set('sortBy', params.sortBy);
       if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder);
 
-      const res = await fetch(`/api/tenants/${tenantId}/users?${searchParams}`);
+      const res = await fetch(`/api/workspace/users?${searchParams}`);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || 'Failed to fetch users');
       }
       return res.json();
     },
-    enabled: !!tenantId,
+    enabled: !!workspaceId,
   });
 }
 
-export function useCurrentTenantUsers(params?: { query?: string; role?: string; company?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }) {
+export function useCurrentWorkspaceUsers(params?: { query?: string; role?: string; company?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }) {
   const { data: session } = useSession();
-  return useTenantUsers(session?.tenantId || undefined, params);
+  return useWorkspaceUsers(session?.tenantId || undefined, params);
 }
 
-export function useInviteUser(tenantId: string | undefined) {
+export function useInviteUser(workspaceId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: CreateUserData) => {
-      if (!tenantId) throw new Error('Tenant ID required');
+      if (!workspaceId) throw new Error('Workspace context required');
 
-      const res = await fetch(`/api/tenants/${tenantId}/users`, {
+      const res = await fetch('/api/workspace/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -245,19 +218,19 @@ export function useInviteUser(tenantId: string | undefined) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-users', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-users', workspaceId] });
     },
   });
 }
 
-export function useUpdateUser(tenantId: string | undefined, userId: string | undefined) {
+export function useUpdateUser(workspaceId: string | undefined, userId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: UpdateUserData) => {
-      if (!tenantId || !userId) throw new Error('Tenant ID and User ID required');
+      if (!workspaceId || !userId) throw new Error('Workspace context and User ID required');
 
-      const res = await fetch(`/api/tenants/${tenantId}/users/${userId}`, {
+      const res = await fetch(`/api/workspace/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -271,20 +244,20 @@ export function useUpdateUser(tenantId: string | undefined, userId: string | und
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-users', tenantId] });
-      queryClient.invalidateQueries({ queryKey: ['tenant-user', tenantId, userId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-users', workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-user', workspaceId, userId] });
     },
   });
 }
 
-export function useDeleteUser(tenantId: string | undefined) {
+export function useDeleteUser(workspaceId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ userId, reason }: { userId: string; reason?: string }) => {
-      if (!tenantId) throw new Error('Tenant ID required');
+      if (!workspaceId) throw new Error('Workspace context required');
 
-      const res = await fetch(`/api/tenants/${tenantId}/users/${userId}`, {
+      const res = await fetch(`/api/workspace/users/${userId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason }),
@@ -298,17 +271,17 @@ export function useDeleteUser(tenantId: string | undefined) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-users', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-users', workspaceId] });
     },
   });
 }
 
-export function useSendPasswordReset(tenantId: string | undefined, userId: string | undefined) {
+export function useSendPasswordReset(workspaceId: string | undefined, userId: string | undefined) {
   return useMutation({
     mutationFn: async () => {
-      if (!tenantId || !userId) throw new Error('Tenant ID and User ID required');
+      if (!workspaceId || !userId) throw new Error('Workspace context and User ID required');
 
-      const res = await fetch(`/api/tenants/${tenantId}/users/${userId}`, {
+      const res = await fetch(`/api/workspace/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sendPasswordReset: true }),
@@ -320,108 +293,6 @@ export function useSendPasswordReset(tenantId: string | undefined, userId: strin
       }
 
       return res.json();
-    },
-  });
-}
-
-// ============================================================================
-// Tenant Management Hooks
-// ============================================================================
-
-export function useTenants(params?: {
-  query?: string;
-  status?: string;
-  page?: number;
-  limit?: number;
-}) {
-  return useQuery<TenantsResponse>({
-    queryKey: ['tenants', params],
-    queryFn: async () => {
-      const searchParams = new URLSearchParams();
-      if (params?.query) searchParams.set('query', params.query);
-      if (params?.status) searchParams.set('status', params.status);
-      if (params?.page) searchParams.set('page', params.page.toString());
-      if (params?.limit) searchParams.set('limit', params.limit.toString());
-
-      const res = await fetch(`/api/tenants?${searchParams}`);
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to fetch tenants');
-      }
-      return res.json();
-    },
-  });
-}
-
-export function useTenant(id: string | undefined) {
-  return useQuery<Tenant>({
-    queryKey: ['tenant', id],
-    queryFn: async () => {
-      if (!id) throw new Error('Tenant ID required');
-      const res = await fetch(`/api/tenants/${id}`);
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to fetch tenant');
-      }
-      return res.json();
-    },
-    enabled: !!id,
-  });
-}
-
-export function useCreateTenant() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: {
-      name: string;
-      slug: string;
-      contactEmail?: string;
-      maxUsers?: number;
-      maxCompanies?: number;
-    }) => {
-      const res = await fetch('/api/tenants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to create tenant');
-      }
-
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenants'] });
-    },
-  });
-}
-
-export function useUpdateTenant(id: string | undefined) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: Partial<Tenant>) => {
-      if (!id) throw new Error('Tenant ID required');
-
-      const res = await fetch(`/api/tenants/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to update tenant');
-      }
-
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenants'] });
-      queryClient.invalidateQueries({ queryKey: ['tenant', id] });
     },
   });
 }
@@ -482,25 +353,25 @@ export function useAuditLogStats(params?: { startDate?: string; endDate?: string
 // Role Management Hooks
 // ============================================================================
 
-export function useTenantRoles(tenantId: string | undefined) {
+export function useWorkspaceRoles(workspaceId: string | undefined) {
   return useQuery<Role[]>({
-    queryKey: ['tenant-roles', tenantId],
+    queryKey: ['workspace-roles', workspaceId],
     queryFn: async () => {
-      if (!tenantId) throw new Error('Tenant ID required');
-      const res = await fetch(`/api/tenants/${tenantId}/roles`);
+      if (!workspaceId) throw new Error('Workspace context required');
+      const res = await fetch('/api/workspace/roles');
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || 'Failed to fetch roles');
       }
       return res.json();
     },
-    enabled: !!tenantId,
+    enabled: !!workspaceId,
   });
 }
 
-export function useCurrentTenantRoles() {
+export function useCurrentWorkspaceRoles() {
   const { data: session } = useSession();
-  return useTenantRoles(session?.tenantId || undefined);
+  return useWorkspaceRoles(session?.tenantId || undefined);
 }
 
 export interface Permission {
@@ -543,13 +414,13 @@ export interface UpdateRoleData {
   permissions?: string[];
 }
 
-export function useCreateRole(tenantId: string | undefined) {
+export function useCreateRole(workspaceId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: CreateRoleData) => {
-      if (!tenantId) throw new Error('Tenant ID required');
-      const res = await fetch(`/api/tenants/${tenantId}/roles`, {
+      if (!workspaceId) throw new Error('Workspace context required');
+      const res = await fetch('/api/workspace/roles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -561,18 +432,18 @@ export function useCreateRole(tenantId: string | undefined) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-roles', workspaceId] });
     },
   });
 }
 
-export function useUpdateRole(tenantId: string | undefined, roleId: string | undefined) {
+export function useUpdateRole(workspaceId: string | undefined, roleId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: UpdateRoleData) => {
-      if (!tenantId || !roleId) throw new Error('Tenant ID and Role ID required');
-      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}`, {
+      if (!workspaceId || !roleId) throw new Error('Workspace context and Role ID required');
+      const res = await fetch(`/api/workspace/roles/${roleId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -584,18 +455,18 @@ export function useUpdateRole(tenantId: string | undefined, roleId: string | und
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-roles', workspaceId] });
     },
   });
 }
 
-export function useDeleteRole(tenantId: string | undefined) {
+export function useDeleteRole(workspaceId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (roleId: string) => {
-      if (!tenantId) throw new Error('Tenant ID required');
-      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}`, {
+      if (!workspaceId) throw new Error('Workspace context required');
+      const res = await fetch(`/api/workspace/roles/${roleId}`, {
         method: 'DELETE',
       });
       if (!res.ok) {
@@ -605,18 +476,18 @@ export function useDeleteRole(tenantId: string | undefined) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-roles', workspaceId] });
     },
   });
 }
 
-export function useDuplicateRole(tenantId: string | undefined) {
+export function useDuplicateRole(workspaceId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ roleId, name }: { roleId: string; name: string }) => {
-      if (!tenantId) throw new Error('Tenant ID required');
-      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}/duplicate`, {
+      if (!workspaceId) throw new Error('Workspace context required');
+      const res = await fetch(`/api/workspace/roles/${roleId}/duplicate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
@@ -628,7 +499,7 @@ export function useDuplicateRole(tenantId: string | undefined) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-roles', workspaceId] });
     },
   });
 }
@@ -649,29 +520,29 @@ export interface RoleUser {
   } | null;
 }
 
-export function useRoleUsers(tenantId: string | undefined, roleId: string | undefined) {
+export function useRoleUsers(workspaceId: string | undefined, roleId: string | undefined) {
   return useQuery<{ users: RoleUser[] }>({
-    queryKey: ['role-users', tenantId, roleId],
+    queryKey: ['role-users', workspaceId, roleId],
     queryFn: async () => {
-      if (!tenantId || !roleId) throw new Error('Tenant ID and Role ID required');
-      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}/users`);
+      if (!workspaceId || !roleId) throw new Error('Workspace context and Role ID required');
+      const res = await fetch(`/api/workspace/roles/${roleId}/users`);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || 'Failed to fetch role users');
       }
       return res.json();
     },
-    enabled: !!tenantId && !!roleId,
+    enabled: !!workspaceId && !!roleId,
   });
 }
 
-export function useAssignRoleToUser(tenantId: string | undefined, roleId: string | undefined) {
+export function useAssignRoleToUser(workspaceId: string | undefined, roleId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: { userId: string; companyId?: string }) => {
-      if (!tenantId || !roleId) throw new Error('Tenant ID and Role ID required');
-      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}/users`, {
+      if (!workspaceId || !roleId) throw new Error('Workspace context and Role ID required');
+      const res = await fetch(`/api/workspace/roles/${roleId}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -683,19 +554,19 @@ export function useAssignRoleToUser(tenantId: string | undefined, roleId: string
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['role-users', tenantId, roleId] });
-      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['role-users', workspaceId, roleId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-roles', workspaceId] });
     },
   });
 }
 
-export function useRemoveRoleFromUser(tenantId: string | undefined, roleId: string | undefined) {
+export function useRemoveRoleFromUser(workspaceId: string | undefined, roleId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: { userId: string; companyId?: string }) => {
-      if (!tenantId || !roleId) throw new Error('Tenant ID and Role ID required');
-      const res = await fetch(`/api/tenants/${tenantId}/roles/${roleId}/users`, {
+      if (!workspaceId || !roleId) throw new Error('Workspace context and Role ID required');
+      const res = await fetch(`/api/workspace/roles/${roleId}/users`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -707,20 +578,20 @@ export function useRemoveRoleFromUser(tenantId: string | undefined, roleId: stri
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['role-users', tenantId, roleId] });
-      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['role-users', workspaceId, roleId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-roles', workspaceId] });
     },
   });
 }
 
 // Hook to remove a role assignment from user (works from user management context)
-export function useRemoveUserRoleAssignment(tenantId: string | undefined) {
+export function useRemoveUserRoleAssignment(workspaceId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: { userId: string; roleId: string; companyId: string | null }) => {
-      if (!tenantId) throw new Error('Tenant ID required');
-      const res = await fetch(`/api/tenants/${tenantId}/roles/${data.roleId}/users`, {
+      if (!workspaceId) throw new Error('Workspace context required');
+      const res = await fetch(`/api/workspace/roles/${data.roleId}/users`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: data.userId, companyId: data.companyId }),
@@ -732,8 +603,8 @@ export function useRemoveUserRoleAssignment(tenantId: string | undefined) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tenant-users', tenantId] });
-      queryClient.invalidateQueries({ queryKey: ['tenant-roles', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-users', workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-roles', workspaceId] });
     },
   });
 }
@@ -779,13 +650,17 @@ export function useAssignUserToCompany(userId: string | undefined) {
       companyId: string | null; // null = "All Companies"
       roleId?: string; // Role to assign for this company
       isPrimary?: boolean;
-      tenantId?: string; // Required for SUPER_ADMIN
+      workspaceId?: string; // Required for SUPER_ADMIN
     }) => {
       if (!userId) throw new Error('User ID required');
+      const { workspaceId, ...requestData } = data;
       const res = await fetch(`/api/users/${userId}/companies`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...requestData,
+          tenantId: workspaceId,
+        }),
       });
       if (!res.ok) {
         const error = await res.json();
@@ -795,7 +670,7 @@ export function useAssignUserToCompany(userId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-company-assignments', userId] });
-      queryClient.invalidateQueries({ queryKey: ['tenant-users'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-users'] });
     },
   });
 }
@@ -845,7 +720,7 @@ export function useRemoveCompanyAssignment(userId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-company-assignments', userId] });
-      queryClient.invalidateQueries({ queryKey: ['tenant-users'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-users'] });
     },
   });
 }
@@ -854,27 +729,14 @@ export function useRemoveCompanyAssignment(userId: string | undefined) {
 // Data Purge Hooks (Permanent Deletion)
 // ============================================================================
 
-export type PurgeableEntity = 'tenant' | 'user' | 'company' | 'contact' | 'generatedDocument' | 'processingDocument';
+export type PurgeableEntity = 'user' | 'company' | 'contact' | 'generatedDocument' | 'processingDocument';
 
 export interface PurgeStats {
-  tenants: number;
   users: number;
   companies: number;
   contacts: number;
   generatedDocuments: number;
   processingDocuments: number;
-}
-
-export interface PurgeableTenant {
-  id: string;
-  name: string;
-  slug: string;
-  deletedAt: string;
-  deletedReason: string | null;
-  _count: {
-    users: number;
-    companies: number;
-  };
 }
 
 export interface PurgeableUser {
@@ -941,7 +803,6 @@ export interface PurgeableProcessingDocument {
 export interface PurgeDataResponse {
   stats: PurgeStats;
   records: {
-    tenants: PurgeableTenant[];
     users: PurgeableUser[];
     companies: PurgeableCompany[];
     contacts: PurgeableContact[];
@@ -986,8 +847,7 @@ export function usePurgeRecords() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purge-data'] });
-      queryClient.invalidateQueries({ queryKey: ['tenants'] });
-      queryClient.invalidateQueries({ queryKey: ['tenant-users'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-users'] });
       queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
       queryClient.invalidateQueries({ queryKey: ['generated-documents'] });
     },
@@ -1015,8 +875,7 @@ export function useRestoreRecords() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purge-data'] });
-      queryClient.invalidateQueries({ queryKey: ['tenants'] });
-      queryClient.invalidateQueries({ queryKey: ['tenant-users'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-users'] });
       queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
       queryClient.invalidateQueries({ queryKey: ['generated-documents'] });
     },

@@ -26,11 +26,11 @@ import {
   useTenantTags,
   useCompanyTags,
   useCreateTag,
-  useCreateTenantTag,
+  useCreateWorkspaceTag,
   useUpdateTag,
   useDeleteTag,
   useUpdateTenantTag,
-  useDeleteTenantTag,
+  useDeleteWorkspaceTag,
   type TagScope,
 } from '@/hooks/use-document-tags';
 import { useToast } from '@/components/ui/toast';
@@ -173,7 +173,7 @@ export function DocumentTags({
 
   const toast = useToast();
   const { data: session } = useSession();
-  const isAdmin = session?.isSuperAdmin || session?.isTenantAdmin;
+  const isAdmin = session?.isSuperAdmin || session?.isWorkspaceAdmin;
 
   // Queries
   // Fetch document tags lazily after component mount
@@ -200,7 +200,7 @@ export function DocumentTags({
   const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
   const updateTenantTagMutation = useUpdateTenantTag();
-  const deleteTenantTagMutation = useDeleteTenantTag();
+  const deleteWorkspaceTagMutation = useDeleteWorkspaceTag();
 
   // Fetch all available tags for manage dropdown (tenant + company)
   const { data: allAvailableTags = [], isLoading: isLoadingAllTags } = useAvailableTags(companyId, tenantId);
@@ -373,7 +373,7 @@ export function DocumentTags({
     try {
       if (scope === 'tenant') {
         // Delete tenant tag (admin only)
-        await deleteTenantTagMutation.mutateAsync({ tagId });
+        await deleteWorkspaceTagMutation.mutateAsync({ tagId });
       } else {
         if (!companyId) return;
         await deleteTagMutation.mutateAsync({ companyId, tagId });
@@ -383,7 +383,7 @@ export function DocumentTags({
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to delete tag');
     }
-  }, [companyId, deleteTagMutation, deleteTenantTagMutation, toast]);
+  }, [companyId, deleteTagMutation, deleteWorkspaceTagMutation, toast]);
 
   // Handle opening manage dropdown with position calculation
   const handleOpenManageDropdown = useCallback(() => {
@@ -581,10 +581,10 @@ export function DocumentTags({
                                       <button
                                         type="button"
                                         onClick={() => handleTagDelete(tag.id, 'tenant')}
-                                        disabled={deleteTenantTagMutation.isPending}
+                                        disabled={deleteWorkspaceTagMutation.isPending}
                                         className="px-2 py-1 text-xs bg-status-error text-white rounded hover:bg-status-error/90 disabled:opacity-50"
                                       >
-                                        {deleteTenantTagMutation.isPending ? 'Deleting...' : 'Delete'}
+                                        {deleteWorkspaceTagMutation.isPending ? 'Deleting...' : 'Delete'}
                                       </button>
                                       <button
                                         type="button"
@@ -945,7 +945,7 @@ export function TagManager({ companyId, tenantId, className }: TagManagerProps) 
   const toast = useToast();
 
   const { data: session } = useSession();
-  const isAdmin = session?.isSuperAdmin || session?.isTenantAdmin;
+  const isAdmin = session?.isSuperAdmin || session?.isWorkspaceAdmin;
 
   // Fetch tenant tags (requires tenantId for super admins)
   const { data: tenantTags = [], isLoading: isLoadingTenant } = useTenantTags(tenantId);
@@ -964,9 +964,9 @@ export function TagManager({ companyId, tenantId, className }: TagManagerProps) 
   const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
   const updateTenantTagMutation = useUpdateTenantTag();
-  const deleteTenantTagMutation = useDeleteTenantTag();
+  const deleteWorkspaceTagMutation = useDeleteWorkspaceTag();
   const createTagMutation = useCreateTag();
-  const createTenantTagMutation = useCreateTenantTag();
+  const createWorkspaceTagMutation = useCreateWorkspaceTag();
 
   // Click outside handler
   useEffect(() => {
@@ -1006,7 +1006,7 @@ export function TagManager({ companyId, tenantId, className }: TagManagerProps) 
   const handleDelete = async (tagId: string, scope: TagScope) => {
     try {
       if (scope === 'tenant') {
-        await deleteTenantTagMutation.mutateAsync({ tagId });
+        await deleteWorkspaceTagMutation.mutateAsync({ tagId });
       } else {
         if (!companyId) return;
         await deleteTagMutation.mutateAsync({ companyId, tagId });
@@ -1023,7 +1023,7 @@ export function TagManager({ companyId, tenantId, className }: TagManagerProps) 
 
     try {
       if (newTagScope === 'tenant') {
-        await createTenantTagMutation.mutateAsync({
+        await createWorkspaceTagMutation.mutateAsync({
           name: newTagName.trim(),
           color: newTagColor,
           tenantId: tenantId || undefined,
@@ -1085,7 +1085,7 @@ export function TagManager({ companyId, tenantId, className }: TagManagerProps) 
                 type="button"
                 onClick={() => {
                   setIsCreating(true);
-                  // Default to tenant scope for admins when no company, otherwise company
+                  // Default to workspace scope for admins when no company, otherwise company
                   setNewTagScope(companyId ? 'company' : 'tenant');
                 }}
                 className={cn(
@@ -1194,10 +1194,10 @@ export function TagManager({ companyId, tenantId, className }: TagManagerProps) 
                     <button
                       type="button"
                       onClick={handleCreateTag}
-                      disabled={!newTagName.trim() || createTagMutation.isPending || createTenantTagMutation.isPending}
+                      disabled={!newTagName.trim() || createTagMutation.isPending || createWorkspaceTagMutation.isPending}
                       className="btn-primary btn-sm flex-1"
                     >
-                      {createTagMutation.isPending || createTenantTagMutation.isPending ? 'Creating...' : 'Create Tag'}
+                      {createTagMutation.isPending || createWorkspaceTagMutation.isPending ? 'Creating...' : 'Create Tag'}
                     </button>
                     <button
                       type="button"
@@ -1281,10 +1281,10 @@ export function TagManager({ companyId, tenantId, className }: TagManagerProps) 
                               <button
                                 type="button"
                                 onClick={() => handleDelete(tag.id, 'tenant')}
-                                disabled={deleteTenantTagMutation.isPending}
+                                disabled={deleteWorkspaceTagMutation.isPending}
                                 className="px-2 py-1 text-xs bg-status-error text-white rounded hover:bg-status-error/90 disabled:opacity-50"
                               >
-                                {deleteTenantTagMutation.isPending ? 'Deleting...' : 'Delete'}
+                                {deleteWorkspaceTagMutation.isPending ? 'Deleting...' : 'Delete'}
                               </button>
                               <button
                                 type="button"

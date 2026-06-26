@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createErrorResponse, resolveTenantId } from '@/lib/api-helpers';
+import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import { saveEsigningFieldDefinitionsSchema } from '@/lib/validations/esigning';
 import { getEsigningEnvelopeDetail } from '@/services/esigning-envelope.service';
 import { saveEnvelopeFieldDefinitions } from '@/services/esigning-field.service';
@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'esigning', 'update');
 
     const body = await request.json();
-    const tenantId = resolveTenantId(session, body.tenantId);
+    const tenantId = resolveWorkspaceId(session, body.tenantId);
     const detail = await getEsigningEnvelopeDetail(session, tenantId, id);
 
     if (!detail.canEdit) {

@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
 import { useCompany } from '@/hooks/use-companies';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 import { DocumentPageViewer, ResizableSplitView } from '@/components/processing';
@@ -230,7 +230,7 @@ export default function UploadBizFilePage() {
 
   // SUPER_ADMIN tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
 
   // AI model selection and context
   const [selectedModelId, setSelectedModelId] = useState('');

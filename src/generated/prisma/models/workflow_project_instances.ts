@@ -259,7 +259,7 @@ export type workflow_project_instancesWhereInput = {
   companies?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   workflow_project_instances?: Prisma.XOR<Prisma.Workflow_project_instancesNullableScalarRelationFilter, Prisma.workflow_project_instancesWhereInput> | null
   other_workflow_project_instances?: Prisma.Workflow_project_instancesListRelationFilter
-  tenants?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenants?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
 }
 
 export type workflow_project_instancesOrderByWithRelationInput = {
@@ -276,7 +276,7 @@ export type workflow_project_instancesOrderByWithRelationInput = {
   companies?: Prisma.CompanyOrderByWithRelationInput
   workflow_project_instances?: Prisma.workflow_project_instancesOrderByWithRelationInput
   other_workflow_project_instances?: Prisma.workflow_project_instancesOrderByRelationAggregateInput
-  tenants?: Prisma.TenantOrderByWithRelationInput
+  tenants?: Prisma.WorkspaceOrderByWithRelationInput
 }
 
 export type workflow_project_instancesWhereUniqueInput = Prisma.AtLeast<{
@@ -297,7 +297,7 @@ export type workflow_project_instancesWhereUniqueInput = Prisma.AtLeast<{
   companies?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   workflow_project_instances?: Prisma.XOR<Prisma.Workflow_project_instancesNullableScalarRelationFilter, Prisma.workflow_project_instancesWhereInput> | null
   other_workflow_project_instances?: Prisma.Workflow_project_instancesListRelationFilter
-  tenants?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenants?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
 }, "id" | "company_id_start_date_due_date">
 
 export type workflow_project_instancesOrderByWithAggregationInput = {
@@ -345,7 +345,7 @@ export type workflow_project_instancesCreateInput = {
   companies: Prisma.CompanyCreateNestedOneWithoutWorkflow_project_instancesInput
   workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedOneWithoutOther_workflow_project_instancesInput
   other_workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutWorkflow_project_instancesInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_project_instancesInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_project_instancesInput
 }
 
 export type workflow_project_instancesUncheckedCreateInput = {
@@ -373,7 +373,7 @@ export type workflow_project_instancesUpdateInput = {
   companies?: Prisma.CompanyUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput
   workflow_project_instances?: Prisma.workflow_project_instancesUpdateOneWithoutOther_workflow_project_instancesNestedInput
   other_workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutWorkflow_project_instancesNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput
 }
 
 export type workflow_project_instancesUncheckedUpdateInput = {
@@ -714,7 +714,7 @@ export type workflow_project_instancesCreateWithoutCompaniesInput = {
   updated_at?: Date | string
   workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedOneWithoutOther_workflow_project_instancesInput
   other_workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutWorkflow_project_instancesInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_project_instancesInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_project_instancesInput
 }
 
 export type workflow_project_instancesUncheckedCreateWithoutCompaniesInput = {
@@ -766,7 +766,7 @@ export type workflow_project_instancesCreateWithoutOther_workflow_project_instan
   updated_at?: Date | string
   companies: Prisma.CompanyCreateNestedOneWithoutWorkflow_project_instancesInput
   workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedOneWithoutOther_workflow_project_instancesInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_project_instancesInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_project_instancesInput
 }
 
 export type workflow_project_instancesUncheckedCreateWithoutOther_workflow_project_instancesInput = {
@@ -797,7 +797,7 @@ export type workflow_project_instancesCreateWithoutWorkflow_project_instancesInp
   updated_at?: Date | string
   companies: Prisma.CompanyCreateNestedOneWithoutWorkflow_project_instancesInput
   other_workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutWorkflow_project_instancesInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_project_instancesInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_project_instancesInput
 }
 
 export type workflow_project_instancesUncheckedCreateWithoutWorkflow_project_instancesInput = {
@@ -844,7 +844,7 @@ export type workflow_project_instancesUpdateWithoutOther_workflow_project_instan
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   companies?: Prisma.CompanyUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput
   workflow_project_instances?: Prisma.workflow_project_instancesUpdateOneWithoutOther_workflow_project_instancesNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput
 }
 
 export type workflow_project_instancesUncheckedUpdateWithoutOther_workflow_project_instancesInput = {
@@ -948,7 +948,7 @@ export type workflow_project_instancesUpdateWithoutCompaniesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   workflow_project_instances?: Prisma.workflow_project_instancesUpdateOneWithoutOther_workflow_project_instancesNestedInput
   other_workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutWorkflow_project_instancesNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput
 }
 
 export type workflow_project_instancesUncheckedUpdateWithoutCompaniesInput = {
@@ -998,7 +998,7 @@ export type workflow_project_instancesUpdateWithoutWorkflow_project_instancesInp
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   companies?: Prisma.CompanyUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput
   other_workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutWorkflow_project_instancesNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput
 }
 
 export type workflow_project_instancesUncheckedUpdateWithoutWorkflow_project_instancesInput = {
@@ -1071,7 +1071,7 @@ export type workflow_project_instancesSelect<ExtArgs extends runtime.Types.Exten
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   workflow_project_instances?: boolean | Prisma.workflow_project_instances$workflow_project_instancesArgs<ExtArgs>
   other_workflow_project_instances?: boolean | Prisma.workflow_project_instances$other_workflow_project_instancesArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.Workflow_project_instancesCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_project_instances"]>
 
@@ -1088,7 +1088,7 @@ export type workflow_project_instancesSelectCreateManyAndReturn<ExtArgs extends 
   updated_at?: boolean
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   workflow_project_instances?: boolean | Prisma.workflow_project_instances$workflow_project_instancesArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_project_instances"]>
 
 export type workflow_project_instancesSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1104,7 +1104,7 @@ export type workflow_project_instancesSelectUpdateManyAndReturn<ExtArgs extends 
   updated_at?: boolean
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   workflow_project_instances?: boolean | Prisma.workflow_project_instances$workflow_project_instancesArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_project_instances"]>
 
 export type workflow_project_instancesSelectScalar = {
@@ -1125,18 +1125,18 @@ export type workflow_project_instancesInclude<ExtArgs extends runtime.Types.Exte
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   workflow_project_instances?: boolean | Prisma.workflow_project_instances$workflow_project_instancesArgs<ExtArgs>
   other_workflow_project_instances?: boolean | Prisma.workflow_project_instances$other_workflow_project_instancesArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.Workflow_project_instancesCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type workflow_project_instancesIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   workflow_project_instances?: boolean | Prisma.workflow_project_instances$workflow_project_instancesArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type workflow_project_instancesIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   companies?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   workflow_project_instances?: boolean | Prisma.workflow_project_instances$workflow_project_instancesArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 
 export type $workflow_project_instancesPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1145,7 +1145,7 @@ export type $workflow_project_instancesPayload<ExtArgs extends runtime.Types.Ext
     companies: Prisma.$CompanyPayload<ExtArgs>
     workflow_project_instances: Prisma.$workflow_project_instancesPayload<ExtArgs> | null
     other_workflow_project_instances: Prisma.$workflow_project_instancesPayload<ExtArgs>[]
-    tenants: Prisma.$TenantPayload<ExtArgs>
+    tenants: Prisma.$WorkspacePayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1555,7 +1555,7 @@ export interface Prisma__workflow_project_instancesClient<T, Null = never, ExtAr
   companies<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   workflow_project_instances<T extends Prisma.workflow_project_instances$workflow_project_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_project_instances$workflow_project_instancesArgs<ExtArgs>>): Prisma.Prisma__workflow_project_instancesClient<runtime.Types.Result.GetResult<Prisma.$workflow_project_instancesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   other_workflow_project_instances<T extends Prisma.workflow_project_instances$other_workflow_project_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_project_instances$other_workflow_project_instancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_project_instancesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  tenants<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenants<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

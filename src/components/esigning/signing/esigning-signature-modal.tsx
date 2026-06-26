@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Caveat, Dancing_Script, Pinyon_Script } from 'next/font/google';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SignaturePad } from '@/components/forms/signature-pad';
@@ -38,21 +37,6 @@ function toBase64(value: string): string {
   return btoa(binary);
 }
 
-const dancingScript = Dancing_Script({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-});
-
-const pinyonScript = Pinyon_Script({
-  subsets: ['latin'],
-  weight: ['400'],
-});
-
-const caveat = Caveat({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-});
-
 const SIGNATURE_FONT_OPTIONS: Array<{
   key: SignatureFontKey;
   label: string;
@@ -61,17 +45,17 @@ const SIGNATURE_FONT_OPTIONS: Array<{
   {
     key: 'dancing-script',
     label: 'Dancing Script',
-    fontFamily: dancingScript.style.fontFamily,
+    fontFamily: '"Brush Script MT", "Segoe Script", cursive',
   },
   {
     key: 'pinyon-script',
     label: 'Pinyon Script',
-    fontFamily: pinyonScript.style.fontFamily,
+    fontFamily: '"Palatino Linotype", "Book Antiqua", serif',
   },
   {
     key: 'caveat',
     label: 'Caveat',
-    fontFamily: caveat.style.fontFamily,
+    fontFamily: '"Comic Sans MS", "Segoe Print", cursive',
   },
 ];
 

@@ -1,11 +1,9 @@
 'use client';
 
 import { Briefcase, ChevronDown, Check, Building2 } from 'lucide-react';
-import { useAllCompanyOptions } from '@/hooks/use-all-company-options';
+import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
 import { useCompanyStore } from '@/stores/company-store';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
-import { useSession } from '@/hooks/use-auth';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -36,54 +34,45 @@ interface CompanySelectorModalProps {
  * Modal for selecting a company - used in the sidebar
  */
 export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalProps) {
-  const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
-    session?.isSuperAdmin ?? false,
-    session?.tenantId
-  );
+  const {
+    searchQuery,
+    setSearchQuery,
+    options: companyOptions,
+    isLoading,
+  } = useCompanySearch({
+    enabled: isOpen,
+    minChars: 0,
+    limit: 50,
+  });
 
-  // Fetch all companies for the active tenant
-  const { data: allCompanies = [], isLoading } = useAllCompanyOptions(activeTenantId);
-
-  const { selectedCompanyId, setSelectedCompany } = useCompanyStore();
-  const [tempSelectedId, setTempSelectedId] = useState(selectedCompanyId);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { selectedCompanyId, selectedCompanyName, setSelectedCompany } = useCompanyStore();
+  const [tempSelectedCompany, setTempSelectedCompany] = useState<CompanySearchOption | null>(null);
 
   // Sync temp selection when modal opens
   useEffect(() => {
     if (isOpen) {
-      setTempSelectedId(selectedCompanyId);
+      setTempSelectedCompany(
+        selectedCompanyId
+          ? {
+              id: selectedCompanyId,
+              name: selectedCompanyName || 'Selected company',
+              label: selectedCompanyName || 'Selected company',
+              description: '',
+              uen: null,
+            }
+          : null
+      );
       setSearchQuery('');
     }
-  }, [isOpen, selectedCompanyId]);
+  }, [isOpen, selectedCompanyId, selectedCompanyName, setSearchQuery]);
 
-  // Clear company selection when tenant changes
-  useEffect(() => {
-    if (activeTenantId && selectedCompanyId) {
-      // Check if current company belongs to active tenant
-      const companyExists = allCompanies.some(c => c.id === selectedCompanyId);
-      if (!companyExists && allCompanies.length > 0) {
-        setSelectedCompany('', '');
-      }
-    }
-  }, [activeTenantId, selectedCompanyId, allCompanies, setSelectedCompany]);
-
-  const filteredCompanies = useMemo(() => {
-    return allCompanies.filter(
-      (company) =>
-        company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (company.uen && company.uen.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [allCompanies, searchQuery]);
-
-  const handleSelect = (companyId: string) => {
-    setTempSelectedId(companyId);
+  const handleSelect = (company: CompanySearchOption) => {
+    setTempSelectedCompany(company);
   };
 
   const handleConfirm = () => {
-    const company = allCompanies.find((c) => c.id === tempSelectedId);
-    if (company) {
-      setSelectedCompany(company.id, company.name);
+    if (tempSelectedCompany) {
+      setSelectedCompany(tempSelectedCompany.id, tempSelectedCompany.name);
     } else {
       setSelectedCompany('', '');
     }
@@ -91,7 +80,7 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
   };
 
   const handleClear = () => {
-    setTempSelectedId('');
+    setTempSelectedCompany(null);
   };
 
   return (
@@ -118,58 +107,58 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
         <div className="max-h-64 overflow-y-auto border border-border-primary rounded-lg divide-y divide-border-primary">
           {/* "All Companies" option */}
           <button
-            onClick={() => handleSelect('')}
+            onClick={handleClear}
             className={cn(
               'w-full flex items-center gap-3 p-3 text-left transition-colors',
-              tempSelectedId === ''
+              tempSelectedCompany === null
                 ? 'bg-oak-primary/10'
                 : 'hover:bg-background-tertiary'
             )}
           >
             <Building2 className={cn(
               'w-5 h-5 flex-shrink-0',
-              tempSelectedId === '' ? 'text-oak-primary' : 'text-text-muted'
+              tempSelectedCompany === null ? 'text-oak-primary' : 'text-text-muted'
             )} />
             <div className="flex-1 min-w-0">
               <div className={cn(
                 'font-medium truncate',
-                tempSelectedId === '' ? 'text-oak-primary' : 'text-text-primary'
+                tempSelectedCompany === null ? 'text-oak-primary' : 'text-text-primary'
               )}>
                 All Companies
               </div>
               <div className="text-xs text-text-muted truncate">View documents from all companies</div>
             </div>
-            {tempSelectedId === '' && (
+            {tempSelectedCompany === null && (
               <Check className="w-5 h-5 text-oak-primary flex-shrink-0" />
             )}
           </button>
 
           {isLoading ? (
             <div className="p-4 text-center text-text-muted">Loading companies...</div>
-          ) : filteredCompanies.length === 0 ? (
+          ) : companyOptions.length === 0 ? (
             <div className="p-4 text-center text-text-muted">
               {searchQuery ? 'No companies match your search' : 'No companies available'}
             </div>
           ) : (
-            filteredCompanies.map((company) => (
+            companyOptions.map((company) => (
               <button
                 key={company.id}
-                onClick={() => handleSelect(company.id)}
+                onClick={() => handleSelect(company)}
                 className={cn(
                   'w-full flex items-center gap-3 p-3 text-left transition-colors',
-                  tempSelectedId === company.id
+                  tempSelectedCompany?.id === company.id
                     ? 'bg-oak-primary/10'
                     : 'hover:bg-background-tertiary'
                 )}
               >
                 <Briefcase className={cn(
                   'w-5 h-5 flex-shrink-0',
-                  tempSelectedId === company.id ? 'text-oak-primary' : 'text-text-muted'
+                  tempSelectedCompany?.id === company.id ? 'text-oak-primary' : 'text-text-muted'
                 )} />
                 <div className="flex-1 min-w-0">
                   <div className={cn(
                     'font-medium truncate',
-                    tempSelectedId === company.id ? 'text-oak-primary' : 'text-text-primary'
+                    tempSelectedCompany?.id === company.id ? 'text-oak-primary' : 'text-text-primary'
                   )}>
                     {company.name}
                   </div>
@@ -177,7 +166,7 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
                     <div className="text-xs text-text-muted truncate">{company.uen}</div>
                   )}
                 </div>
-                {tempSelectedId === company.id && (
+                {tempSelectedCompany?.id === company.id && (
                   <Check className="w-5 h-5 text-oak-primary flex-shrink-0" />
                 )}
               </button>
@@ -186,11 +175,11 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
         </div>
 
         {/* Selected info */}
-        {tempSelectedId && (
+        {tempSelectedCompany && (
           <div className="mt-3 p-2 bg-oak-primary/5 rounded-lg flex items-center justify-between">
             <span className="text-sm text-text-secondary">
               Selected: <span className="font-medium text-text-primary">
-                {filteredCompanies.find((c) => c.id === tempSelectedId)?.name || allCompanies.find((c) => c.id === tempSelectedId)?.name}
+                {tempSelectedCompany.name}
               </span>
             </span>
             <button

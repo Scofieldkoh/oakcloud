@@ -301,7 +301,7 @@ export function ContactDetailsTab({ companyId, companyName, canEdit }: ContactDe
     setShowAddDetailModal(true);
   };
 
-  const contactDetails = data?.contactDetails ?? [];
+  const contactDetails = useMemo(() => data?.contactDetails ?? [], [data?.contactDetails]);
   const activeContactCount = contactDetails.filter((contact) => contact.isCurrent).length;
   const pastContactCount = contactDetails.length - activeContactCount;
 

@@ -37,11 +37,11 @@ import { prisma } from '@/lib/prisma';
 import {
   verifyToken,
   isSuperAdmin,
-  isTenantAdmin,
+  isWorkspaceAdmin,
   isAdmin,
-  canAccessTenant,
+  canAccessWorkspace,
   canAccessCompany,
-  canManageTenant,
+  canManageWorkspace,
   canManageUsers,
   canManageCompanies,
 } from '@/lib/auth';
@@ -56,7 +56,7 @@ function createMockSession(overrides: Partial<SessionUser> = {}): SessionUser {
     lastName: 'User',
     tenantId: 'tenant-1',
     isSuperAdmin: false,
-    isTenantAdmin: false,
+    isWorkspaceAdmin: false,
     companyIds: [],
     hasAllCompaniesAccess: false,
     ...overrides,
@@ -119,25 +119,25 @@ describe('Authentication Library', () => {
     });
 
     it('should return false for tenant admin user', () => {
-      const session = createMockSession({ isTenantAdmin: true, isSuperAdmin: false });
+      const session = createMockSession({ isWorkspaceAdmin: true, isSuperAdmin: false });
       expect(isSuperAdmin(session)).toBe(false);
     });
   });
 
-  describe('isTenantAdmin', () => {
+  describe('isWorkspaceAdmin', () => {
     it('should return true for tenant admin user', () => {
-      const session = createMockSession({ isTenantAdmin: true });
-      expect(isTenantAdmin(session)).toBe(true);
+      const session = createMockSession({ isWorkspaceAdmin: true });
+      expect(isWorkspaceAdmin(session)).toBe(true);
     });
 
     it('should return false for non-tenant admin user', () => {
-      const session = createMockSession({ isTenantAdmin: false });
-      expect(isTenantAdmin(session)).toBe(false);
+      const session = createMockSession({ isWorkspaceAdmin: false });
+      expect(isWorkspaceAdmin(session)).toBe(false);
     });
 
     it('should return false for super admin without tenant admin role', () => {
-      const session = createMockSession({ isSuperAdmin: true, isTenantAdmin: false });
-      expect(isTenantAdmin(session)).toBe(false);
+      const session = createMockSession({ isSuperAdmin: true, isWorkspaceAdmin: false });
+      expect(isWorkspaceAdmin(session)).toBe(false);
     });
   });
 
@@ -148,17 +148,17 @@ describe('Authentication Library', () => {
     });
 
     it('should return true for tenant admin', () => {
-      const session = createMockSession({ isTenantAdmin: true });
+      const session = createMockSession({ isWorkspaceAdmin: true });
       expect(isAdmin(session)).toBe(true);
     });
 
     it('should return true when both super admin and tenant admin', () => {
-      const session = createMockSession({ isSuperAdmin: true, isTenantAdmin: true });
+      const session = createMockSession({ isSuperAdmin: true, isWorkspaceAdmin: true });
       expect(isAdmin(session)).toBe(true);
     });
 
     it('should return false for regular user', () => {
-      const session = createMockSession({ isSuperAdmin: false, isTenantAdmin: false });
+      const session = createMockSession({ isSuperAdmin: false, isWorkspaceAdmin: false });
       expect(isAdmin(session)).toBe(false);
     });
   });
@@ -167,27 +167,27 @@ describe('Authentication Library', () => {
   // Access Control Tests
   // ============================================================================
 
-  describe('canAccessTenant', () => {
+  describe('canAccessWorkspace', () => {
     it('should allow super admin to access any tenant', () => {
       const session = createMockSession({ isSuperAdmin: true, tenantId: 'tenant-1' });
-      expect(canAccessTenant(session, 'tenant-1')).toBe(true);
-      expect(canAccessTenant(session, 'tenant-2')).toBe(true);
-      expect(canAccessTenant(session, 'any-tenant')).toBe(true);
+      expect(canAccessWorkspace(session, 'tenant-1')).toBe(true);
+      expect(canAccessWorkspace(session, 'tenant-2')).toBe(true);
+      expect(canAccessWorkspace(session, 'any-tenant')).toBe(true);
     });
 
     it('should allow user to access their own tenant', () => {
       const session = createMockSession({ tenantId: 'tenant-1' });
-      expect(canAccessTenant(session, 'tenant-1')).toBe(true);
+      expect(canAccessWorkspace(session, 'tenant-1')).toBe(true);
     });
 
     it('should deny user access to different tenant', () => {
       const session = createMockSession({ tenantId: 'tenant-1' });
-      expect(canAccessTenant(session, 'tenant-2')).toBe(false);
+      expect(canAccessWorkspace(session, 'tenant-2')).toBe(false);
     });
 
     it('should deny access when user has no tenant', () => {
       const session = createMockSession({ tenantId: null });
-      expect(canAccessTenant(session, 'tenant-1')).toBe(false);
+      expect(canAccessWorkspace(session, 'tenant-1')).toBe(false);
     });
   });
 
@@ -201,7 +201,7 @@ describe('Authentication Library', () => {
     });
 
     it('should allow tenant admin to access company in their tenant', async () => {
-      const session = createMockSession({ isTenantAdmin: true, tenantId: 'tenant-1' });
+      const session = createMockSession({ isWorkspaceAdmin: true, tenantId: 'tenant-1' });
       vi.mocked(prisma.company.findUnique).mockResolvedValue({
         id: 'company-1',
         tenantId: 'tenant-1',
@@ -212,7 +212,7 @@ describe('Authentication Library', () => {
     });
 
     it('should deny tenant admin access to company in different tenant', async () => {
-      const session = createMockSession({ isTenantAdmin: true, tenantId: 'tenant-1' });
+      const session = createMockSession({ isWorkspaceAdmin: true, tenantId: 'tenant-1' });
       vi.mocked(prisma.company.findUnique).mockResolvedValue({
         id: 'company-1',
         tenantId: 'tenant-2', // Different tenant
@@ -223,7 +223,7 @@ describe('Authentication Library', () => {
     });
 
     it('should deny tenant admin access when they have no tenant', async () => {
-      const session = createMockSession({ isTenantAdmin: true, tenantId: null });
+      const session = createMockSession({ isWorkspaceAdmin: true, tenantId: null });
       const result = await canAccessCompany(session, 'company-1');
       expect(result).toBe(false);
     });
@@ -282,25 +282,25 @@ describe('Authentication Library', () => {
     });
   });
 
-  describe('canManageTenant', () => {
+  describe('canManageWorkspace', () => {
     it('should allow super admin to manage any tenant', () => {
       const session = createMockSession({ isSuperAdmin: true });
-      expect(canManageTenant(session, 'any-tenant')).toBe(true);
+      expect(canManageWorkspace(session, 'any-tenant')).toBe(true);
     });
 
     it('should allow tenant admin to manage their own tenant', () => {
-      const session = createMockSession({ isTenantAdmin: true, tenantId: 'tenant-1' });
-      expect(canManageTenant(session, 'tenant-1')).toBe(true);
+      const session = createMockSession({ isWorkspaceAdmin: true, tenantId: 'tenant-1' });
+      expect(canManageWorkspace(session, 'tenant-1')).toBe(true);
     });
 
     it('should deny tenant admin managing different tenant', () => {
-      const session = createMockSession({ isTenantAdmin: true, tenantId: 'tenant-1' });
-      expect(canManageTenant(session, 'tenant-2')).toBe(false);
+      const session = createMockSession({ isWorkspaceAdmin: true, tenantId: 'tenant-1' });
+      expect(canManageWorkspace(session, 'tenant-2')).toBe(false);
     });
 
     it('should deny regular user managing any tenant', () => {
       const session = createMockSession({ tenantId: 'tenant-1' });
-      expect(canManageTenant(session, 'tenant-1')).toBe(false);
+      expect(canManageWorkspace(session, 'tenant-1')).toBe(false);
     });
   });
 
@@ -311,7 +311,7 @@ describe('Authentication Library', () => {
     });
 
     it('should allow tenant admin to manage users', () => {
-      const session = createMockSession({ isTenantAdmin: true });
+      const session = createMockSession({ isWorkspaceAdmin: true });
       expect(canManageUsers(session)).toBe(true);
     });
 
@@ -328,7 +328,7 @@ describe('Authentication Library', () => {
     });
 
     it('should allow tenant admin to manage companies', () => {
-      const session = createMockSession({ isTenantAdmin: true });
+      const session = createMockSession({ isWorkspaceAdmin: true });
       expect(canManageCompanies(session)).toBe(true);
     });
 
@@ -351,14 +351,14 @@ describe('Authentication Library', () => {
   describe('Edge Cases', () => {
     it('should handle null tenantId for super admin', () => {
       const session = createMockSession({ isSuperAdmin: true, tenantId: null });
-      expect(canAccessTenant(session, 'any-tenant')).toBe(true);
-      expect(canManageTenant(session, 'any-tenant')).toBe(true);
+      expect(canAccessWorkspace(session, 'any-tenant')).toBe(true);
+      expect(canManageWorkspace(session, 'any-tenant')).toBe(true);
     });
 
     it('should handle user with both admin flags false', () => {
       const session = createMockSession({
         isSuperAdmin: false,
-        isTenantAdmin: false,
+        isWorkspaceAdmin: false,
         companyIds: ['company-1'],
       });
       expect(isAdmin(session)).toBe(false);
@@ -367,7 +367,7 @@ describe('Authentication Library', () => {
     });
 
     it('should handle company access when company does not exist', async () => {
-      const session = createMockSession({ isTenantAdmin: true, tenantId: 'tenant-1' });
+      const session = createMockSession({ isWorkspaceAdmin: true, tenantId: 'tenant-1' });
       vi.mocked(prisma.company.findUnique).mockResolvedValue(null);
 
       const result = await canAccessCompany(session, 'non-existent');

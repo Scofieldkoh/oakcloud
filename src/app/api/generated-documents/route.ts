@@ -11,7 +11,7 @@ import {
   createBlankDocument,
   searchGeneratedDocuments,
 } from '@/services/document-generator.service';
-import { createErrorResponse } from '@/lib/api-helpers';
+import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 
 /**
  * GET /api/generated-documents
@@ -38,20 +38,8 @@ export async function GET(request: NextRequest) {
       sortOrder: searchParams.get('sortOrder') || undefined,
     });
 
-    // For SUPER_ADMIN, allow specifying tenantId via query param or viewing all documents
-    const tenantIdParam = searchParams.get('tenantId');
-    let effectiveTenantId: string | null = session.tenantId;
-
-    if (session.isSuperAdmin && tenantIdParam) {
-      effectiveTenantId = tenantIdParam;
-    } else if (session.isSuperAdmin && !session.tenantId) {
-      // SUPER_ADMIN without tenant context - will show all documents across tenants
-      effectiveTenantId = null;
-    }
-
-    const result = await searchGeneratedDocuments(params, effectiveTenantId, {
-      skipTenantFilter: session.isSuperAdmin && !effectiveTenantId,
-    });
+    const tenantId = requireSessionWorkspaceId(session);
+    const result = await searchGeneratedDocuments(params, tenantId);
 
     return NextResponse.json(result);
   } catch (error) {
@@ -71,17 +59,8 @@ export async function POST(request: NextRequest) {
     await requirePermission(session, 'document', 'create');
 
     const body = await request.json();
-    const { tenantId: bodyTenantId, type, ...documentData } = body;
-
-    // Determine tenant ID: SUPER_ADMIN can specify tenantId, others use session
-    let tenantId = session.tenantId;
-    if (session.isSuperAdmin && bodyTenantId) {
-      tenantId = bodyTenantId;
-    }
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
+    const { tenantId: _ignoredTenantId, type, ...documentData } = body;
+    const tenantId = requireSessionWorkspaceId(session);
 
     let document;
 

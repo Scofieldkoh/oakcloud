@@ -4,7 +4,7 @@ import { requirePermission } from '@/lib/rbac';
 import { createAuditContext } from '@/lib/audit';
 import { parseIdParams } from '@/lib/validations/params';
 import { prisma } from '@/lib/prisma';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { requireWorkspaceContext } from '@/lib/api-helpers';
 import {
   getNoteTabs,
   createNoteTab,
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { id } = await parseIdParams(params);
     const { searchParams } = new URL(request.url);
-    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    const tenantResult = await requireWorkspaceContext(session, searchParams.get('tenantId'));
     if ('error' in tenantResult) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { searchParams } = new URL(request.url);
 
     const body = await request.json();
-    const tenantResult = await requireTenantContext(
+    const tenantResult = await requireWorkspaceContext(
       session,
       typeof body.tenantId === 'string' ? body.tenantId : searchParams.get('tenantId')
     );

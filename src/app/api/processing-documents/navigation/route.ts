@@ -10,7 +10,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Prisma } from '@/generated/prisma';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getTenantById } from '@/services/tenant.service';
 
 function jsonError(status: number, code: string, message: string) {
   return NextResponse.json({ success: false, error: { code, message } }, { status });
@@ -81,19 +80,7 @@ export async function GET(request: NextRequest) {
       return jsonError(400, 'VALIDATION_ERROR', 'currentDocumentId is required unless start=true');
     }
 
-    const tenantIdParam = searchParams.get('tenantId');
-    let effectiveTenantId: string | null = session.tenantId;
-
-    if (session.isSuperAdmin) {
-      if (!tenantIdParam) {
-        return jsonError(400, 'VALIDATION_ERROR', 'tenantId is required for SUPER_ADMIN navigation');
-      }
-      const tenant = await getTenantById(tenantIdParam);
-      if (!tenant) {
-        return jsonError(404, 'RESOURCE_NOT_FOUND', 'Tenant not found');
-      }
-      effectiveTenantId = tenantIdParam;
-    }
+    const effectiveTenantId = session.tenantId;
 
     if (!effectiveTenantId) {
       return jsonError(400, 'VALIDATION_ERROR', 'Tenant context is required');
@@ -107,7 +94,7 @@ export async function GET(request: NextRequest) {
         return jsonError(403, 'PERMISSION_DENIED', 'Forbidden');
       }
       companyIds = [companyId];
-    } else if (!session.isSuperAdmin && !session.isTenantAdmin && !session.hasAllCompaniesAccess) {
+    } else if (!session.isSuperAdmin && !session.isWorkspaceAdmin && !session.hasAllCompaniesAccess) {
       companyIds = session.companyIds;
     }
 
@@ -210,4 +197,3 @@ export async function GET(request: NextRequest) {
     return jsonError(500, 'INTERNAL_ERROR', 'Internal server error');
   }
 }
-

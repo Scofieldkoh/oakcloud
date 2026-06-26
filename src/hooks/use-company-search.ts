@@ -12,27 +12,32 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/hooks/use-auth';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import type { AsyncSearchSelectOption } from '@/components/ui/async-search-select';
 
 export interface CompanySearchOption extends AsyncSearchSelectOption {
   id: string;
+  name: string;
   label: string;
   description: string;
-  uen: string;
+  uen: string | null;
+  primarySsicDescription?: string | null;
+  homeCurrency?: string | null;
 }
 
 interface CompanySearchResult {
-  companies: Array<{
+  options: Array<{
     id: string;
     name: string;
-    uen: string;
-    status: string;
+    uen: string | null;
+    primarySsicDescription?: string | null;
+    homeCurrency?: string | null;
   }>;
-  total: number;
 }
 
 interface UseCompanySearchOptions {
+  /** Whether the search query is allowed to run */
+  enabled?: boolean;
   /** Minimum characters before search triggers */
   minChars?: number;
   /** Maximum results to return */
@@ -70,10 +75,10 @@ interface UseCompanySearchOptions {
  * ```
  */
 export function useCompanySearch(options: UseCompanySearchOptions = {}) {
-  const { minChars = 2, limit = 10, excludeIds = [] } = options;
+  const { enabled = true, minChars = 2, limit = 10, excludeIds = [] } = options;
 
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -88,38 +93,41 @@ export function useCompanySearch(options: UseCompanySearchOptions = {}) {
     queryKey: ['company-search', searchQuery, activeTenantId, limit],
     queryFn: async (): Promise<CompanySearchResult> => {
       const params = new URLSearchParams({
-        query: searchQuery,
+        q: searchQuery,
         limit: String(limit),
       });
       if (activeTenantId) {
         params.set('tenantId', activeTenantId);
       }
 
-      const response = await fetch(`/api/companies?${params}`);
+      const response = await fetch(`/api/companies/options?${params}`);
       if (!response.ok) {
         throw new Error('Failed to search companies');
       }
       return response.json();
     },
-    enabled: shouldSearch,
+    enabled: enabled && shouldSearch,
     staleTime: 30 * 1000, // 30 seconds
   });
 
   // Transform to AsyncSearchSelectOption format and filter out excluded IDs
   const companyOptions: CompanySearchOption[] = useMemo(() => {
-    if (!data?.companies) return [];
+    if (!data?.options) return [];
 
     const excludeSet = new Set(excludeIds);
 
-    return data.companies
+    return data.options
       .filter((company) => !excludeSet.has(company.id))
       .map((company) => ({
         id: company.id,
+        name: company.name,
         label: company.name,
-        description: company.uen,
+        description: company.uen || company.primarySsicDescription || '',
         uen: company.uen,
+        primarySsicDescription: company.primarySsicDescription,
+        homeCurrency: company.homeCurrency,
       }));
-  }, [data?.companies, excludeIds]);
+  }, [data?.options, excludeIds]);
 
   // Clear selection handler
   const clearSelection = useCallback(() => {
@@ -143,7 +151,7 @@ export function useCompanySearch(options: UseCompanySearchOptions = {}) {
  */
 export function useContactLinkedCompanies(contactId: string | null) {
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -170,7 +178,7 @@ export function useContactLinkedCompanies(contactId: string | null) {
 export function usePrefetchCompanySearch() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const activeTenantId = useActiveTenantId(
+  const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
@@ -183,14 +191,14 @@ export function usePrefetchCompanySearch() {
         queryKey: ['company-search', query, activeTenantId, limit],
         queryFn: async () => {
           const params = new URLSearchParams({
-            query,
+            q: query,
             limit: String(limit),
           });
           if (activeTenantId) {
             params.set('tenantId', activeTenantId);
           }
 
-          const response = await fetch(`/api/companies?${params}`);
+          const response = await fetch(`/api/companies/options?${params}`);
           if (!response.ok) {
             throw new Error('Failed to search companies');
           }

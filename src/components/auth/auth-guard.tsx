@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { useSession } from '@/hooks/use-auth';
+import { useSessionWithPermissions } from '@/hooks/use-auth';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -11,7 +11,8 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
-  const { data: user, isLoading, isFetched } = useSession();
+  const { data: session, isLoading, isFetched } = useSessionWithPermissions();
+  const user = session?.user ?? null;
 
   useEffect(() => {
     if (isFetched && !user) {

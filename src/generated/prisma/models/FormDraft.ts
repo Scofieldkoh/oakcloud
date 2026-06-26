@@ -223,7 +223,7 @@ export type FormDraftWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"FormDraft"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FormDraft"> | Date | string
   form?: Prisma.XOR<Prisma.FormScalarRelationFilter, Prisma.FormWhereInput>
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   uploads?: Prisma.FormUploadListRelationFilter
 }
 
@@ -240,7 +240,7 @@ export type FormDraftOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   form?: Prisma.FormOrderByWithRelationInput
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
   uploads?: Prisma.FormUploadOrderByRelationAggregateInput
 }
 
@@ -260,7 +260,7 @@ export type FormDraftWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"FormDraft"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FormDraft"> | Date | string
   form?: Prisma.XOR<Prisma.FormScalarRelationFilter, Prisma.FormWhereInput>
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   uploads?: Prisma.FormUploadListRelationFilter
 }, "id" | "code" | "accessTokenHash">
 
@@ -309,7 +309,7 @@ export type FormDraftCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   form: Prisma.FormCreateNestedOneWithoutDraftsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutFormDraftsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutFormDraftsInput
   uploads?: Prisma.FormUploadCreateNestedManyWithoutDraftInput
 }
 
@@ -339,7 +339,7 @@ export type FormDraftUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   form?: Prisma.FormUpdateOneRequiredWithoutDraftsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutFormDraftsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutFormDraftsNestedInput
   uploads?: Prisma.FormUploadUpdateManyWithoutDraftNestedInput
 }
 
@@ -632,7 +632,7 @@ export type FormDraftCreateWithoutFormInput = {
   lastSavedAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
-  tenant: Prisma.TenantCreateNestedOneWithoutFormDraftsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutFormDraftsInput
   uploads?: Prisma.FormUploadCreateNestedManyWithoutDraftInput
 }
 
@@ -687,7 +687,7 @@ export type FormDraftCreateWithoutUploadsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   form: Prisma.FormCreateNestedOneWithoutDraftsInput
-  tenant: Prisma.TenantCreateNestedOneWithoutFormDraftsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutFormDraftsInput
 }
 
 export type FormDraftUncheckedCreateWithoutUploadsInput = {
@@ -731,7 +731,7 @@ export type FormDraftUpdateWithoutUploadsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   form?: Prisma.FormUpdateOneRequiredWithoutDraftsNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutFormDraftsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutFormDraftsNestedInput
 }
 
 export type FormDraftUncheckedUpdateWithoutUploadsInput = {
@@ -825,7 +825,7 @@ export type FormDraftUpdateWithoutFormInput = {
   lastSavedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutFormDraftsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutFormDraftsNestedInput
   uploads?: Prisma.FormUploadUpdateManyWithoutDraftNestedInput
 }
 
@@ -900,7 +900,7 @@ export type FormDraftSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   createdAt?: boolean
   updatedAt?: boolean
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   uploads?: boolean | Prisma.FormDraft$uploadsArgs<ExtArgs>
   _count?: boolean | Prisma.FormDraftCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["formDraft"]>
@@ -918,7 +918,7 @@ export type FormDraftSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   createdAt?: boolean
   updatedAt?: boolean
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["formDraft"]>
 
 export type FormDraftSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -934,7 +934,7 @@ export type FormDraftSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   createdAt?: boolean
   updatedAt?: boolean
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["formDraft"]>
 
 export type FormDraftSelectScalar = {
@@ -954,24 +954,24 @@ export type FormDraftSelectScalar = {
 export type FormDraftOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "accessTokenHash" | "formId" | "tenantId" | "answers" | "metadata" | "expiresAt" | "lastSavedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["formDraft"]>
 export type FormDraftInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   uploads?: boolean | Prisma.FormDraft$uploadsArgs<ExtArgs>
   _count?: boolean | Prisma.FormDraftCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type FormDraftIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type FormDraftIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 
 export type $FormDraftPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "FormDraft"
   objects: {
     form: Prisma.$FormPayload<ExtArgs>
-    tenant: Prisma.$TenantPayload<ExtArgs>
+    tenant: Prisma.$WorkspacePayload<ExtArgs>
     uploads: Prisma.$FormUploadPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1381,7 +1381,7 @@ readonly fields: FormDraftFieldRefs;
 export interface Prisma__FormDraftClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   form<T extends Prisma.FormDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormDefaultArgs<ExtArgs>>): Prisma.Prisma__FormClient<runtime.Types.Result.GetResult<Prisma.$FormPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   uploads<T extends Prisma.FormDraft$uploadsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormDraft$uploadsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormUploadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.

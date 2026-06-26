@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { requireWorkspaceContext } from '@/lib/api-helpers';
 import { deleteCommunicationSchema } from '@/lib/validations/communication';
-import { deleteTenantCommunication } from '@/services/outlook-email-ingestion.service';
+import { deleteWorkspaceCommunication } from '@/services/outlook-email-ingestion.service';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -11,7 +11,7 @@ interface RouteParams {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
-    if (!session.isSuperAdmin && !session.isTenantAdmin) {
+    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -19,10 +19,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const body = await request.json().catch(() => ({}));
     const parsed = deleteCommunicationSchema.parse(body);
 
-    const tenantResult = await requireTenantContext(session, parsed.tenantId);
+    const tenantResult = await requireWorkspaceContext(session, parsed.tenantId);
     if (tenantResult.error) return tenantResult.error;
 
-    await deleteTenantCommunication({
+    await deleteWorkspaceCommunication({
       tenantId: tenantResult.tenantId,
       userId: session.id,
       communicationId: id,

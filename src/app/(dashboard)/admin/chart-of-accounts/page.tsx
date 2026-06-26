@@ -16,7 +16,6 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Pagination } from '@/components/ui/pagination';
 import { useToast } from '@/components/ui/toast';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
-import { TenantSelector } from '@/components/ui/tenant-selector';
 import {
   AccountTypeBadge,
   AccountStatusBadge,
@@ -41,8 +40,6 @@ import {
   Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTenantStore } from '@/stores/tenant-store';
-import { useTenants } from '@/hooks/use-admin';
 import type { AccountType, AccountStatus } from '@/generated/prisma';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -102,7 +99,6 @@ function SortableHeader({
 export default function ChartOfAccountsPage() {
   const { data: session, isLoading: sessionLoading } = useSession();
   const toast = useToast();
-  const { selectedTenantId, setSelectedTenant } = useTenantStore();
 
   // State - show all results by default (no pagination)
   const [params, setParams] = useState<AccountSearchParams>({
@@ -122,7 +118,7 @@ export default function ChartOfAccountsPage() {
   const [collapsedParents, setCollapsedParents] = useState<Set<string> | null>(null);
 
   // Determine tenant context
-  const effectiveTenantId = session?.isSuperAdmin ? selectedTenantId : session?.tenantId;
+  const effectiveTenantId = session?.tenantId;
 
   // Build query params
   const queryParams = useMemo<AccountSearchParams>(() => ({
@@ -139,15 +135,13 @@ export default function ChartOfAccountsPage() {
   const { data: parentOptions } = useAccountsForSelect({ tenantId: effectiveTenantId, headersOnly: true });
   const deleteAccount = useDeleteAccount();
 
-  // Fetch tenants for scope selection (SUPER_ADMIN only)
-  const { data: tenantsData } = useTenants({ limit: 100 });
   const tenantOptions = useMemo(() => {
-    if (!tenantsData?.tenants) return [];
-    return tenantsData.tenants.map((tenant) => ({
-      value: tenant.id,
-      label: tenant.name,
-    }));
-  }, [tenantsData?.tenants]);
+    if (!effectiveTenantId) return [];
+    return [{
+      value: effectiveTenantId,
+      label: 'Current Tenant',
+    }];
+  }, [effectiveTenantId]);
 
   // Debounced search
   const debouncedSearch = useDebouncedCallback((value: string) => {
@@ -357,9 +351,9 @@ export default function ChartOfAccountsPage() {
   }, [data?.accounts, accountHasChildrenMap]);
 
   // Check permissions
-  const canCreate = session?.isSuperAdmin || session?.isTenantAdmin;
-  const canEdit = session?.isSuperAdmin || session?.isTenantAdmin;
-  const canDelete = session?.isSuperAdmin || session?.isTenantAdmin;
+  const canCreate = session?.isSuperAdmin || session?.isWorkspaceAdmin;
+  const canEdit = session?.isSuperAdmin || session?.isWorkspaceAdmin;
+  const canDelete = session?.isSuperAdmin || session?.isWorkspaceAdmin;
 
   if (sessionLoading) {
     return (
@@ -395,31 +389,6 @@ export default function ChartOfAccountsPage() {
           </Button>
         )}
       </div>
-
-      {/* SUPER_ADMIN Tenant Selector */}
-      {session?.isSuperAdmin && (
-        <div className="mb-6">
-          <TenantSelector
-            value={selectedTenantId}
-            onChange={(id) => setSelectedTenant(id)}
-            placeholder="All Tenants (System Accounts)"
-            helpText="Select a tenant to view tenant-specific accounts, or leave empty to view system accounts."
-          />
-        </div>
-      )}
-
-      {/* Empty state for SUPER_ADMIN without tenant selected */}
-      {session?.isSuperAdmin && !selectedTenantId && (
-        <div className="text-center py-12 bg-background-secondary border border-border-primary rounded-lg mb-6">
-          <BookOpen className="w-12 h-12 text-text-muted mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-text-primary mb-2">
-            Viewing System Accounts
-          </h3>
-          <p className="text-sm text-text-secondary max-w-md mx-auto">
-            You are viewing system-level accounts. Select a tenant above to view or manage tenant-specific accounts.
-          </p>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -712,7 +681,7 @@ export default function ChartOfAccountsPage() {
         tenantId={effectiveTenantId}
         onSuccess={handleFormSuccess}
         isSuperAdmin={session?.isSuperAdmin}
-        isTenantAdmin={session?.isTenantAdmin}
+        isWorkspaceAdmin={session?.isWorkspaceAdmin}
         tenantOptions={tenantOptions}
       />
 

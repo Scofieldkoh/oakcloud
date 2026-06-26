@@ -15,7 +15,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
-import { reconcilePendingBatchExtraction } from '@/services/document-extraction.service';
 
 type Params = { documentId: string };
 
@@ -32,7 +31,7 @@ export async function GET(
     const { documentId } = await params;
 
     // Single query to get document with all related data
-    let processingDoc = await prisma.processingDocument.findUnique({
+    const processingDoc = await prisma.processingDocument.findUnique({
       where: { id: documentId },
       include: {
         document: {
@@ -100,66 +99,6 @@ export async function GET(
           error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
         },
         { status: 403 }
-      );
-    }
-
-    if (processingDoc.pipelineStatus === 'QUEUED' || processingDoc.pipelineStatus === 'PROCESSING') {
-      try {
-        await reconcilePendingBatchExtraction(
-          processingDoc.id,
-          document.tenantId,
-          document.companyId,
-          session.id
-        );
-        processingDoc = await prisma.processingDocument.findUnique({
-          where: { id: documentId },
-          include: {
-            document: {
-              select: {
-                companyId: true,
-                tenantId: true,
-                fileName: true,
-                originalFileName: true,
-                mimeType: true,
-                fileSize: true,
-                storageKey: true,
-                company: {
-                  select: {
-                    id: true,
-                    name: true,
-                    homeCurrency: true,
-                  },
-                },
-              },
-            },
-            pages: {
-              orderBy: { pageNumber: 'asc' },
-              select: {
-                id: true,
-                pageNumber: true,
-                widthPx: true,
-                heightPx: true,
-                rotationDeg: true,
-                renderDpi: true,
-              },
-            },
-          },
-        });
-        if (!processingDoc) {
-          throw new Error('Document not found after batch reconciliation');
-        }
-      } catch (batchError) {
-        console.warn('Failed to reconcile pending batch extraction:', batchError);
-      }
-    }
-
-    if (!processingDoc) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'RESOURCE_NOT_FOUND', message: 'Document not found' },
-        },
-        { status: 404 }
       );
     }
 

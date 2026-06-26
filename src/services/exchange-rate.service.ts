@@ -499,8 +499,8 @@ export async function syncMASDateRange(startDate: Date, endDate: Date): Promise<
  * Get tenant's preferred rate type.
  * Returns 'MONTHLY' (default) or 'DAILY'.
  */
-export async function getTenantRatePreference(tenantId: string): Promise<RatePreference> {
-  const tenant = await prisma.tenant.findUnique({
+export async function getWorkspaceRatePreference(tenantId: string): Promise<RatePreference> {
+  const tenant = await prisma.workspace.findUnique({
     where: { id: tenantId },
     select: { settings: true },
   });
@@ -518,11 +518,11 @@ export async function getTenantRatePreference(tenantId: string): Promise<RatePre
 /**
  * Update tenant's preferred rate type.
  */
-export async function updateTenantRatePreference(
+export async function updateWorkspaceRatePreference(
   tenantId: string,
   preference: RatePreference
 ): Promise<void> {
-  const tenant = await prisma.tenant.findUnique({
+  const tenant = await prisma.workspace.findUnique({
     where: { id: tenantId },
     select: { settings: true },
   });
@@ -536,7 +536,7 @@ export async function updateTenantRatePreference(
     },
   };
 
-  await prisma.tenant.update({
+  await prisma.workspace.update({
     where: { id: tenantId },
     data: { settings: updatedSettings },
   });
@@ -596,7 +596,7 @@ export async function getRateWithPreference(
 
   // 2. Get tenant's preferred rate type
   const preference = tenantId
-    ? await getTenantRatePreference(tenantId)
+    ? await getWorkspaceRatePreference(tenantId)
     : 'MONTHLY'; // Default to monthly
 
   // Determine lookup date and rate type based on preference
@@ -839,7 +839,7 @@ export async function getCurrentRates(
  */
 export async function searchRates(
   params: RateSearchInput,
-  tenantContext?: { tenantId?: string; isSuperAdmin?: boolean }
+  WorkspaceContext?: { tenantId?: string; isSuperAdmin?: boolean }
 ): Promise<PaginatedRates> {
   const { page, limit, sourceCurrency, startDate, endDate, source, includeSystem, tenantId, sortBy, sortOrder } =
     params;
@@ -857,9 +857,9 @@ export async function searchRates(
 
   if (tenantId) {
     scopeConditions.push({ tenantId });
-  } else if (tenantContext?.tenantId && !tenantContext.isSuperAdmin) {
+  } else if (WorkspaceContext?.tenantId && !WorkspaceContext.isSuperAdmin) {
     // Non-super admin can only see their tenant + system
-    scopeConditions.push({ tenantId: tenantContext.tenantId });
+    scopeConditions.push({ tenantId: WorkspaceContext.tenantId });
   }
 
   if (scopeConditions.length > 0) {

@@ -171,9 +171,9 @@ export function createValidationErrorResponse(error: z.ZodError) {
 export const listQuerySchema = paginationSchema.merge(querySearchSchema);
 
 /**
- * Tenant users list
+ * Workspace users list
  */
-export const tenantUsersQuerySchema = paginationSchema.merge(querySearchSchema).extend({
+export const workspaceUsersQuerySchema = paginationSchema.merge(querySearchSchema).extend({
   role: z.string().optional(),
   company: z.string().optional(),
   sortBy: z.enum(['firstName', 'lastName', 'email', 'isActive', 'lastLoginAt', 'createdAt']).optional().default('createdAt'),

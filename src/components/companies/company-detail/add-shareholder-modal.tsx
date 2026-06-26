@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
@@ -43,29 +43,12 @@ export function AddShareholderModal({ isOpen, onClose, companyId, companyName }:
     }
   }, [isOpen]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F1') {
-        e.preventDefault();
-        if (selectedContactId && numberOfShares && !linkContactMutation.isPending) {
-          handleSubmit();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedContactId, numberOfShares, linkContactMutation.isPending]);
-
   const handleContactChange = (contactId: string, contact: Contact | null) => {
     setSelectedContactId(contactId);
     setSelectedContact(contact);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!selectedContactId) {
       toastError('Please select a contact');
       return;
@@ -90,7 +73,24 @@ export function AddShareholderModal({ isOpen, onClose, companyId, companyName }:
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to add shareholder');
     }
-  };
+  }, [companyId, linkContactMutation, numberOfShares, onClose, selectedContact?.fullName, selectedContactId, shareClass, success, toastError]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        if (selectedContactId && numberOfShares && !linkContactMutation.isPending) {
+          handleSubmit();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleSubmit, isOpen, selectedContactId, numberOfShares, linkContactMutation.isPending]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add Shareholder" size="lg">

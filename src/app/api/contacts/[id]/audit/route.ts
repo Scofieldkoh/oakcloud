@@ -5,7 +5,7 @@ import { getAuditHistory } from '@/lib/audit';
 import type { AuditAction } from '@/generated/prisma';
 import { parseIdParams } from '@/lib/validations/params';
 import { prisma } from '@/lib/prisma';
-import { clampLimit, parseIntegerParam, parseNumericParam, requireTenantContext } from '@/lib/api-helpers';
+import { clampLimit, parseIntegerParam, parseNumericParam, requireWorkspaceContext } from '@/lib/api-helpers';
 
 export async function GET(
   request: NextRequest,
@@ -15,7 +15,7 @@ export async function GET(
     const session = await requireAuth();
     const { id } = await parseIdParams(params);
     const { searchParams } = new URL(request.url);
-    const tenantResult = await requireTenantContext(session, searchParams.get('tenantId'));
+    const tenantResult = await requireWorkspaceContext(session, searchParams.get('tenantId'));
     if ('error' in tenantResult) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 

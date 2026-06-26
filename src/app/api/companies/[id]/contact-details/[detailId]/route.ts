@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { requireTenantContext } from '@/lib/api-helpers';
+import { requireWorkspaceContext } from '@/lib/api-helpers';
 import {
   getContactDetailById,
   updateContactDetail,
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Resolve tenant context - SUPER_ADMIN can specify via query param
     const { searchParams } = new URL(request.url);
     const tenantIdParam = searchParams.get('tenantId');
-    const tenantResult = await requireTenantContext(session, tenantIdParam);
+    const tenantResult = await requireWorkspaceContext(session, tenantIdParam);
     if (tenantResult.error) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 
@@ -85,7 +85,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // Resolve tenant context - SUPER_ADMIN can specify via body
     const { tenantId: bodyTenantId, ...updateData } = body;
-    const tenantResult = await requireTenantContext(session, bodyTenantId);
+    const tenantResult = await requireWorkspaceContext(session, bodyTenantId);
     if (tenantResult.error) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 
@@ -155,7 +155,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     // Resolve tenant context - SUPER_ADMIN can specify via query param
     const { searchParams } = new URL(request.url);
     const tenantIdParam = searchParams.get('tenantId');
-    const tenantResult = await requireTenantContext(session, tenantIdParam);
+    const tenantResult = await requireWorkspaceContext(session, tenantIdParam);
     if (tenantResult.error) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
 

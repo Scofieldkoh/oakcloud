@@ -144,7 +144,7 @@ export async function getRoleById(
 /**
  * Get all roles for a tenant
  */
-export async function getTenantRoles(tenantId: string): Promise<RoleWithPermissions[]> {
+export async function getWorkspaceRoles(tenantId: string): Promise<RoleWithPermissions[]> {
   return prisma.role.findMany({
     where: { tenantId },
     include: {
@@ -508,7 +508,7 @@ export async function validatePermissionIds(permissionIds: string[]): Promise<bo
 /**
  * Check if a role belongs to a tenant
  */
-export async function roleBelongsToTenant(roleId: string, tenantId: string): Promise<boolean> {
+export async function roleBelongsToWorkspace(roleId: string, tenantId: string): Promise<boolean> {
   const role = await prisma.role.findFirst({
     where: {
       id: roleId,

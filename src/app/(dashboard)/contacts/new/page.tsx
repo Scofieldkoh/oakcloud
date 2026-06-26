@@ -11,7 +11,7 @@ import { useCreateContact } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
-import { useActiveTenantId } from '@/components/ui/tenant-selector';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useToast } from '@/components/ui/toast';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { PurposeToggle } from '@/components/contacts/purpose-toggle';
@@ -79,7 +79,7 @@ export default function NewContactPage() {
 
   // SUPER_ADMIN tenant selection (from centralized store)
   const isSuperAdmin = session?.isSuperAdmin ?? false;
-  const activeTenantId = useActiveTenantId(isSuperAdmin, session?.tenantId);
+  const activeTenantId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
 
   const {
     register,

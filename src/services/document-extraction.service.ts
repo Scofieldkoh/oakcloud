@@ -15,7 +15,7 @@ import { transitionPipelineStatus, recordProcessingAttempt, saveCheckpoint } fro
 import { checkForDuplicates, updateDuplicateStatus } from './duplicate-detection.service';
 import {
   callAIWithConnector,
-  getBestAvailableModelForTenant,
+  getBestAvailableModelForWorkspace,
   getModelConfig,
   logExtractionResults,
   isAIDebugEnabled,
@@ -441,7 +441,7 @@ export async function extractFields(
       ? explicitModel
       : shouldUseMistral
         ? null
-        : await getBestAvailableModelForTenant(tenantId);
+        : await getBestAvailableModelForWorkspace(tenantId);
     const batchModelProvider = batchModelId && AI_MODELS[batchModelId as AIModel]
       ? getModelConfig(batchModelId as AIModel).provider
       : null;
@@ -2219,7 +2219,7 @@ async function performAIExtraction(
     ? explicitModel
     : forceMistral
       ? null
-      : await getBestAvailableModelForTenant(tenantId);
+      : await getBestAvailableModelForWorkspace(tenantId);
 
   // Read and encode the first page image
   const firstPage = pages[0];

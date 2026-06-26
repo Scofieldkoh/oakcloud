@@ -390,7 +390,7 @@ export type EsigningEnvelopeWhereInput = {
   deletedAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
   company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   documents?: Prisma.EsigningEnvelopeDocumentListRelationFilter
   events?: Prisma.EsigningEnvelopeEventListRelationFilter
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionListRelationFilter
@@ -426,7 +426,7 @@ export type EsigningEnvelopeOrderByWithRelationInput = {
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   company?: Prisma.CompanyOrderByWithRelationInput
   createdBy?: Prisma.UserOrderByWithRelationInput
-  tenant?: Prisma.TenantOrderByWithRelationInput
+  tenant?: Prisma.WorkspaceOrderByWithRelationInput
   documents?: Prisma.EsigningEnvelopeDocumentOrderByRelationAggregateInput
   events?: Prisma.EsigningEnvelopeEventOrderByRelationAggregateInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionOrderByRelationAggregateInput
@@ -465,7 +465,7 @@ export type EsigningEnvelopeWhereUniqueInput = Prisma.AtLeast<{
   deletedAt?: Prisma.DateTimeNullableFilter<"EsigningEnvelope"> | Date | string | null
   company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   documents?: Prisma.EsigningEnvelopeDocumentListRelationFilter
   events?: Prisma.EsigningEnvelopeEventListRelationFilter
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionListRelationFilter
@@ -564,7 +564,7 @@ export type EsigningEnvelopeCreateInput = {
   deletedAt?: Date | string | null
   company?: Prisma.CompanyCreateNestedOneWithoutEsigningEnvelopesInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedEsigningEnvelopesInput
-  tenant: Prisma.TenantCreateNestedOneWithoutEsigningEnvelopesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutEsigningEnvelopesInput
   documents?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutEnvelopeInput
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
@@ -630,7 +630,7 @@ export type EsigningEnvelopeUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   company?: Prisma.CompanyUpdateOneWithoutEsigningEnvelopesNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedEsigningEnvelopesNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
   documents?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutEnvelopeNestedInput
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
@@ -1207,7 +1207,7 @@ export type EsigningEnvelopeCreateWithoutCreatedByInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   company?: Prisma.CompanyCreateNestedOneWithoutEsigningEnvelopesInput
-  tenant: Prisma.TenantCreateNestedOneWithoutEsigningEnvelopesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutEsigningEnvelopesInput
   documents?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutEnvelopeInput
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
@@ -1297,7 +1297,7 @@ export type EsigningEnvelopeCreateWithoutCompanyInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedEsigningEnvelopesInput
-  tenant: Prisma.TenantCreateNestedOneWithoutEsigningEnvelopesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutEsigningEnvelopesInput
   documents?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutEnvelopeInput
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
@@ -1388,7 +1388,7 @@ export type EsigningEnvelopeCreateWithoutDocumentsInput = {
   deletedAt?: Date | string | null
   company?: Prisma.CompanyCreateNestedOneWithoutEsigningEnvelopesInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedEsigningEnvelopesInput
-  tenant: Prisma.TenantCreateNestedOneWithoutEsigningEnvelopesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutEsigningEnvelopesInput
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
@@ -1468,7 +1468,7 @@ export type EsigningEnvelopeUpdateWithoutDocumentsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   company?: Prisma.CompanyUpdateOneWithoutEsigningEnvelopesNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedEsigningEnvelopesNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
@@ -1532,7 +1532,7 @@ export type EsigningEnvelopeCreateWithoutRecipientsInput = {
   deletedAt?: Date | string | null
   company?: Prisma.CompanyCreateNestedOneWithoutEsigningEnvelopesInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedEsigningEnvelopesInput
-  tenant: Prisma.TenantCreateNestedOneWithoutEsigningEnvelopesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutEsigningEnvelopesInput
   documents?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutEnvelopeInput
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
@@ -1612,7 +1612,7 @@ export type EsigningEnvelopeUpdateWithoutRecipientsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   company?: Prisma.CompanyUpdateOneWithoutEsigningEnvelopesNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedEsigningEnvelopesNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
   documents?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutEnvelopeNestedInput
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
@@ -1676,7 +1676,7 @@ export type EsigningEnvelopeCreateWithoutFieldDefinitionsInput = {
   deletedAt?: Date | string | null
   company?: Prisma.CompanyCreateNestedOneWithoutEsigningEnvelopesInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedEsigningEnvelopesInput
-  tenant: Prisma.TenantCreateNestedOneWithoutEsigningEnvelopesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutEsigningEnvelopesInput
   documents?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutEnvelopeInput
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
@@ -1756,7 +1756,7 @@ export type EsigningEnvelopeUpdateWithoutFieldDefinitionsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   company?: Prisma.CompanyUpdateOneWithoutEsigningEnvelopesNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedEsigningEnvelopesNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
   documents?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutEnvelopeNestedInput
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
@@ -1820,7 +1820,7 @@ export type EsigningEnvelopeCreateWithoutEventsInput = {
   deletedAt?: Date | string | null
   company?: Prisma.CompanyCreateNestedOneWithoutEsigningEnvelopesInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedEsigningEnvelopesInput
-  tenant: Prisma.TenantCreateNestedOneWithoutEsigningEnvelopesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutEsigningEnvelopesInput
   documents?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
@@ -1900,7 +1900,7 @@ export type EsigningEnvelopeUpdateWithoutEventsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   company?: Prisma.CompanyUpdateOneWithoutEsigningEnvelopesNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedEsigningEnvelopesNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
   documents?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
@@ -2111,7 +2111,7 @@ export type EsigningEnvelopeUpdateWithoutCreatedByInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   company?: Prisma.CompanyUpdateOneWithoutEsigningEnvelopesNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
   documents?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutEnvelopeNestedInput
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
@@ -2231,7 +2231,7 @@ export type EsigningEnvelopeUpdateWithoutCompanyInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedEsigningEnvelopesNestedInput
-  tenant?: Prisma.TenantUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
   documents?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutEnvelopeNestedInput
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
@@ -2385,7 +2385,7 @@ export type EsigningEnvelopeSelect<ExtArgs extends runtime.Types.Extensions.Inte
   deletedAt?: boolean
   company?: boolean | Prisma.EsigningEnvelope$companyArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   documents?: boolean | Prisma.EsigningEnvelope$documentsArgs<ExtArgs>
   events?: boolean | Prisma.EsigningEnvelope$eventsArgs<ExtArgs>
   fieldDefinitions?: boolean | Prisma.EsigningEnvelope$fieldDefinitionsArgs<ExtArgs>
@@ -2422,7 +2422,7 @@ export type EsigningEnvelopeSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   deletedAt?: boolean
   company?: boolean | Prisma.EsigningEnvelope$companyArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["esigningEnvelope"]>
 
 export type EsigningEnvelopeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -2454,7 +2454,7 @@ export type EsigningEnvelopeSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   deletedAt?: boolean
   company?: boolean | Prisma.EsigningEnvelope$companyArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["esigningEnvelope"]>
 
 export type EsigningEnvelopeSelectScalar = {
@@ -2490,7 +2490,7 @@ export type EsigningEnvelopeOmit<ExtArgs extends runtime.Types.Extensions.Intern
 export type EsigningEnvelopeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   company?: boolean | Prisma.EsigningEnvelope$companyArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   documents?: boolean | Prisma.EsigningEnvelope$documentsArgs<ExtArgs>
   events?: boolean | Prisma.EsigningEnvelope$eventsArgs<ExtArgs>
   fieldDefinitions?: boolean | Prisma.EsigningEnvelope$fieldDefinitionsArgs<ExtArgs>
@@ -2500,12 +2500,12 @@ export type EsigningEnvelopeInclude<ExtArgs extends runtime.Types.Extensions.Int
 export type EsigningEnvelopeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   company?: boolean | Prisma.EsigningEnvelope$companyArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type EsigningEnvelopeIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   company?: boolean | Prisma.EsigningEnvelope$companyArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 
 export type $EsigningEnvelopePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2513,7 +2513,7 @@ export type $EsigningEnvelopePayload<ExtArgs extends runtime.Types.Extensions.In
   objects: {
     company: Prisma.$CompanyPayload<ExtArgs> | null
     createdBy: Prisma.$UserPayload<ExtArgs>
-    tenant: Prisma.$TenantPayload<ExtArgs>
+    tenant: Prisma.$WorkspacePayload<ExtArgs>
     documents: Prisma.$EsigningEnvelopeDocumentPayload<ExtArgs>[]
     events: Prisma.$EsigningEnvelopeEventPayload<ExtArgs>[]
     fieldDefinitions: Prisma.$EsigningDocumentFieldDefinitionPayload<ExtArgs>[]
@@ -2942,7 +2942,7 @@ export interface Prisma__EsigningEnvelopeClient<T, Null = never, ExtArgs extends
   readonly [Symbol.toStringTag]: "PrismaPromise"
   company<T extends Prisma.EsigningEnvelope$companyArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$companyArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   createdBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   documents<T extends Prisma.EsigningEnvelope$documentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$documentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningEnvelopeDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   events<T extends Prisma.EsigningEnvelope$eventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$eventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningEnvelopeEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   fieldDefinitions<T extends Prisma.EsigningEnvelope$fieldDefinitionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$fieldDefinitionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningDocumentFieldDefinitionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>

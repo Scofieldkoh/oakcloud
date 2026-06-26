@@ -42,7 +42,7 @@ export default function CommunicationPage() {
   const bulkDeleteMutation = useBulkDeleteCommunications();
   const selectAllRef = useRef<HTMLInputElement>(null);
 
-  const isAdmin = !!session && (session.isSuperAdmin || session.isTenantAdmin);
+  const isAdmin = !!session && (session.isSuperAdmin || session.isWorkspaceAdmin);
   const connector = communicationsQuery.data?.connector;
   const communications = communicationsQuery.data?.communications ?? EMPTY_COMMUNICATIONS;
   const allSelected = communications.length > 0 && selectedCommunicationIds.length === communications.length;

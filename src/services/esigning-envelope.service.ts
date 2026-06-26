@@ -2515,7 +2515,7 @@ export async function cleanupEsigningOrphanedStorage(input?: {
   deletedPrefixes: number;
   failedPrefixes: string[];
 }> {
-  const tenants = await prisma.tenant.findMany({
+  const tenants = await prisma.workspace.findMany({
     where: {
       deletedAt: null,
     },

@@ -15,14 +15,19 @@ RUN npm ci
 # Copy prisma schema for generation
 COPY prisma ./prisma/
 
-# Generate Prisma client
-RUN npx prisma generate
-
 # Copy the rest of the app
 COPY . .
+
+# Build Next.js for production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS=--max-old-space-size=4096
+RUN npx prisma generate
+RUN test -f src/generated/prisma/client.ts
+RUN npx next build
 
 # Expose port
 EXPOSE 3000
 
-# Start dev server
-CMD ["npm", "run", "dev"]
+# Start production server
+ENV NODE_ENV=production
+CMD ["npm", "run", "start"]

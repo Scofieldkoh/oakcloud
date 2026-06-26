@@ -5,7 +5,7 @@
  * Identifies where separate documents start and end in a combined PDF scan.
  */
 
-import { getBestAvailableModelForTenant, callAIWithConnector, stripMarkdownCodeBlocks } from '@/lib/ai';
+import { getBestAvailableModelForWorkspace, callAIWithConnector, stripMarkdownCodeBlocks } from '@/lib/ai';
 import { storage } from '@/lib/storage';
 import { createLogger } from '@/lib/logger';
 import type { AIModel } from '@/lib/ai/types';
@@ -44,7 +44,7 @@ export async function performAISplitDetection(
     const maxPages = config.maxPagesToAnalyze ?? 10;
 
     // Get best available AI model
-    const modelId = config.model ?? (await getBestAvailableModelForTenant(tenantId));
+    const modelId = config.model ?? (await getBestAvailableModelForWorkspace(tenantId));
 
     if (!modelId) {
         log.warn('No AI model available for split detection, using heuristic fallback');

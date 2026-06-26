@@ -255,7 +255,7 @@ export type workflow_notification_logWhereInput = {
   created_at?: Prisma.DateTimeFilter<"workflow_notification_log"> | Date | string
   read_at?: Prisma.DateTimeNullableFilter<"workflow_notification_log"> | Date | string | null
   users?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  tenants?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenants?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
 }
 
 export type workflow_notification_logOrderByWithRelationInput = {
@@ -274,7 +274,7 @@ export type workflow_notification_logOrderByWithRelationInput = {
   created_at?: Prisma.SortOrder
   read_at?: Prisma.SortOrderInput | Prisma.SortOrder
   users?: Prisma.UserOrderByWithRelationInput
-  tenants?: Prisma.TenantOrderByWithRelationInput
+  tenants?: Prisma.WorkspaceOrderByWithRelationInput
 }
 
 export type workflow_notification_logWhereUniqueInput = Prisma.AtLeast<{
@@ -296,7 +296,7 @@ export type workflow_notification_logWhereUniqueInput = Prisma.AtLeast<{
   created_at?: Prisma.DateTimeFilter<"workflow_notification_log"> | Date | string
   read_at?: Prisma.DateTimeNullableFilter<"workflow_notification_log"> | Date | string | null
   users?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  tenants?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
+  tenants?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
 }, "id">
 
 export type workflow_notification_logOrderByWithAggregationInput = {
@@ -353,7 +353,7 @@ export type workflow_notification_logCreateInput = {
   created_at?: Date | string
   read_at?: Date | string | null
   users: Prisma.UserCreateNestedOneWithoutWorkflow_notification_logInput
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_notification_logInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_notification_logInput
 }
 
 export type workflow_notification_logUncheckedCreateInput = {
@@ -387,7 +387,7 @@ export type workflow_notification_logUpdateInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   read_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   users?: Prisma.UserUpdateOneRequiredWithoutWorkflow_notification_logNestedInput
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_notification_logNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_notification_logNestedInput
 }
 
 export type workflow_notification_logUncheckedUpdateInput = {
@@ -700,7 +700,7 @@ export type workflow_notification_logCreateWithoutUsersInput = {
   error_message?: string | null
   created_at?: Date | string
   read_at?: Date | string | null
-  tenants: Prisma.TenantCreateNestedOneWithoutWorkflow_notification_logInput
+  tenants: Prisma.WorkspaceCreateNestedOneWithoutWorkflow_notification_logInput
 }
 
 export type workflow_notification_logUncheckedCreateWithoutUsersInput = {
@@ -838,7 +838,7 @@ export type workflow_notification_logUpdateWithoutUsersInput = {
   error_message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   read_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenants?: Prisma.TenantUpdateOneRequiredWithoutWorkflow_notification_logNestedInput
+  tenants?: Prisma.WorkspaceUpdateOneRequiredWithoutWorkflow_notification_logNestedInput
 }
 
 export type workflow_notification_logUncheckedUpdateWithoutUsersInput = {
@@ -891,7 +891,7 @@ export type workflow_notification_logSelect<ExtArgs extends runtime.Types.Extens
   created_at?: boolean
   read_at?: boolean
   users?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_notification_log"]>
 
 export type workflow_notification_logSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -910,7 +910,7 @@ export type workflow_notification_logSelectCreateManyAndReturn<ExtArgs extends r
   created_at?: boolean
   read_at?: boolean
   users?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_notification_log"]>
 
 export type workflow_notification_logSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -929,7 +929,7 @@ export type workflow_notification_logSelectUpdateManyAndReturn<ExtArgs extends r
   created_at?: boolean
   read_at?: boolean
   users?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workflow_notification_log"]>
 
 export type workflow_notification_logSelectScalar = {
@@ -952,22 +952,22 @@ export type workflow_notification_logSelectScalar = {
 export type workflow_notification_logOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenant_id" | "recipient_user_id" | "notification_type" | "channel" | "subject" | "body" | "related_entity_type" | "related_entity_id" | "status" | "sent_at" | "error_message" | "created_at" | "read_at", ExtArgs["result"]["workflow_notification_log"]>
 export type workflow_notification_logInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   users?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type workflow_notification_logIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   users?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type workflow_notification_logIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   users?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  tenants?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
+  tenants?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 
 export type $workflow_notification_logPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "workflow_notification_log"
   objects: {
     users: Prisma.$UserPayload<ExtArgs>
-    tenants: Prisma.$TenantPayload<ExtArgs>
+    tenants: Prisma.$WorkspacePayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1379,7 +1379,7 @@ readonly fields: workflow_notification_logFieldRefs;
 export interface Prisma__workflow_notification_logClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   users<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  tenants<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  tenants<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
