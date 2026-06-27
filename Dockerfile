@@ -2,9 +2,11 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies for native modules and Chromium for PDF generation
-RUN apk add --no-cache libc6-compat chromium
+# Install dependencies for native modules, Chromium for PDF generation, and
+# LibreOffice for Word-to-PDF conversion in e-signing uploads.
+RUN apk add --no-cache libc6-compat chromium libreoffice ttf-dejavu
 ENV CHROME_PATH=/usr/bin/chromium-browser
+ENV LIBREOFFICE_PATH=/usr/bin/soffice
 
 # Copy package files
 COPY package.json package-lock.json* ./

@@ -27,12 +27,10 @@ export type AggregateDocumentTemplate = {
 }
 
 export type DocumentTemplateAvgAggregateOutputType = {
-  defaultShareExpiryHours: number | null
   version: number | null
 }
 
 export type DocumentTemplateSumAggregateOutputType = {
-  defaultShareExpiryHours: number | null
   version: number | null
 }
 
@@ -44,7 +42,6 @@ export type DocumentTemplateMinAggregateOutputType = {
   category: $Enums.DocumentTemplateCategory | null
   content: string | null
   isActive: boolean | null
-  defaultShareExpiryHours: number | null
   version: number | null
   createdById: string | null
   createdAt: Date | null
@@ -60,7 +57,6 @@ export type DocumentTemplateMaxAggregateOutputType = {
   category: $Enums.DocumentTemplateCategory | null
   content: string | null
   isActive: boolean | null
-  defaultShareExpiryHours: number | null
   version: number | null
   createdById: string | null
   createdAt: Date | null
@@ -78,7 +74,6 @@ export type DocumentTemplateCountAggregateOutputType = {
   contentJson: number
   placeholders: number
   isActive: number
-  defaultShareExpiryHours: number
   version: number
   createdById: number
   createdAt: number
@@ -89,12 +84,10 @@ export type DocumentTemplateCountAggregateOutputType = {
 
 
 export type DocumentTemplateAvgAggregateInputType = {
-  defaultShareExpiryHours?: true
   version?: true
 }
 
 export type DocumentTemplateSumAggregateInputType = {
-  defaultShareExpiryHours?: true
   version?: true
 }
 
@@ -106,7 +99,6 @@ export type DocumentTemplateMinAggregateInputType = {
   category?: true
   content?: true
   isActive?: true
-  defaultShareExpiryHours?: true
   version?: true
   createdById?: true
   createdAt?: true
@@ -122,7 +114,6 @@ export type DocumentTemplateMaxAggregateInputType = {
   category?: true
   content?: true
   isActive?: true
-  defaultShareExpiryHours?: true
   version?: true
   createdById?: true
   createdAt?: true
@@ -140,7 +131,6 @@ export type DocumentTemplateCountAggregateInputType = {
   contentJson?: true
   placeholders?: true
   isActive?: true
-  defaultShareExpiryHours?: true
   version?: true
   createdById?: true
   createdAt?: true
@@ -245,7 +235,6 @@ export type DocumentTemplateGroupByOutputType = {
   contentJson: runtime.JsonValue | null
   placeholders: runtime.JsonValue
   isActive: boolean
-  defaultShareExpiryHours: number | null
   version: number
   createdById: string
   createdAt: Date
@@ -286,7 +275,6 @@ export type DocumentTemplateWhereInput = {
   contentJson?: Prisma.JsonNullableFilter<"DocumentTemplate">
   placeholders?: Prisma.JsonFilter<"DocumentTemplate">
   isActive?: Prisma.BoolFilter<"DocumentTemplate"> | boolean
-  defaultShareExpiryHours?: Prisma.IntNullableFilter<"DocumentTemplate"> | number | null
   version?: Prisma.IntFilter<"DocumentTemplate"> | number
   createdById?: Prisma.StringFilter<"DocumentTemplate"> | string
   createdAt?: Prisma.DateTimeFilter<"DocumentTemplate"> | Date | string
@@ -307,7 +295,6 @@ export type DocumentTemplateOrderByWithRelationInput = {
   contentJson?: Prisma.SortOrderInput | Prisma.SortOrder
   placeholders?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  defaultShareExpiryHours?: Prisma.SortOrderInput | Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -331,7 +318,6 @@ export type DocumentTemplateWhereUniqueInput = Prisma.AtLeast<{
   contentJson?: Prisma.JsonNullableFilter<"DocumentTemplate">
   placeholders?: Prisma.JsonFilter<"DocumentTemplate">
   isActive?: Prisma.BoolFilter<"DocumentTemplate"> | boolean
-  defaultShareExpiryHours?: Prisma.IntNullableFilter<"DocumentTemplate"> | number | null
   version?: Prisma.IntFilter<"DocumentTemplate"> | number
   createdById?: Prisma.StringFilter<"DocumentTemplate"> | string
   createdAt?: Prisma.DateTimeFilter<"DocumentTemplate"> | Date | string
@@ -352,7 +338,6 @@ export type DocumentTemplateOrderByWithAggregationInput = {
   contentJson?: Prisma.SortOrderInput | Prisma.SortOrder
   placeholders?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  defaultShareExpiryHours?: Prisma.SortOrderInput | Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -378,7 +363,6 @@ export type DocumentTemplateScalarWhereWithAggregatesInput = {
   contentJson?: Prisma.JsonNullableWithAggregatesFilter<"DocumentTemplate">
   placeholders?: Prisma.JsonWithAggregatesFilter<"DocumentTemplate">
   isActive?: Prisma.BoolWithAggregatesFilter<"DocumentTemplate"> | boolean
-  defaultShareExpiryHours?: Prisma.IntNullableWithAggregatesFilter<"DocumentTemplate"> | number | null
   version?: Prisma.IntWithAggregatesFilter<"DocumentTemplate"> | number
   createdById?: Prisma.StringWithAggregatesFilter<"DocumentTemplate"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"DocumentTemplate"> | Date | string
@@ -395,7 +379,6 @@ export type DocumentTemplateCreateInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
-  defaultShareExpiryHours?: number | null
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -415,7 +398,6 @@ export type DocumentTemplateUncheckedCreateInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
-  defaultShareExpiryHours?: number | null
   version?: number
   createdById: string
   createdAt?: Date | string
@@ -433,7 +415,6 @@ export type DocumentTemplateUpdateInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -453,7 +434,6 @@ export type DocumentTemplateUncheckedUpdateInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -472,7 +452,6 @@ export type DocumentTemplateCreateManyInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
-  defaultShareExpiryHours?: number | null
   version?: number
   createdById: string
   createdAt?: Date | string
@@ -489,7 +468,6 @@ export type DocumentTemplateUpdateManyMutationInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -506,7 +484,6 @@ export type DocumentTemplateUncheckedUpdateManyInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -534,7 +511,6 @@ export type DocumentTemplateCountOrderByAggregateInput = {
   contentJson?: Prisma.SortOrder
   placeholders?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  defaultShareExpiryHours?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -543,7 +519,6 @@ export type DocumentTemplateCountOrderByAggregateInput = {
 }
 
 export type DocumentTemplateAvgOrderByAggregateInput = {
-  defaultShareExpiryHours?: Prisma.SortOrder
   version?: Prisma.SortOrder
 }
 
@@ -555,7 +530,6 @@ export type DocumentTemplateMaxOrderByAggregateInput = {
   category?: Prisma.SortOrder
   content?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  defaultShareExpiryHours?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -571,7 +545,6 @@ export type DocumentTemplateMinOrderByAggregateInput = {
   category?: Prisma.SortOrder
   content?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  defaultShareExpiryHours?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -580,7 +553,6 @@ export type DocumentTemplateMinOrderByAggregateInput = {
 }
 
 export type DocumentTemplateSumOrderByAggregateInput = {
-  defaultShareExpiryHours?: Prisma.SortOrder
   version?: Prisma.SortOrder
 }
 
@@ -702,7 +674,6 @@ export type DocumentTemplateCreateWithoutTenantInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
-  defaultShareExpiryHours?: number | null
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -720,7 +691,6 @@ export type DocumentTemplateUncheckedCreateWithoutTenantInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
-  defaultShareExpiryHours?: number | null
   version?: number
   createdById: string
   createdAt?: Date | string
@@ -768,7 +738,6 @@ export type DocumentTemplateScalarWhereInput = {
   contentJson?: Prisma.JsonNullableFilter<"DocumentTemplate">
   placeholders?: Prisma.JsonFilter<"DocumentTemplate">
   isActive?: Prisma.BoolFilter<"DocumentTemplate"> | boolean
-  defaultShareExpiryHours?: Prisma.IntNullableFilter<"DocumentTemplate"> | number | null
   version?: Prisma.IntFilter<"DocumentTemplate"> | number
   createdById?: Prisma.StringFilter<"DocumentTemplate"> | string
   createdAt?: Prisma.DateTimeFilter<"DocumentTemplate"> | Date | string
@@ -785,7 +754,6 @@ export type DocumentTemplateCreateWithoutCreatedByInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
-  defaultShareExpiryHours?: number | null
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -804,7 +772,6 @@ export type DocumentTemplateUncheckedCreateWithoutCreatedByInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
-  defaultShareExpiryHours?: number | null
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -847,7 +814,6 @@ export type DocumentTemplateCreateWithoutGeneratedDocumentsInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
-  defaultShareExpiryHours?: number | null
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -866,7 +832,6 @@ export type DocumentTemplateUncheckedCreateWithoutGeneratedDocumentsInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
-  defaultShareExpiryHours?: number | null
   version?: number
   createdById: string
   createdAt?: Date | string
@@ -899,7 +864,6 @@ export type DocumentTemplateUpdateWithoutGeneratedDocumentsInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -918,7 +882,6 @@ export type DocumentTemplateUncheckedUpdateWithoutGeneratedDocumentsInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -935,7 +898,6 @@ export type DocumentTemplateCreateManyTenantInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
-  defaultShareExpiryHours?: number | null
   version?: number
   createdById: string
   createdAt?: Date | string
@@ -952,7 +914,6 @@ export type DocumentTemplateUpdateWithoutTenantInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -970,7 +931,6 @@ export type DocumentTemplateUncheckedUpdateWithoutTenantInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -988,7 +948,6 @@ export type DocumentTemplateUncheckedUpdateManyWithoutTenantInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1006,7 +965,6 @@ export type DocumentTemplateCreateManyCreatedByInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
-  defaultShareExpiryHours?: number | null
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1022,7 +980,6 @@ export type DocumentTemplateUpdateWithoutCreatedByInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1041,7 +998,6 @@ export type DocumentTemplateUncheckedUpdateWithoutCreatedByInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1059,7 +1015,6 @@ export type DocumentTemplateUncheckedUpdateManyWithoutCreatedByInput = {
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  defaultShareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1107,7 +1062,6 @@ export type DocumentTemplateSelect<ExtArgs extends runtime.Types.Extensions.Inte
   contentJson?: boolean
   placeholders?: boolean
   isActive?: boolean
-  defaultShareExpiryHours?: boolean
   version?: boolean
   createdById?: boolean
   createdAt?: boolean
@@ -1129,7 +1083,6 @@ export type DocumentTemplateSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   contentJson?: boolean
   placeholders?: boolean
   isActive?: boolean
-  defaultShareExpiryHours?: boolean
   version?: boolean
   createdById?: boolean
   createdAt?: boolean
@@ -1149,7 +1102,6 @@ export type DocumentTemplateSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   contentJson?: boolean
   placeholders?: boolean
   isActive?: boolean
-  defaultShareExpiryHours?: boolean
   version?: boolean
   createdById?: boolean
   createdAt?: boolean
@@ -1169,7 +1121,6 @@ export type DocumentTemplateSelectScalar = {
   contentJson?: boolean
   placeholders?: boolean
   isActive?: boolean
-  defaultShareExpiryHours?: boolean
   version?: boolean
   createdById?: boolean
   createdAt?: boolean
@@ -1177,7 +1128,7 @@ export type DocumentTemplateSelectScalar = {
   deletedAt?: boolean
 }
 
-export type DocumentTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "description" | "category" | "content" | "contentJson" | "placeholders" | "isActive" | "defaultShareExpiryHours" | "version" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["documentTemplate"]>
+export type DocumentTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "description" | "category" | "content" | "contentJson" | "placeholders" | "isActive" | "version" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["documentTemplate"]>
 export type DocumentTemplateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -1210,7 +1161,6 @@ export type $DocumentTemplatePayload<ExtArgs extends runtime.Types.Extensions.In
     contentJson: runtime.JsonValue | null
     placeholders: runtime.JsonValue
     isActive: boolean
-    defaultShareExpiryHours: number | null
     version: number
     createdById: string
     createdAt: Date
@@ -1651,7 +1601,6 @@ export interface DocumentTemplateFieldRefs {
   readonly contentJson: Prisma.FieldRef<"DocumentTemplate", 'Json'>
   readonly placeholders: Prisma.FieldRef<"DocumentTemplate", 'Json'>
   readonly isActive: Prisma.FieldRef<"DocumentTemplate", 'Boolean'>
-  readonly defaultShareExpiryHours: Prisma.FieldRef<"DocumentTemplate", 'Int'>
   readonly version: Prisma.FieldRef<"DocumentTemplate", 'Int'>
   readonly createdById: Prisma.FieldRef<"DocumentTemplate", 'String'>
   readonly createdAt: Prisma.FieldRef<"DocumentTemplate", 'DateTime'>

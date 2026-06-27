@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = createConnectorSchema.parse(body);
 
-    // TENANT_ADMIN can only create for their tenant
+    // Workspace admins can only create connectors for their workspace
     if (!session.isSuperAdmin) {
       if (data.tenantId === null) {
         return NextResponse.json(

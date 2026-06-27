@@ -1043,7 +1043,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (!content) return [{ id: crypto.randomUUID(), content: '' }];
         const normalizedContent = normalizePageSeparators(content);
         const parts = normalizedContent.split(PAGE_SEPARATOR);
-        console.log('[parsePages] Input length:', content.length, 'Has page-break:', content.includes('page-break'), 'Normalized has PAGE_BREAK:', normalizedContent.includes('PAGE_BREAK'), 'Parts count:', parts.length);
         return parts.map((c, i) => ({
           id: existingPages?.[i]?.id || crypto.randomUUID(),
           content: c,

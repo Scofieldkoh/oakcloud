@@ -21,16 +21,23 @@ import {
   ArrowUpDown,
   CalendarClock,
   ChevronLeft,
+  ClipboardList,
   Copy,
   Download,
   ExternalLink,
+  Eye,
+  FileText,
   GripVertical,
   History,
+  Inbox,
+  MousePointerClick,
   Paperclip,
+  PenLine,
   RefreshCw,
   Tag,
   Trash2,
 } from 'lucide-react';
+import { Alert } from '@/components/ui/alert';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -243,6 +250,21 @@ function getResponseTags(metadata: unknown): string[] {
   if (!root || !Array.isArray(root.responseTags)) return [];
 
   return normalizeResponseTags(root.responseTags.filter((tag): tag is string => typeof tag === 'string'));
+}
+
+const SUBMISSION_STATUS_BADGE: Record<string, string> = {
+  COMPLETED: 'bg-green-500/10 text-green-700 dark:text-green-400',
+  PARTIAL:   'bg-status-warning/10 text-status-warning',
+  SPAM:      'bg-red-500/10 text-red-700 dark:text-red-400',
+};
+
+function SubmissionStatusBadge({ status }: { status: string }) {
+  const cls = SUBMISSION_STATUS_BADGE[status] ?? 'bg-background-tertiary text-text-muted';
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
+      {status.charAt(0) + status.slice(1).toLowerCase()}
+    </span>
+  );
 }
 
 function formatLocaleValue(value: unknown): string {
@@ -1240,18 +1262,27 @@ export default function FormResponsesPage() {
 
   if (isFormLoading) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="h-10 w-72 animate-pulse rounded bg-background-tertiary mb-4" />
-        <div className="h-64 animate-pulse rounded-lg border border-border-primary bg-background-elevated" />
+      <div className="min-h-screen bg-background-primary">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+          <div className="h-28 animate-pulse rounded-2xl border border-border-primary bg-background-secondary sm:rounded-3xl" />
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-20 animate-pulse rounded-2xl border border-border-primary bg-background-secondary sm:rounded-3xl" />
+            ))}
+          </div>
+          <div className="h-64 animate-pulse rounded-2xl border border-border-primary bg-background-secondary sm:rounded-3xl" />
+        </div>
       </div>
     );
   }
 
   if (formError || !form) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-300">
-          {formError instanceof Error ? formError.message : 'Form not found'}
+      <div className="min-h-screen bg-background-primary">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+          <Alert variant="error" title="Form not found">
+            {formError instanceof Error ? formError.message : 'This form could not be loaded.'}
+          </Alert>
         </div>
       </div>
     );
@@ -1308,7 +1339,7 @@ export default function FormResponsesPage() {
           {reviewRequired && (
             <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" aria-hidden="true" />
           )}
-          <span>{submission.status}</span>
+          <SubmissionStatusBadge status={submission.status} />
         </span>
       );
     }
@@ -1339,67 +1370,99 @@ export default function FormResponsesPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6">
-      <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div>
-          <Link href="/forms" className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary">
-            <ChevronLeft className="w-4 h-4" />
-            Back to Forms
-          </Link>
-          <h1 className="mt-1 text-xl sm:text-2xl font-semibold text-text-primary">
-            Responses to &quot;{form.title}&quot;
-          </h1>
-        </div>
+    <div className="min-h-screen bg-background-primary">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<RefreshCw className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />}
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <span className="hidden xl:inline">Refresh (Ctrl+R)</span>
-            <span className="xl:hidden">Refresh</span>
-          </Button>
-          <Button variant="secondary" size="sm" onClick={handleOpenPreview}>
-            {form.status === 'PUBLISHED' ? 'View' : 'Preview'}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => router.push(`/forms/${form.id}/builder`)}>
-            Edit Form
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Download className="w-4 h-4" />} onClick={() => setIsExportOpen(true)}>
-            Export
-          </Button>
+      {/* Header */}
+      <section className="rounded-2xl border border-oak-primary/20 bg-gradient-to-br from-oak-primary/[0.06] to-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="space-y-1">
+            <Link href="/forms" className="inline-flex items-center gap-1.5 text-sm text-text-secondary transition-colors hover:text-text-primary">
+              <ChevronLeft className="h-4 w-4" />
+              Back to Forms
+            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-oak-primary/10 text-oak-primary">
+                <FileText className="h-4 w-4" />
+              </div>
+              <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">
+                {form.title}
+              </h1>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                form.status === 'PUBLISHED'
+                  ? 'bg-green-500/10 text-green-700 dark:text-green-400'
+                  : form.status === 'ARCHIVED'
+                  ? 'bg-background-tertiary text-text-muted'
+                  : 'bg-status-warning/10 text-status-warning'
+              }`}>
+                {form.status.charAt(0) + form.status.slice(1).toLowerCase()}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />}
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <span className="hidden xl:inline">Refresh (Ctrl+R)</span>
+              <span className="xl:hidden">Refresh</span>
+            </Button>
+            <Button variant="secondary" size="sm" onClick={handleOpenPreview}>
+              {form.status === 'PUBLISHED' ? 'View' : 'Preview'}
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => router.push(`/forms/${form.id}/builder`)}>
+              Edit Form
+            </Button>
+            <Button variant="primary" size="sm" leftIcon={<Download className="h-4 w-4" />} onClick={() => setIsExportOpen(true)}>
+              Export
+            </Button>
+          </div>
         </div>
+      </section>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        {([
+          { label: 'Total views', value: form.viewsCount, icon: Eye },
+          { label: 'Responses', value: form.submissionsCount, icon: ClipboardList },
+          { label: 'Conversion rate', value: `${conversionRate}%`, icon: MousePointerClick },
+          { label: 'Active drafts', value: data?.draftTotal ?? 0, icon: PenLine },
+        ] as const).map((stat) => (
+          <div key={stat.label} className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-oak-primary/10 text-oak-primary">
+                <stat.icon className="h-3.5 w-3.5" />
+              </div>
+              <div className="text-xs font-medium text-text-secondary">{stat.label}</div>
+            </div>
+            <div className="mt-2 text-2xl font-semibold text-text-primary">{stat.value}</div>
+          </div>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-lg border border-border-primary bg-background-elevated p-4">
-          <div className="text-xs text-text-secondary">Total views</div>
-          <div className="mt-1 text-2xl font-semibold text-text-primary">{form.viewsCount}</div>
-        </div>
-        <div className="rounded-lg border border-border-primary bg-background-elevated p-4">
-          <div className="text-xs text-text-secondary">Responses</div>
-          <div className="mt-1 text-2xl font-semibold text-text-primary">{form.submissionsCount}</div>
-        </div>
-        <div className="rounded-lg border border-border-primary bg-background-elevated p-4">
-          <div className="text-xs text-text-secondary">Conversion rate</div>
-          <div className="mt-1 text-2xl font-semibold text-text-primary">{conversionRate}%</div>
-        </div>
-        <div className="rounded-lg border border-border-primary bg-background-elevated p-4">
-          <div className="text-xs text-text-secondary">Active drafts</div>
-          <div className="mt-1 text-2xl font-semibold text-text-primary">{data?.draftTotal ?? 0}</div>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-border-primary bg-background-elevated overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl">
         <div className="flex items-center justify-between gap-3 border-b border-border-primary px-4 py-3">
-          <div>
-            <div className="text-sm font-medium text-text-primary">Submissions</div>
-            <p className="mt-1 text-xs text-text-secondary">
-              Sort and filter the visible response columns directly in the table.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-oak-primary/10 text-oak-primary">
+              <ClipboardList className="h-4 w-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-text-primary">Submissions</span>
+                {data && (
+                  <span className="inline-flex items-center rounded-full border border-border-primary px-2 py-0.5 text-xs text-text-secondary">
+                    {data.total}
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs text-text-secondary">
+                Sort and filter columns directly in the table.
+              </p>
+            </div>
           </div>
           {hasActiveSubmissionFilters && (
             <button
@@ -1427,8 +1490,10 @@ export default function FormResponsesPage() {
         )}
 
         {error && (
-          <div className="px-4 py-3 text-sm text-red-600 dark:text-red-300">
-            {error instanceof Error ? error.message : 'Failed to load responses'}
+          <div className="p-4">
+            <Alert variant="error">
+              {error instanceof Error ? error.message : 'Failed to load responses'}
+            </Alert>
           </div>
         )}
 
@@ -1441,8 +1506,24 @@ export default function FormResponsesPage() {
         )}
 
         {!isLoading && data && data.submissions.length === 0 && !hasActiveSubmissionFilters && (
-          <div className="px-4 py-8 text-center text-sm text-text-secondary">
-            No submissions yet.
+          <div className="flex flex-col items-center gap-3 px-4 py-12 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-oak-primary/10 text-oak-primary">
+              <Inbox className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text-primary">No submissions yet</p>
+              <p className="mt-1 text-xs text-text-secondary">
+                Responses will appear here once someone submits the form.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleOpenPreview}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-border-primary bg-background-secondary px-3 py-1.5 text-xs font-medium text-text-secondary shadow-sm transition-colors hover:border-oak-primary/40 hover:text-text-primary"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {form.status === 'PUBLISHED' ? 'View form' : 'Preview form'}
+            </button>
           </div>
         )}
 
@@ -1812,13 +1893,25 @@ export default function FormResponsesPage() {
         }}
       />
 
-      <div className="mt-4 rounded-lg border border-border-primary bg-background-elevated overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl">
         <div className="flex items-center justify-between gap-3 border-b border-border-primary px-4 py-3">
-          <div>
-            <div className="text-sm font-medium text-text-primary">Draft entries</div>
-            <p className="mt-1 text-xs text-text-secondary">
-              Active saved drafts that have not been submitted yet.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-oak-primary/10 text-oak-primary">
+              <PenLine className="h-4 w-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-text-primary">Draft entries</span>
+                {data && (
+                  <span className="inline-flex items-center rounded-full border border-border-primary px-2 py-0.5 text-xs text-text-secondary">
+                    {data.draftTotal}
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs text-text-secondary">
+                Saved drafts not yet submitted.
+              </p>
+            </div>
           </div>
           {hasActiveDraftFilters && (
             <button
@@ -2558,6 +2651,7 @@ export default function FormResponsesPage() {
           </Button>
         </ModalFooter>
       </Modal>
+      </div>
     </div>
   );
 }

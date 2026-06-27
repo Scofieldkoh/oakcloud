@@ -138,7 +138,7 @@ export function buildOpenAIChatCompletionRequest(
   options: AIRequestOptions
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
-  const modelConfig = getModelConfig(options.model);
+  const modelConfig = options.modelConfig ?? getModelConfig(options.model as AIModel);
   if (modelConfig.provider !== 'openai') {
     throw new Error(`Model ${options.model} is not an OpenAI model`);
   }
@@ -211,7 +211,7 @@ export function buildOpenAIChatCompletionRequest(
 export function parseOpenAIChatCompletionResponse(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   response: any,
-  model: AIModel,
+  model: AIModel | string,
   batchMode = false
 ): AIResponse {
   const choice = response.choices?.[0];

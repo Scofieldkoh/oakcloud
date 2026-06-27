@@ -413,7 +413,6 @@ export const ModelName = {
   DocumentTemplate: 'DocumentTemplate',
   GeneratedDocument: 'GeneratedDocument',
   DocumentSection: 'DocumentSection',
-  DocumentShare: 'DocumentShare',
   WorkspaceLetterhead: 'WorkspaceLetterhead',
   DocumentComment: 'DocumentComment',
   DocumentDraft: 'DocumentDraft',
@@ -501,7 +500,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "documentShare" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2648,80 +2647,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.DocumentSectionCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.DocumentSectionCountAggregateOutputType> | number
-        }
-      }
-    }
-    DocumentShare: {
-      payload: Prisma.$DocumentSharePayload<ExtArgs>
-      fields: Prisma.DocumentShareFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.DocumentShareFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.DocumentShareFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
-        }
-        findFirst: {
-          args: Prisma.DocumentShareFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.DocumentShareFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
-        }
-        findMany: {
-          args: Prisma.DocumentShareFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>[]
-        }
-        create: {
-          args: Prisma.DocumentShareCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
-        }
-        createMany: {
-          args: Prisma.DocumentShareCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.DocumentShareCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>[]
-        }
-        delete: {
-          args: Prisma.DocumentShareDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
-        }
-        update: {
-          args: Prisma.DocumentShareUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
-        }
-        deleteMany: {
-          args: Prisma.DocumentShareDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.DocumentShareUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.DocumentShareUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>[]
-        }
-        upsert: {
-          args: Prisma.DocumentShareUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentSharePayload>
-        }
-        aggregate: {
-          args: Prisma.DocumentShareAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateDocumentShare>
-        }
-        groupBy: {
-          args: Prisma.DocumentShareGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.DocumentShareGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.DocumentShareCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.DocumentShareCountAggregateOutputType> | number
         }
       }
     }
@@ -8513,7 +8438,7 @@ export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typ
 
 export const ConnectorScalarFieldEnum = {
   id: 'id',
-  tenantId: 'tenantId',
+  workspaceId: 'workspaceId',
   name: 'name',
   type: 'type',
   provider: 'provider',
@@ -8535,7 +8460,7 @@ export type ConnectorScalarFieldEnum = (typeof ConnectorScalarFieldEnum)[keyof t
 
 export const WorkspaceConnectorAccessScalarFieldEnum = {
   id: 'id',
-  tenantId: 'tenantId',
+  workspaceId: 'workspaceId',
   connectorId: 'connectorId',
   isEnabled: 'isEnabled',
   createdAt: 'createdAt',
@@ -8548,7 +8473,7 @@ export type WorkspaceConnectorAccessScalarFieldEnum = (typeof WorkspaceConnector
 export const ConnectorUsageLogScalarFieldEnum = {
   id: 'id',
   connectorId: 'connectorId',
-  tenantId: 'tenantId',
+  workspaceId: 'workspaceId',
   userId: 'userId',
   model: 'model',
   provider: 'provider',
@@ -8603,7 +8528,6 @@ export const DocumentTemplateScalarFieldEnum = {
   contentJson: 'contentJson',
   placeholders: 'placeholders',
   isActive: 'isActive',
-  defaultShareExpiryHours: 'defaultShareExpiryHours',
   version: 'version',
   createdById: 'createdById',
   createdAt: 'createdAt',
@@ -8628,7 +8552,6 @@ export const GeneratedDocumentScalarFieldEnum = {
   finalizedById: 'finalizedById',
   unfinalizedAt: 'unfinalizedAt',
   useLetterhead: 'useLetterhead',
-  shareExpiryHours: 'shareExpiryHours',
   placeholderData: 'placeholderData',
   metadata: 'metadata',
   createdById: 'createdById',
@@ -8654,28 +8577,6 @@ export const DocumentSectionScalarFieldEnum = {
 export type DocumentSectionScalarFieldEnum = (typeof DocumentSectionScalarFieldEnum)[keyof typeof DocumentSectionScalarFieldEnum]
 
 
-export const DocumentShareScalarFieldEnum = {
-  id: 'id',
-  documentId: 'documentId',
-  shareToken: 'shareToken',
-  expiresAt: 'expiresAt',
-  passwordHash: 'passwordHash',
-  isActive: 'isActive',
-  viewCount: 'viewCount',
-  lastViewedAt: 'lastViewedAt',
-  allowedActions: 'allowedActions',
-  allowComments: 'allowComments',
-  commentRateLimit: 'commentRateLimit',
-  notifyOnComment: 'notifyOnComment',
-  notifyOnView: 'notifyOnView',
-  createdById: 'createdById',
-  createdAt: 'createdAt',
-  revokedAt: 'revokedAt'
-} as const
-
-export type DocumentShareScalarFieldEnum = (typeof DocumentShareScalarFieldEnum)[keyof typeof DocumentShareScalarFieldEnum]
-
-
 export const WorkspaceLetterheadScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -8696,7 +8597,6 @@ export type WorkspaceLetterheadScalarFieldEnum = (typeof WorkspaceLetterheadScal
 export const DocumentCommentScalarFieldEnum = {
   id: 'id',
   documentId: 'documentId',
-  shareId: 'shareId',
   userId: 'userId',
   guestName: 'guestName',
   guestEmail: 'guestEmail',
@@ -9704,8 +9604,7 @@ export const Workflow_artifactsScalarFieldEnum = {
   source_type: 'source_type',
   source_document_id: 'source_document_id',
   source_processing_document_id: 'source_processing_document_id',
-  source_generated_document_id: 'source_generated_document_id',
-  source_document_share_id: 'source_document_share_id'
+  source_generated_document_id: 'source_generated_document_id'
 } as const
 
 export type Workflow_artifactsScalarFieldEnum = (typeof Workflow_artifactsScalarFieldEnum)[keyof typeof Workflow_artifactsScalarFieldEnum]
@@ -11678,7 +11577,6 @@ export type GlobalOmitConfig = {
   documentTemplate?: Prisma.DocumentTemplateOmit
   generatedDocument?: Prisma.GeneratedDocumentOmit
   documentSection?: Prisma.DocumentSectionOmit
-  documentShare?: Prisma.DocumentShareOmit
   workspaceLetterhead?: Prisma.WorkspaceLetterheadOmit
   documentComment?: Prisma.DocumentCommentOmit
   documentDraft?: Prisma.DocumentDraftOmit

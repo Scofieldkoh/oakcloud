@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { AlertTriangle, Check, ChevronDown, ChevronLeft, ChevronUp, Copy, Download, RefreshCw, Trash2 } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { AlertTriangle, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronUp, Copy, Download, FileText, Paperclip, RefreshCw, Trash2, User } from 'lucide-react';
 import type { FormField, FormUpload } from '@/generated/prisma';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -19,7 +19,6 @@ import {
 import {
   WIDTH_CLASS,
   evaluateCondition,
-  formatChoiceAnswer,
   hasUnresolvedFormSubmissionAiWarning,
   isEmptyValue,
   parseFormAiSettings,
@@ -27,6 +26,7 @@ import {
   parseObject,
   type FormSubmissionAiReviewSection,
 } from '@/lib/form-utils';
+import { formatResponseFieldValue, isResponseAnswerField } from '@/lib/form-response-display';
 import { extractSignatureDataUrl } from '@/lib/signature-utils';
 
 type RepeatSectionConfig = {
@@ -76,8 +76,6 @@ type AttachmentCheckResult = {
   omittedAttachmentNames: string[];
 };
 
-const HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
-
 function formatDate(value: string | Date): string {
   const date = value instanceof Date ? value : new Date(value);
   return date.toLocaleString('en-SG', {
@@ -89,15 +87,6 @@ function formatDate(value: string | Date): string {
   });
 }
 
-function safeCell(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  const choiceText = formatChoiceAnswer(value);
-  if (choiceText) return choiceText;
-  if (Array.isArray(value)) return value.join('; ');
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
-}
-
 function toAnswerRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return {};
@@ -105,22 +94,9 @@ function toAnswerRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function toCopyValue(fieldType: string, value: unknown): string | null {
-  if (value === null || value === undefined || fieldType === 'SIGNATURE') return null;
-  if (fieldType === 'SINGLE_CHOICE' || fieldType === 'MULTIPLE_CHOICE') {
-    return formatChoiceAnswer(value);
-  }
-  if (typeof value === 'string') return value.trim().length > 0 ? value : null;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) {
-    const text = value
-      .map((item) => (typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean') ? String(item) : '')
-      .filter(Boolean)
-      .join('\n');
-    return text || null;
-  }
-  if (typeof value === 'object') return JSON.stringify(value, null, 2);
-  return null;
+function toCopyValue(field: FormField, value: unknown): string | null {
+  if (value === null || value === undefined || field.type === 'SIGNATURE') return null;
+  return formatResponseFieldValue(field, value);
 }
 
 function toUploadIds(value: unknown): string[] {
@@ -248,38 +224,6 @@ function getAttachmentReadabilityClasses(readability: AttachmentCheckItem['reada
   }
 
   return 'border-red-200 bg-red-50 text-red-700';
-}
-
-function isValidHttpUrl(value: string | null): value is string {
-  if (!value) return false;
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
-function normalizeHexColor(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim().toLowerCase();
-  if (!HEX_COLOR_PATTERN.test(trimmed)) return null;
-
-  if (trimmed.length === 4) {
-    return `#${trimmed[1]}${trimmed[1]}${trimmed[2]}${trimmed[2]}${trimmed[3]}${trimmed[3]}`;
-  }
-
-  return trimmed;
-}
-
-function getInfoBackgroundColor(field: FormField): string | null {
-  if (field.type !== 'PARAGRAPH') return null;
-  const validation = parseObject(field.validation);
-  return normalizeHexColor(validation?.infoBackgroundColor);
-}
-
-function hasHtmlMarkup(value: string): boolean {
-  return /<\/?[a-z][\s\S]*>/i.test(value);
 }
 
 function isRepeatStartMarker(field: FormField): boolean {
@@ -441,7 +385,7 @@ export default function FormResponseDetailPage() {
               cursor -= 1;
               break;
             }
-            if (candidate.type !== 'HIDDEN') {
+            if (isResponseAnswerField(candidate)) {
               sectionFields.push(candidate);
             }
             cursor += 1;
@@ -475,7 +419,7 @@ export default function FormResponseDetailPage() {
         continue;
       }
 
-      if (field.type === 'HIDDEN') continue;
+      if (!isResponseAnswerField(field)) continue;
       if (!evaluateCondition(field.condition, submissionAnswers)) continue;
 
       pages[pages.length - 1].items.push({ kind: 'field', field });
@@ -654,18 +598,23 @@ export default function FormResponseDetailPage() {
 
   if (isFormLoading || isResponseLoading) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="h-10 w-56 animate-pulse rounded bg-background-tertiary mb-4" />
-        <div className="h-64 animate-pulse rounded-lg border border-border-primary bg-background-elevated" />
+      <div className="min-h-screen bg-background-primary">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+          <div className="h-28 animate-pulse rounded-2xl border border-border-primary bg-background-secondary sm:rounded-3xl" />
+          <div className="h-24 animate-pulse rounded-2xl border border-border-primary bg-background-secondary sm:rounded-3xl" />
+          <div className="h-64 animate-pulse rounded-2xl border border-border-primary bg-background-secondary sm:rounded-3xl" />
+        </div>
       </div>
     );
   }
 
   if (formError || !form) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-300">
-          {formError instanceof Error ? formError.message : 'Form not found'}
+      <div className="min-h-screen bg-background-primary">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+          <Alert variant="error" title="Form not found">
+            {formError instanceof Error ? formError.message : 'This form could not be loaded.'}
+          </Alert>
         </div>
       </div>
     );
@@ -673,9 +622,11 @@ export default function FormResponseDetailPage() {
 
   if (responseError || !submission) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-300">
-          {responseError instanceof Error ? responseError.message : 'Submission not found'}
+      <div className="min-h-screen bg-background-primary">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+          <Alert variant="error" title="Submission not found">
+            {responseError instanceof Error ? responseError.message : 'This submission could not be loaded.'}
+          </Alert>
         </div>
       </div>
     );
@@ -699,83 +650,7 @@ export default function FormResponseDetailPage() {
         if (ids.length === 0) return null;
         return ids.map((id) => uploadsById.get(id)?.fileName || id).join('\n');
       })()
-      : toCopyValue(field.type, value);
-    const infoType = field.type === 'PARAGRAPH'
-      ? (field.inputType === 'info_image' || field.inputType === 'info_url' ? field.inputType : 'info_text')
-      : null;
-    const infoBackgroundColor = getInfoBackgroundColor(field);
-    const infoBackgroundStyle = infoBackgroundColor ? { backgroundColor: infoBackgroundColor } : undefined;
-
-    if (field.type === 'PARAGRAPH') {
-      if (infoType === 'info_image') {
-        const imageUrl = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
-        return (
-          <div key={fieldKey} className={widthClass}>
-            <div className="overflow-hidden rounded-lg border border-border-primary bg-background-primary" style={infoBackgroundStyle}>
-              {imageUrl ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- user-configurable informational image URL */}
-                  <img src={imageUrl} alt={field.subtext || field.label || 'Information image'} className="max-h-72 w-full object-contain" />
-                  {field.subtext && (
-                    <p className="border-t border-border-primary px-3 py-2 text-xs text-text-secondary">{field.subtext}</p>
-                  )}
-                </>
-              ) : (
-                <div className="px-3 py-3 text-sm text-text-muted">No valid image URL configured.</div>
-              )}
-            </div>
-          </div>
-        );
-      }
-
-      if (infoType === 'info_url') {
-        const href = isValidHttpUrl(field.placeholder?.trim() || null) ? field.placeholder!.trim() : null;
-        return (
-          <div key={fieldKey} className={widthClass}>
-            <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm" style={infoBackgroundStyle}>
-              {href ? (
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="break-all text-text-primary underline hover:text-text-secondary"
-                >
-                  {field.subtext || field.label || href}
-                </a>
-              ) : (
-                <span className="text-text-muted">No valid URL configured.</span>
-              )}
-            </div>
-          </div>
-        );
-      }
-
-      return (
-        <div key={fieldKey} className={widthClass}>
-          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary" style={infoBackgroundStyle}>
-            {hasHtmlMarkup(field.subtext || '') ? (
-              <div
-                className="form-rich-render text-sm text-text-primary"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(field.subtext || '') }}
-              />
-            ) : (
-              <div className="whitespace-pre-wrap">{field.subtext || field.label || ''}</div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    if (field.type === 'HTML') {
-      return (
-        <div key={fieldKey} className={widthClass}>
-          <div
-            className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(field.subtext || '') }}
-          />
-        </div>
-      );
-    }
+      : toCopyValue(field, value);
 
     return (
       <div key={fieldKey} className={widthClass}>
@@ -815,22 +690,22 @@ export default function FormResponseDetailPage() {
               <span className="text-text-muted">-</span>
             ) : (
               field.type === 'SINGLE_CHOICE'
-                ? (formatChoiceAnswer(value) || <span className="text-text-muted">-</span>)
-                : String(value)
+                ? (formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>)
+                : (formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>)
             )}
           </div>
         )}
 
         {field.type === 'LONG_TEXT' && (
           <div className="min-h-24 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary whitespace-pre-wrap">
-            {isEmptyValue(value) ? <span className="text-text-muted">-</span> : String(value)}
+            {formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>}
           </div>
         )}
 
         {field.type === 'MULTIPLE_CHOICE' && (
           <div className="min-h-10 rounded-lg border border-border-primary bg-background-primary px-3 py-2">
-            {formatChoiceAnswer(value) ? (
-              <span className="text-sm text-text-primary">{formatChoiceAnswer(value)}</span>
+            {formatResponseFieldValue(field, value) ? (
+              <span className="text-sm text-text-primary">{formatResponseFieldValue(field, value)}</span>
             ) : (
               <span className="text-sm text-text-muted">-</span>
             )}
@@ -909,7 +784,7 @@ export default function FormResponseDetailPage() {
 
         {!['SHORT_TEXT', 'DROPDOWN', 'SINGLE_CHOICE', 'LONG_TEXT', 'MULTIPLE_CHOICE', 'FILE_UPLOAD', 'SIGNATURE'].includes(field.type) && (
           <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary">
-            {isEmptyValue(value) ? <span className="text-text-muted">-</span> : safeCell(value)}
+            {formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>}
           </div>
         )}
       </div>
@@ -917,21 +792,45 @@ export default function FormResponseDetailPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6">
-      <div className="mb-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link
-            href={`/forms/${form.id}/responses`}
-            className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back to Responses
-          </Link>
-          <div className="flex items-center gap-2">
+    <div className="min-h-screen bg-background-primary">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+
+      {/* Header */}
+      <section className="rounded-2xl border border-oak-primary/20 bg-gradient-to-br from-oak-primary/[0.06] to-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="space-y-1">
+            <Link
+              href={`/forms/${form.id}/responses`}
+              className="inline-flex items-center gap-1.5 text-sm text-text-secondary transition-colors hover:text-text-primary"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to Responses
+            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-oak-primary/10 text-oak-primary">
+                <FileText className="h-4 w-4" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">Submission response</h1>
+                <p className="text-sm text-text-secondary">{form.title}</p>
+              </div>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                submission.status === 'COMPLETED'
+                  ? 'bg-green-500/10 text-green-700 dark:text-green-400'
+                  : submission.status === 'SPAM'
+                  ? 'bg-red-500/10 text-red-700 dark:text-red-400'
+                  : 'bg-status-warning/10 text-status-warning'
+              }`}>
+                {submission.status.charAt(0) + submission.status.slice(1).toLowerCase()}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
-              leftIcon={<Download className="w-4 h-4" />}
+              leftIcon={<Download className="h-4 w-4" />}
               onClick={() => window.open(getExportPdfHref(), '_blank', 'noopener,noreferrer')}
             >
               Export PDF
@@ -939,19 +838,17 @@ export default function FormResponseDetailPage() {
             <Button
               variant="danger"
               size="sm"
-              leftIcon={<Trash2 className="w-4 h-4" />}
+              leftIcon={<Trash2 className="h-4 w-4" />}
               onClick={() => setIsDeleteResponseConfirmOpen(true)}
             >
-              Delete Response
+              Delete
             </Button>
           </div>
         </div>
-        <h1 className="mt-1 text-xl sm:text-2xl font-semibold text-text-primary">Submission response</h1>
-        <p className="mt-1 text-sm text-text-secondary">{form.title}</p>
-      </div>
+      </section>
 
       {hasUnresolvedAiWarning && aiReview && (
-        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50/80 p-4">
+        <div className="rounded-2xl border border-amber-300 bg-amber-50/80 p-4 sm:rounded-3xl sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-sm font-semibold text-amber-900">
@@ -1042,27 +939,28 @@ export default function FormResponseDetailPage() {
         </div>
       )}
 
-      <div className="mb-4 grid grid-cols-1 gap-2 rounded-lg border border-border-primary bg-background-elevated p-3 text-sm text-text-primary sm:grid-cols-2 xl:grid-cols-4">
-        <div>
-          <div className="text-2xs uppercase tracking-wide text-text-muted">Submitted</div>
-          <div>{formatDate(submission.submittedAt)}</div>
-        </div>
-        <div>
-          <div className="text-2xs uppercase tracking-wide text-text-muted">Status</div>
-          <div>{submission.status}</div>
-        </div>
-        <div>
-          <div className="text-2xs uppercase tracking-wide text-text-muted">Respondent</div>
-          <div>{submission.respondentName || submission.respondentEmail || 'Anonymous'}</div>
-        </div>
-        <div>
-          <div className="text-2xs uppercase tracking-wide text-text-muted">Attachments</div>
-          <div>{formatAttachmentCount(uploadCount)}</div>
-        </div>
+      {/* Meta cards */}
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {([
+          { label: 'Submitted', value: formatDate(submission.submittedAt), icon: CalendarDays },
+          { label: 'Respondent', value: submission.respondentName || submission.respondentEmail || 'Anonymous', icon: User },
+          { label: 'Attachments', value: formatAttachmentCount(uploadCount), icon: Paperclip },
+          { label: 'Locale', value: (submission as Record<string, unknown>).locale as string || 'Default', icon: FileText },
+        ] as const).map((stat) => (
+          <div key={stat.label} className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-oak-primary/10 text-oak-primary">
+                <stat.icon className="h-3.5 w-3.5" />
+              </div>
+              <div className="text-xs font-medium text-text-secondary">{stat.label}</div>
+            </div>
+            <div className="mt-2 truncate text-sm font-medium text-text-primary">{stat.value}</div>
+          </div>
+        ))}
       </div>
 
       {(aiSettings.enabled || aiReview) && !hasUnresolvedAiWarning && (
-        <div className={`mb-4 rounded-lg border p-4 ${
+        <div className={`rounded-2xl border p-4 shadow-sm sm:rounded-3xl sm:p-5 ${
           aiReview?.status === 'completed' && aiReview.reviewRequired
               ? 'border-border-primary bg-background-elevated'
             : aiReview?.status === 'failed'
@@ -1185,18 +1083,20 @@ export default function FormResponseDetailPage() {
 
       <div className="space-y-4">
         {responsePages.length === 0 && (
-          <div className="rounded-lg border border-border-primary bg-background-elevated p-4 text-sm text-text-secondary">
+          <div className="rounded-2xl border border-border-primary bg-background-secondary p-6 text-center text-sm text-text-secondary shadow-sm sm:rounded-3xl">
             No visible fields to display for this submission.
           </div>
         )}
 
         {responsePages.map((page, pageIndex) => (
-          <section key={`page-${pageIndex}`} className="rounded-lg border border-border-primary bg-background-elevated p-3 sm:p-4">
+          <section key={`page-${pageIndex}`} className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl">
             {responsePages.length > 1 && (
-              <h2 className="mb-3 text-sm font-semibold text-text-primary">Page {pageIndex + 1}</h2>
+              <div className="border-b border-border-primary px-4 py-3">
+                <h2 className="text-sm font-semibold text-text-primary">Page {pageIndex + 1}</h2>
+              </div>
             )}
 
-            <div className="grid grid-cols-12 gap-3">
+            <div className="grid grid-cols-12 gap-3 p-4 sm:p-5">
               {page.items.map((item) => {
                 if (item.kind === 'field') {
                   const value = submissionAnswers[item.field.key];
@@ -1216,17 +1116,15 @@ export default function FormResponseDetailPage() {
                         {Array.from({ length: item.rowCount }).map((_, rowIndex) => {
                           const rowAnswers = buildRowAnswers(submissionAnswers, rowIndex);
                           const rowFields = item.fields.filter((sectionField) => (
-                            sectionField.type !== 'HIDDEN' &&
+                            isResponseAnswerField(sectionField) &&
                             evaluateCondition(sectionField.condition, rowAnswers)
                           ));
 
-                          if (rowFields.length === 0) {
-                            return null;
-                          }
+                          if (rowFields.length === 0) return null;
 
                           return (
-                            <div key={`${item.sectionId}-row-${rowIndex}`} className="rounded-lg border border-border-primary/60 bg-background-elevated p-3">
-                              <div className="mb-2 text-xs font-medium text-text-secondary">Card {rowIndex + 1}</div>
+                            <div key={`${item.sectionId}-row-${rowIndex}`} className="rounded-lg border border-border-primary/60 bg-background-secondary p-3">
+                              <div className="mb-2 text-xs font-medium text-text-secondary">Entry {rowIndex + 1}</div>
                               <div className="grid grid-cols-12 gap-3">
                                 {rowFields.map((sectionField) => {
                                   const value = getRepeatRowValue(submissionAnswers[sectionField.key], rowIndex);
@@ -1463,6 +1361,7 @@ export default function FormResponseDetailPage() {
         confirmLabel="Delete attachment"
         isLoading={deleteUploadMutation.isPending}
       />
+      </div>
     </div>
   );
 }

@@ -12,9 +12,11 @@
 export * from './types';
 export * from './models';
 export * from './debug';
+export * from './model-capabilities';
 
 import type {
   AIModel,
+  AIModelConfig,
   AIProvider,
   AIRequestOptions,
   AIResponse,
@@ -27,6 +29,10 @@ import { callAnthropic, isAnthropicConfigured } from './providers/anthropic';
 import { callGoogle, isGoogleConfigured } from './providers/google';
 import { callOpenRouter, isOpenRouterConfigured } from './providers/openrouter';
 import { createLogger } from '@/lib/logger';
+import {
+  getEffectiveDocumentInputMode,
+  readConnectorModelDocumentSettings,
+} from './model-capabilities';
 
 const log = createLogger('ai');
 
@@ -147,14 +153,14 @@ export function isModelAvailable(modelId: AIModel): boolean {
 export function getBestAvailableModel(): AIModel | null {
   // First, try the default model
   const defaultModel = getDefaultModel();
-  if (isModelAvailable(defaultModel.id)) {
-    return defaultModel.id;
+  if (isModelAvailable(defaultModel.id as AIModel)) {
+    return defaultModel.id as AIModel;
   }
 
   // Otherwise, return the first available model
   const usableModels = getUsableModels();
   if (usableModels.length > 0) {
-    return usableModels[0].id;
+    return usableModels[0].id as AIModel;
   }
 
   return null;
@@ -164,7 +170,7 @@ export function getBestAvailableModel(): AIModel | null {
  * Main AI call function - routes to the appropriate provider
  */
 export async function callAI(options: AIRequestOptions): Promise<AIResponse> {
-  const modelConfig = getModelConfig(options.model);
+  const modelConfig = options.modelConfig ?? getModelConfig(options.model as AIModel);
 
   // Check if the provider is configured
   const providerStatus = getProviderStatus(modelConfig.provider);
@@ -217,7 +223,7 @@ export async function extractJSON<T = unknown>(
  * Create a preconfigured AI caller for a specific use case
  */
 export function createAICaller(defaultOptions: Partial<AIRequestOptions>) {
-  return async function call(options: Omit<AIRequestOptions, 'model'> & { model?: AIModel }) {
+  return async function call(options: Omit<AIRequestOptions, 'model'> & { model?: AIModel | string }) {
     const mergedOptions: AIRequestOptions = {
       ...defaultOptions,
       ...options,
@@ -247,6 +253,83 @@ function mapProviderToConnectorProvider(provider: AIProvider): 'OPENAI' | 'ANTHR
     default:
       throw new Error(`Unknown provider: ${provider}`);
   }
+}
+
+function hasEditableModelList(settings: unknown): boolean {
+  return Boolean(
+    settings &&
+      typeof settings === 'object' &&
+      !Array.isArray(settings) &&
+      Array.isArray((settings as Record<string, unknown>).models)
+  );
+}
+
+function readConnectorModelConfig(
+  settings: unknown,
+  modelId: string,
+  provider: AIProvider
+): { config: AIModelConfig; isEnabled: boolean } | null {
+  const settingsObject =
+    settings && typeof settings === 'object' && !Array.isArray(settings)
+      ? (settings as Record<string, unknown>)
+      : {};
+  const modelArrays = [settingsObject.models, settingsObject.customModels];
+
+  for (const value of modelArrays) {
+    if (!Array.isArray(value)) continue;
+
+    for (const item of value) {
+      if (!item || typeof item !== 'object') continue;
+      const model = item as Record<string, unknown>;
+      const entryModelId = typeof model.modelId === 'string' ? model.modelId.trim() : '';
+      if (entryModelId !== modelId) continue;
+
+      const registryModel = AI_MODELS[entryModelId as AIModel];
+      const providerModelId =
+        typeof model.providerModelId === 'string' && model.providerModelId.trim()
+          ? model.providerModelId.trim()
+          : registryModel?.providerModelId || entryModelId;
+      const name =
+        typeof model.name === 'string' && model.name.trim()
+          ? model.name.trim()
+          : registryModel?.name || providerModelId;
+
+      return {
+        isEnabled: typeof model.isEnabled === 'boolean' ? model.isEnabled : true,
+        config: {
+          id: entryModelId,
+          name,
+          provider,
+          providerModelId,
+          description:
+            typeof model.description === 'string'
+              ? model.description
+              : registryModel?.description || '',
+          maxTokens: registryModel?.maxTokens || 4096,
+          inputPricePerMillion: registryModel?.inputPricePerMillion || 0,
+          outputPricePerMillion: registryModel?.outputPricePerMillion || 0,
+          supportsJson:
+            typeof model.supportsJson === 'boolean'
+              ? model.supportsJson
+              : registryModel?.supportsJson ?? true,
+          supportsVision:
+            typeof model.supportsVision === 'boolean'
+              ? model.supportsVision
+              : registryModel?.supportsVision ?? true,
+          supportsTemperature:
+            typeof model.supportsTemperature === 'boolean'
+              ? model.supportsTemperature
+              : registryModel?.supportsTemperature,
+          supportsJsonResponseFormat:
+            typeof model.supportsJsonResponseFormat === 'boolean'
+              ? model.supportsJsonResponseFormat
+              : registryModel?.supportsJsonResponseFormat,
+        },
+      };
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -280,9 +363,68 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
   const { logConnectorUsage } = await import('@/services/connector-usage.service');
   const { logAIRequestStart, logAIResponse, logAIError } = await import('./debug');
 
-  const modelConfig = getModelConfig(options.model);
-  const provider = options.preferredProvider || modelConfig.provider;
-  const connectorProvider = mapProviderToConnectorProvider(provider);
+  const staticModelConfig = AI_MODELS[options.model as AIModel];
+  const providerList: AIProvider[] = options.preferredProvider
+    ? [options.preferredProvider]
+    : staticModelConfig
+      ? [staticModelConfig.provider]
+      : ['openai', 'anthropic', 'google', 'openrouter'];
+
+  let provider = providerList[0];
+  let connectorProvider = mapProviderToConnectorProvider(provider);
+  let resolved:
+    | Awaited<ReturnType<typeof resolveConnector>>
+    | null = null;
+  let modelConfig: AIModelConfig | undefined = staticModelConfig;
+
+  for (const candidateProvider of providerList) {
+    const candidateConnectorProvider = mapProviderToConnectorProvider(candidateProvider);
+    const candidateResolved = await resolveConnector(
+      options.tenantId,
+      'AI_PROVIDER',
+      candidateConnectorProvider
+    );
+    if (!candidateResolved) {
+      if (staticModelConfig && candidateProvider === staticModelConfig.provider) {
+        provider = candidateProvider;
+        connectorProvider = candidateConnectorProvider;
+      }
+      continue;
+    }
+
+    const connectorModel = readConnectorModelConfig(
+      candidateResolved.connector.settings,
+      options.model,
+      candidateProvider
+    );
+    if (connectorModel) {
+      if (!connectorModel.isEnabled) {
+        throw new Error(`Model "${options.model}" is disabled for this connector.`);
+      }
+      provider = candidateProvider;
+      connectorProvider = candidateConnectorProvider;
+      resolved = candidateResolved;
+      modelConfig = connectorModel.config;
+      break;
+    }
+
+    if (hasEditableModelList(candidateResolved.connector.settings)) {
+      continue;
+    }
+
+    if (staticModelConfig && candidateProvider === staticModelConfig.provider) {
+      provider = candidateProvider;
+      connectorProvider = candidateConnectorProvider;
+      resolved = candidateResolved;
+      modelConfig = staticModelConfig;
+      break;
+    }
+  }
+
+  if (!modelConfig) {
+    throw new Error(`Model "${options.model}" is not configured for any connector.`);
+  }
+  const requestOptions = { ...options, modelConfig };
 
   // Start debug logging if enabled
   const debugContext = logAIRequestStart(
@@ -291,8 +433,6 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
   );
 
   // Try to resolve a connector for this tenant/provider
-  const resolved = await resolveConnector(options.tenantId, 'AI_PROVIDER', connectorProvider);
-
   if (resolved) {
     if (debugContext) {
       debugContext.connectorSource = resolved.source;
@@ -329,23 +469,23 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
     try {
       switch (provider) {
         case 'openai':
-          response = await callOpenAI(options, {
+          response = await callOpenAI(requestOptions, {
             apiKey: credentials.apiKey as string,
             organization: credentials.organization as string | undefined,
           });
           break;
         case 'anthropic':
-          response = await callAnthropic(options, {
+          response = await callAnthropic(requestOptions, {
             apiKey: credentials.apiKey as string,
           });
           break;
         case 'google':
-          response = await callGoogle(options, {
+          response = await callGoogle(requestOptions, {
             apiKey: credentials.apiKey as string,
           });
           break;
         case 'openrouter':
-          response = await callOpenRouter(options, {
+          response = await callOpenRouter(requestOptions, {
             apiKey: credentials.apiKey as string,
           });
           break;
@@ -404,7 +544,7 @@ export async function callAIWithConnector(options: ConnectorAIOptions): Promise<
   }
 
   // Use environment-based call (no usage tracking for env-based calls)
-  return callAI(options);
+  return callAI(requestOptions);
 }
 
 /**
@@ -465,23 +605,103 @@ export async function isProviderAvailableForWorkspace(
   return availableProviders.includes(provider);
 }
 
+function mapConnectorProviderToAIProvider(provider: string): AIProvider | null {
+  switch (provider) {
+    case 'OPENAI':
+      return 'openai';
+    case 'ANTHROPIC':
+      return 'anthropic';
+    case 'GOOGLE':
+      return 'google';
+    case 'OPENROUTER':
+      return 'openrouter';
+    default:
+      return null;
+  }
+}
+
+function readEnabledConnectorModelIds(settings: unknown): string[] | null {
+  const settingsObject =
+    settings && typeof settings === 'object' && !Array.isArray(settings)
+      ? (settings as Record<string, unknown>)
+      : null;
+  if (!settingsObject) return null;
+
+  const modelList = Array.isArray(settingsObject.models)
+    ? settingsObject.models
+    : Array.isArray(settingsObject.customModels)
+      ? settingsObject.customModels
+      : null;
+  if (!modelList) return null;
+
+  const enabledModelIds = modelList
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+    .filter((item) => item.isEnabled !== false)
+    .map((item) => (typeof item.modelId === 'string' ? item.modelId.trim() : ''))
+    .filter(Boolean);
+
+  const defaults =
+    settingsObject.modelDefaults &&
+    typeof settingsObject.modelDefaults === 'object' &&
+    !Array.isArray(settingsObject.modelDefaults)
+      ? (settingsObject.modelDefaults as Record<string, unknown>)
+      : null;
+  const generalDefault =
+    typeof defaults?.general === 'string' ? defaults.general.trim() : '';
+
+  if (generalDefault && enabledModelIds.includes(generalDefault)) {
+    return [generalDefault, ...enabledModelIds.filter((modelId) => modelId !== generalDefault)];
+  }
+
+  return enabledModelIds;
+}
+
 /**
  * Get the best available model for a tenant
  * Checks both connector and environment configurations
  */
 export async function getBestAvailableModelForWorkspace(
   tenantId: string | null
-): Promise<AIModel | null> {
+): Promise<AIModel | string | null> {
   const availableProviders = await getAvailableProvidersForWorkspace(tenantId);
 
   if (availableProviders.length === 0) {
     return null;
   }
 
+  const connectorModelsByProvider = new Map<AIProvider, string[]>();
+  try {
+    const { getAvailableConnectors } = await import('@/services/connector.service');
+    const resolvedConnectors = await getAvailableConnectors(tenantId, 'AI_PROVIDER');
+
+    for (const resolved of resolvedConnectors) {
+      const provider = mapConnectorProviderToAIProvider(resolved.connector.provider);
+      if (!provider) continue;
+
+      const connectorModelIds = readEnabledConnectorModelIds(resolved.connector.settings);
+      if (connectorModelIds && connectorModelIds.length > 0) {
+        connectorModelsByProvider.set(provider, connectorModelIds);
+      }
+    }
+  } catch (error) {
+    log.error('Error getting connector models for tenant:', error);
+  }
+
   // First, try the default model if its provider is available
   const defaultModel = getDefaultModel();
   if (availableProviders.includes(defaultModel.provider)) {
-    return defaultModel.id;
+    const connectorModelIds = connectorModelsByProvider.get(defaultModel.provider);
+    if (connectorModelIds && !connectorModelIds.includes(defaultModel.id)) {
+      return connectorModelIds[0];
+    }
+    return defaultModel.id as AIModel;
+  }
+
+  for (const provider of availableProviders) {
+    const connectorModelIds = connectorModelsByProvider.get(provider);
+    if (connectorModelIds?.[0]) {
+      return connectorModelIds[0];
+    }
   }
 
   // Otherwise, return the first model from an available provider
@@ -490,8 +710,30 @@ export async function getBestAvailableModelForWorkspace(
   );
 
   if (usableModels.length > 0) {
-    return usableModels[0].id;
+    return usableModels[0].id as AIModel;
   }
 
   return null;
+}
+
+export async function getDocumentInputModeForModel(
+  tenantId: string | null,
+  modelId: AIModel | string
+): Promise<'pdf' | 'image'> {
+  try {
+    const { getAvailableConnectors } = await import('@/services/connector.service');
+    const resolvedConnectors = await getAvailableConnectors(tenantId, 'AI_PROVIDER');
+
+    for (const resolved of resolvedConnectors) {
+      const settings = readConnectorModelDocumentSettings(resolved.connector.settings, modelId);
+      if (settings) {
+        return getEffectiveDocumentInputMode(settings);
+      }
+    }
+  } catch (error) {
+    log.error('Error getting connector document input mode for model:', error);
+  }
+
+  const staticModelConfig = AI_MODELS[modelId as AIModel];
+  return staticModelConfig?.provider === 'openrouter' ? 'image' : 'pdf';
 }

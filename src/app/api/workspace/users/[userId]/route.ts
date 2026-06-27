@@ -230,7 +230,6 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       }
     } catch {
       // No body or invalid JSON - use default reason (DELETE with no body is valid)
-      console.debug('DELETE request with no/invalid JSON body, using default reason');
     }
 
     await removeUserFromWorkspace(workspaceId, userId, session.id, reason);

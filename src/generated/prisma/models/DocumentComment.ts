@@ -39,7 +39,6 @@ export type DocumentCommentSumAggregateOutputType = {
 export type DocumentCommentMinAggregateOutputType = {
   id: string | null
   documentId: string | null
-  shareId: string | null
   userId: string | null
   guestName: string | null
   guestEmail: string | null
@@ -63,7 +62,6 @@ export type DocumentCommentMinAggregateOutputType = {
 export type DocumentCommentMaxAggregateOutputType = {
   id: string | null
   documentId: string | null
-  shareId: string | null
   userId: string | null
   guestName: string | null
   guestEmail: string | null
@@ -87,7 +85,6 @@ export type DocumentCommentMaxAggregateOutputType = {
 export type DocumentCommentCountAggregateOutputType = {
   id: number
   documentId: number
-  shareId: number
   userId: number
   guestName: number
   guestEmail: number
@@ -123,7 +120,6 @@ export type DocumentCommentSumAggregateInputType = {
 export type DocumentCommentMinAggregateInputType = {
   id?: true
   documentId?: true
-  shareId?: true
   userId?: true
   guestName?: true
   guestEmail?: true
@@ -147,7 +143,6 @@ export type DocumentCommentMinAggregateInputType = {
 export type DocumentCommentMaxAggregateInputType = {
   id?: true
   documentId?: true
-  shareId?: true
   userId?: true
   guestName?: true
   guestEmail?: true
@@ -171,7 +166,6 @@ export type DocumentCommentMaxAggregateInputType = {
 export type DocumentCommentCountAggregateInputType = {
   id?: true
   documentId?: true
-  shareId?: true
   userId?: true
   guestName?: true
   guestEmail?: true
@@ -282,7 +276,6 @@ export type DocumentCommentGroupByArgs<ExtArgs extends runtime.Types.Extensions.
 export type DocumentCommentGroupByOutputType = {
   id: string
   documentId: string
-  shareId: string | null
   userId: string | null
   guestName: string | null
   guestEmail: string | null
@@ -329,7 +322,6 @@ export type DocumentCommentWhereInput = {
   NOT?: Prisma.DocumentCommentWhereInput | Prisma.DocumentCommentWhereInput[]
   id?: Prisma.StringFilter<"DocumentComment"> | string
   documentId?: Prisma.StringFilter<"DocumentComment"> | string
-  shareId?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
   userId?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
   guestName?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
   guestEmail?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
@@ -353,14 +345,12 @@ export type DocumentCommentWhereInput = {
   parent?: Prisma.XOR<Prisma.DocumentCommentNullableScalarRelationFilter, Prisma.DocumentCommentWhereInput> | null
   replies?: Prisma.DocumentCommentListRelationFilter
   resolvedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-  share?: Prisma.XOR<Prisma.DocumentShareNullableScalarRelationFilter, Prisma.DocumentShareWhereInput> | null
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }
 
 export type DocumentCommentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
-  shareId?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
   guestName?: Prisma.SortOrderInput | Prisma.SortOrder
   guestEmail?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -384,7 +374,6 @@ export type DocumentCommentOrderByWithRelationInput = {
   parent?: Prisma.DocumentCommentOrderByWithRelationInput
   replies?: Prisma.DocumentCommentOrderByRelationAggregateInput
   resolvedBy?: Prisma.UserOrderByWithRelationInput
-  share?: Prisma.DocumentShareOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
 }
 
@@ -394,7 +383,6 @@ export type DocumentCommentWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.DocumentCommentWhereInput[]
   NOT?: Prisma.DocumentCommentWhereInput | Prisma.DocumentCommentWhereInput[]
   documentId?: Prisma.StringFilter<"DocumentComment"> | string
-  shareId?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
   userId?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
   guestName?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
   guestEmail?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
@@ -418,14 +406,12 @@ export type DocumentCommentWhereUniqueInput = Prisma.AtLeast<{
   parent?: Prisma.XOR<Prisma.DocumentCommentNullableScalarRelationFilter, Prisma.DocumentCommentWhereInput> | null
   replies?: Prisma.DocumentCommentListRelationFilter
   resolvedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-  share?: Prisma.XOR<Prisma.DocumentShareNullableScalarRelationFilter, Prisma.DocumentShareWhereInput> | null
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }, "id">
 
 export type DocumentCommentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
-  shareId?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
   guestName?: Prisma.SortOrderInput | Prisma.SortOrder
   guestEmail?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -457,7 +443,6 @@ export type DocumentCommentScalarWhereWithAggregatesInput = {
   NOT?: Prisma.DocumentCommentScalarWhereWithAggregatesInput | Prisma.DocumentCommentScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"DocumentComment"> | string
   documentId?: Prisma.StringWithAggregatesFilter<"DocumentComment"> | string
-  shareId?: Prisma.StringNullableWithAggregatesFilter<"DocumentComment"> | string | null
   userId?: Prisma.StringNullableWithAggregatesFilter<"DocumentComment"> | string | null
   guestName?: Prisma.StringNullableWithAggregatesFilter<"DocumentComment"> | string | null
   guestEmail?: Prisma.StringNullableWithAggregatesFilter<"DocumentComment"> | string | null
@@ -499,14 +484,12 @@ export type DocumentCommentCreateInput = {
   parent?: Prisma.DocumentCommentCreateNestedOneWithoutRepliesInput
   replies?: Prisma.DocumentCommentCreateNestedManyWithoutParentInput
   resolvedBy?: Prisma.UserCreateNestedOneWithoutResolvedCommentsInput
-  share?: Prisma.DocumentShareCreateNestedOneWithoutCommentsInput
   user?: Prisma.UserCreateNestedOneWithoutAuthoredCommentsInput
 }
 
 export type DocumentCommentUncheckedCreateInput = {
   id?: string
   documentId: string
-  shareId?: string | null
   userId?: string | null
   guestName?: string | null
   guestEmail?: string | null
@@ -549,14 +532,12 @@ export type DocumentCommentUpdateInput = {
   parent?: Prisma.DocumentCommentUpdateOneWithoutRepliesNestedInput
   replies?: Prisma.DocumentCommentUpdateManyWithoutParentNestedInput
   resolvedBy?: Prisma.UserUpdateOneWithoutResolvedCommentsNestedInput
-  share?: Prisma.DocumentShareUpdateOneWithoutCommentsNestedInput
   user?: Prisma.UserUpdateOneWithoutAuthoredCommentsNestedInput
 }
 
 export type DocumentCommentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -581,7 +562,6 @@ export type DocumentCommentUncheckedUpdateInput = {
 export type DocumentCommentCreateManyInput = {
   id?: string
   documentId: string
-  shareId?: string | null
   userId?: string | null
   guestName?: string | null
   guestEmail?: string | null
@@ -623,7 +603,6 @@ export type DocumentCommentUpdateManyMutationInput = {
 export type DocumentCommentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -662,7 +641,6 @@ export type DocumentCommentNullableScalarRelationFilter = {
 export type DocumentCommentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
-  shareId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   guestName?: Prisma.SortOrder
   guestEmail?: Prisma.SortOrder
@@ -691,7 +669,6 @@ export type DocumentCommentAvgOrderByAggregateInput = {
 export type DocumentCommentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
-  shareId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   guestName?: Prisma.SortOrder
   guestEmail?: Prisma.SortOrder
@@ -715,7 +692,6 @@ export type DocumentCommentMaxOrderByAggregateInput = {
 export type DocumentCommentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
-  shareId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   guestName?: Prisma.SortOrder
   guestEmail?: Prisma.SortOrder
@@ -909,48 +885,6 @@ export type DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput = {
   deleteMany?: Prisma.DocumentCommentScalarWhereInput | Prisma.DocumentCommentScalarWhereInput[]
 }
 
-export type DocumentCommentCreateNestedManyWithoutShareInput = {
-  create?: Prisma.XOR<Prisma.DocumentCommentCreateWithoutShareInput, Prisma.DocumentCommentUncheckedCreateWithoutShareInput> | Prisma.DocumentCommentCreateWithoutShareInput[] | Prisma.DocumentCommentUncheckedCreateWithoutShareInput[]
-  connectOrCreate?: Prisma.DocumentCommentCreateOrConnectWithoutShareInput | Prisma.DocumentCommentCreateOrConnectWithoutShareInput[]
-  createMany?: Prisma.DocumentCommentCreateManyShareInputEnvelope
-  connect?: Prisma.DocumentCommentWhereUniqueInput | Prisma.DocumentCommentWhereUniqueInput[]
-}
-
-export type DocumentCommentUncheckedCreateNestedManyWithoutShareInput = {
-  create?: Prisma.XOR<Prisma.DocumentCommentCreateWithoutShareInput, Prisma.DocumentCommentUncheckedCreateWithoutShareInput> | Prisma.DocumentCommentCreateWithoutShareInput[] | Prisma.DocumentCommentUncheckedCreateWithoutShareInput[]
-  connectOrCreate?: Prisma.DocumentCommentCreateOrConnectWithoutShareInput | Prisma.DocumentCommentCreateOrConnectWithoutShareInput[]
-  createMany?: Prisma.DocumentCommentCreateManyShareInputEnvelope
-  connect?: Prisma.DocumentCommentWhereUniqueInput | Prisma.DocumentCommentWhereUniqueInput[]
-}
-
-export type DocumentCommentUpdateManyWithoutShareNestedInput = {
-  create?: Prisma.XOR<Prisma.DocumentCommentCreateWithoutShareInput, Prisma.DocumentCommentUncheckedCreateWithoutShareInput> | Prisma.DocumentCommentCreateWithoutShareInput[] | Prisma.DocumentCommentUncheckedCreateWithoutShareInput[]
-  connectOrCreate?: Prisma.DocumentCommentCreateOrConnectWithoutShareInput | Prisma.DocumentCommentCreateOrConnectWithoutShareInput[]
-  upsert?: Prisma.DocumentCommentUpsertWithWhereUniqueWithoutShareInput | Prisma.DocumentCommentUpsertWithWhereUniqueWithoutShareInput[]
-  createMany?: Prisma.DocumentCommentCreateManyShareInputEnvelope
-  set?: Prisma.DocumentCommentWhereUniqueInput | Prisma.DocumentCommentWhereUniqueInput[]
-  disconnect?: Prisma.DocumentCommentWhereUniqueInput | Prisma.DocumentCommentWhereUniqueInput[]
-  delete?: Prisma.DocumentCommentWhereUniqueInput | Prisma.DocumentCommentWhereUniqueInput[]
-  connect?: Prisma.DocumentCommentWhereUniqueInput | Prisma.DocumentCommentWhereUniqueInput[]
-  update?: Prisma.DocumentCommentUpdateWithWhereUniqueWithoutShareInput | Prisma.DocumentCommentUpdateWithWhereUniqueWithoutShareInput[]
-  updateMany?: Prisma.DocumentCommentUpdateManyWithWhereWithoutShareInput | Prisma.DocumentCommentUpdateManyWithWhereWithoutShareInput[]
-  deleteMany?: Prisma.DocumentCommentScalarWhereInput | Prisma.DocumentCommentScalarWhereInput[]
-}
-
-export type DocumentCommentUncheckedUpdateManyWithoutShareNestedInput = {
-  create?: Prisma.XOR<Prisma.DocumentCommentCreateWithoutShareInput, Prisma.DocumentCommentUncheckedCreateWithoutShareInput> | Prisma.DocumentCommentCreateWithoutShareInput[] | Prisma.DocumentCommentUncheckedCreateWithoutShareInput[]
-  connectOrCreate?: Prisma.DocumentCommentCreateOrConnectWithoutShareInput | Prisma.DocumentCommentCreateOrConnectWithoutShareInput[]
-  upsert?: Prisma.DocumentCommentUpsertWithWhereUniqueWithoutShareInput | Prisma.DocumentCommentUpsertWithWhereUniqueWithoutShareInput[]
-  createMany?: Prisma.DocumentCommentCreateManyShareInputEnvelope
-  set?: Prisma.DocumentCommentWhereUniqueInput | Prisma.DocumentCommentWhereUniqueInput[]
-  disconnect?: Prisma.DocumentCommentWhereUniqueInput | Prisma.DocumentCommentWhereUniqueInput[]
-  delete?: Prisma.DocumentCommentWhereUniqueInput | Prisma.DocumentCommentWhereUniqueInput[]
-  connect?: Prisma.DocumentCommentWhereUniqueInput | Prisma.DocumentCommentWhereUniqueInput[]
-  update?: Prisma.DocumentCommentUpdateWithWhereUniqueWithoutShareInput | Prisma.DocumentCommentUpdateWithWhereUniqueWithoutShareInput[]
-  updateMany?: Prisma.DocumentCommentUpdateManyWithWhereWithoutShareInput | Prisma.DocumentCommentUpdateManyWithWhereWithoutShareInput[]
-  deleteMany?: Prisma.DocumentCommentScalarWhereInput | Prisma.DocumentCommentScalarWhereInput[]
-}
-
 export type DocumentCommentCreateNestedOneWithoutRepliesInput = {
   create?: Prisma.XOR<Prisma.DocumentCommentCreateWithoutRepliesInput, Prisma.DocumentCommentUncheckedCreateWithoutRepliesInput>
   connectOrCreate?: Prisma.DocumentCommentCreateOrConnectWithoutRepliesInput
@@ -1033,14 +967,12 @@ export type DocumentCommentCreateWithoutHiddenByInput = {
   parent?: Prisma.DocumentCommentCreateNestedOneWithoutRepliesInput
   replies?: Prisma.DocumentCommentCreateNestedManyWithoutParentInput
   resolvedBy?: Prisma.UserCreateNestedOneWithoutResolvedCommentsInput
-  share?: Prisma.DocumentShareCreateNestedOneWithoutCommentsInput
   user?: Prisma.UserCreateNestedOneWithoutAuthoredCommentsInput
 }
 
 export type DocumentCommentUncheckedCreateWithoutHiddenByInput = {
   id?: string
   documentId: string
-  shareId?: string | null
   userId?: string | null
   guestName?: string | null
   guestEmail?: string | null
@@ -1091,14 +1023,12 @@ export type DocumentCommentCreateWithoutResolvedByInput = {
   hiddenBy?: Prisma.UserCreateNestedOneWithoutHiddenCommentsInput
   parent?: Prisma.DocumentCommentCreateNestedOneWithoutRepliesInput
   replies?: Prisma.DocumentCommentCreateNestedManyWithoutParentInput
-  share?: Prisma.DocumentShareCreateNestedOneWithoutCommentsInput
   user?: Prisma.UserCreateNestedOneWithoutAuthoredCommentsInput
 }
 
 export type DocumentCommentUncheckedCreateWithoutResolvedByInput = {
   id?: string
   documentId: string
-  shareId?: string | null
   userId?: string | null
   guestName?: string | null
   guestEmail?: string | null
@@ -1150,13 +1080,11 @@ export type DocumentCommentCreateWithoutUserInput = {
   parent?: Prisma.DocumentCommentCreateNestedOneWithoutRepliesInput
   replies?: Prisma.DocumentCommentCreateNestedManyWithoutParentInput
   resolvedBy?: Prisma.UserCreateNestedOneWithoutResolvedCommentsInput
-  share?: Prisma.DocumentShareCreateNestedOneWithoutCommentsInput
 }
 
 export type DocumentCommentUncheckedCreateWithoutUserInput = {
   id?: string
   documentId: string
-  shareId?: string | null
   guestName?: string | null
   guestEmail?: string | null
   content: string
@@ -1209,7 +1137,6 @@ export type DocumentCommentScalarWhereInput = {
   NOT?: Prisma.DocumentCommentScalarWhereInput | Prisma.DocumentCommentScalarWhereInput[]
   id?: Prisma.StringFilter<"DocumentComment"> | string
   documentId?: Prisma.StringFilter<"DocumentComment"> | string
-  shareId?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
   userId?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
   guestName?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
   guestEmail?: Prisma.StringNullableFilter<"DocumentComment"> | string | null
@@ -1282,13 +1209,11 @@ export type DocumentCommentCreateWithoutDocumentInput = {
   parent?: Prisma.DocumentCommentCreateNestedOneWithoutRepliesInput
   replies?: Prisma.DocumentCommentCreateNestedManyWithoutParentInput
   resolvedBy?: Prisma.UserCreateNestedOneWithoutResolvedCommentsInput
-  share?: Prisma.DocumentShareCreateNestedOneWithoutCommentsInput
   user?: Prisma.UserCreateNestedOneWithoutAuthoredCommentsInput
 }
 
 export type DocumentCommentUncheckedCreateWithoutDocumentInput = {
   id?: string
-  shareId?: string | null
   userId?: string | null
   guestName?: string | null
   guestEmail?: string | null
@@ -1336,80 +1261,6 @@ export type DocumentCommentUpdateManyWithWhereWithoutDocumentInput = {
   data: Prisma.XOR<Prisma.DocumentCommentUpdateManyMutationInput, Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentInput>
 }
 
-export type DocumentCommentCreateWithoutShareInput = {
-  id?: string
-  guestName?: string | null
-  guestEmail?: string | null
-  content: string
-  selectionStart?: number | null
-  selectionEnd?: number | null
-  selectedText?: string | null
-  status?: $Enums.DocumentCommentStatus
-  resolvedAt?: Date | string | null
-  hiddenAt?: Date | string | null
-  hiddenReason?: string | null
-  ipAddress?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  document: Prisma.GeneratedDocumentCreateNestedOneWithoutCommentsInput
-  hiddenBy?: Prisma.UserCreateNestedOneWithoutHiddenCommentsInput
-  parent?: Prisma.DocumentCommentCreateNestedOneWithoutRepliesInput
-  replies?: Prisma.DocumentCommentCreateNestedManyWithoutParentInput
-  resolvedBy?: Prisma.UserCreateNestedOneWithoutResolvedCommentsInput
-  user?: Prisma.UserCreateNestedOneWithoutAuthoredCommentsInput
-}
-
-export type DocumentCommentUncheckedCreateWithoutShareInput = {
-  id?: string
-  documentId: string
-  userId?: string | null
-  guestName?: string | null
-  guestEmail?: string | null
-  content: string
-  selectionStart?: number | null
-  selectionEnd?: number | null
-  selectedText?: string | null
-  parentId?: string | null
-  status?: $Enums.DocumentCommentStatus
-  resolvedById?: string | null
-  resolvedAt?: Date | string | null
-  hiddenAt?: Date | string | null
-  hiddenById?: string | null
-  hiddenReason?: string | null
-  ipAddress?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  replies?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutParentInput
-}
-
-export type DocumentCommentCreateOrConnectWithoutShareInput = {
-  where: Prisma.DocumentCommentWhereUniqueInput
-  create: Prisma.XOR<Prisma.DocumentCommentCreateWithoutShareInput, Prisma.DocumentCommentUncheckedCreateWithoutShareInput>
-}
-
-export type DocumentCommentCreateManyShareInputEnvelope = {
-  data: Prisma.DocumentCommentCreateManyShareInput | Prisma.DocumentCommentCreateManyShareInput[]
-  skipDuplicates?: boolean
-}
-
-export type DocumentCommentUpsertWithWhereUniqueWithoutShareInput = {
-  where: Prisma.DocumentCommentWhereUniqueInput
-  update: Prisma.XOR<Prisma.DocumentCommentUpdateWithoutShareInput, Prisma.DocumentCommentUncheckedUpdateWithoutShareInput>
-  create: Prisma.XOR<Prisma.DocumentCommentCreateWithoutShareInput, Prisma.DocumentCommentUncheckedCreateWithoutShareInput>
-}
-
-export type DocumentCommentUpdateWithWhereUniqueWithoutShareInput = {
-  where: Prisma.DocumentCommentWhereUniqueInput
-  data: Prisma.XOR<Prisma.DocumentCommentUpdateWithoutShareInput, Prisma.DocumentCommentUncheckedUpdateWithoutShareInput>
-}
-
-export type DocumentCommentUpdateManyWithWhereWithoutShareInput = {
-  where: Prisma.DocumentCommentScalarWhereInput
-  data: Prisma.XOR<Prisma.DocumentCommentUpdateManyMutationInput, Prisma.DocumentCommentUncheckedUpdateManyWithoutShareInput>
-}
-
 export type DocumentCommentCreateWithoutRepliesInput = {
   id?: string
   guestName?: string | null
@@ -1430,14 +1281,12 @@ export type DocumentCommentCreateWithoutRepliesInput = {
   hiddenBy?: Prisma.UserCreateNestedOneWithoutHiddenCommentsInput
   parent?: Prisma.DocumentCommentCreateNestedOneWithoutRepliesInput
   resolvedBy?: Prisma.UserCreateNestedOneWithoutResolvedCommentsInput
-  share?: Prisma.DocumentShareCreateNestedOneWithoutCommentsInput
   user?: Prisma.UserCreateNestedOneWithoutAuthoredCommentsInput
 }
 
 export type DocumentCommentUncheckedCreateWithoutRepliesInput = {
   id?: string
   documentId: string
-  shareId?: string | null
   userId?: string | null
   guestName?: string | null
   guestEmail?: string | null
@@ -1483,14 +1332,12 @@ export type DocumentCommentCreateWithoutParentInput = {
   hiddenBy?: Prisma.UserCreateNestedOneWithoutHiddenCommentsInput
   replies?: Prisma.DocumentCommentCreateNestedManyWithoutParentInput
   resolvedBy?: Prisma.UserCreateNestedOneWithoutResolvedCommentsInput
-  share?: Prisma.DocumentShareCreateNestedOneWithoutCommentsInput
   user?: Prisma.UserCreateNestedOneWithoutAuthoredCommentsInput
 }
 
 export type DocumentCommentUncheckedCreateWithoutParentInput = {
   id?: string
   documentId: string
-  shareId?: string | null
   userId?: string | null
   guestName?: string | null
   guestEmail?: string | null
@@ -1552,14 +1399,12 @@ export type DocumentCommentUpdateWithoutRepliesInput = {
   hiddenBy?: Prisma.UserUpdateOneWithoutHiddenCommentsNestedInput
   parent?: Prisma.DocumentCommentUpdateOneWithoutRepliesNestedInput
   resolvedBy?: Prisma.UserUpdateOneWithoutResolvedCommentsNestedInput
-  share?: Prisma.DocumentShareUpdateOneWithoutCommentsNestedInput
   user?: Prisma.UserUpdateOneWithoutAuthoredCommentsNestedInput
 }
 
 export type DocumentCommentUncheckedUpdateWithoutRepliesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1599,7 +1444,6 @@ export type DocumentCommentUpdateManyWithWhereWithoutParentInput = {
 export type DocumentCommentCreateManyHiddenByInput = {
   id?: string
   documentId: string
-  shareId?: string | null
   userId?: string | null
   guestName?: string | null
   guestEmail?: string | null
@@ -1622,7 +1466,6 @@ export type DocumentCommentCreateManyHiddenByInput = {
 export type DocumentCommentCreateManyResolvedByInput = {
   id?: string
   documentId: string
-  shareId?: string | null
   userId?: string | null
   guestName?: string | null
   guestEmail?: string | null
@@ -1645,7 +1488,6 @@ export type DocumentCommentCreateManyResolvedByInput = {
 export type DocumentCommentCreateManyUserInput = {
   id?: string
   documentId: string
-  shareId?: string | null
   guestName?: string | null
   guestEmail?: string | null
   content: string
@@ -1685,14 +1527,12 @@ export type DocumentCommentUpdateWithoutHiddenByInput = {
   parent?: Prisma.DocumentCommentUpdateOneWithoutRepliesNestedInput
   replies?: Prisma.DocumentCommentUpdateManyWithoutParentNestedInput
   resolvedBy?: Prisma.UserUpdateOneWithoutResolvedCommentsNestedInput
-  share?: Prisma.DocumentShareUpdateOneWithoutCommentsNestedInput
   user?: Prisma.UserUpdateOneWithoutAuthoredCommentsNestedInput
 }
 
 export type DocumentCommentUncheckedUpdateWithoutHiddenByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1716,7 +1556,6 @@ export type DocumentCommentUncheckedUpdateWithoutHiddenByInput = {
 export type DocumentCommentUncheckedUpdateManyWithoutHiddenByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1756,14 +1595,12 @@ export type DocumentCommentUpdateWithoutResolvedByInput = {
   hiddenBy?: Prisma.UserUpdateOneWithoutHiddenCommentsNestedInput
   parent?: Prisma.DocumentCommentUpdateOneWithoutRepliesNestedInput
   replies?: Prisma.DocumentCommentUpdateManyWithoutParentNestedInput
-  share?: Prisma.DocumentShareUpdateOneWithoutCommentsNestedInput
   user?: Prisma.UserUpdateOneWithoutAuthoredCommentsNestedInput
 }
 
 export type DocumentCommentUncheckedUpdateWithoutResolvedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1787,7 +1624,6 @@ export type DocumentCommentUncheckedUpdateWithoutResolvedByInput = {
 export type DocumentCommentUncheckedUpdateManyWithoutResolvedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1828,13 +1664,11 @@ export type DocumentCommentUpdateWithoutUserInput = {
   parent?: Prisma.DocumentCommentUpdateOneWithoutRepliesNestedInput
   replies?: Prisma.DocumentCommentUpdateManyWithoutParentNestedInput
   resolvedBy?: Prisma.UserUpdateOneWithoutResolvedCommentsNestedInput
-  share?: Prisma.DocumentShareUpdateOneWithoutCommentsNestedInput
 }
 
 export type DocumentCommentUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1858,7 +1692,6 @@ export type DocumentCommentUncheckedUpdateWithoutUserInput = {
 export type DocumentCommentUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1880,7 +1713,6 @@ export type DocumentCommentUncheckedUpdateManyWithoutUserInput = {
 
 export type DocumentCommentCreateManyDocumentInput = {
   id?: string
-  shareId?: string | null
   userId?: string | null
   guestName?: string | null
   guestEmail?: string | null
@@ -1921,13 +1753,11 @@ export type DocumentCommentUpdateWithoutDocumentInput = {
   parent?: Prisma.DocumentCommentUpdateOneWithoutRepliesNestedInput
   replies?: Prisma.DocumentCommentUpdateManyWithoutParentNestedInput
   resolvedBy?: Prisma.UserUpdateOneWithoutResolvedCommentsNestedInput
-  share?: Prisma.DocumentShareUpdateOneWithoutCommentsNestedInput
   user?: Prisma.UserUpdateOneWithoutAuthoredCommentsNestedInput
 }
 
 export type DocumentCommentUncheckedUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1951,101 +1781,6 @@ export type DocumentCommentUncheckedUpdateWithoutDocumentInput = {
 
 export type DocumentCommentUncheckedUpdateManyWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  content?: Prisma.StringFieldUpdateOperationsInput | string
-  selectionStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  selectionEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  selectedText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.EnumDocumentCommentStatusFieldUpdateOperationsInput | $Enums.DocumentCommentStatus
-  resolvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  hiddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  hiddenById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hiddenReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ipAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-}
-
-export type DocumentCommentCreateManyShareInput = {
-  id?: string
-  documentId: string
-  userId?: string | null
-  guestName?: string | null
-  guestEmail?: string | null
-  content: string
-  selectionStart?: number | null
-  selectionEnd?: number | null
-  selectedText?: string | null
-  parentId?: string | null
-  status?: $Enums.DocumentCommentStatus
-  resolvedById?: string | null
-  resolvedAt?: Date | string | null
-  hiddenAt?: Date | string | null
-  hiddenById?: string | null
-  hiddenReason?: string | null
-  ipAddress?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-}
-
-export type DocumentCommentUpdateWithoutShareInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  content?: Prisma.StringFieldUpdateOperationsInput | string
-  selectionStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  selectionEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  selectedText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.EnumDocumentCommentStatusFieldUpdateOperationsInput | $Enums.DocumentCommentStatus
-  resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  hiddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  hiddenReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ipAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  document?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutCommentsNestedInput
-  hiddenBy?: Prisma.UserUpdateOneWithoutHiddenCommentsNestedInput
-  parent?: Prisma.DocumentCommentUpdateOneWithoutRepliesNestedInput
-  replies?: Prisma.DocumentCommentUpdateManyWithoutParentNestedInput
-  resolvedBy?: Prisma.UserUpdateOneWithoutResolvedCommentsNestedInput
-  user?: Prisma.UserUpdateOneWithoutAuthoredCommentsNestedInput
-}
-
-export type DocumentCommentUncheckedUpdateWithoutShareInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  content?: Prisma.StringFieldUpdateOperationsInput | string
-  selectionStart?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  selectionEnd?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  selectedText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  parentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.EnumDocumentCommentStatusFieldUpdateOperationsInput | $Enums.DocumentCommentStatus
-  resolvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resolvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  hiddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  hiddenById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hiddenReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ipAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  replies?: Prisma.DocumentCommentUncheckedUpdateManyWithoutParentNestedInput
-}
-
-export type DocumentCommentUncheckedUpdateManyWithoutShareInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  documentId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2069,7 +1804,6 @@ export type DocumentCommentUncheckedUpdateManyWithoutShareInput = {
 export type DocumentCommentCreateManyParentInput = {
   id?: string
   documentId: string
-  shareId?: string | null
   userId?: string | null
   guestName?: string | null
   guestEmail?: string | null
@@ -2109,14 +1843,12 @@ export type DocumentCommentUpdateWithoutParentInput = {
   hiddenBy?: Prisma.UserUpdateOneWithoutHiddenCommentsNestedInput
   replies?: Prisma.DocumentCommentUpdateManyWithoutParentNestedInput
   resolvedBy?: Prisma.UserUpdateOneWithoutResolvedCommentsNestedInput
-  share?: Prisma.DocumentShareUpdateOneWithoutCommentsNestedInput
   user?: Prisma.UserUpdateOneWithoutAuthoredCommentsNestedInput
 }
 
 export type DocumentCommentUncheckedUpdateWithoutParentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2140,7 +1872,6 @@ export type DocumentCommentUncheckedUpdateWithoutParentInput = {
 export type DocumentCommentUncheckedUpdateManyWithoutParentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
-  shareId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2194,7 +1925,6 @@ export type DocumentCommentCountOutputTypeCountRepliesArgs<ExtArgs extends runti
 export type DocumentCommentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   documentId?: boolean
-  shareId?: boolean
   userId?: boolean
   guestName?: boolean
   guestEmail?: boolean
@@ -2218,7 +1948,6 @@ export type DocumentCommentSelect<ExtArgs extends runtime.Types.Extensions.Inter
   parent?: boolean | Prisma.DocumentComment$parentArgs<ExtArgs>
   replies?: boolean | Prisma.DocumentComment$repliesArgs<ExtArgs>
   resolvedBy?: boolean | Prisma.DocumentComment$resolvedByArgs<ExtArgs>
-  share?: boolean | Prisma.DocumentComment$shareArgs<ExtArgs>
   user?: boolean | Prisma.DocumentComment$userArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentCommentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["documentComment"]>
@@ -2226,7 +1955,6 @@ export type DocumentCommentSelect<ExtArgs extends runtime.Types.Extensions.Inter
 export type DocumentCommentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   documentId?: boolean
-  shareId?: boolean
   userId?: boolean
   guestName?: boolean
   guestEmail?: boolean
@@ -2249,14 +1977,12 @@ export type DocumentCommentSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   hiddenBy?: boolean | Prisma.DocumentComment$hiddenByArgs<ExtArgs>
   parent?: boolean | Prisma.DocumentComment$parentArgs<ExtArgs>
   resolvedBy?: boolean | Prisma.DocumentComment$resolvedByArgs<ExtArgs>
-  share?: boolean | Prisma.DocumentComment$shareArgs<ExtArgs>
   user?: boolean | Prisma.DocumentComment$userArgs<ExtArgs>
 }, ExtArgs["result"]["documentComment"]>
 
 export type DocumentCommentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   documentId?: boolean
-  shareId?: boolean
   userId?: boolean
   guestName?: boolean
   guestEmail?: boolean
@@ -2279,14 +2005,12 @@ export type DocumentCommentSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   hiddenBy?: boolean | Prisma.DocumentComment$hiddenByArgs<ExtArgs>
   parent?: boolean | Prisma.DocumentComment$parentArgs<ExtArgs>
   resolvedBy?: boolean | Prisma.DocumentComment$resolvedByArgs<ExtArgs>
-  share?: boolean | Prisma.DocumentComment$shareArgs<ExtArgs>
   user?: boolean | Prisma.DocumentComment$userArgs<ExtArgs>
 }, ExtArgs["result"]["documentComment"]>
 
 export type DocumentCommentSelectScalar = {
   id?: boolean
   documentId?: boolean
-  shareId?: boolean
   userId?: boolean
   guestName?: boolean
   guestEmail?: boolean
@@ -2307,14 +2031,13 @@ export type DocumentCommentSelectScalar = {
   deletedAt?: boolean
 }
 
-export type DocumentCommentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "shareId" | "userId" | "guestName" | "guestEmail" | "content" | "selectionStart" | "selectionEnd" | "selectedText" | "parentId" | "status" | "resolvedById" | "resolvedAt" | "hiddenAt" | "hiddenById" | "hiddenReason" | "ipAddress" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["documentComment"]>
+export type DocumentCommentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "userId" | "guestName" | "guestEmail" | "content" | "selectionStart" | "selectionEnd" | "selectedText" | "parentId" | "status" | "resolvedById" | "resolvedAt" | "hiddenAt" | "hiddenById" | "hiddenReason" | "ipAddress" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["documentComment"]>
 export type DocumentCommentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   document?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   hiddenBy?: boolean | Prisma.DocumentComment$hiddenByArgs<ExtArgs>
   parent?: boolean | Prisma.DocumentComment$parentArgs<ExtArgs>
   replies?: boolean | Prisma.DocumentComment$repliesArgs<ExtArgs>
   resolvedBy?: boolean | Prisma.DocumentComment$resolvedByArgs<ExtArgs>
-  share?: boolean | Prisma.DocumentComment$shareArgs<ExtArgs>
   user?: boolean | Prisma.DocumentComment$userArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentCommentCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -2323,7 +2046,6 @@ export type DocumentCommentIncludeCreateManyAndReturn<ExtArgs extends runtime.Ty
   hiddenBy?: boolean | Prisma.DocumentComment$hiddenByArgs<ExtArgs>
   parent?: boolean | Prisma.DocumentComment$parentArgs<ExtArgs>
   resolvedBy?: boolean | Prisma.DocumentComment$resolvedByArgs<ExtArgs>
-  share?: boolean | Prisma.DocumentComment$shareArgs<ExtArgs>
   user?: boolean | Prisma.DocumentComment$userArgs<ExtArgs>
 }
 export type DocumentCommentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2331,7 +2053,6 @@ export type DocumentCommentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Ty
   hiddenBy?: boolean | Prisma.DocumentComment$hiddenByArgs<ExtArgs>
   parent?: boolean | Prisma.DocumentComment$parentArgs<ExtArgs>
   resolvedBy?: boolean | Prisma.DocumentComment$resolvedByArgs<ExtArgs>
-  share?: boolean | Prisma.DocumentComment$shareArgs<ExtArgs>
   user?: boolean | Prisma.DocumentComment$userArgs<ExtArgs>
 }
 
@@ -2343,13 +2064,11 @@ export type $DocumentCommentPayload<ExtArgs extends runtime.Types.Extensions.Int
     parent: Prisma.$DocumentCommentPayload<ExtArgs> | null
     replies: Prisma.$DocumentCommentPayload<ExtArgs>[]
     resolvedBy: Prisma.$UserPayload<ExtArgs> | null
-    share: Prisma.$DocumentSharePayload<ExtArgs> | null
     user: Prisma.$UserPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     documentId: string
-    shareId: string | null
     userId: string | null
     guestName: string | null
     guestEmail: string | null
@@ -2767,7 +2486,6 @@ export interface Prisma__DocumentCommentClient<T, Null = never, ExtArgs extends 
   parent<T extends Prisma.DocumentComment$parentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentComment$parentArgs<ExtArgs>>): Prisma.Prisma__DocumentCommentClient<runtime.Types.Result.GetResult<Prisma.$DocumentCommentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   replies<T extends Prisma.DocumentComment$repliesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentComment$repliesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentCommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   resolvedBy<T extends Prisma.DocumentComment$resolvedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentComment$resolvedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  share<T extends Prisma.DocumentComment$shareArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentComment$shareArgs<ExtArgs>>): Prisma.Prisma__DocumentShareClient<runtime.Types.Result.GetResult<Prisma.$DocumentSharePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.DocumentComment$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DocumentComment$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2800,7 +2518,6 @@ export interface Prisma__DocumentCommentClient<T, Null = never, ExtArgs extends 
 export interface DocumentCommentFieldRefs {
   readonly id: Prisma.FieldRef<"DocumentComment", 'String'>
   readonly documentId: Prisma.FieldRef<"DocumentComment", 'String'>
-  readonly shareId: Prisma.FieldRef<"DocumentComment", 'String'>
   readonly userId: Prisma.FieldRef<"DocumentComment", 'String'>
   readonly guestName: Prisma.FieldRef<"DocumentComment", 'String'>
   readonly guestEmail: Prisma.FieldRef<"DocumentComment", 'String'>
@@ -3293,25 +3010,6 @@ export type DocumentComment$resolvedByArgs<ExtArgs extends runtime.Types.Extensi
    */
   include?: Prisma.UserInclude<ExtArgs> | null
   where?: Prisma.UserWhereInput
-}
-
-/**
- * DocumentComment.share
- */
-export type DocumentComment$shareArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentShare
-   */
-  select?: Prisma.DocumentShareSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DocumentShare
-   */
-  omit?: Prisma.DocumentShareOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentShareInclude<ExtArgs> | null
-  where?: Prisma.DocumentShareWhereInput
 }
 
 /**

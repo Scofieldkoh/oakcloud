@@ -10,10 +10,10 @@ export default function NotFound() {
           The page you are looking for does not exist.
         </p>
         <Link
-          href="/"
+          href="/companies"
           className="btn-primary btn-sm inline-flex"
         >
-          Go Home
+          Companies
         </Link>
       </div>
     </div>

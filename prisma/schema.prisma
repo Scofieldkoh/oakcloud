@@ -153,7 +153,6 @@ model User {
   resolvedComments                                                                               DocumentComment[]                    @relation("CommentResolver")
   authoredComments                                                                               DocumentComment[]                    @relation("CommentAuthor")
   documentDrafts                                                                                 DocumentDraft[]                      @relation("DraftAuthor")
-  createdShares                                                                                  DocumentShare[]                      @relation("ShareCreator")
   createdTemplates                                                                               DocumentTemplate[]                   @relation("TemplateCreator")
   uploadedDocuments                                                                              Document[]
   createdDocuments                                                                               GeneratedDocument[]                  @relation("DocumentCreator")
@@ -666,7 +665,7 @@ model AuditLog {
 
 model Connector {
   id             String                  @id @default(uuid())
-  tenantId       String?
+  workspaceId    String?
   name           String
   type           ConnectorType
   provider       ConnectorProvider
@@ -683,11 +682,11 @@ model Connector {
   deletedAt      DateTime?
   modelConfigs   ConnectorModelConfig[]
   usageLogs      ConnectorUsageLog[]
-  tenant         Workspace?              @relation(fields: [tenantId], references: [id])
-  tenantAccess   WorkspaceConnectorAccess[]
+  workspace      Workspace?              @relation(fields: [workspaceId], references: [id])
+  workspaceAccess WorkspaceConnectorAccess[]
 
-  @@unique([tenantId, provider, deletedAt])
-  @@index([tenantId])
+  @@unique([workspaceId, provider, deletedAt])
+  @@index([workspaceId])
   @@index([type])
   @@index([provider])
   @@index([isEnabled])
@@ -697,24 +696,24 @@ model Connector {
 
 model WorkspaceConnectorAccess {
   id          String    @id @default(uuid())
-  tenantId    String
+  workspaceId String
   connectorId String
   isEnabled   Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   connector   Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
-  tenant      Workspace @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  @@unique([tenantId, connectorId])
-  @@index([tenantId])
+  @@unique([workspaceId, connectorId])
+  @@index([workspaceId])
   @@index([connectorId])
-  @@map("tenant_connector_access")
+  @@map("workspace_connector_access")
 }
 
 model ConnectorUsageLog {
   id           String    @id @default(uuid())
   connectorId  String
-  tenantId     String?
+  workspaceId  String?
   userId       String?
   model        String
   provider     String
@@ -729,15 +728,15 @@ model ConnectorUsageLog {
   metadata     Json?
   createdAt    DateTime  @default(now())
   connector    Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
-  tenant       Workspace? @relation(fields: [tenantId], references: [id])
+  workspace    Workspace? @relation(fields: [workspaceId], references: [id])
   user         User?     @relation(fields: [userId], references: [id])
 
   @@index([connectorId])
-  @@index([tenantId])
+  @@index([workspaceId])
   @@index([userId])
   @@index([createdAt])
   @@index([connectorId, createdAt])
-  @@index([tenantId, createdAt])
+  @@index([workspaceId, createdAt])
   @@map("connector_usage_logs")
 }
 
@@ -783,7 +782,6 @@ model DocumentTemplate {
   contentJson             Json?                    @map("content_json")
   placeholders            Json                     @default("[]")
   isActive                Boolean                  @default(true) @map("is_active")
-  defaultShareExpiryHours Int?                     @map("default_share_expiry_hours")
   version                 Int                      @default(1)
   createdById             String                   @map("created_by_id")
   createdAt               DateTime                 @default(now()) @map("created_at")
@@ -814,7 +812,6 @@ model GeneratedDocument {
   finalizedById      String?                 @map("finalized_by_id")
   unfinalizedAt      DateTime?               @map("unfinalized_at")
   useLetterhead      Boolean                 @default(true) @map("use_letterhead")
-  shareExpiryHours   Int?                    @map("share_expiry_hours")
   placeholderData    Json?                   @map("placeholder_data")
   metadata           Json?
   createdById        String                  @map("created_by_id")
@@ -824,7 +821,6 @@ model GeneratedDocument {
   comments           DocumentComment[]
   drafts             DocumentDraft[]
   sections           DocumentSection[]
-  shares             DocumentShare[]
   company            Company?                @relation(fields: [companyId], references: [id])
   createdBy          User                    @relation("DocumentCreator", fields: [createdById], references: [id])
   finalizedBy        User?                   @relation("DocumentFinalizer", fields: [finalizedById], references: [id])
@@ -857,35 +853,6 @@ model DocumentSection {
   @@map("document_sections")
 }
 
-model DocumentShare {
-  id                 String               @id @default(uuid())
-  documentId         String               @map("document_id")
-  shareToken         String               @unique @map("share_token") @db.VarChar(64)
-  expiresAt          DateTime?            @map("expires_at")
-  passwordHash       String?              @map("password_hash") @db.VarChar(255)
-  isActive           Boolean              @default(true) @map("is_active")
-  viewCount          Int                  @default(0) @map("view_count")
-  lastViewedAt       DateTime?            @map("last_viewed_at")
-  allowedActions     String[]             @default(["view"]) @map("allowed_actions")
-  allowComments      Boolean              @default(false) @map("allow_comments")
-  commentRateLimit   Int                  @default(20) @map("comment_rate_limit")
-  notifyOnComment    Boolean              @default(false) @map("notify_on_comment")
-  notifyOnView       Boolean              @default(false) @map("notify_on_view")
-  createdById        String               @map("created_by_id")
-  createdAt          DateTime             @default(now()) @map("created_at")
-  revokedAt          DateTime?            @map("revoked_at")
-  comments           DocumentComment[]
-  createdBy          User                 @relation("ShareCreator", fields: [createdById], references: [id])
-  document           GeneratedDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  workflow_artifacts workflow_artifacts[]
-
-  @@index([documentId])
-  @@index([expiresAt])
-  @@index([shareToken])
-  @@index([shareToken, isActive])
-  @@map("document_shares")
-}
-
 model WorkspaceLetterhead {
   id             String   @id @default(uuid())
   tenantId       String   @unique @map("tenant_id")
@@ -906,7 +873,6 @@ model WorkspaceLetterhead {
 model DocumentComment {
   id             String                @id @default(uuid())
   documentId     String                @map("document_id")
-  shareId        String?               @map("share_id")
   userId         String?               @map("user_id")
   guestName      String?               @map("guest_name") @db.VarChar(100)
   guestEmail     String?               @map("guest_email") @db.VarChar(255)
@@ -930,11 +896,9 @@ model DocumentComment {
   parent         DocumentComment?      @relation("CommentReplies", fields: [parentId], references: [id])
   replies        DocumentComment[]     @relation("CommentReplies")
   resolvedBy     User?                 @relation("CommentResolver", fields: [resolvedById], references: [id])
-  share          DocumentShare?        @relation(fields: [shareId], references: [id])
   user           User?                 @relation("CommentAuthor", fields: [userId], references: [id])
 
   @@index([documentId])
-  @@index([shareId])
   @@index([userId])
   @@index([parentId])
   @@index([status])
@@ -2141,10 +2105,8 @@ model workflow_artifacts {
   source_document_id            String?
   source_processing_document_id String?
   source_generated_document_id  String?
-  source_document_share_id      String?
   workflow_milestones           workflow_milestones?       @relation(fields: [milestone_id], references: [id])
   documents                     Document?                  @relation(fields: [source_document_id], references: [id])
-  document_shares               DocumentShare?             @relation(fields: [source_document_share_id], references: [id])
   generated_documents           GeneratedDocument?         @relation(fields: [source_generated_document_id], references: [id])
   processing_documents          ProcessingDocument?        @relation(fields: [source_processing_document_id], references: [id])
   workflow_task_items           workflow_task_items?       @relation(fields: [task_item_id], references: [id])
@@ -2152,7 +2114,6 @@ model workflow_artifacts {
   workflow_instances            workflow_instances         @relation(fields: [workflow_instance_id], references: [id], onDelete: Cascade)
 
   @@index([source_document_id])
-  @@index([source_document_share_id])
   @@index([source_generated_document_id])
   @@index([source_processing_document_id])
   @@index([source_type])
@@ -3328,7 +3289,6 @@ enum WorkflowArtifactSourceType {
   DOCUMENT
   PROCESSING_DOCUMENT
   GENERATED_DOCUMENT
-  DOCUMENT_SHARE
 }
 
 enum WorkflowArtifactType {

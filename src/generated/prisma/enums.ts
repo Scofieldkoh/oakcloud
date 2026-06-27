@@ -840,8 +840,7 @@ export const WorkflowArtifactSourceType = {
   INLINE: 'INLINE',
   DOCUMENT: 'DOCUMENT',
   PROCESSING_DOCUMENT: 'PROCESSING_DOCUMENT',
-  GENERATED_DOCUMENT: 'GENERATED_DOCUMENT',
-  DOCUMENT_SHARE: 'DOCUMENT_SHARE'
+  GENERATED_DOCUMENT: 'GENERATED_DOCUMENT'
 } as const
 
 export type WorkflowArtifactSourceType = (typeof WorkflowArtifactSourceType)[keyof typeof WorkflowArtifactSourceType]

@@ -228,9 +228,17 @@ function buildMistralPrompt(additionalContext?: string): string {
   return `${EXTRACTION_SYSTEM_PROMPT}\n\n${buildUserPrompt(additionalContext)}`;
 }
 
+function getStaticModelConfig(modelId: string) {
+  try {
+    return getModelConfig(modelId as AIModel);
+  } catch {
+    return null;
+  }
+}
+
 async function resolveBizFileModel(
   options?: BizFileExtractionOptions
-): Promise<AIModel | null> {
+): Promise<AIModel | string | null> {
   if (options?.tenantId !== undefined) {
     return options.modelId || (await getBestAvailableModelForWorkspace(options.tenantId));
   }
@@ -315,9 +323,11 @@ export async function extractBizFileWithVision(
     throw new Error(NO_AI_PROVIDER_ERROR);
   }
 
-  const modelConfig = getModelConfig(modelId);
+  const staticModelConfig = getStaticModelConfig(modelId);
+  const modelName = staticModelConfig?.name || modelId;
+  const modelProvider = staticModelConfig?.provider || 'connector';
 
-  log.info(`Using AI vision model: ${modelConfig.name} (${modelConfig.provider})`);
+  log.info(`Using AI vision model: ${modelName} (${modelProvider})`);
   log.info(`File type: ${fileInput.mimeType}, size: ${Math.round(fileInput.base64.length * 0.75 / 1024)}KB`);
   if (options?.tenantId !== undefined) {
     log.info(`Using connector-aware AI for tenant: ${options.tenantId || 'system'}`);
@@ -372,7 +382,7 @@ export async function extractBizFileWithVision(
   return {
     data: parsed,
     modelUsed: modelId,
-    providerUsed: modelConfig.provider,
+    providerUsed: response.provider,
     usage: response.usage,
   };
 }
@@ -403,9 +413,11 @@ export async function extractBizFileData(
     throw new Error(NO_AI_PROVIDER_ERROR);
   }
 
-  const modelConfig = getModelConfig(modelId);
+  const staticModelConfig = getStaticModelConfig(modelId);
+  const modelName = staticModelConfig?.name || modelId;
+  const modelProvider = staticModelConfig?.provider || 'connector';
 
-  log.info(`Using AI model (text mode): ${modelConfig.name} (${modelConfig.provider})`);
+  log.info(`Using AI model (text mode): ${modelName} (${modelProvider})`);
 
   // Build user prompt with optional context
   const basePrompt = buildUserPrompt(options?.additionalContext);
@@ -447,7 +459,7 @@ export async function extractBizFileData(
   return {
     data: parsed,
     modelUsed: modelId,
-    providerUsed: modelConfig.provider,
+    providerUsed: response.provider,
     usage: response.usage,
   };
 }

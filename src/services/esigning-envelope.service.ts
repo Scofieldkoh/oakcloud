@@ -7,7 +7,11 @@ import { createLogger } from '@/lib/logger';
 import { hashBlake3, hashPassword } from '@/lib/encryption';
 import { createAuditLog } from '@/lib/audit';
 import { storage, StorageKeys } from '@/lib/storage';
-import { ALLOWED_FILE_TYPES, validateFileContent } from '@/lib/file-validation';
+import {
+  convertOfficeDocumentToPdf,
+  detectOfficeDocumentType,
+  getPdfFileNameForUpload,
+} from '@/lib/office-conversion';
 import {
   createEsigningAccessLinkToken,
   buildEsigningSigningUrl,
@@ -1257,18 +1261,30 @@ export async function uploadEsigningEnvelopeDocument(
     throw new Error('File exceeds the maximum allowed size');
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const validation = validateFileContent(buffer, ALLOWED_FILE_TYPES.DOCUMENT, file.type);
-  if (!validation.valid) {
-    throw new Error(validation.error || 'Only PDF files are supported');
+  const uploadedBuffer = Buffer.from(await file.arrayBuffer());
+  const documentType = detectOfficeDocumentType(uploadedBuffer, file.name, file.type);
+  if (!documentType) {
+    throw new Error('Only PDF and Word documents (.pdf, .docx, .doc) are supported');
   }
+
+  const pdfBuffer =
+    documentType === 'pdf'
+      ? uploadedBuffer
+      : await convertOfficeDocumentToPdf({
+          buffer: uploadedBuffer,
+          fileName: file.name,
+          clientMimeType: file.type,
+        });
+  const storedFileName = documentType === 'pdf' ? file.name : getPdfFileNameForUpload(file.name);
 
   let pdfDoc: PDFDocument;
   try {
-    pdfDoc = await PDFDocument.load(buffer);
+    pdfDoc = await PDFDocument.load(pdfBuffer);
   } catch (error) {
     throw new Error(
-      `Unable to parse the PDF${error instanceof Error && error.message ? `: ${error.message}` : ''}`
+      `Unable to parse the PDF${documentType === 'pdf' ? '' : ' generated from the Word document'}${
+        error instanceof Error && error.message ? `: ${error.message}` : ''
+      }`
     );
   }
 
@@ -1288,13 +1304,15 @@ export async function uploadEsigningEnvelopeDocument(
   const storagePath = StorageKeys.esigningOriginalDocument(tenantId, envelopeId, documentId, '.pdf');
   const sortOrder = envelope.documents.length;
 
-  await storage.upload(storagePath, buffer, {
+  await storage.upload(storagePath, pdfBuffer, {
     contentType: 'application/pdf',
     metadata: {
       tenantId,
       envelopeId,
       documentId,
       originalFileName: file.name,
+      originalContentType: file.type,
+      sourceFormat: documentType,
     },
   });
 
@@ -1303,12 +1321,12 @@ export async function uploadEsigningEnvelopeDocument(
       id: documentId,
       tenantId,
       envelopeId,
-      fileName: file.name,
+      fileName: storedFileName,
       storagePath,
-      originalHash: hashBlake3(buffer),
+      originalHash: hashBlake3(pdfBuffer),
       pageCount,
       sortOrder,
-      fileSize: file.size,
+      fileSize: pdfBuffer.length,
     },
   });
 
@@ -1324,7 +1342,11 @@ export async function uploadEsigningEnvelopeDocument(
     metadata: {
       documentId,
       pageCount,
-      fileSize: file.size,
+      fileSize: pdfBuffer.length,
+      originalFileSize: file.size,
+      originalFileName: file.name,
+      sourceFormat: documentType,
+      convertedToPdf: documentType !== 'pdf',
     },
   });
 

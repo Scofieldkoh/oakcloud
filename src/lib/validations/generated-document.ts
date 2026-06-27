@@ -16,7 +16,6 @@ export const createDocumentFromTemplateSchema = z.object({
   title: z.string().min(1, 'Title is required').max(300),
   customData: z.record(z.unknown()).optional(), // Custom placeholder values
   useLetterhead: z.boolean().default(true),
-  shareExpiryHours: z.number().int().min(1).max(8760).optional().nullable(),
 });
 
 export type CreateDocumentFromTemplateInput = z.infer<typeof createDocumentFromTemplateSchema>;
@@ -31,7 +30,6 @@ export const createBlankDocumentSchema = z.object({
   content: z.string().optional().default(''),
   contentJson: z.any().optional().nullable(),
   useLetterhead: z.boolean().default(true),
-  shareExpiryHours: z.number().int().min(1).max(8760).optional().nullable(),
 });
 
 export type CreateBlankDocumentInput = z.infer<typeof createBlankDocumentSchema>;
@@ -46,7 +44,6 @@ export const updateGeneratedDocumentSchema = z.object({
   content: z.string().optional(),
   contentJson: z.any().optional().nullable(),
   useLetterhead: z.boolean().optional(),
-  shareExpiryHours: z.number().int().min(1).max(8760).optional().nullable(),
   metadata: z.record(z.unknown()).optional().nullable(),
 });
 
@@ -82,29 +79,11 @@ export const cloneDocumentSchema = z.object({
 export type CloneDocumentInput = z.infer<typeof cloneDocumentSchema>;
 
 // ============================================================================
-// Document Share
-// ============================================================================
-
-export const createDocumentShareSchema = z.object({
-  documentId: z.string().uuid(),
-  expiresAt: z.string().datetime().optional().nullable(),
-  password: z.string().min(4).max(100).optional().nullable(),
-  allowedActions: z.array(z.enum(['view', 'download', 'print'])).default(['view']),
-  allowComments: z.boolean().default(false),
-  commentRateLimit: z.number().int().min(1).max(100).default(20),
-  notifyOnComment: z.boolean().default(false),
-  notifyOnView: z.boolean().default(false),
-});
-
-export type CreateDocumentShareInput = z.infer<typeof createDocumentShareSchema>;
-
-// ============================================================================
 // Document Comment
 // ============================================================================
 
 export const createDocumentCommentSchema = z.object({
   documentId: z.string().uuid(),
-  shareId: z.string().uuid().optional().nullable(), // For external comments
   content: z.string().min(1).max(1000),
   guestName: z.string().min(1).max(100).optional().nullable(),
   guestEmail: z.string().email().max(255).optional().nullable(),

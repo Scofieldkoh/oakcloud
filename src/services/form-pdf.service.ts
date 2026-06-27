@@ -21,6 +21,7 @@ import { extractSignatureDataUrl, isSignatureDataUrl } from '@/lib/signature-uti
 import { prisma } from '@/lib/prisma';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
 import { StorageKeys } from '@/lib/storage';
+import { normalizeWorkspaceLogoUrl } from '@/lib/workspace-logo-url';
 import {
   escapeHtml,
   getTenantTimeZone,
@@ -902,7 +903,7 @@ export async function exportFormResponsePdf(
     fields: form.fields,
     answers,
     uploads,
-    tenantLogoUrl: form.tenant?.logoUrl ?? null,
+    tenantLogoUrl: normalizeWorkspaceLogoUrl(form.tenant?.logoUrl),
     tenantName: form.tenant?.name ?? null,
     formSettings: form.settings,
     timeZone: tenantTimeZone,
@@ -987,7 +988,7 @@ export async function exportPublicFormResponsePdf(
     fields: form.fields,
     answers,
     uploads,
-    tenantLogoUrl: form.tenant?.logoUrl ?? null,
+    tenantLogoUrl: normalizeWorkspaceLogoUrl(form.tenant?.logoUrl),
     tenantName: form.tenant?.name ?? null,
     formSettings: form.settings,
     timeZone: tenantTimeZone,

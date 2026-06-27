@@ -1,73 +1,88 @@
 /**
  * Connector Model Configs API
  *
- * GET /api/connectors/[id]/models - List model configs for a connector
- * PUT /api/connectors/[id]/models - Toggle a model's enabled state
+ * Models are user-managed per connector. The registry models are only seed data:
+ * once settings.models exists, that list is the source of truth.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { AI_MODELS } from '@/lib/ai/models';
+import {
+  getSettingsObject,
+  normalizeModel,
+  persistModels,
+  readEditableModels,
+  toResponseModel,
+} from '@/lib/ai/connector-model-settings';
+import { Prisma } from '@/generated/prisma';
 import { z } from 'zod';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+const MODEL_DEFAULT_GROUPS = ['general', 'ocr', 'research'] as const;
+
+const modelSchema = z.object({
+  modelId: z.string().trim().min(1),
+  name: z.string().trim().min(1).optional(),
+  description: z.string().trim().optional(),
+  providerModelId: z.string().trim().optional(),
+  isEnabled: z.boolean().optional(),
+  supportsJson: z.boolean().optional(),
+  supportsVision: z.boolean().optional(),
+  supportsTemperature: z.boolean().optional(),
+  supportsJsonResponseFormat: z.boolean().optional(),
+  supportsPdfInput: z.boolean().optional(),
+  documentInputMode: z.enum(['auto', 'pdf', 'image']).optional(),
+});
+
+const toggleModelSchema = z.object({
+  modelId: z.string().trim().min(1),
+  isEnabled: z.boolean(),
+});
+
+async function getAuthorizedConnector(id: string) {
+  const session = await requireAuth();
+
+  if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
+    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+  }
+
+  const connector = await prisma.connector.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+      ...(session.isSuperAdmin ? {} : { workspaceId: session.tenantId }),
+    },
+  });
+
+  if (!connector) {
+    return { error: NextResponse.json({ error: 'Connector not found' }, { status: 404 }) };
+  }
+
+  if (!session.isSuperAdmin && !connector.workspaceId) {
+    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+  }
+
+  return { connector, session };
+}
+
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await requireAuth();
     const { id } = await params;
+    const authorized = await getAuthorizedConnector(id);
+    if (authorized.error) return authorized.error;
+    const { connector } = authorized;
 
-    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Verify connector exists and is accessible
-    const connector = await prisma.connector.findFirst({
-      where: {
-        id,
-        deletedAt: null,
-        ...(session.isSuperAdmin ? {} : { tenantId: session.tenantId }),
-      },
-    });
-
-    if (!connector) {
-      return NextResponse.json({ error: 'Connector not found' }, { status: 404 });
-    }
-
-    // TENANT_ADMINs cannot access system connectors
-    if (!session.isSuperAdmin && !connector.tenantId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Get all models for this provider from the registry
-    const registryModels = Object.values(AI_MODELS).filter(
-      (m) => m.provider === connector.provider.toLowerCase()
-    );
-
-    if (registryModels.length === 0) {
-      return NextResponse.json([]);
-    }
-
-    // Get existing overrides from DB
-    const overrides = await prisma.connectorModelConfig.findMany({
+    const overrides = (await prisma.connectorModelConfig.findMany({
       where: { connectorId: id },
-    });
+      select: { modelId: true, isEnabled: true },
+    })) ?? [];
+    const models = readEditableModels(connector, overrides);
 
-    const overrideMap = new Map(overrides.map((o) => [o.modelId, o.isEnabled]));
-
-    const models = registryModels.map((m) => ({
-      modelId: m.id,
-      name: m.name,
-      description: m.description,
-      providerModelId: m.providerModelId,
-      isEnabled: overrideMap.has(m.id) ? overrideMap.get(m.id)! : true,
-      hasOverride: overrideMap.has(m.id),
-    }));
-
-    return NextResponse.json(models);
+    return NextResponse.json(models.map(toResponseModel));
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {
@@ -79,62 +94,150 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   }
 }
 
-const toggleModelSchema = z.object({
-  modelId: z.string().min(1),
-  isEnabled: z.boolean(),
-});
+export async function POST(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params;
+    const authorized = await getAuthorizedConnector(id);
+    if (authorized.error) return authorized.error;
+    const { connector } = authorized;
+
+    const parsed = modelSchema.parse(await request.json());
+    const overrides = (await prisma.connectorModelConfig.findMany({
+      where: { connectorId: id },
+      select: { modelId: true, isEnabled: true },
+    })) ?? [];
+    const models = readEditableModels(connector, overrides);
+    const existingModel = models.find((model) => model.modelId === parsed.modelId);
+    const nextModel = normalizeModel({
+      ...existingModel,
+      modelId: parsed.modelId,
+      name: parsed.name ?? existingModel?.name,
+      description: parsed.description ?? existingModel?.description,
+      providerModelId: parsed.providerModelId ?? existingModel?.providerModelId,
+      isEnabled: parsed.isEnabled ?? existingModel?.isEnabled ?? true,
+      supportsJson: parsed.supportsJson ?? existingModel?.supportsJson,
+      supportsVision: parsed.supportsVision ?? existingModel?.supportsVision,
+      supportsTemperature: parsed.supportsTemperature ?? existingModel?.supportsTemperature,
+      supportsJsonResponseFormat:
+        parsed.supportsJsonResponseFormat ?? existingModel?.supportsJsonResponseFormat,
+      supportsPdfInput: parsed.supportsPdfInput ?? existingModel?.supportsPdfInput,
+      documentInputMode: parsed.documentInputMode ?? existingModel?.documentInputMode,
+    });
+    const nextModels = [
+      ...models.filter((model) => model.modelId !== nextModel.modelId),
+      nextModel,
+    ];
+
+    await persistModels(connector, nextModels);
+    await prisma.connectorModelConfig.deleteMany({
+      where: { connectorId: id, modelId: nextModel.modelId },
+    });
+
+    return NextResponse.json(toResponseModel(nextModel));
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Unauthorized') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await requireAuth();
     const { id } = await params;
+    const authorized = await getAuthorizedConnector(id);
+    if (authorized.error) return authorized.error;
+    const { connector } = authorized;
 
-    if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const { modelId, isEnabled } = toggleModelSchema.parse(await request.json());
+    const overrides = (await prisma.connectorModelConfig.findMany({
+      where: { connectorId: id },
+      select: { modelId: true, isEnabled: true },
+    })) ?? [];
+    const models = readEditableModels(connector, overrides);
+    const model = models.find((item) => item.modelId === modelId);
+    if (!model) {
+      return NextResponse.json({ error: 'Model not found for this connector' }, { status: 404 });
     }
 
-    // Verify connector exists and is accessible
-    const connector = await prisma.connector.findFirst({
-      where: {
-        id,
-        deletedAt: null,
-        ...(session.isSuperAdmin ? {} : { tenantId: session.tenantId }),
-      },
+    const nextModel = normalizeModel({ ...model, isEnabled });
+    const nextModels = models.map((item) => (item.modelId === modelId ? nextModel : item));
+
+    await persistModels(connector, nextModels);
+    await prisma.connectorModelConfig.deleteMany({
+      where: { connectorId: id, modelId },
     });
 
-    if (!connector) {
-      return NextResponse.json({ error: 'Connector not found' }, { status: 404 });
+    return NextResponse.json(toResponseModel(nextModel));
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Unauthorized') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params;
+    const authorized = await getAuthorizedConnector(id);
+    if (authorized.error) return authorized.error;
+    const { connector } = authorized;
+
+    const modelId = new URL(request.url).searchParams.get('modelId')?.trim();
+    if (!modelId) {
+      return NextResponse.json({ error: 'modelId is required' }, { status: 400 });
     }
 
-    // TENANT_ADMINs cannot access system connectors
-    if (!session.isSuperAdmin && !connector.tenantId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const overrides = await prisma.connectorModelConfig.findMany({
+      where: { connectorId: id },
+      select: { modelId: true, isEnabled: true },
+    });
+    const models = readEditableModels(connector, overrides);
+    if (!models.some((model) => model.modelId === modelId)) {
+      return NextResponse.json({ error: 'Model not found for this connector' }, { status: 404 });
     }
 
-    const body = await request.json();
-    const { modelId, isEnabled } = toggleModelSchema.parse(body);
+    const settings = getSettingsObject(connector.settings);
+    const nextSettings: Record<string, unknown> = {
+      ...settings,
+      models: models.filter((model) => model.modelId !== modelId).map((model) => normalizeModel(model)),
+    };
+    delete nextSettings.customModels;
 
-    // Validate that modelId belongs to this connector's provider
-    const modelConfig = AI_MODELS[modelId as keyof typeof AI_MODELS];
-    if (!modelConfig || modelConfig.provider !== connector.provider.toLowerCase()) {
-      return NextResponse.json({ error: 'Invalid model for this connector' }, { status: 400 });
+    if (
+      nextSettings.modelDefaults &&
+      typeof nextSettings.modelDefaults === 'object' &&
+      !Array.isArray(nextSettings.modelDefaults)
+    ) {
+      const defaults = { ...(nextSettings.modelDefaults as Record<string, unknown>) };
+      for (const group of MODEL_DEFAULT_GROUPS) {
+        if (defaults[group] === modelId) {
+          delete defaults[group];
+        }
+      }
+      if (Object.keys(defaults).length > 0) {
+        nextSettings.modelDefaults = defaults;
+      } else {
+        delete nextSettings.modelDefaults;
+      }
     }
 
-    // Upsert the override
-    const config = await prisma.connectorModelConfig.upsert({
-      where: { connectorId_modelId: { connectorId: id, modelId } },
-      create: { connectorId: id, modelId, isEnabled },
-      update: { isEnabled },
+    await prisma.connector.update({
+      where: { id },
+      data: { settings: nextSettings as Prisma.InputJsonValue },
+    });
+    await prisma.connectorModelConfig.deleteMany({
+      where: { connectorId: id, modelId },
     });
 
-    return NextResponse.json({
-      modelId: config.modelId,
-      name: modelConfig.name,
-      description: modelConfig.description,
-      providerModelId: modelConfig.providerModelId,
-      isEnabled: config.isEnabled,
-      hasOverride: true,
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {

@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
@@ -75,7 +75,7 @@ interface UseCompanySearchOptions {
  * ```
  */
 export function useCompanySearch(options: UseCompanySearchOptions = {}) {
-  const { enabled = true, minChars = 2, limit = 10, excludeIds = [] } = options;
+  const { enabled = true, minChars = 2, limit = 10, debounceMs = 300, excludeIds = [] } = options;
 
   const { data: session } = useSession();
   const activeTenantId = useActiveWorkspaceId(
@@ -84,16 +84,25 @@ export function useCompanySearch(options: UseCompanySearchOptions = {}) {
   );
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedCompany, setSelectedCompany] = useState<CompanySearchOption | null>(null);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim());
+    }, debounceMs);
+
+    return () => window.clearTimeout(timer);
+  }, [searchQuery, debounceMs]);
+
   // Only search if query meets minimum length
-  const shouldSearch = searchQuery.length >= minChars;
+  const shouldSearch = debouncedSearchQuery.length >= minChars;
 
   const { data, isLoading } = useQuery({
-    queryKey: ['company-search', searchQuery, activeTenantId, limit],
+    queryKey: ['company-search', debouncedSearchQuery, activeTenantId, limit],
     queryFn: async (): Promise<CompanySearchResult> => {
       const params = new URLSearchParams({
-        q: searchQuery,
+        q: debouncedSearchQuery,
         limit: String(limit),
       });
       if (activeTenantId) {
@@ -108,6 +117,7 @@ export function useCompanySearch(options: UseCompanySearchOptions = {}) {
     },
     enabled: enabled && shouldSearch,
     staleTime: 30 * 1000, // 30 seconds
+    placeholderData: (previousData) => previousData,
   });
 
   // Transform to AsyncSearchSelectOption format and filter out excluded IDs

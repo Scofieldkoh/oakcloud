@@ -163,11 +163,6 @@ export type GeneratedDocument = Prisma.GeneratedDocumentModel
  */
 export type DocumentSection = Prisma.DocumentSectionModel
 /**
- * Model DocumentShare
- * 
- */
-export type DocumentShare = Prisma.DocumentShareModel
-/**
  * Model WorkspaceLetterhead
  * 
  */

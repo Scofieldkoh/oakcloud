@@ -109,20 +109,14 @@ export async function loadImageWithOrientation(imageFile: File): Promise<{ canva
   const arrayBuffer = await imageFile.arrayBuffer();
   const blob = new Blob([arrayBuffer], { type: imageFile.type });
 
-  // Read EXIF orientation for debugging
-  const orientation = imageFile.type === 'image/jpeg' ? getExifOrientation(arrayBuffer) : 1;
-  console.log(`[EXIF] Detected orientation: ${orientation} for ${imageFile.name}`);
-
   // Use createImageBitmap with explicit 'from-image' to ensure EXIF orientation is applied
   // This tells the browser to respect the image's EXIF orientation metadata
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
-    console.log(`[EXIF] Loaded image with EXIF correction (from-image): ${bitmap.width}x${bitmap.height}`);
   } catch {
     // Fallback for browsers that don't support imageOrientation option
     bitmap = await createImageBitmap(blob);
-    console.log(`[EXIF] Loaded image (fallback): ${bitmap.width}x${bitmap.height}`);
   }
 
   // Store dimensions before closing bitmap
@@ -236,10 +230,8 @@ export async function imageToPdf(imageFile: File): Promise<File> {
 
   // If still above threshold and we can reduce quality further, try again
   if (pdfFile.size > COMPRESSION_THRESHOLD && quality > MIN_JPEG_QUALITY) {
-    console.log(`PDF size ${(pdfFile.size / 1024 / 1024).toFixed(2)}MB exceeds threshold, recompressing...`);
     quality = MIN_JPEG_QUALITY;
     pdfFile = await createPdfFromCanvas(canvas, imgWidth, imgHeight, quality, pdfFileName);
-    console.log(`Recompressed to ${(pdfFile.size / 1024 / 1024).toFixed(2)}MB at quality ${quality}`);
   }
 
   return pdfFile;
@@ -371,13 +363,8 @@ export async function compressPdfIfNeeded(file: File): Promise<File> {
 
     // If the "compressed" version is larger or similar, return original
     if (compressedBytes.length >= file.size * 0.95) {
-      console.log('PDF compression did not reduce size significantly, using original');
       return file;
     }
-
-    const sizeBefore = (file.size / 1024 / 1024).toFixed(2);
-    const sizeAfter = (compressedBytes.length / 1024 / 1024).toFixed(2);
-    console.log(`PDF compressed: ${sizeBefore}MB -> ${sizeAfter}MB`);
 
     return createPdfFile(compressedBytes, file.name);
   } catch (err) {
@@ -520,11 +507,10 @@ export async function splitPdfByRanges(
  */
 export async function getPdfPageThumbnails(
   file: File,
-  maxThumbnailHeight: number = 150
+  _maxThumbnailHeight: number = 150
 ): Promise<{ pageNumber: number; dataUrl: string }[]> {
   // This would require pdf.js for rendering. For now, return empty array
   // and let the component use a different approach (e.g., pdf.js directly)
-  console.log('[splitPdf] Thumbnail generation requested, maxHeight:', maxThumbnailHeight);
   // Placeholder - actual implementation would use pdfjs-dist
   return [];
 }

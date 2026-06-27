@@ -47,7 +47,6 @@ export const createDocumentTemplateSchema = z.object({
   contentJson: z.any().optional().nullable(), // TipTap JSON, validated client-side
   placeholders: z.array(placeholderDefinitionSchema).default([]),
   isActive: z.boolean().default(true),
-  defaultShareExpiryHours: z.number().int().min(1).max(8760).optional().nullable(), // max 1 year
 });
 
 export type CreateDocumentTemplateInput = z.infer<typeof createDocumentTemplateSchema>;
@@ -65,7 +64,6 @@ export const updateDocumentTemplateSchema = z.object({
   contentJson: z.any().optional().nullable(),
   placeholders: z.array(placeholderDefinitionSchema).optional(),
   isActive: z.boolean().optional(),
-  defaultShareExpiryHours: z.number().int().min(1).max(8760).optional().nullable(),
 });
 
 export type UpdateDocumentTemplateInput = z.infer<typeof updateDocumentTemplateSchema>;

@@ -103,10 +103,10 @@ export function EsigningConsentScreen({
           </label>
 
           {/* Footer buttons */}
-          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:flex-wrap">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Button
-              variant="danger"
-              className="w-full sm:w-auto"
+              variant="ghost"
+              className="w-full text-rose-600 hover:bg-rose-50 hover:text-rose-700 sm:w-auto"
               onClick={onDecline}
               disabled={isSubmitting}
             >
@@ -118,7 +118,7 @@ export function EsigningConsentScreen({
               disabled={!isAgreed || isSubmitting}
               isLoading={isSubmitting}
             >
-              Continue
+              Continue to Document →
             </Button>
           </div>
         </div>

@@ -66,7 +66,6 @@ export function EsigningFieldPalette({
   recipientFieldSummary,
 }: EsigningFieldPaletteProps) {
   const signerRecipients = recipients.filter((r) => r.type === 'SIGNER');
-  const selectedRecipient = recipients.find((r) => r.id === selectedRecipientId);
   const summary = selectedRecipientId ? recipientFieldSummary.get(selectedRecipientId) : null;
 
   function handleTypeClick(type: EsigningFieldType) {
@@ -94,53 +93,75 @@ export function EsigningFieldPalette({
   }
 
   return (
-    <div className="w-full h-full bg-background-secondary border-r border-border-primary overflow-y-auto p-4 space-y-4">
-      {/* Recipient selector */}
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Recipient</p>
-        <div className="relative">
-          <div
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 rounded-full flex-shrink-0"
-            style={{ backgroundColor: selectedRecipient?.colorTag ?? '#ccc' }}
-          />
-          <select
-            value={selectedRecipientId}
-            onChange={(e) => onRecipientChange(e.target.value)}
-            className="w-full h-8 rounded-lg border border-border-primary bg-background-primary pl-7 pr-3 text-sm text-text-primary appearance-none"
-          >
-            {signerRecipients.length === 0 && (
-              <option value="">No signers</option>
-            )}
-            {signerRecipients.map((r) => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Summary line */}
-        {summary && (
-          <div className={cn('text-xs', !summary.hasSignature ? 'text-amber-600' : 'text-text-secondary')}>
-            {summary.required} required · {summary.optional} optional
-            {!summary.hasSignature && <span className="ml-1 font-medium">⚠ No signature</span>}
-          </div>
-        )}
-      </div>
-
-      {renderGroup('Signature Fields', SIGNATURE_FIELDS)}
-      {renderGroup('Auto-fill Fields', AUTOFILL_FIELDS)}
-      {renderGroup('Standard Fields', STANDARD_FIELDS)}
-
-      {/* Active placement hint */}
+    <div className="flex w-full h-full flex-col bg-background-secondary border-r border-border-primary overflow-hidden">
+      {/* Active placement banner — pinned at top so it's always visible */}
       {activePlacementType && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-          <p className="text-xs font-medium text-amber-800">
-            Click on the document to place a{' '}
-            <span className="font-semibold">{ESIGNING_FIELD_TYPE_LABELS[activePlacementType]}</span>{' '}
-            field.
+        <div className="flex-shrink-0 border-b border-amber-200 bg-amber-50 px-3 py-2.5">
+          <p className="text-xs font-semibold text-amber-800">
+            Placing:{' '}
+            <span className="font-bold">{ESIGNING_FIELD_TYPE_LABELS[activePlacementType]}</span>
           </p>
-          <p className="mt-1 text-xs text-amber-700">Press Escape to cancel.</p>
+          <p className="mt-0.5 text-xs text-amber-700">
+            Click on the document to drop the field. Press <kbd className="rounded border border-amber-300 bg-amber-100 px-1 text-[10px]">Esc</kbd> to cancel.
+          </p>
         </div>
       )}
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Recipient pills */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Placing fields for</p>
+          {signerRecipients.length === 0 ? (
+            <p className="text-xs text-text-muted italic">No signers added yet.</p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {signerRecipients.map((r) => {
+                const isSelected = r.id === selectedRecipientId;
+                const rSummary = recipientFieldSummary.get(r.id);
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => onRecipientChange(r.id)}
+                    className={cn(
+                      'flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition-colors',
+                      isSelected
+                        ? 'border-oak-primary bg-oak-primary/10'
+                        : 'border-border-primary bg-background-primary hover:bg-background-tertiary'
+                    )}
+                  >
+                    <span
+                      className="h-3 w-3 flex-shrink-0 rounded-full"
+                      style={{ backgroundColor: r.colorTag ?? '#ccc' }}
+                    />
+                    <span className={cn('min-w-0 flex-1 truncate text-sm font-medium', isSelected ? 'text-oak-primary' : 'text-text-primary')}>
+                      {r.name}
+                    </span>
+                    {rSummary && !rSummary.hasSignature && (
+                      <span className="flex-shrink-0 text-[10px] font-semibold text-amber-600">⚠</span>
+                    )}
+                    {rSummary && rSummary.hasSignature && (
+                      <span className="flex-shrink-0 text-[10px] text-text-muted">{rSummary.required}r</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Summary for selected recipient */}
+          {summary && (
+            <div className={cn('rounded-lg px-2 py-1.5 text-xs', !summary.hasSignature ? 'bg-amber-50 text-amber-700' : 'bg-background-primary text-text-secondary')}>
+              {summary.required} required · {summary.optional} optional
+              {!summary.hasSignature && <span className="ml-1 font-semibold">— no signature field yet</span>}
+            </div>
+          )}
+        </div>
+
+        {renderGroup('Signature Fields', SIGNATURE_FIELDS)}
+        {renderGroup('Auto-fill Fields', AUTOFILL_FIELDS)}
+        {renderGroup('Standard Fields', STANDARD_FIELDS)}
+      </div>
     </div>
   );
 }

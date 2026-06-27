@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import { useIsMobile, useIsTablet } from '@/hooks/use-media-query';
 import type { EsigningFieldType } from '@/generated/prisma';
 import type { EsigningEnvelopeDetailDto } from '@/types/esigning';
@@ -105,12 +105,18 @@ export function EsigningStepFields({
 
     for (const recipient of envelope.recipients.filter((entry) => entry.type === 'SIGNER')) {
       const recipientFields = fields.filter((field) => field.recipientId === recipient.id);
+      const activeDocIds = [...new Set(recipientFields.map((f) => f.documentId))];
+      const hasSignatureOnAllDocs =
+        activeDocIds.length > 0 &&
+        activeDocIds.every((docId) =>
+          recipientFields.some(
+            (f) => f.documentId === docId && (f.type === 'SIGNATURE' || f.type === 'INITIALS')
+          )
+        );
       map.set(recipient.id, {
         required: recipientFields.filter((field) => field.required).length,
         optional: recipientFields.filter((field) => !field.required).length,
-        hasSignature: recipientFields.some(
-          (field) => field.type === 'SIGNATURE' || field.type === 'INITIALS'
-        ),
+        hasSignature: hasSignatureOnAllDocs,
       });
     }
 
@@ -179,6 +185,11 @@ export function EsigningStepFields({
 
     function handleKeyDown(event: KeyboardEvent) {
       if (shouldIgnoreShortcut(event.target)) {
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        setActivePlacementType(null);
         return;
       }
 
@@ -277,13 +288,19 @@ export function EsigningStepFields({
           variant="info"
           compact
           className="mb-4"
-          title="Placement tips"
+          title="How to place fields"
           onClose={() => {
             window.localStorage.setItem(`esigning-field-coachmarks:${envelope.id}`, 'dismissed');
             setShowCoachmarks(false);
           }}
         >
-          Click a field in the palette, place it on the page, then drag or resize it. Use Ctrl/Cmd+Z to undo layout changes as you work.
+          <ol className="mt-1 list-decimal list-inside space-y-0.5 text-xs">
+            <li>Select a signer in the left panel.</li>
+            <li>Click a field type (e.g. Signature) to activate placement mode.</li>
+            <li>Click anywhere on the document to drop the field.</li>
+            <li>Drag or resize placed fields to reposition them.</li>
+          </ol>
+          <p className="mt-1.5 text-xs">Tip: Ctrl/Cmd+Z to undo, Ctrl/Cmd+Shift+Z to redo.</p>
         </Alert>
       ) : null}
 
@@ -484,15 +501,15 @@ export function EsigningStepFields({
                     {recipient.name}
                   </span>
                 </div>
-                <div
-                  className={cn(
-                    'mt-1 text-xs',
-                    hasIssue ? 'text-amber-600' : 'text-text-secondary'
-                  )}
-                >
-                  {summary?.required ?? 0} required / {summary?.optional ?? 0} optional
-                  {hasIssue ? <div>No signature field assigned</div> : null}
+                <div className="mt-1 text-xs text-text-secondary">
+                  {summary?.required ?? 0} required · {summary?.optional ?? 0} optional
                 </div>
+                {hasIssue && (
+                  <div className="mt-1.5 flex items-center gap-1 text-xs font-medium text-amber-600">
+                    <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                    No signature field assigned
+                  </div>
+                )}
               </div>
             );
           })}
@@ -508,7 +525,7 @@ export function EsigningStepFields({
   );
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 57px)' }}>
+    <div className="flex min-h-0 flex-1 flex-col">
       <div ref={layoutRef} className="flex flex-1 overflow-hidden">
         <div
           className={cn(
@@ -631,18 +648,12 @@ export function EsigningStepFields({
         </div>
       </div>
 
-      <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border-primary bg-background-secondary px-3 py-2 sm:gap-4 sm:px-6 sm:py-3">
+      <div className="flex flex-shrink-0 items-center justify-between gap-2 border-t border-border-primary bg-background-secondary px-3 py-2 sm:gap-4 sm:px-6 sm:py-3">
         <Button variant="secondary" size="sm" onClick={onBack}>
           Back
         </Button>
 
-        <div className="flex flex-wrap gap-2 sm:gap-3">
-          <Button variant="secondary" size="sm" onClick={onUndo} disabled={!canUndo}>
-            Undo
-          </Button>
-          <Button variant="secondary" size="sm" onClick={onRedo} disabled={!canRedo}>
-            Redo
-          </Button>
+        <div className="flex items-center gap-2 sm:gap-3">
           <Button variant="secondary" size="sm" onClick={() => void onSaveFields()} isLoading={isSaving}>
             Save
           </Button>

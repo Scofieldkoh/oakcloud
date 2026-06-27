@@ -8,7 +8,6 @@ import {
   AlertCircle,
   FileText,
   Download,
-  Share2,
   Edit,
   Lock,
   Unlock,
@@ -69,7 +68,6 @@ interface GeneratedDocument {
   content: string;
   contentJson?: Record<string, unknown> | null;
   useLetterhead: boolean;
-  shareExpiryHours?: number | null;
   createdAt: string;
   updatedAt: string;
   finalizedAt?: string | null;
@@ -94,7 +92,6 @@ interface GeneratedDocument {
     lastName: string;
   } | null;
   _count?: {
-    shares: number;
     comments: number;
   };
 }
@@ -479,14 +476,6 @@ export default function DocumentViewPage() {
             Export
           </Button>
 
-          {/* Share */}
-          <Link href={`/generated-documents/${docData.id}/share`}>
-            <Button variant="secondary" size="sm">
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
-            </Button>
-          </Link>
-
           {/* More actions */}
           <div className="relative group">
             <Button variant="ghost" size="sm">
@@ -581,7 +570,6 @@ export default function DocumentViewPage() {
 
                 {docData._count && (
                   <div className="pt-2 border-t border-border-secondary flex items-center gap-4 text-xs text-text-muted">
-                    <span>{docData._count.shares} shares</span>
                     <span>{docData._count.comments} comments</span>
                   </div>
                 )}

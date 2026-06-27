@@ -143,7 +143,7 @@ export async function logConnectorUsage(params: LogUsageParams): Promise<void> {
       prisma.connectorUsageLog.create({
         data: {
           connectorId,
-          tenantId: tenantId || null,
+          workspaceId: tenantId || null,
           userId: userId || null,
           model,
           provider,
@@ -197,7 +197,7 @@ export async function searchUsageLogs(
 
   const where: Prisma.ConnectorUsageLogWhereInput = {
     ...(connectorId && { connectorId }),
-    ...(tenantId && { tenantId }),
+    ...(tenantId && { workspaceId: tenantId }),
     ...(userId && { userId }),
     ...(model && { model }),
     ...(provider && { provider }),
@@ -218,7 +218,7 @@ export async function searchUsageLogs(
       where,
       include: {
         connector: { select: { name: true } },
-        tenant: { select: { name: true } },
+        workspace: { select: { name: true } },
         user: { select: { firstName: true, lastName: true } },
       },
       orderBy: { [sortBy]: sortOrder },
@@ -233,8 +233,8 @@ export async function searchUsageLogs(
       id: log.id,
       connectorId: log.connectorId,
       connectorName: log.connector?.name,
-      tenantId: log.tenantId,
-      tenantName: log.tenant?.name,
+      tenantId: log.workspaceId,
+      tenantName: log.workspace?.name,
       userId: log.userId,
       userName: log.user ? `${log.user.firstName} ${log.user.lastName}` : undefined,
       model: log.model,
@@ -364,7 +364,7 @@ export async function exportUsageLogs(
     'Date',
     'Time',
     'Connector',
-    'Tenant',
+    'Workspace',
     'User',
     'Model',
     'Provider',
@@ -430,7 +430,7 @@ export async function getAllConnectorsUsageSummary(
   }>
 > {
   const where: Prisma.ConnectorUsageLogWhereInput = {
-    ...(tenantId !== undefined && { tenantId }),
+    ...(tenantId !== undefined && { workspaceId: tenantId }),
     ...(startDate || endDate
       ? {
           createdAt: {

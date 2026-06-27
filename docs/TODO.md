@@ -74,7 +74,6 @@ Key principles:
 | Feature | Priority | Status | Description |
 |---------|----------|--------|-------------|
 | E-Signature | P1 | Planned | Digital signature integration for documents |
-| URL Shortener | P2 | Planned | Short URLs for shared documents |
 | Salesrooms | P2 | Planned | Client proposal and presentation rooms |
 
 ### Phase 3 - Long Term

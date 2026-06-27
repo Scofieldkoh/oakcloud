@@ -1,3 +1,5 @@
+/* eslint-disable no-console -- Centralized logger wrapper around console methods. */
+
 /**
  * Configurable logging utility with multiple log levels
  *

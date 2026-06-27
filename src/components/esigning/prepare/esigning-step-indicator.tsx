@@ -81,7 +81,7 @@ export function EsigningStepIndicator({
             {index < STEPS.length - 1 && (
               <div
                 className={cn(
-                  'h-px w-3 mb-4 flex-shrink-0 sm:w-12 sm:mb-5',
+                  'h-px w-6 mb-4 flex-shrink-0 sm:w-16 sm:mb-5',
                   isCompleted(STEPS[index + 1].step) || currentStep > step
                     ? 'bg-emerald-500'
                     : 'bg-border-primary'

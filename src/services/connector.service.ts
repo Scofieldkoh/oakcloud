@@ -14,7 +14,7 @@ import type {
   CreateConnectorInput,
   UpdateConnectorInput,
   ConnectorSearchInput,
-  UpdateTenantAccessInput,
+  UpdateWorkspaceAccessInput,
 } from '@/lib/validations/connector';
 import { validateCredentials } from '@/lib/validations/connector';
 
@@ -33,7 +33,7 @@ export interface ConnectorWithMaskedCredentials extends Omit<Connector, 'credent
 
 export interface ResolvedConnector {
   connector: ConnectorWithDecryptedCredentials;
-  source: 'tenant' | 'system';
+  source: 'workspace' | 'system';
 }
 
 export interface TenantAwareParams {
@@ -42,9 +42,9 @@ export interface TenantAwareParams {
   isSuperAdmin: boolean;
 }
 
-export interface TenantAccessEntry {
-  tenantId: string;
-  tenantName: string;
+export interface WorkspaceAccessEntry {
+  workspaceId: string;
+  workspaceName: string;
   isEnabled: boolean;
 }
 
@@ -66,6 +66,25 @@ function maskCredentialMap(credentials: Record<string, unknown>): Record<string,
   }
 
   return maskedCredentials;
+}
+
+function getMaskedCredentialsForConnector(connector: Connector): {
+  credentials: Record<string, unknown>;
+  credentialsMasked: boolean;
+} {
+  try {
+    const decrypted = JSON.parse(decrypt(connector.credentials)) as Record<string, unknown>;
+    return {
+      credentials: maskCredentialMap(decrypted),
+      credentialsMasked: true,
+    };
+  } catch (error) {
+    console.error(`Unable to decrypt credentials for connector ${connector.id}:`, error);
+    return {
+      credentials: {},
+      credentialsMasked: false,
+    };
+  }
 }
 
 function formatTestError(error: unknown): string {
@@ -105,7 +124,7 @@ export async function createConnector(
 ): Promise<Connector> {
   const { userId, isSuperAdmin } = params;
 
-  // Only SUPER_ADMIN can create system connectors (tenantId = null)
+  // Only SUPER_ADMIN can create system connectors (workspaceId = null)
   if (data.tenantId === null && !isSuperAdmin) {
     throw new Error('Only super admins can create system connectors');
   }
@@ -122,7 +141,7 @@ export async function createConnector(
   // Check for duplicate provider within scope
   const existing = await prisma.connector.findFirst({
     where: {
-      tenantId: data.tenantId ?? null,
+      workspaceId: data.tenantId ?? null,
       provider: data.provider as ConnectorProvider,
       deletedAt: null,
     },
@@ -139,7 +158,7 @@ export async function createConnector(
   if (data.isDefault) {
     await prisma.connector.updateMany({
       where: {
-        tenantId: data.tenantId ?? null,
+        workspaceId: data.tenantId ?? null,
         type: data.type as ConnectorType,
         isDefault: true,
         deletedAt: null,
@@ -150,7 +169,7 @@ export async function createConnector(
 
   const connector = await prisma.connector.create({
     data: {
-      tenantId: data.tenantId ?? null,
+      workspaceId: data.tenantId ?? null,
       name: data.name,
       type: data.type as ConnectorType,
       provider: data.provider as ConnectorProvider,
@@ -200,10 +219,10 @@ export async function updateConnector(
   }
 
   // Access control
-  if (existing.tenantId === null && !isSuperAdmin) {
+  if (existing.workspaceId === null && !isSuperAdmin) {
     throw new Error('Only super admins can modify system connectors');
   }
-  if (existing.tenantId !== null && existing.tenantId !== tenantId && !isSuperAdmin) {
+  if (existing.workspaceId !== null && existing.workspaceId !== tenantId && !isSuperAdmin) {
     throw new Error('Access denied');
   }
 
@@ -243,7 +262,7 @@ export async function updateConnector(
   if (data.isDefault === true) {
     await prisma.connector.updateMany({
       where: {
-        tenantId: existing.tenantId,
+        workspaceId: existing.workspaceId,
         type: existing.type,
         isDefault: true,
         deletedAt: null,
@@ -278,7 +297,7 @@ export async function updateConnector(
           : 'CONNECTOR_UPDATED';
 
     await createAuditLog({
-      tenantId: existing.tenantId ?? undefined,
+      tenantId: existing.workspaceId ?? undefined,
       userId,
       action,
       entityType: 'Connector',
@@ -316,10 +335,10 @@ export async function deleteConnector(
   }
 
   // Access control
-  if (existing.tenantId === null && !isSuperAdmin) {
+  if (existing.workspaceId === null && !isSuperAdmin) {
     throw new Error('Only super admins can delete system connectors');
   }
-  if (existing.tenantId !== null && existing.tenantId !== tenantId && !isSuperAdmin) {
+  if (existing.workspaceId !== null && existing.workspaceId !== tenantId && !isSuperAdmin) {
     throw new Error('Access denied');
   }
 
@@ -329,7 +348,7 @@ export async function deleteConnector(
   });
 
   await createAuditLog({
-    tenantId: existing.tenantId ?? undefined,
+    tenantId: existing.workspaceId ?? undefined,
     userId,
     action: 'CONNECTOR_DELETED',
     entityType: 'Connector',
@@ -340,7 +359,7 @@ export async function deleteConnector(
     reason,
     metadata: {
       provider: existing.provider,
-      isSystem: existing.tenantId === null,
+      isSystem: existing.workspaceId === null,
     },
   });
 
@@ -364,11 +383,11 @@ export async function getConnectorById(
   if (!connector) return null;
 
   // Access control
-  if (connector.tenantId === null && !isSuperAdmin) {
-    // TENANT_ADMIN can see system connectors but not credentials
+  if (connector.workspaceId === null && !isSuperAdmin) {
+    // Workspace admins can see system connectors but not credentials
     throw new Error('Access denied to system connector credentials');
   }
-  if (connector.tenantId !== null && connector.tenantId !== tenantId && !isSuperAdmin) {
+  if (connector.workspaceId !== null && connector.workspaceId !== tenantId && !isSuperAdmin) {
     throw new Error('Access denied');
   }
 
@@ -393,8 +412,8 @@ export async function getConnectorWithMaskedCredentials(
 
   if (!connector) return null;
 
-  // Access control - tenant admins can view system connectors but never receive raw secrets.
-  if (!isSuperAdmin && connector.tenantId !== null && connector.tenantId !== tenantId) {
+  // Access control - workspace admins can view system connectors but never receive raw secrets.
+  if (!isSuperAdmin && connector.workspaceId !== null && connector.workspaceId !== tenantId) {
     throw new Error('Access denied');
   }
 
@@ -431,20 +450,20 @@ export async function searchConnectors(
   if (isSuperAdmin) {
     // SUPER_ADMIN can see all
     if (searchParams.tenantId) {
-      // Filter to specific tenant + system connectors
+      // Filter to specific workspace + system connectors
       if (searchParams.includeSystem) {
-        where.OR = [{ tenantId: searchParams.tenantId }, { tenantId: null }];
+        where.OR = [{ workspaceId: searchParams.tenantId }, { workspaceId: null }];
       } else {
-        where.tenantId = searchParams.tenantId;
+        where.workspaceId = searchParams.tenantId;
       }
     }
-    // If no tenantId filter, show all connectors
+    // If no workspace filter, show all connectors
   } else {
-    // TENANT_ADMIN can see their own + system
+    // Workspace admins can see their own + system
     if (searchParams.includeSystem) {
-      where.OR = [{ tenantId: tenantId }, { tenantId: null }];
+      where.OR = [{ workspaceId: tenantId }, { workspaceId: null }];
     } else {
-      where.tenantId = tenantId;
+      where.workspaceId = tenantId;
     }
   }
 
@@ -457,7 +476,7 @@ export async function searchConnectors(
   const [connectors, total] = await Promise.all([
     prisma.connector.findMany({
       where,
-      orderBy: [{ tenantId: 'asc' }, { type: 'asc' }, { name: 'asc' }],
+      orderBy: [{ workspaceId: 'asc' }, { type: 'asc' }, { name: 'asc' }],
       skip,
       take: searchParams.limit,
     }),
@@ -466,13 +485,12 @@ export async function searchConnectors(
 
   // Map to masked credentials
   const connectorsWithMasked: ConnectorWithMaskedCredentials[] = connectors.map((connector) => {
-    const decrypted = JSON.parse(decrypt(connector.credentials)) as Record<string, unknown>;
-    const credentials = maskCredentialMap(decrypted);
+    const { credentials, credentialsMasked } = getMaskedCredentialsForConnector(connector);
 
     return {
       ...connector,
       credentials,
-      credentialsMasked: true,
+      credentialsMasked,
     };
   });
 
@@ -485,14 +503,14 @@ export async function searchConnectors(
 }
 
 // ============================================================================
-// Connector Resolution (Tenant -> System fallback)
+// Connector Resolution (Workspace -> System fallback)
 // ============================================================================
 
 /**
  * Resolve the best available connector for a given type/provider
  *
  * Resolution logic:
- * 1. Check tenant-specific connector â†’ use if exists & enabled
+ * 1. Check workspace connector -> use if exists & enabled
  * 2. Check WorkspaceConnectorAccess for system connector â†’ blocked if isEnabled=false
  * 3. Check system connector â†’ use if exists & enabled
  * 4. No connector â†’ return null
@@ -502,11 +520,11 @@ export async function resolveConnector(
   type: ConnectorType,
   provider?: ConnectorProvider
 ): Promise<ResolvedConnector | null> {
-  // Step 1: Try tenant-specific connector
+  // Step 1: Try workspace connector
   if (tenantId) {
-    const tenantConnector = await prisma.connector.findFirst({
+    const workspaceConnector = await prisma.connector.findFirst({
       where: {
-        tenantId,
+        workspaceId: tenantId,
         type,
         isEnabled: true,
         deletedAt: null,
@@ -515,13 +533,13 @@ export async function resolveConnector(
       orderBy: { isDefault: 'desc' },
     });
 
-    if (tenantConnector) {
+    if (workspaceConnector) {
       return {
         connector: {
-          ...tenantConnector,
-          credentials: JSON.parse(decrypt(tenantConnector.credentials)),
+          ...workspaceConnector,
+          credentials: JSON.parse(decrypt(workspaceConnector.credentials)),
         },
-        source: 'tenant',
+        source: 'workspace',
       };
     }
   }
@@ -529,7 +547,7 @@ export async function resolveConnector(
   // Step 2: Check for system connector
   const systemConnector = await prisma.connector.findFirst({
     where: {
-      tenantId: null,
+      workspaceId: null,
       type,
       isEnabled: true,
       deletedAt: null,
@@ -542,12 +560,12 @@ export async function resolveConnector(
     return null;
   }
 
-  // Step 3: Check WorkspaceConnectorAccess if tenant is specified
+  // Step 3: Check WorkspaceConnectorAccess if workspace is specified
   if (tenantId) {
     const access = await prisma.workspaceConnectorAccess.findUnique({
       where: {
-        tenantId_connectorId: {
-          tenantId,
+        workspaceId_connectorId: {
+          workspaceId: tenantId,
           connectorId: systemConnector.id,
         },
       },
@@ -569,7 +587,7 @@ export async function resolveConnector(
 }
 
 /**
- * Get all available connectors for a tenant (resolved)
+ * Get all available connectors for a workspace (resolved)
  * Checks each provider type individually to find all available connectors
  */
 export async function getAvailableConnectors(
@@ -589,9 +607,13 @@ export async function getAvailableConnectors(
   for (const t of types) {
     const providers = providersPerType[t];
     for (const provider of providers) {
-      const resolved = await resolveConnector(tenantId, t, provider);
-      if (resolved) {
-        results.push(resolved);
+      try {
+        const resolved = await resolveConnector(tenantId, t, provider);
+        if (resolved) {
+          results.push(resolved);
+        }
+      } catch (error) {
+        console.error(`Unable to resolve ${provider} connector:`, error);
       }
     }
   }
@@ -607,9 +629,28 @@ export async function testConnector(
   id: string,
   params: TenantAwareParams
 ): Promise<TestResult> {
-  const connector = await getConnectorById(id, params);
-  if (!connector) {
+  const { tenantId, isSuperAdmin } = params;
+  const connectorRecord = await prisma.connector.findFirst({
+    where: { id, deletedAt: null },
+  });
+
+  if (!connectorRecord) {
     throw new Error('Connector not found');
+  }
+
+  if (connectorRecord.workspaceId === null && !isSuperAdmin) {
+    throw new Error('Access denied to system connector credentials');
+  }
+  if (connectorRecord.workspaceId !== null && connectorRecord.workspaceId !== tenantId && !isSuperAdmin) {
+    throw new Error('Access denied');
+  }
+
+  let connector: ConnectorWithDecryptedCredentials | null = null;
+  if (!connector) {
+    connector = {
+      ...connectorRecord,
+      credentials: {},
+    };
   }
 
   const startTime = Date.now();
@@ -617,6 +658,8 @@ export async function testConnector(
   let error: string | undefined;
 
   try {
+    connector.credentials = JSON.parse(decrypt(connectorRecord.credentials));
+
     switch (connector.provider) {
       case 'OPENAI':
         await testOpenAI(connector.credentials as { apiKey: string });
@@ -669,7 +712,7 @@ export async function testConnector(
   });
 
   await createAuditLog({
-    tenantId: connector.tenantId ?? undefined,
+    tenantId: connector.workspaceId ?? undefined,
     userId: params.userId,
     action: 'CONNECTOR_TESTED',
     entityType: 'Connector',
@@ -898,18 +941,18 @@ export async function incrementConnectorUsage(id: string): Promise<void> {
 }
 
 // ============================================================================
-// Tenant Access Management (for system connectors)
+// Workspace Access Management (for system connectors)
 // ============================================================================
 
 /**
- * Get tenant access list for a system connector
+ * Get workspace access list for a system connector
  */
-export async function getTenantAccess(
+export async function getWorkspaceAccess(
   connectorId: string,
   params: TenantAwareParams
-): Promise<TenantAccessEntry[]> {
+): Promise<WorkspaceAccessEntry[]> {
   if (!params.isSuperAdmin) {
-    throw new Error('Only super admins can view tenant access');
+    throw new Error('Only super admins can view workspace access');
   }
 
   const connector = await prisma.connector.findFirst({
@@ -920,12 +963,12 @@ export async function getTenantAccess(
     throw new Error('Connector not found');
   }
 
-  if (connector.tenantId !== null) {
-    throw new Error('Tenant access only applies to system connectors');
+  if (connector.workspaceId !== null) {
+    throw new Error('Workspace access only applies to system connectors');
   }
 
-  // Get all tenants with their access status
-  const tenants = await prisma.workspace.findMany({
+  // Get all workspaces with their access status
+  const workspaces = await prisma.workspace.findMany({
     where: { deletedAt: null, status: 'ACTIVE' },
     orderBy: { name: 'asc' },
   });
@@ -934,26 +977,26 @@ export async function getTenantAccess(
     where: { connectorId },
   });
 
-  const accessMap = new Map(accessRecords.map((a) => [a.tenantId, a.isEnabled]));
+  const accessMap = new Map(accessRecords.map((a) => [a.workspaceId, a.isEnabled]));
 
-  return tenants.map((tenant) => ({
-    tenantId: tenant.id,
-    tenantName: tenant.name,
+  return workspaces.map((workspace) => ({
+    workspaceId: workspace.id,
+    workspaceName: workspace.name,
     // Default to enabled if no record exists
-    isEnabled: accessMap.get(tenant.id) ?? true,
+    isEnabled: accessMap.get(workspace.id) ?? true,
   }));
 }
 
 /**
- * Update tenant access for a system connector
+ * Update workspace access for a system connector
  */
-export async function updateTenantAccess(
+export async function updateWorkspaceAccess(
   connectorId: string,
-  data: UpdateTenantAccessInput,
+  data: UpdateWorkspaceAccessInput,
   params: TenantAwareParams
 ): Promise<void> {
   if (!params.isSuperAdmin) {
-    throw new Error('Only super admins can update tenant access');
+    throw new Error('Only super admins can update workspace access');
   }
 
   const connector = await prisma.connector.findFirst({
@@ -964,21 +1007,21 @@ export async function updateTenantAccess(
     throw new Error('Connector not found');
   }
 
-  if (connector.tenantId !== null) {
-    throw new Error('Tenant access only applies to system connectors');
+  if (connector.workspaceId !== null) {
+    throw new Error('Workspace access only applies to system connectors');
   }
 
   // Upsert access records
-  for (const access of data.tenantAccess) {
+  for (const access of data.workspaceAccess) {
     await prisma.workspaceConnectorAccess.upsert({
       where: {
-        tenantId_connectorId: {
-          tenantId: access.tenantId,
+        workspaceId_connectorId: {
+          workspaceId: access.workspaceId,
           connectorId,
         },
       },
       create: {
-        tenantId: access.tenantId,
+        workspaceId: access.workspaceId,
         connectorId,
         isEnabled: access.isEnabled,
       },
@@ -988,20 +1031,20 @@ export async function updateTenantAccess(
     });
 
     // Log the change
-    const tenant = await prisma.workspace.findUnique({ where: { id: access.tenantId } });
+    const workspace = await prisma.workspace.findUnique({ where: { id: access.workspaceId } });
     await createAuditLog({
-      tenantId: access.tenantId,
+      tenantId: access.workspaceId,
       userId: params.userId,
       action: access.isEnabled ? 'CONNECTOR_ENABLED' : 'CONNECTOR_DISABLED',
       entityType: 'Connector',
       entityId: connectorId,
       entityName: connector.name,
-      summary: `${access.isEnabled ? 'Enabled' : 'Disabled'} system connector "${connector.name}" for tenant "${tenant?.name}"`,
+      summary: `${access.isEnabled ? 'Enabled' : 'Disabled'} system connector "${connector.name}" for workspace "${workspace?.name}"`,
       changeSource: 'MANUAL',
       metadata: {
         isSystemConnector: true,
-        tenantId: access.tenantId,
-        tenantName: tenant?.name,
+        workspaceId: access.workspaceId,
+        workspaceName: workspace?.name,
       },
     });
   }

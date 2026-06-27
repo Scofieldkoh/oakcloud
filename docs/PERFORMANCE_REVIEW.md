@@ -79,7 +79,7 @@ Use this as the target architecture for performance work:
 
 - Internal app has one organization/workspace context. No tenant selector, no super-admin tenant switching, no tenant setup wizard, no tenant invite semantics.
 - Logged-in staff access is role based, but not tenant based. Prefer `ADMIN`, `MANAGER`, `STAFF`, and module-specific permissions over `SUPER_ADMIN`, `TENANT_ADMIN`, and company-scoped tenant roles.
-- Public/client-facing modules are explicit exceptions: public forms, e-signing links, document share links, and certificate verification remain token/slug based and do not imply external users can log in.
+- Public/client-facing modules are explicit exceptions: public forms, e-signing links, and certificate verification remain token/slug based and do not imply external users can log in.
 - Compatibility paths that only exist to preserve old multi-tenant behavior should be removed, not hidden.
 - Database cleanup can happen in phases, but runtime code should stop carrying tenant-switching complexity early.
 
@@ -332,8 +332,8 @@ Also audit and remove:
 - [Done] Move processing-list reconciliation and revision backfill out of GET handlers. GET-time work was removed, explicit per-document reconcile was added, and `processing-revision-backfill` is registered as a scheduler task.
 - [Done] Add summary count endpoints for company and processing list/dashboard surfaces. Physical denormalized columns/materialized views remain a production-scale follow-up if endpoint timings require them.
 - Add database-level search support for frequent `contains` searches.
-- Split public form/signing/share APIs from internal APIs so they do not run internal auth, tenant/RBAC, admin permission, or broad relation-loading code.
-- Add lean public config endpoints that return only the fields required to render public forms, signing sessions, shared documents, and verification pages.
+- Split public form/signing APIs from internal APIs so they do not run internal auth, tenant/RBAC, admin permission, or broad relation-loading code.
+- Add lean public config endpoints that return only the fields required to render public forms, signing sessions, and verification pages.
 - Cache public form schema, branding, static form assets, signing envelope metadata, and verification certificate metadata with short, explicit cache windows.
 
 ### Larger Refactors
@@ -345,7 +345,7 @@ Also audit and remove:
 - [Done] Create separate internal/auth/public route groups with separate provider stacks:
   - Internal routes: authenticated app shell, internal roles, dashboard data caches.
   - Public routes: no dashboard shell, no internal auth provider, minimal CSS/JS, token/slug validation only.
-- [Done] Introduce public-page specific route groups for forms, signing, share, and verification instead of inheriting the dashboard provider stack.
+- [Done] Introduce public-page specific route groups for forms, signing, and verification instead of inheriting the dashboard provider stack.
 - Replace runtime tenant branding with organization/public-page settings that can be cached and served cheaply.
 
 ## Full-App Lightweighting Opportunities
@@ -393,14 +393,11 @@ The aggressive revamp should target both internal staff workflows and external c
 - Move reminder/expiry/status reconciliation out of page-load GET handlers.
 - Keep completion certificate generation asynchronous when possible and show completion immediately after required writes finish.
 
-### Shared Documents and Verification
+### Public Verification
 
-- Public share pages should fetch one compact share payload with document metadata, permissions, comments setting, and download/view URLs.
-- Lazy-load PDF/image previewers only after access token validation.
-- Cache immutable generated document exports and signed PDFs.
 - Verification pages should be static-light: certificate ID, status, signer metadata, document fingerprint, and download link only when authorized.
 - Avoid importing dashboard document editor/commenting tools into public read-only pages.
-- Keep comments and audit trails deferred unless the user opens them.
+- Keep audit trails deferred unless the user opens them.
 
 ### Assets and Bundles
 
@@ -455,7 +452,7 @@ Performance work should leave the codebase cleaner, not just faster. These stand
 
 - Separate route groups by audience:
   - `(dashboard)` for authenticated internal staff.
-  - public routes for forms, signing, share links, and verification.
+  - public routes for forms, signing, and verification.
 - Avoid importing internal dashboard modules from public routes.
 - Avoid generic "tenant-aware" helpers in internal-only code after tenant removal.
 - Keep public route helpers small: token validation, narrow data loading, response DTO mapping.
@@ -465,7 +462,6 @@ Performance work should leave the codebase cleaner, not just faster. These stand
   - `features/internal/*` for logged-in workflows.
   - `features/public-forms/*`
   - `features/public-signing/*`
-  - `features/shared-documents/*`
   - `features/background-jobs/*`
 
 ### API Design

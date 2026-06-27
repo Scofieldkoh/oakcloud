@@ -186,10 +186,13 @@ export async function sendEsigningRequestEmail(input: {
       ${escapeHtml(isReminder ? `Still waiting for your signature` : `You have a document to sign`)}
     </h1>
 
+    <p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${TEXT};margin:0 0 6px;line-height:1.6;">
+      Hello <strong>${escapeHtml(input.recipientName)}</strong>,
+    </p>
     <p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${TEXT_SEC};margin:0 0 20px;line-height:1.6;">
       ${isReminder
-        ? `<strong style="color:${TEXT};">${escapeHtml(input.senderName)}</strong> is following up — your signature is still needed.`
-        : `<strong style="color:${TEXT};">${escapeHtml(input.senderName)}</strong> has requested your signature.`
+        ? `<strong style="color:${TEXT};">${escapeHtml(input.senderName)}</strong> is following up — your signature on the document below is still needed.`
+        : `<strong style="color:${TEXT};">${escapeHtml(input.senderName)}</strong> has requested your electronic signature on the following document:`
       }
     </p>
 
@@ -214,13 +217,10 @@ export async function sendEsigningRequestEmail(input: {
       </tr>
     </table>
 
-    <p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${TEXT};margin:0 0 6px;">
-      Hello <strong>${escapeHtml(input.recipientName)}</strong>,
-    </p>
     <p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${TEXT_SEC};margin:0;line-height:1.6;">
       ${isReminder
-        ? `This document is awaiting your signature. Please review and sign at your earliest convenience.`
-        : `Please review the document at the link below and add your electronic signature.`
+        ? `Please review and sign at your earliest convenience.`
+        : `Click the button below to review and add your electronic signature. The process takes just a few minutes.`
       }
     </p>
 
@@ -296,36 +296,41 @@ export async function sendEsigningCompletionEmail(input: {
       All signatures collected
     </h1>
 
+    <p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${TEXT};margin:0 0 6px;line-height:1.6;">
+      Hello <strong>${escapeHtml(input.recipientName)}</strong>,
+    </p>
     <p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${TEXT_SEC};margin:0 0 20px;line-height:1.6;">
-      Hello <strong style="color:${TEXT};">${escapeHtml(input.recipientName)}</strong>,
-      the signing workflow for <strong style="color:${TEXT};">${escapeHtml(input.envelopeTitle)}</strong> is complete.
+      The signing workflow for <strong style="color:${TEXT};">${escapeHtml(input.envelopeTitle)}</strong> is now complete.
+      ${hasAttachments ? 'Your signed copy is attached to this email.' : 'You can download the signed documents using the links below.'}
     </p>
 
+    <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;
+              color:${TEXT};margin:0 0 4px;">
+      ${hasAttachments ? 'Signed documents (attached):' : 'Download signed documents:'}
+    </p>
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
-           style="background:${BRAND_LT};border-radius:8px;margin-bottom:24px;">
+           style="margin-bottom:24px;">
+      ${docRows}
+    </table>
+
+    ${ctaButton('View Verification Record', verificationUrl)}
+
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+           style="background:${BG};border-radius:8px;margin-top:20px;">
       <tr>
-        <td style="padding:14px 20px;">
+        <td style="padding:12px 16px;">
           <p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;
-                    letter-spacing:0.08em;color:${BRAND};margin:0 0 3px;text-transform:uppercase;">
-            Certificate ID
+                    letter-spacing:0.08em;color:${TEXT_MUT};margin:0 0 3px;text-transform:uppercase;">
+            Document Certificate ID
           </p>
-          <p style="font-family:'Courier New',Courier,monospace;font-size:13px;
-                    color:${TEXT};margin:0;font-weight:bold;">
+          <p style="font-family:'Courier New',Courier,monospace;font-size:12px;
+                    color:${TEXT_SEC};margin:0;word-break:break-all;">
             ${escapeHtml(input.certificateId)}
           </p>
         </td>
       </tr>
     </table>
 
-    <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;
-              color:${TEXT};margin:0 0 4px;">
-      ${hasAttachments ? 'Signed documents are attached and available to download:' : 'Download the completed documents:'}
-    </p>
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-      ${docRows}
-    </table>
-
-    ${ctaButton('View Verification Record', verificationUrl)}
     ${signature()}`;
 
   const footerContent = `

@@ -1,25 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  DndContext,
-  PointerSensor,
-  KeyboardSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
-import { CSS } from '@dnd-kit/utilities';
-import { Upload, FileText, UserPlus, MoreVertical, Pencil, X, Check, ChevronDown, ChevronUp, GripVertical, Mail, Trash2, Plus } from 'lucide-react';
+import { Upload, FileText, UserPlus, MoreVertical, Pencil, X, Check, ChevronDown, ChevronUp, Mail, Trash2, Plus, Loader2 } from 'lucide-react';
 import type { EsigningRecipientAccessMode, EsigningRecipientType } from '@/generated/prisma';
 import type { EsigningEnvelopeDetailDto, EsigningEnvelopeDocumentDto, EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { UpdateEsigningEnvelopeInput } from '@/lib/validations/esigning';
@@ -44,6 +28,8 @@ import { cn } from '@/lib/utils';
 import type { EsigningSigningOrder } from '@/generated/prisma';
 
 const RECIPIENT_ACCENT_COLORS = ['#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#f97316'];
+const ESIGNING_UPLOAD_ACCEPT =
+  'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx';
 const SIGNING_ORDER_CYCLE: EsigningSigningOrder[] = ['PARALLEL', 'SEQUENTIAL', 'MIXED'];
 const SIGNING_ORDER_PILL_LABELS: Record<EsigningSigningOrder, string> = {
   PARALLEL: 'Parallel',
@@ -74,6 +60,7 @@ interface EsigningStepUploadProps {
   companies: Array<{ id: string; name: string; uen: string }>;
   companiesLoading: boolean;
   onNext: () => void;
+  onBack: () => void;
 }
 
 function toDateTimeLocal(value?: string | null): string {
@@ -367,102 +354,6 @@ function DocumentCard({ doc, canEdit, onDelete }: {
   );
 }
 
-function SortableSignerRow({
-  recipient,
-  index,
-  accentColor,
-  canEdit,
-  dragEnabled,
-  isBusy,
-  onEdit,
-  onRemove,
-}: {
-  recipient: EsigningEnvelopeRecipientDto;
-  index: number;
-  accentColor: string;
-  canEdit: boolean;
-  dragEnabled: boolean;
-  isBusy: boolean;
-  onEdit: () => void;
-  onRemove: () => void;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: recipient.id,
-    disabled: !dragEnabled,
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        'flex items-center gap-3 rounded-xl border border-border-primary bg-background-primary px-3 py-2.5 overflow-hidden',
-        isDragging && 'z-10 opacity-80 shadow-lg'
-      )}
-      data-recipient-id={recipient.id}
-    >
-      <button
-        type="button"
-        className={cn(
-          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-border-primary text-text-muted transition-colors',
-          dragEnabled ? 'cursor-grab hover:bg-background-tertiary active:cursor-grabbing' : 'cursor-default opacity-50'
-        )}
-        style={{ borderLeftColor: accentColor }}
-        disabled={!dragEnabled || isBusy}
-        aria-label={`Move ${recipient.name}`}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
-      <span
-        className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-        style={{ backgroundColor: accentColor }}
-      >
-        {index + 1}
-      </span>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-text-primary truncate">{recipient.name}</div>
-        <div className="text-xs text-text-muted truncate">{recipient.email}</div>
-      </div>
-      <span className="flex-shrink-0 rounded-full border border-oak-primary/20 bg-oak-primary/10 px-2 py-0.5 text-[10px] text-oak-primary">
-        {ESIGNING_RECIPIENT_TYPE_LABELS[recipient.type]}
-      </span>
-      {canEdit && (
-        <>
-          <button
-            type="button"
-            onClick={onEdit}
-            aria-label={`Edit ${recipient.name}`}
-            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary sm:h-8 sm:w-8"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={onRemove}
-            aria-label={`Remove ${recipient.name}`}
-            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-rose-500 sm:h-8 sm:w-8"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
 
 function RecipientRow({
   recipient,
@@ -551,6 +442,7 @@ export function EsigningStepUpload({
   companies,
   companiesLoading,
   onNext,
+  onBack,
 }: EsigningStepUploadProps) {
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -585,16 +477,6 @@ export function EsigningStepUpload({
   const [advancedOpen, setAdvancedOpen] = useState(true);
   const [pendingSignerGroups, setPendingSignerGroups] = useState<string[][]>([]);
   const usesOrderedSigning = signingOrder !== 'PARALLEL';
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 6,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   // Initialize from envelope
   useEffect(() => {
@@ -657,7 +539,6 @@ export function EsigningStepUpload({
   const hasSigner = signerRecipients.length > 0;
   const hasDocument = envelope.documents.length > 0;
   const canProceed = hasDocument && hasSigner;
-  const canDragSigners = envelope.canEdit && signingOrder === 'SEQUENTIAL' && orderedSignerRecipients.length > 1;
   const signerStructureSignature = useMemo(
     () =>
       `${envelope.signingOrder}:${signerRecipients
@@ -749,32 +630,24 @@ export function EsigningStepUpload({
     }
   }
 
-  async function handleSignerDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) {
-      return;
-    }
-
-    const previousOrder = flattenSignerGroups(reconciledPendingSignerGroups);
-    const oldIndex = previousOrder.indexOf(String(active.id));
-    const newIndex = previousOrder.indexOf(String(over.id));
-    if (oldIndex === -1 || newIndex === -1) {
-      return;
-    }
-
-    const nextOrder = arrayMove(previousOrder, oldIndex, newIndex);
-    const nextGroups = nextOrder.map((recipientId) => [recipientId]);
+  async function moveSequentialSigner(recipientId: string, direction: -1 | 1) {
+    const flat = flattenSignerGroups(reconciledPendingSignerGroups);
+    const currentIndex = flat.indexOf(recipientId);
+    const targetIndex = currentIndex + direction;
+    if (currentIndex === -1 || targetIndex < 0 || targetIndex >= flat.length) return;
+    const nextOrder = arrayMove(flat, currentIndex, targetIndex);
+    const nextGroups = nextOrder.map((id) => [id]);
+    const previousGroups = reconciledPendingSignerGroups;
     setPendingSignerGroups(nextGroups);
-
     try {
       await persistSignerGroups(nextGroups);
     } catch (error) {
-      setPendingSignerGroups(previousOrder.map((recipientId) => [recipientId]));
+      setPendingSignerGroups(previousGroups);
       toast.error(error instanceof Error ? error.message : 'Failed to reorder signers');
     }
   }
 
-  async function applyMixedGroupChange(
+async function applyMixedGroupChange(
     updater: (groups: string[][]) => string[][],
     fallbackMessage: string
   ) {
@@ -1096,33 +969,55 @@ export function EsigningStepUpload({
 
       {/* ——— Section 1: Documents ——— */}
       <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm space-y-4 sm:rounded-3xl sm:p-6">
-        <h2 className="text-lg font-semibold text-text-primary">Add documents</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-text-primary">
+            {envelope.documents.length > 0
+              ? `Documents (${envelope.documents.length})`
+              : 'Add documents'}
+          </h2>
+          {envelope.documents.length > 0 && envelope.canEdit && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border-primary bg-background-primary px-3 py-1.5 text-xs text-text-secondary hover:bg-background-tertiary transition-colors"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Add more
+            </button>
+          )}
+        </div>
 
         {/* Drop zone */}
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !isUploading && fileInputRef.current?.click()}
           className={cn(
-            'flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-colors',
-            isDragging
-              ? 'border-oak-primary bg-oak-primary/5'
-              : 'border-border-primary bg-background-primary hover:border-oak-primary/50 hover:bg-background-tertiary',
+            'flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-colors',
+            isUploading
+              ? 'cursor-wait border-oak-primary bg-oak-primary/5'
+              : isDragging
+                ? 'cursor-copy border-oak-primary bg-oak-primary/5'
+                : 'cursor-pointer border-border-primary bg-background-primary hover:border-oak-primary/50 hover:bg-background-tertiary',
           )}
         >
-          <Upload className="h-6 w-6 text-text-muted mb-1.5" />
+          {isUploading ? (
+            <Loader2 className="h-6 w-6 animate-spin text-oak-primary mb-1.5" />
+          ) : (
+            <Upload className="h-6 w-6 text-text-muted mb-1.5" />
+          )}
           <p className="text-sm font-medium text-text-primary">
-            {isUploading ? 'Uploading…' : 'Drop PDFs here or click to upload'}
+            {isUploading ? 'Uploading…' : isDragging ? 'Release to upload' : 'Drop PDF or Word documents here'}
           </p>
           <p className="text-xs text-text-muted mt-0.5">
-            PDF only · max {ESIGNING_LIMITS.MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB each
+            PDF, DOCX, or DOC · max {ESIGNING_LIMITS.MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB each
           </p>
         </div>
         <input
           ref={fileInputRef}
           type="file"
-          accept="application/pdf"
+          accept={ESIGNING_UPLOAD_ACCEPT}
           multiple
           className="hidden"
           onChange={handleFileChange}
@@ -1147,30 +1042,36 @@ export function EsigningStepUpload({
       <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm space-y-4 sm:rounded-3xl sm:p-6">
         {/* Header row */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-semibold text-text-primary">Add a recipient</h2>
-          <div className="flex flex-col items-start gap-1 sm:items-end sm:text-right">
-            <button
-              type="button"
-              onClick={handleCycleSigningOrder}
-              disabled={!envelope.canEdit}
-              className={cn(
-                'inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
-                signingOrder === 'PARALLEL' && 'border-border-primary bg-background-primary text-text-secondary',
-                signingOrder === 'SEQUENTIAL' && 'border-oak-primary/20 bg-oak-primary/10 text-oak-primary',
-                signingOrder === 'MIXED' && 'border-amber-300 bg-amber-50 text-amber-700',
-                !envelope.canEdit && 'cursor-not-allowed opacity-60'
-              )}
-            >
-              Routing: {SIGNING_ORDER_PILL_LABELS[signingOrder]}
-            </button>
-            <span className="text-[11px] text-text-muted">
-              Click to cycle Parallel, Sequential, Mixed.
-            </span>
-          </div>
+          <h2 className="text-lg font-semibold text-text-primary">
+            {envelope.recipients.length > 0 ? 'Recipients' : 'Add recipients'}
+          </h2>
+          {envelope.canEdit && (
+            <div className="flex flex-col items-start gap-1 sm:items-end sm:text-right">
+              <button
+                type="button"
+                onClick={handleCycleSigningOrder}
+                title="Click to cycle signing order: Parallel → Sequential → Mixed"
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors hover:opacity-80 active:scale-95',
+                  signingOrder === 'PARALLEL' && 'border-border-primary bg-background-primary text-text-secondary',
+                  signingOrder === 'SEQUENTIAL' && 'border-oak-primary/20 bg-oak-primary/10 text-oak-primary',
+                  signingOrder === 'MIXED' && 'border-amber-300 bg-amber-50 text-amber-700'
+                )}
+              >
+                <span className="opacity-60">Order:</span> {SIGNING_ORDER_PILL_LABELS[signingOrder]}
+                <ChevronDown className="h-3 w-3 opacity-50" />
+              </button>
+              <span className="text-[11px] text-text-muted">
+                Click to change signing order
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Self-sign row */}
-        {currentUser && envelope.canEdit && (
+        {/* Self-sign row — hidden if user is already a signer */}
+        {currentUser && envelope.canEdit && !envelope.recipients.some(
+          (r) => r.type === 'SIGNER' && normalizeEmail(r.email) === normalizeEmail(currentUser.email)
+        ) && (
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -1198,7 +1099,7 @@ export function EsigningStepUpload({
                       <p className="text-xs text-text-muted">
                         {signingOrder === 'MIXED'
                           ? 'Mixed routing sends each group in sequence. Signers inside the same group sign in parallel, and you can move people between waves below.'
-                          : 'Drag signer cards to set the signing sequence.'}
+                          : 'Use Earlier / Later to set the signing sequence.'}
                         {signingOrder === 'MIXED'
                           ? ' Group mode is fixed to parallel inside each wave.'
                           : envelope.signingOrder === 'PARALLEL'
@@ -1392,32 +1293,75 @@ export function EsigningStepUpload({
                     ))}
                   </div>
                 ) : (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={(event) => { void handleSignerDragEnd(event); }}
-                  >
-                    <SortableContext
-                      items={orderedSignerRecipients.map((recipient) => recipient.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="space-y-2">
-                        {orderedSignerRecipients.map((recipient, idx) => (
-                          <SortableSignerRow
-                            key={recipient.id}
-                            recipient={recipient}
-                            index={idx}
-                            accentColor={RECIPIENT_ACCENT_COLORS[idx % RECIPIENT_ACCENT_COLORS.length]}
-                            canEdit={envelope.canEdit}
-                            dragEnabled={canDragSigners}
-                            isBusy={isReorderingRecipients}
-                            onEdit={() => onEditRecipient(recipient.id)}
-                            onRemove={() => onRemoveRecipient(recipient.id)}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
+                  <div className="space-y-2">
+                    {orderedSignerRecipients.map((recipient, idx) => {
+                      const accentColor = RECIPIENT_ACCENT_COLORS[idx % RECIPIENT_ACCENT_COLORS.length];
+                      return (
+                        <div
+                          key={recipient.id}
+                          className="flex items-center gap-3 rounded-xl border border-border-primary bg-background-primary px-3 py-2.5 overflow-hidden"
+                        >
+                          <span
+                            className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                            style={{ backgroundColor: accentColor }}
+                          >
+                            {idx + 1}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-text-primary truncate">{recipient.name}</div>
+                            <div className="text-xs text-text-muted truncate">{recipient.email}</div>
+                          </div>
+                          <span className="flex-shrink-0 rounded-full border border-oak-primary/20 bg-oak-primary/10 px-2 py-0.5 text-[10px] text-oak-primary">
+                            {ESIGNING_RECIPIENT_TYPE_LABELS[recipient.type]}
+                          </span>
+                          {envelope.canEdit && signingOrder === 'SEQUENTIAL' && orderedSignerRecipients.length > 1 && (
+                            <div className="inline-flex overflow-hidden rounded-lg border border-border-primary flex-shrink-0">
+                              <button
+                                type="button"
+                                aria-label="Move signer up"
+                                onClick={() => void moveSequentialSigner(recipient.id, -1)}
+                                disabled={isReorderingRecipients || idx === 0}
+                                className="inline-flex h-7 items-center gap-0.5 border-r border-border-primary bg-background-elevated px-2 text-xs text-text-primary transition-colors hover:bg-background-tertiary disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                <ChevronUp className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Up</span>
+                              </button>
+                              <button
+                                type="button"
+                                aria-label="Move signer down"
+                                onClick={() => void moveSequentialSigner(recipient.id, 1)}
+                                disabled={isReorderingRecipients || idx === orderedSignerRecipients.length - 1}
+                                className="inline-flex h-7 items-center gap-0.5 bg-background-elevated px-2 text-xs text-text-primary transition-colors hover:bg-background-tertiary disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                <ChevronDown className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Down</span>
+                              </button>
+                            </div>
+                          )}
+                          {envelope.canEdit && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => onEditRecipient(recipient.id)}
+                                aria-label={`Edit ${recipient.name}`}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onRemoveRecipient(recipient.id)}
+                                aria-label={`Remove ${recipient.name}`}
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-rose-500"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
@@ -1444,35 +1388,95 @@ export function EsigningStepUpload({
 
         {/* New recipient inline form */}
         {isAddingRecipient && (
-          <div className="rounded-xl border-2 border-dashed border-border-primary bg-background-primary p-4 space-y-3">
-          {newRecipient.type === 'SIGNER' && (
-            <ContactSearchSelect
-              key={`recipient-contact-${selectedContactId || 'empty'}`}
-              label="Select from Contacts"
-              value={selectedContactId}
-              onChange={handleContactSelect}
-              placeholder="Search contacts for signer..."
-            />
-          )}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <FormInput
-              placeholder="Full name"
-              value={newRecipient.name}
+          <div className="rounded-2xl border border-border-primary bg-background-primary p-4 space-y-3 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-text-primary">New recipient</h3>
+              <button
+                type="button"
+                onClick={() => { setIsAddingRecipient(false); resetRecipientDraft(); }}
+                className="rounded-lg p-1 text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                aria-label="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {newRecipient.type === 'SIGNER' && (
+              <ContactSearchSelect
+                key={`recipient-contact-${selectedContactId || 'empty'}`}
+                label="Select from Contacts (optional)"
+                value={selectedContactId}
+                onChange={handleContactSelect}
+                placeholder="Search contacts for signer..."
+              />
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FormInput
+                label="Full name"
+                placeholder="e.g. Jane Smith"
+                value={newRecipient.name}
                 onChange={(e) => setNewRecipient((prev) => ({ ...prev, name: e.target.value }))}
               />
               <FormInput
+                label="Email address"
                 type="email"
-                placeholder="Email address"
+                placeholder="e.g. jane@example.com"
                 value={newRecipient.email}
                 onChange={(e) => setNewRecipient((prev) => ({ ...prev, email: e.target.value }))}
               />
             </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
+                Role
+                <select
+                  value={newRecipient.type}
+                  onChange={(e) => {
+                    const nextType = e.target.value as EsigningRecipientType;
+                    setNewRecipient((prev) => ({ ...prev, type: nextType }));
+                    if (nextType !== 'SIGNER') {
+                      setSelectedContactId('');
+                      setSelectedContact(null);
+                      setSelectedContactDefaultEmailDetailId(null);
+                    }
+                  }}
+                  className="h-9 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+                >
+                  {Object.entries(ESIGNING_RECIPIENT_TYPE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
+                Access method
+                <select
+                  value={newRecipient.accessMode}
+                  onChange={(e) => setNewRecipient((prev) => ({ ...prev, accessMode: e.target.value as EsigningRecipientAccessMode }))}
+                  className="h-9 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+                >
+                  {Object.entries(ESIGNING_ACCESS_MODE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {newRecipient.accessMode === 'EMAIL_WITH_CODE' && (
+              <FormInput
+                label="Access code"
+                placeholder={`Min ${ESIGNING_LIMITS.MIN_ACCESS_CODE_LENGTH} characters`}
+                value={newRecipient.accessCode}
+                onChange={(e) => setNewRecipient((prev) => ({ ...prev, accessCode: e.target.value }))}
+              />
+            )}
+
             {newRecipient.type === 'SIGNER' && !selectedContact && (
               <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border-primary bg-background-secondary px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <div className="text-sm font-medium text-text-primary">Can&apos;t find the contact?</div>
+                  <div className="text-sm font-medium text-text-primary">Save as a contact?</div>
                   <p className="mt-1 text-xs text-text-muted">
-                    Quick add this signer as a contact using the name and email above, then keep going here.
+                    Quick-add this signer to your contacts using the name and email above.
                   </p>
                 </div>
                 <Button
@@ -1487,17 +1491,18 @@ export function EsigningStepUpload({
                 </Button>
               </div>
             )}
+
             {newRecipient.type === 'SIGNER' && selectedContact && (
               <div className="flex flex-col gap-2 rounded-xl border border-border-primary bg-background-secondary px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
                     <Mail className="h-4 w-4 text-text-muted" />
-                    <span>Contact default email</span>
+                    <span>Contact email</span>
                   </div>
                   <p className="mt-1 text-xs text-text-muted">
                     {selectedContact.defaultEmail
-                      ? `Currently saved as ${selectedContact.defaultEmail}`
-                      : 'No default email saved yet for this contact.'}
+                      ? `Saved as ${selectedContact.defaultEmail}`
+                      : 'No default email saved for this contact yet.'}
                   </p>
                 </div>
                 <Button
@@ -1508,64 +1513,29 @@ export function EsigningStepUpload({
                   isLoading={isSavingContactEmail}
                   disabled={isSavingContactEmail || !newRecipient.email.trim() || selectedContact.defaultEmail === newRecipient.email.trim()}
                 >
-                  {selectedContact.defaultEmail ? 'Update contact email' : 'Save as default email'}
+                  {selectedContact.defaultEmail ? 'Update email' : 'Save email'}
                 </Button>
               </div>
             )}
-            <div className="flex flex-wrap items-center gap-3">
-              <select
-                value={newRecipient.type}
-                onChange={(e) => {
-                  const nextType = e.target.value as EsigningRecipientType;
-                  setNewRecipient((prev) => ({ ...prev, type: nextType }));
-                  if (nextType !== 'SIGNER') {
-                    setSelectedContactId('');
-                    setSelectedContact(null);
-                    setSelectedContactDefaultEmailDetailId(null);
-                  }
-                }}
-                className="h-8 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+
+            <div className="flex justify-end gap-2 border-t border-border-primary pt-3">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => { setIsAddingRecipient(false); resetRecipientDraft(); }}
               >
-                {Object.entries(ESIGNING_RECIPIENT_TYPE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-              <select
-                value={newRecipient.accessMode}
-                onChange={(e) => setNewRecipient((prev) => ({ ...prev, accessMode: e.target.value as EsigningRecipientAccessMode }))}
-                className="h-8 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                leftIcon={<Check className="h-4 w-4" />}
+                onClick={() => void handleConfirmNewRecipient()}
               >
-                {Object.entries(ESIGNING_ACCESS_MODE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-              <div className="flex gap-2 ml-auto">
-                <button
-                  type="button"
-                  onClick={() => void handleConfirmNewRecipient()}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-oak-primary text-white hover:bg-oak-primary/90"
-                >
-                  <Check className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAddingRecipient(false);
-                    resetRecipientDraft();
-                  }}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-primary text-text-muted hover:bg-background-tertiary"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+                Add recipient
+              </Button>
             </div>
-            {newRecipient.accessMode === 'EMAIL_WITH_CODE' && (
-              <FormInput
-                placeholder="Access code (min 4 chars)"
-                value={newRecipient.accessCode}
-                onChange={(e) => setNewRecipient((prev) => ({ ...prev, accessCode: e.target.value }))}
-              />
-            )}
           </div>
         )}
 
@@ -1584,7 +1554,10 @@ export function EsigningStepUpload({
 
       {/* ——— Section 3: Message ——— */}
       <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm space-y-4 sm:rounded-3xl sm:p-6">
-        <h2 className="text-lg font-semibold text-text-primary">Add message</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-text-primary">Email subject & message</h2>
+          <p className="mt-0.5 text-xs text-text-muted">Shown in the signing request email sent to recipients.</p>
+        </div>
 
         <FormInput
           label="Subject"
@@ -1612,17 +1585,16 @@ export function EsigningStepUpload({
       </section>
 
       {/* ——— Section 4: Advanced settings ——— */}
-      <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
+      <section className="rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl">
         <details
           open={advancedOpen}
           onToggle={(e) => setAdvancedOpen((e.target as HTMLDetailsElement).open)}
-          className="rounded-xl border border-border-primary bg-background-primary"
         >
-          <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium text-text-secondary select-none list-none">
+          <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium text-text-secondary select-none list-none sm:px-6">
             Advanced settings
             {advancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </summary>
-          <div className="border-t border-border-primary px-4 py-4 space-y-4">
+          <div className="border-t border-border-primary px-4 py-4 space-y-4 sm:px-6">
             <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
               <span>Expiration</span>
               <input
@@ -1698,13 +1670,28 @@ export function EsigningStepUpload({
       </section>
 
       {/* ——— Bottom bar ——— */}
-      <div className="flex flex-col gap-2 rounded-2xl border border-border-primary bg-background-secondary px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6">
-        <div className="text-sm text-text-secondary">
-          {!canProceed && (
-            <span className="text-amber-600">
-              {!hasDocument && 'Upload at least one document. '}
-              {!hasSigner && 'Add at least one signer.'}
-            </span>
+      <div className="flex flex-col gap-2 rounded-2xl border border-border-primary bg-background-secondary px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-6">
+        <Button variant="secondary" className="w-full sm:w-auto" onClick={onBack}>
+          Back
+        </Button>
+        <div className="min-w-0 flex-1 text-sm">
+          {canProceed ? (
+            <span className="text-text-muted">Settings and recipients look good.</span>
+          ) : (
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {!hasDocument && (
+                <span className="flex items-center gap-1 text-amber-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  Upload at least one document
+                </span>
+              )}
+              {!hasSigner && (
+                <span className="flex items-center gap-1 text-amber-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  Add at least one signer
+                </span>
+              )}
+            </div>
           )}
         </div>
         <Button
@@ -1713,8 +1700,8 @@ export function EsigningStepUpload({
           isLoading={isUpdating}
           disabled={!canProceed}
         >
-          <span className="hidden sm:inline">Next: Place Fields</span>
-          <span className="sm:hidden">Next</span>
+          <span className="hidden sm:inline">Next: Place Fields →</span>
+          <span className="sm:hidden">Next →</span>
         </Button>
       </div>
     </div>

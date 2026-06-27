@@ -26,7 +26,7 @@ export type AggregateWorkspaceConnectorAccess = {
 
 export type WorkspaceConnectorAccessMinAggregateOutputType = {
   id: string | null
-  tenantId: string | null
+  workspaceId: string | null
   connectorId: string | null
   isEnabled: boolean | null
   createdAt: Date | null
@@ -35,7 +35,7 @@ export type WorkspaceConnectorAccessMinAggregateOutputType = {
 
 export type WorkspaceConnectorAccessMaxAggregateOutputType = {
   id: string | null
-  tenantId: string | null
+  workspaceId: string | null
   connectorId: string | null
   isEnabled: boolean | null
   createdAt: Date | null
@@ -44,7 +44,7 @@ export type WorkspaceConnectorAccessMaxAggregateOutputType = {
 
 export type WorkspaceConnectorAccessCountAggregateOutputType = {
   id: number
-  tenantId: number
+  workspaceId: number
   connectorId: number
   isEnabled: number
   createdAt: number
@@ -55,7 +55,7 @@ export type WorkspaceConnectorAccessCountAggregateOutputType = {
 
 export type WorkspaceConnectorAccessMinAggregateInputType = {
   id?: true
-  tenantId?: true
+  workspaceId?: true
   connectorId?: true
   isEnabled?: true
   createdAt?: true
@@ -64,7 +64,7 @@ export type WorkspaceConnectorAccessMinAggregateInputType = {
 
 export type WorkspaceConnectorAccessMaxAggregateInputType = {
   id?: true
-  tenantId?: true
+  workspaceId?: true
   connectorId?: true
   isEnabled?: true
   createdAt?: true
@@ -73,7 +73,7 @@ export type WorkspaceConnectorAccessMaxAggregateInputType = {
 
 export type WorkspaceConnectorAccessCountAggregateInputType = {
   id?: true
-  tenantId?: true
+  workspaceId?: true
   connectorId?: true
   isEnabled?: true
   createdAt?: true
@@ -155,7 +155,7 @@ export type WorkspaceConnectorAccessGroupByArgs<ExtArgs extends runtime.Types.Ex
 
 export type WorkspaceConnectorAccessGroupByOutputType = {
   id: string
-  tenantId: string
+  workspaceId: string
   connectorId: string
   isEnabled: boolean
   createdAt: Date
@@ -185,44 +185,44 @@ export type WorkspaceConnectorAccessWhereInput = {
   OR?: Prisma.WorkspaceConnectorAccessWhereInput[]
   NOT?: Prisma.WorkspaceConnectorAccessWhereInput | Prisma.WorkspaceConnectorAccessWhereInput[]
   id?: Prisma.StringFilter<"WorkspaceConnectorAccess"> | string
-  tenantId?: Prisma.StringFilter<"WorkspaceConnectorAccess"> | string
+  workspaceId?: Prisma.StringFilter<"WorkspaceConnectorAccess"> | string
   connectorId?: Prisma.StringFilter<"WorkspaceConnectorAccess"> | string
   isEnabled?: Prisma.BoolFilter<"WorkspaceConnectorAccess"> | boolean
   createdAt?: Prisma.DateTimeFilter<"WorkspaceConnectorAccess"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"WorkspaceConnectorAccess"> | Date | string
   connector?: Prisma.XOR<Prisma.ConnectorScalarRelationFilter, Prisma.ConnectorWhereInput>
-  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
+  workspace?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
 }
 
 export type WorkspaceConnectorAccessOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  tenantId?: Prisma.SortOrder
+  workspaceId?: Prisma.SortOrder
   connectorId?: Prisma.SortOrder
   isEnabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   connector?: Prisma.ConnectorOrderByWithRelationInput
-  tenant?: Prisma.WorkspaceOrderByWithRelationInput
+  workspace?: Prisma.WorkspaceOrderByWithRelationInput
 }
 
 export type WorkspaceConnectorAccessWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  tenantId_connectorId?: Prisma.WorkspaceConnectorAccessTenantIdConnectorIdCompoundUniqueInput
+  workspaceId_connectorId?: Prisma.WorkspaceConnectorAccessWorkspaceIdConnectorIdCompoundUniqueInput
   AND?: Prisma.WorkspaceConnectorAccessWhereInput | Prisma.WorkspaceConnectorAccessWhereInput[]
   OR?: Prisma.WorkspaceConnectorAccessWhereInput[]
   NOT?: Prisma.WorkspaceConnectorAccessWhereInput | Prisma.WorkspaceConnectorAccessWhereInput[]
-  tenantId?: Prisma.StringFilter<"WorkspaceConnectorAccess"> | string
+  workspaceId?: Prisma.StringFilter<"WorkspaceConnectorAccess"> | string
   connectorId?: Prisma.StringFilter<"WorkspaceConnectorAccess"> | string
   isEnabled?: Prisma.BoolFilter<"WorkspaceConnectorAccess"> | boolean
   createdAt?: Prisma.DateTimeFilter<"WorkspaceConnectorAccess"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"WorkspaceConnectorAccess"> | Date | string
   connector?: Prisma.XOR<Prisma.ConnectorScalarRelationFilter, Prisma.ConnectorWhereInput>
-  tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
-}, "id" | "tenantId_connectorId">
+  workspace?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
+}, "id" | "workspaceId_connectorId">
 
 export type WorkspaceConnectorAccessOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  tenantId?: Prisma.SortOrder
+  workspaceId?: Prisma.SortOrder
   connectorId?: Prisma.SortOrder
   isEnabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -237,7 +237,7 @@ export type WorkspaceConnectorAccessScalarWhereWithAggregatesInput = {
   OR?: Prisma.WorkspaceConnectorAccessScalarWhereWithAggregatesInput[]
   NOT?: Prisma.WorkspaceConnectorAccessScalarWhereWithAggregatesInput | Prisma.WorkspaceConnectorAccessScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"WorkspaceConnectorAccess"> | string
-  tenantId?: Prisma.StringWithAggregatesFilter<"WorkspaceConnectorAccess"> | string
+  workspaceId?: Prisma.StringWithAggregatesFilter<"WorkspaceConnectorAccess"> | string
   connectorId?: Prisma.StringWithAggregatesFilter<"WorkspaceConnectorAccess"> | string
   isEnabled?: Prisma.BoolWithAggregatesFilter<"WorkspaceConnectorAccess"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"WorkspaceConnectorAccess"> | Date | string
@@ -249,13 +249,13 @@ export type WorkspaceConnectorAccessCreateInput = {
   isEnabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  connector: Prisma.ConnectorCreateNestedOneWithoutTenantAccessInput
-  tenant: Prisma.WorkspaceCreateNestedOneWithoutConnectorAccessInput
+  connector: Prisma.ConnectorCreateNestedOneWithoutWorkspaceAccessInput
+  workspace: Prisma.WorkspaceCreateNestedOneWithoutConnectorAccessInput
 }
 
 export type WorkspaceConnectorAccessUncheckedCreateInput = {
   id?: string
-  tenantId: string
+  workspaceId: string
   connectorId: string
   isEnabled?: boolean
   createdAt?: Date | string
@@ -267,13 +267,13 @@ export type WorkspaceConnectorAccessUpdateInput = {
   isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  connector?: Prisma.ConnectorUpdateOneRequiredWithoutTenantAccessNestedInput
-  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutConnectorAccessNestedInput
+  connector?: Prisma.ConnectorUpdateOneRequiredWithoutWorkspaceAccessNestedInput
+  workspace?: Prisma.WorkspaceUpdateOneRequiredWithoutConnectorAccessNestedInput
 }
 
 export type WorkspaceConnectorAccessUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  workspaceId?: Prisma.StringFieldUpdateOperationsInput | string
   connectorId?: Prisma.StringFieldUpdateOperationsInput | string
   isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -282,7 +282,7 @@ export type WorkspaceConnectorAccessUncheckedUpdateInput = {
 
 export type WorkspaceConnectorAccessCreateManyInput = {
   id?: string
-  tenantId: string
+  workspaceId: string
   connectorId: string
   isEnabled?: boolean
   createdAt?: Date | string
@@ -298,7 +298,7 @@ export type WorkspaceConnectorAccessUpdateManyMutationInput = {
 
 export type WorkspaceConnectorAccessUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  workspaceId?: Prisma.StringFieldUpdateOperationsInput | string
   connectorId?: Prisma.StringFieldUpdateOperationsInput | string
   isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -315,14 +315,14 @@ export type WorkspaceConnectorAccessOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type WorkspaceConnectorAccessTenantIdConnectorIdCompoundUniqueInput = {
-  tenantId: string
+export type WorkspaceConnectorAccessWorkspaceIdConnectorIdCompoundUniqueInput = {
+  workspaceId: string
   connectorId: string
 }
 
 export type WorkspaceConnectorAccessCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  tenantId?: Prisma.SortOrder
+  workspaceId?: Prisma.SortOrder
   connectorId?: Prisma.SortOrder
   isEnabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -331,7 +331,7 @@ export type WorkspaceConnectorAccessCountOrderByAggregateInput = {
 
 export type WorkspaceConnectorAccessMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  tenantId?: Prisma.SortOrder
+  workspaceId?: Prisma.SortOrder
   connectorId?: Prisma.SortOrder
   isEnabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -340,52 +340,52 @@ export type WorkspaceConnectorAccessMaxOrderByAggregateInput = {
 
 export type WorkspaceConnectorAccessMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  tenantId?: Prisma.SortOrder
+  workspaceId?: Prisma.SortOrder
   connectorId?: Prisma.SortOrder
   isEnabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
-export type WorkspaceConnectorAccessCreateNestedManyWithoutTenantInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutTenantInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput> | Prisma.WorkspaceConnectorAccessCreateWithoutTenantInput[] | Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput[]
-  connectOrCreate?: Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutTenantInput | Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutTenantInput[]
-  createMany?: Prisma.WorkspaceConnectorAccessCreateManyTenantInputEnvelope
+export type WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutWorkspaceInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutWorkspaceInput> | Prisma.WorkspaceConnectorAccessCreateWithoutWorkspaceInput[] | Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutWorkspaceInput[]
+  connectOrCreate?: Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutWorkspaceInput | Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutWorkspaceInput[]
+  createMany?: Prisma.WorkspaceConnectorAccessCreateManyWorkspaceInputEnvelope
   connect?: Prisma.WorkspaceConnectorAccessWhereUniqueInput | Prisma.WorkspaceConnectorAccessWhereUniqueInput[]
 }
 
-export type WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutTenantInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutTenantInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput> | Prisma.WorkspaceConnectorAccessCreateWithoutTenantInput[] | Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput[]
-  connectOrCreate?: Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutTenantInput | Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutTenantInput[]
-  createMany?: Prisma.WorkspaceConnectorAccessCreateManyTenantInputEnvelope
+export type WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutWorkspaceInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutWorkspaceInput> | Prisma.WorkspaceConnectorAccessCreateWithoutWorkspaceInput[] | Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutWorkspaceInput[]
+  connectOrCreate?: Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutWorkspaceInput | Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutWorkspaceInput[]
+  createMany?: Prisma.WorkspaceConnectorAccessCreateManyWorkspaceInputEnvelope
   connect?: Prisma.WorkspaceConnectorAccessWhereUniqueInput | Prisma.WorkspaceConnectorAccessWhereUniqueInput[]
 }
 
-export type WorkspaceConnectorAccessUpdateManyWithoutTenantNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutTenantInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput> | Prisma.WorkspaceConnectorAccessCreateWithoutTenantInput[] | Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput[]
-  connectOrCreate?: Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutTenantInput | Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutTenantInput[]
-  upsert?: Prisma.WorkspaceConnectorAccessUpsertWithWhereUniqueWithoutTenantInput | Prisma.WorkspaceConnectorAccessUpsertWithWhereUniqueWithoutTenantInput[]
-  createMany?: Prisma.WorkspaceConnectorAccessCreateManyTenantInputEnvelope
+export type WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutWorkspaceInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutWorkspaceInput> | Prisma.WorkspaceConnectorAccessCreateWithoutWorkspaceInput[] | Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutWorkspaceInput[]
+  connectOrCreate?: Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutWorkspaceInput | Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutWorkspaceInput[]
+  upsert?: Prisma.WorkspaceConnectorAccessUpsertWithWhereUniqueWithoutWorkspaceInput | Prisma.WorkspaceConnectorAccessUpsertWithWhereUniqueWithoutWorkspaceInput[]
+  createMany?: Prisma.WorkspaceConnectorAccessCreateManyWorkspaceInputEnvelope
   set?: Prisma.WorkspaceConnectorAccessWhereUniqueInput | Prisma.WorkspaceConnectorAccessWhereUniqueInput[]
   disconnect?: Prisma.WorkspaceConnectorAccessWhereUniqueInput | Prisma.WorkspaceConnectorAccessWhereUniqueInput[]
   delete?: Prisma.WorkspaceConnectorAccessWhereUniqueInput | Prisma.WorkspaceConnectorAccessWhereUniqueInput[]
   connect?: Prisma.WorkspaceConnectorAccessWhereUniqueInput | Prisma.WorkspaceConnectorAccessWhereUniqueInput[]
-  update?: Prisma.WorkspaceConnectorAccessUpdateWithWhereUniqueWithoutTenantInput | Prisma.WorkspaceConnectorAccessUpdateWithWhereUniqueWithoutTenantInput[]
-  updateMany?: Prisma.WorkspaceConnectorAccessUpdateManyWithWhereWithoutTenantInput | Prisma.WorkspaceConnectorAccessUpdateManyWithWhereWithoutTenantInput[]
+  update?: Prisma.WorkspaceConnectorAccessUpdateWithWhereUniqueWithoutWorkspaceInput | Prisma.WorkspaceConnectorAccessUpdateWithWhereUniqueWithoutWorkspaceInput[]
+  updateMany?: Prisma.WorkspaceConnectorAccessUpdateManyWithWhereWithoutWorkspaceInput | Prisma.WorkspaceConnectorAccessUpdateManyWithWhereWithoutWorkspaceInput[]
   deleteMany?: Prisma.WorkspaceConnectorAccessScalarWhereInput | Prisma.WorkspaceConnectorAccessScalarWhereInput[]
 }
 
-export type WorkspaceConnectorAccessUncheckedUpdateManyWithoutTenantNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutTenantInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput> | Prisma.WorkspaceConnectorAccessCreateWithoutTenantInput[] | Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput[]
-  connectOrCreate?: Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutTenantInput | Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutTenantInput[]
-  upsert?: Prisma.WorkspaceConnectorAccessUpsertWithWhereUniqueWithoutTenantInput | Prisma.WorkspaceConnectorAccessUpsertWithWhereUniqueWithoutTenantInput[]
-  createMany?: Prisma.WorkspaceConnectorAccessCreateManyTenantInputEnvelope
+export type WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutWorkspaceInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutWorkspaceInput> | Prisma.WorkspaceConnectorAccessCreateWithoutWorkspaceInput[] | Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutWorkspaceInput[]
+  connectOrCreate?: Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutWorkspaceInput | Prisma.WorkspaceConnectorAccessCreateOrConnectWithoutWorkspaceInput[]
+  upsert?: Prisma.WorkspaceConnectorAccessUpsertWithWhereUniqueWithoutWorkspaceInput | Prisma.WorkspaceConnectorAccessUpsertWithWhereUniqueWithoutWorkspaceInput[]
+  createMany?: Prisma.WorkspaceConnectorAccessCreateManyWorkspaceInputEnvelope
   set?: Prisma.WorkspaceConnectorAccessWhereUniqueInput | Prisma.WorkspaceConnectorAccessWhereUniqueInput[]
   disconnect?: Prisma.WorkspaceConnectorAccessWhereUniqueInput | Prisma.WorkspaceConnectorAccessWhereUniqueInput[]
   delete?: Prisma.WorkspaceConnectorAccessWhereUniqueInput | Prisma.WorkspaceConnectorAccessWhereUniqueInput[]
   connect?: Prisma.WorkspaceConnectorAccessWhereUniqueInput | Prisma.WorkspaceConnectorAccessWhereUniqueInput[]
-  update?: Prisma.WorkspaceConnectorAccessUpdateWithWhereUniqueWithoutTenantInput | Prisma.WorkspaceConnectorAccessUpdateWithWhereUniqueWithoutTenantInput[]
-  updateMany?: Prisma.WorkspaceConnectorAccessUpdateManyWithWhereWithoutTenantInput | Prisma.WorkspaceConnectorAccessUpdateManyWithWhereWithoutTenantInput[]
+  update?: Prisma.WorkspaceConnectorAccessUpdateWithWhereUniqueWithoutWorkspaceInput | Prisma.WorkspaceConnectorAccessUpdateWithWhereUniqueWithoutWorkspaceInput[]
+  updateMany?: Prisma.WorkspaceConnectorAccessUpdateManyWithWhereWithoutWorkspaceInput | Prisma.WorkspaceConnectorAccessUpdateManyWithWhereWithoutWorkspaceInput[]
   deleteMany?: Prisma.WorkspaceConnectorAccessScalarWhereInput | Prisma.WorkspaceConnectorAccessScalarWhereInput[]
 }
 
@@ -431,15 +431,15 @@ export type WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorNestedInp
   deleteMany?: Prisma.WorkspaceConnectorAccessScalarWhereInput | Prisma.WorkspaceConnectorAccessScalarWhereInput[]
 }
 
-export type WorkspaceConnectorAccessCreateWithoutTenantInput = {
+export type WorkspaceConnectorAccessCreateWithoutWorkspaceInput = {
   id?: string
   isEnabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  connector: Prisma.ConnectorCreateNestedOneWithoutTenantAccessInput
+  connector: Prisma.ConnectorCreateNestedOneWithoutWorkspaceAccessInput
 }
 
-export type WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput = {
+export type WorkspaceConnectorAccessUncheckedCreateWithoutWorkspaceInput = {
   id?: string
   connectorId: string
   isEnabled?: boolean
@@ -447,30 +447,30 @@ export type WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput = {
   updatedAt?: Date | string
 }
 
-export type WorkspaceConnectorAccessCreateOrConnectWithoutTenantInput = {
+export type WorkspaceConnectorAccessCreateOrConnectWithoutWorkspaceInput = {
   where: Prisma.WorkspaceConnectorAccessWhereUniqueInput
-  create: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutTenantInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput>
+  create: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutWorkspaceInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutWorkspaceInput>
 }
 
-export type WorkspaceConnectorAccessCreateManyTenantInputEnvelope = {
-  data: Prisma.WorkspaceConnectorAccessCreateManyTenantInput | Prisma.WorkspaceConnectorAccessCreateManyTenantInput[]
+export type WorkspaceConnectorAccessCreateManyWorkspaceInputEnvelope = {
+  data: Prisma.WorkspaceConnectorAccessCreateManyWorkspaceInput | Prisma.WorkspaceConnectorAccessCreateManyWorkspaceInput[]
   skipDuplicates?: boolean
 }
 
-export type WorkspaceConnectorAccessUpsertWithWhereUniqueWithoutTenantInput = {
+export type WorkspaceConnectorAccessUpsertWithWhereUniqueWithoutWorkspaceInput = {
   where: Prisma.WorkspaceConnectorAccessWhereUniqueInput
-  update: Prisma.XOR<Prisma.WorkspaceConnectorAccessUpdateWithoutTenantInput, Prisma.WorkspaceConnectorAccessUncheckedUpdateWithoutTenantInput>
-  create: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutTenantInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutTenantInput>
+  update: Prisma.XOR<Prisma.WorkspaceConnectorAccessUpdateWithoutWorkspaceInput, Prisma.WorkspaceConnectorAccessUncheckedUpdateWithoutWorkspaceInput>
+  create: Prisma.XOR<Prisma.WorkspaceConnectorAccessCreateWithoutWorkspaceInput, Prisma.WorkspaceConnectorAccessUncheckedCreateWithoutWorkspaceInput>
 }
 
-export type WorkspaceConnectorAccessUpdateWithWhereUniqueWithoutTenantInput = {
+export type WorkspaceConnectorAccessUpdateWithWhereUniqueWithoutWorkspaceInput = {
   where: Prisma.WorkspaceConnectorAccessWhereUniqueInput
-  data: Prisma.XOR<Prisma.WorkspaceConnectorAccessUpdateWithoutTenantInput, Prisma.WorkspaceConnectorAccessUncheckedUpdateWithoutTenantInput>
+  data: Prisma.XOR<Prisma.WorkspaceConnectorAccessUpdateWithoutWorkspaceInput, Prisma.WorkspaceConnectorAccessUncheckedUpdateWithoutWorkspaceInput>
 }
 
-export type WorkspaceConnectorAccessUpdateManyWithWhereWithoutTenantInput = {
+export type WorkspaceConnectorAccessUpdateManyWithWhereWithoutWorkspaceInput = {
   where: Prisma.WorkspaceConnectorAccessScalarWhereInput
-  data: Prisma.XOR<Prisma.WorkspaceConnectorAccessUpdateManyMutationInput, Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutTenantInput>
+  data: Prisma.XOR<Prisma.WorkspaceConnectorAccessUpdateManyMutationInput, Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceInput>
 }
 
 export type WorkspaceConnectorAccessScalarWhereInput = {
@@ -478,7 +478,7 @@ export type WorkspaceConnectorAccessScalarWhereInput = {
   OR?: Prisma.WorkspaceConnectorAccessScalarWhereInput[]
   NOT?: Prisma.WorkspaceConnectorAccessScalarWhereInput | Prisma.WorkspaceConnectorAccessScalarWhereInput[]
   id?: Prisma.StringFilter<"WorkspaceConnectorAccess"> | string
-  tenantId?: Prisma.StringFilter<"WorkspaceConnectorAccess"> | string
+  workspaceId?: Prisma.StringFilter<"WorkspaceConnectorAccess"> | string
   connectorId?: Prisma.StringFilter<"WorkspaceConnectorAccess"> | string
   isEnabled?: Prisma.BoolFilter<"WorkspaceConnectorAccess"> | boolean
   createdAt?: Prisma.DateTimeFilter<"WorkspaceConnectorAccess"> | Date | string
@@ -490,12 +490,12 @@ export type WorkspaceConnectorAccessCreateWithoutConnectorInput = {
   isEnabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  tenant: Prisma.WorkspaceCreateNestedOneWithoutConnectorAccessInput
+  workspace: Prisma.WorkspaceCreateNestedOneWithoutConnectorAccessInput
 }
 
 export type WorkspaceConnectorAccessUncheckedCreateWithoutConnectorInput = {
   id?: string
-  tenantId: string
+  workspaceId: string
   isEnabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -527,7 +527,7 @@ export type WorkspaceConnectorAccessUpdateManyWithWhereWithoutConnectorInput = {
   data: Prisma.XOR<Prisma.WorkspaceConnectorAccessUpdateManyMutationInput, Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorInput>
 }
 
-export type WorkspaceConnectorAccessCreateManyTenantInput = {
+export type WorkspaceConnectorAccessCreateManyWorkspaceInput = {
   id?: string
   connectorId: string
   isEnabled?: boolean
@@ -535,15 +535,15 @@ export type WorkspaceConnectorAccessCreateManyTenantInput = {
   updatedAt?: Date | string
 }
 
-export type WorkspaceConnectorAccessUpdateWithoutTenantInput = {
+export type WorkspaceConnectorAccessUpdateWithoutWorkspaceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  connector?: Prisma.ConnectorUpdateOneRequiredWithoutTenantAccessNestedInput
+  connector?: Prisma.ConnectorUpdateOneRequiredWithoutWorkspaceAccessNestedInput
 }
 
-export type WorkspaceConnectorAccessUncheckedUpdateWithoutTenantInput = {
+export type WorkspaceConnectorAccessUncheckedUpdateWithoutWorkspaceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   connectorId?: Prisma.StringFieldUpdateOperationsInput | string
   isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -551,7 +551,7 @@ export type WorkspaceConnectorAccessUncheckedUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type WorkspaceConnectorAccessUncheckedUpdateManyWithoutTenantInput = {
+export type WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   connectorId?: Prisma.StringFieldUpdateOperationsInput | string
   isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -561,7 +561,7 @@ export type WorkspaceConnectorAccessUncheckedUpdateManyWithoutTenantInput = {
 
 export type WorkspaceConnectorAccessCreateManyConnectorInput = {
   id?: string
-  tenantId: string
+  workspaceId: string
   isEnabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -572,12 +572,12 @@ export type WorkspaceConnectorAccessUpdateWithoutConnectorInput = {
   isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutConnectorAccessNestedInput
+  workspace?: Prisma.WorkspaceUpdateOneRequiredWithoutConnectorAccessNestedInput
 }
 
 export type WorkspaceConnectorAccessUncheckedUpdateWithoutConnectorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  workspaceId?: Prisma.StringFieldUpdateOperationsInput | string
   isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -585,7 +585,7 @@ export type WorkspaceConnectorAccessUncheckedUpdateWithoutConnectorInput = {
 
 export type WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  workspaceId?: Prisma.StringFieldUpdateOperationsInput | string
   isEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -595,69 +595,69 @@ export type WorkspaceConnectorAccessUncheckedUpdateManyWithoutConnectorInput = {
 
 export type WorkspaceConnectorAccessSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  tenantId?: boolean
+  workspaceId?: boolean
   connectorId?: boolean
   isEnabled?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  workspace?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workspaceConnectorAccess"]>
 
 export type WorkspaceConnectorAccessSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  tenantId?: boolean
+  workspaceId?: boolean
   connectorId?: boolean
   isEnabled?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  workspace?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workspaceConnectorAccess"]>
 
 export type WorkspaceConnectorAccessSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  tenantId?: boolean
+  workspaceId?: boolean
   connectorId?: boolean
   isEnabled?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  workspace?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workspaceConnectorAccess"]>
 
 export type WorkspaceConnectorAccessSelectScalar = {
   id?: boolean
-  tenantId?: boolean
+  workspaceId?: boolean
   connectorId?: boolean
   isEnabled?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type WorkspaceConnectorAccessOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "connectorId" | "isEnabled" | "createdAt" | "updatedAt", ExtArgs["result"]["workspaceConnectorAccess"]>
+export type WorkspaceConnectorAccessOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workspaceId" | "connectorId" | "isEnabled" | "createdAt" | "updatedAt", ExtArgs["result"]["workspaceConnectorAccess"]>
 export type WorkspaceConnectorAccessInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  workspace?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type WorkspaceConnectorAccessIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  workspace?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 export type WorkspaceConnectorAccessIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   connector?: boolean | Prisma.ConnectorDefaultArgs<ExtArgs>
-  tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  workspace?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }
 
 export type $WorkspaceConnectorAccessPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "WorkspaceConnectorAccess"
   objects: {
     connector: Prisma.$ConnectorPayload<ExtArgs>
-    tenant: Prisma.$WorkspacePayload<ExtArgs>
+    workspace: Prisma.$WorkspacePayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    tenantId: string
+    workspaceId: string
     connectorId: string
     isEnabled: boolean
     createdAt: Date
@@ -1057,7 +1057,7 @@ readonly fields: WorkspaceConnectorAccessFieldRefs;
 export interface Prisma__WorkspaceConnectorAccessClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   connector<T extends Prisma.ConnectorDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ConnectorDefaultArgs<ExtArgs>>): Prisma.Prisma__ConnectorClient<runtime.Types.Result.GetResult<Prisma.$ConnectorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  workspace<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1088,7 +1088,7 @@ export interface Prisma__WorkspaceConnectorAccessClient<T, Null = never, ExtArgs
  */
 export interface WorkspaceConnectorAccessFieldRefs {
   readonly id: Prisma.FieldRef<"WorkspaceConnectorAccess", 'String'>
-  readonly tenantId: Prisma.FieldRef<"WorkspaceConnectorAccess", 'String'>
+  readonly workspaceId: Prisma.FieldRef<"WorkspaceConnectorAccess", 'String'>
   readonly connectorId: Prisma.FieldRef<"WorkspaceConnectorAccess", 'String'>
   readonly isEnabled: Prisma.FieldRef<"WorkspaceConnectorAccess", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"WorkspaceConnectorAccess", 'DateTime'>

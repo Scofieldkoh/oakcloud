@@ -1,7 +1,7 @@
 /**
  * Document Generator Service
  *
- * Business logic for generating, managing, and sharing documents.
+ * Business logic for generating and managing documents.
  * Handles document lifecycle: draft -> finalized -> archived.
  * Fully integrated with multi-tenancy support.
  */
@@ -22,19 +22,15 @@ import type {
   UpdateGeneratedDocumentInput,
   SearchGeneratedDocumentsInput,
   CloneDocumentInput,
-  CreateDocumentShareInput,
   CreateDocumentCommentInput,
   SaveDraftInput,
 } from '@/lib/validations/generated-document';
 import { Prisma } from '@/generated/prisma';
 import type {
   GeneratedDocument,
-  DocumentShare,
   DocumentComment,
   GeneratedDocumentStatus,
 } from '@/generated/prisma';
-import { randomBytes } from 'crypto';
-import { hashPassword, verifyPassword } from '@/lib/encryption';
 import type { TenantAwareParams } from '@/lib/types';
 import { NotFoundError } from '@/lib/errors';
 
@@ -63,23 +59,10 @@ export interface GeneratedDocumentWithRelations extends GeneratedDocument {
     firstName: string;
     lastName: string;
   } | null;
-  shares?: DocumentShareWithMeta[];
   comments?: DocumentCommentWithReplies[];
   _count?: {
-    shares: number;
     comments: number;
     drafts: number;
-  };
-}
-
-export interface DocumentShareWithMeta extends DocumentShare {
-  createdBy?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  };
-  _count?: {
-    comments: number;
   };
 }
 
@@ -102,7 +85,6 @@ const TRACKED_FIELDS: (keyof GeneratedDocument)[] = [
   'content',
   'status',
   'useLetterhead',
-  'shareExpiryHours',
 ];
 
 // ============================================================================
@@ -173,7 +155,6 @@ export async function createDocumentFromTemplate(
       contentJson: template.contentJson ?? undefined,
       status: 'FINALIZED',
       useLetterhead: data.useLetterhead,
-      shareExpiryHours: data.shareExpiryHours ?? template.defaultShareExpiryHours,
       placeholderData: context as Prisma.InputJsonValue,
       metadata:
         missing.length > 0 || missingPartials.length > 0
@@ -233,7 +214,6 @@ export async function createBlankDocument(
       contentJson: data.contentJson ?? undefined,
       status: 'DRAFT',
       useLetterhead: data.useLetterhead,
-      shareExpiryHours: data.shareExpiryHours,
       createdById: userId,
     },
   });
@@ -288,7 +268,6 @@ export async function updateGeneratedDocument(
     updateData.contentJson = data.contentJson ? (data.contentJson as Prisma.InputJsonValue) : Prisma.JsonNull;
   }
   if (data.useLetterhead !== undefined) updateData.useLetterhead = data.useLetterhead;
-  if (data.shareExpiryHours !== undefined) updateData.shareExpiryHours = data.shareExpiryHours;
   if (data.metadata !== undefined) {
     updateData.metadata = data.metadata ? (data.metadata as Prisma.InputJsonValue) : Prisma.JsonNull;
   }
@@ -444,12 +423,6 @@ export async function archiveDocument(
     throw new Error('Document is already archived');
   }
 
-  // Revoke all active shares when archiving
-  await prisma.documentShare.updateMany({
-    where: { documentId: id, isActive: true },
-    data: { isActive: false, revokedAt: new Date() },
-  });
-
   const document = await prisma.generatedDocument.update({
     where: { id },
     data: {
@@ -495,12 +468,6 @@ export async function deleteGeneratedDocument(
   if (existing.deletedAt) {
     throw new Error('Document is already deleted');
   }
-
-  // Revoke all active shares
-  await prisma.documentShare.updateMany({
-    where: { documentId: id, isActive: true },
-    data: { isActive: false, revokedAt: new Date() },
-  });
 
   const document = await prisma.generatedDocument.update({
     where: { id },
@@ -567,7 +534,6 @@ export async function cloneDocument(
       contentJson: source.contentJson ?? undefined,
       status: 'DRAFT',
       useLetterhead: source.useLetterhead,
-      shareExpiryHours: source.shareExpiryHours,
       placeholderData: source.placeholderData ?? undefined,
       metadata: source.metadata ?? undefined,
       createdById: userId,
@@ -596,7 +562,6 @@ export async function cloneDocument(
 
 export interface GetDocumentOptions {
   includeDeleted?: boolean;
-  includeShares?: boolean;
   includeComments?: boolean;
 }
 
@@ -605,7 +570,7 @@ export async function getGeneratedDocumentById(
   tenantId: string,
   options: GetDocumentOptions = {}
 ): Promise<GeneratedDocumentWithRelations | null> {
-  const { includeDeleted = false, includeShares = false, includeComments = false } = options;
+  const { includeDeleted = false, includeComments = false } = options;
 
   const where: Prisma.GeneratedDocumentWhereInput = { id, tenantId };
   if (!includeDeleted) {
@@ -643,25 +608,6 @@ export async function getGeneratedDocumentById(
           lastName: true,
         },
       },
-      ...(includeShares
-        ? {
-            shares: {
-              orderBy: { createdAt: 'desc' as const },
-              include: {
-                createdBy: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                  },
-                },
-                _count: {
-                  select: { comments: true },
-                },
-              },
-            },
-          }
-        : {}),
       ...(includeComments
         ? {
             comments: {
@@ -694,7 +640,6 @@ export async function getGeneratedDocumentById(
         : {}),
       _count: {
         select: {
-          shares: true,
           comments: true,
           drafts: true,
         },
@@ -791,7 +736,6 @@ export async function searchGeneratedDocuments(
         },
         _count: {
           select: {
-            shares: true,
             comments: true,
             drafts: true,
           },
@@ -813,202 +757,6 @@ export async function searchGeneratedDocuments(
   };
 }
 
-// ============================================================================
-// Document Sharing
-// ============================================================================
-
-/**
- * Generate a secure share token
- */
-function generateShareToken(): string {
-  return randomBytes(32).toString('hex');
-}
-
-/**
- * Create a share link for a document
- */
-export async function createDocumentShare(
-  data: CreateDocumentShareInput,
-  params: TenantAwareParams
-): Promise<DocumentShare> {
-  const { tenantId, userId } = params;
-
-  const document = await prisma.generatedDocument.findFirst({
-    where: { id: data.documentId, tenantId, deletedAt: null },
-  });
-
-  if (!document) {
-    throw new NotFoundError('Document not found');
-  }
-
-  // Hash password if provided (using Argon2id)
-  let sharePasswordHash: string | null = null;
-  if (data.password) {
-    sharePasswordHash = hashPassword(data.password);
-  }
-
-  const share = await prisma.documentShare.create({
-    data: {
-      documentId: data.documentId,
-      shareToken: generateShareToken(),
-      expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
-      passwordHash: sharePasswordHash,
-      allowedActions: data.allowedActions,
-      allowComments: data.allowComments,
-      commentRateLimit: data.commentRateLimit,
-      notifyOnComment: data.notifyOnComment,
-      notifyOnView: data.notifyOnView,
-      createdById: userId,
-    },
-  });
-
-  await createAuditLog({
-    tenantId,
-    userId,
-    companyId: document.companyId ?? undefined,
-    action: 'SHARE_LINK_CREATED',
-    entityType: 'DocumentShare',
-    entityId: share.id,
-    entityName: document.title,
-    summary: `Created share link for document "${document.title}"`,
-    changeSource: 'MANUAL',
-    metadata: {
-      documentId: document.id,
-      expiresAt: share.expiresAt,
-      allowComments: share.allowComments,
-    },
-  });
-
-  return share;
-}
-
-/**
- * Revoke a share link
- */
-export async function revokeDocumentShare(
-  shareId: string,
-  params: TenantAwareParams
-): Promise<DocumentShare> {
-  const { tenantId, userId } = params;
-
-  const share = await prisma.documentShare.findFirst({
-    where: { id: shareId },
-    include: { document: { select: { tenantId: true, title: true, companyId: true } } },
-  });
-
-  if (!share || share.document.tenantId !== tenantId) {
-    throw new NotFoundError('Share not found');
-  }
-
-  if (!share.isActive) {
-    throw new Error('Share is already revoked');
-  }
-
-  const updated = await prisma.documentShare.update({
-    where: { id: shareId },
-    data: {
-      isActive: false,
-      revokedAt: new Date(),
-    },
-  });
-
-  await createAuditLog({
-    tenantId,
-    userId,
-    companyId: share.document.companyId ?? undefined,
-    action: 'SHARE_LINK_REVOKED',
-    entityType: 'DocumentShare',
-    entityId: share.id,
-    entityName: share.document.title,
-    summary: `Revoked share link for document "${share.document.title}"`,
-    changeSource: 'MANUAL',
-    metadata: { documentId: share.documentId },
-  });
-
-  return updated;
-}
-
-/**
- * Get share by token (for public access)
- */
-export async function getShareByToken(
-  token: string
-): Promise<DocumentShare & { document: GeneratedDocument } | null> {
-  const share = await prisma.documentShare.findUnique({
-    where: { shareToken: token },
-    include: { document: true },
-  });
-
-  if (!share) return null;
-
-  // Check if expired or revoked
-  if (!share.isActive) return null;
-  if (share.expiresAt && share.expiresAt < new Date()) return null;
-
-  return share;
-}
-
-/**
- * Verify share password (supports both Argon2id and legacy bcrypt)
- */
-export async function verifySharePassword(shareId: string, password: string): Promise<boolean> {
-  const share = await prisma.documentShare.findUnique({
-    where: { id: shareId },
-    select: { passwordHash: true },
-  });
-
-  if (!share?.passwordHash) return true; // No password required
-
-  const verification = await verifyPassword(password, share.passwordHash);
-  return verification.isValid;
-}
-
-/**
- * Record share view
- */
-export async function recordShareView(shareId: string): Promise<void> {
-  await prisma.documentShare.update({
-    where: { id: shareId },
-    data: {
-      viewCount: { increment: 1 },
-      lastViewedAt: new Date(),
-    },
-  });
-}
-
-// ============================================================================
-// Comments
-// ============================================================================
-
-/**
- * Check rate limit for comments (20 per hour per IP)
- */
-export async function checkCommentRateLimit(
-  ipAddress: string,
-  shareId: string
-): Promise<{ allowed: boolean; remaining: number }> {
-  const share = await prisma.documentShare.findUnique({
-    where: { id: shareId },
-    select: { commentRateLimit: true },
-  });
-
-  const limit = share?.commentRateLimit ?? 20;
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-
-  const recentCount = await prisma.documentComment.count({
-    where: {
-      shareId,
-      ipAddress,
-      createdAt: { gte: oneHourAgo },
-    },
-  });
-
-  return {
-    allowed: recentCount < limit,
-    remaining: Math.max(0, limit - recentCount),
-  };
-}
-
 /**
  * Create a comment on a document
  */
@@ -1026,29 +774,6 @@ export async function createDocumentComment(
     throw new NotFoundError('Document not found');
   }
 
-  // For external comments, verify share allows comments
-  if (data.shareId) {
-    const share = await prisma.documentShare.findFirst({
-      where: { id: data.shareId, documentId: data.documentId, isActive: true },
-    });
-
-    if (!share) {
-      throw new Error('Invalid share link');
-    }
-
-    if (!share.allowComments) {
-      throw new Error('Comments are not allowed on this share');
-    }
-
-    // Check rate limit
-    if (ipAddress) {
-      const { allowed, remaining } = await checkCommentRateLimit(ipAddress, data.shareId);
-      if (!allowed) {
-        throw new Error(`Rate limit exceeded. Try again later. (Remaining: ${remaining})`);
-      }
-    }
-  }
-
   // Validate parent comment if this is a reply
   if (data.parentId) {
     const parent = await prisma.documentComment.findFirst({
@@ -1062,7 +787,6 @@ export async function createDocumentComment(
   const comment = await prisma.documentComment.create({
     data: {
       documentId: data.documentId,
-      shareId: data.shareId,
       userId: params?.userId,
       guestName: data.guestName,
       guestEmail: data.guestEmail,
@@ -1292,10 +1016,9 @@ export async function getDocumentStats(tenantId: string): Promise<{
   byStatus: Record<GeneratedDocumentStatus, number>;
   recentlyCreated: number;
   recentlyFinalized: number;
-  activeShares: number;
   totalComments: number;
 }> {
-  const [total, byStatus, recentlyCreated, recentlyFinalized, activeShares, totalComments] =
+  const [total, byStatus, recentlyCreated, recentlyFinalized, totalComments] =
     await Promise.all([
       prisma.generatedDocument.count({
         where: { tenantId, deletedAt: null },
@@ -1317,13 +1040,6 @@ export async function getDocumentStats(tenantId: string): Promise<{
           tenantId,
           deletedAt: null,
           finalizedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-        },
-      }),
-      prisma.documentShare.count({
-        where: {
-          document: { tenantId, deletedAt: null },
-          isActive: true,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
         },
       }),
       prisma.documentComment.count({
@@ -1349,7 +1065,6 @@ export async function getDocumentStats(tenantId: string): Promise<{
     byStatus: statusCounts,
     recentlyCreated,
     recentlyFinalized,
-    activeShares,
     totalComments,
   };
 }

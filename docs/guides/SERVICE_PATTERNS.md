@@ -212,12 +212,6 @@ export interface IDocumentExporter {
   toHTML(params: ExportHTMLParams): Promise<HTMLResult>;
 }
 
-export interface IDocumentPublisher {
-  publish(params: PublishParams): Promise<DocumentShare>;
-  access(token: string, password?: string): Promise<ShareAccessResult | null>;
-  revoke(tenantId: string, userId: string, shareId: string): Promise<void>;
-}
-
 // implementations.ts
 export function getDocumentGenerator(): IDocumentGenerator {
   // Returns singleton instance

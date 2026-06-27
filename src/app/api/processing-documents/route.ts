@@ -560,9 +560,7 @@ export async function POST(request: NextRequest) {
 
       extractFields(processingDocument.id, company.tenantId, companyId, session.id, extractionConfig)
         .then((result) => {
-          if (result.success) {
-            console.log(`Auto-extraction completed for document ${processingDocument.id}`);
-          } else {
+          if (!result.success) {
             console.error(`Auto-extraction failed for document ${processingDocument.id}:`, result.error);
           }
         })

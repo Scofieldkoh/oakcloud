@@ -549,7 +549,7 @@ export function FieldValidationTab({
               });
             }}
             placeholder="Attachment - [full_name] - [datetime_stamp]"
-            hint="Use [field_key], [upload_id], [original_filename], [original_basename], [original_extension], [file_index], plus [datetime_stamp], [date_stamp], [time_stamp], [submission_id], [form_title], [form_slug], and any [field_key]. [datetime_stamp] uses the tenant timezone (for example: 6 Mar 26 - 9.51PM)."
+            hint="Use [field_key], [upload_id], [original_filename], [original_basename], [original_extension], [file_index], plus [datetime_stamp], [date_stamp], [time_stamp], [submission_id], [form_title], [form_slug], and any [field_key]. [datetime_stamp] uses the workspace timezone (for example: 6 Mar 26 - 9.51PM)."
           />
         </div>
       )}

@@ -18,7 +18,8 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove, rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
-import { Bell, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardCopy, Copy, Globe, Paintbrush, Plus, Save, Sparkles, Users } from 'lucide-react';
+import { Bell, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardCopy, Copy, FileText, Globe, Paintbrush, Plus, Save, Sparkles, Users } from 'lucide-react';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { AIModelSelector } from '@/components/ui/ai-model-selector';
@@ -1583,18 +1584,22 @@ export default function FormBuilderPage() {
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="h-10 w-72 animate-pulse rounded bg-background-tertiary mb-4" />
-        <div className="h-80 animate-pulse rounded-lg border border-border-primary bg-background-elevated" />
+      <div className="min-h-screen bg-background-primary">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+          <div className="h-24 animate-pulse rounded-2xl border border-border-primary bg-background-secondary sm:rounded-3xl" />
+          <div className="h-80 animate-pulse rounded-2xl border border-border-primary bg-background-secondary sm:rounded-3xl" />
+        </div>
       </div>
     );
   }
 
   if (error || !form) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-300">
-          {error instanceof Error ? error.message : 'Form not found'}
+      <div className="min-h-screen bg-background-primary">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+          <Alert variant="error" title="Form not found">
+            {error instanceof Error ? error.message : 'This form could not be loaded.'}
+          </Alert>
         </div>
       </div>
     );
@@ -1609,45 +1614,67 @@ export default function FormBuilderPage() {
     : `/forms/f/${effectiveSlug}?preview=1&formId=${form.id}&tenantId=${form.tenantId}`;
 
   return (
-    <div className="p-4 sm:p-6">
-      <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div>
-          <Link href="/forms" className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary">
-            <ChevronLeft className="w-4 h-4" />
-            Back to Forms
-          </Link>
-          <h1 className="mt-1 text-xl sm:text-2xl font-semibold text-text-primary">{title || 'Untitled form'}</h1>
-        </div>
+    <div className="min-h-screen bg-background-primary">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={handleOpenPreview}>
-            {isPublished ? 'View' : 'Preview'}
-          </Button>
-          {isPublished && (
+      {/* Header */}
+      <section className="rounded-2xl border border-oak-primary/20 bg-gradient-to-br from-oak-primary/[0.06] to-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="space-y-1">
+            <Link href="/forms" className="inline-flex items-center gap-1.5 text-sm text-text-secondary transition-colors hover:text-text-primary">
+              <ChevronLeft className="h-4 w-4" />
+              Back to Forms
+            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-oak-primary/10 text-oak-primary">
+                <FileText className="h-4 w-4" />
+              </div>
+              <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">{title || 'Untitled form'}</h1>
+              {isDirty && (
+                <span className="rounded-full bg-status-warning/10 px-2 py-0.5 text-xs font-medium text-status-warning">
+                  Unsaved
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={handleOpenPreview}>
+              {isPublished ? 'View' : 'Preview'}
+            </Button>
+            {isPublished && (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<ClipboardCopy className="h-4 w-4" />}
+                onClick={handleCopyPublicLink}
+              >
+                Copy link
+              </Button>
+            )}
+            <Button variant="secondary" size="sm" onClick={() => router.push(`/forms/${form.id}/responses`)}>
+              Responses
+            </Button>
+            {!isPublished && (
+              <Button variant="primary" size="sm" onClick={handlePublish} isLoading={updateForm.isPending}>
+                Publish
+              </Button>
+            )}
             <Button
-              variant="secondary"
+              variant={isDirty ? 'primary' : 'secondary'}
               size="sm"
-              leftIcon={<ClipboardCopy className="w-4 h-4" />}
-              onClick={handleCopyPublicLink}
+              leftIcon={<Save className="h-4 w-4" />}
+              onClick={handleSave}
+              isLoading={updateForm.isPending}
             >
-              Copy Public Link
+              {isDirty ? 'Save changes' : 'Saved'}
             </Button>
-          )}
-          <Button variant="secondary" size="sm" onClick={() => router.push(`/forms/${form.id}/responses`)}>
-            Responses
-          </Button>
-          {!isPublished && (
-            <Button variant="primary" size="sm" onClick={handlePublish} isLoading={updateForm.isPending}>
-              Publish
-            </Button>
-          )}
-          <Button variant={isDirty ? 'primary' : 'secondary'} size="sm" leftIcon={<Save className="w-4 h-4" />} onClick={handleSave} isLoading={updateForm.isPending}>
-            {isDirty ? 'Save changes' : 'Saved'}
-          </Button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="mb-3 inline-flex rounded-lg border border-border-primary bg-background-primary p-1">
+      {/* Tab switcher */}
+      <div className="inline-flex self-start rounded-lg border border-border-primary bg-background-secondary p-1 shadow-sm">
         {[
           { key: 'form' as const, label: 'Form' },
           { key: 'language' as const, label: 'Language' },
@@ -1657,9 +1684,9 @@ export default function FormBuilderPage() {
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? 'bg-background-elevated text-text-primary shadow-sm'
+                ? 'bg-oak-primary text-white shadow-sm'
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
@@ -1668,7 +1695,8 @@ export default function FormBuilderPage() {
         ))}
       </div>
 
-      <div className="rounded-lg border border-border-primary bg-background-elevated p-3 sm:p-4">
+      <div className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl">
+        <div className="p-4 sm:p-6">
         <div className="mb-4 flex flex-col gap-3">
           {activeTab === 'form' && (
             <FormInput label="Form title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Client Intake Form" />
@@ -1871,12 +1899,12 @@ export default function FormBuilderPage() {
                   value={pdfFileNameTemplate}
                   onChange={(e) => setPdfFileNameTemplate(e.target.value)}
                   placeholder="Form response - [full_name] - [datetime_stamp]"
-                  hint="Use [field_key] plus standard variables: [datetime_stamp], [date_stamp], [time_stamp], [submission_id], [form_title], [form_slug]. [datetime_stamp] uses the tenant timezone (for example: 6 Mar 26 - 9.51PM)."
+                  hint="Use [field_key] plus standard variables: [datetime_stamp], [date_stamp], [time_stamp], [submission_id], [form_title], [form_slug]. [datetime_stamp] uses the workspace timezone (for example: 6 Mar 26 - 9.51PM)."
                 />
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-medium text-text-secondary">Show tenant logo</p>
-                    <p className="text-2xs text-text-muted">Display your organization logo beside the form title.</p>
+                    <p className="text-xs font-medium text-text-secondary">Show organization logo</p>
+                    <p className="text-2xs text-text-muted">Display the workspace logo beside the form title.</p>
                   </div>
                   <button
                     type="button"
@@ -1897,7 +1925,7 @@ export default function FormBuilderPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-medium text-text-secondary">Show copyright footer</p>
-                    <p className="text-2xs text-text-muted">Display © [Tenant Name] at the bottom of the form</p>
+                    <p className="text-2xs text-text-muted">Display © [Workspace Name] at the bottom of the form</p>
                   </div>
                   <button
                     type="button"
@@ -2384,6 +2412,7 @@ export default function FormBuilderPage() {
           </>
         )}
       </div>
+        </div>
 
       <Modal
         isOpen={showAiTranslateModal}
@@ -2535,6 +2564,7 @@ export default function FormBuilderPage() {
       )}
 
       {activeTab === 'form' && selectedField && <div className="fixed inset-0 z-30 bg-black/20" onClick={() => setSelectedFieldId(null)} aria-hidden="true" />}
+      </div>
     </div>
   );
 }

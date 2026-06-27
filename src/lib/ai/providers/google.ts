@@ -4,7 +4,7 @@
  * Implementation for Google Gemini models.
  */
 
-import type { AIRequestOptions, AIResponse, AICredentials } from '../types';
+import type { AIRequestOptions, AIResponse, AICredentials, AIModel } from '../types';
 import { getModelConfig } from '../models';
 
 // Lazy load Google Generative AI SDK to reduce initial bundle size
@@ -51,7 +51,7 @@ export async function callGoogle(
     throw new Error('Google AI API key not configured');
   }
 
-  const modelConfig = getModelConfig(options.model);
+  const modelConfig = options.modelConfig ?? getModelConfig(options.model as AIModel);
   if (modelConfig.provider !== 'google') {
     throw new Error(`Model ${options.model} is not a Google model`);
   }

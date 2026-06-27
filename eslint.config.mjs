@@ -24,6 +24,12 @@ const eslintConfig = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     rules: {
+      'no-console': [
+        'error',
+        {
+          allow: ['warn', 'error', 'info'],
+        },
+      ],
       // Allow unused variables that start with underscore
       '@typescript-eslint/no-unused-vars': [
         'warn',

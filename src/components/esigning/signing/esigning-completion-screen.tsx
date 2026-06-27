@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CheckCircle2, Clock, Download, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Clock, Download, ExternalLink, Loader2 } from 'lucide-react';
 import { formatEsigningDateTime } from '@/components/esigning/esigning-shared';
 
 interface EsigningCompletionScreenProps {
@@ -28,9 +28,9 @@ export function EsigningCompletionScreen({
   documents,
   certificateId,
 }: EsigningCompletionScreenProps) {
-  const firstSignedDoc = documents.find((d) => d.signedPdfUrl);
+  const signedDocs = documents.filter((d) => d.signedPdfUrl);
   const hasPendingSigners = !isAllPartiesDone && remainingSignerCount > 0;
-  const isSignedCopyReady = isAllPartiesDone && pdfGenerationStatus === 'COMPLETED' && Boolean(firstSignedDoc?.signedPdfUrl);
+  const isSignedCopyReady = isAllPartiesDone && pdfGenerationStatus === 'COMPLETED' && signedDocs.length > 0;
   const isSignedCopyPreparing = isAllPartiesDone && pdfGenerationStatus !== 'COMPLETED';
 
   return (
@@ -132,8 +132,34 @@ export function EsigningCompletionScreen({
           </div>
         </div>
 
+        {/* PDF preparing state */}
+        {isSignedCopyPreparing ? (
+          <div className="mt-6 rounded-2xl border border-border-primary bg-background-primary px-5 py-4 text-center">
+            <div className="flex items-center justify-center gap-2 text-sm text-text-secondary">
+              <Loader2 className="h-4 w-4 animate-spin text-oak-primary" />
+              <span>Preparing your signed document…</span>
+            </div>
+            <p className="mt-1.5 text-xs text-text-muted">
+              This usually takes less than a minute. A copy will be emailed to you once ready.
+            </p>
+          </div>
+        ) : null}
+
         {/* Action buttons */}
         <div className="mt-6 flex flex-wrap justify-center gap-3">
+          {isSignedCopyReady && signedDocs.map((doc) => (
+            <a
+              key={doc.id}
+              href={doc.signedPdfUrl!}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-2xl border border-oak-primary bg-oak-primary/5 px-5 py-2.5 text-sm font-medium text-oak-primary shadow-sm hover:bg-oak-primary/10 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              {signedDocs.length > 1 ? `Save "${doc.fileName ?? 'Document'}"` : 'Save a Copy'}
+            </a>
+          ))}
+
           <Link
             href={`/verify/${certificateId}`}
             className="inline-flex items-center gap-2 rounded-2xl border border-border-primary bg-background-secondary px-5 py-2.5 text-sm font-medium text-text-primary shadow-sm hover:bg-background-tertiary transition-colors"
@@ -141,25 +167,7 @@ export function EsigningCompletionScreen({
             <ExternalLink className="h-4 w-4" />
             View Certificate
           </Link>
-
-          {isSignedCopyReady && firstSignedDoc?.signedPdfUrl && (
-            <a
-              href={firstSignedDoc.signedPdfUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl border border-border-primary bg-background-secondary px-5 py-2.5 text-sm font-medium text-text-primary shadow-sm hover:bg-background-tertiary transition-colors"
-            >
-              <Download className="h-4 w-4" />
-              Save a Copy
-            </a>
-          )}
         </div>
-
-        {isSignedCopyPreparing ? (
-          <p className="mt-3 text-center text-xs text-text-muted">
-            Your signed PDF is being prepared and will be available once processing finishes.
-          </p>
-        ) : null}
       </div>
     </div>
   );

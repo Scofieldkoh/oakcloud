@@ -5,8 +5,6 @@
  * These types are designed for clean integration with workflow modules.
  */
 
-import type { GeneratedDocument } from '@/generated/prisma';
-
 // ============================================================================
 // Document Generator Types
 // ============================================================================
@@ -155,50 +153,6 @@ export interface HTMLResult {
 }
 
 // ============================================================================
-// Document Publisher Types
-// ============================================================================
-
-/**
- * Parameters for publishing/sharing a document
- */
-export interface PublishParams {
-  tenantId: string;
-  userId: string;
-  documentId: string;
-  /** Expiry in hours, null = never expires */
-  expiresIn?: number | null;
-  /** Password protection */
-  password?: string;
-  /** Allowed actions for share recipients */
-  allowedActions?: ('view' | 'download' | 'print')[];
-  /** Allow external viewers to comment */
-  allowComments?: boolean;
-  /** Max comments per hour per IP */
-  commentRateLimit?: number;
-  /** Notify owner on new comments */
-  notifyOnComment?: boolean;
-  /** Notify owner on document views */
-  notifyOnView?: boolean;
-}
-
-/**
- * Result of accessing a shared document
- */
-export interface ShareAccessResult {
-  document: GeneratedDocument;
-  sections: SectionDefinition[];
-  allowedActions: string[];
-  allowComments: boolean;
-  comments?: Array<{
-    id: string;
-    content: string;
-    createdAt: Date;
-    authorName?: string;
-    isInternal: boolean;
-  }>;
-}
-
-// ============================================================================
 // Workflow Integration Types
 // ============================================================================
 
@@ -217,8 +171,6 @@ export interface DocumentStepResult {
   status: 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
 
   /** For next steps (e.g., e-signature) */
-  shareUrl?: string;
-  shareToken?: string;
   pdfUrl?: string;
   pdfBuffer?: Buffer;
 
@@ -259,10 +211,6 @@ export interface DocumentStepConfig {
   exportPDF?: boolean;
   /** Include letterhead in PDF */
   includeLetterhead?: boolean;
-  /** Create share link after generation */
-  createShareLink?: boolean;
-  /** Share link expiry in hours */
-  shareLinkExpiry?: number;
   /** Custom placeholder data */
   customData?: Record<string, unknown>;
 }
@@ -301,35 +249,6 @@ export interface Signatory {
   role: string;
   identificationNumber?: string;
   signatureOrder?: number;
-}
-
-// ============================================================================
-// URL Shortener Integration Types
-// ============================================================================
-
-/**
- * Shortened URL for share link
- */
-export interface ShortenedUrl {
-  originalUrl: string;
-  shortUrl: string;
-  trackingCode: string;
-}
-
-// ============================================================================
-// Notification Integration Types
-// ============================================================================
-
-/**
- * Document share notification
- */
-export interface ShareNotification {
-  type: 'document_share';
-  recipientEmail: string;
-  documentTitle: string;
-  shareUrl: string;
-  expiresAt?: Date;
-  message?: string;
 }
 
 /**

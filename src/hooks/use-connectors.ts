@@ -10,7 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface Connector {
   id: string;
-  tenantId: string | null;
+  workspaceId: string | null;
   name: string;
   type: 'AI_PROVIDER' | 'STORAGE';
   provider:
@@ -91,6 +91,27 @@ export interface ConnectorModelConfig {
   providerModelId: string;
   isEnabled: boolean;
   hasOverride: boolean;
+  supportsPdfInput?: boolean;
+  documentInputMode: 'auto' | 'pdf' | 'image';
+  lastPdfInputTest?: {
+    success: boolean;
+    testedAt: string;
+    error?: string;
+  };
+}
+
+export interface UpsertConnectorModelData {
+  modelId: string;
+  name?: string;
+  description?: string;
+  providerModelId?: string;
+  isEnabled?: boolean;
+  supportsJson?: boolean;
+  supportsVision?: boolean;
+  supportsTemperature?: boolean;
+  supportsJsonResponseFormat?: boolean;
+  supportsPdfInput?: boolean;
+  documentInputMode?: 'auto' | 'pdf' | 'image';
 }
 
 export interface TestResult {
@@ -99,14 +120,14 @@ export interface TestResult {
   latencyMs?: number;
 }
 
-export interface TenantAccessEntry {
-  tenantId: string;
-  tenantName: string;
+export interface WorkspaceAccessEntry {
+  workspaceId: string;
+  workspaceName: string;
   isEnabled: boolean;
 }
 
-export interface TenantAccessResponse {
-  tenantAccess: TenantAccessEntry[];
+export interface WorkspaceAccessResponse {
+  workspaceAccess: WorkspaceAccessEntry[];
 }
 
 // ============================================================================
@@ -288,21 +309,21 @@ export function useToggleConnector(id: string | undefined) {
 }
 
 // ============================================================================
-// Tenant Access Hooks (SUPER_ADMIN only)
+// Workspace Access Hooks (SUPER_ADMIN only)
 // ============================================================================
 
 /**
- * Get tenant access list for a system connector
+ * Get workspace access list for a system connector
  */
-export function useTenantAccess(connectorId: string | undefined) {
-  return useQuery<TenantAccessResponse>({
-    queryKey: ['connector-tenant-access', connectorId],
+export function useWorkspaceAccess(connectorId: string | undefined) {
+  return useQuery<WorkspaceAccessResponse>({
+    queryKey: ['connector-workspace-access', connectorId],
     queryFn: async () => {
       if (!connectorId) throw new Error('Connector ID required');
       const res = await fetch(`/api/connectors/${connectorId}/access`);
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || 'Failed to fetch tenant access');
+        throw new Error(error.error || 'Failed to fetch workspace access');
       }
       return res.json();
     },
@@ -311,29 +332,29 @@ export function useTenantAccess(connectorId: string | undefined) {
 }
 
 /**
- * Update tenant access for a system connector
+ * Update workspace access for a system connector
  */
-export function useUpdateTenantAccess(connectorId: string | undefined) {
+export function useUpdateWorkspaceAccess(connectorId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (
-      tenantAccess: Array<{ tenantId: string; isEnabled: boolean }>
+      workspaceAccess: Array<{ workspaceId: string; isEnabled: boolean }>
     ) => {
       if (!connectorId) throw new Error('Connector ID required');
       const res = await fetch(`/api/connectors/${connectorId}/access`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenantAccess }),
+        body: JSON.stringify({ workspaceAccess }),
       });
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || 'Failed to update tenant access');
+        throw new Error(error.error || 'Failed to update workspace access');
       }
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['connector-tenant-access', connectorId] });
+      queryClient.invalidateQueries({ queryKey: ['connector-workspace-access', connectorId] });
       queryClient.invalidateQueries({ queryKey: ['connectors'] });
     },
   });
@@ -637,7 +658,7 @@ export function formatLatency(ms: number | null): string {
 // ============================================================================
 
 /**
- * Fetch model configs for a connector (only meaningful for OPENROUTER connectors)
+ * Fetch model configs for an AI connector
  */
 export function useConnectorModels(connectorId: string | undefined) {
   return useQuery<ConnectorModelConfig[]>({
@@ -675,8 +696,111 @@ export function useToggleConnectorModel(connectorId: string | undefined) {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_model, data) => {
+      queryClient.setQueryData<ConnectorModelConfig[]>(['connector-models', connectorId], (models) =>
+        models?.map((model) =>
+          model.modelId === data.modelId ? { ...model, isEnabled: data.isEnabled } : model
+        )
+      );
       queryClient.invalidateQueries({ queryKey: ['connector-models', connectorId] });
+    },
+  });
+}
+
+/**
+ * Add or update a model for a connector
+ */
+export function useAddConnectorModel(connectorId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation<ConnectorModelConfig, Error, UpsertConnectorModelData>({
+    mutationFn: async (data) => {
+      if (!connectorId) throw new Error('Connector ID required');
+      const res = await fetch(`/api/connectors/${connectorId}/models`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to add model');
+      }
+      return res.json();
+    },
+    onSuccess: (model) => {
+      queryClient.setQueryData<ConnectorModelConfig[]>(['connector-models', connectorId], (models) => {
+        if (!models) return [model];
+        const existingIndex = models.findIndex((item) => item.modelId === model.modelId);
+        if (existingIndex === -1) return [...models, model];
+        return models.map((item) => (item.modelId === model.modelId ? model : item));
+      });
+      queryClient.invalidateQueries({ queryKey: ['connector-models', connectorId] });
+      queryClient.invalidateQueries({ queryKey: ['connectors'] });
+    },
+  });
+}
+
+/**
+ * Test whether a connector model accepts PDF file input.
+ */
+export function useTestConnectorModelPdf(connectorId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { success: boolean; model: ConnectorModelConfig; error?: string },
+    Error,
+    { modelId: string }
+  >({
+    mutationFn: async ({ modelId }) => {
+      if (!connectorId) throw new Error('Connector ID required');
+      const res = await fetch(`/api/connectors/${connectorId}/models/pdf-test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modelId }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to test PDF input');
+      }
+      return res.json();
+    },
+    onSuccess: (result) => {
+      queryClient.setQueryData<ConnectorModelConfig[]>(['connector-models', connectorId], (models) =>
+        models?.map((model) =>
+          model.modelId === result.model.modelId ? result.model : model
+        )
+      );
+      queryClient.invalidateQueries({ queryKey: ['connector-models', connectorId] });
+      queryClient.invalidateQueries({ queryKey: ['connectors'] });
+    },
+  });
+}
+
+/**
+ * Remove a model from a connector
+ */
+export function useDeleteConnectorModel(connectorId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean }, Error, string>({
+    mutationFn: async (modelId) => {
+      if (!connectorId) throw new Error('Connector ID required');
+      const searchParams = new URLSearchParams({ modelId });
+      const res = await fetch(`/api/connectors/${connectorId}/models?${searchParams}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to remove model');
+      }
+      return res.json();
+    },
+    onSuccess: (_result, modelId) => {
+      queryClient.setQueryData<ConnectorModelConfig[]>(['connector-models', connectorId], (models) =>
+        models?.filter((model) => model.modelId !== modelId)
+      );
+      queryClient.invalidateQueries({ queryKey: ['connector-models', connectorId] });
+      queryClient.invalidateQueries({ queryKey: ['connectors'] });
     },
   });
 }

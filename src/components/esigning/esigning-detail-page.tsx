@@ -752,7 +752,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         </div>
 
         {/* Step content */}
-        <div className="flex-1 overflow-auto">
+        <div className={currentStep === 2 ? 'flex flex-1 min-h-0 flex-col overflow-hidden' : 'flex-1 overflow-auto'}>
           {currentStep === 1 && (
             <EsigningStepUpload
               envelope={envelope}
@@ -791,6 +791,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               }))}
               companiesLoading={companiesQuery.isLoading}
               onNext={() => setCurrentStep(2)}
+              onBack={() => window.location.assign('/esigning')}
             />
           )}
           {currentStep === 2 && (

@@ -55,7 +55,6 @@ const MANUALLY_HANDLED_MODEL_DELEGATES = new Set([
   'documentTemplate',
   'generatedDocument',
   'documentSection',
-  'documentShare',
   'documentComment',
   'documentDraft',
   'templatePartial',
@@ -581,7 +580,6 @@ class BackupService {
       documentTemplates,
       generatedDocuments,
       documentSections,
-      documentShares,
       documentComments,
       documentDrafts,
       templatePartials,
@@ -648,14 +646,13 @@ class BackupService {
       prisma.documentTemplate.findMany({ where: { tenantId } }),
       prisma.generatedDocument.findMany({ where: { tenantId } }),
       prisma.documentSection.findMany({ where: { document: { tenantId } } }),
-      prisma.documentShare.findMany({ where: { document: { tenantId } } }),
       prisma.documentComment.findMany({ where: { document: { tenantId } } }),
       prisma.documentDraft.findMany({ where: { document: { tenantId } } }),
       prisma.templatePartial.findMany({ where: { tenantId } }),
       prisma.workspaceLetterhead.findUnique({ where: { tenantId } }),
-      prisma.connector.findMany({ where: { tenantId } }),
-      prisma.workspaceConnectorAccess.findMany({ where: { tenantId } }),
-      prisma.connectorUsageLog.findMany({ where: { tenantId } }),
+      prisma.connector.findMany({ where: { workspaceId: tenantId } }),
+      prisma.workspaceConnectorAccess.findMany({ where: { workspaceId: tenantId } }),
+      prisma.connectorUsageLog.findMany({ where: { workspaceId: tenantId } }),
       prisma.noteTab.findMany({
         where: { OR: [{ company: { tenantId } }, { contact: { tenantId } }] },
       }),
@@ -716,7 +713,6 @@ class BackupService {
       documentTemplates,
       generatedDocuments,
       documentSections,
-      documentShares,
       documentComments,
       documentDrafts,
       templatePartials,
@@ -1146,7 +1142,6 @@ class BackupService {
       // Delete generated documents
       await tx.documentDraft.deleteMany({ where: { document: { tenantId } } });
       await tx.documentComment.deleteMany({ where: { document: { tenantId } } });
-      await tx.documentShare.deleteMany({ where: { document: { tenantId } } });
       await tx.documentSection.deleteMany({ where: { document: { tenantId } } });
       await tx.generatedDocument.deleteMany({ where: { tenantId } });
       await tx.templatePartial.deleteMany({ where: { tenantId } });
@@ -1181,9 +1176,9 @@ class BackupService {
       await tx.userPreference.deleteMany({ where: { user: { tenantId } } });
 
       // Delete connectors
-      await tx.connectorUsageLog.deleteMany({ where: { tenantId } });
-      await tx.workspaceConnectorAccess.deleteMany({ where: { tenantId } });
-      await tx.connector.deleteMany({ where: { tenantId } });
+      await tx.connectorUsageLog.deleteMany({ where: { workspaceId: tenantId } });
+      await tx.workspaceConnectorAccess.deleteMany({ where: { workspaceId: tenantId } });
+      await tx.connector.deleteMany({ where: { workspaceId: tenantId } });
 
       // Delete AI conversations
       await tx.aiConversation.deleteMany({ where: { tenantId } });
@@ -1524,15 +1519,7 @@ class BackupService {
         });
       }
 
-      // 28. Document Shares
-      if (Array.isArray(data.documentShares) && data.documentShares.length > 0) {
-        await tx.documentShare.createMany({
-          data: data.documentShares as Prisma.DocumentShareCreateManyInput[],
-          skipDuplicates: true,
-        });
-      }
-
-      // 29. Document Comments
+      // 28. Document Comments
       if (Array.isArray(data.documentComments) && data.documentComments.length > 0) {
         await tx.documentComment.createMany({
           data: data.documentComments as Prisma.DocumentCommentCreateManyInput[],
@@ -1540,7 +1527,7 @@ class BackupService {
         });
       }
 
-      // 30. Document Drafts
+      // 29. Document Drafts
       if (Array.isArray(data.documentDrafts) && data.documentDrafts.length > 0) {
         await tx.documentDraft.createMany({
           data: data.documentDrafts as Prisma.DocumentDraftCreateManyInput[],
@@ -1551,7 +1538,13 @@ class BackupService {
       // 31. Connectors
       if (Array.isArray(data.connectors) && data.connectors.length > 0) {
         await tx.connector.createMany({
-          data: data.connectors as Prisma.ConnectorCreateManyInput[],
+          data: data.connectors.map((connector) => {
+            const { tenantId: legacyTenantId, ...item } = connector as Record<string, unknown>;
+            return {
+              ...item,
+              workspaceId: item.workspaceId ?? legacyTenantId,
+            };
+          }) as Prisma.ConnectorCreateManyInput[],
           skipDuplicates: true,
         });
       }
@@ -1559,7 +1552,13 @@ class BackupService {
       // 32. Connector Access
       if (Array.isArray(data.connectorAccess) && data.connectorAccess.length > 0) {
         await tx.workspaceConnectorAccess.createMany({
-          data: data.connectorAccess as Prisma.WorkspaceConnectorAccessCreateManyInput[],
+          data: data.connectorAccess.map((access) => {
+            const { tenantId: legacyTenantId, ...item } = access as Record<string, unknown>;
+            return {
+              ...item,
+              workspaceId: item.workspaceId ?? legacyTenantId,
+            };
+          }) as Prisma.WorkspaceConnectorAccessCreateManyInput[],
           skipDuplicates: true,
         });
       }
@@ -1567,7 +1566,13 @@ class BackupService {
       // 33. Connector Usage Logs
       if (Array.isArray(data.connectorUsageLogs) && data.connectorUsageLogs.length > 0) {
         await tx.connectorUsageLog.createMany({
-          data: data.connectorUsageLogs as Prisma.ConnectorUsageLogCreateManyInput[],
+          data: data.connectorUsageLogs.map((log) => {
+            const { tenantId: legacyTenantId, ...item } = log as Record<string, unknown>;
+            return {
+              ...item,
+              workspaceId: item.workspaceId ?? legacyTenantId,
+            };
+          }) as Prisma.ConnectorUsageLogCreateManyInput[],
           skipDuplicates: true,
         });
       }
@@ -1661,7 +1666,6 @@ class BackupService {
           'letterhead',
           'generatedDocuments',
           'documentSections',
-          'documentShares',
           'documentComments',
           'documentDrafts',
           'connectors',

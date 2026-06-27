@@ -21,7 +21,6 @@ import {
   UserCog,
   Trash2,
   Plug,
-  Share2,
   ScanText,
   HardDrive,
   DollarSign,
@@ -82,9 +81,8 @@ const secondaryNavigation: NavItem[] = [
   { name: 'Document Generation', href: '/generated-documents', icon: FileText },
   { name: 'E-Signing', href: '/esigning', icon: PenSquare },
   { name: 'Forms', href: '/forms', icon: ClipboardList },
-  { name: 'Shared Documents', href: '/shared-documents', icon: Share2 },
   { name: 'Communication', href: '/communication', icon: Mail, adminOnly: true },
-  { name: 'Settings', href: '/settings', icon: Settings, badge: 'Soon' },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 // Ungrouped admin items (shown at top level)

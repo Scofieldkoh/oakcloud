@@ -26,7 +26,7 @@ export type AIModel =
 
 // Model configuration
 export interface AIModelConfig {
-  id: AIModel;
+  id: AIModel | string;
   name: string;
   provider: AIProvider;
   providerModelId: string; // The actual model ID used by the provider API
@@ -52,7 +52,8 @@ export interface AIImageInput {
 
 // AI request options
 export interface AIRequestOptions {
-  model: AIModel;
+  model: AIModel | string;
+  modelConfig?: AIModelConfig;
   systemPrompt?: string;
   userPrompt: string;
   temperature?: number;
@@ -65,7 +66,7 @@ export interface AIRequestOptions {
 // AI response
 export interface AIResponse {
   content: string;
-  model: AIModel;
+  model: AIModel | string;
   provider: AIProvider;
   usage?: {
     inputTokens: number;

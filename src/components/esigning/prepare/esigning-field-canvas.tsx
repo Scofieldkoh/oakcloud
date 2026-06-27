@@ -1004,22 +1004,25 @@ export function EsigningFieldCanvas({
   return (
     <div className="flex h-full flex-col">
       {documents.length > 1 ? (
-        <div className="flex flex-shrink-0 items-center gap-2 overflow-x-auto border-b border-border-primary bg-background-secondary px-4 py-2">
-          {documents.map((document) => (
-            <button
-              key={document.id}
-              type="button"
-              onClick={() => onDocumentChange(document.id)}
-              className={cn(
-                'flex-shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                document.id === selectedDocumentId
-                  ? 'border-oak-primary bg-oak-primary text-white'
-                  : 'border-border-primary bg-background-primary text-text-secondary hover:bg-background-tertiary'
-              )}
-            >
-              {document.fileName}
-            </button>
-          ))}
+        <div className="flex flex-shrink-0 items-end overflow-x-auto border-b border-border-primary bg-background-secondary pl-2">
+          {documents.map((document) => {
+            const isActive = document.id === selectedDocumentId;
+            return (
+              <button
+                key={document.id}
+                type="button"
+                onClick={() => onDocumentChange(document.id)}
+                className={cn(
+                  'relative flex-shrink-0 rounded-tl-lg rounded-tr-lg border border-b-0 px-4 py-2 text-xs font-medium transition-colors -mb-px',
+                  isActive
+                    ? 'border-border-primary bg-background-primary text-text-primary z-10'
+                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border-primary/50'
+                )}
+              >
+                {document.fileName}
+              </button>
+            );
+          })}
         </div>
       ) : null}
 
@@ -1031,14 +1034,14 @@ export function EsigningFieldCanvas({
               initialPage={viewerPage}
               zoomLevel={zoomLevel}
               onZoomLevelChange={onZoomLevelChange}
-              highlights={highlights}
+              highlights={canEdit ? [] : highlights}
               onPageChange={onPageChange}
               className="h-full w-full"
             />
 
-            {canvasBounds.width > 0 && canvasBounds.height > 0 ? (
+            {canEdit && canvasBounds.width > 0 && canvasBounds.height > 0 ? (
               <div
-                className="pointer-events-none absolute z-20"
+                className="pointer-events-none absolute z-20 overflow-hidden"
                 style={{
                   left: canvasBounds.left,
                   top: canvasBounds.top,

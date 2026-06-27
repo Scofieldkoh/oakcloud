@@ -775,21 +775,11 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     // Field keys that have evidence
     const fieldKeys = ['vendorName', 'documentNumber', 'documentDate', 'totalAmount', 'subtotal', 'taxAmount', 'supplierGstNo'];
 
-    // Debug: log raw evidence
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[ProcessingDetail] Raw evidence JSON:', evidence);
-    }
-
     fieldKeys.forEach((key) => {
       const fieldEvidence = evidence[key];
       if (fieldEvidence?.bbox) {
         const { x0, y0, x1, y1 } = fieldEvidence.bbox;
         const isFocused = focusedField === key;
-
-        // Debug: log individual field evidence
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[ProcessingDetail] Field "${key}" bbox:`, { x0, y0, x1, y1 });
-        }
 
         boxes.push({
           pageNumber: fieldEvidence.containerPageNumber || 1,
@@ -803,10 +793,6 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         });
       }
     });
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[ProcessingDetail] Generated highlights:', boxes);
-    }
 
     return boxes;
   }, [revisionWithLineItems?.headerEvidenceJson, focusedField]);
@@ -868,10 +854,6 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         value: revisionWithLineItems.currency,
         color: focusedField === 'currency' ? isFocusedColor : defaultColor,
       });
-    }
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[ProcessingDetail] Field values for text layer search:', values);
     }
 
     return values;

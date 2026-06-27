@@ -22,7 +22,7 @@ type OpenAIBatchStatus =
 interface ResolvedOpenAIConfig {
   credentials?: AICredentials['openai'];
   connectorId: string | null;
-  connectorSource: 'tenant' | 'system' | 'env';
+  connectorSource: 'workspace' | 'tenant' | 'system' | 'env';
 }
 
 interface OpenAIBatchObject {

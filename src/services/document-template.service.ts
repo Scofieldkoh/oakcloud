@@ -42,7 +42,6 @@ const TRACKED_FIELDS: (keyof DocumentTemplate)[] = [
   'category',
   'content',
   'isActive',
-  'defaultShareExpiryHours',
 ];
 
 // ============================================================================
@@ -74,7 +73,6 @@ export async function createDocumentTemplate(
       contentJson: data.contentJson ?? undefined,
       placeholders: data.placeholders,
       isActive: data.isActive,
-      defaultShareExpiryHours: data.defaultShareExpiryHours,
       createdById: userId,
     },
   });
@@ -140,8 +138,6 @@ export async function updateDocumentTemplate(
   if (data.contentJson !== undefined) updateData.contentJson = data.contentJson;
   if (data.placeholders !== undefined) updateData.placeholders = data.placeholders;
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
-  if (data.defaultShareExpiryHours !== undefined)
-    updateData.defaultShareExpiryHours = data.defaultShareExpiryHours;
 
   const template = await prisma.documentTemplate.update({
     where: { id: data.id },
@@ -331,7 +327,6 @@ export async function duplicateDocumentTemplate(
       contentJson: existing.contentJson ?? undefined,
       placeholders: existing.placeholders ?? [],
       isActive: true,
-      defaultShareExpiryHours: existing.defaultShareExpiryHours,
       createdById: userId,
       version: 1, // Reset version for duplicated template
     },

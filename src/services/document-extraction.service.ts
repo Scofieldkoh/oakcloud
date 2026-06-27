@@ -16,12 +16,14 @@ import { checkForDuplicates, updateDuplicateStatus } from './duplicate-detection
 import {
   callAIWithConnector,
   getBestAvailableModelForWorkspace,
+  getDocumentInputModeForModel,
   getModelConfig,
   logExtractionResults,
   isAIDebugEnabled,
   stripMarkdownCodeBlocks,
   AI_MODELS,
 } from '@/lib/ai';
+import { prepareImageUrlVisionInput } from '@/lib/ai/vision-input';
 import type { AIModel } from '@/lib/ai/types';
 import { PDFDocument } from 'pdf-lib';
 import {
@@ -1618,7 +1620,7 @@ async function runLightweightCounterpartyPass(params: {
   tenantId: string;
   companyId: string;
   userId: string;
-  modelId: AIModel | null;
+  modelId: AIModel | string | null;
   forceMistral: boolean;
 }): Promise<LightweightCounterpartyPassResult | null> {
   const { pages, tenantId, companyId, userId, modelId, forceMistral } = params;
@@ -1659,13 +1661,19 @@ async function runLightweightCounterpartyPass(params: {
     return null;
   }
 
+  const documentInputMode = await getDocumentInputModeForModel(tenantId, modelId);
+  const connectorDocument =
+    document.mimeType === 'application/pdf' && documentInputMode === 'image'
+      ? await prepareImageUrlVisionInput(Buffer.from(document.base64, 'base64'), document.mimeType)
+      : document;
+
   const response = await callAIWithConnector({
     model: modelId,
     tenantId,
     userId,
     userPrompt: prompt,
     jsonMode: true,
-    images: [document],
+    images: [connectorDocument],
     operation: 'document_counterparty_hint',
     temperature: 0,
     maxTokens: LIGHTWEIGHT_COUNTERPARTY_MAX_OUTPUT_TOKENS,
@@ -1692,7 +1700,7 @@ async function buildHistoricalCounterpartyLearningContext(params: {
   tenantId: string;
   companyId: string;
   userId: string;
-  modelId: AIModel | null;
+  modelId: AIModel | string | null;
   forceMistral: boolean;
 }): Promise<string | undefined> {
   try {
@@ -2682,16 +2690,20 @@ The following should NEVER appear as separate line items - always include them i
     );
   }
 
-  const providerFromModel = getModelConfig(modelId as AIModel).provider;
-
   try {
+    const documentInputMode = await getDocumentInputModeForModel(tenantId, modelId);
+    const connectorDocument =
+      mimeType === 'application/pdf' && documentInputMode === 'image'
+        ? await prepareImageUrlVisionInput(documentBuffer, mimeType)
+        : { base64: imageBase64, mimeType };
+
     const response = await callAIWithConnector({
-      model: modelId as AIModel,
+      model: modelId,
       tenantId,
       userId,
       userPrompt: extractionPrompt,
       jsonMode: true,
-      images: [{ base64: imageBase64, mimeType }],
+      images: [connectorDocument],
       operation: 'document_extraction',
       temperature: 0.1, // Low temperature for precise extraction
     });
@@ -2728,7 +2740,7 @@ The following should NEVER appear as separate line items - always include them i
     return {
       result,
       modelUsed: modelId,
-      providerUsed: providerFromModel,
+      providerUsed: response.provider,
     };
   } catch (error) {
     log.error('AI extraction failed', error);

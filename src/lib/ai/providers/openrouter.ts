@@ -5,7 +5,7 @@
  * Uses the OpenAI SDK with a custom baseURL.
  */
 
-import type { AIRequestOptions, AIResponse, AICredentials } from '../types';
+import type { AIRequestOptions, AIResponse, AICredentials, AIModel } from '../types';
 import { getModelConfig } from '../models';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
@@ -92,7 +92,7 @@ export async function callOpenRouter(
     throw new Error('OpenRouter API key not configured');
   }
 
-  const modelConfig = getModelConfig(options.model);
+  const modelConfig = options.modelConfig ?? getModelConfig(options.model as AIModel);
   if (modelConfig.provider !== 'openrouter') {
     throw new Error(`Model ${options.model} is not an OpenRouter model`);
   }
@@ -114,13 +114,23 @@ export async function callOpenRouter(
     const contentParts: any[] = [];
 
     for (const image of options.images) {
-      contentParts.push({
-        type: 'image_url',
-        image_url: {
-          url: `data:${image.mimeType};base64,${image.base64}`,
-          detail: 'high',
-        },
-      });
+      if (image.mimeType === 'application/pdf') {
+        contentParts.push({
+          type: 'file',
+          file: {
+            filename: 'document.pdf',
+            file_data: `data:application/pdf;base64,${image.base64}`,
+          },
+        });
+      } else {
+        contentParts.push({
+          type: 'image_url',
+          image_url: {
+            url: `data:${image.mimeType};base64,${image.base64}`,
+            detail: 'high',
+          },
+        });
+      }
     }
 
     contentParts.push({ type: 'text', text: options.userPrompt });

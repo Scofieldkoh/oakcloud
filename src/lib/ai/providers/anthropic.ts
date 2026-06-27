@@ -4,7 +4,7 @@
  * Implementation for Anthropic Claude models.
  */
 
-import type { AIRequestOptions, AIResponse, AICredentials } from '../types';
+import type { AIRequestOptions, AIResponse, AICredentials, AIModel } from '../types';
 import { getModelConfig } from '../models';
 
 // Lazy load Anthropic SDK to reduce initial bundle size
@@ -53,7 +53,7 @@ export async function callAnthropic(
     throw new Error('Anthropic API key not configured');
   }
 
-  const modelConfig = getModelConfig(options.model);
+  const modelConfig = options.modelConfig ?? getModelConfig(options.model as AIModel);
   if (modelConfig.provider !== 'anthropic') {
     throw new Error(`Model ${options.model} is not an Anthropic model`);
   }

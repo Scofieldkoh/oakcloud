@@ -15,15 +15,13 @@ import type {
   PDFResult,
   ExportHTMLParams,
   HTMLResult,
-  PublishParams,
-  ShareAccessResult,
   DocumentStepResult,
   DocumentStepConfig,
   WorkflowContext,
   DocumentForSignature,
   Signatory,
 } from './types';
-import type { GeneratedDocument, DocumentShare } from '@/generated/prisma';
+import type { GeneratedDocument } from '@/generated/prisma';
 
 // ============================================================================
 // IDocumentGenerator Interface
@@ -162,61 +160,6 @@ export interface IDocumentExporter {
 }
 
 // ============================================================================
-// IDocumentPublisher Interface
-// ============================================================================
-
-/**
- * Document Publisher Interface
- *
- * Provides methods for sharing documents externally.
- */
-export interface IDocumentPublisher {
-  /**
-   * Publish document for sharing.
-   * Creates a secure share link.
-   *
-   * @param params - Publish parameters
-   * @returns The document share record
-   */
-  publish(params: PublishParams): Promise<DocumentShare>;
-
-  /**
-   * Get the shareable URL for a token.
-   *
-   * @param shareToken - The share token
-   * @returns The full shareable URL
-   */
-  getShareUrl(shareToken: string): string;
-
-  /**
-   * Access a shared document.
-   *
-   * @param token - Share token
-   * @param password - Optional password if share is protected
-   * @returns Share access result or null if invalid
-   */
-  access(token: string, password?: string): Promise<ShareAccessResult | null>;
-
-  /**
-   * Revoke share access.
-   *
-   * @param tenantId - Tenant ID
-   * @param userId - User performing the action
-   * @param shareId - Share to revoke
-   */
-  revoke(tenantId: string, userId: string, shareId: string): Promise<void>;
-
-  /**
-   * List all shares for a document.
-   *
-   * @param tenantId - Tenant ID
-   * @param documentId - Document ID
-   * @returns Array of document shares
-   */
-  listShares(tenantId: string, documentId: string): Promise<DocumentShare[]>;
-}
-
-// ============================================================================
 // IDocumentWorkflowStep Interface
 // ============================================================================
 
@@ -224,7 +167,7 @@ export interface IDocumentPublisher {
  * Document Workflow Step Interface
  *
  * High-level interface for workflow integration.
- * Combines generation, export, and publishing in a single step.
+ * Combines generation and export in a single step.
  */
 export interface IDocumentWorkflowStep {
   /**

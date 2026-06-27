@@ -213,7 +213,7 @@ export function getDefaultModel(): AIModelConfig {
 
 // Get the default model ID (for frontend)
 export function getDefaultModelId(): AIModel {
-  return getDefaultModel().id;
+  return getDefaultModel().id as AIModel;
 }
 
 // Get all model IDs

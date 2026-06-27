@@ -415,20 +415,6 @@ export default function ProcessingUploadPage() {
       let processedFile: File;
       try {
         processedFile = await processFileForUpload(queuedFile.file);
-
-        // Log if file was converted or compressed
-        if (processedFile !== queuedFile.file) {
-          const wasImage = queuedFile.file.type.startsWith('image/');
-          const sizeReduced = processedFile.size < queuedFile.file.size;
-          if (wasImage) {
-            console.log(`Converted ${queuedFile.file.name} to PDF`);
-          }
-          if (sizeReduced) {
-            const before = (queuedFile.file.size / 1024 / 1024).toFixed(2);
-            const after = (processedFile.size / 1024 / 1024).toFixed(2);
-            console.log(`Compressed ${queuedFile.file.name}: ${before}MB -> ${after}MB`);
-          }
-        }
       } catch (err) {
         console.error('File processing failed:', err);
         setQueuedFiles((prev) =>

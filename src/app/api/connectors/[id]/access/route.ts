@@ -1,14 +1,14 @@
 /**
- * Connector Tenant Access API Routes
+ * Connector Workspace Access API Routes
  *
- * GET   /api/connectors/[id]/access - Get tenant access list (SUPER_ADMIN only)
- * PATCH /api/connectors/[id]/access - Update tenant access (SUPER_ADMIN only)
+ * GET   /api/connectors/[id]/access - Get workspace access list (SUPER_ADMIN only)
+ * PATCH /api/connectors/[id]/access - Update workspace access (SUPER_ADMIN only)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { updateTenantAccessSchema } from '@/lib/validations/connector';
-import { getTenantAccess, updateTenantAccess } from '@/services/connector.service';
+import { updateWorkspaceAccessSchema } from '@/lib/validations/connector';
+import { getWorkspaceAccess, updateWorkspaceAccess } from '@/services/connector.service';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -23,13 +23,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const tenantAccess = await getTenantAccess(id, {
+    const workspaceAccess = await getWorkspaceAccess(id, {
       tenantId: session.tenantId,
       userId: session.id,
       isSuperAdmin: session.isSuperAdmin,
     });
 
-    return NextResponse.json({ tenantAccess });
+    return NextResponse.json({ workspaceAccess });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {
@@ -57,9 +57,19 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const data = updateTenantAccessSchema.parse(body);
+    const normalizedBody = body.workspaceAccess
+      ? body
+      : {
+          workspaceAccess: body.tenantAccess?.map(
+            (access: { tenantId: string; isEnabled: boolean }) => ({
+              workspaceId: access.tenantId,
+              isEnabled: access.isEnabled,
+            })
+          ),
+        };
+    const data = updateWorkspaceAccessSchema.parse(normalizedBody);
 
-    await updateTenantAccess(id, data, {
+    await updateWorkspaceAccess(id, data, {
       tenantId: session.tenantId,
       userId: session.id,
       isSuperAdmin: session.isSuperAdmin,

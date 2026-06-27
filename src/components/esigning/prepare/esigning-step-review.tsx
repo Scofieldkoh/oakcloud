@@ -32,18 +32,27 @@ export function EsigningStepReview({
   manualLinks,
 }: EsigningStepReviewProps) {
   const toast = useToast();
-  const [previewRecipientId, setPreviewRecipientId] = useState<string>('');
+  const [previewRecipientId, setPreviewRecipientId] = useState<string>('ALL');
   const [previewDocumentId, setPreviewDocumentId] = useState<string>(() => envelope.documents[0]?.id ?? '');
   const [previewPage, setPreviewPage] = useState(1);
   const signerRecipients = envelope.recipients.filter((r) => r.type === 'SIGNER');
-  const activePreviewRecipientId = previewRecipientId || signerRecipients[0]?.id || '';
+  const activePreviewRecipientId = previewRecipientId || 'ALL';
   const previewFields = useMemo(
-    () => fields.filter((field) => field.recipientId === activePreviewRecipientId),
+    () =>
+      activePreviewRecipientId === 'ALL'
+        ? fields
+        : fields.filter((field) => field.recipientId === activePreviewRecipientId),
     [activePreviewRecipientId, fields]
   );
   const fieldSummaryByRecipient = new Map(
     signerRecipients.map((recipient) => {
       const recipientFields = fields.filter((field) => field.recipientId === recipient.id);
+      const activeDocIds = [...new Set(recipientFields.map((f) => f.documentId))];
+      const hasSignatureOnAllDocs =
+        activeDocIds.length > 0 &&
+        activeDocIds.every((docId) =>
+          recipientFields.some((f) => f.documentId === docId && (f.type === 'SIGNATURE' || f.type === 'INITIALS'))
+        );
       return [
         recipient.id,
         {
@@ -52,12 +61,13 @@ export function EsigningStepReview({
           signatureCount: recipientFields.filter(
             (field) => field.type === 'SIGNATURE' || field.type === 'INITIALS'
           ).length,
+          hasSignatureOnAllDocs,
         },
       ];
     })
   );
 
-  // Validation
+  // Validation — signature requirement is per-document: each document with fields for a signer needs a sig field
   const blockingIssues: string[] = [];
   if (envelope.documents.length === 0) blockingIssues.push('Upload at least one document');
   if (signerRecipients.length === 0) blockingIssues.push('Add at least one signer');
@@ -65,8 +75,19 @@ export function EsigningStepReview({
     const summary = fieldSummaryByRecipient.get(r.id);
     if (!summary || summary.totalCount === 0) {
       blockingIssues.push(`${r.name} has no fields assigned`);
-    } else if (summary.signatureCount === 0) {
-      blockingIssues.push(`${r.name} has no signature field`);
+    } else {
+      const recipientFields = fields.filter((f) => f.recipientId === r.id);
+      const activeDocIds = [...new Set(recipientFields.map((f) => f.documentId))];
+      const docsWithoutSig = activeDocIds.filter(
+        (docId) => !recipientFields.some((f) => f.documentId === docId && (f.type === 'SIGNATURE' || f.type === 'INITIALS'))
+      );
+      if (docsWithoutSig.length > 0) {
+        const docNames = docsWithoutSig
+          .map((docId) => envelope.documents.find((d) => d.id === docId)?.fileName ?? docId)
+          .map((name) => `"${name}"`)
+          .join(', ');
+        blockingIssues.push(`${r.name} has no signature field on ${docsWithoutSig.length === 1 ? 'document' : 'documents'} ${docNames}`);
+      }
     }
     if (r.accessMode === 'EMAIL_WITH_CODE' && !r.hasAccessCode) {
       blockingIssues.push(`${r.name} requires an access code`);
@@ -77,7 +98,22 @@ export function EsigningStepReview({
 
   return (
     <div className="pb-6 sm:pb-20">
-      <div className="max-w-4xl mx-auto p-4 space-y-4 sm:p-6 sm:space-y-6">
+      <div className="max-w-4xl mx-auto p-4 space-y-4 sm:p-6 sm:space-y-6" id="review-summary">
+        {/* Validation panel — shown at top so issues are immediately visible */}
+        {!isReady && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="h-4 w-4 text-amber-700" />
+              <span className="text-sm font-semibold text-amber-800">Resolve before sending</span>
+            </div>
+            <ul className="list-disc list-inside space-y-1">
+              {blockingIssues.map((issue, i) => (
+                <li key={i} className="text-sm text-amber-700">{issue}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Envelope summary card */}
         <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
           <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">{envelope.title}</h1>
@@ -118,28 +154,40 @@ export function EsigningStepReview({
         <section>
           <h2 className="mb-3 text-base font-semibold text-text-primary">Signers</h2>
           <div className="space-y-3">
-            {signerRecipients.map((r) => {
+            {signerRecipients.map((r, idx) => {
               const summary = fieldSummaryByRecipient.get(r.id) ?? {
                 totalCount: 0,
                 requiredCount: 0,
                 signatureCount: 0,
+                hasSignatureOnAllDocs: false,
               };
-              const hasIssue = summary.totalCount === 0 || summary.signatureCount === 0;
+              const hasIssue = summary.totalCount === 0 || !summary.hasSignatureOnAllDocs;
+              const isSequential = envelope.signingOrder === 'SEQUENTIAL';
 
               return (
                 <div
                   key={r.id}
                   className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm"
+                  style={{ borderLeftColor: r.colorTag, borderLeftWidth: 3 }}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span
-                        className="h-3 w-3 flex-shrink-0 rounded-full mt-0.5"
-                        style={{ backgroundColor: r.colorTag }}
-                      />
+                    <div className="flex items-start gap-3 min-w-0">
+                      {isSequential && (
+                        <span
+                          className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                          style={{ backgroundColor: r.colorTag }}
+                        >
+                          {idx + 1}
+                        </span>
+                      )}
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium text-text-primary">{r.name}</span>
+                          {isSequential && (
+                            <span className="text-xs text-text-muted">
+                              Signs {idx === 0 ? '1st' : idx === 1 ? '2nd' : idx === 2 ? '3rd' : `${idx + 1}th`}
+                            </span>
+                          )}
                           <span className="inline-flex items-center rounded-full border border-border-primary px-2 py-0.5 text-xs text-text-secondary">
                             {ESIGNING_RECIPIENT_TYPE_LABELS[r.type]}
                           </span>
@@ -149,7 +197,7 @@ export function EsigningStepReview({
                           {ESIGNING_ACCESS_MODE_LABELS[r.accessMode]}
                         </div>
                         <div className="mt-1 text-xs text-text-secondary">
-                          {summary.requiredCount} required field{summary.requiredCount !== 1 ? 's' : ''} · {summary.signatureCount} signature
+                          {summary.requiredCount} required field{summary.requiredCount !== 1 ? 's' : ''} · {summary.signatureCount} signature{summary.signatureCount !== 1 ? 's' : ''}
                         </div>
                       </div>
                     </div>
@@ -203,25 +251,13 @@ export function EsigningStepReview({
           </div>
         </section>
 
-        {/* Validation panel */}
-        {isReady ? (
+        {/* Ready banner */}
+        {isReady && (
           <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
             <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-emerald-600" />
             <span className="text-sm font-medium text-emerald-800">
               Ready to send — all requirements are met.
             </span>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="h-4 w-4 text-amber-700" />
-              <span className="text-sm font-semibold text-amber-800">Issues to resolve</span>
-            </div>
-            <ul className="list-disc list-inside space-y-1">
-              {blockingIssues.map((issue, i) => (
-                <li key={i} className="text-sm text-amber-700">{issue}</li>
-              ))}
-            </ul>
           </div>
         )}
 
@@ -266,9 +302,12 @@ export function EsigningStepReview({
           </section>
         )}
 
-        {signerRecipients.length > 0 && envelope.documents.length > 0 ? (
-          <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      </div>
+
+      {signerRecipients.length > 0 && envelope.documents.length > 0 ? (
+        <section className="px-4 pt-0 pb-2 sm:px-6">
+          <div className="rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl overflow-hidden">
+            <div className="flex flex-col gap-4 px-4 pt-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:pt-5">
               <div>
                 <h2 className="text-base font-semibold text-text-primary">Preview as signer</h2>
                 <p className="mt-1 text-sm text-text-secondary">
@@ -282,6 +321,7 @@ export function EsigningStepReview({
                   onChange={(event) => setPreviewRecipientId(event.target.value)}
                   className="h-9 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary sm:min-w-52"
                 >
+                  <option value="ALL">All Signers</option>
                   {signerRecipients.map((recipient) => (
                     <option key={recipient.id} value={recipient.id}>
                       {recipient.name}
@@ -290,8 +330,7 @@ export function EsigningStepReview({
                 </select>
               </label>
             </div>
-
-            <div className="mt-4 overflow-hidden rounded-2xl border border-border-primary">
+            <div className="mt-4 border-t border-border-primary">
               <EsigningFieldCanvas
                 documents={envelope.documents}
                 selectedDocumentId={previewDocumentId}
@@ -311,9 +350,9 @@ export function EsigningStepReview({
                 canEdit={false}
               />
             </div>
-          </section>
-        ) : null}
-      </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* Sticky footer */}
       <div className="sticky bottom-0 bg-background-secondary border-t border-border-primary px-3 py-2 flex flex-wrap items-center justify-between gap-2 sm:px-6 sm:py-3 sm:gap-4">

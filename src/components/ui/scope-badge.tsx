@@ -22,7 +22,7 @@ export const SCOPE_CONFIG: Record<string, {
     icon: Building2,
     color: 'text-blue-800 dark:text-blue-300',
     bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-    label: 'Tenant',
+    label: 'Workspace',
   },
   company: {
     icon: Settings,
@@ -47,7 +47,7 @@ export const SCOPE_CONFIG: Record<string, {
 export type ScopeType = keyof typeof SCOPE_CONFIG;
 
 export interface ScopeBadgeProps {
-  /** Scope type or boolean for simple system/tenant */
+  /** Scope type or boolean for simple system/workspace */
   scope: ScopeType | boolean;
   /** Custom label (overrides default) */
   label?: string;
@@ -70,16 +70,16 @@ const SIZE_CONFIG = {
  *
  * Features:
  * - Predefined scope types (system, tenant, company, user, global)
- * - Boolean shorthand for simple system/tenant distinction
+ * - Boolean shorthand for simple system/workspace distinction
  * - Multiple size variants
  * - Optional icon display
  * - Dark mode support
  *
  * @example
  * ```tsx
- * // Boolean shorthand (system vs tenant)
+ * // Boolean shorthand (system vs workspace)
  * <ScopeBadge scope={true} />   // Shows "System"
- * <ScopeBadge scope={false} />  // Shows "Tenant"
+ * <ScopeBadge scope={false} />  // Shows "Workspace"
  *
  * // Named scope
  * <ScopeBadge scope="company" />
@@ -99,7 +99,7 @@ export function ScopeBadge({
   showIcon = true,
   className,
 }: ScopeBadgeProps) {
-  // Convert boolean to scope type (true = system, false = tenant)
+  // Convert boolean to scope type (true = system, false = workspace)
   const scopeType: ScopeType = typeof scope === 'boolean'
     ? (scope ? 'system' : 'tenant')
     : scope;

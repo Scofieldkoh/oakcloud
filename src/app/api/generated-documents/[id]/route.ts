@@ -30,12 +30,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const tenantId = requireSessionWorkspaceId(session);
 
     const includeDeleted = searchParams.get('includeDeleted') === 'true' && session.isWorkspaceAdmin;
-    const includeShares = searchParams.get('includeShares') === 'true';
     const includeComments = searchParams.get('includeComments') === 'true';
 
     const document = await getGeneratedDocumentById(id, tenantId, {
       includeDeleted,
-      includeShares,
       includeComments,
     });
 

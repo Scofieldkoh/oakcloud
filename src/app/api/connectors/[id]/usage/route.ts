@@ -27,20 +27,20 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Get connector to verify access
     const connector = await prisma.connector.findUnique({
       where: { id: connectorId, deletedAt: null },
-      select: { id: true, tenantId: true, name: true },
+      select: { id: true, workspaceId: true, name: true },
     });
 
     if (!connector) {
       return NextResponse.json({ error: 'Connector not found' }, { status: 404 });
     }
 
-    // Access control: SUPER_ADMIN can see all, TENANT_ADMIN can only see their tenant's connectors
-    const isSystem = connector.tenantId === null;
+    // Access control: SUPER_ADMIN can see all, workspace admins can only see their workspace connectors
+    const isSystem = connector.workspaceId === null;
     if (!session.isSuperAdmin) {
       if (isSystem) {
-        // TENANT_ADMIN can view usage of system connectors used by their tenant
+        // Workspace admins can view usage of system connectors used by their workspace
         // But can't see global usage
-      } else if (connector.tenantId !== session.tenantId) {
+      } else if (connector.workspaceId !== session.tenantId) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       }
     }
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const sortBy = (searchParams.get('sortBy') as 'createdAt' | 'costCents' | 'totalTokens' | 'latencyMs') || 'createdAt';
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
 
-    // For TENANT_ADMIN viewing system connector, filter to their tenant's usage
+    // For workspace admins viewing a system connector, filter to their workspace usage
     const filterTenantId = !session.isSuperAdmin && isSystem ? session.tenantId : undefined;
 
     const searchParams_parsed = {

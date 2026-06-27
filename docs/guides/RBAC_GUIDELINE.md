@@ -895,23 +895,14 @@ const isCompanyScoped = !session.isSuperAdmin && !session.isTenantAdmin && !sess
 
 ## Document Generation Module Permissions
 
-The Document Generation Module (templates, generated documents, shares, comments) uses the existing `document` resource permissions:
+The Document Generation Module (templates, generated documents, comments) uses the existing `document` resource permissions:
 
 | Permission | Allows |
 |------------|--------|
-| `document:read` | View templates, generated documents, shares, comments |
-| `document:create` | Create templates, generate documents, create share links |
+| `document:read` | View templates, generated documents, comments |
+| `document:create` | Create templates and generate documents |
 | `document:update` | Edit templates/documents, finalize/unfinalize, create comments, manage comments (resolve/hide) |
-| `document:delete` | Delete templates, delete/archive generated documents, revoke shares |
-
-### External (Anonymous) Access
-
-External users can access shared documents without authentication:
-
-- **Public Share Links**: Access via `/share/{token}` with optional password protection
-- **Commenting**: External commenters can add comments if `allowComments` is enabled on the share
-- **Rate Limiting**: External comments are limited to 20/hour per IP address (configurable per share)
-- **No Login Required**: External access doesn't require authentication
+| `document:delete` | Delete templates and delete/archive generated documents |
 
 ### Access Resolution for Document Generation
 
@@ -931,10 +922,6 @@ External users can access shared documents without authentication:
 │  └── Templates: tenant-wide access                              │
 │  └── Documents: can be scoped to companies (optional)           │
 │                                                                  │
-│  External (via share link)                                       │
-│  └── View-only access to specific shared document               │
-│  └── Comment access if enabled on share                         │
-│  └── Rate limited (20 comments/hour/IP)                         │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```

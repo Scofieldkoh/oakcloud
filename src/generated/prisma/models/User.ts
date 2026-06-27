@@ -269,7 +269,6 @@ export type UserWhereInput = {
   resolvedComments?: Prisma.DocumentCommentListRelationFilter
   authoredComments?: Prisma.DocumentCommentListRelationFilter
   documentDrafts?: Prisma.DocumentDraftListRelationFilter
-  createdShares?: Prisma.DocumentShareListRelationFilter
   createdTemplates?: Prisma.DocumentTemplateListRelationFilter
   uploadedDocuments?: Prisma.DocumentListRelationFilter
   createdDocuments?: Prisma.GeneratedDocumentListRelationFilter
@@ -329,7 +328,6 @@ export type UserOrderByWithRelationInput = {
   resolvedComments?: Prisma.DocumentCommentOrderByRelationAggregateInput
   authoredComments?: Prisma.DocumentCommentOrderByRelationAggregateInput
   documentDrafts?: Prisma.DocumentDraftOrderByRelationAggregateInput
-  createdShares?: Prisma.DocumentShareOrderByRelationAggregateInput
   createdTemplates?: Prisma.DocumentTemplateOrderByRelationAggregateInput
   uploadedDocuments?: Prisma.DocumentOrderByRelationAggregateInput
   createdDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
@@ -392,7 +390,6 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   resolvedComments?: Prisma.DocumentCommentListRelationFilter
   authoredComments?: Prisma.DocumentCommentListRelationFilter
   documentDrafts?: Prisma.DocumentDraftListRelationFilter
-  createdShares?: Prisma.DocumentShareListRelationFilter
   createdTemplates?: Prisma.DocumentTemplateListRelationFilter
   uploadedDocuments?: Prisma.DocumentListRelationFilter
   createdDocuments?: Prisma.GeneratedDocumentListRelationFilter
@@ -493,7 +490,6 @@ export type UserCreateInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -553,7 +549,6 @@ export type UserUncheckedCreateInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -611,7 +606,6 @@ export type UserUpdateInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -671,7 +665,6 @@ export type UserUncheckedUpdateInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -1006,20 +999,6 @@ export type UserUpdateOneWithoutFinalizedDocumentsNestedInput = {
   delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutFinalizedDocumentsInput, Prisma.UserUpdateWithoutFinalizedDocumentsInput>, Prisma.UserUncheckedUpdateWithoutFinalizedDocumentsInput>
-}
-
-export type UserCreateNestedOneWithoutCreatedSharesInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedSharesInput, Prisma.UserUncheckedCreateWithoutCreatedSharesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedSharesInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserUpdateOneRequiredWithoutCreatedSharesNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedSharesInput, Prisma.UserUncheckedCreateWithoutCreatedSharesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedSharesInput
-  upsert?: Prisma.UserUpsertWithoutCreatedSharesInput
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCreatedSharesInput, Prisma.UserUpdateWithoutCreatedSharesInput>, Prisma.UserUncheckedUpdateWithoutCreatedSharesInput>
 }
 
 export type UserCreateNestedOneWithoutHiddenCommentsInput = {
@@ -1510,7 +1489,6 @@ export type UserCreateWithoutTenantInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -1568,7 +1546,6 @@ export type UserUncheckedCreateWithoutTenantInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -1673,7 +1650,6 @@ export type UserCreateWithoutRoleAssignmentsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -1732,7 +1708,6 @@ export type UserUncheckedCreateWithoutRoleAssignmentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -1805,7 +1780,6 @@ export type UserUpdateWithoutRoleAssignmentsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -1864,7 +1838,6 @@ export type UserUncheckedUpdateWithoutRoleAssignmentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -1921,7 +1894,6 @@ export type UserCreateWithoutPreferencesInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -1980,7 +1952,6 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -2053,7 +2024,6 @@ export type UserUpdateWithoutPreferencesInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -2112,7 +2082,6 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -2169,7 +2138,6 @@ export type UserCreateWithoutCompanyAssignmentsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -2228,7 +2196,6 @@ export type UserUncheckedCreateWithoutCompanyAssignmentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -2301,7 +2268,6 @@ export type UserUpdateWithoutCompanyAssignmentsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -2360,7 +2326,6 @@ export type UserUncheckedUpdateWithoutCompanyAssignmentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -2417,7 +2382,6 @@ export type UserCreateWithoutUploadedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
@@ -2476,7 +2440,6 @@ export type UserUncheckedCreateWithoutUploadedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
@@ -2549,7 +2512,6 @@ export type UserUpdateWithoutUploadedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
@@ -2608,7 +2570,6 @@ export type UserUncheckedUpdateWithoutUploadedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -2664,7 +2625,6 @@ export type UserCreateWithoutAuditLogsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -2723,7 +2683,6 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -2796,7 +2755,6 @@ export type UserUpdateWithoutAuditLogsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -2855,7 +2813,6 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -2912,7 +2869,6 @@ export type UserCreateWithoutConnectorUsageLogsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -2971,7 +2927,6 @@ export type UserUncheckedCreateWithoutConnectorUsageLogsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -3044,7 +2999,6 @@ export type UserUpdateWithoutConnectorUsageLogsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -3103,7 +3057,6 @@ export type UserUncheckedUpdateWithoutConnectorUsageLogsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -3161,7 +3114,6 @@ export type UserCreateWithoutCreatedTemplatesInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
@@ -3220,7 +3172,6 @@ export type UserUncheckedCreateWithoutCreatedTemplatesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
@@ -3293,7 +3244,6 @@ export type UserUpdateWithoutCreatedTemplatesInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
@@ -3352,7 +3302,6 @@ export type UserUncheckedUpdateWithoutCreatedTemplatesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -3409,7 +3358,6 @@ export type UserCreateWithoutCreatedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
@@ -3468,7 +3416,6 @@ export type UserUncheckedCreateWithoutCreatedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
@@ -3530,7 +3477,6 @@ export type UserCreateWithoutFinalizedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -3589,7 +3535,6 @@ export type UserUncheckedCreateWithoutFinalizedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -3662,7 +3607,6 @@ export type UserUpdateWithoutCreatedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
@@ -3721,7 +3665,6 @@ export type UserUncheckedUpdateWithoutCreatedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -3789,7 +3732,6 @@ export type UserUpdateWithoutFinalizedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -3848,259 +3790,10 @@ export type UserUncheckedUpdateWithoutFinalizedDocumentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
-  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
-  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
-  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutUsersNestedInput
-  workflow_billing_states?: Prisma.workflow_billing_statesUncheckedUpdateManyWithoutUsersNestedInput
-  workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUncheckedUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
-  workflow_blockers_workflow_blockers_raised_byTousers?: Prisma.workflow_blockersUncheckedUpdateManyWithoutUsers_workflow_blockers_raised_byTousersNestedInput
-  workflow_blockers_workflow_blockers_resolved_byTousers?: Prisma.workflow_blockersUncheckedUpdateManyWithoutUsers_workflow_blockers_resolved_byTousersNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedUpdateManyWithoutUsersNestedInput
-  workflow_cross_dependencies?: Prisma.workflow_cross_dependenciesUncheckedUpdateManyWithoutUsersNestedInput
-  workflow_deviations?: Prisma.workflow_deviationsUncheckedUpdateManyWithoutUsersNestedInput
-  workflow_engagements_workflow_engagements_created_byTousers?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutUsers_workflow_engagements_created_byTousersNestedInput
-  workflow_engagements_workflow_engagements_director_poc_idTousers?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutUsers_workflow_engagements_director_poc_idTousersNestedInput
-  workflow_instances_workflow_instances_assigned_owner_idTousers?: Prisma.workflow_instancesUncheckedUpdateManyWithoutUsers_workflow_instances_assigned_owner_idTousersNestedInput
-  workflow_instances_workflow_instances_cancelled_byTousers?: Prisma.workflow_instancesUncheckedUpdateManyWithoutUsers_workflow_instances_cancelled_byTousersNestedInput
-  workflow_instances_workflow_instances_created_byTousers?: Prisma.workflow_instancesUncheckedUpdateManyWithoutUsers_workflow_instances_created_byTousersNestedInput
-  workflow_milestones_workflow_milestones_completed_byTousers?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutUsers_workflow_milestones_completed_byTousersNestedInput
-  workflow_milestones_workflow_milestones_owner_idTousers?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutUsers_workflow_milestones_owner_idTousersNestedInput
-  workflow_milestones_workflow_milestones_reviewed_byTousers?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutUsers_workflow_milestones_reviewed_byTousersNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutUsersNestedInput
-  workflow_program_requirements?: Prisma.workflow_program_requirementsUncheckedUpdateManyWithoutUsersNestedInput
-  workflow_scheduled_instances_queue_workflow_scheduled_instances_queue_confirmed_byTousers?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutUsers_workflow_scheduled_instances_queue_confirmed_byTousersNestedInput
-  workflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutUsers_workflow_scheduled_instances_queue_proposed_owner_idTousersNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutUsersNestedInput
-  workflow_task_dependencies?: Prisma.workflow_task_dependenciesUncheckedUpdateManyWithoutUsersNestedInput
-  workflow_task_items_workflow_task_items_completed_byTousers?: Prisma.workflow_task_itemsUncheckedUpdateManyWithoutUsers_workflow_task_items_completed_byTousersNestedInput
-  workflow_task_items_workflow_task_items_owner_idTousers?: Prisma.workflow_task_itemsUncheckedUpdateManyWithoutUsers_workflow_task_items_owner_idTousersNestedInput
-}
-
-export type UserCreateWithoutCreatedSharesInput = {
-  id?: string
-  email: string
-  passwordHash: string
-  firstName: string
-  lastName: string
-  isActive?: boolean
-  lastLoginAt?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  mustChangePassword?: boolean
-  passwordResetToken?: string | null
-  passwordResetExpires?: Date | string | null
-  passwordChangedAt?: Date | string | null
-  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
-  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
-  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
-  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
-  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
-  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
-  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
-  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
-  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
-  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
-  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
-  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
-  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutUsersInput
-  workflow_billing_states?: Prisma.workflow_billing_statesCreateNestedManyWithoutUsersInput
-  workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
-  workflow_blockers_workflow_blockers_raised_byTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_raised_byTousersInput
-  workflow_blockers_workflow_blockers_resolved_byTousers?: Prisma.workflow_blockersCreateNestedManyWithoutUsers_workflow_blockers_resolved_byTousersInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesCreateNestedManyWithoutUsersInput
-  workflow_cross_dependencies?: Prisma.workflow_cross_dependenciesCreateNestedManyWithoutUsersInput
-  workflow_deviations?: Prisma.workflow_deviationsCreateNestedManyWithoutUsersInput
-  workflow_engagements_workflow_engagements_created_byTousers?: Prisma.workflow_engagementsCreateNestedManyWithoutUsers_workflow_engagements_created_byTousersInput
-  workflow_engagements_workflow_engagements_director_poc_idTousers?: Prisma.workflow_engagementsCreateNestedManyWithoutUsers_workflow_engagements_director_poc_idTousersInput
-  workflow_instances_workflow_instances_assigned_owner_idTousers?: Prisma.workflow_instancesCreateNestedManyWithoutUsers_workflow_instances_assigned_owner_idTousersInput
-  workflow_instances_workflow_instances_cancelled_byTousers?: Prisma.workflow_instancesCreateNestedManyWithoutUsers_workflow_instances_cancelled_byTousersInput
-  workflow_instances_workflow_instances_created_byTousers?: Prisma.workflow_instancesCreateNestedManyWithoutUsers_workflow_instances_created_byTousersInput
-  workflow_milestones_workflow_milestones_completed_byTousers?: Prisma.workflow_milestonesCreateNestedManyWithoutUsers_workflow_milestones_completed_byTousersInput
-  workflow_milestones_workflow_milestones_owner_idTousers?: Prisma.workflow_milestonesCreateNestedManyWithoutUsers_workflow_milestones_owner_idTousersInput
-  workflow_milestones_workflow_milestones_reviewed_byTousers?: Prisma.workflow_milestonesCreateNestedManyWithoutUsers_workflow_milestones_reviewed_byTousersInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutUsersInput
-  workflow_program_requirements?: Prisma.workflow_program_requirementsCreateNestedManyWithoutUsersInput
-  workflow_scheduled_instances_queue_workflow_scheduled_instances_queue_confirmed_byTousers?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutUsers_workflow_scheduled_instances_queue_confirmed_byTousersInput
-  workflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutUsers_workflow_scheduled_instances_queue_proposed_owner_idTousersInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutUsersInput
-  workflow_task_dependencies?: Prisma.workflow_task_dependenciesCreateNestedManyWithoutUsersInput
-  workflow_task_items_workflow_task_items_completed_byTousers?: Prisma.workflow_task_itemsCreateNestedManyWithoutUsers_workflow_task_items_completed_byTousersInput
-  workflow_task_items_workflow_task_items_owner_idTousers?: Prisma.workflow_task_itemsCreateNestedManyWithoutUsers_workflow_task_items_owner_idTousersInput
-}
-
-export type UserUncheckedCreateWithoutCreatedSharesInput = {
-  id?: string
-  email: string
-  passwordHash: string
-  firstName: string
-  lastName: string
-  isActive?: boolean
-  lastLoginAt?: Date | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  mustChangePassword?: boolean
-  passwordResetToken?: string | null
-  passwordResetExpires?: Date | string | null
-  passwordChangedAt?: Date | string | null
-  tenantId?: string | null
-  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
-  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
-  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
-  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
-  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
-  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
-  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
-  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
-  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
-  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
-  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
-  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutUsersInput
-  workflow_billing_states?: Prisma.workflow_billing_statesUncheckedCreateNestedManyWithoutUsersInput
-  workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUncheckedCreateNestedManyWithoutUsers_workflow_blockers_owner_idTousersInput
-  workflow_blockers_workflow_blockers_raised_byTousers?: Prisma.workflow_blockersUncheckedCreateNestedManyWithoutUsers_workflow_blockers_raised_byTousersInput
-  workflow_blockers_workflow_blockers_resolved_byTousers?: Prisma.workflow_blockersUncheckedCreateNestedManyWithoutUsers_workflow_blockers_resolved_byTousersInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedCreateNestedManyWithoutUsersInput
-  workflow_cross_dependencies?: Prisma.workflow_cross_dependenciesUncheckedCreateNestedManyWithoutUsersInput
-  workflow_deviations?: Prisma.workflow_deviationsUncheckedCreateNestedManyWithoutUsersInput
-  workflow_engagements_workflow_engagements_created_byTousers?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutUsers_workflow_engagements_created_byTousersInput
-  workflow_engagements_workflow_engagements_director_poc_idTousers?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutUsers_workflow_engagements_director_poc_idTousersInput
-  workflow_instances_workflow_instances_assigned_owner_idTousers?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutUsers_workflow_instances_assigned_owner_idTousersInput
-  workflow_instances_workflow_instances_cancelled_byTousers?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutUsers_workflow_instances_cancelled_byTousersInput
-  workflow_instances_workflow_instances_created_byTousers?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutUsers_workflow_instances_created_byTousersInput
-  workflow_milestones_workflow_milestones_completed_byTousers?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutUsers_workflow_milestones_completed_byTousersInput
-  workflow_milestones_workflow_milestones_owner_idTousers?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutUsers_workflow_milestones_owner_idTousersInput
-  workflow_milestones_workflow_milestones_reviewed_byTousers?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutUsers_workflow_milestones_reviewed_byTousersInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutUsersInput
-  workflow_program_requirements?: Prisma.workflow_program_requirementsUncheckedCreateNestedManyWithoutUsersInput
-  workflow_scheduled_instances_queue_workflow_scheduled_instances_queue_confirmed_byTousers?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutUsers_workflow_scheduled_instances_queue_confirmed_byTousersInput
-  workflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutUsers_workflow_scheduled_instances_queue_proposed_owner_idTousersInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutUsersInput
-  workflow_task_dependencies?: Prisma.workflow_task_dependenciesUncheckedCreateNestedManyWithoutUsersInput
-  workflow_task_items_workflow_task_items_completed_byTousers?: Prisma.workflow_task_itemsUncheckedCreateNestedManyWithoutUsers_workflow_task_items_completed_byTousersInput
-  workflow_task_items_workflow_task_items_owner_idTousers?: Prisma.workflow_task_itemsUncheckedCreateNestedManyWithoutUsers_workflow_task_items_owner_idTousersInput
-}
-
-export type UserCreateOrConnectWithoutCreatedSharesInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedSharesInput, Prisma.UserUncheckedCreateWithoutCreatedSharesInput>
-}
-
-export type UserUpsertWithoutCreatedSharesInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutCreatedSharesInput, Prisma.UserUncheckedUpdateWithoutCreatedSharesInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedSharesInput, Prisma.UserUncheckedCreateWithoutCreatedSharesInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutCreatedSharesInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutCreatedSharesInput, Prisma.UserUncheckedUpdateWithoutCreatedSharesInput>
-}
-
-export type UserUpdateWithoutCreatedSharesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
-  firstName?: Prisma.StringFieldUpdateOperationsInput | string
-  lastName?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
-  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
-  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
-  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
-  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
-  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
-  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
-  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
-  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
-  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
-  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
-  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
-  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutUsersNestedInput
-  workflow_billing_states?: Prisma.workflow_billing_statesUpdateManyWithoutUsersNestedInput
-  workflow_blockers_workflow_blockers_owner_idTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_owner_idTousersNestedInput
-  workflow_blockers_workflow_blockers_raised_byTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_raised_byTousersNestedInput
-  workflow_blockers_workflow_blockers_resolved_byTousers?: Prisma.workflow_blockersUpdateManyWithoutUsers_workflow_blockers_resolved_byTousersNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUpdateManyWithoutUsersNestedInput
-  workflow_cross_dependencies?: Prisma.workflow_cross_dependenciesUpdateManyWithoutUsersNestedInput
-  workflow_deviations?: Prisma.workflow_deviationsUpdateManyWithoutUsersNestedInput
-  workflow_engagements_workflow_engagements_created_byTousers?: Prisma.workflow_engagementsUpdateManyWithoutUsers_workflow_engagements_created_byTousersNestedInput
-  workflow_engagements_workflow_engagements_director_poc_idTousers?: Prisma.workflow_engagementsUpdateManyWithoutUsers_workflow_engagements_director_poc_idTousersNestedInput
-  workflow_instances_workflow_instances_assigned_owner_idTousers?: Prisma.workflow_instancesUpdateManyWithoutUsers_workflow_instances_assigned_owner_idTousersNestedInput
-  workflow_instances_workflow_instances_cancelled_byTousers?: Prisma.workflow_instancesUpdateManyWithoutUsers_workflow_instances_cancelled_byTousersNestedInput
-  workflow_instances_workflow_instances_created_byTousers?: Prisma.workflow_instancesUpdateManyWithoutUsers_workflow_instances_created_byTousersNestedInput
-  workflow_milestones_workflow_milestones_completed_byTousers?: Prisma.workflow_milestonesUpdateManyWithoutUsers_workflow_milestones_completed_byTousersNestedInput
-  workflow_milestones_workflow_milestones_owner_idTousers?: Prisma.workflow_milestonesUpdateManyWithoutUsers_workflow_milestones_owner_idTousersNestedInput
-  workflow_milestones_workflow_milestones_reviewed_byTousers?: Prisma.workflow_milestonesUpdateManyWithoutUsers_workflow_milestones_reviewed_byTousersNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutUsersNestedInput
-  workflow_program_requirements?: Prisma.workflow_program_requirementsUpdateManyWithoutUsersNestedInput
-  workflow_scheduled_instances_queue_workflow_scheduled_instances_queue_confirmed_byTousers?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutUsers_workflow_scheduled_instances_queue_confirmed_byTousersNestedInput
-  workflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousers?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutUsers_workflow_scheduled_instances_queue_proposed_owner_idTousersNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutUsersNestedInput
-  workflow_task_dependencies?: Prisma.workflow_task_dependenciesUpdateManyWithoutUsersNestedInput
-  workflow_task_items_workflow_task_items_completed_byTousers?: Prisma.workflow_task_itemsUpdateManyWithoutUsers_workflow_task_items_completed_byTousersNestedInput
-  workflow_task_items_workflow_task_items_owner_idTousers?: Prisma.workflow_task_itemsUpdateManyWithoutUsers_workflow_task_items_owner_idTousersNestedInput
-}
-
-export type UserUncheckedUpdateWithoutCreatedSharesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
-  firstName?: Prisma.StringFieldUpdateOperationsInput | string
-  lastName?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
-  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
-  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
-  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
-  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
-  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
-  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
-  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
@@ -4152,7 +3845,6 @@ export type UserCreateWithoutHiddenCommentsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -4211,7 +3903,6 @@ export type UserUncheckedCreateWithoutHiddenCommentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -4273,7 +3964,6 @@ export type UserCreateWithoutResolvedCommentsInput = {
   hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -4332,7 +4022,6 @@ export type UserUncheckedCreateWithoutResolvedCommentsInput = {
   hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -4394,7 +4083,6 @@ export type UserCreateWithoutAuthoredCommentsInput = {
   hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -4453,7 +4141,6 @@ export type UserUncheckedCreateWithoutAuthoredCommentsInput = {
   hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -4526,7 +4213,6 @@ export type UserUpdateWithoutHiddenCommentsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -4585,7 +4271,6 @@ export type UserUncheckedUpdateWithoutHiddenCommentsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -4653,7 +4338,6 @@ export type UserUpdateWithoutResolvedCommentsInput = {
   hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -4712,7 +4396,6 @@ export type UserUncheckedUpdateWithoutResolvedCommentsInput = {
   hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -4780,7 +4463,6 @@ export type UserUpdateWithoutAuthoredCommentsInput = {
   hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -4839,7 +4521,6 @@ export type UserUncheckedUpdateWithoutAuthoredCommentsInput = {
   hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -4896,7 +4577,6 @@ export type UserCreateWithoutDocumentDraftsInput = {
   hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -4955,7 +4635,6 @@ export type UserUncheckedCreateWithoutDocumentDraftsInput = {
   hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -5028,7 +4707,6 @@ export type UserUpdateWithoutDocumentDraftsInput = {
   hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -5087,7 +4765,6 @@ export type UserUncheckedUpdateWithoutDocumentDraftsInput = {
   hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -5145,7 +4822,6 @@ export type UserCreateWithoutCreatedPartialsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -5204,7 +4880,6 @@ export type UserUncheckedCreateWithoutCreatedPartialsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -5277,7 +4952,6 @@ export type UserUpdateWithoutCreatedPartialsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -5336,7 +5010,6 @@ export type UserUncheckedUpdateWithoutCreatedPartialsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -5392,7 +5065,6 @@ export type UserCreateWithoutAiConversationsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -5451,7 +5123,6 @@ export type UserUncheckedCreateWithoutAiConversationsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -5524,7 +5195,6 @@ export type UserUpdateWithoutAiConversationsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -5583,7 +5253,6 @@ export type UserUncheckedUpdateWithoutAiConversationsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -5641,7 +5310,6 @@ export type UserCreateWithoutCreatedEsigningEnvelopesInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -5700,7 +5368,6 @@ export type UserUncheckedCreateWithoutCreatedEsigningEnvelopesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -5773,7 +5440,6 @@ export type UserUpdateWithoutCreatedEsigningEnvelopesInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -5832,7 +5498,6 @@ export type UserUncheckedUpdateWithoutCreatedEsigningEnvelopesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -5889,7 +5554,6 @@ export type UserCreateWithoutWorkflow_artifactsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -5948,7 +5612,6 @@ export type UserUncheckedCreateWithoutWorkflow_artifactsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -6021,7 +5684,6 @@ export type UserUpdateWithoutWorkflow_artifactsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -6080,7 +5742,6 @@ export type UserUncheckedUpdateWithoutWorkflow_artifactsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -6137,7 +5798,6 @@ export type UserCreateWithoutWorkflow_billing_statesInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -6196,7 +5856,6 @@ export type UserUncheckedCreateWithoutWorkflow_billing_statesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -6269,7 +5928,6 @@ export type UserUpdateWithoutWorkflow_billing_statesInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -6328,7 +5986,6 @@ export type UserUncheckedUpdateWithoutWorkflow_billing_statesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -6385,7 +6042,6 @@ export type UserCreateWithoutWorkflow_blockers_workflow_blockers_owner_idTousers
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -6444,7 +6100,6 @@ export type UserUncheckedCreateWithoutWorkflow_blockers_workflow_blockers_owner_
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -6506,7 +6161,6 @@ export type UserCreateWithoutWorkflow_blockers_workflow_blockers_raised_byTouser
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -6565,7 +6219,6 @@ export type UserUncheckedCreateWithoutWorkflow_blockers_workflow_blockers_raised
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -6627,7 +6280,6 @@ export type UserCreateWithoutWorkflow_blockers_workflow_blockers_resolved_byTous
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -6686,7 +6338,6 @@ export type UserUncheckedCreateWithoutWorkflow_blockers_workflow_blockers_resolv
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -6759,7 +6410,6 @@ export type UserUpdateWithoutWorkflow_blockers_workflow_blockers_owner_idTousers
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -6818,7 +6468,6 @@ export type UserUncheckedUpdateWithoutWorkflow_blockers_workflow_blockers_owner_
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -6886,7 +6535,6 @@ export type UserUpdateWithoutWorkflow_blockers_workflow_blockers_raised_byTouser
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -6945,7 +6593,6 @@ export type UserUncheckedUpdateWithoutWorkflow_blockers_workflow_blockers_raised
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -7013,7 +6660,6 @@ export type UserUpdateWithoutWorkflow_blockers_workflow_blockers_resolved_byTous
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -7072,7 +6718,6 @@ export type UserUncheckedUpdateWithoutWorkflow_blockers_workflow_blockers_resolv
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -7129,7 +6774,6 @@ export type UserCreateWithoutWorkflow_communication_log_entriesInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -7188,7 +6832,6 @@ export type UserUncheckedCreateWithoutWorkflow_communication_log_entriesInput = 
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -7261,7 +6904,6 @@ export type UserUpdateWithoutWorkflow_communication_log_entriesInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -7320,7 +6962,6 @@ export type UserUncheckedUpdateWithoutWorkflow_communication_log_entriesInput = 
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -7377,7 +7018,6 @@ export type UserCreateWithoutWorkflow_cross_dependenciesInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -7436,7 +7076,6 @@ export type UserUncheckedCreateWithoutWorkflow_cross_dependenciesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -7509,7 +7148,6 @@ export type UserUpdateWithoutWorkflow_cross_dependenciesInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -7568,7 +7206,6 @@ export type UserUncheckedUpdateWithoutWorkflow_cross_dependenciesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -7625,7 +7262,6 @@ export type UserCreateWithoutWorkflow_deviationsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -7684,7 +7320,6 @@ export type UserUncheckedCreateWithoutWorkflow_deviationsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -7757,7 +7392,6 @@ export type UserUpdateWithoutWorkflow_deviationsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -7816,7 +7450,6 @@ export type UserUncheckedUpdateWithoutWorkflow_deviationsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -7873,7 +7506,6 @@ export type UserCreateWithoutWorkflow_engagements_workflow_engagements_created_b
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -7932,7 +7564,6 @@ export type UserUncheckedCreateWithoutWorkflow_engagements_workflow_engagements_
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -7994,7 +7625,6 @@ export type UserCreateWithoutWorkflow_engagements_workflow_engagements_director_
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -8053,7 +7683,6 @@ export type UserUncheckedCreateWithoutWorkflow_engagements_workflow_engagements_
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -8126,7 +7755,6 @@ export type UserUpdateWithoutWorkflow_engagements_workflow_engagements_created_b
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -8185,7 +7813,6 @@ export type UserUncheckedUpdateWithoutWorkflow_engagements_workflow_engagements_
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -8253,7 +7880,6 @@ export type UserUpdateWithoutWorkflow_engagements_workflow_engagements_director_
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -8312,7 +7938,6 @@ export type UserUncheckedUpdateWithoutWorkflow_engagements_workflow_engagements_
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -8369,7 +7994,6 @@ export type UserCreateWithoutWorkflow_instances_workflow_instances_assigned_owne
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -8428,7 +8052,6 @@ export type UserUncheckedCreateWithoutWorkflow_instances_workflow_instances_assi
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -8490,7 +8113,6 @@ export type UserCreateWithoutWorkflow_instances_workflow_instances_cancelled_byT
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -8549,7 +8171,6 @@ export type UserUncheckedCreateWithoutWorkflow_instances_workflow_instances_canc
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -8611,7 +8232,6 @@ export type UserCreateWithoutWorkflow_instances_workflow_instances_created_byTou
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -8670,7 +8290,6 @@ export type UserUncheckedCreateWithoutWorkflow_instances_workflow_instances_crea
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -8743,7 +8362,6 @@ export type UserUpdateWithoutWorkflow_instances_workflow_instances_assigned_owne
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -8802,7 +8420,6 @@ export type UserUncheckedUpdateWithoutWorkflow_instances_workflow_instances_assi
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -8870,7 +8487,6 @@ export type UserUpdateWithoutWorkflow_instances_workflow_instances_cancelled_byT
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -8929,7 +8545,6 @@ export type UserUncheckedUpdateWithoutWorkflow_instances_workflow_instances_canc
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -8997,7 +8612,6 @@ export type UserUpdateWithoutWorkflow_instances_workflow_instances_created_byTou
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -9056,7 +8670,6 @@ export type UserUncheckedUpdateWithoutWorkflow_instances_workflow_instances_crea
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -9113,7 +8726,6 @@ export type UserCreateWithoutWorkflow_milestones_workflow_milestones_completed_b
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -9172,7 +8784,6 @@ export type UserUncheckedCreateWithoutWorkflow_milestones_workflow_milestones_co
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -9234,7 +8845,6 @@ export type UserCreateWithoutWorkflow_milestones_workflow_milestones_owner_idTou
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -9293,7 +8903,6 @@ export type UserUncheckedCreateWithoutWorkflow_milestones_workflow_milestones_ow
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -9355,7 +8964,6 @@ export type UserCreateWithoutWorkflow_milestones_workflow_milestones_reviewed_by
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -9414,7 +9022,6 @@ export type UserUncheckedCreateWithoutWorkflow_milestones_workflow_milestones_re
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -9487,7 +9094,6 @@ export type UserUpdateWithoutWorkflow_milestones_workflow_milestones_completed_b
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -9546,7 +9152,6 @@ export type UserUncheckedUpdateWithoutWorkflow_milestones_workflow_milestones_co
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -9614,7 +9219,6 @@ export type UserUpdateWithoutWorkflow_milestones_workflow_milestones_owner_idTou
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -9673,7 +9277,6 @@ export type UserUncheckedUpdateWithoutWorkflow_milestones_workflow_milestones_ow
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -9741,7 +9344,6 @@ export type UserUpdateWithoutWorkflow_milestones_workflow_milestones_reviewed_by
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -9800,7 +9402,6 @@ export type UserUncheckedUpdateWithoutWorkflow_milestones_workflow_milestones_re
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -9857,7 +9458,6 @@ export type UserCreateWithoutWorkflow_notification_logInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -9916,7 +9516,6 @@ export type UserUncheckedCreateWithoutWorkflow_notification_logInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -9989,7 +9588,6 @@ export type UserUpdateWithoutWorkflow_notification_logInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -10048,7 +9646,6 @@ export type UserUncheckedUpdateWithoutWorkflow_notification_logInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -10105,7 +9702,6 @@ export type UserCreateWithoutWorkflow_program_requirementsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -10164,7 +9760,6 @@ export type UserUncheckedCreateWithoutWorkflow_program_requirementsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -10237,7 +9832,6 @@ export type UserUpdateWithoutWorkflow_program_requirementsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -10296,7 +9890,6 @@ export type UserUncheckedUpdateWithoutWorkflow_program_requirementsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -10353,7 +9946,6 @@ export type UserCreateWithoutWorkflow_scheduled_instances_queue_workflow_schedul
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -10412,7 +10004,6 @@ export type UserUncheckedCreateWithoutWorkflow_scheduled_instances_queue_workflo
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -10474,7 +10065,6 @@ export type UserCreateWithoutWorkflow_scheduled_instances_queue_workflow_schedul
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -10533,7 +10123,6 @@ export type UserUncheckedCreateWithoutWorkflow_scheduled_instances_queue_workflo
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -10606,7 +10195,6 @@ export type UserUpdateWithoutWorkflow_scheduled_instances_queue_workflow_schedul
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -10665,7 +10253,6 @@ export type UserUncheckedUpdateWithoutWorkflow_scheduled_instances_queue_workflo
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -10733,7 +10320,6 @@ export type UserUpdateWithoutWorkflow_scheduled_instances_queue_workflow_schedul
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -10792,7 +10378,6 @@ export type UserUncheckedUpdateWithoutWorkflow_scheduled_instances_queue_workflo
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -10849,7 +10434,6 @@ export type UserCreateWithoutWorkflow_service_definitionsInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -10908,7 +10492,6 @@ export type UserUncheckedCreateWithoutWorkflow_service_definitionsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -10981,7 +10564,6 @@ export type UserUpdateWithoutWorkflow_service_definitionsInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -11040,7 +10622,6 @@ export type UserUncheckedUpdateWithoutWorkflow_service_definitionsInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -11097,7 +10678,6 @@ export type UserCreateWithoutWorkflow_task_dependenciesInput = {
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -11156,7 +10736,6 @@ export type UserUncheckedCreateWithoutWorkflow_task_dependenciesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -11229,7 +10808,6 @@ export type UserUpdateWithoutWorkflow_task_dependenciesInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -11288,7 +10866,6 @@ export type UserUncheckedUpdateWithoutWorkflow_task_dependenciesInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -11345,7 +10922,6 @@ export type UserCreateWithoutWorkflow_task_items_workflow_task_items_completed_b
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -11404,7 +10980,6 @@ export type UserUncheckedCreateWithoutWorkflow_task_items_workflow_task_items_co
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -11466,7 +11041,6 @@ export type UserCreateWithoutWorkflow_task_items_workflow_task_items_owner_idTou
   resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
@@ -11525,7 +11099,6 @@ export type UserUncheckedCreateWithoutWorkflow_task_items_workflow_task_items_ow
   resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
   authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
   documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
-  createdShares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutCreatedByInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
@@ -11598,7 +11171,6 @@ export type UserUpdateWithoutWorkflow_task_items_workflow_task_items_completed_b
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -11657,7 +11229,6 @@ export type UserUncheckedUpdateWithoutWorkflow_task_items_workflow_task_items_co
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -11725,7 +11296,6 @@ export type UserUpdateWithoutWorkflow_task_items_workflow_task_items_owner_idTou
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -11784,7 +11354,6 @@ export type UserUncheckedUpdateWithoutWorkflow_task_items_workflow_task_items_ow
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -11858,7 +11427,6 @@ export type UserUpdateWithoutTenantInput = {
   resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
@@ -11916,7 +11484,6 @@ export type UserUncheckedUpdateWithoutTenantInput = {
   resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
   authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
   documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
-  createdShares?: Prisma.DocumentShareUncheckedUpdateManyWithoutCreatedByNestedInput
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -11982,7 +11549,6 @@ export type UserCountOutputType = {
   resolvedComments: number
   authoredComments: number
   documentDrafts: number
-  createdShares: number
   createdTemplates: number
   uploadedDocuments: number
   createdDocuments: number
@@ -12026,7 +11592,6 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   resolvedComments?: boolean | UserCountOutputTypeCountResolvedCommentsArgs
   authoredComments?: boolean | UserCountOutputTypeCountAuthoredCommentsArgs
   documentDrafts?: boolean | UserCountOutputTypeCountDocumentDraftsArgs
-  createdShares?: boolean | UserCountOutputTypeCountCreatedSharesArgs
   createdTemplates?: boolean | UserCountOutputTypeCountCreatedTemplatesArgs
   uploadedDocuments?: boolean | UserCountOutputTypeCountUploadedDocumentsArgs
   createdDocuments?: boolean | UserCountOutputTypeCountCreatedDocumentsArgs
@@ -12119,13 +11684,6 @@ export type UserCountOutputTypeCountAuthoredCommentsArgs<ExtArgs extends runtime
  */
 export type UserCountOutputTypeCountDocumentDraftsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.DocumentDraftWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountCreatedSharesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentShareWhereInput
 }
 
 /**
@@ -12383,7 +11941,6 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   resolvedComments?: boolean | Prisma.User$resolvedCommentsArgs<ExtArgs>
   authoredComments?: boolean | Prisma.User$authoredCommentsArgs<ExtArgs>
   documentDrafts?: boolean | Prisma.User$documentDraftsArgs<ExtArgs>
-  createdShares?: boolean | Prisma.User$createdSharesArgs<ExtArgs>
   createdTemplates?: boolean | Prisma.User$createdTemplatesArgs<ExtArgs>
   uploadedDocuments?: boolean | Prisma.User$uploadedDocumentsArgs<ExtArgs>
   createdDocuments?: boolean | Prisma.User$createdDocumentsArgs<ExtArgs>
@@ -12486,7 +12043,6 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   resolvedComments?: boolean | Prisma.User$resolvedCommentsArgs<ExtArgs>
   authoredComments?: boolean | Prisma.User$authoredCommentsArgs<ExtArgs>
   documentDrafts?: boolean | Prisma.User$documentDraftsArgs<ExtArgs>
-  createdShares?: boolean | Prisma.User$createdSharesArgs<ExtArgs>
   createdTemplates?: boolean | Prisma.User$createdTemplatesArgs<ExtArgs>
   uploadedDocuments?: boolean | Prisma.User$uploadedDocumentsArgs<ExtArgs>
   createdDocuments?: boolean | Prisma.User$createdDocumentsArgs<ExtArgs>
@@ -12540,7 +12096,6 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     resolvedComments: Prisma.$DocumentCommentPayload<ExtArgs>[]
     authoredComments: Prisma.$DocumentCommentPayload<ExtArgs>[]
     documentDrafts: Prisma.$DocumentDraftPayload<ExtArgs>[]
-    createdShares: Prisma.$DocumentSharePayload<ExtArgs>[]
     createdTemplates: Prisma.$DocumentTemplatePayload<ExtArgs>[]
     uploadedDocuments: Prisma.$DocumentPayload<ExtArgs>[]
     createdDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
@@ -12993,7 +12548,6 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   resolvedComments<T extends Prisma.User$resolvedCommentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$resolvedCommentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentCommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   authoredComments<T extends Prisma.User$authoredCommentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$authoredCommentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentCommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   documentDrafts<T extends Prisma.User$documentDraftsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$documentDraftsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentDraftPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  createdShares<T extends Prisma.User$createdSharesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdSharesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentSharePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   createdTemplates<T extends Prisma.User$createdTemplatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdTemplatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentTemplatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   uploadedDocuments<T extends Prisma.User$uploadedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$uploadedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   createdDocuments<T extends Prisma.User$createdDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -13633,30 +13187,6 @@ export type User$documentDraftsArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.DocumentDraftScalarFieldEnum | Prisma.DocumentDraftScalarFieldEnum[]
-}
-
-/**
- * User.createdShares
- */
-export type User$createdSharesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentShare
-   */
-  select?: Prisma.DocumentShareSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DocumentShare
-   */
-  omit?: Prisma.DocumentShareOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentShareInclude<ExtArgs> | null
-  where?: Prisma.DocumentShareWhereInput
-  orderBy?: Prisma.DocumentShareOrderByWithRelationInput | Prisma.DocumentShareOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentShareWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DocumentShareScalarFieldEnum | Prisma.DocumentShareScalarFieldEnum[]
 }
 
 /**

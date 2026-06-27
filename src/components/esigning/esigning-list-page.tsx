@@ -10,6 +10,7 @@ import {
   ExternalLink,
   FilePenLine,
   FileSignature,
+  LayoutList,
   Minus,
   MoreHorizontal,
   Plus,
@@ -70,6 +71,26 @@ const TAB_LABELS_SHORT: Record<TabKey, string> = {
   completed: 'Done',
   voided: 'Voided',
 };
+
+const ESIGNING_UPLOAD_MIME_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+
+function isEsigningUploadFile(file: File): boolean {
+  const lowerName = file.name.toLowerCase();
+  return (
+    ESIGNING_UPLOAD_MIME_TYPES.has(file.type.toLowerCase()) ||
+    lowerName.endsWith('.pdf') ||
+    lowerName.endsWith('.docx') ||
+    lowerName.endsWith('.doc')
+  );
+}
+
+function getEnvelopeTitleFromFile(file: File): string {
+  return file.name.replace(/\.(pdf|docx?|doc)$/i, '') || 'New Envelope';
+}
 
 const TAB_STATUSES: Record<TabKey, StatusFilter[]> = {
   all: [],
@@ -199,6 +220,8 @@ export function EsigningListPage() {
   const [limit, setLimit] = useState(20);
   const [isStarting, setIsStarting] = useState(false);
   const [isDraggingOnHero, setIsDraggingOnHero] = useState(false);
+  const [compactView, setCompactView] = useState(true);
+  const [companyFilter, setCompanyFilter] = useState<string>('');
   const [deleteTarget, setDeleteTarget] = useState<EsigningEnvelopeListItem | null>(null);
   const [voidTarget, setVoidTarget] = useState<EsigningEnvelopeListItem | null>(null);
   const [retryTargetId, setRetryTargetId] = useState<string | null>(null);
@@ -239,7 +262,23 @@ export function EsigningListPage() {
 
   useEffect(() => {
     setPage(1);
+    setCompanyFilter('');
   }, [activeTab, query]);
+
+  const uniqueCompanies = useMemo(() => {
+    const names = envelopes
+      .map((e) => e.companyName)
+      .filter((name): name is string => Boolean(name));
+    return [...new Set(names)].sort();
+  }, [envelopes]);
+
+  const displayedEnvelopes = useMemo(
+    () =>
+      companyFilter
+        ? envelopes.filter((e) => e.companyName === companyFilter)
+        : envelopes,
+    [envelopes, companyFilter]
+  );
 
   const tabCounts = useMemo<Record<TabKey, number>>(
     () => ({
@@ -262,7 +301,7 @@ export function EsigningListPage() {
 
     try {
       setIsStarting(true);
-      const title = file ? file.name.replace(/\.pdf$/i, '') : 'New Envelope';
+      const title = file ? getEnvelopeTitleFromFile(file) : 'New Envelope';
       const envelope = await createEnvelope.mutateAsync({ title, signingOrder: 'PARALLEL' });
       const destination = `/esigning/${envelope.id}`;
 
@@ -340,7 +379,7 @@ export function EsigningListPage() {
   return (
     <div className="min-h-screen bg-background-primary">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
-        <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
+        <section className="rounded-2xl border border-oak-primary/20 bg-gradient-to-br from-oak-primary/[0.06] to-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 rounded-full border border-border-primary bg-background-tertiary px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-text-muted">
@@ -368,7 +407,7 @@ export function EsigningListPage() {
               event.preventDefault();
               setIsDraggingOnHero(false);
               const file = event.dataTransfer.files[0];
-              if (file?.type === 'application/pdf') {
+              if (file && isEsigningUploadFile(file)) {
                 void handleStart(file);
               }
             }}
@@ -385,7 +424,7 @@ export function EsigningListPage() {
             <div>
               <p className="text-base font-semibold text-text-primary">Sign or get signatures</p>
               <p className="mt-1 text-sm text-text-secondary">
-                Drop a PDF here to start, or click the button below.
+                Drop a PDF or Word document here to start, or click the button below.
               </p>
             </div>
             <Button
@@ -427,14 +466,60 @@ export function EsigningListPage() {
               </button>
             ))}
           </div>
-          <div className="p-4">
-            <FormInput
-              placeholder="Search envelopes, senders, or recipients..."
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              leftIcon={<Search className="h-4 w-4" />}
-            />
+          <div className="flex items-center gap-2 p-4">
+            <div className="flex-1">
+              <FormInput
+                placeholder="Search envelopes, senders, or recipients..."
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                leftIcon={<Search className="h-4 w-4" />}
+              />
+            </div>
+            <button
+              type="button"
+              title={compactView ? 'Expanded view' : 'Compact view'}
+              onClick={() => setCompactView((v) => !v)}
+              className={cn(
+                'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border transition-colors',
+                compactView
+                  ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
+                  : 'border-border-primary bg-background-primary text-text-muted hover:bg-background-tertiary'
+              )}
+            >
+              <LayoutList className="h-4 w-4" />
+            </button>
           </div>
+          {uniqueCompanies.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 px-4 pb-3">
+              <button
+                type="button"
+                onClick={() => setCompanyFilter('')}
+                className={cn(
+                  'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                  !companyFilter
+                    ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
+                    : 'border-border-primary text-text-muted hover:bg-background-tertiary'
+                )}
+              >
+                All companies
+              </button>
+              {uniqueCompanies.map((company) => (
+                <button
+                  key={company}
+                  type="button"
+                  onClick={() => setCompanyFilter(companyFilter === company ? '' : company)}
+                  className={cn(
+                    'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                    companyFilter === company
+                      ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
+                      : 'border-border-primary text-text-muted hover:bg-background-tertiary'
+                  )}
+                >
+                  {company}
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
         {envelopesQuery.error ? (
@@ -443,117 +528,150 @@ export function EsigningListPage() {
           </Alert>
         ) : null}
 
-        <section className="grid gap-4">
-          {envelopes.map((envelope) => (
-            <article
-              key={envelope.id}
-              className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm transition-colors hover:border-oak-primary/40 sm:rounded-3xl sm:p-5"
-            >
-              <div className="flex items-start justify-between gap-3 sm:gap-4">
-                <Link href={`/esigning/${envelope.id}`} className="min-w-0 flex-1">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                        <EnvelopeStatusBadge status={envelope.status} />
-                        <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
-                          {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
-                        </span>
-                        <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
-                          {envelope.documentCount} docs
-                        </span>
-                        <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
-                          {envelope.signerCount} signers
-                        </span>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-2xl bg-oak-primary/10 p-3 text-oak-primary">
-                          <FilePenLine className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0">
-                          <h2 className="truncate text-lg font-semibold text-text-primary">
-                            {envelope.title}
-                          </h2>
-                          <p className="mt-1 truncate text-sm text-text-secondary">
-                            {envelope.companyName ?? 'No linked company'} · Created by {envelope.createdByName}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid min-w-0 gap-1 text-xs text-text-secondary sm:text-sm lg:shrink-0 lg:text-right">
-                      <div>Updated {formatEsigningDateTime(envelope.updatedAt)}</div>
-                      <div>Created {formatEsigningDateTime(envelope.createdAt)}</div>
-                      <div className="truncate">Certificate {envelope.certificateId}</div>
-                    </div>
-                  </div>
-                </Link>
-
-                <EnvelopeActionsDropdown
-                  envelope={envelope}
-                  onResend={(target) => void handleResendEnvelope(target)}
-                  onDelete={setDeleteTarget}
-                  onVoid={setVoidTarget}
-                  onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
-                  onDownload={handleDownload}
-                />
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {envelope.recipients.slice(0, 4).map((recipient) => {
-                  const StatusIcon =
-                    recipient.status === 'SIGNED'
-                      ? CheckCircle2
-                      : recipient.status === 'DECLINED'
-                        ? XCircle
-                        : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
-                          ? Clock
-                          : recipient.type === 'CC'
-                            ? Minus
-                            : Circle;
-
-                  const iconColor =
-                    recipient.status === 'SIGNED'
-                      ? 'text-green-500'
-                      : recipient.status === 'DECLINED'
-                        ? 'text-rose-500'
-                        : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
-                          ? 'text-blue-500'
-                          : 'text-text-muted';
-
-                  return (
-                    <span
-                      key={recipient.id}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-border-primary bg-background-primary px-3 py-1 text-xs text-text-secondary"
-                    >
-                      <StatusIcon className={cn('h-3 w-3 flex-shrink-0', iconColor)} />
-                      {recipient.name}
+        <section className="grid gap-2">
+          {displayedEnvelopes.map((envelope) =>
+            compactView ? (
+              <article
+                key={envelope.id}
+                className="overflow-hidden rounded-xl border border-border-primary bg-background-secondary transition-colors hover:border-oak-primary/40"
+              >
+                <div className="flex items-center gap-3 px-3 py-2.5">
+                  <Link href={`/esigning/${envelope.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                    <EnvelopeStatusBadge status={envelope.status} />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-primary">
+                      {envelope.title}
                     </span>
-                  );
-                })}
+                    <span className="hidden shrink-0 text-xs text-text-muted sm:block">
+                      {envelope.companyName ?? 'No company'}
+                    </span>
+                    <span className="hidden shrink-0 text-xs text-text-muted lg:block">
+                      {envelope.documentCount} docs · {envelope.signerCount} signers
+                    </span>
+                    <span className="hidden shrink-0 text-xs text-text-muted xl:block">
+                      {formatEsigningDateTime(envelope.updatedAt)}
+                    </span>
+                  </Link>
+                  <EnvelopeActionsDropdown
+                    envelope={envelope}
+                    onResend={(target) => void handleResendEnvelope(target)}
+                    onDelete={setDeleteTarget}
+                    onVoid={setVoidTarget}
+                    onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
+                    onDownload={handleDownload}
+                  />
+                </div>
+              </article>
+            ) : (
+              <article
+                key={envelope.id}
+                className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm transition-colors hover:border-oak-primary/40 sm:rounded-3xl sm:p-5"
+              >
+                <div className="flex items-start justify-between gap-3 sm:gap-4">
+                  <Link href={`/esigning/${envelope.id}`} className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                          <EnvelopeStatusBadge status={envelope.status} />
+                          <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
+                            {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
+                          </span>
+                          <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
+                            {envelope.documentCount} docs
+                          </span>
+                          <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
+                            {envelope.signerCount} signers
+                          </span>
+                        </div>
 
-                {envelope.recipientCount > 4 ? (
-                  <span className="inline-flex items-center rounded-full border border-border-primary bg-background-primary px-3 py-1 text-xs text-text-secondary">
-                    +{envelope.recipientCount - 4} more
-                  </span>
-                ) : null}
-              </div>
+                        <div className="flex items-start gap-3">
+                          <div className="rounded-2xl bg-oak-primary/10 p-3 text-oak-primary">
+                            <FilePenLine className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <h2 className="truncate text-lg font-semibold text-text-primary">
+                              {envelope.title}
+                            </h2>
+                            <p className="mt-1 truncate text-sm text-text-secondary">
+                              {envelope.companyName ?? 'No linked company'} · Created by {envelope.createdByName}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
 
-              <div className="mt-3 text-xs text-text-muted">
-                {envelope.status === 'DRAFT'
-                  ? `Draft · ${envelope.documentCount} doc${envelope.documentCount === 1 ? '' : 's'} · ${envelope.signerCount} signer${envelope.signerCount === 1 ? '' : 's'}`
-                  : envelope.status === 'COMPLETED'
-                    ? `Completed ${envelope.completedAt ? formatEsigningDateTime(envelope.completedAt) : ''}`
-                    : envelope.status === 'DECLINED'
-                      ? 'Declined - action required'
-                      : envelope.status === 'VOIDED'
-                        ? 'Voided'
-                        : envelope.status === 'EXPIRED'
-                          ? 'Expired'
-                          : `Updated ${formatEsigningDateTime(envelope.updatedAt)}`}
-              </div>
-            </article>
-          ))}
+                      <div className="grid min-w-0 gap-1 text-xs text-text-secondary sm:text-sm lg:shrink-0 lg:text-right">
+                        <div>Updated {formatEsigningDateTime(envelope.updatedAt)}</div>
+                        <div>Created {formatEsigningDateTime(envelope.createdAt)}</div>
+                        <div className="truncate">Certificate {envelope.certificateId}</div>
+                      </div>
+                    </div>
+                  </Link>
+
+                  <EnvelopeActionsDropdown
+                    envelope={envelope}
+                    onResend={(target) => void handleResendEnvelope(target)}
+                    onDelete={setDeleteTarget}
+                    onVoid={setVoidTarget}
+                    onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
+                    onDownload={handleDownload}
+                  />
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {envelope.recipients.slice(0, 4).map((recipient) => {
+                    const StatusIcon =
+                      recipient.status === 'SIGNED'
+                        ? CheckCircle2
+                        : recipient.status === 'DECLINED'
+                          ? XCircle
+                          : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
+                            ? Clock
+                            : recipient.type === 'CC'
+                              ? Minus
+                              : Circle;
+
+                    const iconColor =
+                      recipient.status === 'SIGNED'
+                        ? 'text-green-500'
+                        : recipient.status === 'DECLINED'
+                          ? 'text-rose-500'
+                          : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
+                            ? 'text-blue-500'
+                            : 'text-text-muted';
+
+                    return (
+                      <span
+                        key={recipient.id}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border-primary bg-background-primary px-3 py-1 text-xs text-text-secondary"
+                      >
+                        <StatusIcon className={cn('h-3 w-3 flex-shrink-0', iconColor)} />
+                        {recipient.name}
+                      </span>
+                    );
+                  })}
+
+                  {envelope.recipientCount > 4 ? (
+                    <span className="inline-flex items-center rounded-full border border-border-primary bg-background-primary px-3 py-1 text-xs text-text-secondary">
+                      +{envelope.recipientCount - 4} more
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="mt-3 text-xs text-text-muted">
+                  {envelope.status === 'DRAFT'
+                    ? `Draft · ${envelope.documentCount} doc${envelope.documentCount === 1 ? '' : 's'} · ${envelope.signerCount} signer${envelope.signerCount === 1 ? '' : 's'}`
+                    : envelope.status === 'COMPLETED'
+                      ? `Completed ${envelope.completedAt ? formatEsigningDateTime(envelope.completedAt) : ''}`
+                      : envelope.status === 'DECLINED'
+                        ? 'Declined - action required'
+                        : envelope.status === 'VOIDED'
+                          ? 'Voided'
+                          : envelope.status === 'EXPIRED'
+                            ? 'Expired'
+                            : `Updated ${formatEsigningDateTime(envelope.updatedAt)}`}
+                </div>
+              </article>
+            )
+          )}
 
           {envelopesQuery.isLoading ? (
             <div className="rounded-2xl border border-dashed border-border-primary bg-background-secondary p-6 text-center text-sm text-text-secondary sm:rounded-3xl sm:p-10">
@@ -561,7 +679,7 @@ export function EsigningListPage() {
             </div>
           ) : null}
 
-          {!envelopesQuery.isLoading && envelopes.length === 0 ? (
+          {!envelopesQuery.isLoading && displayedEnvelopes.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border-primary bg-background-secondary p-6 text-center sm:rounded-3xl sm:p-10">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-oak-primary/10 text-oak-primary">
                 <FileSignature className="h-6 w-6" />

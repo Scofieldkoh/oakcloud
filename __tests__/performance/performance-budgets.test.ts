@@ -26,7 +26,6 @@ describe('performance regression checks', () => {
     const publicPages = [
       'src/app/(public)/forms/f/[slug]/page.tsx',
       'src/app/(public)/esigning/sign/[token]/page.tsx',
-      'src/app/(public)/share/[token]/page.tsx',
       'src/app/(public)/verify/[certificateId]/page.tsx',
     ];
 
@@ -43,7 +42,6 @@ describe('performance regression checks', () => {
   it('keeps compact bootstrap, summary, and measurement endpoints present', () => {
     const routes = [
       'src/app/api/public-bootstrap/forms/[slug]/route.ts',
-      'src/app/api/public-bootstrap/share/[token]/route.ts',
       'src/app/api/public-bootstrap/esigning/session/route.ts',
       'src/app/api/public-bootstrap/verify/[certificateId]/route.ts',
       'src/app/api/page-bootstrap/companies/route.ts',

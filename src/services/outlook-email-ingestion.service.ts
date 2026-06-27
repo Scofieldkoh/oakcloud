@@ -84,7 +84,7 @@ export interface OutlookConnectorStatus {
   reason?: 'missing_connector' | 'missing_mailboxes';
   message?: string;
   provider?: 'ONEDRIVE' | 'SHAREPOINT';
-  source?: 'tenant' | 'system';
+  source?: 'workspace' | 'tenant' | 'system';
   connectorId?: string;
   mailboxUserIds: string[];
   ingestAllEmails: boolean;
@@ -113,7 +113,7 @@ export interface IngestTenantOutlookCommunicationsInput {
 
 export interface IngestTenantOutlookCommunicationsResult {
   connectorProvider: 'ONEDRIVE' | 'SHAREPOINT';
-  connectorSource: 'tenant' | 'system';
+  connectorSource: 'workspace' | 'tenant' | 'system';
   mailboxUserIds: string[];
   lookbackDays: number;
   scannedMessages: number;

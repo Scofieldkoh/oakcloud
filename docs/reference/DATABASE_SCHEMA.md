@@ -1360,7 +1360,6 @@ Reusable document templates with placeholder support.
 | content_json | JSONB | Yes | TipTap JSON format (for editor state) |
 | placeholders | JSONB | No | Array of placeholder definitions (default: []) |
 | is_active | BOOLEAN | No | Active status (default: true) |
-| default_share_expiry_hours | INT | Yes | Default expiry for share links |
 | version | INT | No | Template version (increments on update) |
 | created_by_id | UUID | No | FK to users |
 | created_at | TIMESTAMP | No | Record creation time |
@@ -1408,7 +1407,6 @@ Documents created from templates or blank.
 | finalized_by_id | UUID | Yes | FK to users who finalized |
 | unfinalized_at | TIMESTAMP | Yes | Last time un-finalized |
 | use_letterhead | BOOLEAN | No | Include letterhead in PDF (default: true) |
-| share_expiry_hours | INT | Yes | Override default share expiry |
 | placeholder_data | JSONB | Yes | Snapshot of data used for placeholders |
 | metadata | JSONB | Yes | Additional metadata |
 | created_by_id | UUID | No | FK to users |
@@ -1502,16 +1500,15 @@ Tenant letterhead configuration for PDF export.
 
 ### document_comments
 
-Comments on documents (internal and external).
+Comments on documents.
 
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | id | UUID | No | Primary key |
 | document_id | UUID | No | FK to generated_documents (CASCADE) |
-| share_id | UUID | Yes | FK to document_shares (for external) |
-| user_id | UUID | Yes | FK to users (null for external) |
-| guest_name | VARCHAR(100) | Yes | External commenter name |
-| guest_email | VARCHAR(255) | Yes | External commenter email |
+| user_id | UUID | Yes | FK to users |
+| guest_name | VARCHAR(100) | Yes | Guest commenter name |
+| guest_email | VARCHAR(255) | Yes | Guest commenter email |
 | content | VARCHAR(1000) | No | Comment content (max 1000 chars) |
 | selection_start | INT | Yes | Text selection start position |
 | selection_end | INT | Yes | Text selection end position |
@@ -1523,18 +1520,13 @@ Comments on documents (internal and external).
 | hidden_at | TIMESTAMP | Yes | When comment was hidden (moderation) |
 | hidden_by_id | UUID | Yes | FK to users who hid |
 | hidden_reason | VARCHAR(255) | Yes | Reason for hiding |
-| ip_address | VARCHAR(45) | Yes | Commenter IP (for rate limiting) |
+| ip_address | VARCHAR(45) | Yes | Commenter IP |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
 
-**Rate Limiting:**
-- External comments limited to 20/hour per IP address by default
-- Configurable per share link via `comment_rate_limit`
-
 **Indexes:**
 - `document_comments_document_id_idx` on document_id
-- `document_comments_share_id_idx` on share_id
 - `document_comments_user_id_idx` on user_id
 - `document_comments_parent_id_idx` on parent_id
 - `document_comments_status_idx` on status

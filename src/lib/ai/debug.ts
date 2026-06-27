@@ -6,7 +6,7 @@
  */
 
 import { createLogger } from '@/lib/logger';
-import type { AIModel, AIRequestOptions, AIResponse } from './types';
+import type { AIRequestOptions, AIResponse } from './types';
 import { calculateUsageCost } from './models';
 import { stripMarkdownCodeBlocks } from './index';
 import * as fs from 'fs';
@@ -59,11 +59,11 @@ export function estimateCost(
 
 export interface AIDebugContext {
   operation: string;
-  model: AIModel;
+  model: string;
   provider: string;
   tenantId?: string | null;
   userId?: string | null;
-  connectorSource?: 'tenant' | 'system' | 'env';
+  connectorSource?: 'workspace' | 'tenant' | 'system' | 'env';
   connectorId?: string | null;
   connectorName?: string | null;
   startTime: number;

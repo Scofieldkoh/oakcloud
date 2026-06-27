@@ -82,11 +82,10 @@ export function ApiIntegrationExample() {
     return params;
   };
 
+  const apiParams = getApiParams();
+
   const handleFilterChange = (key: 'subtotalFilter' | 'totalFilter', value: AmountFilterValue | undefined) => {
     setFilters({ ...filters, [key]: value });
-    // The API params would be used to fetch data
-    const apiParams = getApiParams();
-    console.log('API Parameters:', apiParams);
   };
 
   return (
@@ -101,6 +100,9 @@ export function ApiIntegrationExample() {
         onChange={(value) => handleFilterChange('totalFilter', value)}
         placeholder="Filter total"
       />
+      <pre className="text-xs text-text-muted">
+        {JSON.stringify(apiParams, null, 2)}
+      </pre>
     </div>
   );
 }
@@ -156,17 +158,22 @@ export function UrlSyncExample() {
 
   const handleChange = (value: AmountFilterValue | undefined) => {
     setAmountFilter(value);
-    const urlParams = serializeToUrl(value);
-    console.log('URL Parameters:', urlParams);
     // Update URL with: router.push(`/path?${new URLSearchParams(urlParams).toString()}`);
   };
 
+  const urlParams = serializeToUrl(amountFilter);
+
   return (
-    <AmountFilter
-      value={amountFilter}
-      onChange={handleChange}
-      placeholder="Filter by amount"
-    />
+    <div className="space-y-2">
+      <AmountFilter
+        value={amountFilter}
+        onChange={handleChange}
+        placeholder="Filter by amount"
+      />
+      <code className="block text-xs text-text-muted">
+        {new URLSearchParams(urlParams).toString()}
+      </code>
+    </div>
   );
 }
 

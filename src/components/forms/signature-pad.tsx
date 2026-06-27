@@ -256,7 +256,7 @@ export function SignaturePad({
 
   return (
     <div className="space-y-2">
-      <div className="h-44 w-full rounded-lg border border-dashed border-border-primary bg-background-primary p-2">
+      <div className="h-[264px] w-full rounded-lg border border-dashed border-border-primary bg-background-primary p-2">
         <canvas
           ref={canvasRef}
           className="h-full w-full touch-none cursor-crosshair"

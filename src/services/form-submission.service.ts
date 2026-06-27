@@ -40,6 +40,7 @@ import { createLogger } from '@/lib/logger';
 import type { TenantAwareParams } from '@/lib/types';
 import { evaluateArithmeticExpression } from '@/lib/safe-math';
 import { incrementViewCount } from '@/lib/view-count-buffer';
+import { normalizeWorkspaceLogoUrl } from '@/lib/workspace-logo-url';
 import type { PublicSubmissionInput } from '@/lib/validations/form-builder';
 import {
   applyDefaultTodayAnswers,
@@ -524,7 +525,7 @@ export async function sendCompletionNotificationEmailInternal(input: {
       fields: input.form.fields,
       answers,
       uploads: input.uploads,
-      tenantLogoUrl: tenant?.logoUrl ?? null,
+      tenantLogoUrl: normalizeWorkspaceLogoUrl(tenant?.logoUrl),
       tenantName: tenant?.name ?? null,
       formSettings: input.form.settings,
       timeZone: input.tenantTimeZone,
@@ -2075,7 +2076,7 @@ export async function getPublicFormBySlug(slug: string): Promise<PublicFormDefin
     description: form.description,
     settings: buildPublicFormSettings(form.settings),
     fields: form.fields,
-    tenantLogoUrl: form.tenant?.logoUrl ?? null,
+    tenantLogoUrl: normalizeWorkspaceLogoUrl(form.tenant?.logoUrl),
     tenantName: form.tenant?.name ?? null,
   };
 }

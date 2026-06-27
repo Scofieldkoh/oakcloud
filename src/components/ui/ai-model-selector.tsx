@@ -35,6 +35,11 @@ interface AIModelsResponse {
   models: AIModel[];
   providers: AIProvider[];
   defaultModel: string | null;
+  defaultModels?: {
+    general: string | null;
+    ocr: string | null;
+    research: string | null;
+  };
   mistralOcrAvailable?: boolean;
   grouped: {
     openai: GroupedModel[];
@@ -115,6 +120,8 @@ interface AIModelSelectorProps {
   tenantId?: string;
   /** Show a dedicated Mistral OCR option when available */
   includeMistralOcrOption?: boolean;
+  /** Which configured connector default should seed this selector */
+  defaultGroup?: 'general' | 'ocr' | 'research';
 }
 
 /**
@@ -149,6 +156,7 @@ export function AIModelSelector({
   onStandardContextsChange,
   tenantId,
   includeMistralOcrOption = false,
+  defaultGroup = 'general',
 }: AIModelSelectorProps) {
   const [data, setData] = useState<AIModelsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -181,6 +189,9 @@ export function AIModelSelector({
         if (cancelled) return;
 
         setData(result);
+        const selectedDefaultModel =
+          result.defaultModels?.[defaultGroup as keyof typeof result.defaultModels] ??
+          result.defaultModel;
 
         // Auto-select default model in these cases:
         // 1. No value currently selected
@@ -193,10 +204,10 @@ export function AIModelSelector({
             );
 
         const defaultChanged = previousDefaultRef.current !== null &&
-                               previousDefaultRef.current !== result.defaultModel;
+                               previousDefaultRef.current !== selectedDefaultModel;
 
         // Update the ref for next comparison
-        previousDefaultRef.current = result.defaultModel;
+        previousDefaultRef.current = selectedDefaultModel;
 
         if (allowAuto) {
           if (value && !currentModelAvailable) {
@@ -205,8 +216,8 @@ export function AIModelSelector({
           return;
         }
 
-        if (result.defaultModel && (!value || !currentModelAvailable || defaultChanged)) {
-          onChange(result.defaultModel);
+        if (selectedDefaultModel && (!value || !currentModelAvailable || defaultChanged)) {
+          onChange(selectedDefaultModel);
           return;
         }
 
@@ -214,7 +225,7 @@ export function AIModelSelector({
           includeMistralOcrOption &&
           result.mistralOcrAvailable &&
           (!value || !currentModelAvailable) &&
-          !result.defaultModel
+          !selectedDefaultModel
         ) {
           onChange(MISTRAL_OCR_MODEL_ID);
         }
@@ -234,7 +245,7 @@ export function AIModelSelector({
     return () => {
       cancelled = true;
     };
-  }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tenantId, defaultGroup]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter models based on requirements
   const filteredModels = data?.models?.filter((m) => {
@@ -526,6 +537,7 @@ export function useAIModels(tenantId?: string) {
     models: data?.models || [],
     providers: data?.providers || [],
     defaultModel: data?.defaultModel,
+    defaultModels: data?.defaultModels,
     grouped: data?.grouped,
     mistralOcrAvailable: data?.mistralOcrAvailable ?? false,
     isLoading,

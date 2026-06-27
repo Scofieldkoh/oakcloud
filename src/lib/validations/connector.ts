@@ -164,19 +164,19 @@ export const connectorSearchSchema = z.object({
 export type ConnectorSearchInput = z.infer<typeof connectorSearchSchema>;
 
 // ============================================================================
-// Tenant Connector Access
+// Workspace Connector Access
 // ============================================================================
 
-export const updateTenantAccessSchema = z.object({
-  tenantAccess: z.array(
+export const updateWorkspaceAccessSchema = z.object({
+  workspaceAccess: z.array(
     z.object({
-      tenantId: z.string().uuid('Invalid tenant ID'),
+      workspaceId: z.string().uuid('Invalid workspace ID'),
       isEnabled: z.boolean(),
     })
   ),
 });
 
-export type UpdateTenantAccessInput = z.infer<typeof updateTenantAccessSchema>;
+export type UpdateWorkspaceAccessInput = z.infer<typeof updateWorkspaceAccessSchema>;
 
 // ============================================================================
 // Validation Helpers

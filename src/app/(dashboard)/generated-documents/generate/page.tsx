@@ -102,7 +102,6 @@ export default function GenerateDocumentPage() {
         title: data.title,
         customData: data.customData,
         useLetterhead: data.useLetterhead,
-        shareExpiryHours: data.shareExpiryHours,
         editedContent: data.editedContent,
         status: 'FINALIZED', // Set as finalized by default
       };

@@ -1786,7 +1786,7 @@ export default function PublicFormPage() {
             const draftData = await draftResponse.json();
 
             if (!draftResponse.ok) {
-              throw new Error(draftData.error || uiLabel('resume_draft_failed'));
+              throw new Error(draftData.error || DEFAULT_UI_LABELS.resume_draft_failed);
             }
 
             if (!isCancelled) {
@@ -1802,7 +1802,7 @@ export default function PublicFormPage() {
             }
           } catch (err) {
             if (!isCancelled) {
-              setDraftFeedback(err instanceof Error ? err.message : uiLabel('resume_draft_failed'));
+              setDraftFeedback(err instanceof Error ? err.message : DEFAULT_UI_LABELS.resume_draft_failed);
             }
           }
         }
@@ -1824,7 +1824,7 @@ export default function PublicFormPage() {
     return () => {
       isCancelled = true;
     };
-  }, [slug, isPreview, previewFormId, previewTenantId, requestedDraftCode, requestedDraftToken, applyResolvedDraftPayload, uiLabel]);
+  }, [slug, isPreview, previewFormId, previewTenantId, requestedDraftCode, requestedDraftToken, applyResolvedDraftPayload]);
 
   useEffect(() => {
     if (!form) {

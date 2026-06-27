@@ -2112,13 +2112,6 @@ function TemplateEditorContent() {
       // Used for conditionals ({{#if}}) and loops ({{#each}})
       const hashPattern = '(?:#|&#35;|&#x23;)';
 
-      // Debug: Log the raw content to see how partials are stored
-      console.log('[Preview] Raw content:', preview);
-      console.log('[Preview] Content includes {{>:', preview.includes('{{>'));
-      console.log('[Preview] Content includes {{&gt;:', preview.includes('{{&gt;'));
-      console.log('[Preview] Content includes PAGE_BREAK:', preview.includes('PAGE_BREAK'));
-      console.log('[Preview] Content includes page-break class:', preview.includes('page-break'));
-
       // Resolve partials first ({{>partial-name}}) so their content also gets placeholder processing
       // Get partials from the query data
       const availablePartials = partialsData?.partials || [];
@@ -2127,15 +2120,12 @@ function TemplateEditorContent() {
       // Pattern: {{> partial-name }} or {{&gt; partial-name }} or {{&#62; partial-name }} or {{&#x3e; partial-name }}
       const partialRegex = /\{\{(?:>|&gt;|&#62;|&#x3[eE];)\s*([a-zA-Z0-9_-]+)\s*\}\}/g;
       preview = preview.replace(partialRegex, (_match, partialName) => {
-        console.log('[Preview] Resolving partial:', partialName, 'Available:', availablePartials.map((p: TemplatePartial) => p.name));
         const partial = availablePartials.find((p: TemplatePartial) => p.name === partialName);
         if (partial?.content) {
           // Return the partial content (HTML preserved)
-          console.log('[Preview] Found partial content, length:', partial.content.length);
           return partial.content;
         }
         // If partial not found, return a placeholder message
-        console.log('[Preview] Partial not found:', partialName);
         return `<span style="color: #ef4444; background: #fef2f2; padding: 2px 6px; border-radius: 4px; font-size: 12px;">[Partial "${partialName}" not found]</span>`;
       });
 
@@ -2292,7 +2282,6 @@ function TemplateEditorContent() {
 
         // Simple truthy check (handle string boolean values)
         const value = getValueByPath(cleanExpression);
-        console.log('[Condition] Expression:', cleanExpression, 'Value:', value, 'Type:', typeof value);
         if (value === 'false' || value === '0' || value === false) return false;
         return !!value;
       };
@@ -2358,14 +2347,8 @@ function TemplateEditorContent() {
       const filteredPages = pages.filter(pageContent => {
         // Strip HTML tags and check if the text content is just [Remove Page]
         const textContent = pageContent.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
-        const isRemovePage = /^\[Remove\s*Page\]$/i.test(textContent);
-        if (isRemovePage) {
-          console.log('[Preview] Removing page marked with [Remove Page]');
-        }
-        return !isRemovePage;
+        return !/^\[Remove\s*Page\]$/i.test(textContent);
       });
-
-      console.log('[Preview] Pages before filter:', pages.length, 'After filter:', filteredPages.length);
 
       // Rejoin with page break divs
       preview = filteredPages.join('<div class="page-break"></div>');

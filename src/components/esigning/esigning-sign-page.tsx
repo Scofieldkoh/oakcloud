@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useParams } from 'next/navigation';
-import { AlertCircle, Loader2, Shield } from 'lucide-react';
+import { AlertCircle, Ban, Loader2, Shield } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -244,6 +244,7 @@ export function EsigningSignPage() {
   const [activeFieldIndex, setActiveFieldIndex] = useState(0);
   const [viewerRetryKey, setViewerRetryKey] = useState(0);
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+  const [portraitBannerDismissed, setPortraitBannerDismissed] = useState(false);
 
   // Signature modal
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -919,8 +920,9 @@ export function EsigningSignPage() {
 
   if (flowState === 'loading') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background-primary">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background-primary p-6">
         <Loader2 className="h-8 w-8 animate-spin text-oak-primary" />
+        <p className="text-sm text-text-secondary">Loading your signing session…</p>
       </div>
     );
   }
@@ -970,6 +972,9 @@ export function EsigningSignPage() {
           <h1 className="mt-4 text-center text-2xl font-semibold text-text-primary">
             Access code required
           </h1>
+          <p className="mt-2 text-center text-sm text-text-secondary">
+            Check your email for a one-time access code and enter it below to continue.
+          </p>
           {accessCodeError ? (
             <Alert variant="error" className="mt-4">
               {accessCodeError}
@@ -980,6 +985,7 @@ export function EsigningSignPage() {
               label="Access code"
               value={accessCode}
               onChange={(event) => setAccessCode(event.target.value)}
+              placeholder="Enter code from your email"
               required
             />
             <Button type="submit" className="w-full">
@@ -1044,10 +1050,16 @@ export function EsigningSignPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background-primary p-6">
         <div className="w-full max-w-lg rounded-3xl border border-border-primary bg-background-secondary p-8 shadow-sm text-center">
-          <AlertCircle className="mx-auto h-10 w-10 text-rose-500" />
-          <h1 className="mt-4 text-2xl font-semibold text-text-primary">You declined to sign</h1>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 border border-gray-200">
+            <Ban className="h-8 w-8 text-gray-400" />
+          </div>
+          <h1 className="mt-5 text-2xl font-semibold text-text-primary">Signing declined</h1>
           <p className="mt-2 text-sm text-text-secondary">
-            The sender has been notified. The envelope has been declined.
+            You have chosen not to sign. The sender has been notified.
+          </p>
+          <p className="mt-4 rounded-2xl border border-border-primary bg-background-primary px-4 py-3 text-sm text-text-secondary">
+            No further action is required from you. If you changed your mind, please contact the
+            sender to request a new signing link.
           </p>
         </div>
       </div>
@@ -1085,9 +1097,16 @@ export function EsigningSignPage() {
       />
 
       <div className="mx-auto w-full max-w-7xl px-4 py-4">
-        {isPortraitMobile ? (
-          <Alert variant="info" className="mb-4">
-            Landscape mode gives you more space to review the document and complete fields on mobile.
+        {isPortraitMobile && !portraitBannerDismissed ? (
+          <Alert variant="info" className="mb-4 flex items-center justify-between gap-3">
+            <span>Rotate to landscape for a better signing experience on mobile.</span>
+            <button
+              type="button"
+              onClick={() => setPortraitBannerDismissed(true)}
+              className="shrink-0 text-xs font-medium text-text-secondary hover:text-text-primary"
+            >
+              Dismiss
+            </button>
           </Alert>
         ) : null}
 

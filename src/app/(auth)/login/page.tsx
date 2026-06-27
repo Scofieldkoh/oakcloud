@@ -56,10 +56,10 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5">
             <Image src="/falcon.svg" alt="Oakcloud" width={72} height={72} unoptimized />
             <span className="text-base font-semibold text-white">Oakcloud</span>
-          </Link>
+          </div>
         </div>
 
         {/* Content */}
@@ -96,9 +96,9 @@ export default function LoginPage() {
         <div className="w-full max-w-sm space-y-6">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center">
-            <Link href="/" className="inline-flex items-center gap-2.5">
+            <div className="inline-flex items-center gap-2.5">
               <Image src="/falcon.svg" alt="Oakcloud" width={84} height={84} className="w-16 h-16 sm:w-[5.25rem] sm:h-[5.25rem]" unoptimized />
-            </Link>
+            </div>
           </div>
 
           {/* Header */}
@@ -165,12 +165,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Back to Home */}
-          <p className="text-center text-xs text-text-tertiary">
-            <Link href="/" className="text-oak-light hover:text-oak-hover transition-colors">
-              Back to home
-            </Link>
-          </p>
         </div>
       </div>
     </div>

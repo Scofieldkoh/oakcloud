@@ -7,10 +7,9 @@ const nextConfig = {
       bodySizeLimit: '10mb',
     },
   },
-  // Turbopack and webpack configurations removed
-  // Phaser requires real canvas support
   webpack: (config) => {
-    // No canvas aliasing - Phaser needs real canvas
+    // Persistent Webpack packs fail to snapshot resolve dependencies in this Windows/OneDrive workspace.
+    config.cache = false;
     return config;
   },
 };

@@ -250,15 +250,6 @@ export const contactsQuerySchema = paginationSchema.extend({
 });
 
 /**
- * Document shares query
- */
-export const documentSharesQuerySchema = paginationSchema.extend({
-  status: z.enum(['active', 'expired', 'revoked', 'all']).optional(),
-  query: z.string().max(MAX_QUERY_STRING_LENGTH).optional(),
-  documentId: uuidString.optional(),
-});
-
-/**
  * Connector usage query
  */
 export const connectorUsageQuerySchema = paginationSchema.merge(dateRangeSchema).extend({

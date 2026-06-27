@@ -68,7 +68,6 @@ export interface GenerateDocumentData {
   title: string;
   customData: Record<string, string>;
   useLetterhead: boolean;
-  shareExpiryHours?: number;
   editedContent?: string;
 }
 
@@ -86,7 +85,6 @@ interface WizardState {
   title: string;
   customData: Record<string, string>;
   useLetterhead: boolean;
-  shareExpiryHours: string;
   validationResult: ValidationResult | null;
   generatedDocument: GeneratedDocumentResult | null;
   previewContent: string | null;
@@ -673,7 +671,6 @@ export function DocumentGenerationWizard({
     title: '',
     customData: {},
     useLetterhead: true,
-    shareExpiryHours: '',
     validationResult: null,
     generatedDocument: null,
     previewContent: null,
@@ -807,9 +804,6 @@ export function DocumentGenerationWizard({
         title: state.title,
         customData: state.customData,
         useLetterhead: state.useLetterhead,
-        shareExpiryHours: state.shareExpiryHours
-          ? parseInt(state.shareExpiryHours)
-          : undefined,
         editedContent: state.editedContent || state.previewContent || undefined,
       });
 
@@ -831,7 +825,6 @@ export function DocumentGenerationWizard({
       title: '',
       customData: {},
       useLetterhead: true,
-      shareExpiryHours: '',
       validationResult: null,
       generatedDocument: null,
       previewContent: null,

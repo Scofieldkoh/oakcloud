@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * - Allowed origins list (for configured external integrations)
  *
  * Exemptions:
- * - Public API endpoints that need external access (share endpoints)
+ * - Public API endpoints that need external access
  * - Webhook endpoints
  */
 
@@ -21,7 +21,6 @@ const PROTECTED_METHODS = ['POST', 'PUT', 'DELETE', 'PATCH'];
 
 // API paths that are exempt from CSRF protection (public endpoints)
 const CSRF_EXEMPT_PATHS = [
-  '/api/share/', // Public share document endpoints
   '/api/forms/public/', // Public form submissions/uploads
   '/api/webhooks/', // Webhook endpoints
   '/api/auth/login', // Login endpoint (needs to work from external forms)

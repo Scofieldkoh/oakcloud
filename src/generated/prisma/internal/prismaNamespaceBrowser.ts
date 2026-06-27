@@ -80,7 +80,6 @@ export const ModelName = {
   DocumentTemplate: 'DocumentTemplate',
   GeneratedDocument: 'GeneratedDocument',
   DocumentSection: 'DocumentSection',
-  DocumentShare: 'DocumentShare',
   WorkspaceLetterhead: 'WorkspaceLetterhead',
   DocumentComment: 'DocumentComment',
   DocumentDraft: 'DocumentDraft',
@@ -592,7 +591,7 @@ export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typ
 
 export const ConnectorScalarFieldEnum = {
   id: 'id',
-  tenantId: 'tenantId',
+  workspaceId: 'workspaceId',
   name: 'name',
   type: 'type',
   provider: 'provider',
@@ -614,7 +613,7 @@ export type ConnectorScalarFieldEnum = (typeof ConnectorScalarFieldEnum)[keyof t
 
 export const WorkspaceConnectorAccessScalarFieldEnum = {
   id: 'id',
-  tenantId: 'tenantId',
+  workspaceId: 'workspaceId',
   connectorId: 'connectorId',
   isEnabled: 'isEnabled',
   createdAt: 'createdAt',
@@ -627,7 +626,7 @@ export type WorkspaceConnectorAccessScalarFieldEnum = (typeof WorkspaceConnector
 export const ConnectorUsageLogScalarFieldEnum = {
   id: 'id',
   connectorId: 'connectorId',
-  tenantId: 'tenantId',
+  workspaceId: 'workspaceId',
   userId: 'userId',
   model: 'model',
   provider: 'provider',
@@ -682,7 +681,6 @@ export const DocumentTemplateScalarFieldEnum = {
   contentJson: 'contentJson',
   placeholders: 'placeholders',
   isActive: 'isActive',
-  defaultShareExpiryHours: 'defaultShareExpiryHours',
   version: 'version',
   createdById: 'createdById',
   createdAt: 'createdAt',
@@ -707,7 +705,6 @@ export const GeneratedDocumentScalarFieldEnum = {
   finalizedById: 'finalizedById',
   unfinalizedAt: 'unfinalizedAt',
   useLetterhead: 'useLetterhead',
-  shareExpiryHours: 'shareExpiryHours',
   placeholderData: 'placeholderData',
   metadata: 'metadata',
   createdById: 'createdById',
@@ -733,28 +730,6 @@ export const DocumentSectionScalarFieldEnum = {
 export type DocumentSectionScalarFieldEnum = (typeof DocumentSectionScalarFieldEnum)[keyof typeof DocumentSectionScalarFieldEnum]
 
 
-export const DocumentShareScalarFieldEnum = {
-  id: 'id',
-  documentId: 'documentId',
-  shareToken: 'shareToken',
-  expiresAt: 'expiresAt',
-  passwordHash: 'passwordHash',
-  isActive: 'isActive',
-  viewCount: 'viewCount',
-  lastViewedAt: 'lastViewedAt',
-  allowedActions: 'allowedActions',
-  allowComments: 'allowComments',
-  commentRateLimit: 'commentRateLimit',
-  notifyOnComment: 'notifyOnComment',
-  notifyOnView: 'notifyOnView',
-  createdById: 'createdById',
-  createdAt: 'createdAt',
-  revokedAt: 'revokedAt'
-} as const
-
-export type DocumentShareScalarFieldEnum = (typeof DocumentShareScalarFieldEnum)[keyof typeof DocumentShareScalarFieldEnum]
-
-
 export const WorkspaceLetterheadScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -775,7 +750,6 @@ export type WorkspaceLetterheadScalarFieldEnum = (typeof WorkspaceLetterheadScal
 export const DocumentCommentScalarFieldEnum = {
   id: 'id',
   documentId: 'documentId',
-  shareId: 'shareId',
   userId: 'userId',
   guestName: 'guestName',
   guestEmail: 'guestEmail',
@@ -1783,8 +1757,7 @@ export const Workflow_artifactsScalarFieldEnum = {
   source_type: 'source_type',
   source_document_id: 'source_document_id',
   source_processing_document_id: 'source_processing_document_id',
-  source_generated_document_id: 'source_generated_document_id',
-  source_document_share_id: 'source_document_share_id'
+  source_generated_document_id: 'source_generated_document_id'
 } as const
 
 export type Workflow_artifactsScalarFieldEnum = (typeof Workflow_artifactsScalarFieldEnum)[keyof typeof Workflow_artifactsScalarFieldEnum]

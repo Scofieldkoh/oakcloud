@@ -28,12 +28,10 @@ export type AggregateGeneratedDocument = {
 
 export type GeneratedDocumentAvgAggregateOutputType = {
   templateVersion: number | null
-  shareExpiryHours: number | null
 }
 
 export type GeneratedDocumentSumAggregateOutputType = {
   templateVersion: number | null
-  shareExpiryHours: number | null
 }
 
 export type GeneratedDocumentMinAggregateOutputType = {
@@ -49,7 +47,6 @@ export type GeneratedDocumentMinAggregateOutputType = {
   finalizedById: string | null
   unfinalizedAt: Date | null
   useLetterhead: boolean | null
-  shareExpiryHours: number | null
   createdById: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -69,7 +66,6 @@ export type GeneratedDocumentMaxAggregateOutputType = {
   finalizedById: string | null
   unfinalizedAt: Date | null
   useLetterhead: boolean | null
-  shareExpiryHours: number | null
   createdById: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -90,7 +86,6 @@ export type GeneratedDocumentCountAggregateOutputType = {
   finalizedById: number
   unfinalizedAt: number
   useLetterhead: number
-  shareExpiryHours: number
   placeholderData: number
   metadata: number
   createdById: number
@@ -103,12 +98,10 @@ export type GeneratedDocumentCountAggregateOutputType = {
 
 export type GeneratedDocumentAvgAggregateInputType = {
   templateVersion?: true
-  shareExpiryHours?: true
 }
 
 export type GeneratedDocumentSumAggregateInputType = {
   templateVersion?: true
-  shareExpiryHours?: true
 }
 
 export type GeneratedDocumentMinAggregateInputType = {
@@ -124,7 +117,6 @@ export type GeneratedDocumentMinAggregateInputType = {
   finalizedById?: true
   unfinalizedAt?: true
   useLetterhead?: true
-  shareExpiryHours?: true
   createdById?: true
   createdAt?: true
   updatedAt?: true
@@ -144,7 +136,6 @@ export type GeneratedDocumentMaxAggregateInputType = {
   finalizedById?: true
   unfinalizedAt?: true
   useLetterhead?: true
-  shareExpiryHours?: true
   createdById?: true
   createdAt?: true
   updatedAt?: true
@@ -165,7 +156,6 @@ export type GeneratedDocumentCountAggregateInputType = {
   finalizedById?: true
   unfinalizedAt?: true
   useLetterhead?: true
-  shareExpiryHours?: true
   placeholderData?: true
   metadata?: true
   createdById?: true
@@ -275,7 +265,6 @@ export type GeneratedDocumentGroupByOutputType = {
   finalizedById: string | null
   unfinalizedAt: Date | null
   useLetterhead: boolean
-  shareExpiryHours: number | null
   placeholderData: runtime.JsonValue | null
   metadata: runtime.JsonValue | null
   createdById: string
@@ -321,7 +310,6 @@ export type GeneratedDocumentWhereInput = {
   finalizedById?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   unfinalizedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
   useLetterhead?: Prisma.BoolFilter<"GeneratedDocument"> | boolean
-  shareExpiryHours?: Prisma.IntNullableFilter<"GeneratedDocument"> | number | null
   placeholderData?: Prisma.JsonNullableFilter<"GeneratedDocument">
   metadata?: Prisma.JsonNullableFilter<"GeneratedDocument">
   createdById?: Prisma.StringFilter<"GeneratedDocument"> | string
@@ -331,7 +319,6 @@ export type GeneratedDocumentWhereInput = {
   comments?: Prisma.DocumentCommentListRelationFilter
   drafts?: Prisma.DocumentDraftListRelationFilter
   sections?: Prisma.DocumentSectionListRelationFilter
-  shares?: Prisma.DocumentShareListRelationFilter
   company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   finalizedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -354,7 +341,6 @@ export type GeneratedDocumentOrderByWithRelationInput = {
   finalizedById?: Prisma.SortOrderInput | Prisma.SortOrder
   unfinalizedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   useLetterhead?: Prisma.SortOrder
-  shareExpiryHours?: Prisma.SortOrderInput | Prisma.SortOrder
   placeholderData?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -364,7 +350,6 @@ export type GeneratedDocumentOrderByWithRelationInput = {
   comments?: Prisma.DocumentCommentOrderByRelationAggregateInput
   drafts?: Prisma.DocumentDraftOrderByRelationAggregateInput
   sections?: Prisma.DocumentSectionOrderByRelationAggregateInput
-  shares?: Prisma.DocumentShareOrderByRelationAggregateInput
   company?: Prisma.CompanyOrderByWithRelationInput
   createdBy?: Prisma.UserOrderByWithRelationInput
   finalizedBy?: Prisma.UserOrderByWithRelationInput
@@ -390,7 +375,6 @@ export type GeneratedDocumentWhereUniqueInput = Prisma.AtLeast<{
   finalizedById?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   unfinalizedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
   useLetterhead?: Prisma.BoolFilter<"GeneratedDocument"> | boolean
-  shareExpiryHours?: Prisma.IntNullableFilter<"GeneratedDocument"> | number | null
   placeholderData?: Prisma.JsonNullableFilter<"GeneratedDocument">
   metadata?: Prisma.JsonNullableFilter<"GeneratedDocument">
   createdById?: Prisma.StringFilter<"GeneratedDocument"> | string
@@ -400,7 +384,6 @@ export type GeneratedDocumentWhereUniqueInput = Prisma.AtLeast<{
   comments?: Prisma.DocumentCommentListRelationFilter
   drafts?: Prisma.DocumentDraftListRelationFilter
   sections?: Prisma.DocumentSectionListRelationFilter
-  shares?: Prisma.DocumentShareListRelationFilter
   company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   finalizedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -423,7 +406,6 @@ export type GeneratedDocumentOrderByWithAggregationInput = {
   finalizedById?: Prisma.SortOrderInput | Prisma.SortOrder
   unfinalizedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   useLetterhead?: Prisma.SortOrder
-  shareExpiryHours?: Prisma.SortOrderInput | Prisma.SortOrder
   placeholderData?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -454,7 +436,6 @@ export type GeneratedDocumentScalarWhereWithAggregatesInput = {
   finalizedById?: Prisma.StringNullableWithAggregatesFilter<"GeneratedDocument"> | string | null
   unfinalizedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"GeneratedDocument"> | Date | string | null
   useLetterhead?: Prisma.BoolWithAggregatesFilter<"GeneratedDocument"> | boolean
-  shareExpiryHours?: Prisma.IntNullableWithAggregatesFilter<"GeneratedDocument"> | number | null
   placeholderData?: Prisma.JsonNullableWithAggregatesFilter<"GeneratedDocument">
   metadata?: Prisma.JsonNullableWithAggregatesFilter<"GeneratedDocument">
   createdById?: Prisma.StringWithAggregatesFilter<"GeneratedDocument"> | string
@@ -473,7 +454,6 @@ export type GeneratedDocumentCreateInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -482,7 +462,6 @@ export type GeneratedDocumentCreateInput = {
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
   finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
@@ -505,7 +484,6 @@ export type GeneratedDocumentUncheckedCreateInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -515,7 +493,6 @@ export type GeneratedDocumentUncheckedCreateInput = {
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
@@ -529,7 +506,6 @@ export type GeneratedDocumentUpdateInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -538,7 +514,6 @@ export type GeneratedDocumentUpdateInput = {
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
   finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
@@ -561,7 +536,6 @@ export type GeneratedDocumentUncheckedUpdateInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -571,7 +545,6 @@ export type GeneratedDocumentUncheckedUpdateInput = {
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
@@ -589,7 +562,6 @@ export type GeneratedDocumentCreateManyInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -608,7 +580,6 @@ export type GeneratedDocumentUpdateManyMutationInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -630,7 +601,6 @@ export type GeneratedDocumentUncheckedUpdateManyInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -663,7 +633,6 @@ export type GeneratedDocumentCountOrderByAggregateInput = {
   finalizedById?: Prisma.SortOrder
   unfinalizedAt?: Prisma.SortOrder
   useLetterhead?: Prisma.SortOrder
-  shareExpiryHours?: Prisma.SortOrder
   placeholderData?: Prisma.SortOrder
   metadata?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -674,7 +643,6 @@ export type GeneratedDocumentCountOrderByAggregateInput = {
 
 export type GeneratedDocumentAvgOrderByAggregateInput = {
   templateVersion?: Prisma.SortOrder
-  shareExpiryHours?: Prisma.SortOrder
 }
 
 export type GeneratedDocumentMaxOrderByAggregateInput = {
@@ -690,7 +658,6 @@ export type GeneratedDocumentMaxOrderByAggregateInput = {
   finalizedById?: Prisma.SortOrder
   unfinalizedAt?: Prisma.SortOrder
   useLetterhead?: Prisma.SortOrder
-  shareExpiryHours?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -710,7 +677,6 @@ export type GeneratedDocumentMinOrderByAggregateInput = {
   finalizedById?: Prisma.SortOrder
   unfinalizedAt?: Prisma.SortOrder
   useLetterhead?: Prisma.SortOrder
-  shareExpiryHours?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -719,7 +685,6 @@ export type GeneratedDocumentMinOrderByAggregateInput = {
 
 export type GeneratedDocumentSumOrderByAggregateInput = {
   templateVersion?: Prisma.SortOrder
-  shareExpiryHours?: Prisma.SortOrder
 }
 
 export type GeneratedDocumentScalarRelationFilter = {
@@ -960,20 +925,6 @@ export type GeneratedDocumentUpdateOneRequiredWithoutSectionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.GeneratedDocumentUpdateToOneWithWhereWithoutSectionsInput, Prisma.GeneratedDocumentUpdateWithoutSectionsInput>, Prisma.GeneratedDocumentUncheckedUpdateWithoutSectionsInput>
 }
 
-export type GeneratedDocumentCreateNestedOneWithoutSharesInput = {
-  create?: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutSharesInput, Prisma.GeneratedDocumentUncheckedCreateWithoutSharesInput>
-  connectOrCreate?: Prisma.GeneratedDocumentCreateOrConnectWithoutSharesInput
-  connect?: Prisma.GeneratedDocumentWhereUniqueInput
-}
-
-export type GeneratedDocumentUpdateOneRequiredWithoutSharesNestedInput = {
-  create?: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutSharesInput, Prisma.GeneratedDocumentUncheckedCreateWithoutSharesInput>
-  connectOrCreate?: Prisma.GeneratedDocumentCreateOrConnectWithoutSharesInput
-  upsert?: Prisma.GeneratedDocumentUpsertWithoutSharesInput
-  connect?: Prisma.GeneratedDocumentWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.GeneratedDocumentUpdateToOneWithWhereWithoutSharesInput, Prisma.GeneratedDocumentUpdateWithoutSharesInput>, Prisma.GeneratedDocumentUncheckedUpdateWithoutSharesInput>
-}
-
 export type GeneratedDocumentCreateNestedOneWithoutCommentsInput = {
   create?: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutCommentsInput, Prisma.GeneratedDocumentUncheckedCreateWithoutCommentsInput>
   connectOrCreate?: Prisma.GeneratedDocumentCreateOrConnectWithoutCommentsInput
@@ -1028,7 +979,6 @@ export type GeneratedDocumentCreateWithoutTenantInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -1037,7 +987,6 @@ export type GeneratedDocumentCreateWithoutTenantInput = {
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
   finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
@@ -1058,7 +1007,6 @@ export type GeneratedDocumentUncheckedCreateWithoutTenantInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -1068,7 +1016,6 @@ export type GeneratedDocumentUncheckedCreateWithoutTenantInput = {
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
@@ -1115,7 +1062,6 @@ export type GeneratedDocumentScalarWhereInput = {
   finalizedById?: Prisma.StringNullableFilter<"GeneratedDocument"> | string | null
   unfinalizedAt?: Prisma.DateTimeNullableFilter<"GeneratedDocument"> | Date | string | null
   useLetterhead?: Prisma.BoolFilter<"GeneratedDocument"> | boolean
-  shareExpiryHours?: Prisma.IntNullableFilter<"GeneratedDocument"> | number | null
   placeholderData?: Prisma.JsonNullableFilter<"GeneratedDocument">
   metadata?: Prisma.JsonNullableFilter<"GeneratedDocument">
   createdById?: Prisma.StringFilter<"GeneratedDocument"> | string
@@ -1134,7 +1080,6 @@ export type GeneratedDocumentCreateWithoutCreatedByInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -1143,7 +1088,6 @@ export type GeneratedDocumentCreateWithoutCreatedByInput = {
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
   finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
   template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
@@ -1165,7 +1109,6 @@ export type GeneratedDocumentUncheckedCreateWithoutCreatedByInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -1174,7 +1117,6 @@ export type GeneratedDocumentUncheckedCreateWithoutCreatedByInput = {
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
@@ -1198,7 +1140,6 @@ export type GeneratedDocumentCreateWithoutFinalizedByInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -1207,7 +1148,6 @@ export type GeneratedDocumentCreateWithoutFinalizedByInput = {
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
   template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
@@ -1228,7 +1168,6 @@ export type GeneratedDocumentUncheckedCreateWithoutFinalizedByInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -1238,7 +1177,6 @@ export type GeneratedDocumentUncheckedCreateWithoutFinalizedByInput = {
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
@@ -1294,7 +1232,6 @@ export type GeneratedDocumentCreateWithoutCompanyInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -1303,7 +1240,6 @@ export type GeneratedDocumentCreateWithoutCompanyInput = {
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
   finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
   template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
@@ -1324,7 +1260,6 @@ export type GeneratedDocumentUncheckedCreateWithoutCompanyInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -1334,7 +1269,6 @@ export type GeneratedDocumentUncheckedCreateWithoutCompanyInput = {
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
@@ -1374,7 +1308,6 @@ export type GeneratedDocumentCreateWithoutTemplateInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -1383,7 +1316,6 @@ export type GeneratedDocumentCreateWithoutTemplateInput = {
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
   finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
@@ -1404,7 +1336,6 @@ export type GeneratedDocumentUncheckedCreateWithoutTemplateInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -1414,7 +1345,6 @@ export type GeneratedDocumentUncheckedCreateWithoutTemplateInput = {
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
@@ -1454,7 +1384,6 @@ export type GeneratedDocumentCreateWithoutSectionsInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -1462,7 +1391,6 @@ export type GeneratedDocumentCreateWithoutSectionsInput = {
   deletedAt?: Date | string | null
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
   finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
@@ -1485,7 +1413,6 @@ export type GeneratedDocumentUncheckedCreateWithoutSectionsInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -1494,7 +1421,6 @@ export type GeneratedDocumentUncheckedCreateWithoutSectionsInput = {
   deletedAt?: Date | string | null
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
@@ -1524,7 +1450,6 @@ export type GeneratedDocumentUpdateWithoutSectionsInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1532,7 +1457,6 @@ export type GeneratedDocumentUpdateWithoutSectionsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
   finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
@@ -1555,7 +1479,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutSectionsInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1564,131 +1487,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutSectionsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
-  workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
-}
-
-export type GeneratedDocumentCreateWithoutSharesInput = {
-  id?: string
-  templateVersion?: number | null
-  title: string
-  content: string
-  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  status?: $Enums.GeneratedDocumentStatus
-  finalizedAt?: Date | string | null
-  unfinalizedAt?: Date | string | null
-  useLetterhead?: boolean
-  shareExpiryHours?: number | null
-  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
-  drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
-  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
-  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
-  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
-  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
-  tenant: Prisma.WorkspaceCreateNestedOneWithoutGeneratedDocumentsInput
-  workflow_artifacts?: Prisma.workflow_artifactsCreateNestedManyWithoutGenerated_documentsInput
-}
-
-export type GeneratedDocumentUncheckedCreateWithoutSharesInput = {
-  id?: string
-  tenantId: string
-  templateId?: string | null
-  templateVersion?: number | null
-  companyId?: string | null
-  title: string
-  content: string
-  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  status?: $Enums.GeneratedDocumentStatus
-  finalizedAt?: Date | string | null
-  finalizedById?: string | null
-  unfinalizedAt?: Date | string | null
-  useLetterhead?: boolean
-  shareExpiryHours?: number | null
-  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  createdById: string
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
-  drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
-  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
-}
-
-export type GeneratedDocumentCreateOrConnectWithoutSharesInput = {
-  where: Prisma.GeneratedDocumentWhereUniqueInput
-  create: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutSharesInput, Prisma.GeneratedDocumentUncheckedCreateWithoutSharesInput>
-}
-
-export type GeneratedDocumentUpsertWithoutSharesInput = {
-  update: Prisma.XOR<Prisma.GeneratedDocumentUpdateWithoutSharesInput, Prisma.GeneratedDocumentUncheckedUpdateWithoutSharesInput>
-  create: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutSharesInput, Prisma.GeneratedDocumentUncheckedCreateWithoutSharesInput>
-  where?: Prisma.GeneratedDocumentWhereInput
-}
-
-export type GeneratedDocumentUpdateToOneWithWhereWithoutSharesInput = {
-  where?: Prisma.GeneratedDocumentWhereInput
-  data: Prisma.XOR<Prisma.GeneratedDocumentUpdateWithoutSharesInput, Prisma.GeneratedDocumentUncheckedUpdateWithoutSharesInput>
-}
-
-export type GeneratedDocumentUpdateWithoutSharesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
-  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
-  finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
-  drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
-  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
-  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
-  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
-  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
-  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
-  workflow_artifacts?: Prisma.workflow_artifactsUpdateManyWithoutGenerated_documentsNestedInput
-}
-
-export type GeneratedDocumentUncheckedUpdateWithoutSharesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  title?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
-  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
-  finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  createdById?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
-  drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
-  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
@@ -1702,7 +1500,6 @@ export type GeneratedDocumentCreateWithoutCommentsInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -1710,7 +1507,6 @@ export type GeneratedDocumentCreateWithoutCommentsInput = {
   deletedAt?: Date | string | null
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
   finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
@@ -1733,7 +1529,6 @@ export type GeneratedDocumentUncheckedCreateWithoutCommentsInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -1742,7 +1537,6 @@ export type GeneratedDocumentUncheckedCreateWithoutCommentsInput = {
   deletedAt?: Date | string | null
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
@@ -1772,7 +1566,6 @@ export type GeneratedDocumentUpdateWithoutCommentsInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1780,7 +1573,6 @@ export type GeneratedDocumentUpdateWithoutCommentsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
   finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
@@ -1803,7 +1595,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutCommentsInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1812,7 +1603,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutCommentsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
@@ -1826,7 +1616,6 @@ export type GeneratedDocumentCreateWithoutDraftsInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -1834,7 +1623,6 @@ export type GeneratedDocumentCreateWithoutDraftsInput = {
   deletedAt?: Date | string | null
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
   finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
@@ -1857,7 +1645,6 @@ export type GeneratedDocumentUncheckedCreateWithoutDraftsInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -1866,7 +1653,6 @@ export type GeneratedDocumentUncheckedCreateWithoutDraftsInput = {
   deletedAt?: Date | string | null
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedCreateNestedManyWithoutGenerated_documentsInput
 }
 
@@ -1896,7 +1682,6 @@ export type GeneratedDocumentUpdateWithoutDraftsInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1904,7 +1689,6 @@ export type GeneratedDocumentUpdateWithoutDraftsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
   finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
@@ -1927,7 +1711,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutDraftsInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1936,7 +1719,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutDraftsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
@@ -1950,7 +1732,6 @@ export type GeneratedDocumentCreateWithoutWorkflow_artifactsInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -1959,7 +1740,6 @@ export type GeneratedDocumentCreateWithoutWorkflow_artifactsInput = {
   comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareCreateNestedManyWithoutDocumentInput
   company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
   finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
@@ -1981,7 +1761,6 @@ export type GeneratedDocumentUncheckedCreateWithoutWorkflow_artifactsInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -1991,7 +1770,6 @@ export type GeneratedDocumentUncheckedCreateWithoutWorkflow_artifactsInput = {
   comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
   drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
-  shares?: Prisma.DocumentShareUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutWorkflow_artifactsInput = {
@@ -2020,7 +1798,6 @@ export type GeneratedDocumentUpdateWithoutWorkflow_artifactsInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2029,7 +1806,6 @@ export type GeneratedDocumentUpdateWithoutWorkflow_artifactsInput = {
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
   finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
@@ -2051,7 +1827,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutWorkflow_artifactsInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2061,7 +1836,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutWorkflow_artifactsInput = {
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type GeneratedDocumentCreateManyTenantInput = {
@@ -2077,7 +1851,6 @@ export type GeneratedDocumentCreateManyTenantInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -2096,7 +1869,6 @@ export type GeneratedDocumentUpdateWithoutTenantInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2105,7 +1877,6 @@ export type GeneratedDocumentUpdateWithoutTenantInput = {
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
   finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
@@ -2126,7 +1897,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutTenantInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2136,7 +1906,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutTenantInput = {
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
@@ -2153,7 +1922,6 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutTenantInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2176,7 +1944,6 @@ export type GeneratedDocumentCreateManyCreatedByInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
@@ -2197,7 +1964,6 @@ export type GeneratedDocumentCreateManyFinalizedByInput = {
   finalizedAt?: Date | string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -2216,7 +1982,6 @@ export type GeneratedDocumentUpdateWithoutCreatedByInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2225,7 +1990,6 @@ export type GeneratedDocumentUpdateWithoutCreatedByInput = {
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
   finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
   template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
@@ -2247,7 +2011,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutCreatedByInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2256,7 +2019,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutCreatedByInput = {
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
@@ -2274,7 +2036,6 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutCreatedByInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2292,7 +2053,6 @@ export type GeneratedDocumentUpdateWithoutFinalizedByInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2301,7 +2061,6 @@ export type GeneratedDocumentUpdateWithoutFinalizedByInput = {
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
   template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
@@ -2322,7 +2081,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutFinalizedByInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2332,7 +2090,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutFinalizedByInput = {
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
@@ -2349,7 +2106,6 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2371,7 +2127,6 @@ export type GeneratedDocumentCreateManyCompanyInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -2390,7 +2145,6 @@ export type GeneratedDocumentUpdateWithoutCompanyInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2399,7 +2153,6 @@ export type GeneratedDocumentUpdateWithoutCompanyInput = {
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
   finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
   template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
@@ -2420,7 +2173,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutCompanyInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2430,7 +2182,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutCompanyInput = {
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
@@ -2447,7 +2198,6 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutCompanyInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2469,7 +2219,6 @@ export type GeneratedDocumentCreateManyTemplateInput = {
   finalizedById?: string | null
   unfinalizedAt?: Date | string | null
   useLetterhead?: boolean
-  shareExpiryHours?: number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById: string
@@ -2488,7 +2237,6 @@ export type GeneratedDocumentUpdateWithoutTemplateInput = {
   finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2497,7 +2245,6 @@ export type GeneratedDocumentUpdateWithoutTemplateInput = {
   comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUpdateManyWithoutDocumentNestedInput
   company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
   finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
@@ -2518,7 +2265,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutTemplateInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2528,7 +2274,6 @@ export type GeneratedDocumentUncheckedUpdateWithoutTemplateInput = {
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
   drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
-  shares?: Prisma.DocumentShareUncheckedUpdateManyWithoutDocumentNestedInput
   workflow_artifacts?: Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNestedInput
 }
 
@@ -2545,7 +2290,6 @@ export type GeneratedDocumentUncheckedUpdateManyWithoutTemplateInput = {
   finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shareExpiryHours?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2563,7 +2307,6 @@ export type GeneratedDocumentCountOutputType = {
   comments: number
   drafts: number
   sections: number
-  shares: number
   workflow_artifacts: number
 }
 
@@ -2571,7 +2314,6 @@ export type GeneratedDocumentCountOutputTypeSelect<ExtArgs extends runtime.Types
   comments?: boolean | GeneratedDocumentCountOutputTypeCountCommentsArgs
   drafts?: boolean | GeneratedDocumentCountOutputTypeCountDraftsArgs
   sections?: boolean | GeneratedDocumentCountOutputTypeCountSectionsArgs
-  shares?: boolean | GeneratedDocumentCountOutputTypeCountSharesArgs
   workflow_artifacts?: boolean | GeneratedDocumentCountOutputTypeCountWorkflow_artifactsArgs
 }
 
@@ -2609,13 +2351,6 @@ export type GeneratedDocumentCountOutputTypeCountSectionsArgs<ExtArgs extends ru
 /**
  * GeneratedDocumentCountOutputType without action
  */
-export type GeneratedDocumentCountOutputTypeCountSharesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.DocumentShareWhereInput
-}
-
-/**
- * GeneratedDocumentCountOutputType without action
- */
 export type GeneratedDocumentCountOutputTypeCountWorkflow_artifactsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.workflow_artifactsWhereInput
 }
@@ -2635,7 +2370,6 @@ export type GeneratedDocumentSelect<ExtArgs extends runtime.Types.Extensions.Int
   finalizedById?: boolean
   unfinalizedAt?: boolean
   useLetterhead?: boolean
-  shareExpiryHours?: boolean
   placeholderData?: boolean
   metadata?: boolean
   createdById?: boolean
@@ -2645,7 +2379,6 @@ export type GeneratedDocumentSelect<ExtArgs extends runtime.Types.Extensions.Int
   comments?: boolean | Prisma.GeneratedDocument$commentsArgs<ExtArgs>
   drafts?: boolean | Prisma.GeneratedDocument$draftsArgs<ExtArgs>
   sections?: boolean | Prisma.GeneratedDocument$sectionsArgs<ExtArgs>
-  shares?: boolean | Prisma.GeneratedDocument$sharesArgs<ExtArgs>
   company?: boolean | Prisma.GeneratedDocument$companyArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
@@ -2669,7 +2402,6 @@ export type GeneratedDocumentSelectCreateManyAndReturn<ExtArgs extends runtime.T
   finalizedById?: boolean
   unfinalizedAt?: boolean
   useLetterhead?: boolean
-  shareExpiryHours?: boolean
   placeholderData?: boolean
   metadata?: boolean
   createdById?: boolean
@@ -2697,7 +2429,6 @@ export type GeneratedDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   finalizedById?: boolean
   unfinalizedAt?: boolean
   useLetterhead?: boolean
-  shareExpiryHours?: boolean
   placeholderData?: boolean
   metadata?: boolean
   createdById?: boolean
@@ -2725,7 +2456,6 @@ export type GeneratedDocumentSelectScalar = {
   finalizedById?: boolean
   unfinalizedAt?: boolean
   useLetterhead?: boolean
-  shareExpiryHours?: boolean
   placeholderData?: boolean
   metadata?: boolean
   createdById?: boolean
@@ -2734,12 +2464,11 @@ export type GeneratedDocumentSelectScalar = {
   deletedAt?: boolean
 }
 
-export type GeneratedDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "templateId" | "templateVersion" | "companyId" | "title" | "content" | "contentJson" | "status" | "finalizedAt" | "finalizedById" | "unfinalizedAt" | "useLetterhead" | "shareExpiryHours" | "placeholderData" | "metadata" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["generatedDocument"]>
+export type GeneratedDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "templateId" | "templateVersion" | "companyId" | "title" | "content" | "contentJson" | "status" | "finalizedAt" | "finalizedById" | "unfinalizedAt" | "useLetterhead" | "placeholderData" | "metadata" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["generatedDocument"]>
 export type GeneratedDocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   comments?: boolean | Prisma.GeneratedDocument$commentsArgs<ExtArgs>
   drafts?: boolean | Prisma.GeneratedDocument$draftsArgs<ExtArgs>
   sections?: boolean | Prisma.GeneratedDocument$sectionsArgs<ExtArgs>
-  shares?: boolean | Prisma.GeneratedDocument$sharesArgs<ExtArgs>
   company?: boolean | Prisma.GeneratedDocument$companyArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   finalizedBy?: boolean | Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>
@@ -2769,7 +2498,6 @@ export type $GeneratedDocumentPayload<ExtArgs extends runtime.Types.Extensions.I
     comments: Prisma.$DocumentCommentPayload<ExtArgs>[]
     drafts: Prisma.$DocumentDraftPayload<ExtArgs>[]
     sections: Prisma.$DocumentSectionPayload<ExtArgs>[]
-    shares: Prisma.$DocumentSharePayload<ExtArgs>[]
     company: Prisma.$CompanyPayload<ExtArgs> | null
     createdBy: Prisma.$UserPayload<ExtArgs>
     finalizedBy: Prisma.$UserPayload<ExtArgs> | null
@@ -2791,7 +2519,6 @@ export type $GeneratedDocumentPayload<ExtArgs extends runtime.Types.Extensions.I
     finalizedById: string | null
     unfinalizedAt: Date | null
     useLetterhead: boolean
-    shareExpiryHours: number | null
     placeholderData: runtime.JsonValue | null
     metadata: runtime.JsonValue | null
     createdById: string
@@ -3195,7 +2922,6 @@ export interface Prisma__GeneratedDocumentClient<T, Null = never, ExtArgs extend
   comments<T extends Prisma.GeneratedDocument$commentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentCommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   drafts<T extends Prisma.GeneratedDocument$draftsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$draftsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentDraftPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sections<T extends Prisma.GeneratedDocument$sectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$sectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentSectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  shares<T extends Prisma.GeneratedDocument$sharesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$sharesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentSharePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   company<T extends Prisma.GeneratedDocument$companyArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$companyArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   createdBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   finalizedBy<T extends Prisma.GeneratedDocument$finalizedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$finalizedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -3244,7 +2970,6 @@ export interface GeneratedDocumentFieldRefs {
   readonly finalizedById: Prisma.FieldRef<"GeneratedDocument", 'String'>
   readonly unfinalizedAt: Prisma.FieldRef<"GeneratedDocument", 'DateTime'>
   readonly useLetterhead: Prisma.FieldRef<"GeneratedDocument", 'Boolean'>
-  readonly shareExpiryHours: Prisma.FieldRef<"GeneratedDocument", 'Int'>
   readonly placeholderData: Prisma.FieldRef<"GeneratedDocument", 'Json'>
   readonly metadata: Prisma.FieldRef<"GeneratedDocument", 'Json'>
   readonly createdById: Prisma.FieldRef<"GeneratedDocument", 'String'>
@@ -3716,30 +3441,6 @@ export type GeneratedDocument$sectionsArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.DocumentSectionScalarFieldEnum | Prisma.DocumentSectionScalarFieldEnum[]
-}
-
-/**
- * GeneratedDocument.shares
- */
-export type GeneratedDocument$sharesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentShare
-   */
-  select?: Prisma.DocumentShareSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DocumentShare
-   */
-  omit?: Prisma.DocumentShareOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentShareInclude<ExtArgs> | null
-  where?: Prisma.DocumentShareWhereInput
-  orderBy?: Prisma.DocumentShareOrderByWithRelationInput | Prisma.DocumentShareOrderByWithRelationInput[]
-  cursor?: Prisma.DocumentShareWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.DocumentShareScalarFieldEnum | Prisma.DocumentShareScalarFieldEnum[]
 }
 
 /**

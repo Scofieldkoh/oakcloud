@@ -10,6 +10,7 @@ import { createAuditLog } from '@/lib/audit';
 import { normalizeKey } from '@/lib/form-utils';
 import { prisma } from '@/lib/prisma';
 import type { TenantAwareParams } from '@/lib/types';
+import { normalizeWorkspaceLogoUrl } from '@/lib/workspace-logo-url';
 import type {
   CreateFormInput,
   FormFieldInput,
@@ -229,7 +230,7 @@ export async function getFormById(formId: string, tenantId: string): Promise<For
 
   return {
     ...form,
-    tenantLogoUrl: form.tenant?.logoUrl ?? null,
+    tenantLogoUrl: normalizeWorkspaceLogoUrl(form.tenant?.logoUrl),
     tenantName: form.tenant?.name ?? null,
   };
 }
@@ -439,7 +440,7 @@ export async function duplicateForm(
     return {
       ...form,
       fields,
-      tenantLogoUrl: form.tenant?.logoUrl ?? null,
+      tenantLogoUrl: normalizeWorkspaceLogoUrl(form.tenant?.logoUrl),
       tenantName: form.tenant?.name ?? null,
     };
   });

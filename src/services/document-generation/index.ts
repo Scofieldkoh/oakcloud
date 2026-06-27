@@ -11,10 +11,8 @@
  * import {
  *   IDocumentGenerator,
  *   IDocumentExporter,
- *   IDocumentPublisher,
  *   getDocumentGenerator,
  *   getDocumentExporter,
- *   getDocumentPublisher,
  *   DocumentStepResult,
  * } from '@/services/document-generation';
  *
@@ -68,10 +66,6 @@ export type {
   ExportHTMLParams,
   HTMLResult,
 
-  // Document Publisher Types
-  PublishParams,
-  ShareAccessResult,
-
   // Workflow Integration Types
   DocumentStepResult,
   DocumentStepConfig,
@@ -81,11 +75,7 @@ export type {
   DocumentForSignature,
   Signatory,
 
-  // URL Shortener Integration Types
-  ShortenedUrl,
-
   // Notification Integration Types
-  ShareNotification,
   CommentNotification,
 } from './types';
 
@@ -96,7 +86,6 @@ export type {
 export type {
   IDocumentGenerator,
   IDocumentExporter,
-  IDocumentPublisher,
   IDocumentWorkflowStep,
 } from './interfaces';
 
@@ -107,7 +96,6 @@ export type {
 export {
   getDocumentGenerator,
   getDocumentExporter,
-  getDocumentPublisher,
   getDocumentWorkflowStep,
   resetInstances,
 } from './implementations';

@@ -56,7 +56,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </h2>
 
             <p className="text-text-secondary mb-6">
-              An unexpected error occurred. Please try again or return to the home page.
+              An unexpected error occurred. Please try again or return to Companies.
             </p>
 
             {process.env.NODE_ENV === 'development' && this.state.error && (
@@ -76,13 +76,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               >
                 Try Again
               </Button>
-              <Link href="/">
+              <Link href="/companies">
                 <Button
                   variant="primary"
                   size="sm"
                   leftIcon={<Home className="w-4 h-4" />}
                 >
-                  Go Home
+                  Companies
                 </Button>
               </Link>
             </div>

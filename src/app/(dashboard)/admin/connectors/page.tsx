@@ -9,10 +9,13 @@ import {
   useDeleteConnector,
   useTestConnector,
   useToggleConnector,
-  useTenantAccess,
-  useUpdateTenantAccess,
+  useWorkspaceAccess,
+  useUpdateWorkspaceAccess,
   useConnectorModels,
   useToggleConnectorModel,
+  useAddConnectorModel,
+  useTestConnectorModelPdf,
+  useDeleteConnectorModel,
   useConnectorUsage,
   useExportUsage,
   getProviderDisplayName,
@@ -89,6 +92,20 @@ type ConnectorProvider =
   | 'ONEDRIVE'
   | 'SHAREPOINT';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
+const MODEL_DEFAULT_GROUPS = [
+  { key: 'general', label: 'General default' },
+  { key: 'ocr', label: 'OCR default' },
+  { key: 'research', label: 'Research default' },
+] as const;
+
+type ModelDefaultGroup = (typeof MODEL_DEFAULT_GROUPS)[number]['key'];
+type ModelDefaults = Record<ModelDefaultGroup, string>;
+
+const EMPTY_MODEL_DEFAULTS: ModelDefaults = {
+  general: '',
+  ocr: '',
+  research: '',
+};
 
 function parseMailboxUserIdsInput(raw: string): {
   mailboxUserIds: string[];
@@ -128,6 +145,27 @@ function extractMailboxUserIdsFromSettings(settings: Record<string, unknown> | n
   return [...new Set(results)];
 }
 
+function extractModelDefaultsFromSettings(settings: Record<string, unknown> | null): ModelDefaults {
+  const defaults: ModelDefaults = { ...EMPTY_MODEL_DEFAULTS };
+  if (!settings || typeof settings !== 'object') return defaults;
+
+  const modelDefaults = settings.modelDefaults;
+  if (modelDefaults && typeof modelDefaults === 'object' && !Array.isArray(modelDefaults)) {
+    for (const group of MODEL_DEFAULT_GROUPS) {
+      const value = (modelDefaults as Record<string, unknown>)[group.key];
+      if (typeof value === 'string') {
+        defaults[group.key] = value;
+      }
+    }
+  }
+
+  if (!defaults.general && typeof settings.defaultModel === 'string') {
+    defaults.general = settings.defaultModel;
+  }
+
+  return defaults;
+}
+
 function maskCredentialPreview(value: string): string {
   const trimmed = value.trim();
 
@@ -163,7 +201,7 @@ interface CreateFormData {
   name: string;
   type: ConnectorType;
   provider: ConnectorProvider;
-  tenantId: string | null;
+  workspaceId: string | null;
   credentials: Record<string, string>;
   mailboxUserIdsText: string;
   isEnabled: boolean;
@@ -173,6 +211,7 @@ interface EditFormData {
   name: string;
   credentials: Record<string, string>;
   mailboxUserIdsText: string;
+  modelDefaults: ModelDefaults;
   isEnabled: boolean;
 }
 
@@ -184,7 +223,7 @@ const INITIAL_CREATE_FORM: CreateFormData = {
   name: '',
   type: 'AI_PROVIDER',
   provider: 'OPENAI',
-  tenantId: null,
+  workspaceId: null,
   credentials: {},
   mailboxUserIdsText: '',
   isEnabled: true,
@@ -250,18 +289,21 @@ export default function ConnectorsPage() {
     name: '',
     credentials: {},
     mailboxUserIdsText: '',
+    modelDefaults: { ...EMPTY_MODEL_DEFAULTS },
     isEnabled: true,
   });
   const [formError, setFormError] = useState('');
+  const [newModelId, setNewModelId] = useState('');
+  const [newModelName, setNewModelName] = useState('');
   const [showCredentials, setShowCredentials] = useState<Record<string, boolean>>({});
   const [showSetupGuide, setShowSetupGuide] = useState<'SHAREPOINT' | 'ONEDRIVE' | null>(null);
 
   // Active tenant - using centralized hook
-  const activeTenantId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
+  const activeWorkspaceId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
 
   // Build search params
   const searchParams: ConnectorSearchParams = {
-    ...(activeTenantId ? { tenantId: activeTenantId } : {}),
+    ...(activeWorkspaceId ? { tenantId: activeWorkspaceId } : {}),
     ...(typeFilter ? { type: typeFilter } : {}),
     ...(providerFilter ? { provider: providerFilter } : {}),
     includeSystem: true,
@@ -282,6 +324,9 @@ export default function ConnectorsPage() {
     editingConnector?.type === 'AI_PROVIDER' ? editingConnector?.id : undefined
   );
   const toggleModelMutation = useToggleConnectorModel(editingConnector?.id);
+  const addModelMutation = useAddConnectorModel(editingConnector?.id);
+  const testModelPdfMutation = useTestConnectorModelPdf(editingConnector?.id);
+  const deleteModelMutation = useDeleteConnectorModel(editingConnector?.id);
 
   // Extract dates from DatePickerValue for API
   const getUsageDates = () => {
@@ -376,7 +421,7 @@ export default function ConnectorsPage() {
         name: createForm.name,
         type: createForm.type,
         provider: createForm.provider,
-        tenantId: isSuperAdmin ? createForm.tenantId : session?.tenantId || null,
+        tenantId: isSuperAdmin ? createForm.workspaceId : session?.tenantId || null,
         credentials: createForm.credentials,
         settings,
         isEnabled: createForm.isEnabled,
@@ -405,6 +450,11 @@ export default function ConnectorsPage() {
         name: editForm.name,
         isEnabled: editForm.isEnabled,
       };
+      const existingSettings =
+        editingConnector.settings && typeof editingConnector.settings === 'object'
+          ? editingConnector.settings
+          : {};
+      const nextSettings: Record<string, unknown> = { ...existingSettings };
 
       // Only include credentials if they've been modified (non-empty)
       const hasCredentialChanges = Object.values(editForm.credentials).some((v) => v);
@@ -421,21 +471,45 @@ export default function ConnectorsPage() {
           return;
         }
 
-        const existingSettings =
-          editingConnector.settings && typeof editingConnector.settings === 'object'
-            ? editingConnector.settings
-            : {};
-        const nextSettings: Record<string, unknown> = { ...existingSettings };
-
         if (parsedMailboxInput.mailboxUserIds.length > 0) {
           nextSettings.mailboxUserIds = parsedMailboxInput.mailboxUserIds;
         } else {
           delete nextSettings.mailboxUserIds;
         }
         delete nextSettings.mailboxUserId;
-
-        updateData.settings = nextSettings;
       }
+
+      if (editingConnector.type === 'AI_PROVIDER') {
+        if (connectorModels) {
+          nextSettings.models = connectorModels.map((model) => ({
+            modelId: model.modelId,
+            name: model.name,
+            description: model.description,
+            providerModelId: model.providerModelId,
+            isEnabled: model.isEnabled,
+            documentInputMode: model.documentInputMode,
+            supportsPdfInput: model.supportsPdfInput,
+            lastPdfInputTest: model.lastPdfInputTest,
+          }));
+          delete nextSettings.customModels;
+        }
+
+        const nextModelDefaults = Object.fromEntries(
+          MODEL_DEFAULT_GROUPS
+            .map((group) => [group.key, editForm.modelDefaults[group.key].trim()])
+            .filter(([, modelId]) => Boolean(modelId))
+        );
+
+        if (Object.keys(nextModelDefaults).length > 0) {
+          nextSettings.modelDefaults = nextModelDefaults;
+          delete nextSettings.defaultModel;
+        } else {
+          delete nextSettings.modelDefaults;
+          delete nextSettings.defaultModel;
+        }
+      }
+
+      updateData.settings = nextSettings;
 
       await updateMutation.mutateAsync(updateData);
       success('Connector updated successfully');
@@ -470,6 +544,81 @@ export default function ConnectorsPage() {
     }
   };
 
+  const handleAddModel = async () => {
+    const modelId = newModelId.trim();
+    const name = newModelName.trim();
+    if (!modelId) {
+      setFormError('Model ID is required');
+      return;
+    }
+
+    try {
+      setFormError('');
+      await addModelMutation.mutateAsync({
+        modelId,
+        providerModelId: modelId,
+        name: name || modelId,
+        isEnabled: true,
+      });
+      setNewModelId('');
+      setNewModelName('');
+      success('Model added');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to add model');
+    }
+  };
+
+  const handleRemoveModel = async (model: ConnectorModelConfig) => {
+    try {
+      await deleteModelMutation.mutateAsync(model.modelId);
+      setEditForm((prev) => ({
+        ...prev,
+        modelDefaults: Object.fromEntries(
+          MODEL_DEFAULT_GROUPS.map((group) => [
+            group.key,
+            prev.modelDefaults[group.key] === model.modelId ? '' : prev.modelDefaults[group.key],
+          ])
+        ) as ModelDefaults,
+      }));
+      success('Model removed');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to remove model');
+    }
+  };
+
+  const handleUpdateModelDocumentInputMode = async (
+    model: ConnectorModelConfig,
+    documentInputMode: ConnectorModelConfig['documentInputMode']
+  ) => {
+    try {
+      await addModelMutation.mutateAsync({
+        modelId: model.modelId,
+        providerModelId: model.providerModelId,
+        name: model.name,
+        description: model.description,
+        isEnabled: model.isEnabled,
+        documentInputMode,
+        supportsPdfInput: model.supportsPdfInput,
+      });
+      success('Model document input mode updated');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to update model input mode');
+    }
+  };
+
+  const handleTestModelPdf = async (model: ConnectorModelConfig) => {
+    try {
+      const result = await testModelPdfMutation.mutateAsync({ modelId: model.modelId });
+      if (result.success) {
+        success('PDF input test passed');
+      } else {
+        showError(`PDF input test failed: ${result.error || 'model rejected PDF input'}`);
+      }
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to test PDF input');
+    }
+  };
+
   const handleToggle = async (connector: Connector) => {
     try {
       const res = await fetch(`/api/connectors/${connector.id}`, {
@@ -492,10 +641,13 @@ export default function ConnectorsPage() {
       name: connector.name,
       credentials: {}, // Don't pre-fill credentials
       mailboxUserIdsText: mailboxUserIds.join(', '),
+      modelDefaults: extractModelDefaultsFromSettings(connector.settings),
       isEnabled: connector.isEnabled,
     });
     setShowCredentials({});
     setFormError('');
+    setNewModelId('');
+    setNewModelName('');
   };
 
   const toggleCredentialVisibility = (key: string) => {
@@ -504,8 +656,8 @@ export default function ConnectorsPage() {
 
   // Render mobile connector card
   const renderConnectorCard = (connector: Connector) => {
-    const isSystem = connector.tenantId === null;
-    const canEdit = isSuperAdmin || (!isSystem && connector.tenantId === session?.tenantId);
+    const isSystem = connector.workspaceId === null;
+    const canEdit = isSuperAdmin || (!isSystem && connector.workspaceId === session?.tenantId);
     const canDelete = canEdit;
     const isTesting = testMutation.isPending && testMutation.variables === connector.id;
 
@@ -568,7 +720,7 @@ export default function ConnectorsPage() {
                   {isSuperAdmin && isSystem && (
                     <DropdownItem onClick={() => setAccessConnector(connector)}>
                       <Shield className="w-4 h-4 mr-2" />
-                      Tenant Access
+                      Workspace Access
                     </DropdownItem>
                   )}
                   {canDelete && (
@@ -602,8 +754,8 @@ export default function ConnectorsPage() {
 
   // Render connector row
   const renderConnectorRow = (connector: Connector) => {
-    const isSystem = connector.tenantId === null;
-    const canEdit = isSuperAdmin || (!isSystem && connector.tenantId === session?.tenantId);
+    const isSystem = connector.workspaceId === null;
+    const canEdit = isSuperAdmin || (!isSystem && connector.workspaceId === session?.tenantId);
     const canDelete = canEdit;
     const isTesting = testMutation.isPending && testMutation.variables === connector.id;
 
@@ -686,7 +838,7 @@ export default function ConnectorsPage() {
                   {isSuperAdmin && isSystem && (
                     <DropdownItem onClick={() => setAccessConnector(connector)}>
                       <Shield className="w-4 h-4 mr-2" />
-                      Tenant Access
+                      Workspace Access
                     </DropdownItem>
                   )}
                   {canDelete && (
@@ -895,18 +1047,18 @@ export default function ConnectorsPage() {
                 <div>
                   <label className="label">Scope</label>
                   <select
-                    value={createForm.tenantId ?? 'system'}
+                    value={createForm.workspaceId ?? 'system'}
                     onChange={(e) =>
                       setCreateForm({
                         ...createForm,
-                        tenantId: e.target.value === 'system' ? null : e.target.value,
+                        workspaceId: e.target.value === 'system' ? null : e.target.value,
                       })
                     }
                     className="input input-sm w-full"
                   >
-                    <option value="system">System (available to all tenants)</option>
-                    {activeTenantId && (
-                      <option value={activeTenantId}>Current Tenant Only</option>
+                    <option value="system">System (available to all workspaces)</option>
+                    {activeWorkspaceId && (
+                      <option value={activeWorkspaceId}>Current Workspace Only</option>
                     )}
                   </select>
                 </div>
@@ -1101,10 +1253,12 @@ export default function ConnectorsPage() {
         onClose={() => {
           setEditingConnector(null);
           setFormError('');
+          setNewModelId('');
+          setNewModelName('');
           setShowCredentials({});
         }}
         title={`Edit ${editingConnector?.name}`}
-        size="md"
+        size="4xl"
       >
         <form onSubmit={handleUpdate}>
           <ModalBody>
@@ -1211,6 +1365,33 @@ export default function ConnectorsPage() {
               {editingConnector?.type === 'AI_PROVIDER' && (
                 <div className="space-y-3">
                   <label className="label mb-0">Models</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 items-end">
+                    <FormInput
+                      label="Model ID"
+                      value={newModelId}
+                      onChange={(e) => setNewModelId(e.target.value)}
+                      placeholder="provider/model-id"
+                      inputSize="sm"
+                    />
+                    <FormInput
+                      label="Name"
+                      value={newModelName}
+                      onChange={(e) => setNewModelName(e.target.value)}
+                      placeholder="Display name"
+                      inputSize="sm"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddModel}
+                      isLoading={addModelMutation.isPending}
+                      disabled={!newModelId.trim() || addModelMutation.isPending}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add
+                    </Button>
+                  </div>
                   {isLoadingModels ? (
                     <div className="space-y-2">
                       {[1, 2].map((i) => (
@@ -1222,10 +1403,39 @@ export default function ConnectorsPage() {
                     </div>
                   ) : connectorModels && connectorModels.length > 0 ? (
                     <div className="space-y-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {MODEL_DEFAULT_GROUPS.map((group) => (
+                          <div key={group.key}>
+                            <label className="label">{group.label}</label>
+                            <select
+                              value={editForm.modelDefaults[group.key]}
+                              onChange={(e) =>
+                                setEditForm({
+                                  ...editForm,
+                                  modelDefaults: {
+                                    ...editForm.modelDefaults,
+                                    [group.key]: e.target.value,
+                                  },
+                                })
+                              }
+                              className="input input-sm w-full"
+                            >
+                              <option value="">Auto</option>
+                              {connectorModels
+                                .filter((model) => model.isEnabled)
+                                .map((model) => (
+                                  <option key={model.modelId} value={model.modelId}>
+                                    {model.name}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
                       {connectorModels.map((model: ConnectorModelConfig) => (
                         <div
                           key={model.modelId}
-                          className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-bg-tertiary"
+                          className="flex flex-col gap-3 p-3 rounded-lg border border-border-primary bg-bg-tertiary sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex flex-col min-w-0 mr-3">
                             <span className="text-sm font-medium text-text-primary truncate">
@@ -1234,32 +1444,98 @@ export default function ConnectorsPage() {
                             <span className="text-xs text-text-muted truncate">
                               {model.providerModelId}
                             </span>
-                          </div>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={model.isEnabled}
-                            disabled={toggleModelMutation.isPending}
-                            onClick={() =>
-                              toggleModelMutation.mutate({
-                                modelId: model.modelId,
-                                isEnabled: !model.isEnabled,
-                              })
-                            }
-                            className={cn(
-                              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
-                              model.isEnabled
-                                ? 'bg-oak-primary border-oak-primary'
-                                : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
+                            {editingConnector.provider === 'OPENROUTER' && (
+                              <span
+                                className={cn(
+                                  'mt-1 text-xs',
+                                  model.lastPdfInputTest?.success
+                                    ? 'text-success'
+                                    : model.lastPdfInputTest
+                                      ? 'text-error'
+                                      : 'text-text-muted'
+                                )}
+                                title={model.lastPdfInputTest?.error}
+                              >
+                                {model.lastPdfInputTest?.success
+                                  ? 'PDF OK'
+                                  : model.lastPdfInputTest
+                                    ? 'PDF failed'
+                                    : 'PDF untested'}
+                              </span>
                             )}
-                          >
-                            <span
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {editingConnector.provider === 'OPENROUTER' && (
+                              <>
+                                <select
+                                  value={model.documentInputMode}
+                                  onChange={(e) =>
+                                    handleUpdateModelDocumentInputMode(
+                                      model,
+                                      e.target.value as ConnectorModelConfig['documentInputMode']
+                                    )
+                                  }
+                                  className="input input-sm w-28"
+                                  disabled={addModelMutation.isPending}
+                                  title="Document input mode"
+                                >
+                                  <option value="auto">Auto</option>
+                                  <option value="pdf">PDF</option>
+                                  <option value="image">Image</option>
+                                </select>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="xs"
+                                  onClick={() => handleTestModelPdf(model)}
+                                  isLoading={
+                                    testModelPdfMutation.isPending &&
+                                    testModelPdfMutation.variables?.modelId === model.modelId
+                                  }
+                                  disabled={!model.isEnabled || testModelPdfMutation.isPending}
+                                >
+                                  <RefreshCw className="w-3 h-3 mr-1" />
+                                  Test PDF
+                                </Button>
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={model.isEnabled}
+                              disabled={toggleModelMutation.isPending}
+                              onClick={() =>
+                                toggleModelMutation.mutate({
+                                  modelId: model.modelId,
+                                  isEnabled: !model.isEnabled,
+                                })
+                              }
                               className={cn(
-                                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
-                                model.isEnabled ? 'translate-x-5' : 'translate-x-0'
+                                'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-oak-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+                                model.isEnabled
+                                  ? 'bg-oak-primary border-oak-primary'
+                                  : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
                               )}
+                            >
+                              <span
+                                className={cn(
+                                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out',
+                                  model.isEnabled ? 'translate-x-5' : 'translate-x-0'
+                                )}
+                              />
+                            </button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="xs"
+                              iconOnly
+                              leftIcon={<Trash2 className="w-4 h-4" />}
+                              aria-label={`Remove ${model.name}`}
+                              title={`Remove ${model.name}`}
+                              disabled={deleteModelMutation.isPending}
+                              onClick={() => handleRemoveModel(model)}
                             />
-                          </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1336,9 +1612,9 @@ export default function ConnectorsPage() {
         isLoading={deleteMutation.isPending}
       />
 
-      {/* Tenant Access Modal */}
+      {/* Workspace Access Modal */}
       {accessConnector && (
-        <TenantAccessModal
+        <WorkspaceAccessModal
           connector={accessConnector}
           onClose={() => setAccessConnector(null)}
         />
@@ -1521,33 +1797,33 @@ export default function ConnectorsPage() {
 }
 
 // ============================================================================
-// Tenant Access Modal Component
+// Workspace Access Modal Component
 // ============================================================================
 
-interface TenantAccessModalProps {
+interface WorkspaceAccessModalProps {
   connector: Connector;
   onClose: () => void;
 }
 
-function TenantAccessModal({ connector, onClose }: TenantAccessModalProps) {
+function WorkspaceAccessModal({ connector, onClose }: WorkspaceAccessModalProps) {
   const { success, error: showError } = useToast();
-  const { data: accessData, isLoading } = useTenantAccess(connector.id);
-  const updateMutation = useUpdateTenantAccess(connector.id);
+  const { data: accessData, isLoading } = useWorkspaceAccess(connector.id);
+  const updateMutation = useUpdateWorkspaceAccess(connector.id);
 
   const [localAccess, setLocalAccess] = useState<
-    Array<{ tenantId: string; tenantName: string; isEnabled: boolean }>
+    Array<{ workspaceId: string; workspaceName: string; isEnabled: boolean }>
   >([]);
 
   useEffect(() => {
-    if (accessData?.tenantAccess) {
-      setLocalAccess(accessData.tenantAccess);
+    if (accessData?.workspaceAccess) {
+      setLocalAccess(accessData.workspaceAccess);
     }
   }, [accessData]);
 
-  const handleToggle = (tenantId: string) => {
+  const handleToggle = (workspaceId: string) => {
     setLocalAccess((prev) =>
       prev.map((a) =>
-        a.tenantId === tenantId ? { ...a, isEnabled: !a.isEnabled } : a
+        a.workspaceId === workspaceId ? { ...a, isEnabled: !a.isEnabled } : a
       )
     );
   };
@@ -1555,9 +1831,9 @@ function TenantAccessModal({ connector, onClose }: TenantAccessModalProps) {
   const handleSave = async () => {
     try {
       await updateMutation.mutateAsync(
-        localAccess.map(({ tenantId, isEnabled }) => ({ tenantId, isEnabled }))
+        localAccess.map(({ workspaceId, isEnabled }) => ({ workspaceId, isEnabled }))
       );
-      success('Tenant access updated');
+      success('Workspace access updated');
       onClose();
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Failed to update access');
@@ -1565,29 +1841,29 @@ function TenantAccessModal({ connector, onClose }: TenantAccessModalProps) {
   };
 
   return (
-    <Modal isOpen onClose={onClose} title={`Tenant Access: ${connector.name}`} size="md">
+    <Modal isOpen onClose={onClose} title={`Workspace Access: ${connector.name}`} size="md">
       <ModalBody>
         {isLoading ? (
-          <div className="text-center py-8 text-text-muted">Loading tenants...</div>
+          <div className="text-center py-8 text-text-muted">Loading workspaces...</div>
         ) : !localAccess.length ? (
           <div className="text-center py-8 text-text-muted">
-            No active tenants found
+            No active workspaces found
           </div>
         ) : (
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
             <p className="text-sm text-text-secondary mb-4">
-              Control which tenants can use this system connector. Disabled tenants
+              Control which workspaces can use this system connector. Disabled workspaces
               will not have access to this integration.
             </p>
             {localAccess.map((access) => (
               <div
-                key={access.tenantId}
+                key={access.workspaceId}
                 className="flex items-center justify-between p-3 rounded-lg bg-bg-tertiary"
               >
-                <span className="text-sm text-text-primary">{access.tenantName}</span>
+                <span className="text-sm text-text-primary">{access.workspaceName}</span>
                 <Checkbox
                   checked={access.isEnabled}
-                  onChange={() => handleToggle(access.tenantId)}
+                  onChange={() => handleToggle(access.workspaceId)}
                   size="sm"
                 />
               </div>

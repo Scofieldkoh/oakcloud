@@ -86,11 +86,6 @@ export {
 } from './comment-panel';
 
 export {
-  ExternalCommentPanel,
-  type ExternalCommentPanelProps,
-} from './external-comment-panel';
-
-export {
   TextSelectionHighlight,
   useTextSelection,
   buildCommentHighlights,

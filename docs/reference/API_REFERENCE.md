@@ -1449,75 +1449,6 @@ Delete a comment.
 
 ---
 
-### GET /api/generated-documents/[id]/share
-List shares for a document.
-
----
-
-### POST /api/generated-documents/[id]/share
-Create a share link.
-
-**Request Body:**
-```json
-{
-  "password": "string (optional)",
-  "expiresAt": "string (ISO date, optional)",
-  "allowComments": "boolean",
-  "allowedActions": ["view", "download", "comment"]
-}
-```
-
----
-
-## Document Sharing Endpoints
-
-### GET /api/document-shares
-List all document shares.
-
----
-
-### GET /api/share/[token]
-Access a shared document.
-
----
-
-### POST /api/share/[token]/verify
-Verify password for protected share.
-
-**Request Body:**
-```json
-{
-  "password": "string"
-}
-```
-
----
-
-### GET /api/share/[token]/pdf
-Download shared document as PDF.
-
----
-
-### GET /api/share/[token]/comments
-List comments on shared document.
-
----
-
-### POST /api/share/[token]/comments
-Add comment to shared document.
-
----
-
-### PUT /api/share/[token]/comments/[commentId]
-Update comment on shared document.
-
----
-
-### DELETE /api/share/[token]/comments/[commentId]
-Delete comment on shared document.
-
----
-
 ## Connector Endpoints
 
 ### GET /api/connectors
@@ -1765,11 +1696,6 @@ Return the compact public form startup payload.
 
 ---
 
-### GET /api/public-bootstrap/share/[token]
-Return the compact shared-document startup payload. Password-protected shares still require `X-Verification-Token`.
-
----
-
 ### GET /api/public-bootstrap/esigning/session
 Return the compact public e-signing session startup payload.
 
@@ -1867,7 +1793,6 @@ All endpoints return standard error responses:
 Some endpoints have rate limiting:
 - `/api/auth/login` - 5 attempts per minute
 - `/api/auth/forgot-password` - 3 requests per hour
-- `/api/share/[token]/comments` - Configurable per share
 
 Rate limit headers:
 - `X-RateLimit-Limit`: Maximum requests allowed

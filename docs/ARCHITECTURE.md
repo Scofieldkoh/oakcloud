@@ -56,6 +56,7 @@ Core design principles:
 | TipTap | Rich text editing |
 | pdf-lib | Existing document export paths |
 | Puppeteer | Form response PDF rendering |
+| LibreOffice (`soffice`) | Word-to-PDF conversion for e-signing uploads |
 | MinIO / S3 | Uploaded file storage |
 
 ### Runtime Services

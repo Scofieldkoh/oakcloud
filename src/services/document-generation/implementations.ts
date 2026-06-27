@@ -8,7 +8,6 @@
 import type {
   IDocumentGenerator,
   IDocumentExporter,
-  IDocumentPublisher,
   IDocumentWorkflowStep,
 } from './interfaces';
 import type {
@@ -21,15 +20,13 @@ import type {
   PDFResult,
   ExportHTMLParams,
   HTMLResult,
-  PublishParams,
-  ShareAccessResult,
   DocumentStepResult,
   DocumentStepConfig,
   WorkflowContext,
   DocumentForSignature,
   Signatory,
 } from './types';
-import type { GeneratedDocument, DocumentShare } from '@/generated/prisma';
+import type { GeneratedDocument } from '@/generated/prisma';
 
 // Import existing service functions
 import {
@@ -38,10 +35,6 @@ import {
   unfinalizeDocument,
   cloneDocument,
   getGeneratedDocumentById,
-  createDocumentShare,
-  revokeDocumentShare,
-  getShareByToken,
-  verifySharePassword,
 } from '@/services/document-generator.service';
 
 import {
@@ -237,100 +230,16 @@ class DocumentExporterImpl implements IDocumentExporter {
 }
 
 // ============================================================================
-// Document Publisher Implementation
-// ============================================================================
-
-class DocumentPublisherImpl implements IDocumentPublisher {
-  async publish(params: PublishParams): Promise<DocumentShare> {
-    // Convert expiresIn (hours) to expiresAt (datetime)
-    let expiresAt: string | null = null;
-    if (params.expiresIn !== null && params.expiresIn !== undefined) {
-      const expiryDate = new Date();
-      expiryDate.setHours(expiryDate.getHours() + params.expiresIn);
-      expiresAt = expiryDate.toISOString();
-    }
-
-    return createDocumentShare(
-      {
-        documentId: params.documentId,
-        expiresAt,
-        password: params.password,
-        allowedActions: params.allowedActions ?? ['view', 'download'],
-        allowComments: params.allowComments ?? false,
-        commentRateLimit: params.commentRateLimit ?? 20,
-        notifyOnComment: params.notifyOnComment ?? false,
-        notifyOnView: params.notifyOnView ?? false,
-      },
-      {
-        tenantId: params.tenantId,
-        userId: params.userId,
-      }
-    );
-  }
-
-  getShareUrl(shareToken: string): string {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    return `${baseUrl}/share/${shareToken}`;
-  }
-
-  async access(token: string, password?: string): Promise<ShareAccessResult | null> {
-    const shareData = await getShareByToken(token);
-    if (!shareData) return null;
-
-    // Verify password if required
-    if (shareData.passwordHash && password) {
-      const valid = await verifySharePassword(shareData.id, password);
-      if (!valid) return null;
-    } else if (shareData.passwordHash && !password) {
-      return null;
-    }
-
-    // Extract sections from document content
-    const sections = extractSections(shareData.document.content);
-
-    return {
-      document: shareData.document,
-      sections: sections.map((s) => ({
-        id: s.id,
-        title: s.title,
-        level: s.level,
-        startIndex: 0,
-        endIndex: 0,
-      })),
-      allowedActions: shareData.allowedActions as string[],
-      allowComments: shareData.allowComments,
-    };
-  }
-
-  async revoke(tenantId: string, userId: string, shareId: string): Promise<void> {
-    await revokeDocumentShare(shareId, { tenantId, userId });
-  }
-
-  async listShares(tenantId: string, documentId: string): Promise<DocumentShare[]> {
-    return prisma.documentShare.findMany({
-      where: {
-        documentId,
-        document: { tenantId },
-        revokedAt: null,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-}
-
-// ============================================================================
 // Document Workflow Step Implementation
 // ============================================================================
 
 class DocumentWorkflowStepImpl implements IDocumentWorkflowStep {
   private generator: IDocumentGenerator;
   private exporter: IDocumentExporter;
-  private publisher: IDocumentPublisher;
 
   constructor() {
     this.generator = new DocumentGeneratorImpl();
     this.exporter = new DocumentExporterImpl();
-    this.publisher = new DocumentPublisherImpl();
   }
 
   async execute(
@@ -382,20 +291,6 @@ class DocumentWorkflowStepImpl implements IDocumentWorkflowStep {
         pdfBuffer = pdf.buffer;
       }
 
-      // Create share link if configured
-      let shareUrl: string | undefined;
-      let shareToken: string | undefined;
-      if (config.createShareLink) {
-        const share = await this.publisher.publish({
-          tenantId,
-          userId: triggeredById,
-          documentId: document.id,
-          expiresIn: config.shareLinkExpiry ?? undefined,
-        });
-        shareToken = share.shareToken;
-        shareUrl = this.publisher.getShareUrl(share.shareToken);
-      }
-
       // Extract signatories from document content (basic extraction)
       const signatories = this.extractSignatories(finalDocument.content);
 
@@ -404,8 +299,6 @@ class DocumentWorkflowStepImpl implements IDocumentWorkflowStep {
         documentId: document.id,
         documentTitle: document.title,
         status: finalDocument.status as 'DRAFT' | 'FINALIZED' | 'ARCHIVED',
-        shareUrl,
-        shareToken,
         pdfBuffer,
         pdfUrl,
         companyId: companyId ?? undefined,
@@ -495,7 +388,6 @@ class DocumentWorkflowStepImpl implements IDocumentWorkflowStep {
 /** Singleton instances */
 let generatorInstance: IDocumentGenerator | null = null;
 let exporterInstance: IDocumentExporter | null = null;
-let publisherInstance: IDocumentPublisher | null = null;
 let workflowStepInstance: IDocumentWorkflowStep | null = null;
 
 /**
@@ -521,17 +413,6 @@ export function getDocumentExporter(): IDocumentExporter {
 }
 
 /**
- * Get the Document Publisher instance.
- * Returns a singleton implementation of IDocumentPublisher.
- */
-export function getDocumentPublisher(): IDocumentPublisher {
-  if (!publisherInstance) {
-    publisherInstance = new DocumentPublisherImpl();
-  }
-  return publisherInstance;
-}
-
-/**
  * Get the Document Workflow Step instance.
  * Returns a singleton implementation of IDocumentWorkflowStep.
  */
@@ -549,6 +430,5 @@ export function getDocumentWorkflowStep(): IDocumentWorkflowStep {
 export function resetInstances(): void {
   generatorInstance = null;
   exporterInstance = null;
-  publisherInstance = null;
   workflowStepInstance = null;
 }

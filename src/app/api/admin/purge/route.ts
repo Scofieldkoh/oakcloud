@@ -483,11 +483,6 @@ export async function POST(request: NextRequest) {
                 where: { documentId: doc.id },
               });
 
-              // Delete document shares
-              await tx.documentShare.deleteMany({
-                where: { documentId: doc.id },
-              });
-
               // Delete document comments
               await tx.documentComment.deleteMany({
                 where: { documentId: doc.id },

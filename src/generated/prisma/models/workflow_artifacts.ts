@@ -54,7 +54,6 @@ export type Workflow_artifactsMinAggregateOutputType = {
   source_document_id: string | null
   source_processing_document_id: string | null
   source_generated_document_id: string | null
-  source_document_share_id: string | null
 }
 
 export type Workflow_artifactsMaxAggregateOutputType = {
@@ -77,7 +76,6 @@ export type Workflow_artifactsMaxAggregateOutputType = {
   source_document_id: string | null
   source_processing_document_id: string | null
   source_generated_document_id: string | null
-  source_document_share_id: string | null
 }
 
 export type Workflow_artifactsCountAggregateOutputType = {
@@ -100,7 +98,6 @@ export type Workflow_artifactsCountAggregateOutputType = {
   source_document_id: number
   source_processing_document_id: number
   source_generated_document_id: number
-  source_document_share_id: number
   _all: number
 }
 
@@ -133,7 +130,6 @@ export type Workflow_artifactsMinAggregateInputType = {
   source_document_id?: true
   source_processing_document_id?: true
   source_generated_document_id?: true
-  source_document_share_id?: true
 }
 
 export type Workflow_artifactsMaxAggregateInputType = {
@@ -156,7 +152,6 @@ export type Workflow_artifactsMaxAggregateInputType = {
   source_document_id?: true
   source_processing_document_id?: true
   source_generated_document_id?: true
-  source_document_share_id?: true
 }
 
 export type Workflow_artifactsCountAggregateInputType = {
@@ -179,7 +174,6 @@ export type Workflow_artifactsCountAggregateInputType = {
   source_document_id?: true
   source_processing_document_id?: true
   source_generated_document_id?: true
-  source_document_share_id?: true
   _all?: true
 }
 
@@ -289,7 +283,6 @@ export type Workflow_artifactsGroupByOutputType = {
   source_document_id: string | null
   source_processing_document_id: string | null
   source_generated_document_id: string | null
-  source_document_share_id: string | null
   _count: Workflow_artifactsCountAggregateOutputType | null
   _avg: Workflow_artifactsAvgAggregateOutputType | null
   _sum: Workflow_artifactsSumAggregateOutputType | null
@@ -335,10 +328,8 @@ export type workflow_artifactsWhereInput = {
   source_document_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
   source_processing_document_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
   source_generated_document_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
-  source_document_share_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
   workflow_milestones?: Prisma.XOR<Prisma.Workflow_milestonesNullableScalarRelationFilter, Prisma.workflow_milestonesWhereInput> | null
   documents?: Prisma.XOR<Prisma.DocumentNullableScalarRelationFilter, Prisma.DocumentWhereInput> | null
-  document_shares?: Prisma.XOR<Prisma.DocumentShareNullableScalarRelationFilter, Prisma.DocumentShareWhereInput> | null
   generated_documents?: Prisma.XOR<Prisma.GeneratedDocumentNullableScalarRelationFilter, Prisma.GeneratedDocumentWhereInput> | null
   processing_documents?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
   workflow_task_items?: Prisma.XOR<Prisma.Workflow_task_itemsNullableScalarRelationFilter, Prisma.workflow_task_itemsWhereInput> | null
@@ -366,10 +357,8 @@ export type workflow_artifactsOrderByWithRelationInput = {
   source_document_id?: Prisma.SortOrderInput | Prisma.SortOrder
   source_processing_document_id?: Prisma.SortOrderInput | Prisma.SortOrder
   source_generated_document_id?: Prisma.SortOrderInput | Prisma.SortOrder
-  source_document_share_id?: Prisma.SortOrderInput | Prisma.SortOrder
   workflow_milestones?: Prisma.workflow_milestonesOrderByWithRelationInput
   documents?: Prisma.DocumentOrderByWithRelationInput
-  document_shares?: Prisma.DocumentShareOrderByWithRelationInput
   generated_documents?: Prisma.GeneratedDocumentOrderByWithRelationInput
   processing_documents?: Prisma.ProcessingDocumentOrderByWithRelationInput
   workflow_task_items?: Prisma.workflow_task_itemsOrderByWithRelationInput
@@ -400,10 +389,8 @@ export type workflow_artifactsWhereUniqueInput = Prisma.AtLeast<{
   source_document_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
   source_processing_document_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
   source_generated_document_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
-  source_document_share_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
   workflow_milestones?: Prisma.XOR<Prisma.Workflow_milestonesNullableScalarRelationFilter, Prisma.workflow_milestonesWhereInput> | null
   documents?: Prisma.XOR<Prisma.DocumentNullableScalarRelationFilter, Prisma.DocumentWhereInput> | null
-  document_shares?: Prisma.XOR<Prisma.DocumentShareNullableScalarRelationFilter, Prisma.DocumentShareWhereInput> | null
   generated_documents?: Prisma.XOR<Prisma.GeneratedDocumentNullableScalarRelationFilter, Prisma.GeneratedDocumentWhereInput> | null
   processing_documents?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
   workflow_task_items?: Prisma.XOR<Prisma.Workflow_task_itemsNullableScalarRelationFilter, Prisma.workflow_task_itemsWhereInput> | null
@@ -431,7 +418,6 @@ export type workflow_artifactsOrderByWithAggregationInput = {
   source_document_id?: Prisma.SortOrderInput | Prisma.SortOrder
   source_processing_document_id?: Prisma.SortOrderInput | Prisma.SortOrder
   source_generated_document_id?: Prisma.SortOrderInput | Prisma.SortOrder
-  source_document_share_id?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.workflow_artifactsCountOrderByAggregateInput
   _avg?: Prisma.workflow_artifactsAvgOrderByAggregateInput
   _max?: Prisma.workflow_artifactsMaxOrderByAggregateInput
@@ -462,7 +448,6 @@ export type workflow_artifactsScalarWhereWithAggregatesInput = {
   source_document_id?: Prisma.StringNullableWithAggregatesFilter<"workflow_artifacts"> | string | null
   source_processing_document_id?: Prisma.StringNullableWithAggregatesFilter<"workflow_artifacts"> | string | null
   source_generated_document_id?: Prisma.StringNullableWithAggregatesFilter<"workflow_artifacts"> | string | null
-  source_document_share_id?: Prisma.StringNullableWithAggregatesFilter<"workflow_artifacts"> | string | null
 }
 
 export type workflow_artifactsCreateInput = {
@@ -480,7 +465,6 @@ export type workflow_artifactsCreateInput = {
   source_type?: $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesCreateNestedOneWithoutWorkflow_artifactsInput
   documents?: Prisma.DocumentCreateNestedOneWithoutWorkflow_artifactsInput
-  document_shares?: Prisma.DocumentShareCreateNestedOneWithoutWorkflow_artifactsInput
   generated_documents?: Prisma.GeneratedDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   processing_documents?: Prisma.ProcessingDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   workflow_task_items?: Prisma.workflow_task_itemsCreateNestedOneWithoutWorkflow_artifactsInput
@@ -508,7 +492,6 @@ export type workflow_artifactsUncheckedCreateInput = {
   source_document_id?: string | null
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsUpdateInput = {
@@ -526,7 +509,6 @@ export type workflow_artifactsUpdateInput = {
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesUpdateOneWithoutWorkflow_artifactsNestedInput
   documents?: Prisma.DocumentUpdateOneWithoutWorkflow_artifactsNestedInput
-  document_shares?: Prisma.DocumentShareUpdateOneWithoutWorkflow_artifactsNestedInput
   generated_documents?: Prisma.GeneratedDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   processing_documents?: Prisma.ProcessingDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   workflow_task_items?: Prisma.workflow_task_itemsUpdateOneWithoutWorkflow_artifactsNestedInput
@@ -554,7 +536,6 @@ export type workflow_artifactsUncheckedUpdateInput = {
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsCreateManyInput = {
@@ -577,7 +558,6 @@ export type workflow_artifactsCreateManyInput = {
   source_document_id?: string | null
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsUpdateManyMutationInput = {
@@ -615,7 +595,6 @@ export type workflow_artifactsUncheckedUpdateManyInput = {
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type Workflow_artifactsListRelationFilter = {
@@ -648,7 +627,6 @@ export type workflow_artifactsCountOrderByAggregateInput = {
   source_document_id?: Prisma.SortOrder
   source_processing_document_id?: Prisma.SortOrder
   source_generated_document_id?: Prisma.SortOrder
-  source_document_share_id?: Prisma.SortOrder
 }
 
 export type workflow_artifactsAvgOrderByAggregateInput = {
@@ -675,7 +653,6 @@ export type workflow_artifactsMaxOrderByAggregateInput = {
   source_document_id?: Prisma.SortOrder
   source_processing_document_id?: Prisma.SortOrder
   source_generated_document_id?: Prisma.SortOrder
-  source_document_share_id?: Prisma.SortOrder
 }
 
 export type workflow_artifactsMinOrderByAggregateInput = {
@@ -698,7 +675,6 @@ export type workflow_artifactsMinOrderByAggregateInput = {
   source_document_id?: Prisma.SortOrder
   source_processing_document_id?: Prisma.SortOrder
   source_generated_document_id?: Prisma.SortOrder
-  source_document_share_id?: Prisma.SortOrder
 }
 
 export type workflow_artifactsSumOrderByAggregateInput = {
@@ -828,48 +804,6 @@ export type workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsNeste
   connect?: Prisma.workflow_artifactsWhereUniqueInput | Prisma.workflow_artifactsWhereUniqueInput[]
   update?: Prisma.workflow_artifactsUpdateWithWhereUniqueWithoutGenerated_documentsInput | Prisma.workflow_artifactsUpdateWithWhereUniqueWithoutGenerated_documentsInput[]
   updateMany?: Prisma.workflow_artifactsUpdateManyWithWhereWithoutGenerated_documentsInput | Prisma.workflow_artifactsUpdateManyWithWhereWithoutGenerated_documentsInput[]
-  deleteMany?: Prisma.workflow_artifactsScalarWhereInput | Prisma.workflow_artifactsScalarWhereInput[]
-}
-
-export type workflow_artifactsCreateNestedManyWithoutDocument_sharesInput = {
-  create?: Prisma.XOR<Prisma.workflow_artifactsCreateWithoutDocument_sharesInput, Prisma.workflow_artifactsUncheckedCreateWithoutDocument_sharesInput> | Prisma.workflow_artifactsCreateWithoutDocument_sharesInput[] | Prisma.workflow_artifactsUncheckedCreateWithoutDocument_sharesInput[]
-  connectOrCreate?: Prisma.workflow_artifactsCreateOrConnectWithoutDocument_sharesInput | Prisma.workflow_artifactsCreateOrConnectWithoutDocument_sharesInput[]
-  createMany?: Prisma.workflow_artifactsCreateManyDocument_sharesInputEnvelope
-  connect?: Prisma.workflow_artifactsWhereUniqueInput | Prisma.workflow_artifactsWhereUniqueInput[]
-}
-
-export type workflow_artifactsUncheckedCreateNestedManyWithoutDocument_sharesInput = {
-  create?: Prisma.XOR<Prisma.workflow_artifactsCreateWithoutDocument_sharesInput, Prisma.workflow_artifactsUncheckedCreateWithoutDocument_sharesInput> | Prisma.workflow_artifactsCreateWithoutDocument_sharesInput[] | Prisma.workflow_artifactsUncheckedCreateWithoutDocument_sharesInput[]
-  connectOrCreate?: Prisma.workflow_artifactsCreateOrConnectWithoutDocument_sharesInput | Prisma.workflow_artifactsCreateOrConnectWithoutDocument_sharesInput[]
-  createMany?: Prisma.workflow_artifactsCreateManyDocument_sharesInputEnvelope
-  connect?: Prisma.workflow_artifactsWhereUniqueInput | Prisma.workflow_artifactsWhereUniqueInput[]
-}
-
-export type workflow_artifactsUpdateManyWithoutDocument_sharesNestedInput = {
-  create?: Prisma.XOR<Prisma.workflow_artifactsCreateWithoutDocument_sharesInput, Prisma.workflow_artifactsUncheckedCreateWithoutDocument_sharesInput> | Prisma.workflow_artifactsCreateWithoutDocument_sharesInput[] | Prisma.workflow_artifactsUncheckedCreateWithoutDocument_sharesInput[]
-  connectOrCreate?: Prisma.workflow_artifactsCreateOrConnectWithoutDocument_sharesInput | Prisma.workflow_artifactsCreateOrConnectWithoutDocument_sharesInput[]
-  upsert?: Prisma.workflow_artifactsUpsertWithWhereUniqueWithoutDocument_sharesInput | Prisma.workflow_artifactsUpsertWithWhereUniqueWithoutDocument_sharesInput[]
-  createMany?: Prisma.workflow_artifactsCreateManyDocument_sharesInputEnvelope
-  set?: Prisma.workflow_artifactsWhereUniqueInput | Prisma.workflow_artifactsWhereUniqueInput[]
-  disconnect?: Prisma.workflow_artifactsWhereUniqueInput | Prisma.workflow_artifactsWhereUniqueInput[]
-  delete?: Prisma.workflow_artifactsWhereUniqueInput | Prisma.workflow_artifactsWhereUniqueInput[]
-  connect?: Prisma.workflow_artifactsWhereUniqueInput | Prisma.workflow_artifactsWhereUniqueInput[]
-  update?: Prisma.workflow_artifactsUpdateWithWhereUniqueWithoutDocument_sharesInput | Prisma.workflow_artifactsUpdateWithWhereUniqueWithoutDocument_sharesInput[]
-  updateMany?: Prisma.workflow_artifactsUpdateManyWithWhereWithoutDocument_sharesInput | Prisma.workflow_artifactsUpdateManyWithWhereWithoutDocument_sharesInput[]
-  deleteMany?: Prisma.workflow_artifactsScalarWhereInput | Prisma.workflow_artifactsScalarWhereInput[]
-}
-
-export type workflow_artifactsUncheckedUpdateManyWithoutDocument_sharesNestedInput = {
-  create?: Prisma.XOR<Prisma.workflow_artifactsCreateWithoutDocument_sharesInput, Prisma.workflow_artifactsUncheckedCreateWithoutDocument_sharesInput> | Prisma.workflow_artifactsCreateWithoutDocument_sharesInput[] | Prisma.workflow_artifactsUncheckedCreateWithoutDocument_sharesInput[]
-  connectOrCreate?: Prisma.workflow_artifactsCreateOrConnectWithoutDocument_sharesInput | Prisma.workflow_artifactsCreateOrConnectWithoutDocument_sharesInput[]
-  upsert?: Prisma.workflow_artifactsUpsertWithWhereUniqueWithoutDocument_sharesInput | Prisma.workflow_artifactsUpsertWithWhereUniqueWithoutDocument_sharesInput[]
-  createMany?: Prisma.workflow_artifactsCreateManyDocument_sharesInputEnvelope
-  set?: Prisma.workflow_artifactsWhereUniqueInput | Prisma.workflow_artifactsWhereUniqueInput[]
-  disconnect?: Prisma.workflow_artifactsWhereUniqueInput | Prisma.workflow_artifactsWhereUniqueInput[]
-  delete?: Prisma.workflow_artifactsWhereUniqueInput | Prisma.workflow_artifactsWhereUniqueInput[]
-  connect?: Prisma.workflow_artifactsWhereUniqueInput | Prisma.workflow_artifactsWhereUniqueInput[]
-  update?: Prisma.workflow_artifactsUpdateWithWhereUniqueWithoutDocument_sharesInput | Prisma.workflow_artifactsUpdateWithWhereUniqueWithoutDocument_sharesInput[]
-  updateMany?: Prisma.workflow_artifactsUpdateManyWithWhereWithoutDocument_sharesInput | Prisma.workflow_artifactsUpdateManyWithWhereWithoutDocument_sharesInput[]
   deleteMany?: Prisma.workflow_artifactsScalarWhereInput | Prisma.workflow_artifactsScalarWhereInput[]
 }
 
@@ -1064,7 +998,6 @@ export type workflow_artifactsCreateWithoutUsersInput = {
   source_type?: $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesCreateNestedOneWithoutWorkflow_artifactsInput
   documents?: Prisma.DocumentCreateNestedOneWithoutWorkflow_artifactsInput
-  document_shares?: Prisma.DocumentShareCreateNestedOneWithoutWorkflow_artifactsInput
   generated_documents?: Prisma.GeneratedDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   processing_documents?: Prisma.ProcessingDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   workflow_task_items?: Prisma.workflow_task_itemsCreateNestedOneWithoutWorkflow_artifactsInput
@@ -1090,7 +1023,6 @@ export type workflow_artifactsUncheckedCreateWithoutUsersInput = {
   source_document_id?: string | null
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsCreateOrConnectWithoutUsersInput = {
@@ -1142,7 +1074,6 @@ export type workflow_artifactsScalarWhereInput = {
   source_document_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
   source_processing_document_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
   source_generated_document_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
-  source_document_share_id?: Prisma.StringNullableFilter<"workflow_artifacts"> | string | null
 }
 
 export type workflow_artifactsCreateWithoutDocumentsInput = {
@@ -1159,7 +1090,6 @@ export type workflow_artifactsCreateWithoutDocumentsInput = {
   created_at?: Date | string
   source_type?: $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesCreateNestedOneWithoutWorkflow_artifactsInput
-  document_shares?: Prisma.DocumentShareCreateNestedOneWithoutWorkflow_artifactsInput
   generated_documents?: Prisma.GeneratedDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   processing_documents?: Prisma.ProcessingDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   workflow_task_items?: Prisma.workflow_task_itemsCreateNestedOneWithoutWorkflow_artifactsInput
@@ -1186,7 +1116,6 @@ export type workflow_artifactsUncheckedCreateWithoutDocumentsInput = {
   source_type?: $Enums.WorkflowArtifactSourceType
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsCreateOrConnectWithoutDocumentsInput = {
@@ -1230,7 +1159,6 @@ export type workflow_artifactsCreateWithoutGenerated_documentsInput = {
   source_type?: $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesCreateNestedOneWithoutWorkflow_artifactsInput
   documents?: Prisma.DocumentCreateNestedOneWithoutWorkflow_artifactsInput
-  document_shares?: Prisma.DocumentShareCreateNestedOneWithoutWorkflow_artifactsInput
   processing_documents?: Prisma.ProcessingDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   workflow_task_items?: Prisma.workflow_task_itemsCreateNestedOneWithoutWorkflow_artifactsInput
   users: Prisma.UserCreateNestedOneWithoutWorkflow_artifactsInput
@@ -1256,7 +1184,6 @@ export type workflow_artifactsUncheckedCreateWithoutGenerated_documentsInput = {
   source_type?: $Enums.WorkflowArtifactSourceType
   source_document_id?: string | null
   source_processing_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsCreateOrConnectWithoutGenerated_documentsInput = {
@@ -1285,76 +1212,6 @@ export type workflow_artifactsUpdateManyWithWhereWithoutGenerated_documentsInput
   data: Prisma.XOR<Prisma.workflow_artifactsUpdateManyMutationInput, Prisma.workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsInput>
 }
 
-export type workflow_artifactsCreateWithoutDocument_sharesInput = {
-  id: string
-  artifact_type: $Enums.WorkflowArtifactType
-  name: string
-  description?: string | null
-  file_url?: string | null
-  file_name?: string | null
-  file_size_bytes?: number | null
-  mime_type?: string | null
-  text_content?: string | null
-  is_mandatory_artifact?: boolean
-  created_at?: Date | string
-  source_type?: $Enums.WorkflowArtifactSourceType
-  workflow_milestones?: Prisma.workflow_milestonesCreateNestedOneWithoutWorkflow_artifactsInput
-  documents?: Prisma.DocumentCreateNestedOneWithoutWorkflow_artifactsInput
-  generated_documents?: Prisma.GeneratedDocumentCreateNestedOneWithoutWorkflow_artifactsInput
-  processing_documents?: Prisma.ProcessingDocumentCreateNestedOneWithoutWorkflow_artifactsInput
-  workflow_task_items?: Prisma.workflow_task_itemsCreateNestedOneWithoutWorkflow_artifactsInput
-  users: Prisma.UserCreateNestedOneWithoutWorkflow_artifactsInput
-  workflow_instances: Prisma.workflow_instancesCreateNestedOneWithoutWorkflow_artifactsInput
-}
-
-export type workflow_artifactsUncheckedCreateWithoutDocument_sharesInput = {
-  id: string
-  workflow_instance_id: string
-  milestone_id?: string | null
-  task_item_id?: string | null
-  artifact_type: $Enums.WorkflowArtifactType
-  name: string
-  description?: string | null
-  file_url?: string | null
-  file_name?: string | null
-  file_size_bytes?: number | null
-  mime_type?: string | null
-  text_content?: string | null
-  uploaded_by: string
-  is_mandatory_artifact?: boolean
-  created_at?: Date | string
-  source_type?: $Enums.WorkflowArtifactSourceType
-  source_document_id?: string | null
-  source_processing_document_id?: string | null
-  source_generated_document_id?: string | null
-}
-
-export type workflow_artifactsCreateOrConnectWithoutDocument_sharesInput = {
-  where: Prisma.workflow_artifactsWhereUniqueInput
-  create: Prisma.XOR<Prisma.workflow_artifactsCreateWithoutDocument_sharesInput, Prisma.workflow_artifactsUncheckedCreateWithoutDocument_sharesInput>
-}
-
-export type workflow_artifactsCreateManyDocument_sharesInputEnvelope = {
-  data: Prisma.workflow_artifactsCreateManyDocument_sharesInput | Prisma.workflow_artifactsCreateManyDocument_sharesInput[]
-  skipDuplicates?: boolean
-}
-
-export type workflow_artifactsUpsertWithWhereUniqueWithoutDocument_sharesInput = {
-  where: Prisma.workflow_artifactsWhereUniqueInput
-  update: Prisma.XOR<Prisma.workflow_artifactsUpdateWithoutDocument_sharesInput, Prisma.workflow_artifactsUncheckedUpdateWithoutDocument_sharesInput>
-  create: Prisma.XOR<Prisma.workflow_artifactsCreateWithoutDocument_sharesInput, Prisma.workflow_artifactsUncheckedCreateWithoutDocument_sharesInput>
-}
-
-export type workflow_artifactsUpdateWithWhereUniqueWithoutDocument_sharesInput = {
-  where: Prisma.workflow_artifactsWhereUniqueInput
-  data: Prisma.XOR<Prisma.workflow_artifactsUpdateWithoutDocument_sharesInput, Prisma.workflow_artifactsUncheckedUpdateWithoutDocument_sharesInput>
-}
-
-export type workflow_artifactsUpdateManyWithWhereWithoutDocument_sharesInput = {
-  where: Prisma.workflow_artifactsScalarWhereInput
-  data: Prisma.XOR<Prisma.workflow_artifactsUpdateManyMutationInput, Prisma.workflow_artifactsUncheckedUpdateManyWithoutDocument_sharesInput>
-}
-
 export type workflow_artifactsCreateWithoutProcessing_documentsInput = {
   id: string
   artifact_type: $Enums.WorkflowArtifactType
@@ -1370,7 +1227,6 @@ export type workflow_artifactsCreateWithoutProcessing_documentsInput = {
   source_type?: $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesCreateNestedOneWithoutWorkflow_artifactsInput
   documents?: Prisma.DocumentCreateNestedOneWithoutWorkflow_artifactsInput
-  document_shares?: Prisma.DocumentShareCreateNestedOneWithoutWorkflow_artifactsInput
   generated_documents?: Prisma.GeneratedDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   workflow_task_items?: Prisma.workflow_task_itemsCreateNestedOneWithoutWorkflow_artifactsInput
   users: Prisma.UserCreateNestedOneWithoutWorkflow_artifactsInput
@@ -1396,7 +1252,6 @@ export type workflow_artifactsUncheckedCreateWithoutProcessing_documentsInput = 
   source_type?: $Enums.WorkflowArtifactSourceType
   source_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsCreateOrConnectWithoutProcessing_documentsInput = {
@@ -1440,7 +1295,6 @@ export type workflow_artifactsCreateWithoutWorkflow_instancesInput = {
   source_type?: $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesCreateNestedOneWithoutWorkflow_artifactsInput
   documents?: Prisma.DocumentCreateNestedOneWithoutWorkflow_artifactsInput
-  document_shares?: Prisma.DocumentShareCreateNestedOneWithoutWorkflow_artifactsInput
   generated_documents?: Prisma.GeneratedDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   processing_documents?: Prisma.ProcessingDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   workflow_task_items?: Prisma.workflow_task_itemsCreateNestedOneWithoutWorkflow_artifactsInput
@@ -1466,7 +1320,6 @@ export type workflow_artifactsUncheckedCreateWithoutWorkflow_instancesInput = {
   source_document_id?: string | null
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsCreateOrConnectWithoutWorkflow_instancesInput = {
@@ -1509,7 +1362,6 @@ export type workflow_artifactsCreateWithoutWorkflow_milestonesInput = {
   created_at?: Date | string
   source_type?: $Enums.WorkflowArtifactSourceType
   documents?: Prisma.DocumentCreateNestedOneWithoutWorkflow_artifactsInput
-  document_shares?: Prisma.DocumentShareCreateNestedOneWithoutWorkflow_artifactsInput
   generated_documents?: Prisma.GeneratedDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   processing_documents?: Prisma.ProcessingDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   workflow_task_items?: Prisma.workflow_task_itemsCreateNestedOneWithoutWorkflow_artifactsInput
@@ -1536,7 +1388,6 @@ export type workflow_artifactsUncheckedCreateWithoutWorkflow_milestonesInput = {
   source_document_id?: string | null
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsCreateOrConnectWithoutWorkflow_milestonesInput = {
@@ -1580,7 +1431,6 @@ export type workflow_artifactsCreateWithoutWorkflow_task_itemsInput = {
   source_type?: $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesCreateNestedOneWithoutWorkflow_artifactsInput
   documents?: Prisma.DocumentCreateNestedOneWithoutWorkflow_artifactsInput
-  document_shares?: Prisma.DocumentShareCreateNestedOneWithoutWorkflow_artifactsInput
   generated_documents?: Prisma.GeneratedDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   processing_documents?: Prisma.ProcessingDocumentCreateNestedOneWithoutWorkflow_artifactsInput
   users: Prisma.UserCreateNestedOneWithoutWorkflow_artifactsInput
@@ -1606,7 +1456,6 @@ export type workflow_artifactsUncheckedCreateWithoutWorkflow_task_itemsInput = {
   source_document_id?: string | null
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsCreateOrConnectWithoutWorkflow_task_itemsInput = {
@@ -1654,7 +1503,6 @@ export type workflow_artifactsCreateManyUsersInput = {
   source_document_id?: string | null
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsUpdateWithoutUsersInput = {
@@ -1672,7 +1520,6 @@ export type workflow_artifactsUpdateWithoutUsersInput = {
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesUpdateOneWithoutWorkflow_artifactsNestedInput
   documents?: Prisma.DocumentUpdateOneWithoutWorkflow_artifactsNestedInput
-  document_shares?: Prisma.DocumentShareUpdateOneWithoutWorkflow_artifactsNestedInput
   generated_documents?: Prisma.GeneratedDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   processing_documents?: Prisma.ProcessingDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   workflow_task_items?: Prisma.workflow_task_itemsUpdateOneWithoutWorkflow_artifactsNestedInput
@@ -1698,7 +1545,6 @@ export type workflow_artifactsUncheckedUpdateWithoutUsersInput = {
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsUncheckedUpdateManyWithoutUsersInput = {
@@ -1720,7 +1566,6 @@ export type workflow_artifactsUncheckedUpdateManyWithoutUsersInput = {
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsCreateManyDocumentsInput = {
@@ -1742,7 +1587,6 @@ export type workflow_artifactsCreateManyDocumentsInput = {
   source_type?: $Enums.WorkflowArtifactSourceType
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsUpdateWithoutDocumentsInput = {
@@ -1759,7 +1603,6 @@ export type workflow_artifactsUpdateWithoutDocumentsInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesUpdateOneWithoutWorkflow_artifactsNestedInput
-  document_shares?: Prisma.DocumentShareUpdateOneWithoutWorkflow_artifactsNestedInput
   generated_documents?: Prisma.GeneratedDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   processing_documents?: Prisma.ProcessingDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   workflow_task_items?: Prisma.workflow_task_itemsUpdateOneWithoutWorkflow_artifactsNestedInput
@@ -1786,7 +1629,6 @@ export type workflow_artifactsUncheckedUpdateWithoutDocumentsInput = {
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsUncheckedUpdateManyWithoutDocumentsInput = {
@@ -1808,7 +1650,6 @@ export type workflow_artifactsUncheckedUpdateManyWithoutDocumentsInput = {
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsCreateManyGenerated_documentsInput = {
@@ -1830,7 +1671,6 @@ export type workflow_artifactsCreateManyGenerated_documentsInput = {
   source_type?: $Enums.WorkflowArtifactSourceType
   source_document_id?: string | null
   source_processing_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsUpdateWithoutGenerated_documentsInput = {
@@ -1848,7 +1688,6 @@ export type workflow_artifactsUpdateWithoutGenerated_documentsInput = {
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesUpdateOneWithoutWorkflow_artifactsNestedInput
   documents?: Prisma.DocumentUpdateOneWithoutWorkflow_artifactsNestedInput
-  document_shares?: Prisma.DocumentShareUpdateOneWithoutWorkflow_artifactsNestedInput
   processing_documents?: Prisma.ProcessingDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   workflow_task_items?: Prisma.workflow_task_itemsUpdateOneWithoutWorkflow_artifactsNestedInput
   users?: Prisma.UserUpdateOneRequiredWithoutWorkflow_artifactsNestedInput
@@ -1874,7 +1713,6 @@ export type workflow_artifactsUncheckedUpdateWithoutGenerated_documentsInput = {
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsInput = {
@@ -1896,95 +1734,6 @@ export type workflow_artifactsUncheckedUpdateManyWithoutGenerated_documentsInput
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-}
-
-export type workflow_artifactsCreateManyDocument_sharesInput = {
-  id: string
-  workflow_instance_id: string
-  milestone_id?: string | null
-  task_item_id?: string | null
-  artifact_type: $Enums.WorkflowArtifactType
-  name: string
-  description?: string | null
-  file_url?: string | null
-  file_name?: string | null
-  file_size_bytes?: number | null
-  mime_type?: string | null
-  text_content?: string | null
-  uploaded_by: string
-  is_mandatory_artifact?: boolean
-  created_at?: Date | string
-  source_type?: $Enums.WorkflowArtifactSourceType
-  source_document_id?: string | null
-  source_processing_document_id?: string | null
-  source_generated_document_id?: string | null
-}
-
-export type workflow_artifactsUpdateWithoutDocument_sharesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  artifact_type?: Prisma.EnumWorkflowArtifactTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactType
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  file_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  file_size_bytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  mime_type?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  text_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  is_mandatory_artifact?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
-  workflow_milestones?: Prisma.workflow_milestonesUpdateOneWithoutWorkflow_artifactsNestedInput
-  documents?: Prisma.DocumentUpdateOneWithoutWorkflow_artifactsNestedInput
-  generated_documents?: Prisma.GeneratedDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
-  processing_documents?: Prisma.ProcessingDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
-  workflow_task_items?: Prisma.workflow_task_itemsUpdateOneWithoutWorkflow_artifactsNestedInput
-  users?: Prisma.UserUpdateOneRequiredWithoutWorkflow_artifactsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateOneRequiredWithoutWorkflow_artifactsNestedInput
-}
-
-export type workflow_artifactsUncheckedUpdateWithoutDocument_sharesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  workflow_instance_id?: Prisma.StringFieldUpdateOperationsInput | string
-  milestone_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  task_item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  artifact_type?: Prisma.EnumWorkflowArtifactTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactType
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  file_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  file_size_bytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  mime_type?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  text_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  uploaded_by?: Prisma.StringFieldUpdateOperationsInput | string
-  is_mandatory_artifact?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
-  source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-}
-
-export type workflow_artifactsUncheckedUpdateManyWithoutDocument_sharesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  workflow_instance_id?: Prisma.StringFieldUpdateOperationsInput | string
-  milestone_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  task_item_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  artifact_type?: Prisma.EnumWorkflowArtifactTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactType
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  file_url?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  file_name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  file_size_bytes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  mime_type?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  text_content?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  uploaded_by?: Prisma.StringFieldUpdateOperationsInput | string
-  is_mandatory_artifact?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
-  source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsCreateManyProcessing_documentsInput = {
@@ -2006,7 +1755,6 @@ export type workflow_artifactsCreateManyProcessing_documentsInput = {
   source_type?: $Enums.WorkflowArtifactSourceType
   source_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsUpdateWithoutProcessing_documentsInput = {
@@ -2024,7 +1772,6 @@ export type workflow_artifactsUpdateWithoutProcessing_documentsInput = {
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesUpdateOneWithoutWorkflow_artifactsNestedInput
   documents?: Prisma.DocumentUpdateOneWithoutWorkflow_artifactsNestedInput
-  document_shares?: Prisma.DocumentShareUpdateOneWithoutWorkflow_artifactsNestedInput
   generated_documents?: Prisma.GeneratedDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   workflow_task_items?: Prisma.workflow_task_itemsUpdateOneWithoutWorkflow_artifactsNestedInput
   users?: Prisma.UserUpdateOneRequiredWithoutWorkflow_artifactsNestedInput
@@ -2050,7 +1797,6 @@ export type workflow_artifactsUncheckedUpdateWithoutProcessing_documentsInput = 
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsInput = {
@@ -2072,7 +1818,6 @@ export type workflow_artifactsUncheckedUpdateManyWithoutProcessing_documentsInpu
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsCreateManyWorkflow_instancesInput = {
@@ -2094,7 +1839,6 @@ export type workflow_artifactsCreateManyWorkflow_instancesInput = {
   source_document_id?: string | null
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsUpdateWithoutWorkflow_instancesInput = {
@@ -2112,7 +1856,6 @@ export type workflow_artifactsUpdateWithoutWorkflow_instancesInput = {
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesUpdateOneWithoutWorkflow_artifactsNestedInput
   documents?: Prisma.DocumentUpdateOneWithoutWorkflow_artifactsNestedInput
-  document_shares?: Prisma.DocumentShareUpdateOneWithoutWorkflow_artifactsNestedInput
   generated_documents?: Prisma.GeneratedDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   processing_documents?: Prisma.ProcessingDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   workflow_task_items?: Prisma.workflow_task_itemsUpdateOneWithoutWorkflow_artifactsNestedInput
@@ -2138,7 +1881,6 @@ export type workflow_artifactsUncheckedUpdateWithoutWorkflow_instancesInput = {
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsUncheckedUpdateManyWithoutWorkflow_instancesInput = {
@@ -2160,7 +1902,6 @@ export type workflow_artifactsUncheckedUpdateManyWithoutWorkflow_instancesInput 
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsCreateManyWorkflow_milestonesInput = {
@@ -2182,7 +1923,6 @@ export type workflow_artifactsCreateManyWorkflow_milestonesInput = {
   source_document_id?: string | null
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsUpdateWithoutWorkflow_milestonesInput = {
@@ -2199,7 +1939,6 @@ export type workflow_artifactsUpdateWithoutWorkflow_milestonesInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   documents?: Prisma.DocumentUpdateOneWithoutWorkflow_artifactsNestedInput
-  document_shares?: Prisma.DocumentShareUpdateOneWithoutWorkflow_artifactsNestedInput
   generated_documents?: Prisma.GeneratedDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   processing_documents?: Prisma.ProcessingDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   workflow_task_items?: Prisma.workflow_task_itemsUpdateOneWithoutWorkflow_artifactsNestedInput
@@ -2226,7 +1965,6 @@ export type workflow_artifactsUncheckedUpdateWithoutWorkflow_milestonesInput = {
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsUncheckedUpdateManyWithoutWorkflow_milestonesInput = {
@@ -2248,7 +1986,6 @@ export type workflow_artifactsUncheckedUpdateManyWithoutWorkflow_milestonesInput
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsCreateManyWorkflow_task_itemsInput = {
@@ -2270,7 +2007,6 @@ export type workflow_artifactsCreateManyWorkflow_task_itemsInput = {
   source_document_id?: string | null
   source_processing_document_id?: string | null
   source_generated_document_id?: string | null
-  source_document_share_id?: string | null
 }
 
 export type workflow_artifactsUpdateWithoutWorkflow_task_itemsInput = {
@@ -2288,7 +2024,6 @@ export type workflow_artifactsUpdateWithoutWorkflow_task_itemsInput = {
   source_type?: Prisma.EnumWorkflowArtifactSourceTypeFieldUpdateOperationsInput | $Enums.WorkflowArtifactSourceType
   workflow_milestones?: Prisma.workflow_milestonesUpdateOneWithoutWorkflow_artifactsNestedInput
   documents?: Prisma.DocumentUpdateOneWithoutWorkflow_artifactsNestedInput
-  document_shares?: Prisma.DocumentShareUpdateOneWithoutWorkflow_artifactsNestedInput
   generated_documents?: Prisma.GeneratedDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   processing_documents?: Prisma.ProcessingDocumentUpdateOneWithoutWorkflow_artifactsNestedInput
   users?: Prisma.UserUpdateOneRequiredWithoutWorkflow_artifactsNestedInput
@@ -2314,7 +2049,6 @@ export type workflow_artifactsUncheckedUpdateWithoutWorkflow_task_itemsInput = {
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type workflow_artifactsUncheckedUpdateManyWithoutWorkflow_task_itemsInput = {
@@ -2336,7 +2070,6 @@ export type workflow_artifactsUncheckedUpdateManyWithoutWorkflow_task_itemsInput
   source_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_processing_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source_generated_document_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  source_document_share_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -2361,10 +2094,8 @@ export type workflow_artifactsSelect<ExtArgs extends runtime.Types.Extensions.In
   source_document_id?: boolean
   source_processing_document_id?: boolean
   source_generated_document_id?: boolean
-  source_document_share_id?: boolean
   workflow_milestones?: boolean | Prisma.workflow_artifacts$workflow_milestonesArgs<ExtArgs>
   documents?: boolean | Prisma.workflow_artifacts$documentsArgs<ExtArgs>
-  document_shares?: boolean | Prisma.workflow_artifacts$document_sharesArgs<ExtArgs>
   generated_documents?: boolean | Prisma.workflow_artifacts$generated_documentsArgs<ExtArgs>
   processing_documents?: boolean | Prisma.workflow_artifacts$processing_documentsArgs<ExtArgs>
   workflow_task_items?: boolean | Prisma.workflow_artifacts$workflow_task_itemsArgs<ExtArgs>
@@ -2392,10 +2123,8 @@ export type workflow_artifactsSelectCreateManyAndReturn<ExtArgs extends runtime.
   source_document_id?: boolean
   source_processing_document_id?: boolean
   source_generated_document_id?: boolean
-  source_document_share_id?: boolean
   workflow_milestones?: boolean | Prisma.workflow_artifacts$workflow_milestonesArgs<ExtArgs>
   documents?: boolean | Prisma.workflow_artifacts$documentsArgs<ExtArgs>
-  document_shares?: boolean | Prisma.workflow_artifacts$document_sharesArgs<ExtArgs>
   generated_documents?: boolean | Prisma.workflow_artifacts$generated_documentsArgs<ExtArgs>
   processing_documents?: boolean | Prisma.workflow_artifacts$processing_documentsArgs<ExtArgs>
   workflow_task_items?: boolean | Prisma.workflow_artifacts$workflow_task_itemsArgs<ExtArgs>
@@ -2423,10 +2152,8 @@ export type workflow_artifactsSelectUpdateManyAndReturn<ExtArgs extends runtime.
   source_document_id?: boolean
   source_processing_document_id?: boolean
   source_generated_document_id?: boolean
-  source_document_share_id?: boolean
   workflow_milestones?: boolean | Prisma.workflow_artifacts$workflow_milestonesArgs<ExtArgs>
   documents?: boolean | Prisma.workflow_artifacts$documentsArgs<ExtArgs>
-  document_shares?: boolean | Prisma.workflow_artifacts$document_sharesArgs<ExtArgs>
   generated_documents?: boolean | Prisma.workflow_artifacts$generated_documentsArgs<ExtArgs>
   processing_documents?: boolean | Prisma.workflow_artifacts$processing_documentsArgs<ExtArgs>
   workflow_task_items?: boolean | Prisma.workflow_artifacts$workflow_task_itemsArgs<ExtArgs>
@@ -2454,14 +2181,12 @@ export type workflow_artifactsSelectScalar = {
   source_document_id?: boolean
   source_processing_document_id?: boolean
   source_generated_document_id?: boolean
-  source_document_share_id?: boolean
 }
 
-export type workflow_artifactsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workflow_instance_id" | "milestone_id" | "task_item_id" | "artifact_type" | "name" | "description" | "file_url" | "file_name" | "file_size_bytes" | "mime_type" | "text_content" | "uploaded_by" | "is_mandatory_artifact" | "created_at" | "source_type" | "source_document_id" | "source_processing_document_id" | "source_generated_document_id" | "source_document_share_id", ExtArgs["result"]["workflow_artifacts"]>
+export type workflow_artifactsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workflow_instance_id" | "milestone_id" | "task_item_id" | "artifact_type" | "name" | "description" | "file_url" | "file_name" | "file_size_bytes" | "mime_type" | "text_content" | "uploaded_by" | "is_mandatory_artifact" | "created_at" | "source_type" | "source_document_id" | "source_processing_document_id" | "source_generated_document_id", ExtArgs["result"]["workflow_artifacts"]>
 export type workflow_artifactsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   workflow_milestones?: boolean | Prisma.workflow_artifacts$workflow_milestonesArgs<ExtArgs>
   documents?: boolean | Prisma.workflow_artifacts$documentsArgs<ExtArgs>
-  document_shares?: boolean | Prisma.workflow_artifacts$document_sharesArgs<ExtArgs>
   generated_documents?: boolean | Prisma.workflow_artifacts$generated_documentsArgs<ExtArgs>
   processing_documents?: boolean | Prisma.workflow_artifacts$processing_documentsArgs<ExtArgs>
   workflow_task_items?: boolean | Prisma.workflow_artifacts$workflow_task_itemsArgs<ExtArgs>
@@ -2471,7 +2196,6 @@ export type workflow_artifactsInclude<ExtArgs extends runtime.Types.Extensions.I
 export type workflow_artifactsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   workflow_milestones?: boolean | Prisma.workflow_artifacts$workflow_milestonesArgs<ExtArgs>
   documents?: boolean | Prisma.workflow_artifacts$documentsArgs<ExtArgs>
-  document_shares?: boolean | Prisma.workflow_artifacts$document_sharesArgs<ExtArgs>
   generated_documents?: boolean | Prisma.workflow_artifacts$generated_documentsArgs<ExtArgs>
   processing_documents?: boolean | Prisma.workflow_artifacts$processing_documentsArgs<ExtArgs>
   workflow_task_items?: boolean | Prisma.workflow_artifacts$workflow_task_itemsArgs<ExtArgs>
@@ -2481,7 +2205,6 @@ export type workflow_artifactsIncludeCreateManyAndReturn<ExtArgs extends runtime
 export type workflow_artifactsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   workflow_milestones?: boolean | Prisma.workflow_artifacts$workflow_milestonesArgs<ExtArgs>
   documents?: boolean | Prisma.workflow_artifacts$documentsArgs<ExtArgs>
-  document_shares?: boolean | Prisma.workflow_artifacts$document_sharesArgs<ExtArgs>
   generated_documents?: boolean | Prisma.workflow_artifacts$generated_documentsArgs<ExtArgs>
   processing_documents?: boolean | Prisma.workflow_artifacts$processing_documentsArgs<ExtArgs>
   workflow_task_items?: boolean | Prisma.workflow_artifacts$workflow_task_itemsArgs<ExtArgs>
@@ -2494,7 +2217,6 @@ export type $workflow_artifactsPayload<ExtArgs extends runtime.Types.Extensions.
   objects: {
     workflow_milestones: Prisma.$workflow_milestonesPayload<ExtArgs> | null
     documents: Prisma.$DocumentPayload<ExtArgs> | null
-    document_shares: Prisma.$DocumentSharePayload<ExtArgs> | null
     generated_documents: Prisma.$GeneratedDocumentPayload<ExtArgs> | null
     processing_documents: Prisma.$ProcessingDocumentPayload<ExtArgs> | null
     workflow_task_items: Prisma.$workflow_task_itemsPayload<ExtArgs> | null
@@ -2521,7 +2243,6 @@ export type $workflow_artifactsPayload<ExtArgs extends runtime.Types.Extensions.
     source_document_id: string | null
     source_processing_document_id: string | null
     source_generated_document_id: string | null
-    source_document_share_id: string | null
   }, ExtArgs["result"]["workflow_artifacts"]>
   composites: {}
 }
@@ -2918,7 +2639,6 @@ export interface Prisma__workflow_artifactsClient<T, Null = never, ExtArgs exten
   readonly [Symbol.toStringTag]: "PrismaPromise"
   workflow_milestones<T extends Prisma.workflow_artifacts$workflow_milestonesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_artifacts$workflow_milestonesArgs<ExtArgs>>): Prisma.Prisma__workflow_milestonesClient<runtime.Types.Result.GetResult<Prisma.$workflow_milestonesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   documents<T extends Prisma.workflow_artifacts$documentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_artifacts$documentsArgs<ExtArgs>>): Prisma.Prisma__DocumentClient<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  document_shares<T extends Prisma.workflow_artifacts$document_sharesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_artifacts$document_sharesArgs<ExtArgs>>): Prisma.Prisma__DocumentShareClient<runtime.Types.Result.GetResult<Prisma.$DocumentSharePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   generated_documents<T extends Prisma.workflow_artifacts$generated_documentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_artifacts$generated_documentsArgs<ExtArgs>>): Prisma.Prisma__GeneratedDocumentClient<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   processing_documents<T extends Prisma.workflow_artifacts$processing_documentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_artifacts$processing_documentsArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   workflow_task_items<T extends Prisma.workflow_artifacts$workflow_task_itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.workflow_artifacts$workflow_task_itemsArgs<ExtArgs>>): Prisma.Prisma__workflow_task_itemsClient<runtime.Types.Result.GetResult<Prisma.$workflow_task_itemsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -2972,7 +2692,6 @@ export interface workflow_artifactsFieldRefs {
   readonly source_document_id: Prisma.FieldRef<"workflow_artifacts", 'String'>
   readonly source_processing_document_id: Prisma.FieldRef<"workflow_artifacts", 'String'>
   readonly source_generated_document_id: Prisma.FieldRef<"workflow_artifacts", 'String'>
-  readonly source_document_share_id: Prisma.FieldRef<"workflow_artifacts", 'String'>
 }
     
 
@@ -3404,25 +3123,6 @@ export type workflow_artifacts$documentsArgs<ExtArgs extends runtime.Types.Exten
    */
   include?: Prisma.DocumentInclude<ExtArgs> | null
   where?: Prisma.DocumentWhereInput
-}
-
-/**
- * workflow_artifacts.document_shares
- */
-export type workflow_artifacts$document_sharesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the DocumentShare
-   */
-  select?: Prisma.DocumentShareSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the DocumentShare
-   */
-  omit?: Prisma.DocumentShareOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.DocumentShareInclude<ExtArgs> | null
-  where?: Prisma.DocumentShareWhereInput
 }
 
 /**
