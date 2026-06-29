@@ -28,6 +28,12 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Dropdown, DropdownItem, DropdownMenu, DropdownSeparator, DropdownTrigger } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import {
+  isAllowedEsigningUploadFile,
+  useEsigningWordUploadAvailability,
+} from '@/components/esigning/esigning-upload-files';
+import { useSession } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
 import {
   useCreateEsigningEnvelope,
@@ -71,22 +77,6 @@ const TAB_LABELS_SHORT: Record<TabKey, string> = {
   completed: 'Done',
   voided: 'Voided',
 };
-
-const ESIGNING_UPLOAD_MIME_TYPES = new Set([
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-]);
-
-function isEsigningUploadFile(file: File): boolean {
-  const lowerName = file.name.toLowerCase();
-  return (
-    ESIGNING_UPLOAD_MIME_TYPES.has(file.type.toLowerCase()) ||
-    lowerName.endsWith('.pdf') ||
-    lowerName.endsWith('.docx') ||
-    lowerName.endsWith('.doc')
-  );
-}
 
 function getEnvelopeTitleFromFile(file: File): string {
   return file.name.replace(/\.(pdf|docx?|doc)$/i, '') || 'New Envelope';
@@ -214,6 +204,9 @@ function EnvelopeActionsDropdown({
 export function EsigningListPage() {
   const { can } = usePermissions();
   const toast = useToast();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const wordUploadEnabled = useEsigningWordUploadAvailability(activeTenantId);
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [page, setPage] = useState(1);
@@ -296,6 +289,15 @@ export function EsigningListPage() {
 
   async function handleStart(file?: File) {
     if (isStarting) {
+      return;
+    }
+
+    if (file && !isAllowedEsigningUploadFile(file, { wordUploadEnabled })) {
+      toast.error(
+        wordUploadEnabled
+          ? 'Upload a PDF, DOCX, or DOC document.'
+          : 'Word upload requires a valid SharePoint or OneDrive connector. Upload a PDF instead.'
+      );
       return;
     }
 
@@ -407,8 +409,14 @@ export function EsigningListPage() {
               event.preventDefault();
               setIsDraggingOnHero(false);
               const file = event.dataTransfer.files[0];
-              if (file && isEsigningUploadFile(file)) {
+              if (file && isAllowedEsigningUploadFile(file, { wordUploadEnabled })) {
                 void handleStart(file);
+              } else if (file) {
+                toast.error(
+                  wordUploadEnabled
+                    ? 'Upload a PDF, DOCX, or DOC document.'
+                    : 'Word upload requires a valid SharePoint or OneDrive connector. Upload a PDF instead.'
+                );
               }
             }}
             className={cn(
@@ -424,7 +432,9 @@ export function EsigningListPage() {
             <div>
               <p className="text-base font-semibold text-text-primary">Sign or get signatures</p>
               <p className="mt-1 text-sm text-text-secondary">
-                Drop a PDF or Word document here to start, or click the button below.
+                {wordUploadEnabled
+                  ? 'Drop a PDF or Word document here to start, or click the button below.'
+                  : 'Drop a PDF document here to start, or click the button below.'}
               </p>
             </div>
             <Button

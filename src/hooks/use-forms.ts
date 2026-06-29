@@ -415,6 +415,22 @@ async function deleteFormRequest(id: string, tenantId?: string | null, reason?: 
   return response.json();
 }
 
+async function hardDeleteFormRequest(id: string, tenantId?: string | null): Promise<Form> {
+  const params = new URLSearchParams();
+  if (tenantId) params.set('tenantId', tenantId);
+
+  const response = await fetch(`/api/forms/${id}/hard-delete${params.toString() ? `?${params.toString()}` : ''}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to permanently delete form');
+  }
+
+  return response.json();
+}
+
 export const formKeys = {
   all: ['forms'] as const,
   lists: () => [...formKeys.all, 'list'] as const,
@@ -465,6 +481,7 @@ export function useForm(id: string | null) {
     queryKey: formKeys.detail(id || '', activeTenantId),
     queryFn: () => fetchForm(id!, activeTenantId),
     enabled: !!id && (session?.isSuperAdmin ? !!activeTenantId : true),
+    staleTime: 30_000,
   });
 }
 
@@ -608,6 +625,21 @@ export function useDeleteForm() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: formKeys.lists() });
       queryClient.invalidateQueries({ queryKey: formKeys.all.concat(['recent-submissions'] as never[]) });
+    },
+  });
+}
+
+export function useHardDeleteForm() {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) => hardDeleteFormRequest(id, activeTenantId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: formKeys.recentSubmissions(8, activeTenantId) });
+      queryClient.invalidateQueries({ queryKey: formKeys.warnings(8, activeTenantId) });
     },
   });
 }

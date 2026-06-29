@@ -31,6 +31,7 @@ import {
   useCreateForm,
   useDeleteForm,
   useDuplicateForm,
+  useHardDeleteForm,
   useForms,
   useFormsWithWarnings,
   useRecentFormSubmissions,
@@ -88,10 +89,11 @@ export default function FormsPage() {
   const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   const [query, setQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<TabKey>('all');
+  const [activeTab, setActiveTab] = useState<TabKey>('published');
   const [page, setPage] = useState(1);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [hardDeleteTargetId, setHardDeleteTargetId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tagsText, setTagsText] = useState('');
@@ -106,6 +108,43 @@ export default function FormsPage() {
     sortBy: 'updatedAt',
     sortOrder: 'desc',
   });
+  const { data: allCountData } = useForms({
+    query: query || undefined,
+    page: 1,
+    limit: 1,
+    sortBy: 'updatedAt',
+    sortOrder: 'desc',
+  });
+  const { data: draftCountData } = useForms({
+    query: query || undefined,
+    status: 'DRAFT',
+    page: 1,
+    limit: 1,
+    sortBy: 'updatedAt',
+    sortOrder: 'desc',
+  });
+  const { data: publishedCountData } = useForms({
+    query: query || undefined,
+    status: 'PUBLISHED',
+    page: 1,
+    limit: 1,
+    sortBy: 'updatedAt',
+    sortOrder: 'desc',
+  });
+  const { data: archivedCountData } = useForms({
+    query: query || undefined,
+    status: 'ARCHIVED',
+    page: 1,
+    limit: 1,
+    sortBy: 'updatedAt',
+    sortOrder: 'desc',
+  });
+  const tabCounts: Record<TabKey, number | undefined> = {
+    all: activeTab === 'all' ? data?.total : allCountData?.total,
+    draft: activeTab === 'draft' ? data?.total : draftCountData?.total,
+    published: activeTab === 'published' ? data?.total : publishedCountData?.total,
+    archived: activeTab === 'archived' ? data?.total : archivedCountData?.total,
+  };
   const {
     data: recentSubmissions,
     isLoading: isRecentLoading,
@@ -120,6 +159,7 @@ export default function FormsPage() {
   const createForm = useCreateForm();
   const duplicateForm = useDuplicateForm();
   const deleteForm = useDeleteForm();
+  const hardDeleteForm = useHardDeleteForm();
 
   const tags = useMemo(
     () => tagsText.split(',').map((tag) => tag.trim()).filter(Boolean),
@@ -194,6 +234,16 @@ export default function FormsPage() {
     }
   }
 
+  async function handleHardDelete(formId: string) {
+    try {
+      await hardDeleteForm.mutateAsync({ id: formId });
+      success('Form permanently deleted');
+      setHardDeleteTargetId(null);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to permanently delete form');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background-primary">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
@@ -248,9 +298,9 @@ export default function FormsPage() {
                 )}
               >
                 {TAB_LABELS[tab]}
-                {activeTab === tab && data?.total != null && (
+                {tabCounts[tab] != null && (
                   <span className="rounded-full bg-oak-primary/10 px-1.5 py-0.5 text-xs font-semibold text-oak-primary">
-                    {data.total}
+                    {tabCounts[tab]}
                   </span>
                 )}
               </button>
@@ -421,13 +471,23 @@ export default function FormsPage() {
                             Copy embed code
                           </DropdownItem>
                           <DropdownSeparator />
-                          <DropdownItem
-                            destructive
-                            icon={<Trash2 className="h-4 w-4" />}
-                            onClick={() => setDeleteTargetId(form.id)}
-                          >
-                            Archive form
-                          </DropdownItem>
+                          {form.status === 'ARCHIVED' ? (
+                            <DropdownItem
+                              destructive
+                              icon={<Trash2 className="h-4 w-4" />}
+                              onClick={() => setHardDeleteTargetId(form.id)}
+                            >
+                              Delete permanently
+                            </DropdownItem>
+                          ) : (
+                            <DropdownItem
+                              destructive
+                              icon={<Trash2 className="h-4 w-4" />}
+                              onClick={() => setDeleteTargetId(form.id)}
+                            >
+                              Archive form
+                            </DropdownItem>
+                          )}
                         </DropdownMenu>
                       </Dropdown>
                     </div>
@@ -620,6 +680,19 @@ export default function FormsPage() {
         description="This form will no longer be accessible to respondents."
         confirmLabel="Archive"
         isLoading={deleteForm.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(hardDeleteTargetId)}
+        onClose={() => setHardDeleteTargetId(null)}
+        onConfirm={async () => {
+          if (!hardDeleteTargetId) return;
+          await handleHardDelete(hardDeleteTargetId);
+        }}
+        title="Delete archived form permanently?"
+        description="This permanently deletes the form, responses, drafts, fields, and uploaded files. This cannot be undone."
+        confirmLabel="Delete permanently"
+        isLoading={hardDeleteForm.isPending}
       />
     </div>
   );

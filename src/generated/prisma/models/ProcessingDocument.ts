@@ -49,6 +49,7 @@ export type ProcessingDocumentSumAggregateOutputType = {
 export type ProcessingDocumentMinAggregateOutputType = {
   id: string | null
   documentId: string | null
+  tenantId: string | null
   isContainer: boolean | null
   parentProcessingDocId: string | null
   pageFrom: number | null
@@ -90,6 +91,7 @@ export type ProcessingDocumentMinAggregateOutputType = {
 export type ProcessingDocumentMaxAggregateOutputType = {
   id: string | null
   documentId: string | null
+  tenantId: string | null
   isContainer: boolean | null
   parentProcessingDocId: string | null
   pageFrom: number | null
@@ -131,6 +133,7 @@ export type ProcessingDocumentMaxAggregateOutputType = {
 export type ProcessingDocumentCountAggregateOutputType = {
   id: number
   documentId: number
+  tenantId: number
   isContainer: number
   parentProcessingDocId: number
   pageFrom: number
@@ -195,6 +198,7 @@ export type ProcessingDocumentSumAggregateInputType = {
 export type ProcessingDocumentMinAggregateInputType = {
   id?: true
   documentId?: true
+  tenantId?: true
   isContainer?: true
   parentProcessingDocId?: true
   pageFrom?: true
@@ -236,6 +240,7 @@ export type ProcessingDocumentMinAggregateInputType = {
 export type ProcessingDocumentMaxAggregateInputType = {
   id?: true
   documentId?: true
+  tenantId?: true
   isContainer?: true
   parentProcessingDocId?: true
   pageFrom?: true
@@ -277,6 +282,7 @@ export type ProcessingDocumentMaxAggregateInputType = {
 export type ProcessingDocumentCountAggregateInputType = {
   id?: true
   documentId?: true
+  tenantId?: true
   isContainer?: true
   parentProcessingDocId?: true
   pageFrom?: true
@@ -406,6 +412,7 @@ export type ProcessingDocumentGroupByArgs<ExtArgs extends runtime.Types.Extensio
 export type ProcessingDocumentGroupByOutputType = {
   id: string
   documentId: string
+  tenantId: string
   isContainer: boolean
   parentProcessingDocId: string | null
   pageFrom: number | null
@@ -471,6 +478,7 @@ export type ProcessingDocumentWhereInput = {
   NOT?: Prisma.ProcessingDocumentWhereInput | Prisma.ProcessingDocumentWhereInput[]
   id?: Prisma.StringFilter<"ProcessingDocument"> | string
   documentId?: Prisma.StringFilter<"ProcessingDocument"> | string
+  tenantId?: Prisma.StringFilter<"ProcessingDocument"> | string
   isContainer?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
   parentProcessingDocId?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
   pageFrom?: Prisma.IntNullableFilter<"ProcessingDocument"> | number | null
@@ -534,6 +542,7 @@ export type ProcessingDocumentWhereInput = {
 export type ProcessingDocumentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
+  tenantId?: Prisma.SortOrder
   isContainer?: Prisma.SortOrder
   parentProcessingDocId?: Prisma.SortOrderInput | Prisma.SortOrder
   pageFrom?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -601,6 +610,7 @@ export type ProcessingDocumentWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.ProcessingDocumentWhereInput | Prisma.ProcessingDocumentWhereInput[]
   OR?: Prisma.ProcessingDocumentWhereInput[]
   NOT?: Prisma.ProcessingDocumentWhereInput | Prisma.ProcessingDocumentWhereInput[]
+  tenantId?: Prisma.StringFilter<"ProcessingDocument"> | string
   isContainer?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
   parentProcessingDocId?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
   pageFrom?: Prisma.IntNullableFilter<"ProcessingDocument"> | number | null
@@ -663,6 +673,7 @@ export type ProcessingDocumentWhereUniqueInput = Prisma.AtLeast<{
 export type ProcessingDocumentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
+  tenantId?: Prisma.SortOrder
   isContainer?: Prisma.SortOrder
   parentProcessingDocId?: Prisma.SortOrderInput | Prisma.SortOrder
   pageFrom?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -713,6 +724,7 @@ export type ProcessingDocumentScalarWhereWithAggregatesInput = {
   NOT?: Prisma.ProcessingDocumentScalarWhereWithAggregatesInput | Prisma.ProcessingDocumentScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"ProcessingDocument"> | string
   documentId?: Prisma.StringWithAggregatesFilter<"ProcessingDocument"> | string
+  tenantId?: Prisma.StringWithAggregatesFilter<"ProcessingDocument"> | string
   isContainer?: Prisma.BoolWithAggregatesFilter<"ProcessingDocument"> | boolean
   parentProcessingDocId?: Prisma.StringNullableWithAggregatesFilter<"ProcessingDocument"> | string | null
   pageFrom?: Prisma.IntNullableWithAggregatesFilter<"ProcessingDocument"> | number | null
@@ -754,6 +766,7 @@ export type ProcessingDocumentScalarWhereWithAggregatesInput = {
 
 export type ProcessingDocumentCreateInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -813,6 +826,7 @@ export type ProcessingDocumentCreateInput = {
 export type ProcessingDocumentUncheckedCreateInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -870,6 +884,7 @@ export type ProcessingDocumentUncheckedCreateInput = {
 
 export type ProcessingDocumentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -929,6 +944,7 @@ export type ProcessingDocumentUpdateInput = {
 export type ProcessingDocumentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -987,6 +1003,7 @@ export type ProcessingDocumentUncheckedUpdateInput = {
 export type ProcessingDocumentCreateManyInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -1028,6 +1045,7 @@ export type ProcessingDocumentCreateManyInput = {
 
 export type ProcessingDocumentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1066,6 +1084,7 @@ export type ProcessingDocumentUpdateManyMutationInput = {
 export type ProcessingDocumentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1123,6 +1142,7 @@ export type ProcessingDocumentOrderByRelationAggregateInput = {
 export type ProcessingDocumentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
+  tenantId?: Prisma.SortOrder
   isContainer?: Prisma.SortOrder
   parentProcessingDocId?: Prisma.SortOrder
   pageFrom?: Prisma.SortOrder
@@ -1175,6 +1195,7 @@ export type ProcessingDocumentAvgOrderByAggregateInput = {
 export type ProcessingDocumentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
+  tenantId?: Prisma.SortOrder
   isContainer?: Prisma.SortOrder
   parentProcessingDocId?: Prisma.SortOrder
   pageFrom?: Prisma.SortOrder
@@ -1216,6 +1237,7 @@ export type ProcessingDocumentMaxOrderByAggregateInput = {
 export type ProcessingDocumentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
+  tenantId?: Prisma.SortOrder
   isContainer?: Prisma.SortOrder
   parentProcessingDocId?: Prisma.SortOrder
   pageFrom?: Prisma.SortOrder
@@ -1717,6 +1739,7 @@ export type ProcessingDocumentUpdateOneWithoutWorkflow_artifactsNestedInput = {
 
 export type ProcessingDocumentCreateWithoutDocumentInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -1774,6 +1797,7 @@ export type ProcessingDocumentCreateWithoutDocumentInput = {
 
 export type ProcessingDocumentUncheckedCreateWithoutDocumentInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -1847,6 +1871,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutDocumentInput = {
 
 export type ProcessingDocumentUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1904,6 +1929,7 @@ export type ProcessingDocumentUpdateWithoutDocumentInput = {
 
 export type ProcessingDocumentUncheckedUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1961,6 +1987,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutDocumentInput = {
 
 export type ProcessingDocumentCreateWithoutDuplicatesInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -2019,6 +2046,7 @@ export type ProcessingDocumentCreateWithoutDuplicatesInput = {
 export type ProcessingDocumentUncheckedCreateWithoutDuplicatesInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -2080,6 +2108,7 @@ export type ProcessingDocumentCreateOrConnectWithoutDuplicatesInput = {
 
 export type ProcessingDocumentCreateWithoutDuplicateOfInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -2138,6 +2167,7 @@ export type ProcessingDocumentCreateWithoutDuplicateOfInput = {
 export type ProcessingDocumentUncheckedCreateWithoutDuplicateOfInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -2204,6 +2234,7 @@ export type ProcessingDocumentCreateManyDuplicateOfInputEnvelope = {
 
 export type ProcessingDocumentCreateWithoutChildrenInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -2262,6 +2293,7 @@ export type ProcessingDocumentCreateWithoutChildrenInput = {
 export type ProcessingDocumentUncheckedCreateWithoutChildrenInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -2323,6 +2355,7 @@ export type ProcessingDocumentCreateOrConnectWithoutChildrenInput = {
 
 export type ProcessingDocumentCreateWithoutParentProcessingDocInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -2381,6 +2414,7 @@ export type ProcessingDocumentCreateWithoutParentProcessingDocInput = {
 export type ProcessingDocumentUncheckedCreateWithoutParentProcessingDocInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -2447,6 +2481,7 @@ export type ProcessingDocumentCreateManyParentProcessingDocInputEnvelope = {
 
 export type ProcessingDocumentCreateWithoutVersionsInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -2505,6 +2540,7 @@ export type ProcessingDocumentCreateWithoutVersionsInput = {
 export type ProcessingDocumentUncheckedCreateWithoutVersionsInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -2566,6 +2602,7 @@ export type ProcessingDocumentCreateOrConnectWithoutVersionsInput = {
 
 export type ProcessingDocumentCreateWithoutRootDocumentInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -2624,6 +2661,7 @@ export type ProcessingDocumentCreateWithoutRootDocumentInput = {
 export type ProcessingDocumentUncheckedCreateWithoutRootDocumentInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -2701,6 +2739,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutDuplicatesInput = {
 
 export type ProcessingDocumentUpdateWithoutDuplicatesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2759,6 +2798,7 @@ export type ProcessingDocumentUpdateWithoutDuplicatesInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutDuplicatesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2835,6 +2875,7 @@ export type ProcessingDocumentScalarWhereInput = {
   NOT?: Prisma.ProcessingDocumentScalarWhereInput | Prisma.ProcessingDocumentScalarWhereInput[]
   id?: Prisma.StringFilter<"ProcessingDocument"> | string
   documentId?: Prisma.StringFilter<"ProcessingDocument"> | string
+  tenantId?: Prisma.StringFilter<"ProcessingDocument"> | string
   isContainer?: Prisma.BoolFilter<"ProcessingDocument"> | boolean
   parentProcessingDocId?: Prisma.StringNullableFilter<"ProcessingDocument"> | string | null
   pageFrom?: Prisma.IntNullableFilter<"ProcessingDocument"> | number | null
@@ -2887,6 +2928,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutChildrenInput = {
 
 export type ProcessingDocumentUpdateWithoutChildrenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2945,6 +2987,7 @@ export type ProcessingDocumentUpdateWithoutChildrenInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutChildrenInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -3028,6 +3071,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutVersionsInput = {
 
 export type ProcessingDocumentUpdateWithoutVersionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -3086,6 +3130,7 @@ export type ProcessingDocumentUpdateWithoutVersionsInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutVersionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -3158,6 +3203,7 @@ export type ProcessingDocumentUpdateManyWithWhereWithoutRootDocumentInput = {
 
 export type ProcessingDocumentCreateWithoutLinkedFromInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -3216,6 +3262,7 @@ export type ProcessingDocumentCreateWithoutLinkedFromInput = {
 export type ProcessingDocumentUncheckedCreateWithoutLinkedFromInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -3277,6 +3324,7 @@ export type ProcessingDocumentCreateOrConnectWithoutLinkedFromInput = {
 
 export type ProcessingDocumentCreateWithoutLinkedToInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -3335,6 +3383,7 @@ export type ProcessingDocumentCreateWithoutLinkedToInput = {
 export type ProcessingDocumentUncheckedCreateWithoutLinkedToInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -3407,6 +3456,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutLinkedFromInput = {
 
 export type ProcessingDocumentUpdateWithoutLinkedFromInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -3465,6 +3515,7 @@ export type ProcessingDocumentUpdateWithoutLinkedFromInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutLinkedFromInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -3532,6 +3583,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutLinkedToInput = {
 
 export type ProcessingDocumentUpdateWithoutLinkedToInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -3590,6 +3642,7 @@ export type ProcessingDocumentUpdateWithoutLinkedToInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutLinkedToInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -3646,6 +3699,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutLinkedToInput = {
 
 export type ProcessingDocumentCreateWithoutDocumentTagsInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -3704,6 +3758,7 @@ export type ProcessingDocumentCreateWithoutDocumentTagsInput = {
 export type ProcessingDocumentUncheckedCreateWithoutDocumentTagsInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -3776,6 +3831,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutDocumentTagsInput = {
 
 export type ProcessingDocumentUpdateWithoutDocumentTagsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -3834,6 +3890,7 @@ export type ProcessingDocumentUpdateWithoutDocumentTagsInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutDocumentTagsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -3890,6 +3947,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutDocumentTagsInput = {
 
 export type ProcessingDocumentCreateWithoutPagesInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -3948,6 +4006,7 @@ export type ProcessingDocumentCreateWithoutPagesInput = {
 export type ProcessingDocumentUncheckedCreateWithoutPagesInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -4020,6 +4079,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutPagesInput = {
 
 export type ProcessingDocumentUpdateWithoutPagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -4078,6 +4138,7 @@ export type ProcessingDocumentUpdateWithoutPagesInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutPagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -4134,6 +4195,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutPagesInput = {
 
 export type ProcessingDocumentCreateWithoutExtractionsInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -4192,6 +4254,7 @@ export type ProcessingDocumentCreateWithoutExtractionsInput = {
 export type ProcessingDocumentUncheckedCreateWithoutExtractionsInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -4264,6 +4327,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutExtractionsInput = {
 
 export type ProcessingDocumentUpdateWithoutExtractionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -4322,6 +4386,7 @@ export type ProcessingDocumentUpdateWithoutExtractionsInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutExtractionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -4378,6 +4443,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutExtractionsInput = {
 
 export type ProcessingDocumentCreateWithoutRevisionsInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -4436,6 +4502,7 @@ export type ProcessingDocumentCreateWithoutRevisionsInput = {
 export type ProcessingDocumentUncheckedCreateWithoutRevisionsInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -4497,6 +4564,7 @@ export type ProcessingDocumentCreateOrConnectWithoutRevisionsInput = {
 
 export type ProcessingDocumentCreateWithoutCurrentRevisionInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -4555,6 +4623,7 @@ export type ProcessingDocumentCreateWithoutCurrentRevisionInput = {
 export type ProcessingDocumentUncheckedCreateWithoutCurrentRevisionInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -4627,6 +4696,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutRevisionsInput = {
 
 export type ProcessingDocumentUpdateWithoutRevisionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -4685,6 +4755,7 @@ export type ProcessingDocumentUpdateWithoutRevisionsInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutRevisionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -4752,6 +4823,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutCurrentRevisionInput = 
 
 export type ProcessingDocumentUpdateWithoutCurrentRevisionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -4810,6 +4882,7 @@ export type ProcessingDocumentUpdateWithoutCurrentRevisionInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutCurrentRevisionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -4866,6 +4939,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutCurrentRevisionInput = {
 
 export type ProcessingDocumentCreateWithoutDuplicateDecisionsInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -4924,6 +4998,7 @@ export type ProcessingDocumentCreateWithoutDuplicateDecisionsInput = {
 export type ProcessingDocumentUncheckedCreateWithoutDuplicateDecisionsInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -4996,6 +5071,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutDuplicateDecisionsInput
 
 export type ProcessingDocumentUpdateWithoutDuplicateDecisionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -5054,6 +5130,7 @@ export type ProcessingDocumentUpdateWithoutDuplicateDecisionsInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutDuplicateDecisionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -5110,6 +5187,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutDuplicateDecisionsInput = {
 
 export type ProcessingDocumentCreateWithoutProcessingAttemptsInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -5168,6 +5246,7 @@ export type ProcessingDocumentCreateWithoutProcessingAttemptsInput = {
 export type ProcessingDocumentUncheckedCreateWithoutProcessingAttemptsInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -5240,6 +5319,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutProcessingAttemptsInput
 
 export type ProcessingDocumentUpdateWithoutProcessingAttemptsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -5298,6 +5378,7 @@ export type ProcessingDocumentUpdateWithoutProcessingAttemptsInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutProcessingAttemptsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -5354,6 +5435,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutProcessingAttemptsInput = {
 
 export type ProcessingDocumentCreateWithoutProcessingCheckpointsInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -5412,6 +5494,7 @@ export type ProcessingDocumentCreateWithoutProcessingCheckpointsInput = {
 export type ProcessingDocumentUncheckedCreateWithoutProcessingCheckpointsInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -5484,6 +5567,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutProcessingCheckpointsIn
 
 export type ProcessingDocumentUpdateWithoutProcessingCheckpointsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -5542,6 +5626,7 @@ export type ProcessingDocumentUpdateWithoutProcessingCheckpointsInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutProcessingCheckpointsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -5598,6 +5683,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutProcessingCheckpointsInput =
 
 export type ProcessingDocumentCreateWithoutSplitPlansInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -5656,6 +5742,7 @@ export type ProcessingDocumentCreateWithoutSplitPlansInput = {
 export type ProcessingDocumentUncheckedCreateWithoutSplitPlansInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -5728,6 +5815,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutSplitPlansInput = {
 
 export type ProcessingDocumentUpdateWithoutSplitPlansInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -5786,6 +5874,7 @@ export type ProcessingDocumentUpdateWithoutSplitPlansInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutSplitPlansInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -5842,6 +5931,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutSplitPlansInput = {
 
 export type ProcessingDocumentCreateWithoutStateEventsInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -5900,6 +5990,7 @@ export type ProcessingDocumentCreateWithoutStateEventsInput = {
 export type ProcessingDocumentUncheckedCreateWithoutStateEventsInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -5972,6 +6063,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutStateEventsInput = {
 
 export type ProcessingDocumentUpdateWithoutStateEventsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -6030,6 +6122,7 @@ export type ProcessingDocumentUpdateWithoutStateEventsInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutStateEventsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -6086,6 +6179,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutStateEventsInput = {
 
 export type ProcessingDocumentCreateWithoutDerivedFilesInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -6144,6 +6238,7 @@ export type ProcessingDocumentCreateWithoutDerivedFilesInput = {
 export type ProcessingDocumentUncheckedCreateWithoutDerivedFilesInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -6216,6 +6311,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutDerivedFilesInput = {
 
 export type ProcessingDocumentUpdateWithoutDerivedFilesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -6274,6 +6370,7 @@ export type ProcessingDocumentUpdateWithoutDerivedFilesInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutDerivedFilesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -6330,6 +6427,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutDerivedFilesInput = {
 
 export type ProcessingDocumentCreateWithoutWorkflow_artifactsInput = {
   id?: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -6388,6 +6486,7 @@ export type ProcessingDocumentCreateWithoutWorkflow_artifactsInput = {
 export type ProcessingDocumentUncheckedCreateWithoutWorkflow_artifactsInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -6460,6 +6559,7 @@ export type ProcessingDocumentUpdateToOneWithWhereWithoutWorkflow_artifactsInput
 
 export type ProcessingDocumentUpdateWithoutWorkflow_artifactsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -6518,6 +6618,7 @@ export type ProcessingDocumentUpdateWithoutWorkflow_artifactsInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutWorkflow_artifactsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -6575,6 +6676,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutWorkflow_artifactsInput = {
 export type ProcessingDocumentCreateManyDuplicateOfInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -6616,6 +6718,7 @@ export type ProcessingDocumentCreateManyDuplicateOfInput = {
 export type ProcessingDocumentCreateManyParentProcessingDocInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   pageFrom?: number | null
   pageTo?: number | null
@@ -6657,6 +6760,7 @@ export type ProcessingDocumentCreateManyParentProcessingDocInput = {
 export type ProcessingDocumentCreateManyRootDocumentInput = {
   id?: string
   documentId: string
+  tenantId: string
   isContainer?: boolean
   parentProcessingDocId?: string | null
   pageFrom?: number | null
@@ -6697,6 +6801,7 @@ export type ProcessingDocumentCreateManyRootDocumentInput = {
 
 export type ProcessingDocumentUpdateWithoutDuplicateOfInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -6755,6 +6860,7 @@ export type ProcessingDocumentUpdateWithoutDuplicateOfInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutDuplicateOfInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -6812,6 +6918,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutDuplicateOfInput = {
 export type ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -6852,6 +6959,7 @@ export type ProcessingDocumentUncheckedUpdateManyWithoutDuplicateOfInput = {
 
 export type ProcessingDocumentUpdateWithoutParentProcessingDocInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -6910,6 +7018,7 @@ export type ProcessingDocumentUpdateWithoutParentProcessingDocInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutParentProcessingDocInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -6967,6 +7076,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutParentProcessingDocInput = {
 export type ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -7007,6 +7117,7 @@ export type ProcessingDocumentUncheckedUpdateManyWithoutParentProcessingDocInput
 
 export type ProcessingDocumentUpdateWithoutRootDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   pageTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -7065,6 +7176,7 @@ export type ProcessingDocumentUpdateWithoutRootDocumentInput = {
 export type ProcessingDocumentUncheckedUpdateWithoutRootDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -7122,6 +7234,7 @@ export type ProcessingDocumentUncheckedUpdateWithoutRootDocumentInput = {
 export type ProcessingDocumentUncheckedUpdateManyWithoutRootDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   isContainer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   parentProcessingDocId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pageFrom?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -7329,6 +7442,7 @@ export type ProcessingDocumentCountOutputTypeCountWorkflow_artifactsArgs<ExtArgs
 export type ProcessingDocumentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   documentId?: boolean
+  tenantId?: boolean
   isContainer?: boolean
   parentProcessingDocId?: boolean
   pageFrom?: boolean
@@ -7393,6 +7507,7 @@ export type ProcessingDocumentSelect<ExtArgs extends runtime.Types.Extensions.In
 export type ProcessingDocumentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   documentId?: boolean
+  tenantId?: boolean
   isContainer?: boolean
   parentProcessingDocId?: boolean
   pageFrom?: boolean
@@ -7440,6 +7555,7 @@ export type ProcessingDocumentSelectCreateManyAndReturn<ExtArgs extends runtime.
 export type ProcessingDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   documentId?: boolean
+  tenantId?: boolean
   isContainer?: boolean
   parentProcessingDocId?: boolean
   pageFrom?: boolean
@@ -7487,6 +7603,7 @@ export type ProcessingDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.
 export type ProcessingDocumentSelectScalar = {
   id?: boolean
   documentId?: boolean
+  tenantId?: boolean
   isContainer?: boolean
   parentProcessingDocId?: boolean
   pageFrom?: boolean
@@ -7526,7 +7643,7 @@ export type ProcessingDocumentSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ProcessingDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "isContainer" | "parentProcessingDocId" | "pageFrom" | "pageTo" | "pageCount" | "fileHash" | "perceptualHash" | "isEncryptedPdf" | "isPasswordProtected" | "contentTypeDetected" | "pipelineStatus" | "processingPriority" | "slaDeadline" | "lastError" | "errorCount" | "firstErrorAt" | "canRetry" | "nextRetryAt" | "deadLetterAt" | "duplicateStatus" | "duplicateOfId" | "duplicateScore" | "duplicateReason" | "rootDocumentId" | "version" | "deletedAt" | "deletedReason" | "currentRevisionId" | "lockVersion" | "lockedById" | "lockedAt" | "lockExpiresAt" | "uploadSource" | "legalHold" | "retentionUntil" | "createdAt" | "updatedAt", ExtArgs["result"]["processingDocument"]>
+export type ProcessingDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "tenantId" | "isContainer" | "parentProcessingDocId" | "pageFrom" | "pageTo" | "pageCount" | "fileHash" | "perceptualHash" | "isEncryptedPdf" | "isPasswordProtected" | "contentTypeDetected" | "pipelineStatus" | "processingPriority" | "slaDeadline" | "lastError" | "errorCount" | "firstErrorAt" | "canRetry" | "nextRetryAt" | "deadLetterAt" | "duplicateStatus" | "duplicateOfId" | "duplicateScore" | "duplicateReason" | "rootDocumentId" | "version" | "deletedAt" | "deletedReason" | "currentRevisionId" | "lockVersion" | "lockedById" | "lockedAt" | "lockExpiresAt" | "uploadSource" | "legalHold" | "retentionUntil" | "createdAt" | "updatedAt", ExtArgs["result"]["processingDocument"]>
 export type ProcessingDocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   derivedFiles?: boolean | Prisma.ProcessingDocument$derivedFilesArgs<ExtArgs>
   extractions?: boolean | Prisma.ProcessingDocument$extractionsArgs<ExtArgs>
@@ -7594,6 +7711,7 @@ export type $ProcessingDocumentPayload<ExtArgs extends runtime.Types.Extensions.
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     documentId: string
+    tenantId: string
     isContainer: boolean
     parentProcessingDocId: string | null
     pageFrom: number | null
@@ -8077,6 +8195,7 @@ export interface Prisma__ProcessingDocumentClient<T, Null = never, ExtArgs exten
 export interface ProcessingDocumentFieldRefs {
   readonly id: Prisma.FieldRef<"ProcessingDocument", 'String'>
   readonly documentId: Prisma.FieldRef<"ProcessingDocument", 'String'>
+  readonly tenantId: Prisma.FieldRef<"ProcessingDocument", 'String'>
   readonly isContainer: Prisma.FieldRef<"ProcessingDocument", 'Boolean'>
   readonly parentProcessingDocId: Prisma.FieldRef<"ProcessingDocument", 'String'>
   readonly pageFrom: Prisma.FieldRef<"ProcessingDocument", 'Int'>

@@ -8,10 +8,10 @@ import { hashBlake3, hashPassword } from '@/lib/encryption';
 import { createAuditLog } from '@/lib/audit';
 import { storage, StorageKeys } from '@/lib/storage';
 import {
-  convertOfficeDocumentToPdf,
   detectOfficeDocumentType,
   getPdfFileNameForUpload,
 } from '@/lib/office-conversion';
+import { convertOfficeDocumentToPdfWithMicrosoftGraph } from '@/services/microsoft-graph-document-conversion.service';
 import {
   createEsigningAccessLinkToken,
   buildEsigningSigningUrl,
@@ -1270,10 +1270,11 @@ export async function uploadEsigningEnvelopeDocument(
   const pdfBuffer =
     documentType === 'pdf'
       ? uploadedBuffer
-      : await convertOfficeDocumentToPdf({
+      : await convertOfficeDocumentToPdfWithMicrosoftGraph({
+          tenantId,
           buffer: uploadedBuffer,
           fileName: file.name,
-          clientMimeType: file.type,
+          mimeType: file.type,
         });
   const storedFileName = documentType === 'pdf' ? file.name : getPdfFileNameForUpload(file.name);
 

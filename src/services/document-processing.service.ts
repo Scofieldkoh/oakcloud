@@ -149,6 +149,7 @@ export async function uploadDocument(
   const processingDocument = await prisma.processingDocument.create({
     data: {
       documentId,
+      tenantId,
       isContainer: true,
       pipelineStatus: 'UPLOADED',
       processingPriority: priority,
@@ -799,6 +800,7 @@ export async function createChildDocuments(
     const childDoc = await prisma.processingDocument.create({
       data: {
         documentId: newDocumentId,
+        tenantId,
         isContainer: false,
         parentProcessingDocId,
         pageFrom: range.pageFrom,
@@ -1033,23 +1035,20 @@ export async function listProcessingDocumentsPaged(options: {
     throw new Error('Tenant ID is required for processing documents list');
   }
 
-  // Build document filter - companyIds is optional
-  const documentFilter: Prisma.DocumentWhereInput = {};
+  // Build where clause — use tenantId directly on processing_documents for index efficiency
+  const where: Prisma.ProcessingDocumentWhereInput = {
+    deletedAt: null,
+  };
 
   // Tenant scope (skip for SUPER_ADMIN cross-tenant operations)
   if (tenantId && !skipTenantFilter) {
-    documentFilter.tenantId = tenantId;
+    where.tenantId = tenantId;
   }
 
+  // companyId lives on Document — only join when needed
   if (companyIds && companyIds.length > 0) {
-    documentFilter.companyId = { in: companyIds };
+    where.document = { companyId: { in: companyIds } };
   }
-
-  // Filter through document relation for tenant isolation
-  const where: Prisma.ProcessingDocumentWhereInput = {
-    deletedAt: null,
-    document: documentFilter,
-  };
 
   if (pipelineStatus) {
     where.pipelineStatus = pipelineStatus;
@@ -1132,10 +1131,13 @@ export async function listProcessingDocumentsPaged(options: {
 
   // Specific file name filter
   if (fileName) {
-    documentFilter.OR = [
-      { originalFileName: { contains: fileName, mode: 'insensitive' } },
-      { fileName: { contains: fileName, mode: 'insensitive' } },
-    ];
+    where.document = {
+      ...((where.document as Prisma.DocumentWhereInput) ?? {}),
+      OR: [
+        { originalFileName: { contains: fileName, mode: 'insensitive' } },
+        { fileName: { contains: fileName, mode: 'insensitive' } },
+      ],
+    };
   }
 
   // Document category filter
@@ -1460,18 +1462,17 @@ export async function getProcessingDocumentSummary(options: {
     throw new Error('Tenant ID is required for processing document summary');
   }
 
-  const documentFilter: Prisma.DocumentWhereInput = {};
-  if (tenantId && !skipTenantFilter) {
-    documentFilter.tenantId = tenantId;
-  }
-  if (companyIds?.length) {
-    documentFilter.companyId = { in: companyIds };
-  }
-
   const where: Prisma.ProcessingDocumentWhereInput = {
     deletedAt: null,
-    document: documentFilter,
   };
+
+  if (tenantId && !skipTenantFilter) {
+    where.tenantId = tenantId;
+  }
+
+  if (companyIds?.length) {
+    where.document = { companyId: { in: companyIds } };
+  }
 
   const [total, byPipelineStatus, byDuplicateStatus, byRevisionPointer, needsReview] =
     await Promise.all([
@@ -1597,9 +1598,8 @@ export async function getDocumentsPendingRetry(options: {
     nextRetryAt: { lte: new Date() },
   };
 
-  // Filter by tenant through document relation if tenantId provided
   if (tenantId) {
-    where.document = { tenantId };
+    where.tenantId = tenantId;
   }
 
   return prisma.processingDocument.findMany({
@@ -1878,6 +1878,7 @@ export async function migrateBizFileToProcessing(
     const processingDoc = await tx.processingDocument.create({
       data: {
         documentId,
+        tenantId,
         isContainer: true,
         pipelineStatus: 'UPLOADED',
         processingPriority: 'NORMAL',

@@ -87,6 +87,7 @@ export async function processBizFileExtractionSelective(
         const processingDoc = await tx.processingDocument.create({
           data: {
             documentId,
+            tenantId,
             isContainer: true,
             pipelineStatus: 'EXTRACTION_DONE',
             processingPriority: 'NORMAL',
@@ -463,6 +464,7 @@ export async function processBizFileExtractionSelective(
       const processingDoc = await tx.processingDocument.create({
         data: {
           documentId,
+          tenantId,
           isContainer: true,
           pipelineStatus: 'EXTRACTION_DONE',
           processingPriority: 'NORMAL',
@@ -1004,6 +1006,7 @@ export async function processBizFileExtraction(
     const processingDoc = await tx.processingDocument.create({
       data: {
         documentId,
+        tenantId,
         isContainer: true,
         pipelineStatus: 'EXTRACTION_DONE',
         processingPriority: 'NORMAL',

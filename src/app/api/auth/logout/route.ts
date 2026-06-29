@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getSession } from '@/lib/auth';
+import { getSession, invalidateSessionCache } from '@/lib/auth';
 import { logAuthEvent } from '@/lib/audit';
 import { AUTH_COOKIE_NAME, HTTP_STATUS } from '@/lib/constants/application';
 
@@ -12,8 +12,9 @@ export async function POST() {
     const cookieStore = await cookies();
     cookieStore.delete(AUTH_COOKIE_NAME);
 
-    // Log logout if we had a session
+    // Invalidate session cache and log logout if we had a session
     if (session) {
+      invalidateSessionCache(session.id);
       await logAuthEvent('LOGOUT', session.id, {
         email: session.email,
         userName: `${session.firstName} ${session.lastName}`,

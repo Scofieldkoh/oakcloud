@@ -1,3 +1,8 @@
+export function getCopyableText(text: string | null | undefined): string | null {
+  const normalized = text?.trim();
+  return normalized && normalized !== '-' ? normalized : null;
+}
+
 export async function copyTextToClipboard(text: string): Promise<boolean> {
   if (typeof document === 'undefined' || typeof window === 'undefined') return false;
 

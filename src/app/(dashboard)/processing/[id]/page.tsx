@@ -28,6 +28,7 @@ import {
   FileSpreadsheet,
   Building2,
   Link2,
+  Settings,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -81,10 +82,13 @@ import { useAccountsForSelect } from '@/hooks/use-chart-of-accounts';
 import { useCompany } from '@/hooks/use-companies';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
+import { DocumentExtractionPromptModal } from '@/components/processing/document-extraction-prompt-modal';
+import { useDocumentExtractionPromptSettings } from '@/hooks/use-document-extraction-prompt-settings';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { MISTRAL_OCR_MODEL_ID } from '@/lib/ocr/constants';
 import { AI_MODELS } from '@/lib/ai/models';
 import type { AIModel } from '@/lib/ai/types';
+import { copyTextToClipboard, getCopyableText } from '@/lib/clipboard';
 
 // Status display configs
 const pipelineStatusConfig: Record<
@@ -324,6 +328,19 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   } : undefined, [viewData]);
 
   const { mutateAsync: reconcilePendingExtraction } = useReconcileProcessingDocument();
+  const handleCopyFieldValue = useCallback(async (label: string, value: string | null) => {
+    const copyValue = getCopyableText(value);
+    if (!copyValue) return;
+
+    const copied = await copyTextToClipboard(copyValue);
+    if (copied) {
+      success(`${label} copied`);
+      return;
+    }
+
+    toastError('Clipboard access failed');
+  }, [success, toastError]);
+
   const refreshDocument = useCallback(async () => {
     const isExtracting = data?.document?.pipelineStatus === 'QUEUED' ||
       data?.document?.pipelineStatus === 'PROCESSING';
@@ -475,7 +492,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
   // AI context state (matching upload page)
   const [aiContext, setAiContext] = useState('');
   const [selectedStandardContexts, setSelectedStandardContexts] = useState<string[]>([]);
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const previousBatchProviderRef = useRef<'mistral' | 'openai' | null>(null);
+  const {
+    settings: promptSettings,
+    setSettings: setPromptSettings,
+    standardContextOptions,
+  } = useDocumentExtractionPromptSettings(showModelSelector);
 
   useEffect(() => {
     const batchProvider = getBatchProcessingProvider(selectedModel);
@@ -916,7 +939,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     // Build full context including company context, standard contexts, and custom context
     const fullContext = [
       companyContext,
-      buildFullContext(selectedStandardContexts, aiContext),
+      buildFullContext(selectedStandardContexts, aiContext, standardContextOptions),
     ].filter(Boolean).join('\n\n');
 
     await handleTriggerExtraction(
@@ -1691,6 +1714,7 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               setFocusedField={setFocusedField}
               getFieldConfidence={getFieldConfidence}
               categoryLabels={categoryLabels}
+              onCopyFieldValue={handleCopyFieldValue}
             />
 
             {/* Amounts Section - Combined document and home currency */}
@@ -2295,11 +2319,22 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
               contextPlaceholder="E.g., 'Focus on line items and totals' or 'This is a foreign currency invoice'"
               contextHelpText="Provide your own hints to help the AI extract data more accurately."
               showStandardContexts
+              standardContextOptions={standardContextOptions}
               selectedStandardContexts={selectedStandardContexts}
               onStandardContextsChange={setSelectedStandardContexts}
               tenantId={activeTenantId || undefined}
               className="mb-0"
             />
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsPromptModalOpen(true)}
+                className="btn-secondary btn-sm flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Prompt Management
+              </button>
+            </div>
           </div>
         </ModalBody>
         <ModalFooter>
@@ -2325,6 +2360,13 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
           </Button>
         </ModalFooter>
       </Modal>
+
+      <DocumentExtractionPromptModal
+        isOpen={isPromptModalOpen}
+        onClose={() => setIsPromptModalOpen(false)}
+        settings={promptSettings}
+        onSettingsChange={setPromptSettings}
+      />
 
       {/* Duplicate Comparison Modal */}
       {/* Document Splitter Modal */}
@@ -2429,6 +2471,7 @@ function ExtractedHeaderFields({
   setFocusedField,
   getFieldConfidence,
   categoryLabels,
+  onCopyFieldValue,
 }: {
   revision: {
     documentCategory: DocumentCategory | null;
@@ -2488,6 +2531,7 @@ function ExtractedHeaderFields({
   setFocusedField: (field: string | null) => void;
   getFieldConfidence: (key: string) => number | undefined;
   categoryLabels: Record<DocumentCategory, string>;
+  onCopyFieldValue: (label: string, value: string | null) => void;
 }) {
   const handleFieldFocus = (fieldKey: string) => setFocusedField(fieldKey);
   const handleFieldBlur = () => setFocusedField(null);
@@ -2609,6 +2653,7 @@ function ExtractedHeaderFields({
         focusedField={focusedField}
         onFocus={handleFieldFocus}
         onBlur={handleFieldBlur}
+        onCopy={onCopyFieldValue}
       />
 
       {/* Vendor and Document # */}
@@ -2621,6 +2666,7 @@ function ExtractedHeaderFields({
           focusedField={focusedField}
           onFocus={handleFieldFocus}
           onBlur={handleFieldBlur}
+          onCopy={onCopyFieldValue}
         />
         <FieldDisplay
           label="Document #"
@@ -2630,6 +2676,7 @@ function ExtractedHeaderFields({
           focusedField={focusedField}
           onFocus={handleFieldFocus}
           onBlur={handleFieldBlur}
+          onCopy={onCopyFieldValue}
         />
       </div>
 
@@ -2643,6 +2690,7 @@ function ExtractedHeaderFields({
           focusedField={focusedField}
           onFocus={handleFieldFocus}
           onBlur={handleFieldBlur}
+          onCopy={onCopyFieldValue}
         />
         <FieldDisplay
           label="Due Date"
@@ -2651,6 +2699,7 @@ function ExtractedHeaderFields({
           focusedField={focusedField}
           onFocus={handleFieldFocus}
           onBlur={handleFieldBlur}
+          onCopy={onCopyFieldValue}
         />
       </div>
     </div>
@@ -2665,6 +2714,7 @@ function FieldDisplay({
   focusedField,
   onFocus,
   onBlur,
+  onCopy,
   highlight = false,
   size = 'md',
 }: {
@@ -2675,19 +2725,38 @@ function FieldDisplay({
   focusedField: string | null;
   onFocus: (key: string) => void;
   onBlur: () => void;
+  onCopy?: (label: string, value: string | null) => void;
   highlight?: boolean;
   size?: 'sm' | 'md' | 'lg';
 }) {
   const isFocused = focusedField === fieldKey;
+  const copyValue = getCopyableText(value);
+  const isCopyable = Boolean(onCopy && copyValue);
+
+  const handleCopy = () => {
+    if (!onCopy || !copyValue) return;
+    onCopy(label, copyValue);
+  };
 
   return (
     <div
       className={cn(
-        'py-1.5 px-2 rounded cursor-pointer transition-colors',
+        'py-1.5 px-2 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-oak-light/50',
+        isCopyable && 'cursor-copy',
         isFocused ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'hover:bg-background-tertiary'
       )}
       onMouseEnter={() => onFocus(fieldKey)}
       onMouseLeave={onBlur}
+      onClick={handleCopy}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        handleCopy();
+      }}
+      role={isCopyable ? 'button' : undefined}
+      tabIndex={isCopyable ? 0 : undefined}
+      aria-label={isCopyable ? `Copy ${label}` : undefined}
+      title={isCopyable ? `Copy ${label}` : undefined}
     >
       <dt className="text-xs text-text-muted mb-0.5 flex items-center gap-1.5">
         {label}

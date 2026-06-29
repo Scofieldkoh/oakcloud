@@ -1289,7 +1289,11 @@ export async function getFormResponses(
   query: FormResponsesQueryInput = {}
 ): Promise<FormResponsesResult> {
   const form = await prisma.form.findFirst({
-    where: { id: formId, tenantId, deletedAt: null },
+    where: {
+      id: formId,
+      tenantId,
+      OR: [{ deletedAt: null }, { status: 'ARCHIVED' }],
+    },
     select: {
       id: true,
       fields: {

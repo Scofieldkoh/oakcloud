@@ -138,6 +138,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             const newProcessingDoc = await prisma.processingDocument.create({
                 data: {
                     documentId: newDocument.id,
+                    tenantId,
                     parentProcessingDocId: sourceDoc.id,
                     pageFrom: range.pageFrom,
                     pageTo: range.pageTo,

@@ -47,6 +47,22 @@ const JWT_SECRET = getJwtSecret();
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || DEFAULT_JWT_EXPIRES_IN;
 
 // ============================================================================
+// Session Cache
+// Per-process Map cache keyed by userId. Safe for Docker/persistent server
+// deployments. TTL of 30s balances freshness with DB round-trip reduction.
+// ============================================================================
+
+type SessionCacheEntry<T> = { value: T; expiresAt: number };
+const SESSION_CACHE_TTL_MS = 30_000;
+const _sessionCache = new Map<string, SessionCacheEntry<SessionUser>>();
+const _sessionWithWorkspaceCache = new Map<string, SessionCacheEntry<SessionWithWorkspace>>();
+
+export function invalidateSessionCache(userId: string): void {
+  _sessionCache.delete(userId);
+  _sessionWithWorkspaceCache.delete(userId);
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -214,6 +230,9 @@ export async function getSession(): Promise<SessionUser | null> {
   const payload = await verifyToken(token);
   if (!payload) return null;
 
+  const cached = _sessionCache.get(payload.userId);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+
   const user = await prisma.user.findUnique({
     where: { id: payload.userId },
     select: {
@@ -256,7 +275,7 @@ export async function getSession(): Promise<SessionUser | null> {
     ),
   ];
 
-  return {
+  const session: SessionUser = {
     id: user.id,
     email: user.email,
     firstName: user.firstName,
@@ -272,6 +291,9 @@ export async function getSession(): Promise<SessionUser | null> {
     hasAllCompaniesAccess,
     companyIds,
   };
+
+  _sessionCache.set(user.id, { value: session, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
+  return session;
 }
 
 /**
@@ -285,6 +307,9 @@ export async function getSessionWithWorkspace(): Promise<SessionWithWorkspace | 
 
   const payload = await verifyToken(token);
   if (!payload) return null;
+
+  const cached = _sessionWithWorkspaceCache.get(payload.userId);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
 
   const user = await prisma.user.findUnique({
     where: { id: payload.userId },
@@ -342,7 +367,7 @@ export async function getSessionWithWorkspace(): Promise<SessionWithWorkspace | 
     ),
   ];
 
-  return {
+  const sessionWithWorkspace: SessionWithWorkspace = {
     id: user.id,
     email: user.email,
     firstName: user.firstName,
@@ -359,6 +384,9 @@ export async function getSessionWithWorkspace(): Promise<SessionWithWorkspace | 
     hasAllCompaniesAccess,
     companyIds,
   };
+
+  _sessionWithWorkspaceCache.set(user.id, { value: sessionWithWorkspace, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
+  return sessionWithWorkspace;
 }
 
 // ============================================================================

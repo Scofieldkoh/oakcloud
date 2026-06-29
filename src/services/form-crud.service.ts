@@ -8,7 +8,9 @@ import {
 } from '@/generated/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { normalizeKey } from '@/lib/form-utils';
+import { createLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { storage } from '@/lib/storage';
 import type { TenantAwareParams } from '@/lib/types';
 import { normalizeWorkspaceLogoUrl } from '@/lib/workspace-logo-url';
 import type {
@@ -40,6 +42,23 @@ export interface FormListResult {
 }
 
 const MAX_SLUG_ATTEMPTS = 10;
+const log = createLogger('form-crud-service');
+
+function getArchivedFormSlug(formId: string): string {
+  return `archived-${formId}`;
+}
+
+async function releaseArchivedFormSlug(form: Pick<Form, 'id' | 'slug'>): Promise<void> {
+  const archivedSlug = getArchivedFormSlug(form.id);
+  if (form.slug === archivedSlug) {
+    return;
+  }
+
+  await prisma.form.update({
+    where: { id: form.id },
+    data: { slug: archivedSlug },
+  });
+}
 
 function makeUniqueKey(base: string, used: Set<string>): string {
   let candidate = base;
@@ -163,7 +182,6 @@ export async function listForms(
 ): Promise<FormListResult> {
   const where: Prisma.FormWhereInput = {
     tenantId: params.tenantId,
-    deletedAt: null,
     ...(input.status ? { status: input.status as FormStatus } : {}),
   };
 
@@ -212,7 +230,7 @@ export async function getFormById(formId: string, tenantId: string): Promise<For
     where: {
       id: formId,
       tenantId,
-      deletedAt: null,
+      OR: [{ deletedAt: null }, { status: 'ARCHIVED' }],
     },
     include: {
       fields: {
@@ -254,14 +272,21 @@ export async function updateForm(
     throw new Error('Public URL segment is required');
   }
 
-  if (nextSlug !== undefined && nextSlug !== existing.slug) {
+  const nextStatus = data.status !== undefined ? data.status as FormStatus : existing.status;
+  const archiveSlug = nextStatus === 'ARCHIVED' ? getArchivedFormSlug(existing.id) : undefined;
+
+  if (nextSlug !== undefined && nextSlug !== existing.slug && nextSlug !== archiveSlug) {
     const conflict = await prisma.form.findUnique({
       where: { slug: nextSlug },
-      select: { id: true },
+      select: { id: true, slug: true, status: true, deletedAt: true },
     });
 
     if (conflict && conflict.id !== existing.id) {
-      throw new Error('Public URL segment is already in use');
+      if (conflict.status === 'ARCHIVED' || conflict.deletedAt) {
+        await releaseArchivedFormSlug(conflict);
+      } else {
+        throw new Error('Public URL segment is already in use');
+      }
     }
   }
 
@@ -272,7 +297,7 @@ export async function updateForm(
       ...(data.description !== undefined ? { description: data.description?.trim() || null } : {}),
       ...(data.tags !== undefined ? { tags: data.tags } : {}),
       ...(data.status !== undefined ? { status: data.status as FormStatus } : {}),
-      ...(nextSlug !== undefined ? { slug: nextSlug } : {}),
+      ...(archiveSlug ? { slug: archiveSlug, deletedAt: null } : nextSlug !== undefined ? { slug: nextSlug } : {}),
       ...(data.settings !== undefined ? { settings: toJsonInput(data.settings) } : {}),
       updatedById: params.userId,
     },
@@ -476,9 +501,10 @@ export async function deleteForm(
   const deleted = await prisma.form.update({
     where: { id: formId },
     data: {
-      deletedAt: new Date(),
+      deletedAt: null,
       updatedById: params.userId,
       status: 'ARCHIVED',
+      slug: getArchivedFormSlug(formId),
     },
   });
 
@@ -491,6 +517,64 @@ export async function deleteForm(
     entityName: existing.title,
     summary: `Archived form "${existing.title}"`,
     reason,
+    changeSource: 'MANUAL',
+  });
+
+  return deleted;
+}
+
+export async function hardDeleteArchivedForm(
+  formId: string,
+  params: TenantAwareParams
+): Promise<Form> {
+  const existing = await prisma.form.findFirst({
+    where: {
+      id: formId,
+      tenantId: params.tenantId,
+      OR: [{ deletedAt: null }, { status: 'ARCHIVED' }],
+    },
+  });
+
+  if (!existing) {
+    throw new Error('Form not found');
+  }
+
+  if (existing.status !== 'ARCHIVED') {
+    throw new Error('Only archived forms can be permanently deleted');
+  }
+
+  const uploads = await prisma.formUpload.findMany({
+    where: { formId, tenantId: params.tenantId },
+    select: { id: true, storageKey: true },
+  });
+
+  const deleteResults = await Promise.allSettled(
+    uploads.map((upload) => storage.delete(upload.storageKey))
+  );
+
+  deleteResults.forEach((result, index) => {
+    if (result.status === 'fulfilled') return;
+
+    const upload = uploads[index];
+    log.error('Failed to delete form upload during permanent form deletion', {
+      formId,
+      uploadId: upload?.id,
+      error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+    });
+  });
+
+  const deleted = await prisma.form.delete({
+    where: { id: formId },
+  });
+
+  await createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    action: 'DELETE',
+    entityType: 'Form',
+    entityId: formId,
+    entityName: existing.title,
+    summary: `Permanently deleted archived form "${existing.title}"`,
     changeSource: 'MANUAL',
   });
 

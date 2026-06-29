@@ -6,8 +6,16 @@ import { CSS } from '@dnd-kit/utilities';
 import { Copy, GripVertical, MoreHorizontal, MoveHorizontal, Plus, SquarePen, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip } from '@/components/ui/tooltip';
-import { FIELD_TYPE_LABEL, WIDTH_CLASS, WIDTH_OPTIONS, isBlockDividerInputType } from './builder-utils';
+import { FIELD_TYPE_LABEL, FIELD_TYPE_OPTIONS, WIDTH_CLASS, WIDTH_OPTIONS, isBlockDividerInputType } from './builder-utils';
 import type { BuilderField } from './builder-utils';
+
+const ADD_FIELD_GROUPS: Array<{ label: string; types: Array<BuilderField['type']> }> = [
+  { label: 'Text', types: ['SHORT_TEXT', 'LONG_TEXT'] },
+  { label: 'Choice', types: ['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN'] },
+  { label: 'Content', types: ['PARAGRAPH', 'HTML'] },
+  { label: 'Upload', types: ['FILE_UPLOAD', 'SIGNATURE'] },
+  { label: 'Structure', types: ['PAGE_BREAK', 'HIDDEN'] },
+];
 
 function getFieldTypeLabel(field: BuilderField): string {
   if (field.type === 'PAGE_BREAK') {
@@ -80,7 +88,7 @@ export function SortableFieldCard({
   isDropTarget?: boolean;
   dropPosition?: 'before' | 'after' | null;
   onSelect: (id: string) => void;
-  onAddBelow: (id: string) => void;
+  onAddBelow: (id: string, type: BuilderField['type']) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
   onSetWidth: (id: string, width: BuilderField['layoutWidth']) => void;
@@ -96,8 +104,10 @@ export function SortableFieldCard({
 
   const [showWidthOptions, setShowWidthOptions] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
+  const [showAddPicker, setShowAddPicker] = useState(false);
   const [useCompactActions, setUseCompactActions] = useState(false);
   const actionPopoverRef = useRef<HTMLDivElement>(null);
+  const addPickerRef = useRef<HTMLDivElement>(null);
   const actionButtonClass = 'inline-flex h-7 w-7 items-center justify-center rounded text-text-secondary hover:bg-background-tertiary hover:text-text-primary';
 
   useEffect(() => {
@@ -117,12 +127,15 @@ export function SortableFieldCard({
   }, []);
 
   useEffect(() => {
-    if (!showWidthOptions && !showActionMenu) return;
+    if (!showWidthOptions && !showActionMenu && !showAddPicker) return;
 
     function handleOutsideClick(event: MouseEvent) {
       if (!actionPopoverRef.current?.contains(event.target as Node)) {
         setShowWidthOptions(false);
         setShowActionMenu(false);
+      }
+      if (!addPickerRef.current?.contains(event.target as Node)) {
+        setShowAddPicker(false);
       }
     }
 
@@ -130,7 +143,7 @@ export function SortableFieldCard({
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, [showWidthOptions, showActionMenu]);
+  }, [showWidthOptions, showActionMenu, showAddPicker]);
 
   useEffect(() => {
     if (!useCompactActions) {
@@ -367,17 +380,43 @@ export function SortableFieldCard({
       </div>
 
       {!isDragging && (
-        <div className="pointer-events-none absolute inset-x-0 -bottom-[14px] z-20 flex justify-center">
-          <Tooltip content="Quick add element">
-            <button
-              type="button"
-              className="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-full border border-border-primary bg-background-primary text-text-secondary opacity-0 shadow-elevation-1 transition-opacity hover:text-text-primary group-hover/field:opacity-100 group-focus-within/field:opacity-100"
-              aria-label="Add element below"
-              onClick={() => onAddBelow(field.clientId)}
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </Tooltip>
+        <div ref={addPickerRef} className="pointer-events-none absolute inset-x-0 -bottom-[14px] z-20 flex justify-center">
+          <button
+            type="button"
+            className="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-full border border-border-primary bg-background-primary text-text-secondary opacity-0 shadow-elevation-1 transition-opacity hover:text-text-primary group-hover/field:opacity-100 group-focus-within/field:opacity-100"
+            aria-label="Add element below"
+            onClick={() => setShowAddPicker((prev) => !prev)}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+
+          {showAddPicker && (
+            <div className="pointer-events-auto absolute bottom-full mb-2 w-64 rounded-xl border border-border-primary bg-background-primary p-2 shadow-elevation-3">
+              <p className="mb-1.5 px-1 text-2xs font-semibold uppercase tracking-widest text-text-muted">Add below</p>
+              <div className="space-y-1">
+                {ADD_FIELD_GROUPS.map((group) => (
+                  <div key={group.label}>
+                    <p className="px-1 py-0.5 text-2xs text-text-muted">{group.label}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {group.types.map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => {
+                            onAddBelow(field.clientId, type);
+                            setShowAddPicker(false);
+                          }}
+                          className="rounded-md border border-border-primary bg-background-elevated px-2 py-1 text-xs text-text-secondary hover:border-oak-primary/50 hover:bg-oak-primary/5 hover:text-text-primary transition-colors"
+                        >
+                          {FIELD_TYPE_LABEL[type]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

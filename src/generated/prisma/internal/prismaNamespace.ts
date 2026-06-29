@@ -8804,6 +8804,7 @@ export type EsigningEnvelopeEventScalarFieldEnum = (typeof EsigningEnvelopeEvent
 export const ProcessingDocumentScalarFieldEnum = {
   id: 'id',
   documentId: 'documentId',
+  tenantId: 'tenantId',
   isContainer: 'isContainer',
   parentProcessingDocId: 'parentProcessingDocId',
   pageFrom: 'pageFrom',

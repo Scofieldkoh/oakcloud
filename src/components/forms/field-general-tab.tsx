@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { FormInput } from '@/components/ui/form-input';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Toggle } from '@/components/ui/toggle';
+import { cn } from '@/lib/utils';
 import { DROPDOWN_PRESETS } from '@/lib/constants/form-option-presets';
 import { isSummaryEligibleFieldType } from '@/lib/form-utils';
 import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS, normalizeKey, isRepeatMarkerInputType, isBlockDividerInputType, isFaqField, newClientId } from './builder-utils';
@@ -36,7 +37,6 @@ function normalizeFaqOptions(options: BuilderField['options']): BuilderField['op
   return normalized.length > 0 ? normalized : [createFaqOption(1)];
 }
 
-
 function normalizeHexColor(value: string): string | undefined {
   const trimmed = value.trim().toLowerCase();
   if (!trimmed) return undefined;
@@ -64,6 +64,37 @@ function getDefaultInfoPadding(inputType: ShortInputType): { top: number; right:
   return { top: 8, right: 12, bottom: 8, left: 12 };
 }
 
+function WidthSelector({ value, onChange }: { value: number; onChange: (v: 25 | 33 | 50 | 66 | 75 | 100) => void }) {
+  return (
+    <div className="flex rounded-lg border border-border-primary bg-background-primary p-0.5 gap-0.5">
+      {WIDTH_OPTIONS.map((width) => (
+        <button
+          key={width}
+          type="button"
+          onClick={() => onChange(width)}
+          className={cn(
+            'flex-1 rounded py-1.5 text-xs font-medium transition-colors',
+            value === width
+              ? 'bg-oak-primary text-white shadow-sm'
+              : 'text-text-secondary hover:bg-background-tertiary hover:text-text-primary'
+          )}
+        >
+          {width}%
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-2">
+      <span className="shrink-0 text-2xs font-semibold uppercase tracking-widest text-text-muted">{title}</span>
+      <div className="h-px flex-1 bg-border-primary" />
+    </div>
+  );
+}
+
 export function FieldGeneralTab({
   field,
   onChange,
@@ -85,70 +116,80 @@ export function FieldGeneralTab({
     INFO_INPUT_TYPES.includes(field.inputType) ? field.inputType : 'info_text'
   );
 
+  const showLayoutSection = field.type !== 'PAGE_BREAK' && field.type !== 'PARAGRAPH' && !isFaqField(field);
+  const showBehaviorSection = field.type !== 'PAGE_BREAK' && !isFaqField(field);
+
   return (
-    <>
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-text-secondary">Element</label>
-        <select
-          value={field.type}
+    <div className="space-y-4">
+
+      {/* ── Field identity ─────────────────────────────────────────── */}
+      <div className="space-y-3">
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-text-secondary">Element type</label>
+          <select
+            value={field.type}
+            onChange={(e) => {
+              const nextType = e.target.value as BuilderField['type'];
+              const next: BuilderField = { ...field, type: nextType };
+              if (nextType === 'PAGE_BREAK') next.layoutWidth = 100;
+              if (nextType === 'SHORT_TEXT' && (!next.inputType || INFO_INPUT_TYPES.includes(next.inputType))) {
+                next.inputType = 'text';
+              }
+              if (nextType === 'PARAGRAPH' && !INFO_INPUT_TYPES.includes(next.inputType)) {
+                next.inputType = 'info_text';
+              }
+              if (nextType === 'PAGE_BREAK' && !isRepeatMarkerInputType(next.inputType)) {
+                next.inputType = 'text';
+              }
+              if (['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN'].includes(nextType) && next.options.length === 0) {
+                next.options = [
+                  { label: 'Option 1', value: 'Option 1' },
+                  { label: 'Option 2', value: 'Option 2' },
+                ];
+              }
+              if (!isSummaryEligibleFieldType(nextType)) {
+                next.showOnSummary = false;
+              }
+              onChange(next);
+            }}
+            className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+          >
+            {FIELD_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <FormInput
+          label="Label"
+          value={field.label}
           onChange={(e) => {
-            const nextType = e.target.value as BuilderField['type'];
-            const next: BuilderField = { ...field, type: nextType };
-            if (nextType === 'PAGE_BREAK') next.layoutWidth = 100;
-            if (nextType === 'SHORT_TEXT' && (!next.inputType || INFO_INPUT_TYPES.includes(next.inputType))) {
-              next.inputType = 'text';
-            }
-            if (nextType === 'PARAGRAPH' && !INFO_INPUT_TYPES.includes(next.inputType)) {
-              next.inputType = 'info_text';
-            }
-            if (nextType === 'PAGE_BREAK' && !isRepeatMarkerInputType(next.inputType)) {
-              next.inputType = 'text';
-            }
-            if (['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN'].includes(nextType) && next.options.length === 0) {
-              next.options = [
-                { label: 'Option 1', value: 'Option 1' },
-                { label: 'Option 2', value: 'Option 2' },
-              ];
-            }
-            if (!isSummaryEligibleFieldType(nextType)) {
-              next.showOnSummary = false;
-            }
-            onChange(next);
+            const nextLabel = e.target.value;
+            const keyFromCurrentLabel = normalizeKey(field.label || '');
+            const keyFromCurrentKey = normalizeKey(field.key || '');
+            const shouldSyncKey = !field.key.trim() || keyFromCurrentKey === keyFromCurrentLabel;
+            onChange({
+              ...field,
+              label: nextLabel,
+              key: shouldSyncKey ? normalizeKey(nextLabel) : field.key,
+            });
           }}
-          className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
-        >
-          {FIELD_TYPE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
+        />
+
+        <FormInput
+          label="Custom key"
+          value={field.key}
+          onChange={(e) => onChange({ ...field, key: e.target.value })}
+        />
       </div>
 
-      <FormInput
-        label="Label"
-        value={field.label}
-        onChange={(e) => {
-          const nextLabel = e.target.value;
-          const keyFromCurrentLabel = normalizeKey(field.label || '');
-          const keyFromCurrentKey = normalizeKey(field.key || '');
-          const shouldSyncKey = !field.key.trim() || keyFromCurrentKey === keyFromCurrentLabel;
-          onChange({
-            ...field,
-            label: nextLabel,
-            key: shouldSyncKey ? normalizeKey(nextLabel) : field.key,
-          });
-        }}
-      />
-
-      <FormInput
-        label="Custom key"
-        value={field.key}
-        onChange={(e) => onChange({ ...field, key: e.target.value })}
-      />
+      {/* ── Type-specific content ───────────────────────────────────── */}
 
       {field.type === 'PAGE_BREAK' && (
-        <>
+        <div className="space-y-3">
+          <SectionHeader title="Page break" />
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Page break mode</label>
+            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Mode</label>
             <select
               value={isRepeatMarkerInputType(field.inputType) || isBlockDividerInputType(field.inputType) ? field.inputType : 'text'}
               onChange={(e) => {
@@ -203,7 +244,7 @@ export function FieldGeneralTab({
           </div>
 
           {field.inputType === PAGE_BREAK_REPEAT_START && (
-            <>
+            <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
               <FormInput
                 label="Section title"
                 value={field.label}
@@ -222,7 +263,7 @@ export function FieldGeneralTab({
                 })}
                 placeholder="Add item"
               />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <FormInput
                   label="Min rows"
                   type="number"
@@ -258,26 +299,26 @@ export function FieldGeneralTab({
                   placeholder="Explain what each row/card should capture."
                 />
               </div>
-            </>
+            </div>
           )}
 
           {field.inputType === PAGE_BREAK_REPEAT_END && (
             <p className="rounded-lg border border-border-primary bg-background-elevated p-3 text-xs text-text-secondary">
-              This marks the end of a dynamic section. All fields between start and end become repeatable cards.
+              Marks the end of a dynamic section. All fields between start and end become repeatable cards.
             </p>
           )}
 
           {field.inputType === PAGE_BREAK_BLOCK_DIVIDER && (
             <p className="rounded-lg border border-border-primary bg-background-elevated p-3 text-xs text-text-secondary">
-              Starts a new visual block for the elements that follow it. This divider is not shown to respondents and does not collect an answer.
+              Starts a new visual block for the elements that follow it. Not shown to respondents and does not collect an answer.
             </p>
           )}
-        </>
+        </div>
       )}
 
       {field.type === 'SHORT_TEXT' && (
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-text-secondary">Type</label>
+        <div className="space-y-3">
+          <SectionHeader title="Input type" />
           <select
             value={field.inputType}
             onChange={(e) => onChange({ ...field, inputType: e.target.value as ShortInputType })}
@@ -294,177 +335,185 @@ export function FieldGeneralTab({
       )}
 
       {field.type === 'PARAGRAPH' && (
-        <>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Information type</label>
-            <select
-              value={INFO_INPUT_TYPES.includes(field.inputType) ? field.inputType : 'info_text'}
-              onChange={(e) => {
-                const nextInputType = e.target.value as ShortInputType;
-                if (nextInputType === 'info_faq') {
-                  const nextLabel = field.label && field.label !== 'Untitled field' ? field.label : 'Commonly Asked Questions';
-                  onChange({
+        <div className="space-y-4">
+          {/* Content */}
+          <div className="space-y-3">
+            <SectionHeader title="Content" />
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-text-secondary">Information type</label>
+              <select
+                value={INFO_INPUT_TYPES.includes(field.inputType) ? field.inputType : 'info_text'}
+                onChange={(e) => {
+                  const nextInputType = e.target.value as ShortInputType;
+                  if (nextInputType === 'info_faq') {
+                    const nextLabel = field.label && field.label !== 'Untitled field' ? field.label : 'Commonly Asked Questions';
+                    onChange({
+                      ...field,
+                      inputType: 'info_faq',
+                      label: nextLabel,
+                      key: field.key && field.key !== 'untitled_field' ? field.key : normalizeKey(nextLabel),
+                      isRequired: false,
+                      isReadOnly: false,
+                      showOnSummary: false,
+                      options: normalizeFaqOptions(field.options),
+                      validation: {
+                        ...(field.validation || {}),
+                        faqDefaultState: field.validation?.faqDefaultState || 'collapsed',
+                        faqSearchEnabled: field.validation?.faqSearchEnabled ?? true,
+                      },
+                    });
+                    return;
+                  }
+                  onChange({ ...field, inputType: nextInputType });
+                }}
+                className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+              >
+                <option value="info_text">Text block</option>
+                <option value="info_image">Image</option>
+                <option value="info_url">URL / Link</option>
+                <option value="info_heading_1">Heading 1</option>
+                <option value="info_heading_2">Heading 2</option>
+                <option value="info_heading_3">Heading 3</option>
+                <option value="info_faq">FAQ</option>
+              </select>
+            </div>
+
+            {!isFaqField(field) && (
+              <>
+                {(field.inputType === 'info_text' || !INFO_INPUT_TYPES.includes(field.inputType)) && (
+                  <div className="space-y-2">
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Text block content</label>
+                    <div className="overflow-hidden rounded-lg border border-border-primary">
+                      <RichTextEditor
+                        value={field.subtext || ''}
+                        onChange={(nextHtml) => onChange({ ...field, subtext: nextHtml })}
+                        minHeight={140}
+                      />
+                    </div>
+                    <p className="text-2xs text-text-muted">Supports rich text formatting (headings, bold, lists, links).</p>
+                  </div>
+                )}
+
+                {field.inputType === 'info_image' && (
+                  <>
+                    <FormInput
+                      label="Image URL"
+                      value={field.placeholder}
+                      onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
+                      placeholder="https://example.com/image.png"
+                    />
+                    <FormInput
+                      label="Caption / alt text"
+                      value={field.subtext}
+                      onChange={(e) => onChange({ ...field, subtext: e.target.value })}
+                      placeholder="Optional caption"
+                    />
+                  </>
+                )}
+
+                {field.inputType === 'info_url' && (
+                  <>
+                    <FormInput
+                      label="URL"
+                      value={field.placeholder}
+                      onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
+                      placeholder="https://example.com"
+                    />
+                    <FormInput
+                      label="Link label"
+                      value={field.subtext}
+                      onChange={(e) => onChange({ ...field, subtext: e.target.value })}
+                      placeholder="Open resource"
+                    />
+                  </>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Display options */}
+          {!isFaqField(field) && (
+            <div className="space-y-3">
+              <SectionHeader title="Display" />
+              <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
+                <Toggle
+                  checked={field.validation?.infoShowInPdf === true}
+                  onChange={(checked) => onChange({
                     ...field,
-                    inputType: 'info_faq',
-                    label: nextLabel,
-                    key: field.key && field.key !== 'untitled_field' ? field.key : normalizeKey(nextLabel),
-                    isRequired: false,
-                    isReadOnly: false,
-                    showOnSummary: false,
-                    options: normalizeFaqOptions(field.options),
                     validation: {
                       ...(field.validation || {}),
-                      faqDefaultState: field.validation?.faqDefaultState || 'collapsed',
-                      faqSearchEnabled: field.validation?.faqSearchEnabled ?? true,
+                      infoShowInPdf: checked ? true : undefined,
                     },
-                  });
-                  return;
-                }
-                onChange({ ...field, inputType: nextInputType });
-              }}
-              className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
-            >
-              <option value="info_text">Text block</option>
-              <option value="info_image">Image</option>
-              <option value="info_url">URL / Link</option>
-              <option value="info_heading_1">Heading 1</option>
-              <option value="info_heading_2">Heading 2</option>
-              <option value="info_heading_3">Heading 3</option>
-              <option value="info_faq">FAQ</option>
-            </select>
-          </div>
-
-          <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
-            <Toggle
-              checked={field.validation?.infoShowInPdf === true}
-              onChange={(checked) => onChange({
-                ...field,
-                validation: {
-                  ...(field.validation || {}),
-                  infoShowInPdf: checked ? true : undefined,
-                },
-              })}
-              label="Show in print PDF"
-              description="Include this information block in the generated response PDF. FAQ blocks print fully expanded."
-              size="sm"
-            />
-          </div>
-
-          {!isFaqField(field) && (
-            <>
-          {(field.inputType === 'info_text' || !INFO_INPUT_TYPES.includes(field.inputType)) && (
-            <div className="space-y-2">
-              <label className="mb-1.5 block text-xs font-medium text-text-secondary">Text block content</label>
-              <div className="overflow-hidden rounded-lg border border-border-primary">
-                <RichTextEditor
-                  value={field.subtext || ''}
-                  onChange={(nextHtml) => onChange({ ...field, subtext: nextHtml })}
-                  minHeight={140}
+                  })}
+                  label="Show in print PDF"
+                  description="Include this block in the generated response PDF. FAQ blocks print fully expanded."
+                  size="sm"
+                />
+                <div className="border-t border-border-primary pt-3">
+                  <Toggle
+                    checked={field.validation?.infoInlineCard === true}
+                    onChange={(checked) => onChange({
+                      ...field,
+                      validation: {
+                        ...(field.validation || {}),
+                        infoInlineCard: checked ? true : undefined,
+                      },
+                    })}
+                    label="Place inside current card"
+                    description="Render this block together with nearby form fields instead of as its own full-width card."
+                    size="sm"
+                  />
+                  {field.validation?.infoInlineCard === true && (
+                    <div className="mt-3">
+                      <label className="mb-1.5 block text-xs font-medium text-text-secondary">Layout width</label>
+                      <WidthSelector
+                        value={field.layoutWidth}
+                        onChange={(v) => onChange({ ...field, layoutWidth: v })}
+                      />
+                    </div>
+                  )}
+                </div>
+                {(field.inputType === 'info_text' || !INFO_INPUT_TYPES.includes(field.inputType)) && (
+                  <div className="border-t border-border-primary pt-3">
+                    <Toggle
+                      checked={infoBareStyle}
+                      onChange={(checked) => onChange({
+                        ...field,
+                        validation: {
+                          ...(field.validation || {}),
+                          infoBareStyle: checked ? true : undefined,
+                        },
+                      })}
+                      label="Plain text style"
+                      description="Show this text block without border or background."
+                      size="sm"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="rounded-lg border border-status-warning/25 bg-status-warning/5 p-3">
+                <Toggle
+                  checked={field.validation?.infoStopsProgress === true}
+                  onChange={(checked) => onChange({
+                    ...field,
+                    validation: {
+                      ...(field.validation || {}),
+                      infoStopsProgress: checked ? true : undefined,
+                    },
+                  })}
+                  label="Stop form progression"
+                  description="When this block is visible, respondents cannot continue to the next page or submit the form."
+                  size="sm"
                 />
               </div>
-              <p className="text-2xs text-text-muted">
-                Supports rich text formatting (headings, bold, lists, links).
-              </p>
             </div>
           )}
 
-          {field.inputType === 'info_image' && (
-            <>
-              <FormInput
-                label="Image URL"
-                value={field.placeholder}
-                onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
-                placeholder="https://example.com/image.png"
-              />
-              <FormInput
-                label="Caption / alt text"
-                value={field.subtext}
-                onChange={(e) => onChange({ ...field, subtext: e.target.value })}
-                placeholder="Optional caption"
-              />
-            </>
-          )}
-
-          {field.inputType === 'info_url' && (
-            <>
-              <FormInput
-                label="URL"
-                value={field.placeholder}
-                onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
-                placeholder="https://example.com"
-              />
-              <FormInput
-                label="Link label"
-                value={field.subtext}
-                onChange={(e) => onChange({ ...field, subtext: e.target.value })}
-                placeholder="Open resource"
-              />
-            </>
-          )}
-
-          <div className="rounded-lg border border-status-warning/25 bg-status-warning/5 p-3">
-            <Toggle
-              checked={field.validation?.infoStopsProgress === true}
-              onChange={(checked) => onChange({
-                ...field,
-                validation: {
-                  ...(field.validation || {}),
-                  infoStopsProgress: checked ? true : undefined,
-                },
-              })}
-              label="Stop form progression"
-              description="When this information block is visible, respondents cannot continue to the next page or submit the form."
-              size="sm"
-            />
-          </div>
-
-          <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
-            <Toggle
-              checked={field.validation?.infoInlineCard === true}
-              onChange={(checked) => onChange({
-                ...field,
-                validation: {
-                  ...(field.validation || {}),
-                  infoInlineCard: checked ? true : undefined,
-                },
-              })}
-              label="Place inside current card"
-              description="Render this information block together with nearby form fields instead of as its own full-width card."
-              size="sm"
-            />
-
-            {field.validation?.infoInlineCard === true && (
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-text-secondary">Layout width</label>
-                <select
-                  value={field.layoutWidth}
-                  onChange={(e) => onChange({ ...field, layoutWidth: Number(e.target.value) as 25 | 33 | 50 | 66 | 75 | 100 })}
-                  className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
-                >
-                  {WIDTH_OPTIONS.map((width) => (
-                    <option key={width} value={width}>{width}%</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {(field.inputType === 'info_text' || !INFO_INPUT_TYPES.includes(field.inputType)) && (
-              <Toggle
-                checked={infoBareStyle}
-                onChange={(checked) => onChange({
-                  ...field,
-                  validation: {
-                    ...(field.validation || {}),
-                    infoBareStyle: checked ? true : undefined,
-                  },
-                })}
-                label="Plain text style"
-                description="Show this text block without border or background."
-                size="sm"
-              />
-            )}
-
-              <div className="space-y-3">
+          {/* Styling */}
+          {!isFaqField(field) && (
+            <div className="space-y-3">
+              <SectionHeader title="Styling" />
+              <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-text-secondary">Background color</label>
                   <div className="flex flex-wrap items-center gap-2">
@@ -502,7 +551,7 @@ export function FieldGeneralTab({
                   </div>
                 </div>
 
-                <div>
+                <div className="border-t border-border-primary pt-3">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <label className="block text-xs font-medium text-text-secondary">Content padding (px)</label>
                     {(normalizedInfoPaddingTopPx !== undefined
@@ -566,172 +615,172 @@ export function FieldGeneralTab({
                       </div>
                     ))}
                   </div>
-                  <p className="mt-1 text-2xs text-text-muted">
-                    Override internal padding for this information block. Leave empty for default spacing.
-                  </p>
+                  <p className="mt-1 text-2xs text-text-muted">Leave empty for default spacing.</p>
                 </div>
               </div>
             </div>
-            </>
           )}
-        </>
+        </div>
       )}
 
       {isFaqField(field) && (
-        <div className="space-y-3">
-          <div className="space-y-2 rounded-lg border border-border-primary bg-background-elevated p-3">
-            <label className="block text-xs font-medium text-text-secondary">Main header</label>
-            <div className="overflow-hidden rounded-lg border border-border-primary">
-              <RichTextEditor
-                value={field.label || ''}
-                onChange={(nextHtml) => onChange({ ...field, label: nextHtml })}
-                minHeight={96}
-              />
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <SectionHeader title="Content" />
+            <div className="space-y-2 rounded-lg border border-border-primary bg-background-elevated p-3">
+              <label className="block text-xs font-medium text-text-secondary">Main header</label>
+              <div className="overflow-hidden rounded-lg border border-border-primary">
+                <RichTextEditor
+                  value={field.label || ''}
+                  onChange={(nextHtml) => onChange({ ...field, label: nextHtml })}
+                  minHeight={96}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-text-secondary">FAQ item default state</label>
-              <select
-                value={field.validation?.faqDefaultState || 'collapsed'}
-                onChange={(e) => onChange({
+              <label className="mb-1.5 block text-xs font-medium text-text-secondary">FAQ items</label>
+              <div className="space-y-2">
+                {field.options.map((option, optionIndex) => (
+                  <div key={option.value || `${field.clientId}-faq-${optionIndex}`} className="rounded-lg border border-border-primary bg-background-elevated p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium text-text-secondary">Item {optionIndex + 1}</span>
+                      <button
+                        type="button"
+                        className="rounded border border-border-primary px-2 py-1 text-xs text-text-secondary hover:text-status-error"
+                        onClick={() => onChange({
+                          ...field,
+                          options: field.options.filter((_, idx) => idx !== optionIndex),
+                        })}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <label className="block text-xs font-medium text-text-secondary">Header</label>
+                        <div className="overflow-hidden rounded-lg border border-border-primary">
+                          <RichTextEditor
+                            value={option.label || ''}
+                            onChange={(nextHtml) => {
+                              const nextOptions = field.options.map((candidate, idx) => (
+                                idx === optionIndex ? { ...candidate, label: nextHtml } : candidate
+                              ));
+                              onChange({ ...field, options: nextOptions });
+                            }}
+                            minHeight={96}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-xs font-medium text-text-secondary">Body</label>
+                        <div className="overflow-hidden rounded-lg border border-border-primary">
+                          <RichTextEditor
+                            value={option.bodyHtml || ''}
+                            onChange={(nextHtml) => {
+                              const nextOptions = field.options.map((candidate, idx) => (
+                                idx === optionIndex ? { ...candidate, bodyHtml: nextHtml } : candidate
+                              ));
+                              onChange({ ...field, options: nextOptions });
+                            }}
+                            minHeight={140}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="mt-2 rounded border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary"
+                onClick={() => onChange({
                   ...field,
-                  validation: {
-                    ...(field.validation || {}),
-                    faqDefaultState: e.target.value as 'collapsed' | 'expanded' | 'first_expanded',
-                  },
+                  options: [
+                    ...field.options,
+                    createFaqOption(field.options.length + 1),
+                  ],
                 })}
-                className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
               >
-                <option value="collapsed">All collapsed</option>
-                <option value="expanded">All expanded</option>
-                <option value="first_expanded">First item expanded</option>
-              </select>
+                Add FAQ item
+              </button>
             </div>
-
-            <Toggle
-              checked={field.validation?.faqSearchEnabled !== false}
-              onChange={(checked) => onChange({
-                ...field,
-                validation: {
-                  ...(field.validation || {}),
-                  faqSearchEnabled: checked ? true : false,
-                },
-              })}
-              label="Show search bar"
-              description="Allow respondents to search FAQ headers and body text."
-              size="sm"
-            />
-
-            <Toggle
-              checked={field.validation?.faqMainToggleEnabled === true}
-              onChange={(checked) => onChange({
-                ...field,
-                validation: {
-                  ...(field.validation || {}),
-                  faqMainToggleEnabled: checked ? true : undefined,
-                  faqMainDefaultExpanded: checked ? (field.validation?.faqMainDefaultExpanded ?? false) : undefined,
-                },
-              })}
-              label="Hide FAQ behind main header"
-              description="Show only the main header row until respondents expand it."
-              size="sm"
-            />
-
-            {field.validation?.faqMainToggleEnabled === true && (
-              <Toggle
-                checked={field.validation?.faqMainDefaultExpanded === true}
-                onChange={(checked) => onChange({
-                  ...field,
-                  validation: {
-                    ...(field.validation || {}),
-                    faqMainToggleEnabled: true,
-                    faqMainDefaultExpanded: checked ? true : undefined,
-                  },
-                })}
-                label="Main header expanded by default"
-                description="Open the FAQ section when the form first loads."
-                size="sm"
-              />
-            )}
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-text-secondary">FAQ items</label>
-            <div className="space-y-2">
-              {field.options.map((option, optionIndex) => (
-                <div key={option.value || `${field.clientId}-faq-${optionIndex}`} className="rounded-lg border border-border-primary bg-background-elevated p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-text-secondary">Item {optionIndex + 1}</span>
-                    <button
-                      type="button"
-                      className="rounded border border-border-primary px-2 py-1 text-xs text-text-secondary hover:text-status-error"
-                      onClick={() => onChange({
-                        ...field,
-                        options: field.options.filter((_, idx) => idx !== optionIndex),
-                      })}
-                    >
-                      Remove
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <label className="block text-xs font-medium text-text-secondary">Header</label>
-                      <div className="overflow-hidden rounded-lg border border-border-primary">
-                        <RichTextEditor
-                          value={option.label || ''}
-                          onChange={(nextHtml) => {
-                            const nextOptions = field.options.map((candidate, idx) => (
-                              idx === optionIndex ? { ...candidate, label: nextHtml } : candidate
-                            ));
-                            onChange({ ...field, options: nextOptions });
-                          }}
-                          minHeight={96}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-xs font-medium text-text-secondary">Body</label>
-                      <div className="overflow-hidden rounded-lg border border-border-primary">
-                        <RichTextEditor
-                          value={option.bodyHtml || ''}
-                          onChange={(nextHtml) => {
-                            const nextOptions = field.options.map((candidate, idx) => (
-                              idx === optionIndex ? { ...candidate, bodyHtml: nextHtml } : candidate
-                            ));
-                            onChange({ ...field, options: nextOptions });
-                          }}
-                          minHeight={140}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          <div className="space-y-3">
+            <SectionHeader title="Behavior" />
+            <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-secondary">Default item state</label>
+                <select
+                  value={field.validation?.faqDefaultState || 'collapsed'}
+                  onChange={(e) => onChange({
+                    ...field,
+                    validation: {
+                      ...(field.validation || {}),
+                      faqDefaultState: e.target.value as 'collapsed' | 'expanded' | 'first_expanded',
+                    },
+                  })}
+                  className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                >
+                  <option value="collapsed">All collapsed</option>
+                  <option value="expanded">All expanded</option>
+                  <option value="first_expanded">First item expanded</option>
+                </select>
+              </div>
+              <div className="border-t border-border-primary pt-3 space-y-3">
+                <Toggle
+                  checked={field.validation?.faqSearchEnabled !== false}
+                  onChange={(checked) => onChange({
+                    ...field,
+                    validation: {
+                      ...(field.validation || {}),
+                      faqSearchEnabled: checked ? true : false,
+                    },
+                  })}
+                  label="Show search bar"
+                  description="Allow respondents to search FAQ headers and body text."
+                  size="sm"
+                />
+                <Toggle
+                  checked={field.validation?.faqMainToggleEnabled === true}
+                  onChange={(checked) => onChange({
+                    ...field,
+                    validation: {
+                      ...(field.validation || {}),
+                      faqMainToggleEnabled: checked ? true : undefined,
+                      faqMainDefaultExpanded: checked ? (field.validation?.faqMainDefaultExpanded ?? false) : undefined,
+                    },
+                  })}
+                  label="Hide FAQ behind main header"
+                  description="Show only the main header row until respondents expand it."
+                  size="sm"
+                />
+                {field.validation?.faqMainToggleEnabled === true && (
+                  <Toggle
+                    checked={field.validation?.faqMainDefaultExpanded === true}
+                    onChange={(checked) => onChange({
+                      ...field,
+                      validation: {
+                        ...(field.validation || {}),
+                        faqMainToggleEnabled: true,
+                        faqMainDefaultExpanded: checked ? true : undefined,
+                      },
+                    })}
+                    label="Main header expanded by default"
+                    description="Open the FAQ section when the form first loads."
+                    size="sm"
+                  />
+                )}
+              </div>
             </div>
-            <button
-              type="button"
-              className="mt-2 rounded border border-border-primary bg-background-primary px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary"
-              onClick={() => onChange({
-                ...field,
-                options: [
-                  ...field.options,
-                  createFaqOption(field.options.length + 1),
-                ],
-              })}
-            >
-              Add FAQ item
-            </button>
           </div>
         </div>
       )}
 
       {(field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') && (
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-text-secondary">Options</label>
+        <div className="space-y-3">
+          <SectionHeader title="Options" />
           <div className="space-y-2">
             {field.options.map((option, optionIndex) => (
               <div key={`${field.clientId}-option-${optionIndex}`} className="rounded-lg border border-border-primary bg-background-elevated p-2.5">
@@ -853,7 +902,6 @@ export function FieldGeneralTab({
                                 if (!checked) {
                                   return { ...candidate, childSelectionMode: 'multiple' as const, childOptions };
                                 }
-
                                 let defaultAssigned = false;
                                 let requiredAssigned = false;
                                 return {
@@ -1102,26 +1150,12 @@ export function FieldGeneralTab({
           >
             Add option
           </button>
-          <div className="mt-3 rounded-lg border border-border-primary bg-background-elevated p-3">
-            <Toggle
-              checked={field.validation?.choiceInlineRight === true}
-              onChange={(checked) => onChange({
-                ...field,
-                validation: {
-                  ...(field.validation || {}),
-                  choiceInlineRight: checked ? true : undefined,
-                },
-              })}
-              label="Inline options on right"
-              description="Show the question label on the left and options side by side on the right."
-              size="sm"
-            />
-          </div>
         </div>
       )}
 
       {field.type === 'DROPDOWN' && (
         <div className="space-y-3">
+          <SectionHeader title="Options" />
           <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
             <label className="mb-1.5 block text-xs font-medium text-text-secondary">Preset list</label>
             <div className="flex flex-wrap items-end gap-2">
@@ -1154,7 +1188,6 @@ export function FieldGeneralTab({
               <p className="mt-2 text-xs text-text-tertiary">{selectedDropdownPreset.description}</p>
             )}
           </div>
-
           <div>
             <label className="mb-1.5 block text-xs font-medium text-text-secondary">Options</label>
             <textarea
@@ -1172,48 +1205,86 @@ export function FieldGeneralTab({
         </div>
       )}
 
-      {field.type !== 'PAGE_BREAK' && field.type !== 'PARAGRAPH' && !isFaqField(field) && (
-        <>
+      {/* ── Layout ─────────────────────────────────────────────────── */}
+      {showLayoutSection && (
+        <div className="space-y-3">
+          <SectionHeader title="Layout" />
           <FormInput
             label="Placeholder"
             value={field.placeholder}
             onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
           />
-
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Layout width</label>
-            <select
+            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Width</label>
+            <WidthSelector
               value={field.layoutWidth}
-              onChange={(e) => onChange({ ...field, layoutWidth: Number(e.target.value) as 25 | 33 | 50 | 66 | 75 | 100 })}
-              className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
-            >
-              {WIDTH_OPTIONS.map((width) => (
-                <option key={width} value={width}>{width}%</option>
-              ))}
-            </select>
+              onChange={(v) => onChange({ ...field, layoutWidth: v })}
+            />
           </div>
-        </>
+          {(field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') && (
+            <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
+              <Toggle
+                checked={field.validation?.choiceInlineRight === true}
+                onChange={(checked) => onChange({
+                  ...field,
+                  validation: {
+                    ...(field.validation || {}),
+                    choiceInlineRight: checked ? true : undefined,
+                  },
+                })}
+                label="Inline options on right"
+                description="Show the question label on the left and options side by side on the right."
+                size="sm"
+              />
+            </div>
+          )}
+        </div>
       )}
 
-      {field.type !== 'PAGE_BREAK' && !isFaqField(field) && (
-        <>
+      {/* ── Behavior ───────────────────────────────────────────────── */}
+      {showBehaviorSection && (
+        <div className="space-y-3">
+          <SectionHeader title="Behavior" />
           <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
-            <Toggle checked={field.isRequired} onChange={(checked) => onChange({ ...field, isRequired: checked })} label="Field is required" size="sm" />
-            <Toggle checked={field.hideLabel} onChange={(checked) => onChange({ ...field, hideLabel: checked })} label="Hide label" size="sm" />
-            <Toggle checked={field.isReadOnly} onChange={(checked) => onChange({ ...field, isReadOnly: checked })} label="Read only" size="sm" />
-            <Toggle
-              checked={field.validation?.layoutBreakBefore === true}
-              onChange={(checked) => onChange({
-                ...field,
-                validation: {
-                  ...(field.validation || {}),
-                  layoutBreakBefore: checked ? true : undefined,
-                },
-              })}
-              label="Start on new row"
-              description="Prevent this field from merging into the previous row when widths leave space."
-              size="sm"
-            />
+            <Toggle checked={field.isRequired} onChange={(checked) => onChange({ ...field, isRequired: checked })} label="Required" description="Respondents must fill this field before continuing." size="sm" />
+            <div className="border-t border-border-primary pt-3 space-y-3">
+              <Toggle checked={field.isReadOnly} onChange={(checked) => onChange({ ...field, isReadOnly: checked })} label="Read only" size="sm" />
+              <Toggle checked={field.hideLabel} onChange={(checked) => onChange({ ...field, hideLabel: checked })} label="Hide label" size="sm" />
+              <Toggle
+                checked={field.validation?.layoutBreakBefore === true}
+                onChange={(checked) => onChange({
+                  ...field,
+                  validation: {
+                    ...(field.validation || {}),
+                    layoutBreakBefore: checked ? true : undefined,
+                  },
+                })}
+                label="Start on new row"
+                description="Prevent this field from merging into the previous row when widths leave space."
+                size="sm"
+              />
+            </div>
+            <div className="border-t border-border-primary pt-3">
+              <Toggle
+                checked={field.showOnSummary}
+                onChange={(checked) => onChange({ ...field, showOnSummary: checked })}
+                label="Show on summary"
+                description={canShowOnSummary
+                  ? 'Show this field as a column on the Responses page.'
+                  : 'This field type cannot be shown on the responses summary table.'}
+                size="sm"
+                disabled={!canShowOnSummary}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Help ───────────────────────────────────────────────────── */}
+      {showBehaviorSection && (
+        <div className="space-y-3">
+          <SectionHeader title="Help" />
+          <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
             <Toggle
               checked={field.validation?.tooltipEnabled === true}
               onChange={(checked) => onChange({
@@ -1228,20 +1299,10 @@ export function FieldGeneralTab({
               description="Show an information icon beside this field label."
               size="sm"
             />
-            <Toggle
-              checked={field.showOnSummary}
-              onChange={(checked) => onChange({ ...field, showOnSummary: checked })}
-              label="Show on summary"
-              description={canShowOnSummary
-                ? 'Show this field as a column on the Responses page.'
-                : 'This field type cannot be shown on the responses summary table.'}
-              size="sm"
-              disabled={!canShowOnSummary}
-            />
           </div>
 
           {field.validation?.tooltipEnabled === true && (
-            <>
+            <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-text-secondary">Tooltip mode</label>
                 <select
@@ -1261,36 +1322,36 @@ export function FieldGeneralTab({
                 </select>
               </div>
 
-              {field.validation?.tooltipMode === 'inline' ? (
-                <div className="space-y-2">
-                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">Tooltip content</label>
-                  <div className="overflow-hidden rounded-lg border border-border-primary">
-                    <RichTextEditor
-                      value={field.helpText || ''}
-                      onChange={(nextHtml) => onChange({ ...field, helpText: nextHtml })}
-                      minHeight={120}
+              <div className="border-t border-border-primary pt-3">
+                {field.validation?.tooltipMode === 'inline' ? (
+                  <div className="space-y-2">
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Tooltip content</label>
+                    <div className="overflow-hidden rounded-lg border border-border-primary">
+                      <RichTextEditor
+                        value={field.helpText || ''}
+                        onChange={(nextHtml) => onChange({ ...field, helpText: nextHtml })}
+                        minHeight={120}
+                      />
+                    </div>
+                    <p className="text-2xs text-text-muted">Supports rich text for the block shown after clicking the icon.</p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Tooltip content</label>
+                    <textarea
+                      value={field.helpText}
+                      onChange={(e) => onChange({ ...field, helpText: e.target.value })}
+                      className="w-full min-h-20 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+                      placeholder="Guidance shown when users hover the info icon"
                     />
                   </div>
-                  <p className="text-2xs text-text-muted">
-                    Supports rich text formatting for the information block shown after clicking the icon.
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-text-secondary">Tooltip content</label>
-                  <textarea
-                    value={field.helpText}
-                    onChange={(e) => onChange({ ...field, helpText: e.target.value })}
-                    className="w-full min-h-20 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
-                    placeholder="Guidance shown when users hover the info icon"
-                  />
-                </div>
-              )}
+                )}
+              </div>
 
               {field.validation?.tooltipMode === 'inline' && (
-                <div className="space-y-3 rounded-lg border border-border-primary bg-background-elevated p-3">
+                <div className="space-y-3 border-t border-border-primary pt-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Information block background</label>
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Block background color</label>
                     <div className="flex flex-wrap items-center gap-2">
                       <input
                         type="color"
@@ -1310,9 +1371,8 @@ export function FieldGeneralTab({
                       </div>
                     </div>
                   </div>
-
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Information block padding (px)</label>
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Block padding (px)</label>
                     <div className="grid grid-cols-2 gap-2">
                       {([
                         { key: 'tooltipInfoPaddingTopPx', label: 'Top' },
@@ -1346,10 +1406,11 @@ export function FieldGeneralTab({
                   </div>
                 </div>
               )}
-            </>
+            </div>
           )}
-        </>
+        </div>
       )}
-    </>
+
+    </div>
   );
 }

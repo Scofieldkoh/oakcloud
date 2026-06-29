@@ -20,6 +20,7 @@ import {
   Image as ImageIcon,
   FileText,
   Copy,
+  Settings,
 } from 'lucide-react';
 import { useSession } from '@/hooks/use-auth';
 import { useCompanySearch } from '@/hooks/use-company-search';
@@ -31,6 +32,8 @@ import { useToast } from '@/components/ui/toast';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 import { FileMergeModal } from '@/components/processing/file-merge-modal';
+import { DocumentExtractionPromptModal } from '@/components/processing/document-extraction-prompt-modal';
+import { useDocumentExtractionPromptSettings } from '@/hooks/use-document-extraction-prompt-settings';
 import { processFileForUpload, isSupportedFileType } from '@/lib/pdf-utils';
 import { calculateFileHash } from '@/lib/file-hash';
 import { cn } from '@/lib/utils';
@@ -96,7 +99,13 @@ export default function ProcessingUploadPage() {
   const [companyContext, setCompanyContext] = useState(''); // Auto-populated from company
   const [aiContext, setAiContext] = useState(''); // User's additional context
   const [selectedStandardContexts, setSelectedStandardContexts] = useState<string[]>([]);
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const previousBatchProviderRef = useRef<'mistral' | 'openai' | null>(null);
+  const {
+    settings: promptSettings,
+    setSettings: setPromptSettings,
+    standardContextOptions,
+  } = useDocumentExtractionPromptSettings(!uploadWithoutAiExtraction);
   const {
     searchQuery: companySearchQuery,
     setSearchQuery: setCompanySearchQuery,
@@ -140,10 +149,6 @@ export default function ProcessingUploadPage() {
     if (activeCompany && activeCompanyId) {
       setSelectedCompanyId(activeCompanyId);
       setSelectedCompany(activeCompany);
-    } else if (companyOptions.length === 1) {
-      // Auto-select if only one company
-      setSelectedCompanyId(companyOptions[0].id);
-      setSelectedCompany(companyOptions[0]);
     }
   }, [activeCompanyId, companyOptions, selectedCompanyId, setSelectedCompany]);
 
@@ -396,7 +401,7 @@ export default function ProcessingUploadPage() {
       ? ''
       : [
         companyContext,
-        buildFullContext(selectedStandardContexts, aiContext),
+        buildFullContext(selectedStandardContexts, aiContext, standardContextOptions),
       ].filter(Boolean).join('\n\n');
 
     for (const queuedFile of queuedFiles) {
@@ -513,6 +518,7 @@ export default function ProcessingUploadPage() {
     companyContext,
     selectedStandardContexts,
     aiContext,
+    standardContextOptions,
     uploadWithoutAiExtraction,
     useBatchProcessing,
     toastError,
@@ -948,11 +954,25 @@ export default function ProcessingUploadPage() {
         contextPlaceholder="E.g., 'Focus on line items and totals' or 'This is a foreign currency invoice'"
         contextHelpText="Provide your own hints to help the AI extract data more accurately."
         showStandardContexts
+        standardContextOptions={standardContextOptions}
         selectedStandardContexts={selectedStandardContexts}
         onStandardContextsChange={setSelectedStandardContexts}
         tenantId={activeTenantId || undefined}
         className="mb-6"
       />
+
+      {!uploadWithoutAiExtraction && (
+        <div className="-mt-4 mb-6 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setIsPromptModalOpen(true)}
+            className="btn-secondary btn-sm flex items-center gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            Prompt Management
+          </button>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -993,6 +1013,12 @@ export default function ProcessingUploadPage() {
         isOpen={isMergeModalOpen}
         onClose={() => setIsMergeModalOpen(false)}
         onMergeComplete={handleMergeComplete}
+      />
+      <DocumentExtractionPromptModal
+        isOpen={isPromptModalOpen}
+        onClose={() => setIsPromptModalOpen(false)}
+        settings={promptSettings}
+        onSettingsChange={setPromptSettings}
       />
     </div>
   );

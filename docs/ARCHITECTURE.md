@@ -56,7 +56,7 @@ Core design principles:
 | TipTap | Rich text editing |
 | pdf-lib | Existing document export paths |
 | Puppeteer | Form response PDF rendering |
-| LibreOffice (`soffice`) | Word-to-PDF conversion for e-signing uploads |
+| Microsoft Graph | Word-to-PDF conversion for e-signing uploads through usable SharePoint/OneDrive connectors; uploads remain PDF-only when no valid connector is configured |
 | MinIO / S3 | Uploaded file storage |
 
 ### Runtime Services
@@ -196,7 +196,7 @@ MinIO is used in local development; S3-compatible providers can be used in produ
 | Companies | Core company data, BizFile ingestion, compliance metadata |
 | Contacts | Individual and corporate contacts |
 | Document Generation | Templates, sharing, comments, exports |
-| Document Processing | Extraction, revisions, duplicate detection |
+| Document Processing | Extraction, revisions, duplicate detection; workspace-managed extraction prompts and quick context buttons |
 | Forms | Builder, public forms, drafts, attachments, PDF export, AI review |
 | Workflow (Preview) | Project and task workspace |
 | Exchange Rates | MAS sync and overrides |

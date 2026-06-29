@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { BuilderField } from './builder-utils';
+import { FIELD_TYPE_LABEL } from './builder-utils';
 import { FieldGeneralTab } from './field-general-tab';
 import { FieldValidationTab } from './field-validation-tab';
 import { FieldConditionTab } from './field-condition-tab';
@@ -18,11 +19,15 @@ export function FieldEditorDrawer({
   allFields,
   onClose,
   onChange,
+  isDirty,
+  onSave,
 }: {
   field: BuilderField;
   allFields: BuilderField[];
   onClose: () => void;
   onChange: (next: BuilderField) => void;
+  isDirty?: boolean;
+  onSave?: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<'general' | 'validation' | 'condition'>('general');
   const [panelWidth, setPanelWidth] = useState(FIELD_DRAWER_DEFAULT_WIDTH);
@@ -90,8 +95,11 @@ export function FieldEditorDrawer({
         aria-label="Resize field editor"
       />
       <div className="flex h-full flex-col">
-        <div className="flex items-center justify-between border-b border-border-primary px-5 py-4">
-          <h2 className="text-lg font-semibold text-text-primary">Edit form field</h2>
+        <div className="flex items-start justify-between border-b border-border-primary px-5 py-4">
+          <div>
+            <h2 className="text-sm font-semibold text-text-primary">Edit field</h2>
+            <p className="mt-0.5 text-xs text-text-muted">{FIELD_TYPE_LABEL[field.type] ?? field.type}</p>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -105,9 +113,9 @@ export function FieldEditorDrawer({
         <div className="border-b border-border-primary px-5 pt-2">
           <div className="flex items-center gap-5 text-sm">
             {[
-              { id: 'general', label: 'General' },
-              { id: 'validation', label: 'Validation' },
-              { id: 'condition', label: 'Condition' },
+              { id: 'general', label: 'Setup' },
+              { id: 'validation', label: 'Rules' },
+              { id: 'condition', label: 'Conditions' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -143,6 +151,26 @@ export function FieldEditorDrawer({
             />
           )}
         </div>
+
+        {onSave && (
+          <div className="flex items-center justify-between gap-3 border-t border-border-primary px-5 py-3">
+            <span className={cn('text-xs', isDirty ? 'text-status-warning' : 'text-text-muted')}>
+              {isDirty ? 'Unsaved changes' : 'All saved'}
+            </span>
+            <button
+              type="button"
+              onClick={onSave}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                isDirty
+                  ? 'bg-oak-primary text-white hover:opacity-90'
+                  : 'border border-border-primary bg-background-primary text-text-secondary hover:text-text-primary'
+              )}
+            >
+              Save
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

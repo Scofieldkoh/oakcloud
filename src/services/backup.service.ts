@@ -615,7 +615,7 @@ class BackupService {
       prisma.companyContact.findMany({ where: { company: { tenantId } } }),
       prisma.contact.findMany({ where: { tenantId } }),
       prisma.document.findMany({ where: { tenantId } }),
-      prisma.processingDocument.findMany({ where: { document: { tenantId } } }),
+      prisma.processingDocument.findMany({ where: { tenantId } }),
       prisma.documentLink.findMany({
         where: {
           OR: [
@@ -971,7 +971,7 @@ class BackupService {
       }
 
       // 3. Restore database data (in transaction)
-      await this.restoreDatabaseData(data);
+      await this.restoreDatabaseData(data, backup.tenantId);
 
       // 4. Restore files
       await this.restoreFiles(backupId, backup.tenantId, manifest.files);
@@ -1137,7 +1137,7 @@ class BackupService {
       await tx.documentPage.deleteMany({
         where: { processingDocument: { document: { tenantId } } },
       });
-      await tx.processingDocument.deleteMany({ where: { document: { tenantId } } });
+      await tx.processingDocument.deleteMany({ where: { tenantId } });
 
       // Delete generated documents
       await tx.documentDraft.deleteMany({ where: { document: { tenantId } } });
@@ -1205,7 +1205,7 @@ class BackupService {
   /**
    * Restore database data from backup
    */
-  private async restoreDatabaseData(data: Record<string, unknown>): Promise<void> {
+  private async restoreDatabaseData(data: Record<string, unknown>, tenantId: string): Promise<void> {
     log.info('Restoring database data from backup');
 
     await prisma.$transaction(async (tx) => {
@@ -1341,7 +1341,8 @@ class BackupService {
               currentRevisionId: doc.currentRevisionId as string,
             });
           }
-          return { ...doc, currentRevisionId: null };
+          // Inject tenantId (may be missing in backups taken before this field was added)
+          return { ...doc, tenantId, currentRevisionId: null };
         });
         await tx.processingDocument.createMany({
           data: docsWithoutRevision as Prisma.ProcessingDocumentCreateManyInput[],

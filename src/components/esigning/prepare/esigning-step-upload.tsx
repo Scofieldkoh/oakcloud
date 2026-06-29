@@ -15,8 +15,14 @@ import {
   ESIGNING_ACCESS_MODE_LABELS,
   formatEsigningFileSize,
 } from '@/components/esigning/esigning-shared';
+import {
+  getEsigningUploadAccept,
+  isAllowedEsigningUploadFile,
+  useEsigningWordUploadAvailability,
+} from '@/components/esigning/esigning-upload-files';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
+import { SingleDateInput } from '@/components/ui/single-date-input';
 import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
 import { ContactSearchSelect, type SearchableContact } from '@/components/ui/contact-search-select';
 import { useToast } from '@/components/ui/toast';
@@ -28,8 +34,6 @@ import { cn } from '@/lib/utils';
 import type { EsigningSigningOrder } from '@/generated/prisma';
 
 const RECIPIENT_ACCENT_COLORS = ['#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#f97316'];
-const ESIGNING_UPLOAD_ACCEPT =
-  'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx';
 const SIGNING_ORDER_CYCLE: EsigningSigningOrder[] = ['PARALLEL', 'SEQUENTIAL', 'MIXED'];
 const SIGNING_ORDER_PILL_LABELS: Record<EsigningSigningOrder, string> = {
   PARALLEL: 'Parallel',
@@ -63,15 +67,18 @@ interface EsigningStepUploadProps {
   onBack: () => void;
 }
 
-function toDateTimeLocal(value?: string | null): string {
+function toDateInputValue(value?: string | null): string {
   if (!value) return '';
   const date = new Date(value);
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, '0');
   const day = `${date.getDate()}`.padStart(2, '0');
-  const hours = `${date.getHours()}`.padStart(2, '0');
-  const minutes = `${date.getMinutes()}`.padStart(2, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+  return `${year}-${month}-${day}`;
+}
+
+function dateInputValueToIso(value: string): string | null {
+  if (!value) return null;
+  return new Date(`${value}T00:00`).toISOString();
 }
 
 function parseOptionalWholeNumber(value: string): number | null {
@@ -449,6 +456,8 @@ export function EsigningStepUpload({
   const createContactMutation = useCreateContact();
   const { data: session } = useSession();
   const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const wordUploadEnabled = useEsigningWordUploadAvailability(activeTenantId);
+  const uploadAccept = getEsigningUploadAccept(wordUploadEnabled);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastSyncedEnvelopeIdRef = useRef<string | null>(null);
   const persistedSignerGroupsRef = useRef<string[][]>([]);
@@ -488,7 +497,7 @@ export function EsigningStepUpload({
     setTitle(envelope.title);
     setMessage(envelope.message ?? '');
     setSigningOrder(envelope.signingOrder);
-    setExpiresAt(toDateTimeLocal(envelope.expiresAt));
+    setExpiresAt(toDateInputValue(envelope.expiresAt));
     setCompanyId(envelope.companyId ?? '');
     setReminderFrequencyDays(envelope.reminderFrequencyDays?.toString() ?? '');
     setReminderStartDays(envelope.reminderStartDays?.toString() ?? '');
@@ -590,7 +599,7 @@ export function EsigningStepUpload({
       message: message.trim() || undefined,
       companyId: companyId || null,
       signingOrder,
-      expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+      expiresAt: dateInputValueToIso(expiresAt),
       reminderFrequencyDays: parseOptionalWholeNumber(reminderFrequencyDays),
       reminderStartDays: parseOptionalWholeNumber(reminderStartDays),
       expiryWarningDays: parseOptionalWholeNumber(expiryWarningDays),
@@ -619,15 +628,39 @@ export function EsigningStepUpload({
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files.length > 0) {
+      if (!validateUploadFiles(e.dataTransfer.files)) {
+        return;
+      }
       void onUploadDocuments(e.dataTransfer.files);
     }
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files?.length) {
+      if (!validateUploadFiles(e.target.files)) {
+        e.currentTarget.value = '';
+        return;
+      }
       void onUploadDocuments(e.target.files);
       e.currentTarget.value = '';
     }
+  }
+
+  function validateUploadFiles(files: FileList): boolean {
+    const invalidFile = Array.from(files).find(
+      (file) => !isAllowedEsigningUploadFile(file, { wordUploadEnabled })
+    );
+
+    if (!invalidFile) {
+      return true;
+    }
+
+    toast.error(
+      wordUploadEnabled
+        ? 'Upload a PDF, DOCX, or DOC document.'
+        : 'Word upload requires a valid SharePoint or OneDrive connector. Upload a PDF instead.'
+    );
+    return false;
   }
 
   async function moveSequentialSigner(recipientId: string, direction: -1 | 1) {
@@ -1008,16 +1041,22 @@ async function applyMixedGroupChange(
             <Upload className="h-6 w-6 text-text-muted mb-1.5" />
           )}
           <p className="text-sm font-medium text-text-primary">
-            {isUploading ? 'Uploading…' : isDragging ? 'Release to upload' : 'Drop PDF or Word documents here'}
+            {isUploading
+              ? 'Uploading...'
+              : isDragging
+                ? 'Release to upload'
+                : wordUploadEnabled
+                  ? 'Drop PDF or Word documents here'
+                  : 'Drop PDF documents here'}
           </p>
           <p className="text-xs text-text-muted mt-0.5">
-            PDF, DOCX, or DOC · max {ESIGNING_LIMITS.MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB each
+            {wordUploadEnabled ? 'PDF, DOCX, or DOC' : 'PDF only'} - max {ESIGNING_LIMITS.MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB each
           </p>
         </div>
         <input
           ref={fileInputRef}
           type="file"
-          accept={ESIGNING_UPLOAD_ACCEPT}
+          accept={uploadAccept}
           multiple
           className="hidden"
           onChange={handleFileChange}
@@ -1595,19 +1634,16 @@ async function applyMixedGroupChange(
             {advancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </summary>
           <div className="border-t border-border-primary px-4 py-4 space-y-4 sm:px-6">
-            <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
-              <span>Expiration</span>
-              <input
-                type="datetime-local"
-                value={expiresAt}
-                onChange={(e) => {
-                  setExpiresAt(e.target.value);
-                  setIsSettingsDirty(true);
-                }}
-                disabled={!envelope.canEdit}
-                className="h-8 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary disabled:opacity-60"
-              />
-            </label>
+            <SingleDateInput
+              label="Expiration"
+              value={expiresAt}
+              onChange={(value) => {
+                setExpiresAt(value);
+                setIsSettingsDirty(true);
+              }}
+              disabled={!envelope.canEdit}
+              placeholder="dd mmm yyyy"
+            />
 
             <div className="grid gap-4 sm:grid-cols-3">
               <FormInput

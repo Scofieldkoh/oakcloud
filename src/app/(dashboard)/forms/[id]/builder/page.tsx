@@ -337,12 +337,14 @@ function SettingsSection({
   title,
   summary,
   defaultOpen = false,
+  configured = false,
   children,
 }: {
   icon: ReactNode;
   title: string;
   summary: ReactNode;
   defaultOpen?: boolean;
+  configured?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -356,7 +358,12 @@ function SettingsSection({
       >
         <span className="mt-0.5 shrink-0 text-text-muted">{icon}</span>
         <span className="flex-1 min-w-0">
-          <span className="block text-xs font-semibold text-text-primary">{title}</span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-text-primary">{title}</span>
+            {configured && (
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-oak-primary" aria-label="Configured" />
+            )}
+          </span>
           {!open && (
             <span className="block text-2xs text-text-muted truncate">{summary}</span>
           )}
@@ -427,6 +434,7 @@ export default function FormBuilderPage() {
   const [isGeneratingAiAssistContext, setIsGeneratingAiAssistContext] = useState(false);
   const [expandedTranslationSections, setExpandedTranslationSections] = useState<string[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [fieldSearch, setFieldSearch] = useState('');
   const baselineSnapshot = useRef<string>('');
 
   useEffect(() => {
@@ -467,7 +475,7 @@ export default function FormBuilderPage() {
 
     setTitle(form.title);
     setDescription(form.description || '');
-    setSlug(form.slug);
+    setSlug(form.status === 'ARCHIVED' ? '' : form.slug);
     setStatus(form.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED');
     setTagsText(form.tags.join(', '));
     setNotificationRecipientsText(notificationSettings.completionRecipientEmails.join('\n'));
@@ -492,7 +500,7 @@ export default function FormBuilderPage() {
     baselineSnapshot.current = serializeBuilderState({
       title: form.title,
       description: form.description || '',
-      slug: form.slug,
+      slug: form.status === 'ARCHIVED' ? '' : form.slug,
       status: form.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED',
       tags: form.tags,
       notificationRecipientEmails: notificationSettings.completionRecipientEmails,
@@ -631,6 +639,14 @@ export default function FormBuilderPage() {
 
     return aiTranslationSourceItems.filter((item) => !hasValue(getTranslatedValueByKey(activeLocaleTranslation, item.key)));
   }, [activeLocaleTranslation, aiTranslateFillEmptyOnly, aiTranslationSourceItems]);
+
+  const translationProgress = useMemo(() => {
+    const total = aiTranslationSourceItems.length;
+    const translated = aiTranslationSourceItems.filter(
+      (item) => hasValue(getTranslatedValueByKey(activeLocaleTranslation, item.key))
+    ).length;
+    return { total, translated };
+  }, [aiTranslationSourceItems, activeLocaleTranslation]);
 
   const translatableUiItems = useMemo(
     () => TRANSLATABLE_UI_LABELS.filter((item) => hasValue(item.placeholder)),
@@ -1359,7 +1375,7 @@ export default function FormBuilderPage() {
         : [normalizedDefaultLocale, ...normalizedEnabledLocales];
 
       const normalizedSlug = normalizeSlugSegment(slug);
-      if (normalizedSlug.length < 3) {
+      if (nextStatus !== 'ARCHIVED' && normalizedSlug.length < 3) {
         showError('Custom URL segment must be at least 3 characters');
         return;
       }
@@ -1466,7 +1482,7 @@ export default function FormBuilderPage() {
       const saved = await updateForm.mutateAsync({
         title: title.trim(),
         description: description.trim() || null,
-        slug: normalizedSlug,
+        ...(nextStatus === 'ARCHIVED' ? {} : { slug: normalizedSlug }),
         status: nextStatus,
         tags,
         settings: nextSettings,
@@ -1475,6 +1491,7 @@ export default function FormBuilderPage() {
       });
 
       setStatus(saved.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED');
+      setSlug(saved.status === 'ARCHIVED' ? '' : saved.slug);
       const savedDraftSettings = parseFormDraftSettings(saved.settings);
       const savedAiSettings = parseFormAiSettings(saved.settings);
       const savedFileNameSettings = parseFormFileNameSettings(saved.settings);
@@ -1493,7 +1510,7 @@ export default function FormBuilderPage() {
       baselineSnapshot.current = serializeBuilderState({
         title: saved.title,
         description: saved.description || '',
-        slug: saved.slug,
+        slug: saved.status === 'ARCHIVED' ? '' : saved.slug,
         status: saved.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED',
         tags: saved.tags,
         notificationRecipientEmails: notificationEmailParse.emails,
@@ -1606,6 +1623,7 @@ export default function FormBuilderPage() {
   }
 
   const isPublished = status === 'PUBLISHED';
+  const isArchived = status === 'ARCHIVED';
   const effectiveSlug = normalizeSlugSegment(slug) || form.slug;
   const publicOrigin = isHydrated ? window.location.origin : 'https://service.oakcloud.app';
   const publicUrlPreview = `${publicOrigin}/forms/f/${effectiveSlug || 'your-form-url'}`;
@@ -1708,8 +1726,9 @@ export default function FormBuilderPage() {
               <SettingsSection
                 icon={<Globe className="w-3.5 h-3.5" />}
                 title="Publishing"
-                summary={`${status.charAt(0) + status.slice(1).toLowerCase()} · ${slug || 'no slug'}`}
+                summary={`${status.charAt(0) + status.slice(1).toLowerCase()} · ${isArchived ? 'public URL disabled' : slug || 'no slug'}`}
                 defaultOpen
+                configured={status === 'PUBLISHED' || !!slug}
               >
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-text-secondary">Status</label>
@@ -1730,10 +1749,15 @@ export default function FormBuilderPage() {
                   onChange={(e) => setSlug(e.target.value.toLowerCase())}
                   onBlur={(e) => setSlug(normalizeSlugSegment(e.target.value))}
                   placeholder="client-intake-form"
+                  disabled={isArchived}
                   hint="Use lowercase letters, numbers, and hyphens."
                 />
                 <div className="text-2xs text-text-muted">
-                  Public URL: <span className="font-mono text-text-secondary">{publicUrlPreview}</span>
+                  {isArchived ? (
+                    'Public URL is disabled while this form is archived.'
+                  ) : (
+                    <>Public URL: <span className="font-mono text-text-secondary">{publicUrlPreview}</span></>
+                  )}
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-text-secondary">Description</label>
@@ -1758,6 +1782,7 @@ export default function FormBuilderPage() {
                   ? 'No recipients'
                   : `${notificationEmailParse.emails.length} recipient${notificationEmailParse.emails.length === 1 ? '' : 's'}`}
                 defaultOpen
+                configured={notificationEmailParse.emails.length > 0}
               >
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-text-secondary">Completion notification emails</label>
@@ -1783,6 +1808,7 @@ export default function FormBuilderPage() {
                 icon={<Users className="w-3.5 h-3.5" />}
                 title="Respondent"
                 summary={draftSaveEnabled ? `Save draft enabled · ${draftAutoDeleteDays} days` : 'Save draft off'}
+                configured={draftSaveEnabled}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -1835,6 +1861,7 @@ export default function FormBuilderPage() {
                 icon={<Sparkles className="w-3.5 h-3.5" />}
                 title="AI Review"
                 summary={aiParsingEnabled ? (aiParsingCustomContext ? 'Enabled · Custom context set' : 'Enabled') : 'Disabled'}
+                configured={aiParsingEnabled}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -1893,6 +1920,7 @@ export default function FormBuilderPage() {
                   ...(!hideFooter ? ['Footer'] : []),
                   ...(pdfFileNameTemplate ? ['PDF template'] : []),
                 ].join(' · ') || 'Default appearance'}
+                configured={!!pdfFileNameTemplate || hideLogo || hideFooter}
               >
                 <FormInput
                   label="PDF filename template"
@@ -2055,6 +2083,23 @@ export default function FormBuilderPage() {
                 </p>
               ) : (
                 <div className="space-y-4">
+                  {translationProgress.total > 0 && (
+                    <div className="rounded-lg border border-border-primary bg-background-elevated p-3 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-text-secondary">Translation progress</span>
+                        <span className="text-xs font-semibold text-text-primary">{translationProgress.translated} / {translationProgress.total}</span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-border-primary">
+                        <div
+                          className="h-full rounded-full bg-oak-primary transition-all duration-300"
+                          style={{ width: `${translationProgress.total > 0 ? Math.round((translationProgress.translated / translationProgress.total) * 100) : 0}%` }}
+                        />
+                      </div>
+                      <p className="text-2xs text-text-muted">
+                        {translationProgress.total - translationProgress.translated} values remaining for {getLocaleDisplayName(activeEditingLocale)}
+                      </p>
+                    </div>
+                  )}
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                       <p className="text-xs font-semibold text-text-secondary">English source</p>
@@ -2309,6 +2354,17 @@ export default function FormBuilderPage() {
 
         {activeTab === 'form' && (
           <>
+            {fields.length > 5 && (
+              <div className="mb-3">
+                <input
+                  type="search"
+                  value={fieldSearch}
+                  onChange={(e) => setFieldSearch(e.target.value)}
+                  placeholder="Search fields by label or key…"
+                  className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted"
+                />
+              </div>
+            )}
             <DndContext
               sensors={sensors}
               collisionDetection={collisionDetection}
@@ -2319,7 +2375,13 @@ export default function FormBuilderPage() {
             >
               <SortableContext items={fields.map((field) => field.clientId)} strategy={rectSortingStrategy}>
                 <div className="grid grid-cols-12 gap-3">
-                  {fields.map((field) => (
+                  {(fieldSearch.trim()
+                    ? fields.filter((f) =>
+                        (f.label || '').toLowerCase().includes(fieldSearch.toLowerCase()) ||
+                        (f.key || '').toLowerCase().includes(fieldSearch.toLowerCase())
+                      )
+                    : fields
+                  ).map((field) => (
                     <SortableFieldCard
                       key={field.clientId}
                       field={field}
@@ -2327,7 +2389,7 @@ export default function FormBuilderPage() {
                       isDropTarget={dragActiveId !== null && dragOverId === field.clientId && dragActiveId !== field.clientId}
                       dropPosition={dragActiveId !== null && dragOverId === field.clientId && dragActiveId !== field.clientId ? dragDropPosition : null}
                       onSelect={selectField}
-                      onAddBelow={(clientId) => insertFieldAfter(clientId, 'SHORT_TEXT')}
+                      onAddBelow={(clientId, type) => insertFieldAfter(clientId, type)}
                       onDuplicate={duplicateField}
                       onDelete={deleteField}
                       onSetWidth={setFieldWidth}
@@ -2560,6 +2622,8 @@ export default function FormBuilderPage() {
           allFields={fields}
           onClose={() => setSelectedFieldId(null)}
           onChange={(next) => updateField(selectedField.clientId, () => next)}
+          isDirty={isDirty}
+          onSave={handleSave}
         />
       )}
 

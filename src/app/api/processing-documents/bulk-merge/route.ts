@@ -174,6 +174,7 @@ export async function POST(request: NextRequest) {
         const mergedProcessingDoc = await prisma.processingDocument.create({
             data: {
                 documentId: newDocument.id,
+                tenantId,
                 isContainer: true,
                 pageCount: totalPageCount,
                 pipelineStatus: 'QUEUED',

@@ -208,22 +208,22 @@ export function FieldConditionTab({
                     </div>
 
                     <div>
-                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Conditional field custom key</label>
+                    <label className="mb-1.5 block text-xs font-medium text-text-secondary">Field</label>
                   <select
                     value={rule.fieldKey}
                     onChange={(e) => updateRule(groupIndex, ruleIndex, (current) => ({ ...current, fieldKey: e.target.value }))}
                     className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
                   >
-                    <option value="">Select custom key</option>
+                    <option value="">Select field</option>
                     {conditionalCandidates.map((candidate) => (
                       <option key={candidate.clientId} value={candidate.key}>
-                        {candidate.key}
+                        {candidate.label ? `${candidate.label} [${candidate.key}]` : candidate.key}
                       </option>
                     ))}
                   </select>
                   {rule.fieldKey && (
-                    <p className="mt-1 text-2xs text-text-muted">
-                      References [{rule.fieldKey}]
+                    <p className="mt-1 text-2xs text-text-muted font-mono">
+                      [{rule.fieldKey}]
                     </p>
                   )}
                 </div>
