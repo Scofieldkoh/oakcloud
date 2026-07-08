@@ -79,6 +79,11 @@ function makeEnvelope(overrides: Partial<EsigningEnvelopeDetailDto> = {}): Esign
     canVoid: true,
     canDuplicate: true,
     canRetryPdf: false,
+    emailDelivery: {
+      status: 'ok',
+      lastFailureAt: null,
+      failures: [],
+    },
     documentCount: 1,
     signerCount: 1,
     recipientCount: 1,

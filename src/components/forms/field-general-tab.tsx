@@ -7,6 +7,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 import { DROPDOWN_PRESETS } from '@/lib/constants/form-option-presets';
 import { isSummaryEligibleFieldType } from '@/lib/form-utils';
+import { getConditionDependents } from './builder-analysis';
 import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS, normalizeKey, isRepeatMarkerInputType, isBlockDividerInputType, isFaqField, newClientId } from './builder-utils';
 import type { BuilderField, ShortInputType } from './builder-utils';
 
@@ -97,9 +98,11 @@ function SectionHeader({ title }: { title: string }) {
 
 export function FieldGeneralTab({
   field,
+  allFields = [],
   onChange,
 }: {
   field: BuilderField;
+  allFields?: BuilderField[];
   onChange: (next: BuilderField) => void;
 }) {
   const [dropdownPresetId, setDropdownPresetId] = useState('');
@@ -118,6 +121,7 @@ export function FieldGeneralTab({
 
   const showLayoutSection = field.type !== 'PAGE_BREAK' && field.type !== 'PARAGRAPH' && !isFaqField(field);
   const showBehaviorSection = field.type !== 'PAGE_BREAK' && !isFaqField(field);
+  const conditionDependents = getConditionDependents(allFields, field.key);
 
   return (
     <div className="space-y-4">
@@ -180,6 +184,9 @@ export function FieldGeneralTab({
           label="Custom key"
           value={field.key}
           onChange={(e) => onChange({ ...field, key: e.target.value })}
+          hint={conditionDependents.length > 0
+            ? `${conditionDependents.length} field${conditionDependents.length === 1 ? '' : 's'} use this key in conditions: ${conditionDependents.map((item) => item.label || item.key).join(', ')}. Update those conditions if you rename it.`
+            : 'Used by conditions, response columns, exports, and saved answers.'}
         />
       </div>
 

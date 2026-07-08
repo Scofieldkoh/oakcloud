@@ -40,6 +40,12 @@ import {
   sendEsigningRequestEmail,
   sendEsigningVoidedEmailToRecipient,
 } from '@/services/esigning-notification.service';
+import {
+  getEsigningEmailDeliveryHealth,
+  recordEsigningEnvelopeEmailDeliveryResults,
+  type EsigningEmailDeliveryResult,
+} from '@/services/esigning-email-delivery.service';
+import { detectEsigningFieldOverlapWarnings } from '@/services/esigning-field.service';
 import { generateEsigningEnvelopeArtifactsNow } from '@/services/esigning-pdf.service';
 import {
   buildRecipientSigningOrder,
@@ -202,6 +208,7 @@ async function prepareReminderNotifications(
 }
 
 async function deliverPreparedNotifications(input: {
+  envelopeId: string;
   senderName: string;
   envelopeTitle: string;
   message?: string | null;
@@ -209,6 +216,7 @@ async function deliverPreparedNotifications(input: {
   notifications: PreparedRecipientNotification[];
   kind?: 'request' | 'reminder';
 }): Promise<void> {
+  const deliveryResults: EsigningEmailDeliveryResult[] = [];
   for (const notification of input.notifications) {
     if (notification.accessMode === 'MANUAL_LINK') {
       continue;
@@ -226,12 +234,14 @@ async function deliverPreparedNotifications(input: {
     } as const;
 
     if (input.kind === 'reminder') {
-      await sendEsigningReminderEmail(emailInput);
+      deliveryResults.push(await sendEsigningReminderEmail(emailInput));
       continue;
     }
 
-    await sendEsigningRequestEmail(emailInput);
+    deliveryResults.push(await sendEsigningRequestEmail(emailInput));
   }
+
+  await recordEsigningEnvelopeEmailDeliveryResults(input.envelopeId, deliveryResults);
 }
 
 function startOfDay(value: Date): Date {
@@ -431,6 +441,7 @@ export async function listEsigningEnvelopes(
         envelope.status === 'COMPLETED' &&
         envelope.pdfGenerationStatus !== 'COMPLETED' &&
         (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
+      emailDelivery: getEsigningEmailDeliveryHealth(envelope.metadata),
       resendableRecipientCount: envelope.recipients.filter(
         (recipient) =>
           recipient.type === 'SIGNER' && ['NOTIFIED', 'VIEWED'].includes(recipient.status)
@@ -1126,6 +1137,7 @@ export async function updateEsigningEnvelopeRecipient(
       envelope.createdBy.email
     );
     await deliverPreparedNotifications({
+      envelopeId: envelope.id,
       senderName,
       envelopeTitle: envelope.title,
       message: envelope.message,
@@ -1613,10 +1625,28 @@ export async function sendEsigningEnvelope(
       accessCodeHash: recipient.accessCodeHash,
     })),
     fieldDefinitions: envelope.fieldDefinitions.map((field) => ({
+      id: field.id,
       recipientId: field.recipientId,
       type: field.type,
+      documentId: field.documentId,
+      pageNumber: field.pageNumber,
+      xPercent: field.xPercent,
+      yPercent: field.yPercent,
+      widthPercent: field.widthPercent,
+      heightPercent: field.heightPercent,
     })),
   });
+  const fieldWarnings = detectEsigningFieldOverlapWarnings(
+    envelope.fieldDefinitions.map((field) => ({
+      id: field.id,
+      documentId: field.documentId,
+      pageNumber: field.pageNumber,
+      xPercent: field.xPercent,
+      yPercent: field.yPercent,
+      widthPercent: field.widthPercent,
+      heightPercent: field.heightPercent,
+    }))
+  );
 
   const totalPages = envelope.documents.reduce((sum, document) => sum + document.pageCount, 0);
   if (totalPages > ESIGNING_LIMITS.MAX_TOTAL_PAGES) {
@@ -1713,6 +1743,7 @@ export async function sendEsigningEnvelope(
     envelope.createdBy.email
   );
   await deliverPreparedNotifications({
+    envelopeId: envelope.id,
     senderName,
     envelopeTitle: envelope.title,
     message: envelope.message,
@@ -1736,7 +1767,10 @@ export async function sendEsigningEnvelope(
   });
 
   return {
-    envelope: await getEsigningEnvelopeDetail(session, tenantId, envelopeId),
+    envelope: {
+      ...(await getEsigningEnvelopeDetail(session, tenantId, envelopeId)),
+      fieldWarnings,
+    },
     manualLinks: preparedNotifications.manualLinks,
   };
 }
@@ -1835,6 +1869,7 @@ export async function resendEsigningEnvelopeRecipient(
       envelope.createdBy.email
     );
     await deliverPreparedNotifications({
+      envelopeId: envelope.id,
       senderName,
       envelopeTitle: envelope.title,
       message: envelope.message,
@@ -2023,6 +2058,7 @@ export async function resendEsigningEnvelopeActiveRecipients(
   );
 
   await deliverPreparedNotifications({
+    envelopeId: envelope.id,
     senderName,
     envelopeTitle: envelope.title,
     message: envelope.message,
@@ -2140,15 +2176,17 @@ export async function voidEsigningEnvelope(
     ['QUEUED', 'NOTIFIED', 'VIEWED'].includes(recipient.status)
   );
 
+  const deliveryResults: EsigningEmailDeliveryResult[] = [];
   for (const recipient of recipientsToNotify) {
-    await sendEsigningVoidedEmailToRecipient({
+    deliveryResults.push(await sendEsigningVoidedEmailToRecipient({
       to: recipient.email,
       recipientName: recipient.name,
       envelopeTitle: envelope.title,
       senderName,
       reason,
-    });
+    }));
   }
+  await recordEsigningEnvelopeEmailDeliveryResults(envelope.id, deliveryResults);
 
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }
@@ -2313,7 +2351,7 @@ export async function processExpiredEsigningEnvelopes(input?: {
         email: recipient.email,
       }));
 
-    await sendEsigningExpiredEmailToSender({
+    const deliveryResult = await sendEsigningExpiredEmailToSender({
       to: envelope.createdBy.email,
       senderName,
       envelopeTitle: envelope.title,
@@ -2321,6 +2359,7 @@ export async function processExpiredEsigningEnvelopes(input?: {
       pendingRecipients,
       envelopeId: envelope.id,
     });
+    await recordEsigningEnvelopeEmailDeliveryResults(envelope.id, [deliveryResult]);
   }
 
   return {
@@ -2421,7 +2460,7 @@ export async function processEsigningReminderNotifications(input?: {
             email: recipient.email,
           }));
 
-        await sendEsigningExpiryWarningEmailToSender({
+        const deliveryResult = await sendEsigningExpiryWarningEmailToSender({
           to: envelope.createdBy.email,
           senderName,
           envelopeTitle: envelope.title,
@@ -2429,6 +2468,7 @@ export async function processEsigningReminderNotifications(input?: {
           pendingRecipients,
           envelopeId: envelope.id,
         });
+        await recordEsigningEnvelopeEmailDeliveryResults(envelope.id, [deliveryResult]);
 
         await createEnvelopeEvent({
           envelopeId: envelope.id,
@@ -2512,6 +2552,7 @@ export async function processEsigningReminderNotifications(input?: {
     });
 
     await deliverPreparedNotifications({
+      envelopeId: envelope.id,
       senderName,
       envelopeTitle: envelope.title,
       message: envelope.message,
@@ -2693,6 +2734,7 @@ export async function activateNextQueuedEsigningRecipients(
     envelope.createdBy.email
   );
   await deliverPreparedNotifications({
+    envelopeId: envelope.id,
     senderName,
     envelopeTitle: envelope.title,
     message: envelope.message,

@@ -216,7 +216,7 @@ export interface ReorderEsigningRecipientsPayload {
   recipients?: Array<{ recipientId: string; signingOrder: number }>;
 }
 
-async function uploadDocumentRequest(
+export async function uploadEsigningDocumentRequest(
   envelopeId: string,
   file: File,
   tenantId?: string | null
@@ -544,7 +544,7 @@ export function useUploadEsigningDocument(envelopeId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (file: File) => uploadDocumentRequest(envelopeId, file, tenantId),
+    mutationFn: (file: File) => uploadEsigningDocumentRequest(envelopeId, file, tenantId),
     onSuccess: async (result) => {
       queryClient.setQueryData(['esigning', 'detail', tenantId, envelopeId], result);
       await invalidateEnvelopeQueries(queryClient, tenantId);

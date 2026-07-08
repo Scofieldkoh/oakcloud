@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown, Plus, Trash2, X } from 'lucide-react';
 import { FormInput } from '@/components/ui/form-input';
+import { describeCondition } from './builder-analysis';
 import type { BuilderField, ConditionConfig, ConditionGroupConfig, FieldConditionConfig } from './builder-utils';
 
 const CONDITION_OPERATORS: Array<{ value: ConditionConfig['operator']; label: string }> = [
@@ -67,16 +68,19 @@ function getGroupSummary(rules: ConditionConfig[], logic: ConditionGroupConfig['
 
 export function FieldConditionTab({
   field,
+  allFields,
   conditionalCandidates,
   onChange,
 }: {
   field: BuilderField;
+  allFields: BuilderField[];
   conditionalCandidates: BuilderField[];
   onChange: (next: BuilderField) => void;
 }) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<number>>(() => new Set());
   const groups = getGroups(field.condition);
   const firstCandidateKey = conditionalCandidates[0]?.key || '';
+  const conditionSummary = describeCondition(field.condition, allFields);
 
   function updateCondition(nextGroups: ConditionGroupConfig[]) {
     onChange({
@@ -128,6 +132,11 @@ export function FieldConditionTab({
         </button>
       ) : (
         <>
+          <div className="rounded-lg border border-border-primary bg-background-primary p-3">
+            <div className="text-2xs font-semibold uppercase tracking-widest text-text-muted">Shown when</div>
+            <div className="mt-1 text-sm text-text-primary">{conditionSummary}</div>
+          </div>
+
           {groups.length > 1 && (
             <p className="rounded-lg border border-border-primary bg-background-elevated p-3 text-xs text-text-secondary">
               Field is shown when any condition group matches. Each group can match all or any of its own conditions.

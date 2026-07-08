@@ -11,6 +11,7 @@ import type {
   EsigningFieldValueDto,
 } from '@/types/esigning';
 import type { EsigningListQueryInput } from '@/lib/validations/esigning';
+import { getEsigningEmailDeliveryHealth } from '@/services/esigning-email-delivery.service';
 
 export interface EsigningActorScope {
   tenantId: string;
@@ -276,6 +277,7 @@ export function serializeEnvelopeDetail(input: {
       envelope.status === 'COMPLETED' &&
       envelope.pdfGenerationStatus === 'FAILED' &&
       (scope.canManage || canMutateEnvelope(scope, session, envelope.createdById)),
+    emailDelivery: getEsigningEmailDeliveryHealth(envelope.metadata),
     documentCount: envelope.documents.length,
     signerCount: envelope.recipients.filter((recipient) => recipient.type === 'SIGNER').length,
     recipientCount: envelope.recipients.length,
@@ -423,7 +425,17 @@ export function validateEnvelopeSendReadiness(input: {
     accessMode: 'EMAIL_LINK' | 'EMAIL_WITH_CODE' | 'MANUAL_LINK';
     accessCodeHash: string | null;
   }>;
-  fieldDefinitions: Array<{ recipientId: string; type: string }>;
+  fieldDefinitions: Array<{
+    id?: string | null;
+    recipientId: string;
+    type: string;
+    documentId?: string;
+    pageNumber?: number;
+    xPercent?: number;
+    yPercent?: number;
+    widthPercent?: number;
+    heightPercent?: number;
+  }>;
 }): void {
   if (input.documents.length === 0) {
     throw new Error('Add at least one document before sending');

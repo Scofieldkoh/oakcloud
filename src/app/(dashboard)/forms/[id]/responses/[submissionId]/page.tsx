@@ -15,15 +15,19 @@ import {
   useDeleteFormResponseUpload,
   useForm,
   useFormResponse,
+  useUpdateFormResponseReviewStatus,
 } from '@/hooks/use-forms';
 import {
+  FORM_RESPONSE_REVIEW_STATUS_OPTIONS,
   WIDTH_CLASS,
   evaluateCondition,
   hasUnresolvedFormSubmissionAiWarning,
   isEmptyValue,
   parseFormAiSettings,
+  parseFormResponseReviewStatus,
   parseFormSubmissionAiReview,
   parseObject,
+  type FormResponseReviewStatus,
   type FormSubmissionAiReviewSection,
 } from '@/lib/form-utils';
 import { formatResponseFieldValue, isResponseAnswerField } from '@/lib/form-response-display';
@@ -321,9 +325,11 @@ export default function FormResponseDetailPage() {
   } = useFormResponse(formId, submissionId);
   const deleteResponseMutation = useDeleteFormResponse(formId);
   const deleteUploadMutation = useDeleteFormResponseUpload(formId, submissionId);
+  const updateReviewStatusMutation = useUpdateFormResponseReviewStatus(formId);
 
   const submission = responseDetail?.submission ?? null;
   const uploadCount = responseDetail?.uploads.length ?? 0;
+  const reviewStatus = parseFormResponseReviewStatus(submission?.metadata);
 
   const submissionAnswers = useMemo(
     () => toAnswerRecord(submission?.answers),
@@ -394,7 +400,7 @@ export default function FormResponseDetailPage() {
           const sectionConfig = getRepeatSectionConfig(field);
           const rowCount = getRepeatSectionRowCount(sectionFields, submissionAnswers, sectionConfig.minItems);
           const hasData = sectionFields.some((sectionField) => hasAnyAnswerValue(submissionAnswers[sectionField.key]));
-          const shouldDisplaySection = evaluateCondition(field.condition, submissionAnswers) || hasData;
+          const shouldDisplaySection = evaluateCondition(field.condition, submissionAnswers, { fields: form.fields }) || hasData;
 
           if (shouldDisplaySection && sectionFields.length > 0 && rowCount > 0) {
             pages[pages.length - 1].items.push({
@@ -420,7 +426,7 @@ export default function FormResponseDetailPage() {
       }
 
       if (!isResponseAnswerField(field)) continue;
-      if (!evaluateCondition(field.condition, submissionAnswers)) continue;
+      if (!evaluateCondition(field.condition, submissionAnswers, { fields: form.fields })) continue;
 
       pages[pages.length - 1].items.push({ kind: 'field', field });
     }
@@ -438,6 +444,20 @@ export default function FormResponseDetailPage() {
       window.setTimeout(() => setRecentlyCopiedKey((prev) => (prev === copyKey ? null : prev)), 1200);
     } catch {
       showError('Failed to copy value');
+    }
+  }
+
+  async function handleReviewStatusChange(nextStatus: FormResponseReviewStatus) {
+    if (!submission || nextStatus === reviewStatus) return;
+
+    try {
+      await updateReviewStatusMutation.mutateAsync({
+        submissionId: submission.id,
+        reviewStatus: nextStatus,
+      });
+      success('Review status updated');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to update review status');
     }
   }
 
@@ -823,6 +843,19 @@ export default function FormResponseDetailPage() {
               }`}>
                 {submission.status.charAt(0) + submission.status.slice(1).toLowerCase()}
               </span>
+              <label className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
+                Review
+                <select
+                  value={reviewStatus}
+                  onChange={(event) => void handleReviewStatusChange(event.target.value as FormResponseReviewStatus)}
+                  disabled={updateReviewStatusMutation.isPending}
+                  className="h-7 rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary"
+                >
+                  {FORM_RESPONSE_REVIEW_STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
 
@@ -1117,7 +1150,7 @@ export default function FormResponseDetailPage() {
                           const rowAnswers = buildRowAnswers(submissionAnswers, rowIndex);
                           const rowFields = item.fields.filter((sectionField) => (
                             isResponseAnswerField(sectionField) &&
-                            evaluateCondition(sectionField.condition, rowAnswers)
+                            evaluateCondition(sectionField.condition, rowAnswers, { fields: item.fields })
                           ));
 
                           if (rowFields.length === 0) return null;

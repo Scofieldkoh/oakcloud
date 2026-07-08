@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  AlertTriangle,
   ArrowLeft,
   ChevronDown,
   ChevronUp,
@@ -31,6 +32,7 @@ import {
   useAddEsigningRecipient,
   useDeleteEsigningDocument,
   useDeleteEsigningEnvelope,
+  useDuplicateEsigningEnvelope,
   useEsigningEnvelope,
   useEsigningRecipientManualLink,
   useReorderEsigningRecipients,
@@ -151,6 +153,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const sessionQuery = useSession();
   const envelopeQuery = useEsigningEnvelope(envelopeId);
   const envelope = envelopeQuery.data;
+  const latestEmailFailure = envelope?.emailDelivery.failures[0] ?? null;
   const companiesQuery = useCompanies({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' });
 
   // Mutations
@@ -161,6 +164,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const voidEnvelope = useVoidEsigningEnvelope(envelopeId);
   const retryProcessing = useRetryEsigningEnvelopeProcessing(envelopeId);
   const deleteEnvelope = useDeleteEsigningEnvelope();
+  const duplicateEnvelope = useDuplicateEsigningEnvelope();
   // Wizard state
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [manualLinks, setManualLinks] = useState<EsigningManualLinkDto[]>([]);
@@ -428,6 +432,16 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       router.push('/esigning');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to delete draft');
+    }
+  }
+
+  async function handleDuplicateEnvelope() {
+    try {
+      const duplicated = await duplicateEnvelope.mutateAsync(envelopeId);
+      toast.success('Envelope duplicated');
+      router.push(`/esigning/${duplicated.id}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate envelope');
     }
   }
 
@@ -863,6 +877,12 @@ export function EsigningDetailPage({ envelopeId }: Props) {
           !(envelope.status === 'COMPLETED' && envelope.pdfGenerationStatus === 'COMPLETED') ? (
             <PdfGenerationBadge status={envelope.pdfGenerationStatus} />
           ) : null}
+          {envelope.emailDelivery.status === 'failed' ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+              Email failed
+            </span>
+          ) : null}
         </div>
 
         {/* Header card */}
@@ -886,6 +906,11 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   {envelope.pdfGenerationError}
                 </Alert>
               )}
+              {latestEmailFailure ? (
+                <Alert variant="warning" title="Some e-signing emails failed to send" className="mt-4">
+                  Last failure: {latestEmailFailure.to} - {latestEmailFailure.error}
+                </Alert>
+              ) : null}
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
               {envelope.canSend && can.updateEsigning && (
@@ -914,6 +939,17 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               {envelope.canVoid && can.updateEsigning && (
                 <Button className="w-full sm:w-auto" variant="secondary" onClick={() => setIsVoidOpen(true)}>
                   Void
+                </Button>
+              )}
+              {envelope.canDuplicate && can.createEsigning && (
+                <Button
+                  className="w-full sm:w-auto"
+                  variant="secondary"
+                  leftIcon={<Copy className="h-4 w-4" />}
+                  onClick={() => void handleDuplicateEnvelope()}
+                  isLoading={duplicateEnvelope.isPending}
+                >
+                  Duplicate
                 </Button>
               )}
               {envelope.status === 'COMPLETED' && envelope.pdfGenerationStatus === 'COMPLETED' ? (

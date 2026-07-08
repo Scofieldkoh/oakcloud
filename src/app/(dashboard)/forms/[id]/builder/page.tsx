@@ -18,7 +18,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove, rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
-import { Bell, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardCopy, Copy, FileText, Globe, Paintbrush, Plus, Save, Sparkles, Users } from 'lucide-react';
+import { AlertTriangle, Bell, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardCopy, Copy, FileText, Globe, Paintbrush, Plus, Save, Sparkles, Users } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
@@ -31,6 +31,7 @@ import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { FieldEditorDrawer } from '@/components/forms/field-editor-drawer';
 import { SortableFieldCard } from '@/components/forms/sortable-field-card';
+import { getConditionDependents, getPublishReadiness } from '@/components/forms/builder-analysis';
 import { COUNTRY_PRESET_OPTIONS, NATIONALITY_PRESET_OPTIONS } from '@/lib/constants/form-option-presets';
 import {
   FIELD_TYPE_LABEL,
@@ -382,6 +383,7 @@ function SettingsSection({
 }
 
 type BuilderTab = 'form' | 'language' | 'settings';
+type PreviewMode = 'public' | 'embed' | 'mobile';
 
 type TranslationSourceItem = {
   key: string;
@@ -435,6 +437,7 @@ export default function FormBuilderPage() {
   const [expandedTranslationSections, setExpandedTranslationSections] = useState<string[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
   const [fieldSearch, setFieldSearch] = useState('');
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('public');
   const baselineSnapshot = useRef<string>('');
 
   useEffect(() => {
@@ -562,6 +565,16 @@ export default function FormBuilderPage() {
   const translatableFields = useMemo(
     () => fields.filter((field) => field.type !== 'PAGE_BREAK' && field.type !== 'HIDDEN'),
     [fields]
+  );
+
+  const publishReadiness = useMemo(
+    () => getPublishReadiness({
+      title,
+      slug,
+      draftSaveEnabled,
+      fields,
+    }),
+    [draftSaveEnabled, fields, slug, title]
   );
 
   const aiTranslationSourceItems = useMemo<TranslationSourceItem[]>(() => {
@@ -977,9 +990,13 @@ export default function FormBuilderPage() {
   function deleteField(clientId: string) {
     const target = fields.find((field) => field.clientId === clientId);
     const isDynamicMarker = target?.type === 'PAGE_BREAK' && (target.inputType === 'repeat_start' || target.inputType === 'repeat_end');
-    const confirmMessage = isDynamicMarker
+    const dependents = target ? getConditionDependents(fields, target.key) : [];
+    const dependencyMessage = dependents.length > 0
+      ? `\n\n${dependents.length} field${dependents.length === 1 ? '' : 's'} use this key in conditions: ${dependents.map((field) => field.label || field.key).join(', ')}. Deleting it will create publish blockers until those conditions are updated.`
+      : '';
+    const confirmMessage = (isDynamicMarker
       ? 'Delete this dynamic section? This will remove the start/end markers and enclosed fields.'
-      : 'Delete this field?';
+      : 'Delete this field?') + dependencyMessage;
 
     if (!window.confirm(confirmMessage)) return;
 
@@ -1540,6 +1557,11 @@ export default function FormBuilderPage() {
   }
 
   async function handlePublish() {
+    if (publishReadiness.blockers.length > 0) {
+      setActiveTab('settings');
+      showError(`Resolve ${publishReadiness.blockers.length} publish blocker${publishReadiness.blockers.length === 1 ? '' : 's'} before publishing.`);
+      return;
+    }
     await persistForm('PUBLISHED', 'Form published');
   }
 
@@ -1557,7 +1579,10 @@ export default function FormBuilderPage() {
   }
 
   function handleOpenPreview() {
-    window.open(viewHref, '_blank', 'noopener,noreferrer');
+    const features = previewMode === 'mobile'
+      ? 'noopener,noreferrer,width=430,height=900'
+      : 'noopener,noreferrer';
+    window.open(viewHref, '_blank', features);
   }
 
   useKeyboardShortcuts(
@@ -1628,8 +1653,8 @@ export default function FormBuilderPage() {
   const publicOrigin = isHydrated ? window.location.origin : 'https://service.oakcloud.app';
   const publicUrlPreview = `${publicOrigin}/forms/f/${effectiveSlug || 'your-form-url'}`;
   const viewHref = isPublished
-    ? `/forms/f/${effectiveSlug}`
-    : `/forms/f/${effectiveSlug}?preview=1&formId=${form.id}&tenantId=${form.tenantId}`;
+    ? `/forms/f/${effectiveSlug}${previewMode === 'embed' ? '?embed=1' : ''}`
+    : `/forms/f/${effectiveSlug}?preview=1&formId=${form.id}&tenantId=${form.tenantId}${previewMode === 'embed' ? '&embed=1' : ''}`;
 
   return (
     <div className="min-h-screen bg-background-primary">
@@ -1657,6 +1682,16 @@ export default function FormBuilderPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={previewMode}
+              onChange={(event) => setPreviewMode(event.target.value as PreviewMode)}
+              className="h-8 rounded-lg border border-border-primary bg-background-primary px-2 text-xs text-text-primary"
+              aria-label="Preview mode"
+            >
+              <option value="public">Public preview</option>
+              <option value="embed">Embed preview</option>
+              <option value="mobile">Mobile preview</option>
+            </select>
             <Button variant="secondary" size="sm" onClick={handleOpenPreview}>
               {isPublished ? 'View' : 'Preview'}
             </Button>
@@ -1715,6 +1750,44 @@ export default function FormBuilderPage() {
 
       <div className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl">
         <div className="p-4 sm:p-6">
+        {(publishReadiness.blockers.length > 0 || publishReadiness.warnings.length > 0) && (
+          <div className="mb-4 rounded-lg border border-status-warning/30 bg-status-warning/5 p-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-status-warning" />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold text-text-primary">Publish readiness</div>
+                <div className="mt-2 grid gap-2 md:grid-cols-2">
+                  {publishReadiness.blockers.length > 0 && (
+                    <div>
+                      <div className="text-2xs font-semibold uppercase tracking-widest text-status-error">Blockers</div>
+                      <ul className="mt-1 space-y-1 text-xs text-text-secondary">
+                        {publishReadiness.blockers.slice(0, 5).map((item) => (
+                          <li key={`blocker-${item.message}`}>{item.message}</li>
+                        ))}
+                        {publishReadiness.blockers.length > 5 && (
+                          <li>{publishReadiness.blockers.length - 5} more blockers</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                  {publishReadiness.warnings.length > 0 && (
+                    <div>
+                      <div className="text-2xs font-semibold uppercase tracking-widest text-status-warning">Warnings</div>
+                      <ul className="mt-1 space-y-1 text-xs text-text-secondary">
+                        {publishReadiness.warnings.slice(0, 5).map((item) => (
+                          <li key={`warning-${item.message}`}>{item.message}</li>
+                        ))}
+                        {publishReadiness.warnings.length > 5 && (
+                          <li>{publishReadiness.warnings.length - 5} more warnings</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="mb-4 flex flex-col gap-3">
           {activeTab === 'form' && (
             <FormInput label="Form title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Client Intake Form" />

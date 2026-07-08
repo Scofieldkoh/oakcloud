@@ -30,6 +30,7 @@ export interface EsigningEnvelopeListItem {
   canDuplicate: boolean;
   canResend: boolean;
   canRetryPdf: boolean;
+  emailDelivery: EsigningEmailDeliveryHealthDto;
   resendableRecipientCount: number;
   recipientCount: number;
   signerCount: number;
@@ -42,6 +43,20 @@ export interface EsigningEnvelopeListItem {
     status: EsigningRecipientStatus;
     signingOrder: number | null;
   }>;
+}
+
+export interface EsigningEmailDeliveryFailureDto {
+  kind: string;
+  to: string;
+  subject: string;
+  error: string;
+  attemptedAt: string;
+}
+
+export interface EsigningEmailDeliveryHealthDto {
+  status: 'ok' | 'failed';
+  lastFailureAt: string | null;
+  failures: EsigningEmailDeliveryFailureDto[];
 }
 
 export type EsigningEnvelopeStatusCounts = Record<EsigningEnvelopeStatus, number>;
@@ -94,6 +109,13 @@ export interface EsigningFieldDefinitionDto {
   sortOrder: number;
 }
 
+export interface EsigningFieldOverlapWarning {
+  fieldIds: string[];
+  documentId: string;
+  pageNumber: number;
+  message: string;
+}
+
 export interface EsigningFieldValueDto {
   id: string;
   fieldDefinitionId: string;
@@ -144,6 +166,7 @@ export interface EsigningEnvelopeDetailDto {
   canVoid: boolean;
   canDuplicate: boolean;
   canRetryPdf: boolean;
+  emailDelivery: EsigningEmailDeliveryHealthDto;
   documentCount: number;
   signerCount: number;
   recipientCount: number;
@@ -152,6 +175,7 @@ export interface EsigningEnvelopeDetailDto {
   recipients: EsigningEnvelopeRecipientDto[];
   fields: EsigningFieldDefinitionDto[];
   fieldValues: EsigningFieldValueDto[];
+  fieldWarnings?: EsigningFieldOverlapWarning[];
   events: EsigningEnvelopeEventDto[];
 }
 

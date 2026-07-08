@@ -2,6 +2,10 @@ import type { EmailAttachment } from '@/lib/email';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
 import { buildEsigningVerificationUrl } from '@/lib/esigning-session';
 import { createLogger } from '@/lib/logger';
+import type {
+  EsigningEmailDeliveryKind,
+  EsigningEmailDeliveryResult,
+} from '@/services/esigning-email-delivery.service';
 
 const log = createLogger('esigning-notifications');
 
@@ -153,11 +157,24 @@ function shell(body: string, footer?: string): string {
 </html>`.trim();
 }
 
-async function safeSendEmail(input: Parameters<typeof sendEmail>[0]): Promise<void> {
+async function safeSendEmail(
+  kind: EsigningEmailDeliveryKind,
+  input: Parameters<typeof sendEmail>[0]
+): Promise<EsigningEmailDeliveryResult> {
+  const attemptedAt = new Date().toISOString();
   const result = await sendEmail(input);
   if (!result.success) {
     log.error('Failed to send e-signing email', { to: input.to, subject: input.subject, error: result.error });
   }
+  const recipientLabel = Array.isArray(input.to) ? input.to.join(', ') : input.to;
+  return {
+    ok: result.success,
+    kind,
+    to: recipientLabel,
+    subject: input.subject,
+    attemptedAt,
+    error: result.success ? undefined : result.error,
+  };
 }
 
 // ── Email templates ───────────────────────────────────────────────────────────
@@ -172,7 +189,7 @@ export async function sendEsigningRequestEmail(input: {
   accessMode: 'EMAIL_LINK' | 'EMAIL_WITH_CODE' | 'MANUAL_LINK';
   expiresAt?: Date | null;
   kind?: 'request' | 'reminder';
-}): Promise<void> {
+}): Promise<EsigningEmailDeliveryResult> {
   const isReminder = input.kind === 'reminder';
   const expiresText = formatDateTime(input.expiresAt ?? null);
 
@@ -235,11 +252,13 @@ export async function sendEsigningRequestEmail(input: {
     ${fallbackLink(input.signingUrl)}
     ${signature()}`;
 
-  await safeSendEmail({
+  const emailSubject = isReminder
+    ? subject(`Reminder: "${input.envelopeTitle}" awaits your signature`)
+    : subject(`"${input.envelopeTitle}" — signature requested by ${input.senderName}`);
+
+  return safeSendEmail(isReminder ? 'reminder' : 'request', {
     to: input.to,
-    subject: isReminder
-      ? subject(`Reminder: "${input.envelopeTitle}" awaits your signature`)
-      : subject(`"${input.envelopeTitle}" — signature requested by ${input.senderName}`),
+    subject: emailSubject,
     html: shell(body),
   });
 }
@@ -256,7 +275,7 @@ export async function sendEsigningCompletionEmail(input: {
   }>;
   attachments?: EmailAttachment[];
   actorType?: 'recipient' | 'sender';
-}): Promise<void> {
+}): Promise<EsigningEmailDeliveryResult> {
   const verificationUrl = buildEsigningVerificationUrl(input.certificateId);
   const hasAttachments = Boolean(input.attachments?.length);
 
@@ -340,7 +359,7 @@ export async function sendEsigningCompletionEmail(input: {
       <a href="${verificationUrl}" style="color:${BRAND};word-break:break-all;">${escapeHtml(verificationUrl)}</a>
     </p>`;
 
-  await safeSendEmail({
+  return safeSendEmail('completion', {
     to: input.to,
     subject: subject(`Completed: "${input.envelopeTitle}"`),
     attachments: input.attachments,
@@ -354,7 +373,7 @@ export async function sendEsigningDeclinedEmailToSender(input: {
   envelopeTitle: string;
   recipientName: string;
   declineReason?: string | null;
-}): Promise<void> {
+}): Promise<EsigningEmailDeliveryResult> {
   const body = `
     <p style="margin:0 0 4px;">${tag('DECLINED', ERROR, '#fee2e2')}</p>
 
@@ -390,7 +409,7 @@ export async function sendEsigningDeclinedEmailToSender(input: {
     </p>
     ${signature()}`;
 
-  await safeSendEmail({
+  return safeSendEmail('declined', {
     to: input.to,
     subject: subject(`Declined: "${input.envelopeTitle}"`),
     html: shell(body),
@@ -402,7 +421,7 @@ export async function sendEsigningPdfFailureEmailToSender(input: {
   senderName: string;
   envelopeTitle: string;
   errorMessage: string;
-}): Promise<void> {
+}): Promise<EsigningEmailDeliveryResult> {
   const body = `
     <p style="margin:0 0 4px;">${tag('ACTION REQUIRED', ERROR, '#fee2e2')}</p>
 
@@ -437,7 +456,7 @@ export async function sendEsigningPdfFailureEmailToSender(input: {
     </p>
     ${signature()}`;
 
-  await safeSendEmail({
+  return safeSendEmail('pdf_failure', {
     to: input.to,
     subject: subject(`Action required: signed documents could not be prepared`),
     html: shell(body),
@@ -453,8 +472,8 @@ export async function sendEsigningReminderEmail(input: {
   signingUrl: string;
   accessMode: 'EMAIL_LINK' | 'EMAIL_WITH_CODE' | 'MANUAL_LINK';
   expiresAt?: Date | null;
-}): Promise<void> {
-  await sendEsigningRequestEmail({ ...input, kind: 'reminder' });
+}): Promise<EsigningEmailDeliveryResult> {
+  return sendEsigningRequestEmail({ ...input, kind: 'reminder' });
 }
 
 export async function sendEsigningExpiryWarningEmailToSender(input: {
@@ -464,7 +483,7 @@ export async function sendEsigningExpiryWarningEmailToSender(input: {
   daysUntilExpiry: number;
   pendingRecipients: Array<{ name: string; email: string }>;
   envelopeId: string;
-}): Promise<void> {
+}): Promise<EsigningEmailDeliveryResult> {
   const envelopeUrl = `${getAppBaseUrl()}/esigning/${encodeURIComponent(input.envelopeId)}`;
   const dayLabel = `${input.daysUntilExpiry} day${input.daysUntilExpiry === 1 ? '' : 's'}`;
 
@@ -515,7 +534,7 @@ export async function sendEsigningExpiryWarningEmailToSender(input: {
     ${ctaButton('Open Envelope', envelopeUrl)}
     ${signature()}`;
 
-  await safeSendEmail({
+  return safeSendEmail('expiry_warning', {
     to: input.to,
     subject: subject(`Expiry warning: "${input.envelopeTitle}" expires in ${dayLabel}`),
     html: shell(body),
@@ -529,7 +548,7 @@ export async function sendEsigningExpiredEmailToSender(input: {
   expiredAt: Date;
   pendingRecipients: Array<{ name: string; email: string }>;
   envelopeId: string;
-}): Promise<void> {
+}): Promise<EsigningEmailDeliveryResult> {
   const envelopeUrl = `${getAppBaseUrl()}/esigning/${encodeURIComponent(input.envelopeId)}`;
   const expiredText = formatDateTime(input.expiredAt);
 
@@ -581,7 +600,7 @@ export async function sendEsigningExpiredEmailToSender(input: {
     ${ctaButton('Review Envelope', envelopeUrl)}
     ${signature()}`;
 
-  await safeSendEmail({
+  return safeSendEmail('expired', {
     to: input.to,
     subject: subject(`Expired: "${input.envelopeTitle}"`),
     html: shell(body),
@@ -594,7 +613,7 @@ export async function sendEsigningVoidedEmailToRecipient(input: {
   envelopeTitle: string;
   senderName: string;
   reason?: string | null;
-}): Promise<void> {
+}): Promise<EsigningEmailDeliveryResult> {
   const body = `
     <p style="margin:0 0 4px;">${tag('CANCELLED', TEXT_SEC, '#f3f4f6')}</p>
 
@@ -630,7 +649,7 @@ export async function sendEsigningVoidedEmailToRecipient(input: {
     </p>
     ${signature()}`;
 
-  await safeSendEmail({
+  return safeSendEmail('voided', {
     to: input.to,
     subject: subject(`Cancelled: "${input.envelopeTitle}"`),
     html: shell(body),

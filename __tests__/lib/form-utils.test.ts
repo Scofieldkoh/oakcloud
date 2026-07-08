@@ -6,6 +6,7 @@ import {
   parseChoiceOptions,
   formatChoiceAnswer,
   parseFormDraftSettings,
+  parseFormResponseReviewStatus,
   writeFormDraftSettings,
 } from '@/lib/form-utils';
 import { applyDefaultTodayAnswers } from '@/services/form-builder.helpers';
@@ -133,6 +134,25 @@ describe('form-utils condition evaluation', () => {
       { fields }
     )).toBe(true);
   });
+
+  it('fails closed for circular visibility dependencies', () => {
+    const fields = [
+      {
+        key: 'field_a',
+        condition: { fieldKey: 'field_b', operator: 'is_visible' },
+      },
+      {
+        key: 'field_b',
+        condition: { fieldKey: 'field_a', operator: 'is_visible' },
+      },
+    ];
+
+    expect(evaluateCondition(
+      { fieldKey: 'field_a', operator: 'is_visible' },
+      {},
+      { fields }
+    )).toBe(false);
+  });
 });
 
 describe('form-utils progress stop info blocks', () => {
@@ -152,6 +172,18 @@ describe('form-utils progress stop info blocks', () => {
       type: 'PARAGRAPH',
       validation: { infoStopsProgress: false },
     })).toBe(false);
+  });
+});
+
+describe('form-utils response review status', () => {
+  it('parses valid response review statuses from metadata', () => {
+    expect(parseFormResponseReviewStatus({ responseReviewStatus: 'reviewed' })).toBe('reviewed');
+    expect(parseFormResponseReviewStatus({ responseReviewStatus: 'needs_follow_up' })).toBe('needs_follow_up');
+  });
+
+  it('defaults invalid or absent response review statuses to new', () => {
+    expect(parseFormResponseReviewStatus(null)).toBe('new');
+    expect(parseFormResponseReviewStatus({ responseReviewStatus: 'done' })).toBe('new');
   });
 });
 

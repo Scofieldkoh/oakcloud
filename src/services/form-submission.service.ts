@@ -22,6 +22,7 @@ import {
   isEmptyValue,
   parseFormAiSettings,
   parseFormNotificationSettings,
+  parseFormResponseReviewStatus,
   parseFormSubmissionAiReview,
   parseChoiceOptions,
   parseObject,
@@ -29,6 +30,7 @@ import {
   isProgressStopInfoBlock,
   toAnswerRecord,
   type FormSubmissionAiReview,
+  type FormResponseReviewStatus,
   type PublicFormDefinition,
   type PublicFormField,
 } from '@/lib/form-utils';
@@ -143,6 +145,11 @@ export interface FormResponsesExcelExportResult {
 export interface UpdateFormResponseTagsResult {
   id: string;
   tags: string[];
+}
+
+export interface UpdateFormResponseReviewStatusResult {
+  id: string;
+  reviewStatus: FormResponseReviewStatus;
 }
 
 export interface FormResponsesResult {
@@ -1723,6 +1730,75 @@ export async function updateFormResponseTags(
   return {
     id: submission.id,
     tags: normalizedTags,
+  };
+}
+
+export async function updateFormResponseReviewStatus(
+  formId: string,
+  submissionId: string,
+  reviewStatus: FormResponseReviewStatus,
+  params: TenantAwareParams
+): Promise<UpdateFormResponseReviewStatusResult> {
+  const submission = await prisma.formSubmission.findFirst({
+    where: {
+      id: submissionId,
+      formId,
+      tenantId: params.tenantId,
+      deletedAt: null,
+    },
+    include: {
+      form: {
+        select: {
+          title: true,
+        },
+      },
+    },
+  });
+
+  if (!submission) {
+    throw new Error('Submission not found');
+  }
+
+  const previousReviewStatus = parseFormResponseReviewStatus(submission.metadata);
+  const nextMetadata = parseObject(submission.metadata)
+    ? { ...(submission.metadata as Record<string, unknown>) }
+    : {};
+
+  if (reviewStatus === 'new') {
+    delete nextMetadata.responseReviewStatus;
+  } else {
+    nextMetadata.responseReviewStatus = reviewStatus;
+  }
+
+  await prisma.formSubmission.update({
+    where: { id: submission.id },
+    data: {
+      metadata: Object.keys(nextMetadata).length > 0
+        ? nextMetadata as Prisma.InputJsonValue
+        : Prisma.NullableJsonNullValueInput.JsonNull,
+    },
+  });
+
+  await createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    action: 'UPDATE',
+    entityType: 'FormSubmission',
+    entityId: submission.id,
+    entityName: submission.respondentName || submission.respondentEmail || submission.id,
+    summary: `Updated review status for response ${submission.id} on "${submission.form.title}"`,
+    changeSource: 'MANUAL',
+    metadata: {
+      event: 'form_response_review_status_updated',
+      formId,
+      previousReviewStatus,
+      reviewStatus,
+    },
+  });
+
+  return {
+    id: submission.id,
+    reviewStatus,
   };
 }
 

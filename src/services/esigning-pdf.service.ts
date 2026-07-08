@@ -19,6 +19,10 @@ import {
   sendEsigningCompletionEmail,
   sendEsigningPdfFailureEmailToSender,
 } from '@/services/esigning-notification.service';
+import {
+  recordEsigningEnvelopeEmailDeliveryResults,
+  type EsigningEmailDeliveryResult,
+} from '@/services/esigning-email-delivery.service';
 
 const log = createLogger('esigning-pdf');
 const PROCESSING_LEASE_MS = 15 * 60 * 1000;
@@ -927,6 +931,7 @@ async function generateEnvelopeArtifacts(
 
   if (sendNotifications) {
     const attachments = buildEmailAttachments({ documents: generatedDocuments });
+    const deliveryResults: EsigningEmailDeliveryResult[] = [];
 
     for (const recipient of envelope.recipients) {
       const documentLinks = await buildDeliveryDocumentLinks({
@@ -939,7 +944,7 @@ async function generateEnvelopeArtifacts(
         })),
       });
 
-      await sendEsigningCompletionEmail({
+      deliveryResults.push(await sendEsigningCompletionEmail({
         to: recipient.email,
         recipientName: recipient.name,
         envelopeTitle: envelope.title,
@@ -947,7 +952,7 @@ async function generateEnvelopeArtifacts(
         documentLinks,
         attachments,
         actorType: 'recipient',
-      });
+      }));
     }
 
     const senderDocumentLinks = await buildDeliveryDocumentLinks({
@@ -959,7 +964,7 @@ async function generateEnvelopeArtifacts(
       })),
     });
 
-    await sendEsigningCompletionEmail({
+    deliveryResults.push(await sendEsigningCompletionEmail({
       to: envelope.createdBy.email,
       recipientName: senderName,
       envelopeTitle: envelope.title,
@@ -967,7 +972,9 @@ async function generateEnvelopeArtifacts(
       documentLinks: senderDocumentLinks,
       attachments,
       actorType: 'sender',
-    });
+    }));
+
+    await recordEsigningEnvelopeEmailDeliveryResults(envelope.id, deliveryResults);
   }
 }
 
@@ -1101,12 +1108,13 @@ async function markEnvelopePdfFailure(envelopeId: string, error: unknown): Promi
     [envelope.createdBy.firstName, envelope.createdBy.lastName].filter(Boolean).join(' ').trim() ||
     envelope.createdBy.email;
 
-  await sendEsigningPdfFailureEmailToSender({
+  const deliveryResult = await sendEsigningPdfFailureEmailToSender({
     to: envelope.createdBy.email,
     senderName,
     envelopeTitle: envelope.title,
     errorMessage: message,
   });
+  await recordEsigningEnvelopeEmailDeliveryResults(envelopeId, [deliveryResult]);
 }
 
 export async function generateEsigningEnvelopeArtifactsNow(input: {

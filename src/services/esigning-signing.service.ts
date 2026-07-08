@@ -21,12 +21,9 @@ import { storage } from '@/lib/storage';
 import { createLogger } from '@/lib/logger';
 import { sendEsigningDeclinedEmailToSender } from '@/services/esigning-notification.service';
 import { activateNextQueuedEsigningRecipients } from '@/services/esigning-envelope.service';
+import { recordEsigningEnvelopeEmailDeliveryResults } from '@/services/esigning-email-delivery.service';
 import { summarizeEsigningUserAgent } from '@/services/esigning-evidence';
 import { isRequiredEsigningFieldComplete, saveRecipientFieldValues } from '@/services/esigning-field.service';
-import {
-  ensureEsigningEnvelopeArtifacts,
-  generateEsigningEnvelopeArtifactsNow,
-} from '@/services/esigning-pdf.service';
 
 const log = createLogger('esigning-signing');
 
@@ -703,7 +700,6 @@ export async function completeEsigningSigningSession(input: {
     context,
     values: input.values,
   });
-  let envelopeJustCompleted = false;
 
   await prisma.$transaction(async (tx) => {
     await saveRecipientFieldValues(
@@ -791,7 +787,6 @@ export async function completeEsigningSigningSession(input: {
       });
 
       if (completionUpdate.count > 0) {
-        envelopeJustCompleted = true;
         await tx.esigningEnvelopeEvent.create({
           data: {
             tenantId: context.envelope.tenantId,
@@ -815,19 +810,6 @@ export async function completeEsigningSigningSession(input: {
       envelopeId: context.envelope.id,
       error,
     });
-  }
-
-  if (envelopeJustCompleted) {
-    try {
-      await generateEsigningEnvelopeArtifactsNow({
-        envelopeId: context.envelope.id,
-      });
-    } catch (error) {
-      log.warn('Failed to generate completed e-signing package immediately after final signature', {
-        envelopeId: context.envelope.id,
-        error,
-      });
-    }
   }
 
   return loadEsigningSigningSession();
@@ -888,7 +870,7 @@ export async function declineEsigningSigningSession(input: {
 
   await clearEsigningSessionCookie();
 
-  await sendEsigningDeclinedEmailToSender({
+  const deliveryResult = await sendEsigningDeclinedEmailToSender({
     to: context.envelope.createdBy.email,
     senderName:
       [context.envelope.createdBy.firstName, context.envelope.createdBy.lastName]
@@ -899,6 +881,7 @@ export async function declineEsigningSigningSession(input: {
     recipientName: context.recipient.name,
     declineReason: input.reason,
   });
+  await recordEsigningEnvelopeEmailDeliveryResults(context.envelope.id, [deliveryResult]);
 }
 
 export async function downloadEsigningSessionDocument(input: {
@@ -931,6 +914,7 @@ export async function downloadEsigningSessionDocument(input: {
   }
 
   if (input.variant === 'signed') {
+    const { ensureEsigningEnvelopeArtifacts } = await import('@/services/esigning-pdf.service');
     await ensureEsigningEnvelopeArtifacts({
       envelopeId: context.envelope.id,
       requireCertificates: false,

@@ -9,6 +9,7 @@ import type {
   SaveEsigningFieldDefinitionsInput,
   SaveEsigningFieldValuesInput,
 } from '@/lib/validations/esigning';
+import type { EsigningFieldOverlapWarning } from '@/types/esigning';
 
 const log = createLogger('esigning-field');
 
@@ -26,6 +27,58 @@ function hasFieldValueContent(
   }
 
   return Boolean(value && value.trim().length > 0);
+}
+
+type FieldBounds = Pick<
+  EsigningFieldDefinitionInput,
+  'id' | 'documentId' | 'pageNumber' | 'xPercent' | 'yPercent' | 'widthPercent' | 'heightPercent'
+>;
+
+function fieldsOverlap(left: FieldBounds, right: FieldBounds): boolean {
+  if (left.documentId !== right.documentId || left.pageNumber !== right.pageNumber) {
+    return false;
+  }
+
+  const leftRight = left.xPercent + left.widthPercent;
+  const rightRight = right.xPercent + right.widthPercent;
+  const leftBottom = left.yPercent + left.heightPercent;
+  const rightBottom = right.yPercent + right.heightPercent;
+
+  return (
+    left.xPercent < rightRight &&
+    leftRight > right.xPercent &&
+    left.yPercent < rightBottom &&
+    leftBottom > right.yPercent
+  );
+}
+
+export function detectEsigningFieldOverlapWarnings(
+  fields: FieldBounds[]
+): EsigningFieldOverlapWarning[] {
+  const warnings: EsigningFieldOverlapWarning[] = [];
+
+  for (let leftIndex = 0; leftIndex < fields.length; leftIndex += 1) {
+    const left = fields[leftIndex];
+    if (!left?.id) {
+      continue;
+    }
+
+    for (let rightIndex = leftIndex + 1; rightIndex < fields.length; rightIndex += 1) {
+      const right = fields[rightIndex];
+      if (!right?.id || !fieldsOverlap(left, right)) {
+        continue;
+      }
+
+      warnings.push({
+        fieldIds: [left.id, right.id],
+        documentId: left.documentId,
+        pageNumber: left.pageNumber,
+        message: `2 fields overlap on page ${left.pageNumber}`,
+      });
+    }
+  }
+
+  return warnings;
 }
 
 export function isRequiredEsigningFieldComplete(input: {
@@ -53,7 +106,7 @@ export async function saveEnvelopeFieldDefinitions(
   envelopeId: string,
   input: SaveEsigningFieldDefinitionsInput,
   tx?: Prisma.TransactionClient
-): Promise<void> {
+): Promise<EsigningFieldOverlapWarning[]> {
   const db = tx ?? prisma;
   const envelope = await db.esigningEnvelope.findUnique({
     where: { id: envelopeId },
@@ -100,6 +153,8 @@ export async function saveEnvelopeFieldDefinitions(
     }
   }
 
+  const overlapWarnings = detectEsigningFieldOverlapWarnings(normalizedFields);
+
   const persist = async (client: Prisma.TransactionClient) => {
     await client.esigningDocumentFieldDefinition.deleteMany({
       where: { envelopeId },
@@ -137,6 +192,7 @@ export async function saveEnvelopeFieldDefinitions(
   }
 
   log.info(`Saved ${normalizedFields.length} field definitions for envelope ${envelopeId}`);
+  return overlapWarnings;
 }
 
 export async function saveRecipientFieldValues(input: {

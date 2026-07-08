@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  AlertTriangle,
   CheckCircle2,
   Circle,
   Clock,
+  Copy,
   Download,
   ExternalLink,
   FilePenLine,
@@ -38,9 +40,11 @@ import { usePermissions } from '@/hooks/use-permissions';
 import {
   useCreateEsigningEnvelope,
   useDeleteEsigningEnvelope,
+  useDuplicateEsigningEnvelope,
   useEsigningEnvelopes,
   useResendEsigningEnvelope,
   useRetryEsigningEnvelopeProcessing,
+  uploadEsigningDocumentRequest,
   useVoidEsigningEnvelope,
 } from '@/hooks/use-esigning';
 import type { EsigningEnvelopeListItem, EsigningManualLinkDto } from '@/types/esigning';
@@ -90,8 +94,25 @@ const TAB_STATUSES: Record<TabKey, StatusFilter[]> = {
   voided: ['VOIDED', 'EXPIRED'],
 };
 
+export function EmailDeliveryWarningBadge({ envelope }: { envelope: EsigningEnvelopeListItem }) {
+  if (envelope.emailDelivery.status !== 'failed') {
+    return null;
+  }
+
+  return (
+    <span
+      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800"
+      title="Some e-signing emails failed to send"
+    >
+      <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+      Email failed
+    </span>
+  );
+}
+
 interface EnvelopeActionsDropdownProps {
   envelope: EsigningEnvelopeListItem;
+  onDuplicate: (envelope: EsigningEnvelopeListItem) => void;
   onResend: (envelope: EsigningEnvelopeListItem) => void;
   onDelete: (envelope: EsigningEnvelopeListItem) => void;
   onVoid: (envelope: EsigningEnvelopeListItem) => void;
@@ -103,8 +124,9 @@ interface EnvelopeActionsDropdownProps {
   ) => void;
 }
 
-function EnvelopeActionsDropdown({
+export function EnvelopeActionsDropdown({
   envelope,
+  onDuplicate,
   onResend,
   onDelete,
   onVoid,
@@ -114,6 +136,7 @@ function EnvelopeActionsDropdown({
   const hasActions =
     envelope.canResend ||
     envelope.canDelete ||
+    envelope.canDuplicate ||
     envelope.canVoid ||
     envelope.canRetryPdf ||
     envelope.status === 'COMPLETED';
@@ -163,6 +186,15 @@ function EnvelopeActionsDropdown({
             onClick={() => onResend(envelope)}
           >
             Resend active requests
+          </DropdownItem>
+        ) : null}
+
+        {envelope.canDuplicate ? (
+          <DropdownItem
+            icon={<Copy className="h-4 w-4" />}
+            onClick={() => onDuplicate(envelope)}
+          >
+            Duplicate envelope
           </DropdownItem>
         ) : null}
 
@@ -230,6 +262,7 @@ export function EsigningListPage() {
   });
   const createEnvelope = useCreateEsigningEnvelope();
   const deleteEnvelope = useDeleteEsigningEnvelope();
+  const duplicateEnvelope = useDuplicateEsigningEnvelope();
   const resendEnvelope = useResendEsigningEnvelope();
   const voidEnvelope = useVoidEsigningEnvelope(voidTarget?.id ?? '');
   const retryProcessing = useRetryEsigningEnvelopeProcessing(retryTargetId ?? '');
@@ -308,12 +341,7 @@ export function EsigningListPage() {
       const destination = `/esigning/${envelope.id}`;
 
       if (file) {
-        const formData = new FormData();
-        formData.set('file', file);
-        await fetch(`/api/esigning/envelopes/${envelope.id}/documents`, {
-          method: 'POST',
-          body: formData,
-        });
+        await uploadEsigningDocumentRequest(envelope.id, file, activeTenantId);
       }
 
       window.location.assign(destination);
@@ -340,6 +368,16 @@ export function EsigningListPage() {
       );
     } finally {
       setRetryTargetId(null);
+    }
+  }
+
+  async function handleDuplicateEnvelope(envelope: EsigningEnvelopeListItem) {
+    try {
+      const duplicated = await duplicateEnvelope.mutateAsync(envelope.id);
+      toast.success('Envelope duplicated');
+      window.location.assign(`/esigning/${duplicated.id}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to duplicate envelope');
     }
   }
 
@@ -548,6 +586,7 @@ export function EsigningListPage() {
                 <div className="flex items-center gap-3 px-3 py-2.5">
                   <Link href={`/esigning/${envelope.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                     <EnvelopeStatusBadge status={envelope.status} />
+                    <EmailDeliveryWarningBadge envelope={envelope} />
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-primary">
                       {envelope.title}
                     </span>
@@ -563,6 +602,7 @@ export function EsigningListPage() {
                   </Link>
                   <EnvelopeActionsDropdown
                     envelope={envelope}
+                    onDuplicate={(target) => void handleDuplicateEnvelope(target)}
                     onResend={(target) => void handleResendEnvelope(target)}
                     onDelete={setDeleteTarget}
                     onVoid={setVoidTarget}
@@ -582,6 +622,7 @@ export function EsigningListPage() {
                       <div className="space-y-3">
                         <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                           <EnvelopeStatusBadge status={envelope.status} />
+                          <EmailDeliveryWarningBadge envelope={envelope} />
                           <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
                             {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
                           </span>
@@ -618,6 +659,7 @@ export function EsigningListPage() {
 
                   <EnvelopeActionsDropdown
                     envelope={envelope}
+                    onDuplicate={(target) => void handleDuplicateEnvelope(target)}
                     onResend={(target) => void handleResendEnvelope(target)}
                     onDelete={setDeleteTarget}
                     onVoid={setVoidTarget}

@@ -136,7 +136,7 @@ export function FieldEditorDrawer({
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {activeTab === 'general' && (
-            <FieldGeneralTab field={field} onChange={onChange} />
+            <FieldGeneralTab field={field} allFields={allFields} onChange={onChange} />
           )}
 
           {activeTab === 'validation' && (
@@ -146,6 +146,7 @@ export function FieldEditorDrawer({
           {activeTab === 'condition' && (
             <FieldConditionTab
               field={field}
+              allFields={allFields}
               conditionalCandidates={conditionalCandidates}
               onChange={onChange}
             />

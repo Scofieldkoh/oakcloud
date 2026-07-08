@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { resolveWorkspaceId, createErrorResponse } from '@/lib/api-helpers';
-import { deleteFormResponse, getFormResponseById, updateFormResponseTags } from '@/services/form-builder.service';
+import {
+  deleteFormResponse,
+  getFormResponseById,
+  updateFormResponseReviewStatus,
+  updateFormResponseTags,
+} from '@/services/form-builder.service';
+import { FORM_RESPONSE_REVIEW_STATUS_OPTIONS, type FormResponseReviewStatus } from '@/lib/form-utils';
 
 interface RouteParams {
   params: Promise<{
@@ -36,6 +42,25 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { searchParams } = new URL(request.url);
     const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const body = await request.json().catch(() => ({}));
+    const reviewStatus = typeof body.reviewStatus === 'string' &&
+      FORM_RESPONSE_REVIEW_STATUS_OPTIONS.some((option) => option.value === body.reviewStatus)
+      ? body.reviewStatus as FormResponseReviewStatus
+      : null;
+
+    if (reviewStatus) {
+      const result = await updateFormResponseReviewStatus(
+        id,
+        submissionId,
+        reviewStatus,
+        {
+          tenantId,
+          userId: session.id,
+        }
+      );
+
+      return NextResponse.json(result);
+    }
+
     const tags = Array.isArray(body.tags)
       ? body.tags.filter((tag: unknown): tag is string => typeof tag === 'string')
       : [];

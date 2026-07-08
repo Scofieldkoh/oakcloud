@@ -20,7 +20,9 @@ import type {
   GenerateFormDraftResumeLinkResult,
   ExtendFormDraftExpiryResult,
   UpdateFormResponseTagsResult,
+  UpdateFormResponseReviewStatusResult,
 } from '@/services/form-builder.service';
+import type { FormResponseReviewStatus } from '@/lib/form-utils';
 
 export type { FormListItem, FormListResult, FormDetail, FormResponsesResult, FormResponseDetailResult };
 
@@ -218,6 +220,29 @@ async function updateFormResponseTagsRequest(
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.error || 'Failed to update response tags');
+  }
+
+  return response.json();
+}
+
+async function updateFormResponseReviewStatusRequest(
+  id: string,
+  submissionId: string,
+  reviewStatus: FormResponseReviewStatus,
+  tenantId?: string | null
+): Promise<UpdateFormResponseReviewStatusResult> {
+  const params = new URLSearchParams();
+  if (tenantId) params.set('tenantId', tenantId);
+
+  const response = await fetch(`/api/forms/${id}/responses/${submissionId}${params.toString() ? `?${params.toString()}` : ''}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reviewStatus }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to update response review status');
   }
 
   return response.json();
@@ -670,6 +695,23 @@ export function useUpdateFormResponseTags(id: string) {
   return useMutation({
     mutationFn: ({ submissionId, tags }: { submissionId: string; tags: string[] }) =>
       updateFormResponseTagsRequest(id, submissionId, tags, activeTenantId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: formKeys.allResponsesForForm(id) });
+      queryClient.invalidateQueries({
+        queryKey: formKeys.responseDetail(id, variables.submissionId, activeTenantId),
+      });
+    },
+  });
+}
+
+export function useUpdateFormResponseReviewStatus(id: string) {
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
+
+  return useMutation({
+    mutationFn: ({ submissionId, reviewStatus }: { submissionId: string; reviewStatus: FormResponseReviewStatus }) =>
+      updateFormResponseReviewStatusRequest(id, submissionId, reviewStatus, activeTenantId),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: formKeys.allResponsesForForm(id) });
       queryClient.invalidateQueries({

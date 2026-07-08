@@ -1163,6 +1163,23 @@ export function isEmptyValue(value: unknown): boolean {
   return false;
 }
 
+export type FormResponseReviewStatus = 'new' | 'reviewed' | 'needs_follow_up' | 'archived';
+
+export const FORM_RESPONSE_REVIEW_STATUS_OPTIONS: Array<{ value: FormResponseReviewStatus; label: string }> = [
+  { value: 'new', label: 'New' },
+  { value: 'reviewed', label: 'Reviewed' },
+  { value: 'needs_follow_up', label: 'Needs follow-up' },
+  { value: 'archived', label: 'Archived' },
+];
+
+export function parseFormResponseReviewStatus(metadata: unknown): FormResponseReviewStatus {
+  const root = parseObject(metadata);
+  const value = typeof root?.responseReviewStatus === 'string' ? root.responseReviewStatus : '';
+  return FORM_RESPONSE_REVIEW_STATUS_OPTIONS.some((option) => option.value === value)
+    ? value as FormResponseReviewStatus
+    : 'new';
+}
+
 type ConditionEvaluationField = {
   key: string;
   condition: unknown;
@@ -1216,7 +1233,7 @@ export function evaluateCondition(
       const targetIsVisible = targetField
         ? (() => {
           const activeFieldKeys = options.activeFieldKeys || new Set<string>();
-          if (activeFieldKeys.has(fieldKey)) return true;
+          if (activeFieldKeys.has(fieldKey)) return false;
           const nextActiveFieldKeys = new Set(activeFieldKeys);
           nextActiveFieldKeys.add(fieldKey);
           return evaluateCondition(targetField.condition, answers, {

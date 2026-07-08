@@ -59,6 +59,14 @@ Key principles:
 |----|----------|--------|-------------|-------|
 | UI-001 | P2 | Open | Mobile responsiveness improvements | General responsive issues across modules |
 
+### Forms
+
+| ID | Priority | Status | Description | Notes |
+|----|----------|--------|-------------|-------|
+| FORMS-002 | P1 | Open | Published form render snapshot | Store optimized published schema separately from editable builder draft so live public forms only change on publish |
+| FORMS-003 | P2 | Open | Async cached response PDFs | Generate response PDFs in a background job and reuse cached artifacts for repeated downloads |
+| FORMS-004 | P2 | Open | Progressive rendering for long public forms | Reduce full-form recalculation/render work on every answer change, especially with conditions and repeat sections |
+
 ## Planned Features
 
 ### Phase 1 - Near Term

@@ -26,10 +26,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const parsed = saveEsigningFieldDefinitionsSchema.parse(body);
-    await saveEnvelopeFieldDefinitions(id, parsed);
+    const fieldWarnings = await saveEnvelopeFieldDefinitions(id, parsed);
 
     const updated = await getEsigningEnvelopeDetail(session, tenantId, id);
-    return NextResponse.json(updated);
+    return NextResponse.json({ ...updated, fieldWarnings });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid payload', details: error.errors }, { status: 400 });
