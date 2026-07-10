@@ -189,6 +189,14 @@ Examples:
 
 MinIO is used in local development; S3-compatible providers can be used in production.
 
+## A4 Document Editor Pagination
+
+The A4 editor stores one canonical HTML document and derives physical pages at runtime. Soft page boundaries are never persisted; explicit hard boundaries use `<div class="page-break" data-break-type="hard"></div>`. Legacy `<!-- PAGE_BREAK -->` comments are treated as soft layout hints and removed when content is normalized.
+
+Pagination runs as one animation-frame transaction over hard-break-delimited sections. The engine reassembles continuation fragments, measures them against the active A4 content box, repacks content forward and backward, commits the full page set atomically, and restores selection through stable flow IDs. Paragraphs and list items may continue across pages, tables split between body rows, and oversized atomic blocks are rendered once instead of being requeued.
+
+Preview, read-only, print, and PDF paths share the same hard-versus-soft break contract. The deterministic engine is covered by DOM-independent measurement tests, while Chromium browser tests verify physical overflow, pullback, table integrity, and caret restoration using real layout.
+
 ## Implemented Modules
 
 | Module | Notes |

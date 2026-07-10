@@ -1,8 +1,14 @@
+import { createRef } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { A4PageEditor } from '@/components/documents/a4-page-editor';
+import {
+  A4PageEditor,
+  type A4PageEditorRef,
+} from '@/components/documents/a4-page-editor';
 
 const pageBreak = '<!-- PAGE_BREAK -->';
+const hardPageBreak =
+  '<div class="page-break" data-break-type="hard"></div>';
 
 describe('A4PageEditor', () => {
   it('applies document line spacing to editable pages', () => {
@@ -66,7 +72,9 @@ describe('A4PageEditor', () => {
   });
 
   it('toggles page numbers in the editor', () => {
-    render(<A4PageEditor value={`<p>First</p>${pageBreak}<p>Second</p>`} />);
+    render(
+      <A4PageEditor value={`<p>First</p>${hardPageBreak}<p>Second</p>`} />,
+    );
 
     expect(screen.getByTestId('a4-page-number-1')).toBeInTheDocument();
     expect(screen.getByTestId('a4-page-number-2')).toBeInTheDocument();
@@ -82,7 +90,7 @@ describe('A4PageEditor', () => {
 
     render(
       <A4PageEditor
-        value={`<p>First page</p>${pageBreak}<p>Second page</p>`}
+        value={`<p>First page</p>${hardPageBreak}<p>Second page</p>`}
         onChange={onChange}
       />,
     );
@@ -120,7 +128,7 @@ describe('A4PageEditor', () => {
   it('preserves live page content when backspacing from a later page', async () => {
     render(
       <A4PageEditor
-        value={`<p>First page</p>${pageBreak}<p>Original second page</p>`}
+        value={`<p>First page</p>${hardPageBreak}<p>Original second page</p>`}
       />,
     );
 
@@ -156,7 +164,7 @@ describe('A4PageEditor', () => {
   it('treats leading empty blocks as page start when backspacing from a later page', async () => {
     render(
       <A4PageEditor
-        value={`<p>First page</p>${pageBreak}<p><br></p><p>Unless the context requires otherwise</p>`}
+        value={`<p>First page</p>${hardPageBreak}<p><br></p><p>Unless the context requires otherwise</p>`}
       />,
     );
 
@@ -263,11 +271,20 @@ describe('A4PageEditor', () => {
     expect(screen.getByTestId('a4-page-content-1').innerHTML).not.toContain(
       'page-break',
     );
-    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining(pageBreak));
+    await waitFor(() => {
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.stringContaining('data-break-type="hard"'),
+      );
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.not.stringContaining(pageBreak),
+      );
+    });
   });
 
   it('selects all document pages with Ctrl+A', () => {
-    render(<A4PageEditor value={`<p>First</p>${pageBreak}<p>Second</p>`} />);
+    render(
+      <A4PageEditor value={`<p>First</p>${hardPageBreak}<p>Second</p>`} />,
+    );
 
     const secondPage = screen.getByTestId('a4-page-content-2');
     act(() => {
@@ -395,7 +412,9 @@ describe('A4PageEditor', () => {
     });
 
     expect(editor.querySelector('table')).not.toBeNull();
-    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('<table'));
+    await waitFor(() => {
+      expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('<table'));
+    });
   });
 
   it('adds table rows and columns at the selected cell', async () => {
@@ -463,5 +482,185 @@ describe('A4PageEditor', () => {
     expect(screen.getByTestId('a4-page-content-1').textContent).toBe(
       'Start typed',
     );
+  });
+
+  it('treats legacy page-break comments as soft layout hints', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    render(
+      <A4PageEditor
+        ref={editorRef}
+        value={`<p>First</p>${pageBreak}<p>Second</p>`}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('a4-page-content-2')).not.toBeInTheDocument();
+    });
+    expect(editorRef.current?.getContent()).toBe('<p>First</p><p>Second</p>');
+  });
+
+  it('uses the same physical paginator for generated preview content', async () => {
+    const originalScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return (this.textContent?.length ?? 0) * 100;
+      },
+    });
+
+    try {
+      render(
+        <A4PageEditor
+          value="<p>Editable</p>"
+          previewContent="<p>123456789012345</p>"
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('a4-page-content-2')).toBeInTheDocument();
+      });
+      expect(screen.getByTestId('a4-page-content-1').textContent).toContain(
+        '123456789',
+      );
+      expect(screen.getByTestId('a4-page-content-2').textContent).toContain(
+        '012345',
+      );
+    } finally {
+      if (originalScrollHeight) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          'scrollHeight',
+          originalScrollHeight,
+        );
+      }
+    }
+  });
+
+  it('deletes the preceding character when backspacing across a soft page boundary', async () => {
+    const originalScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return (this.textContent?.length ?? 0) * 100;
+      },
+    });
+    const onChange = vi.fn();
+
+    try {
+      render(
+        <A4PageEditor value="<p>123456789012345</p>" onChange={onChange} />,
+      );
+      const secondPage = await screen.findByTestId('a4-page-content-2');
+      act(() => {
+        secondPage.focus();
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(secondPage);
+        range.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      });
+      fireEvent.keyDown(secondPage, { key: 'Backspace' });
+
+      await waitFor(() => {
+        expect(onChange).toHaveBeenLastCalledWith(
+          expect.stringContaining('12345678012345'),
+        );
+      });
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.not.stringContaining(pageBreak),
+      );
+    } finally {
+      if (originalScrollHeight) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          'scrollHeight',
+          originalScrollHeight,
+        );
+      }
+    }
+  });
+
+  it('deletes a selection spanning multiple pages as one document range', async () => {
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        value={`<p>Alpha</p>${hardPageBreak}<p>Beta</p>`}
+        onChange={onChange}
+      />,
+    );
+    const firstPage = screen.getByTestId('a4-page-content-1');
+    const secondPage = screen.getByTestId('a4-page-content-2');
+    const firstText = firstPage.querySelector('p')?.firstChild;
+    const secondText = secondPage.querySelector('p')?.firstChild;
+    expect(firstText).toBeTruthy();
+    expect(secondText).toBeTruthy();
+
+    act(() => {
+      firstPage.focus();
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStart(firstText!, 2);
+      range.setEnd(secondText!, 2);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    });
+    fireEvent.keyDown(firstPage, { key: 'Delete' });
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.not.stringContaining('page-break'),
+      );
+      expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('Al'));
+      expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('ta'));
+      expect(onChange).not.toHaveBeenLastCalledWith(
+        expect.stringContaining('pha'),
+      );
+    });
+  });
+
+  it('replaces a selection spanning pages with pasted content', async () => {
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        value={`<p>Alpha</p>${hardPageBreak}<p>Beta</p>`}
+        onChange={onChange}
+      />,
+    );
+    const firstPage = screen.getByTestId('a4-page-content-1');
+    const secondPage = screen.getByTestId('a4-page-content-2');
+    const firstText = firstPage.querySelector('p')?.firstChild;
+    const secondText = secondPage.querySelector('p')?.firstChild;
+
+    act(() => {
+      firstPage.focus();
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStart(firstText!, 2);
+      range.setEnd(secondText!, 2);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    });
+    fireEvent.paste(firstPage, {
+      clipboardData: {
+        getData: (type: string) => (type === 'text/plain' ? 'X' : ''),
+      },
+    });
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.not.stringContaining('page-break'),
+      );
+      expect(onChange).toHaveBeenLastCalledWith(
+        '<p>Al</p><p>X</p><p>ta</p>',
+      );
+    });
   });
 });

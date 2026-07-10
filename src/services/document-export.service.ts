@@ -14,6 +14,7 @@ import {
   type PageMargins,
 } from '@/services/letterhead.service';
 import { extractSections, type DocumentSection } from '@/services/document-validation.service';
+import { splitHardPageSections } from '@/lib/document-page-breaks';
 import DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 
@@ -501,25 +502,14 @@ function shouldRemovePage(content: string): boolean {
 }
 
 /**
- * Parse content into pages (split by page-break markers)
- * Supports multiple formats:
- * - <!-- PAGE_BREAK --> (A4PageEditor internal format)
- * - <div class="page-break"></div> (HTML format)
+ * Parse content into hard page sections.
+ * Legacy <!-- PAGE_BREAK --> comments are soft layout hints and are discarded;
+ * class-based page-break elements remain explicit hard boundaries.
  */
 function parsePages(content: string): string[] {
-  // First normalize all page break formats to a common separator
-  let normalizedContent = content;
-
-  // Handle A4PageEditor's internal page break format
-  normalizedContent = normalizedContent.replace(/<!--\s*PAGE_BREAK\s*-->/gi, '{{PAGE_BREAK}}');
-
-  // Handle HTML page-break div format
-  const pageBreakDivRegex = /<div[^>]*class\s*=\s*["'][^"']*\bpage-break\b[^"']*["'][^>]*>(?:\s*<\/div>)?/gi;
-  normalizedContent = normalizedContent.replace(pageBreakDivRegex, '{{PAGE_BREAK}}');
-
-  // Split by the normalized separator
-  const pages = normalizedContent.split('{{PAGE_BREAK}}');
-  return pages.map(page => page.trim()).filter(page => page.length > 0);
+  return splitHardPageSections(content)
+    .map((page) => page.trim())
+    .filter((page) => page.length > 0);
 }
 
 /**

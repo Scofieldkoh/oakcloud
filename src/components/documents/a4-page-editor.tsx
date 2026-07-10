@@ -39,6 +39,25 @@ import {
   Undo,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  deleteCharacterBeforeTextOffset,
+  deleteFlowSelection,
+  replaceFlowSelection,
+  hydrateFlowHtml,
+  reassemblePageFragments,
+  splitHardSections,
+  stripFlowMetadata,
+  type PageFragment,
+} from './a4-pagination/model';
+import {
+  paginateFlowHtml,
+  type HtmlMeasurer,
+} from './a4-pagination/engine';
+import {
+  captureFlowSelection,
+  restoreFlowSelection,
+  type FlowSelectionBookmark,
+} from './a4-pagination/selection';
 
 // ============================================================================
 // HTML Sanitization
@@ -95,6 +114,10 @@ function sanitizeHtml(html: string): string {
       'valign',
       'width',
       'height',
+      'data-break-type',
+      'data-flow-id',
+      'data-flow-continuation',
+      'data-flow-oversized',
     ],
     ALLOWED_URI_REGEXP:
       /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
@@ -105,285 +128,10 @@ function sanitizeHtml(html: string): string {
 // Overflow helpers
 // ============================================================================
 
-const OVERFLOW_TOLERANCE_PX = 5;
-const HTML_PAGE_BREAK_REGEX =
-  /<[^>]*class\s*=\s*["'][^"']*\bpage-break\b[^"']*["'][^>]*>(?:\s*<\/[^>]+>)?/gi;
-
-interface SplitResult {
-  fitHtml: string;
-  overflowHtml: string;
-}
-
-interface TextNodeInfo {
-  node: Text;
-  start: number;
-  length: number;
-  end: number;
-}
-
 function fragmentToHtml(fragment: DocumentFragment): string {
   const wrapper = document.createElement('div');
   wrapper.appendChild(fragment);
   return wrapper.innerHTML;
-}
-
-function splitByManualBreak(container: HTMLElement): SplitResult | null {
-  const manualBreak = container.querySelector('.page-break');
-  if (!manualBreak) return null;
-
-  const rangeBefore = document.createRange();
-  rangeBefore.setStart(container, 0);
-  rangeBefore.setEndBefore(manualBreak);
-
-  const rangeAfter = document.createRange();
-  rangeAfter.setStartAfter(manualBreak);
-  rangeAfter.setEnd(container, container.childNodes.length);
-
-  const fitHtml = fragmentToHtml(rangeBefore.cloneContents());
-  const overflowHtml = fragmentToHtml(rangeAfter.cloneContents());
-
-  if (!overflowHtml.trim()) {
-    return null;
-  }
-
-  return { fitHtml, overflowHtml };
-}
-
-function collectTextNodes(container: HTMLElement): {
-  nodes: TextNodeInfo[];
-  totalLength: number;
-} {
-  const walker = document.createTreeWalker(
-    container,
-    NodeFilter.SHOW_TEXT,
-    null,
-  );
-  const nodes: TextNodeInfo[] = [];
-  let totalLength = 0;
-  let current: Node | null;
-
-  while ((current = walker.nextNode())) {
-    const textNode = current as Text;
-    const textContent = textNode.textContent ?? '';
-    const length = textContent.length;
-
-    if (length === 0) continue;
-
-    nodes.push({
-      node: textNode,
-      start: totalLength,
-      length,
-      end: totalLength + length,
-    });
-
-    totalLength += length;
-  }
-
-  return { nodes, totalLength };
-}
-
-function mapOffsetToDomPosition(
-  nodes: TextNodeInfo[],
-  offset: number,
-): { node: Text; offset: number } | null {
-  if (nodes.length === 0) return null;
-
-  if (offset <= 0) {
-    return { node: nodes[0].node, offset: 0 };
-  }
-
-  const totalLength = nodes[nodes.length - 1].end;
-  if (offset >= totalLength) {
-    const last = nodes[nodes.length - 1];
-    return { node: last.node, offset: last.length };
-  }
-
-  for (const info of nodes) {
-    if (offset >= info.start && offset <= info.end) {
-      return { node: info.node, offset: offset - info.start };
-    }
-  }
-
-  const last = nodes[nodes.length - 1];
-  return { node: last.node, offset: last.length };
-}
-
-function getCharAt(nodes: TextNodeInfo[], index: number): string | null {
-  if (index < 0) return null;
-
-  for (const info of nodes) {
-    if (index >= info.start && index < info.end) {
-      const text = info.node.textContent ?? '';
-      return text.charAt(index - info.start) ?? null;
-    }
-  }
-
-  return null;
-}
-
-function findWhitespaceSplitOffset(nodes: TextNodeInfo[], offset: number): number {
-  const WHITESPACE_REGEX = /[\s\u00A0]/;
-  let adjusted = offset;
-
-  for (let i = 0; i < 50 && adjusted > 0; i += 1) {
-    const char = getCharAt(nodes, adjusted - 1);
-    if (!char) break;
-    if (WHITESPACE_REGEX.test(char)) {
-      return adjusted;
-    }
-    adjusted -= 1;
-  }
-
-  return offset;
-}
-
-function measureRangeHeight(range: Range, containerTop: number): number {
-  const rects = Array.from(range.getClientRects?.() ?? []);
-  if (rects.length === 0) {
-    const rect = range.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0) {
-      return 0;
-    }
-    return Math.ceil(rect.bottom - containerTop);
-  }
-
-  let maxBottom = containerTop;
-  rects.forEach((rect) => {
-    if (rect.bottom > maxBottom) {
-      maxBottom = rect.bottom;
-    }
-  });
-
-  return Math.ceil(maxBottom - containerTop);
-}
-
-function splitByCharacter(
-  container: HTMLElement,
-  maxHeight: number,
-): SplitResult | null {
-  const { nodes, totalLength } = collectTextNodes(container);
-  if (nodes.length === 0 || totalLength === 0) {
-    return null;
-  }
-
-  const containerTop = container.getBoundingClientRect().top;
-
-  let low = 0;
-  let high = totalLength;
-  let bestOffset = -1;
-
-  while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    const domPos = mapOffsetToDomPosition(nodes, mid);
-    if (!domPos) break;
-
-    const testRange = document.createRange();
-    testRange.setStart(container, 0);
-    testRange.setEnd(domPos.node, domPos.offset);
-
-    const measuredHeight = measureRangeHeight(testRange, containerTop);
-
-    if (measuredHeight <= maxHeight + OVERFLOW_TOLERANCE_PX) {
-      bestOffset = mid;
-      low = mid + 1;
-    } else {
-      high = mid - 1;
-    }
-  }
-
-  if (bestOffset <= 0 || bestOffset >= totalLength) {
-    return null;
-  }
-
-  const adjustedOffset = findWhitespaceSplitOffset(nodes, bestOffset);
-  if (adjustedOffset <= 0 || adjustedOffset >= totalLength) {
-    return null;
-  }
-
-  const finalPosition = mapOffsetToDomPosition(nodes, adjustedOffset);
-  if (!finalPosition) return null;
-
-  const fitRange = document.createRange();
-  fitRange.setStart(container, 0);
-  fitRange.setEnd(finalPosition.node, finalPosition.offset);
-
-  const overflowRange = document.createRange();
-  overflowRange.setStart(finalPosition.node, finalPosition.offset);
-  overflowRange.setEnd(container, container.childNodes.length);
-
-  const fitHtml = fragmentToHtml(fitRange.cloneContents());
-  const overflowHtml = fragmentToHtml(overflowRange.cloneContents());
-
-  if (!overflowHtml.trim()) {
-    return null;
-  }
-
-  return { fitHtml, overflowHtml };
-}
-
-function splitByElement(container: HTMLElement): SplitResult | null {
-  const nodes = Array.from(container.childNodes);
-  if (nodes.length <= 1) return null;
-
-  const splitNode = nodes[nodes.length - 1];
-
-  const fitRange = document.createRange();
-  fitRange.setStart(container, 0);
-  fitRange.setEndBefore(splitNode);
-
-  const overflowRange = document.createRange();
-  overflowRange.setStartBefore(splitNode);
-  overflowRange.setEnd(container, container.childNodes.length);
-
-  const fitHtml = fragmentToHtml(fitRange.cloneContents());
-  const overflowHtml = fragmentToHtml(overflowRange.cloneContents());
-
-  if (!overflowHtml.trim()) {
-    return null;
-  }
-
-  return { fitHtml, overflowHtml };
-}
-
-function splitContainerContent(
-  container: HTMLElement,
-  maxHeight: number,
-): SplitResult | null {
-  const manualSplit = splitByManualBreak(container);
-  if (manualSplit) {
-    return manualSplit;
-  }
-
-  const characterSplit = splitByCharacter(container, maxHeight);
-  if (characterSplit) {
-    return characterSplit;
-  }
-
-  const elementSplit = splitByElement(container);
-  if (elementSplit) {
-    return elementSplit;
-  }
-
-  return null;
-}
-
-function hasRenderableContent(html: string): boolean {
-  if (!html) return false;
-
-  const cleaned = html
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<[^>]+>/g, '')
-    .trim();
-
-  if (cleaned.length > 0) {
-    return true;
-  }
-
-  return /<(img|svg|object|embed|video|audio|canvas|table|tr|td|th|li|ul|ol|hr|br)\b/i.test(
-    html,
-  );
 }
 
 function hasMeaningfulContentBeforeCaret(html: string): boolean {
@@ -665,6 +413,8 @@ export interface A4PageEditorRef {
 interface PageData {
   id: string;
   content: string;
+  hardBreakBefore: boolean;
+  oversized?: boolean;
 }
 
 // ============================================================================
@@ -700,6 +450,45 @@ function createPageLayout(marginMm: number): PageLayout {
     marginPx,
     contentWidthPx: A4.WIDTH_PX - marginPx * 2,
     contentHeightPx: A4.HEIGHT_PX - marginPx * 2,
+  };
+}
+
+function createPageMeasurer(
+  pageLayout: PageLayout,
+  lineHeight: string,
+  paragraphSpacing: string,
+): HtmlMeasurer & { dispose: () => void } {
+  const element = document.createElement('div');
+  element.className = 'a4-page-content';
+  Object.assign(element.style, {
+    position: 'fixed',
+    visibility: 'hidden',
+    pointerEvents: 'none',
+    contain: 'layout style',
+    top: '-100000px',
+    left: '0',
+    width: `${pageLayout.contentWidthPx}px`,
+    height: 'auto',
+    minHeight: '0',
+    overflow: 'visible',
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '11pt',
+    lineHeight,
+    overflowWrap: 'break-word',
+    wordBreak: 'break-word',
+    whiteSpace: 'pre-wrap',
+  });
+  element.style.setProperty('--a4-paragraph-spacing', paragraphSpacing);
+  document.body.appendChild(element);
+
+  return {
+    measure(html: string) {
+      element.innerHTML = sanitizeHtml(html);
+      return element.scrollHeight;
+    },
+    dispose() {
+      element.remove();
+    },
   };
 }
 
@@ -1026,8 +815,9 @@ interface PageProps {
   onFocus: (id: string) => void;
   onBlur?: () => void;
   onDelete: (id: string) => void;
-  onOverflow?: (id: string, overflowContent: string) => void;
   onBackspaceAtStart?: (id: string, currentContent: string) => void;
+  onDeleteAcrossPages?: () => void;
+  onPasteAcrossPages?: (html: string) => void;
   onSelectAllDocument?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
@@ -1038,7 +828,6 @@ interface PageProps {
   pageLayout: PageLayout;
   lineHeight: string;
   showPageNumbers: boolean;
-  maxContentHeight: number;
 }
 
 function Page({
@@ -1051,8 +840,9 @@ function Page({
   onFocus,
   onBlur,
   onDelete,
-  onOverflow,
   onBackspaceAtStart,
+  onDeleteAcrossPages,
+  onPasteAcrossPages,
   onSelectAllDocument,
   onUndo,
   onRedo,
@@ -1063,10 +853,8 @@ function Page({
   pageLayout,
   lineHeight,
   showPageNumbers,
-  maxContentHeight,
 }: PageProps) {
   const contentRef = useRef<HTMLDivElement>(null);
-  const isCheckingOverflow = useRef(false);
   const isEmpty =
     !page.content || page.content.replace(/<[^>]*>/g, '').trim() === '';
 
@@ -1087,73 +875,6 @@ function Page({
       }
     }
   }, [isPreviewMode, page.content]);
-
-  const checkOverflow = useCallback(() => {
-    const el = contentRef.current;
-    if (
-      !el ||
-      isPreviewMode ||
-      isCheckingOverflow.current ||
-      !onOverflow ||
-      !el.innerHTML
-    ) {
-      return;
-    }
-
-    const overflowThreshold = maxContentHeight + OVERFLOW_TOLERANCE_PX;
-
-    if (el.scrollHeight <= overflowThreshold) {
-      return;
-    }
-
-    isCheckingOverflow.current = true;
-    const originalHtml = el.innerHTML;
-
-    const split = splitContainerContent(el, maxContentHeight);
-
-    if (!split) {
-      isCheckingOverflow.current = false;
-      return;
-    }
-
-    const sanitizedFit = sanitizeHtml(split.fitHtml);
-    const sanitizedOverflow = sanitizeHtml(split.overflowHtml);
-
-    if (!hasRenderableContent(sanitizedOverflow)) {
-      if (contentRef.current) {
-        contentRef.current.innerHTML = originalHtml;
-      }
-      isCheckingOverflow.current = false;
-      return;
-    }
-
-    if (contentRef.current) {
-      contentRef.current.innerHTML = sanitizedFit;
-    }
-
-    if (sanitizedFit !== page.content) {
-      onContentChange(page.id, sanitizedFit);
-    }
-
-    onOverflow(page.id, sanitizedOverflow);
-
-    setTimeout(() => {
-      isCheckingOverflow.current = false;
-      checkOverflow();
-    }, 30);
-  }, [
-    isPreviewMode,
-    maxContentHeight,
-    onContentChange,
-    onOverflow,
-    page.content,
-    page.id,
-  ]);
-
-  useEffect(() => {
-    const timer = setTimeout(checkOverflow, 100);
-    return () => clearTimeout(timer);
-  }, [page.content, checkOverflow]);
 
   const handleInput = useCallback(() => {
     if (contentRef.current && !isPreviewMode) {
@@ -1235,14 +956,24 @@ function Page({
 
       if (!html) return;
 
+      const selection = window.getSelection();
+      if (
+        selection &&
+        !selection.isCollapsed &&
+        (!contentRef.current?.contains(selection.anchorNode) ||
+          !contentRef.current?.contains(selection.focusNode))
+      ) {
+        onPasteAcrossPages?.(html);
+        return;
+      }
+
       document.execCommand('insertHTML', false, html);
 
       setTimeout(() => {
         handleInput();
-        checkOverflow();
       }, 0);
     },
-    [checkOverflow, handleInput, isPreviewMode],
+    [handleInput, isPreviewMode, onPasteAcrossPages],
   );
 
   const handleKeyDown = useCallback(
@@ -1269,6 +1000,19 @@ function Page({
         return;
       }
 
+      const selection = window.getSelection();
+      if (
+        (event.key === 'Backspace' || event.key === 'Delete') &&
+        selection &&
+        !selection.isCollapsed &&
+        (!contentRef.current?.contains(selection.anchorNode) ||
+          !contentRef.current?.contains(selection.focusNode))
+      ) {
+        event.preventDefault();
+        onDeleteAcrossPages?.();
+        return;
+      }
+
       const el = contentRef.current;
       if (
         event.key !== 'Backspace' ||
@@ -1286,6 +1030,7 @@ function Page({
     [
       isPreviewMode,
       onBackspaceAtStart,
+      onDeleteAcrossPages,
       onRedo,
       onSelectAllDocument,
       onUndo,
@@ -1428,10 +1173,12 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     },
     ref,
   ) {
-    const PAGE_SEPARATOR = '<!-- PAGE_BREAK -->';
     const activeEditorRef = useRef<HTMLDivElement | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-    const lastValueRef = useRef<string>(value);
+    // Client components are still rendered on the server by Next.js. Keep the
+    // initial render DOM-free, then hydrate and paginate the canonical HTML in
+    // the effects below once browser APIs are available.
+    const lastValueRef = useRef<string | null>(null);
     const isInternalUpdate = useRef(false);
 
     const savedSelectionRef = useRef<{
@@ -1541,28 +1288,40 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       [restoreSelection],
     );
 
-    const normalizePageSeparators = useCallback(
-      (input: string) => {
-        if (!input || input.indexOf('page-break') === -1) return input;
-        return input.replace(HTML_PAGE_BREAK_REGEX, PAGE_SEPARATOR);
-      },
-      [PAGE_SEPARATOR],
-    );
-
     const parsePages = useCallback(
       (content: string, existingPages?: PageData[]): PageData[] => {
-        if (!content) return [{ id: crypto.randomUUID(), content: '' }];
-        const normalizedContent = normalizePageSeparators(content);
-        const parts = normalizedContent.split(PAGE_SEPARATOR);
-        return parts.map((c, i) => ({
+        const hydrated = hydrateFlowHtml(content || '');
+        const sections = splitHardSections(hydrated);
+        return sections.map((section, i) => ({
           id: existingPages?.[i]?.id || crypto.randomUUID(),
-          content: c,
+          content: sanitizeHtml(section),
+          hardBreakBefore: i > 0,
         }));
       },
-      [normalizePageSeparators],
+      [],
     );
 
-    const [pages, setPages] = useState<PageData[]>(() => parsePages(value));
+    const serializePages = useCallback((pageList: PageData[]) => {
+      const fragments: PageFragment[] = pageList.map((page) => ({
+        content: page.content,
+        hardBreakBefore: page.hardBreakBefore,
+        oversized: page.oversized,
+      }));
+      return sanitizeHtml(stripFlowMetadata(reassemblePageFragments(fragments)));
+    }, []);
+
+    const [pages, setPages] = useState<PageData[]>(() => [
+      {
+        id: 'a4-page-initial',
+        content: '',
+        hardBreakBefore: false,
+      },
+    ]);
+    const pagesRef = useRef<PageData[]>(pages);
+    const reflowFrameRef = useRef<number | null>(null);
+    const reflowGenerationRef = useRef(0);
+    const pendingUpdateRef = useRef(false);
+    const pendingFlowSelectionRef = useRef<FlowSelectionBookmark | null>(null);
     const [activePageId, setActivePageId] = useState<string>(
       pages[0]?.id || '',
     );
@@ -1576,6 +1335,111 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       [pageMarginMm],
     );
 
+    const scheduleReflow = useCallback(
+      (sourcePages: PageData[], emitChange: boolean) => {
+        pagesRef.current = sourcePages;
+        reflowGenerationRef.current += 1;
+        const generation = reflowGenerationRef.current;
+
+        if (reflowFrameRef.current !== null) {
+          cancelAnimationFrame(reflowFrameRef.current);
+        }
+
+        reflowFrameRef.current = requestAnimationFrame(() => {
+          if (generation !== reflowGenerationRef.current) return;
+
+          if (
+            scrollContainerRef.current &&
+            !pendingFlowSelectionRef.current
+          ) {
+            pendingFlowSelectionRef.current = captureFlowSelection(
+              scrollContainerRef.current,
+            );
+          }
+
+          const canonical = reassemblePageFragments(
+            pagesRef.current.map((page) => ({
+              content: page.content,
+              hardBreakBefore: page.hardBreakBefore,
+              oversized: page.oversized,
+            })),
+          );
+          const measurer = createPageMeasurer(
+            pageLayout,
+            lineHeight,
+            paragraphSpacing,
+          );
+
+          try {
+            const fragments = paginateFlowHtml(
+              canonical,
+              measurer,
+              pageLayout.contentHeightPx,
+            );
+            if (generation !== reflowGenerationRef.current) return;
+
+            const nextPages = fragments.map((fragment, index) => ({
+              id: pagesRef.current[index]?.id || crypto.randomUUID(),
+              content: sanitizeHtml(fragment.content),
+              hardBreakBefore: fragment.hardBreakBefore,
+              oversized: fragment.oversized,
+            }));
+            pagesRef.current = nextPages;
+            lastValueRef.current = serializePages(nextPages);
+            pendingUpdateRef.current = emitChange;
+            setPages(nextPages);
+          } finally {
+            measurer.dispose();
+            if (reflowFrameRef.current !== null) {
+              reflowFrameRef.current = null;
+            }
+          }
+        });
+      },
+      [lineHeight, pageLayout, paragraphSpacing, serializePages],
+    );
+
+    useEffect(() => {
+      scheduleReflow(pagesRef.current, false);
+      return () => {
+        reflowGenerationRef.current += 1;
+        if (reflowFrameRef.current !== null) {
+          cancelAnimationFrame(reflowFrameRef.current);
+          reflowFrameRef.current = null;
+        }
+      };
+    }, [scheduleReflow]);
+
+    useEffect(() => {
+      const bookmark = pendingFlowSelectionRef.current;
+      const root = scrollContainerRef.current;
+      if (!bookmark || !root) return;
+
+      const frame = requestAnimationFrame(() => {
+        const targetFlowElement = Array.from(
+          root.querySelectorAll<HTMLElement>('[data-flow-id]'),
+        ).find(
+          (element) => element.dataset.flowId === bookmark.anchor.flowId,
+        );
+        const targetEditor = targetFlowElement?.closest(
+          '[contenteditable="true"]',
+        ) as HTMLDivElement | null;
+        targetEditor?.focus({ preventScroll: true });
+
+        if (restoreFlowSelection(root, bookmark)) {
+          const pageElement = targetEditor?.closest('[data-page-id]') as
+            | HTMLElement
+            | null;
+          if (pageElement?.dataset.pageId) {
+            setActivePageId(pageElement.dataset.pageId);
+          }
+        }
+        pendingFlowSelectionRef.current = null;
+      });
+
+      return () => cancelAnimationFrame(frame);
+    }, [pages]);
+
     // Expose methods via ref
     useImperativeHandle(
       ref,
@@ -1583,25 +1447,75 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         insertAtCursor,
         insertHtmlAtCursor,
         focus: () => activeEditorRef.current?.focus(),
-        getContent: () => pages.map((p) => p.content).join(PAGE_SEPARATOR),
+        getContent: () => serializePages(pagesRef.current),
         setContent: (html: string) => {
-          const newPages = parsePages(html, pages);
+          const newPages = parsePages(html, pagesRef.current);
+          pagesRef.current = newPages;
           setPages(newPages);
+          scheduleReflow(newPages, false);
           if (newPages.length > 0 && !newPages.find((p) => p.id === activePageId)) {
             setActivePageId(newPages[0].id);
           }
         },
       }),
-      [insertAtCursor, insertHtmlAtCursor, pages, parsePages, activePageId, PAGE_SEPARATOR],
+      [
+        activePageId,
+        insertAtCursor,
+        insertHtmlAtCursor,
+        parsePages,
+        scheduleReflow,
+        serializePages,
+      ],
     );
 
     // In read-only mode, always stay in preview/read mode
     const effectivePreviewMode = readOnly || isPreviewMode;
 
-    const previewPages = useMemo(() => {
-      if (!previewContent) return null;
-      return parsePages(previewContent);
-    }, [previewContent, parsePages]);
+    const [previewPages, setPreviewPages] = useState<PageData[] | null>(null);
+
+    useEffect(() => {
+      if (!previewContent) {
+        setPreviewPages(null);
+        return;
+      }
+
+      const basePages = parsePages(previewContent, previewPages ?? undefined);
+      const frame = requestAnimationFrame(() => {
+        const canonical = reassemblePageFragments(
+          basePages.map((page) => ({
+            content: page.content,
+            hardBreakBefore: page.hardBreakBefore,
+          })),
+        );
+        const measurer = createPageMeasurer(
+          pageLayout,
+          lineHeight,
+          paragraphSpacing,
+        );
+        try {
+          const fragments = paginateFlowHtml(
+            canonical,
+            measurer,
+            pageLayout.contentHeightPx,
+          );
+          setPreviewPages(
+            fragments.map((fragment, index) => ({
+              id: basePages[index]?.id || crypto.randomUUID(),
+              content: sanitizeHtml(fragment.content),
+              hardBreakBefore: fragment.hardBreakBefore,
+              oversized: fragment.oversized,
+            })),
+          );
+        } finally {
+          measurer.dispose();
+        }
+      });
+
+      return () => cancelAnimationFrame(frame);
+      // previewPages is intentionally excluded: it supplies stable ids but must not
+      // retrigger pagination after each derived preview layout.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lineHeight, pageLayout, paragraphSpacing, parsePages, previewContent]);
 
     // Helper to check if a page should be removed (contains only [Remove Page])
     const shouldRemovePage = useCallback((content: string) => {
@@ -1628,16 +1542,19 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     }, [displayPages, activePageId]);
 
     useEffect(() => {
-      if (isInternalUpdate.current || value === lastValueRef.current) {
+      const canonicalValue = stripFlowMetadata(hydrateFlowHtml(value));
+      if (isInternalUpdate.current || canonicalValue === lastValueRef.current) {
         isInternalUpdate.current = false;
         return;
       }
 
-      lastValueRef.current = value;
+      lastValueRef.current = canonicalValue;
 
       if (!isPreviewMode) {
         setPages((prev) => {
           const newPages = parsePages(value, prev);
+          pagesRef.current = newPages;
+          scheduleReflow(newPages, false);
           if (
             !newPages.find((p) => p.id === activePageId) &&
             newPages.length > 0
@@ -1647,18 +1564,12 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return newPages;
         });
       }
-    }, [value, parsePages, isPreviewMode, activePageId]);
+    }, [value, parsePages, isPreviewMode, activePageId, scheduleReflow]);
 
-    const pendingUpdateRef = useRef(false);
     const historyRef = useRef<{ past: string[]; future: string[] }>({
       past: [],
       future: [],
     });
-
-    const serializePages = useCallback(
-      (pageList: PageData[]) => pageList.map((p) => p.content).join(PAGE_SEPARATOR),
-      [PAGE_SEPARATOR],
-    );
 
     const pushHistorySnapshot = useCallback(
       (pageList: PageData[]) => {
@@ -1695,15 +1606,16 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (!previousSnapshot) return prev;
 
         historyRef.current.future.push(serializePages(prev));
-        pendingUpdateRef.current = true;
 
         const nextPages = parsePages(previousSnapshot, prev);
+        pagesRef.current = nextPages;
+        scheduleReflow(nextPages, true);
         if (nextPages.length > 0) {
           setActivePageId(nextPages[0].id);
         }
         return nextPages;
       });
-    }, [effectivePreviewMode, parsePages, serializePages]);
+    }, [effectivePreviewMode, parsePages, scheduleReflow, serializePages]);
 
     const handleRedo = useCallback(() => {
       if (effectivePreviewMode) return;
@@ -1713,15 +1625,16 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (!nextSnapshot) return prev;
 
         historyRef.current.past.push(serializePages(prev));
-        pendingUpdateRef.current = true;
 
         const nextPages = parsePages(nextSnapshot, prev);
+        pagesRef.current = nextPages;
+        scheduleReflow(nextPages, true);
         if (nextPages.length > 0) {
           setActivePageId(nextPages[0].id);
         }
         return nextPages;
       });
-    }, [effectivePreviewMode, parsePages, serializePages]);
+    }, [effectivePreviewMode, parsePages, scheduleReflow, serializePages]);
 
     const handleContentChange = useCallback(
       (id: string, content: string) => {
@@ -1734,34 +1647,43 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           }
 
           pushHistorySnapshot(prev);
-          pendingUpdateRef.current = true;
-          return prev.map((p) =>
+          const nextPages = prev.map((p) =>
             p.id === id ? { ...p, content: sanitizedContent } : p,
           );
+          pagesRef.current = nextPages;
+          scheduleReflow(nextPages, true);
+          return nextPages;
         });
       },
-      [effectivePreviewMode, pushHistorySnapshot],
+      [effectivePreviewMode, pushHistorySnapshot, scheduleReflow],
     );
 
     const handleAddPage = useCallback(() => {
       if (effectivePreviewMode) return;
-      const newPage: PageData = { id: crypto.randomUUID(), content: '' };
-      pendingUpdateRef.current = true;
+      const newPage: PageData = {
+        id: crypto.randomUUID(),
+        content: '<p><br></p>',
+        hardBreakBefore: true,
+      };
       setPages((prev) => {
         pushHistorySnapshot(prev);
-        return [...prev, newPage];
+        const nextPages = [...prev, newPage];
+        pagesRef.current = nextPages;
+        scheduleReflow(nextPages, true);
+        return nextPages;
       });
       setActivePageId(newPage.id);
-    }, [effectivePreviewMode, pushHistorySnapshot]);
+    }, [effectivePreviewMode, pushHistorySnapshot, scheduleReflow]);
 
     const handleDeletePage = useCallback(
       (id: string) => {
         if (effectivePreviewMode) return;
-        pendingUpdateRef.current = true;
         setPages((prev) => {
           if (prev.length <= 1) return prev;
           pushHistorySnapshot(prev);
           const newPages = prev.filter((p) => p.id !== id);
+          pagesRef.current = newPages;
+          scheduleReflow(newPages, true);
           const deletedIndex = prev.findIndex((p) => p.id === id);
           const newActiveIndex = Math.min(deletedIndex, newPages.length - 1);
           setTimeout(
@@ -1771,34 +1693,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return newPages;
         });
       },
-      [effectivePreviewMode, pushHistorySnapshot],
+      [effectivePreviewMode, pushHistorySnapshot, scheduleReflow],
     );
 
-    const isHandlingOverflow = useRef(false);
-    const pendingFocusPageId = useRef<string | null>(null);
     const pendingFocusStartPageId = useRef<string | null>(null);
     const pendingBoundaryFocusRef = useRef<{
       pageId: string;
       previousContent: string;
     } | null>(null);
-
-    const focusPageAtEnd = useCallback((pageId: string) => {
-      const pageEl = document.querySelector(
-        `[data-page-id="${pageId}"] [contenteditable]`,
-      ) as HTMLDivElement | null;
-
-      if (pageEl) {
-        pageEl.focus();
-        const selection = window.getSelection();
-        if (selection) {
-          const range = document.createRange();
-          range.selectNodeContents(pageEl);
-          range.collapse(false);
-          selection.removeAllRanges();
-          selection.addRange(range);
-        }
-      }
-    }, []);
 
     const focusPageAtStart = useCallback((pageId: string) => {
       const pageEl = document.querySelector(
@@ -1840,6 +1742,65 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       // Reserved for selection-aware controls that should not affect document-level settings.
     }, []);
 
+    const handleDeleteAcrossPages = useCallback(() => {
+      if (effectivePreviewMode || !scrollContainerRef.current) return;
+      const bookmark = captureFlowSelection(scrollContainerRef.current);
+      if (!bookmark || bookmark.collapsed) return;
+
+      setPages((prev) => {
+        pushHistorySnapshot(prev);
+        const canonical = reassemblePageFragments(
+          prev.map((page) => ({
+            content: page.content,
+            hardBreakBefore: page.hardBreakBefore,
+          })),
+        );
+        const deleted = deleteFlowSelection(canonical, bookmark);
+        const nextPages = parsePages(deleted, prev);
+        pendingFlowSelectionRef.current = {
+          anchor: bookmark.anchor,
+          focus: bookmark.anchor,
+          collapsed: true,
+        };
+        pagesRef.current = nextPages;
+        scheduleReflow(nextPages, true);
+        return nextPages;
+      });
+    }, [effectivePreviewMode, parsePages, pushHistorySnapshot, scheduleReflow]);
+
+    const handlePasteAcrossPages = useCallback(
+      (html: string) => {
+        if (effectivePreviewMode || !scrollContainerRef.current) return;
+        const bookmark = captureFlowSelection(scrollContainerRef.current);
+        if (!bookmark || bookmark.collapsed) return;
+
+        setPages((prev) => {
+          pushHistorySnapshot(prev);
+          const canonical = reassemblePageFragments(
+            prev.map((page) => ({
+              content: page.content,
+              hardBreakBefore: page.hardBreakBefore,
+            })),
+          );
+          const replacementText = document.createElement('div');
+          replacementText.innerHTML = html;
+          const nextCanonical = replaceFlowSelection(canonical, bookmark, html);
+          const nextPages = parsePages(nextCanonical, prev);
+          const caretOffset =
+            bookmark.anchor.offset + (replacementText.textContent?.length ?? 0);
+          pendingFlowSelectionRef.current = {
+            anchor: { ...bookmark.anchor, offset: caretOffset },
+            focus: { ...bookmark.anchor, offset: caretOffset },
+            collapsed: true,
+          };
+          pagesRef.current = nextPages;
+          scheduleReflow(nextPages, true);
+          return nextPages;
+        });
+      },
+      [effectivePreviewMode, parsePages, pushHistorySnapshot, scheduleReflow],
+    );
+
     const focusPageAtContentBoundary = useCallback(
       (pageId: string, previousContent: string) => {
         const pageEl = document.querySelector(
@@ -1877,59 +1838,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       [],
     );
 
-    const handleOverflow = useCallback(
-      (pageId: string, overflowContent: string) => {
-        if (effectivePreviewMode || !overflowContent.trim() || isHandlingOverflow.current) {
-          return;
-        }
-
-        isHandlingOverflow.current = true;
-        pendingUpdateRef.current = true;
-
-        setPages((prev) => {
-          const pageIndex = prev.findIndex((p) => p.id === pageId);
-          if (pageIndex === -1) return prev;
-
-          const nextPageIndex = pageIndex + 1;
-
-          if (nextPageIndex < prev.length) {
-            const nextPage = prev[nextPageIndex];
-            const updatedPages = [...prev];
-            updatedPages[nextPageIndex] = {
-              ...nextPage,
-              content: overflowContent + nextPage.content,
-            };
-            pendingFocusPageId.current = nextPage.id;
-            return updatedPages;
-          }
-
-          const newPage: PageData = {
-            id: crypto.randomUUID(),
-            content: overflowContent,
-          };
-          pendingFocusPageId.current = newPage.id;
-          return [...prev, newPage];
-        });
-      },
-      [effectivePreviewMode],
-    );
-
-    useEffect(() => {
-      if (pendingFocusPageId.current && isHandlingOverflow.current) {
-        const targetId = pendingFocusPageId.current;
-        const timer = setTimeout(() => {
-          setActivePageId(targetId);
-          setTimeout(() => {
-            focusPageAtEnd(targetId);
-            pendingFocusPageId.current = null;
-            isHandlingOverflow.current = false;
-          }, 100);
-        }, 50);
-
-        return () => clearTimeout(timer);
-      }
-    }, [pages, focusPageAtEnd]);
-
     useEffect(() => {
       if (!pendingFocusStartPageId.current) return;
 
@@ -1958,16 +1866,15 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       (pageId: string, currentContent?: string) => {
         if (effectivePreviewMode) return;
 
-        const currentPageIndex = pages.findIndex((p) => p.id === pageId);
+        const currentPageIndex = pagesRef.current.findIndex((p) => p.id === pageId);
         if (currentPageIndex <= 0) return;
 
-        const previousPage = pages[currentPageIndex - 1];
+        const previousPage = pagesRef.current[currentPageIndex - 1];
         pendingBoundaryFocusRef.current = {
           pageId: previousPage.id,
           previousContent: previousPage.content,
         };
 
-        pendingUpdateRef.current = true;
         setActivePageId(previousPage.id);
         setPages((prev) => {
           const pageIndex = prev.findIndex((p) => p.id === pageId);
@@ -1981,16 +1888,55 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               ? currentPage.content
               : sanitizeHtml(currentContent);
           const updatedPages = [...prev];
+          const previousContentContainer = document.createElement('div');
+          previousContentContainer.innerHTML = previousPage.content;
+          const boundaryTextOffset =
+            previousContentContainer.textContent?.length ?? 0;
+          let mergedContent = reassemblePageFragments([
+            {
+              content: previousPage.content,
+              hardBreakBefore: false,
+            },
+            {
+              content: contentToMerge,
+              hardBreakBefore: false,
+            },
+          ]);
+          if (!currentPage.hardBreakBefore) {
+            mergedContent = deleteCharacterBeforeTextOffset(
+              mergedContent,
+              boundaryTextOffset,
+            );
+
+            const bookmark = scrollContainerRef.current
+              ? captureFlowSelection(scrollContainerRef.current)
+              : null;
+            if (bookmark) {
+              pendingFlowSelectionRef.current = {
+                ...bookmark,
+                anchor: {
+                  ...bookmark.anchor,
+                  offset: Math.max(0, bookmark.anchor.offset - 1),
+                },
+                focus: {
+                  ...bookmark.focus,
+                  offset: Math.max(0, bookmark.focus.offset - 1),
+                },
+              };
+            }
+          }
 
           updatedPages[pageIndex - 1] = {
             ...previousPage,
-            content: `${previousPage.content}${contentToMerge}`,
+            content: mergedContent,
           };
           updatedPages.splice(pageIndex, 1);
+          pagesRef.current = updatedPages;
+          scheduleReflow(updatedPages, true);
           return updatedPages;
         });
       },
-      [effectivePreviewMode, pages, pushHistorySnapshot],
+      [effectivePreviewMode, pushHistorySnapshot, scheduleReflow],
     );
 
     const splitActivePageAtSelection = useCallback(() => {
@@ -2029,10 +1975,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       const afterHtml = sanitizeHtml(fragmentToHtml(afterRange.cloneContents()));
       const newPage: PageData = {
         id: crypto.randomUUID(),
-        content: afterHtml,
+        content: afterHtml || '<p><br></p>',
+        hardBreakBefore: true,
       };
 
-      pendingUpdateRef.current = true;
       pendingFocusStartPageId.current = newPage.id;
       setActivePageId(newPage.id);
       setPages((prev) => {
@@ -2046,9 +1992,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           content: beforeHtml,
         };
         updatedPages.splice(pageIndex + 1, 0, newPage);
+        pagesRef.current = updatedPages;
+        scheduleReflow(updatedPages, true);
         return updatedPages;
       });
-    }, [effectivePreviewMode, pushHistorySnapshot]);
+    }, [effectivePreviewMode, pushHistorySnapshot, scheduleReflow]);
 
     const handleCommand = useCallback(
       (cmd: string, val?: string) => {
@@ -2574,8 +2522,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                   onFocus={setActivePageId}
                   onBlur={saveCursorPosition}
                   onDelete={handleDeletePage}
-                  onOverflow={handleOverflow}
                   onBackspaceAtStart={handleBackspaceAtPageStart}
+                  onDeleteAcrossPages={handleDeleteAcrossPages}
+                  onPasteAcrossPages={handlePasteAcrossPages}
                   onSelectAllDocument={selectAllDocument}
                   onUndo={handleUndo}
                   onRedo={handleRedo}
@@ -2586,7 +2535,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                   pageLayout={pageLayout}
                   lineHeight={lineHeight}
                   showPageNumbers={showPageNumbers}
-                  maxContentHeight={pageLayout.contentHeightPx}
                 />
               </div>
             ))}
