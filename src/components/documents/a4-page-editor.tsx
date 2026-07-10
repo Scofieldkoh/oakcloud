@@ -1305,8 +1305,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const pendingNonCancelableMutationRef = useRef<{
       pages: PageData[];
       canonical: string;
-      bookmark: FlowSelectionBookmark;
-      collapsePoint: FlowSelectionBookmark['anchor'];
+      bookmark: FlowSelectionBookmark | null;
+      collapsePoint: FlowSelectionBookmark['anchor'] | null;
+      targetPageId: string | null;
       inputType: string;
       data: string | null;
       repairOnly: boolean;
@@ -2005,11 +2006,25 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         const inputData = followup?.data ?? pending.data;
         if (pending.repairOnly) {
           pagesRef.current = pending.pages;
-          pendingFlowSelectionRef.current = {
-            anchor: pending.collapsePoint,
-            focus: pending.collapsePoint,
-            collapsed: true,
-          };
+          if (pending.collapsePoint) {
+            pendingFlowSelectionRef.current = {
+              anchor: pending.collapsePoint,
+              focus: pending.collapsePoint,
+              collapsed: true,
+            };
+          } else if (pending.targetPageId) {
+            pendingFocusStartPageId.current = pending.targetPageId;
+          }
+          setSurfaceRepairGeneration((generation) => generation + 1);
+          setPages(pending.pages.map((page) => ({ ...page })));
+          return true;
+        }
+
+        if (!pending.bookmark || !pending.collapsePoint) {
+          pagesRef.current = pending.pages;
+          if (pending.targetPageId) {
+            pendingFocusStartPageId.current = pending.targetPageId;
+          }
           setSurfaceRepairGeneration((generation) => generation + 1);
           setPages(pending.pages.map((page) => ({ ...page })));
           return true;
@@ -2209,8 +2224,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           const isMutating = Boolean(
             inputEvent.inputType || inputEvent.data !== null,
           );
-          if (isMutating && flowId) {
-            const safePoint = { flowId, offset: 0 };
+          const targetPageId = targetPage?.dataset.pageId;
+          if (isMutating && targetPageId) {
+            const safePoint = flowId ? { flowId, offset: 0 } : null;
             const snapshotPages = pagesRef.current;
             pendingNonCancelableMutationRef.current = {
               pages: snapshotPages,
@@ -2220,12 +2236,15 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                   hardBreakBefore: page.hardBreakBefore,
                 })),
               ),
-              bookmark: {
-                anchor: safePoint,
-                focus: safePoint,
-                collapsed: true,
-              },
+              bookmark: safePoint
+                ? {
+                    anchor: safePoint,
+                    focus: safePoint,
+                    collapsed: true,
+                  }
+                : null,
               collapsePoint: safePoint,
+              targetPageId,
               inputType: inputEvent.inputType,
               data: inputEvent.data,
               repairOnly: true,
@@ -2250,6 +2269,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               ),
               bookmark,
               collapsePoint,
+              targetPageId:
+                pageContentFromTarget(
+                  surface,
+                  window.getSelection()?.focusNode ?? null,
+                )?.dataset.pageId ?? null,
               inputType: inputEvent.inputType,
               data: inputEvent.data,
               repairOnly: false,

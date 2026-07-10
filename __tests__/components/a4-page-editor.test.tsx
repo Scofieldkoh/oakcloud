@@ -961,6 +961,73 @@ describe('A4PageEditor', () => {
     });
   });
 
+  it('repairs non-cancelable boundary input on an empty page without a flow node', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const onChange = vi.fn();
+    render(<A4PageEditor ref={editorRef} value="" onChange={onChange} />);
+
+    const surface = screen.getByTestId('a4-document-surface');
+    const pageContent = screen.getByTestId('a4-page-content-1');
+    const paperContainer = pageContent.parentElement!;
+    await waitFor(() => expect(editorRef.current?.getContent()).not.toBe(''));
+    const canonicalBeforeBoundary = editorRef.current?.getContent() ?? '';
+    pageContent.innerHTML = '';
+    expect(pageContent.querySelector('[data-flow-id]')).toBeNull();
+
+    act(() => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(paperContainer, 0);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    surface.dispatchEvent(
+      new InputEvent('beforeinput', {
+        bubbles: true,
+        cancelable: false,
+        data: '文',
+        inputType: 'insertCompositionText',
+        isComposing: true,
+      }),
+    );
+    paperContainer.insertBefore(
+      document.createTextNode('ROGUE_EMPTY_BOUNDARY'),
+      pageContent,
+    );
+    fireEvent.input(surface, {
+      data: '文',
+      inputType: 'insertCompositionText',
+      isComposing: true,
+    });
+
+    await waitFor(() => {
+      expect(editorRef.current?.getContent()).toBe(canonicalBeforeBoundary);
+      expect(screen.getByTestId('a4-document-surface').textContent).not.toContain(
+        'ROGUE_EMPTY_BOUNDARY',
+      );
+    });
+    expect(onChange).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      const selection = window.getSelection()!;
+      const selectionElement =
+        selection.anchorNode?.nodeType === Node.ELEMENT_NODE
+          ? (selection.anchorNode as HTMLElement)
+          : selection.anchorNode?.parentElement;
+      expect(selection.isCollapsed).toBe(true);
+      expect(selectionElement).toBe(screen.getByTestId('a4-page-content-1'));
+    });
+
+    fireEvent.keyDown(screen.getByTestId('a4-document-surface'), {
+      key: 'z',
+      ctrlKey: true,
+    });
+    expect(editorRef.current?.getContent()).toBe(canonicalBeforeBoundary);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('replaces a selection spanning pages with pasted content', async () => {
     const onChange = vi.fn();
     render(
