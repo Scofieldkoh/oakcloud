@@ -854,17 +854,103 @@ describe('A4PageEditor', () => {
       );
     });
 
-    const repairedSurface = screen.getByTestId('a4-document-surface');
-    const repairedSelection = window.getSelection()!;
-    const selectionElement =
-      repairedSelection.anchorNode?.nodeType === Node.ELEMENT_NODE
-        ? (repairedSelection.anchorNode as HTMLElement)
-        : repairedSelection.anchorNode?.parentElement;
-    expect(repairedSelection.isCollapsed).toBe(true);
-    expect(
-      selectionElement?.closest('[data-testid^="a4-page-content-"]'),
-    ).toBeTruthy();
+    await waitFor(() => {
+      const repairedSelection = window.getSelection()!;
+      const selectionElement =
+        repairedSelection.anchorNode?.nodeType === Node.ELEMENT_NODE
+          ? (repairedSelection.anchorNode as HTMLElement)
+          : repairedSelection.anchorNode?.parentElement;
+      expect(repairedSelection.isCollapsed).toBe(true);
+      expect(
+        selectionElement?.closest('[data-testid^="a4-page-content-"]'),
+      ).toBeTruthy();
+    });
 
+    const repairedSurface = screen.getByTestId('a4-document-surface');
+    fireEvent.keyDown(repairedSurface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      const canonical = editorRef.current?.getContent() ?? '';
+      const text = new DOMParser()
+        .parseFromString(canonical, 'text/html')
+        .body.textContent ?? '';
+      expect(text).toBe('AlphaBeta');
+    });
+  });
+
+  it('repairs non-cancelable boundary input without changing canonical history', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        ref={editorRef}
+        value={`<p>Alpha</p>${hardPageBreak}<p>Beta</p>`}
+        onChange={onChange}
+      />,
+    );
+
+    const initialFirstPage = screen.getByTestId('a4-page-content-1');
+    initialFirstPage.innerHTML = '<p>Alpha edited</p>';
+    fireEvent.input(screen.getByTestId('a4-document-surface'));
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+    onChange.mockClear();
+
+    const surface = screen.getByTestId('a4-document-surface');
+    const firstPage = screen.getByTestId('a4-page-content-1');
+    const paperContainer = firstPage.parentElement!;
+    act(() => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(paperContainer, 0);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    surface.dispatchEvent(
+      new InputEvent('beforeinput', {
+        bubbles: true,
+        cancelable: false,
+        data: '文',
+        inputType: 'insertCompositionText',
+        isComposing: true,
+      }),
+    );
+    paperContainer.insertBefore(
+      document.createTextNode('ROGUE_BOUNDARY_IME'),
+      firstPage,
+    );
+    fireEvent.input(surface, {
+      data: '文',
+      inputType: 'insertCompositionText',
+      isComposing: true,
+    });
+
+    await waitFor(() => {
+      const canonical = editorRef.current?.getContent() ?? '';
+      const text = new DOMParser()
+        .parseFromString(canonical, 'text/html')
+        .body.textContent ?? '';
+      expect(text).toBe('Alpha editedBeta');
+      expect(screen.getByTestId('a4-document-surface').textContent).not.toContain(
+        'ROGUE_BOUNDARY_IME',
+      );
+    });
+    expect(onChange).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      const repairedSelection = window.getSelection()!;
+      const selectionElement =
+        repairedSelection.anchorNode?.nodeType === Node.ELEMENT_NODE
+          ? (repairedSelection.anchorNode as HTMLElement)
+          : repairedSelection.anchorNode?.parentElement;
+      expect(repairedSelection.isCollapsed).toBe(true);
+      expect(
+        selectionElement?.closest('[data-testid^="a4-page-content-"]'),
+      ).toBeTruthy();
+    });
+
+    const repairedSurface = screen.getByTestId('a4-document-surface');
     fireEvent.keyDown(repairedSurface, { key: 'z', ctrlKey: true });
     await waitFor(() => {
       const canonical = editorRef.current?.getContent() ?? '';

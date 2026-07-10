@@ -1309,10 +1309,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       collapsePoint: FlowSelectionBookmark['anchor'];
       inputType: string;
       data: string | null;
+      repairOnly: boolean;
     } | null>(null);
     const [activePageId, setActivePageId] = useState<string>(
       pages[0]?.id || '',
     );
+    const activePageIdRef = useRef(activePageId);
+    activePageIdRef.current = activePageId;
     const [isPreviewMode, setIsPreviewMode] = useState(readOnly);
     const [lineHeight, setLineHeight] = useState(LINE_HEIGHT);
     const [paragraphSpacing, setParagraphSpacing] = useState('0.5em');
@@ -2000,6 +2003,18 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
         const inputType = followup?.inputType || pending.inputType;
         const inputData = followup?.data ?? pending.data;
+        if (pending.repairOnly) {
+          pagesRef.current = pending.pages;
+          pendingFlowSelectionRef.current = {
+            anchor: pending.collapsePoint,
+            focus: pending.collapsePoint,
+            collapsed: true,
+          };
+          setSurfaceRepairGeneration((generation) => generation + 1);
+          setPages(pending.pages.map((page) => ({ ...page })));
+          return true;
+        }
+
         if (inputType.startsWith('delete')) {
           pushHistorySnapshot(pending.pages);
           const deleted = deleteFlowSelection(
@@ -2172,7 +2187,50 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           surface &&
           !selectionIsWithinPageContents(surface)
         ) {
-          if (inputEvent.cancelable) inputEvent.preventDefault();
+          if (inputEvent.cancelable) {
+            inputEvent.preventDefault();
+            return;
+          }
+
+          const selection = window.getSelection();
+          const targetPage =
+            pageContentFromTarget(surface, selection?.focusNode ?? null) ??
+            pageContentFromTarget(surface, selection?.anchorNode ?? null) ??
+            surface.querySelector<HTMLElement>(
+              `[data-testid^="a4-page-content-"][data-page-id="${activePageIdRef.current}"]`,
+            ) ??
+            surface.querySelector<HTMLElement>(
+              '[data-testid^="a4-page-content-"][data-page-id]',
+            );
+          const targetFlow = targetPage?.querySelector<HTMLElement>(
+            '[data-flow-id]',
+          );
+          const flowId = targetFlow?.dataset.flowId;
+          const isMutating = Boolean(
+            inputEvent.inputType || inputEvent.data !== null,
+          );
+          if (isMutating && flowId) {
+            const safePoint = { flowId, offset: 0 };
+            const snapshotPages = pagesRef.current;
+            pendingNonCancelableMutationRef.current = {
+              pages: snapshotPages,
+              canonical: reassemblePageFragments(
+                snapshotPages.map((page) => ({
+                  content: page.content,
+                  hardBreakBefore: page.hardBreakBefore,
+                })),
+              ),
+              bookmark: {
+                anchor: safePoint,
+                focus: safePoint,
+                collapsed: true,
+              },
+              collapsePoint: safePoint,
+              inputType: inputEvent.inputType,
+              data: inputEvent.data,
+              repairOnly: true,
+            };
+          }
           return;
         }
 
@@ -2194,6 +2252,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               collapsePoint,
               inputType: inputEvent.inputType,
               data: inputEvent.data,
+              repairOnly: false,
             };
             return;
           }
