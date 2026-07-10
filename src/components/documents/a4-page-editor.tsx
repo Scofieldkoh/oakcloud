@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type ClipboardEvent as ReactClipboardEvent,
+  type FormEvent as ReactFormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import DOMPurify from 'dompurify';
@@ -184,6 +185,103 @@ function getEditorSelectionRange(editor: HTMLElement): Range | null {
   if (!editor.contains(range.commonAncestorContainer)) return null;
 
   return range;
+}
+
+function pageContentFromTarget(
+  root: HTMLElement,
+  target: EventTarget | Node | null,
+): HTMLElement | null {
+  const node = target instanceof Node ? target : null;
+  if (!node || !root.contains(node)) return null;
+
+  const element =
+    node.nodeType === Node.ELEMENT_NODE
+      ? (node as HTMLElement)
+      : node.parentElement;
+  const pageElement = element?.closest<HTMLElement>('[data-page-id]');
+  if (!pageElement) return null;
+  if (pageElement.matches('[data-testid^="a4-page-content-"]')) {
+    return pageElement;
+  }
+
+  return Array.from(
+    pageElement.querySelectorAll<HTMLElement>(
+      '[data-testid^="a4-page-content-"][data-page-id]',
+    ),
+  ).find((candidate) => candidate.dataset.pageId === pageElement.dataset.pageId) ?? null;
+}
+
+function selectionPageContents(root: HTMLElement): {
+  anchor: HTMLElement | null;
+  focus: HTMLElement | null;
+} {
+  const selection = window.getSelection();
+  return {
+    anchor: pageContentFromTarget(root, selection?.anchorNode ?? null),
+    focus: pageContentFromTarget(root, selection?.focusNode ?? null),
+  };
+}
+
+function selectionSpansPages(root: HTMLElement): boolean {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed) return false;
+  const { anchor, focus } = selectionPageContents(root);
+  return Boolean(
+    anchor?.dataset.pageId &&
+      focus?.dataset.pageId &&
+      anchor.dataset.pageId !== focus.dataset.pageId,
+  );
+}
+
+function selectionStartPoint(
+  bookmark: FlowSelectionBookmark,
+): FlowSelectionBookmark['anchor'] {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return bookmark.anchor;
+  const range = selection.getRangeAt(0);
+  const anchorIsStart =
+    selection.anchorNode === range.startContainer &&
+    selection.anchorOffset === range.startOffset;
+  return anchorIsStart ? bookmark.anchor : bookmark.focus;
+}
+
+function replaceTypedPageBreaks(html: string): string {
+  const pageBreakReplacement = '<div class="page-break"></div>';
+  return html
+    .replace(/\[pagebreak\]/gi, pageBreakReplacement)
+    .replace(/\[page-break\]/gi, pageBreakReplacement)
+    .replace(/\[pb\]/gi, pageBreakReplacement)
+    .replace(/---\s*pagebreak\s*---/gi, pageBreakReplacement)
+    .replace(/===\s*pagebreak\s*===/gi, pageBreakReplacement)
+    .replace(/&lt;pagebreak&gt;/gi, pageBreakReplacement);
+}
+
+function clipboardHtml(clipboard: DataTransfer | null): string {
+  if (!clipboard) return '';
+
+  const rawHtml = clipboard.getData('text/html');
+  if (rawHtml) return sanitizeHtml(rawHtml);
+
+  const text = clipboard.getData('text/plain');
+  if (!text) return '';
+  const escape = (value: string) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  return sanitizeHtml(
+    text
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .split('\n')
+      .map((line) =>
+        line.length ? `<p>${escape(line)}</p>` : '<p><br /></p>',
+      )
+      .join(''),
+  );
 }
 
 function selectNodeContents(node: Node): void {
@@ -811,19 +909,8 @@ interface PageProps {
   totalPages: number;
   isActive: boolean;
   isPreviewMode: boolean;
-  onContentChange: (id: string, content: string) => void;
-  onFocus: (id: string) => void;
-  onBlur?: () => void;
   onDelete: (id: string) => void;
-  onBackspaceAtStart?: (id: string, currentContent: string) => void;
-  onDeleteAcrossPages?: () => void;
-  onPasteAcrossPages?: (html: string) => void;
-  onSelectAllDocument?: () => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
-  onSelectionChange?: () => void;
   canDelete: boolean;
-  editorRef: React.RefObject<HTMLDivElement | null>;
   placeholder?: string;
   pageLayout: PageLayout;
   lineHeight: string;
@@ -836,19 +923,8 @@ function Page({
   totalPages,
   isActive,
   isPreviewMode,
-  onContentChange,
-  onFocus,
-  onBlur,
   onDelete,
-  onBackspaceAtStart,
-  onDeleteAcrossPages,
-  onPasteAcrossPages,
-  onSelectAllDocument,
-  onUndo,
-  onRedo,
-  onSelectionChange,
   canDelete,
-  editorRef,
   placeholder,
   pageLayout,
   lineHeight,
@@ -861,198 +937,34 @@ function Page({
   useEffect(() => {
     if (contentRef.current) {
       const sanitized = sanitizeHtml(page.content || '');
-      const isFocused = document.activeElement === contentRef.current;
       const currentHtml = contentRef.current.innerHTML;
-      if (
-        !isPreviewMode &&
-        isFocused &&
-        sanitizeHtml(currentHtml) === sanitized
-      ) {
-        return;
-      }
       if (currentHtml !== sanitized) {
         contentRef.current.innerHTML = sanitized;
       }
     }
-  }, [isPreviewMode, page.content]);
-
-  const handleInput = useCallback(() => {
-    if (contentRef.current && !isPreviewMode) {
-      let html = contentRef.current.innerHTML;
-
-      // Convert typed page break patterns to actual page breaks
-      // Supports: [pagebreak], [page-break], [pb], ---pagebreak---, ===pagebreak===
-      const originalHtml = html;
-      const pageBreakReplacement = '<div class="page-break"></div>';
-
-      html = html
-        .replace(/\[pagebreak\]/gi, pageBreakReplacement)
-        .replace(/\[page-break\]/gi, pageBreakReplacement)
-        .replace(/\[pb\]/gi, pageBreakReplacement)
-        .replace(/---\s*pagebreak\s*---/gi, pageBreakReplacement)
-        .replace(/===\s*pagebreak\s*===/gi, pageBreakReplacement)
-        .replace(/&lt;pagebreak&gt;/gi, pageBreakReplacement);
-
-      if (html !== originalHtml) {
-        // Save cursor position info
-        const selection = window.getSelection();
-        const hadSelection = selection && selection.rangeCount > 0;
-
-        // Update the content
-        contentRef.current.innerHTML = html;
-
-        // Move cursor to end if we had a selection
-        if (hadSelection && contentRef.current) {
-          const range = document.createRange();
-          range.selectNodeContents(contentRef.current);
-          range.collapse(false);
-          selection?.removeAllRanges();
-          selection?.addRange(range);
-        }
-      }
-
-      onContentChange(page.id, contentRef.current.innerHTML);
-    }
-  }, [page.id, onContentChange, isPreviewMode]);
-
-  const handlePaste = useCallback(
-    (e: ReactClipboardEvent<HTMLDivElement>) => {
-      if (isPreviewMode) return;
-      e.preventDefault();
-
-      const clipboard = e.clipboardData;
-      let html = '';
-
-      if (clipboard) {
-        const rawHtml = clipboard.getData('text/html');
-        if (rawHtml) {
-          html = sanitizeHtml(rawHtml);
-        }
-
-        if (!html) {
-          const text = clipboard.getData('text/plain');
-          if (text) {
-            const escape = (str: string) =>
-              str
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-
-            const paragraphHtml = text
-              .replace(/\r\n/g, '\n')
-              .replace(/\r/g, '\n')
-              .split('\n')
-              .map((line) =>
-                line.length ? `<p>${escape(line)}</p>` : '<p><br /></p>',
-              )
-              .join('');
-
-            html = sanitizeHtml(paragraphHtml);
-          }
-        }
-      }
-
-      if (!html) return;
-
-      const selection = window.getSelection();
-      if (
-        selection &&
-        !selection.isCollapsed &&
-        (!contentRef.current?.contains(selection.anchorNode) ||
-          !contentRef.current?.contains(selection.focusNode))
-      ) {
-        onPasteAcrossPages?.(html);
-        return;
-      }
-
-      document.execCommand('insertHTML', false, html);
-
-      setTimeout(() => {
-        handleInput();
-      }, 0);
-    },
-    [handleInput, isPreviewMode, onPasteAcrossPages],
-  );
-
-  const handleKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLDivElement>) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-        event.preventDefault();
-        onSelectAllDocument?.();
-        return;
-      }
-
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
-        event.preventDefault();
-        if (event.shiftKey) {
-          onRedo?.();
-        } else {
-          onUndo?.();
-        }
-        return;
-      }
-
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') {
-        event.preventDefault();
-        onRedo?.();
-        return;
-      }
-
-      const selection = window.getSelection();
-      if (
-        (event.key === 'Backspace' || event.key === 'Delete') &&
-        selection &&
-        !selection.isCollapsed &&
-        (!contentRef.current?.contains(selection.anchorNode) ||
-          !contentRef.current?.contains(selection.focusNode))
-      ) {
-        event.preventDefault();
-        onDeleteAcrossPages?.();
-        return;
-      }
-
-      const el = contentRef.current;
-      if (
-        event.key !== 'Backspace' ||
-        !el ||
-        isPreviewMode ||
-        !onBackspaceAtStart ||
-        !isCaretAtEditorStart(el)
-      ) {
-        return;
-      }
-
-      event.preventDefault();
-      onBackspaceAtStart(page.id, el.innerHTML);
-    },
-    [
-      isPreviewMode,
-      onBackspaceAtStart,
-      onDeleteAcrossPages,
-      onRedo,
-      onSelectAllDocument,
-      onUndo,
-      page.id,
-    ],
-  );
+  }, [page.content]);
 
   return (
     <div
+      data-page-id={page.id}
       className="relative group"
       style={{
+        position: 'relative',
         width: A4.WIDTH_PX,
         height: A4.HEIGHT_PX,
       }}
     >
-      <div className="absolute -top-6 left-1/2 -translate-x-1/2 px-3 py-1 bg-gray-700 text-white text-xs rounded-t-md z-10">
+      <div
+        contentEditable={false}
+        className="absolute -top-6 left-1/2 -translate-x-1/2 px-3 py-1 bg-gray-700 text-white text-xs rounded-t-md z-10"
+      >
         Page {pageNumber} of {totalPages}
       </div>
 
       {canDelete && !isPreviewMode && (
         <button
           type="button"
+          contentEditable={false}
           onClick={() => onDelete(page.id)}
           className="absolute -right-10 top-4 p-1.5 rounded bg-red-100 text-red-600 opacity-0 group-hover:opacity-100 hover:bg-red-200 transition-opacity z-10"
           title="Delete page"
@@ -1074,28 +986,8 @@ function Page({
         }}
       >
         <div
-          ref={(el) => {
-            (contentRef as React.MutableRefObject<HTMLDivElement | null>).current =
-              el;
-            if (isActive && editorRef) {
-              (editorRef as React.MutableRefObject<HTMLDivElement | null>).current =
-                el;
-            }
-          }}
-          contentEditable={!isPreviewMode}
-          suppressContentEditableWarning
-          onPaste={handlePaste}
-          onInput={handleInput}
-          onKeyDown={handleKeyDown}
-          onKeyUp={() => !isPreviewMode && onSelectionChange?.()}
-          onMouseUp={() => !isPreviewMode && onSelectionChange?.()}
-          onFocus={() => {
-            if (!isPreviewMode) {
-              onFocus(page.id);
-              setTimeout(() => onSelectionChange?.(), 0);
-            }
-          }}
-          onBlur={() => !isPreviewMode && onBlur?.()}
+          ref={contentRef}
+          data-page-id={page.id}
           data-placeholder={placeholder}
           data-testid={`a4-page-content-${pageNumber}`}
           className={cn(
@@ -1121,6 +1013,7 @@ function Page({
 
         {isEmpty && placeholder && !isPreviewMode && (
           <div
+            contentEditable={false}
             className="pointer-events-none select-none text-gray-400"
             style={{
               position: 'absolute',
@@ -1137,6 +1030,7 @@ function Page({
 
         {showPageNumbers && (
           <div
+            contentEditable={false}
             className="absolute left-1/2 -translate-x-1/2 text-gray-400"
             data-testid={`a4-page-number-${pageNumber}`}
             style={{
@@ -1173,7 +1067,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     },
     ref,
   ) {
-    const activeEditorRef = useRef<HTMLDivElement | null>(null);
+    const documentSurfaceRef = useRef<HTMLDivElement | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     // Client components are still rendered on the server by Next.js. Keep the
     // initial render DOM-free, then hydrate and paginate the canonical HTML in
@@ -1193,7 +1087,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
-        if (activeEditorRef.current?.contains(range.startContainer)) {
+        if (documentSurfaceRef.current?.contains(range.startContainer)) {
           savedSelectionRef.current = {
             startNode: range.startContainer,
             startOffset: range.startOffset,
@@ -1206,7 +1100,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     }, []);
 
     const restoreSelection = useCallback(() => {
-      const editor = activeEditorRef.current;
+      const editor = documentSurfaceRef.current;
       const saved = savedSelectionRef.current;
       if (!editor || !saved) return false;
 
@@ -1234,7 +1128,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const insertAtCursor = useCallback(
       (text: string) => {
-        const editor = activeEditorRef.current;
+        const editor = documentSurfaceRef.current;
         if (!editor) return;
 
         editor.focus();
@@ -1262,7 +1156,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const insertHtmlAtCursor = useCallback(
       (html: string) => {
-        const editor = activeEditorRef.current;
+        const editor = documentSurfaceRef.current;
         if (!editor) return;
 
         editor.focus();
@@ -1349,11 +1243,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           if (generation !== reflowGenerationRef.current) return;
 
           if (
-            scrollContainerRef.current &&
+            documentSurfaceRef.current &&
             !pendingFlowSelectionRef.current
           ) {
             pendingFlowSelectionRef.current = captureFlowSelection(
-              scrollContainerRef.current,
+              documentSurfaceRef.current,
             );
           }
 
@@ -1412,7 +1306,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     useEffect(() => {
       const bookmark = pendingFlowSelectionRef.current;
-      const root = scrollContainerRef.current;
+      const root = documentSurfaceRef.current;
       if (!bookmark || !root) return;
 
       const frame = requestAnimationFrame(() => {
@@ -1427,7 +1321,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         targetEditor?.focus({ preventScroll: true });
 
         if (restoreFlowSelection(root, bookmark)) {
-          const pageElement = targetEditor?.closest('[data-page-id]') as
+          const pageElement = targetFlowElement?.closest('[data-page-id]') as
             | HTMLElement
             | null;
           if (pageElement?.dataset.pageId) {
@@ -1446,7 +1340,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       () => ({
         insertAtCursor,
         insertHtmlAtCursor,
-        focus: () => activeEditorRef.current?.focus(),
+        focus: () => documentSurfaceRef.current?.focus(),
         getContent: () => serializePages(pagesRef.current),
         setContent: (html: string) => {
           const newPages = parsePages(html, pagesRef.current);
@@ -1636,27 +1530,37 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       });
     }, [effectivePreviewMode, parsePages, scheduleReflow, serializePages]);
 
-    const handleContentChange = useCallback(
-      (id: string, content: string) => {
-        if (effectivePreviewMode) return;
-        const sanitizedContent = sanitizeHtml(content);
-        setPages((prev) => {
-          const currentPage = prev.find((p) => p.id === id);
-          if (!currentPage || currentPage.content === sanitizedContent) {
-            return prev;
-          }
+    const commitDocumentSurface = useCallback(() => {
+      const surface = documentSurfaceRef.current;
+      if (effectivePreviewMode || !surface) return;
 
-          pushHistorySnapshot(prev);
-          const nextPages = prev.map((p) =>
-            p.id === id ? { ...p, content: sanitizedContent } : p,
-          );
-          pagesRef.current = nextPages;
-          scheduleReflow(nextPages, true);
-          return nextPages;
-        });
-      },
-      [effectivePreviewMode, pushHistorySnapshot, scheduleReflow],
-    );
+      const contentByPageId = new Map(
+        Array.from(
+          surface.querySelectorAll<HTMLElement>(
+            '[data-testid^="a4-page-content-"][data-page-id]',
+          ),
+        ).map((element) => [
+          element.dataset.pageId!,
+          sanitizeHtml(replaceTypedPageBreaks(element.innerHTML)),
+        ]),
+      );
+      const currentPages = pagesRef.current;
+      const nextPages = currentPages.map((page) => {
+        const content = contentByPageId.get(page.id);
+        return content === undefined || content === page.content
+          ? page
+          : { ...page, content };
+      });
+      if (nextPages.every((page, index) => page === currentPages[index])) {
+        return;
+      }
+
+      pendingFlowSelectionRef.current = captureFlowSelection(surface);
+      pushHistorySnapshot(currentPages);
+      pagesRef.current = nextPages;
+      setPages(nextPages);
+      scheduleReflow(nextPages, true);
+    }, [effectivePreviewMode, pushHistorySnapshot, scheduleReflow]);
 
     const handleAddPage = useCallback(() => {
       if (effectivePreviewMode) return;
@@ -1703,12 +1607,12 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     } | null>(null);
 
     const focusPageAtStart = useCallback((pageId: string) => {
-      const pageEl = document.querySelector(
-        `[data-page-id="${pageId}"] [contenteditable]`,
+      const pageEl = documentSurfaceRef.current?.querySelector(
+        `[data-testid^="a4-page-content-"][data-page-id="${pageId}"]`,
       ) as HTMLDivElement | null;
 
       if (pageEl) {
-        pageEl.focus();
+        documentSurfaceRef.current?.focus();
         const selection = window.getSelection();
         if (selection) {
           const range = document.createRange();
@@ -1721,12 +1625,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     }, []);
 
     const selectAllDocument = useCallback(() => {
-      const container = scrollContainerRef.current;
-      const editors = Array.from(
-        container?.querySelectorAll('[contenteditable]') ?? [],
-      ) as HTMLDivElement[];
-      const firstEditor = editors[0];
-      const lastEditor = editors[editors.length - 1];
+      const surface = documentSurfaceRef.current;
+      const pageContents = Array.from(
+        surface?.querySelectorAll<HTMLElement>(
+          '[data-testid^="a4-page-content-"]',
+        ) ?? [],
+      );
+      const firstEditor = pageContents[0];
+      const lastEditor = pageContents[pageContents.length - 1];
       const selection = window.getSelection();
 
       if (!firstEditor || !lastEditor || !selection) return;
@@ -1743,9 +1649,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     }, []);
 
     const handleDeleteAcrossPages = useCallback(() => {
-      if (effectivePreviewMode || !scrollContainerRef.current) return;
-      const bookmark = captureFlowSelection(scrollContainerRef.current);
+      if (effectivePreviewMode || !documentSurfaceRef.current) return;
+      const bookmark = captureFlowSelection(documentSurfaceRef.current);
       if (!bookmark || bookmark.collapsed) return;
+      const collapsePoint = selectionStartPoint(bookmark);
 
       setPages((prev) => {
         pushHistorySnapshot(prev);
@@ -1758,8 +1665,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         const deleted = deleteFlowSelection(canonical, bookmark);
         const nextPages = parsePages(deleted, prev);
         pendingFlowSelectionRef.current = {
-          anchor: bookmark.anchor,
-          focus: bookmark.anchor,
+          anchor: collapsePoint,
+          focus: collapsePoint,
           collapsed: true,
         };
         pagesRef.current = nextPages;
@@ -1770,9 +1677,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const handlePasteAcrossPages = useCallback(
       (html: string) => {
-        if (effectivePreviewMode || !scrollContainerRef.current) return;
-        const bookmark = captureFlowSelection(scrollContainerRef.current);
+        if (effectivePreviewMode || !documentSurfaceRef.current) return;
+        const bookmark = captureFlowSelection(documentSurfaceRef.current);
         if (!bookmark || bookmark.collapsed) return;
+        const replacementPoint = selectionStartPoint(bookmark);
 
         setPages((prev) => {
           pushHistorySnapshot(prev);
@@ -1787,10 +1695,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           const nextCanonical = replaceFlowSelection(canonical, bookmark, html);
           const nextPages = parsePages(nextCanonical, prev);
           const caretOffset =
-            bookmark.anchor.offset + (replacementText.textContent?.length ?? 0);
+            replacementPoint.offset + (replacementText.textContent?.length ?? 0);
           pendingFlowSelectionRef.current = {
-            anchor: { ...bookmark.anchor, offset: caretOffset },
-            focus: { ...bookmark.anchor, offset: caretOffset },
+            anchor: { ...replacementPoint, offset: caretOffset },
+            focus: { ...replacementPoint, offset: caretOffset },
             collapsed: true,
           };
           pagesRef.current = nextPages;
@@ -1803,13 +1711,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     const focusPageAtContentBoundary = useCallback(
       (pageId: string, previousContent: string) => {
-        const pageEl = document.querySelector(
-          `[data-page-id="${pageId}"] [contenteditable]`,
+        const pageEl = documentSurfaceRef.current?.querySelector(
+          `[data-testid^="a4-page-content-"][data-page-id="${pageId}"]`,
         ) as HTMLDivElement | null;
 
         if (!pageEl) return;
 
-        pageEl.focus();
+        documentSurfaceRef.current?.focus();
         const selection = window.getSelection();
         if (!selection) return;
 
@@ -1908,8 +1816,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               boundaryTextOffset,
             );
 
-            const bookmark = scrollContainerRef.current
-              ? captureFlowSelection(scrollContainerRef.current)
+            const bookmark = documentSurfaceRef.current
+              ? captureFlowSelection(documentSurfaceRef.current)
               : null;
             if (bookmark) {
               pendingFlowSelectionRef.current = {
@@ -1939,17 +1847,134 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       [effectivePreviewMode, pushHistorySnapshot, scheduleReflow],
     );
 
+    const syncActivePage = useCallback((target?: EventTarget | null) => {
+      const surface = documentSurfaceRef.current;
+      if (!surface) return null;
+      const selection = window.getSelection();
+      const pageContent =
+        pageContentFromTarget(surface, target ?? null) ??
+        pageContentFromTarget(surface, selection?.focusNode ?? null) ??
+        pageContentFromTarget(surface, selection?.anchorNode ?? null);
+      const pageId = pageContent?.dataset.pageId;
+      if (pageId) setActivePageId(pageId);
+      return pageContent;
+    }, []);
+
+    const handleDocumentInput = useCallback(() => {
+      commitDocumentSurface();
+    }, [commitDocumentSurface]);
+
+    const handleDocumentPaste = useCallback(
+      (event: ReactClipboardEvent<HTMLDivElement>) => {
+        if (effectivePreviewMode) return;
+        event.preventDefault();
+        const html = clipboardHtml(event.clipboardData);
+        if (!html) return;
+
+        const surface = documentSurfaceRef.current;
+        if (surface && selectionSpansPages(surface)) {
+          handlePasteAcrossPages(html);
+          return;
+        }
+
+        document.execCommand('insertHTML', false, html);
+        setTimeout(commitDocumentSurface, 0);
+      },
+      [commitDocumentSurface, effectivePreviewMode, handlePasteAcrossPages],
+    );
+
+    const handleDocumentKeyDown = useCallback(
+      (event: ReactKeyboardEvent<HTMLDivElement>) => {
+        if (effectivePreviewMode) return;
+        const pageContent = syncActivePage(event.target);
+
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+          event.preventDefault();
+          selectAllDocument();
+          return;
+        }
+
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+          event.preventDefault();
+          if (event.shiftKey) {
+            handleRedo();
+          } else {
+            handleUndo();
+          }
+          return;
+        }
+
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') {
+          event.preventDefault();
+          handleRedo();
+          return;
+        }
+
+        const surface = documentSurfaceRef.current;
+        if (
+          surface &&
+          (event.key === 'Backspace' || event.key === 'Delete') &&
+          selectionSpansPages(surface)
+        ) {
+          event.preventDefault();
+          handleDeleteAcrossPages();
+          return;
+        }
+
+        if (
+          event.key === 'Backspace' &&
+          pageContent &&
+          isCaretAtEditorStart(pageContent)
+        ) {
+          event.preventDefault();
+          handleBackspaceAtPageStart(
+            pageContent.dataset.pageId!,
+            pageContent.innerHTML,
+          );
+        }
+      },
+      [
+        effectivePreviewMode,
+        handleBackspaceAtPageStart,
+        handleDeleteAcrossPages,
+        handleRedo,
+        handleUndo,
+        selectAllDocument,
+        syncActivePage,
+      ],
+    );
+
+    const handleBeforeInput = useCallback(
+      (event: ReactFormEvent<HTMLDivElement>) => {
+        const inputEvent = event.nativeEvent as InputEvent;
+        const surface = documentSurfaceRef.current;
+        if (
+          !effectivePreviewMode &&
+          surface &&
+          inputEvent.inputType.startsWith('delete') &&
+          selectionSpansPages(surface)
+        ) {
+          event.preventDefault();
+          handleDeleteAcrossPages();
+        }
+      },
+      [effectivePreviewMode, handleDeleteAcrossPages],
+    );
+
     const splitActivePageAtSelection = useCallback(() => {
       if (effectivePreviewMode) return;
 
-      const editor = activeEditorRef.current;
-      if (!editor) return;
-
-      const pageContainer = editor.closest('[data-page-id]') as HTMLElement | null;
-      const pageId = pageContainer?.dataset.pageId;
+      const surface = documentSurfaceRef.current;
+      if (!surface) return;
+      const selection = window.getSelection();
+      const editor =
+        pageContentFromTarget(surface, selection?.focusNode ?? null) ??
+        surface.querySelector<HTMLElement>(
+          `[data-testid^="a4-page-content-"][data-page-id="${activePageId}"]`,
+        );
+      const pageId = editor?.dataset.pageId;
       if (!pageId) return;
 
-      const selection = window.getSelection();
       const activeRange =
         selection &&
         selection.rangeCount > 0 &&
@@ -1996,7 +2021,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         scheduleReflow(updatedPages, true);
         return updatedPages;
       });
-    }, [effectivePreviewMode, pushHistorySnapshot, scheduleReflow]);
+    }, [activePageId, effectivePreviewMode, pushHistorySnapshot, scheduleReflow]);
 
     const handleCommand = useCallback(
       (cmd: string, val?: string) => {
@@ -2012,11 +2037,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return;
         }
 
-        const editor = activeEditorRef.current;
+        const editor = documentSurfaceRef.current;
         if (!editor) return;
 
-        editor.focus();
-        restoreSelection();
+        if (!getEditorSelectionRange(editor)) {
+          editor.focus();
+          restoreSelection();
+        }
 
         if (cmd === 'paragraphStyle' && val) {
           applyBlockTagToSelection(editor, val);
@@ -2509,47 +2536,73 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         )}
 
         <div ref={scrollContainerRef} className="flex-1 overflow-auto py-8">
-          <div className="flex flex-col items-center gap-8">
-            {displayPages.map((page, index) => (
-              <div key={page.id} data-page-id={page.id}>
-                <Page
-                  page={page}
-                  pageNumber={index + 1}
-                  totalPages={displayPages.length}
-                  isActive={page.id === activePageId}
-                  isPreviewMode={effectivePreviewMode}
-                  onContentChange={handleContentChange}
-                  onFocus={setActivePageId}
-                  onBlur={saveCursorPosition}
-                  onDelete={handleDeletePage}
-                  onBackspaceAtStart={handleBackspaceAtPageStart}
-                  onDeleteAcrossPages={handleDeleteAcrossPages}
-                  onPasteAcrossPages={handlePasteAcrossPages}
-                  onSelectAllDocument={selectAllDocument}
-                  onUndo={handleUndo}
-                  onRedo={handleRedo}
-                  onSelectionChange={syncFormattingFromSelection}
-                  canDelete={displayPages.length > 1 && !readOnly}
-                  editorRef={activeEditorRef}
-                  placeholder={index === 0 ? placeholder : undefined}
-                  pageLayout={pageLayout}
-                  lineHeight={lineHeight}
-                  showPageNumbers={showPageNumbers}
-                />
-              </div>
-            ))}
-
-            {!readOnly && !effectivePreviewMode && (
-              <button
-                type="button"
-                onClick={handleAddPage}
-                className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border-primary text-text-muted hover:border-text-muted hover:text-text-secondary transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                Add New Page
-              </button>
+          <div
+            ref={documentSurfaceRef}
+            data-testid="a4-document-surface"
+            contentEditable={!effectivePreviewMode}
+            suppressContentEditableWarning
+            onBeforeInput={handleBeforeInput}
+            onInput={handleDocumentInput}
+            onKeyDown={handleDocumentKeyDown}
+            onPaste={handleDocumentPaste}
+            onMouseUp={(event) => {
+              if (!effectivePreviewMode) {
+                syncActivePage(event.target);
+                syncFormattingFromSelection();
+              }
+            }}
+            onKeyUp={(event) => {
+              if (!effectivePreviewMode) {
+                syncActivePage(event.target);
+                syncFormattingFromSelection();
+              }
+            }}
+            onFocus={(event) => {
+              if (!effectivePreviewMode) {
+                syncActivePage(event.target);
+                setTimeout(syncFormattingFromSelection, 0);
+              }
+            }}
+            onBlur={() => !effectivePreviewMode && saveCursorPosition()}
+            className={cn(
+              'flex flex-col items-center gap-8 outline-none',
+              effectivePreviewMode && 'cursor-default',
             )}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2rem',
+            }}
+          >
+            {displayPages.map((page, index) => (
+              <Page
+                key={page.id}
+                page={page}
+                pageNumber={index + 1}
+                totalPages={displayPages.length}
+                isActive={page.id === activePageId}
+                isPreviewMode={effectivePreviewMode}
+                onDelete={handleDeletePage}
+                canDelete={displayPages.length > 1 && !readOnly}
+                placeholder={index === 0 ? placeholder : undefined}
+                pageLayout={pageLayout}
+                lineHeight={lineHeight}
+                showPageNumbers={showPageNumbers}
+              />
+            ))}
           </div>
+
+          {!readOnly && !effectivePreviewMode && (
+            <button
+              type="button"
+              onClick={handleAddPage}
+              className="mx-auto mt-8 flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border-primary text-text-muted hover:border-text-muted hover:text-text-secondary transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Add New Page
+            </button>
+          )}
         </div>
 
         <div className="flex-shrink-0 px-4 py-1.5 bg-background-elevated border-t border-border-primary text-xs text-text-muted flex justify-between">

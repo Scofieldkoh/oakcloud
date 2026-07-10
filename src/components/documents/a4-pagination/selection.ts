@@ -146,6 +146,17 @@ export function restoreFlowSelection(
   if (!anchor || !focus || !selection) return false;
 
   try {
+    if (!bookmark.collapsed && selection.setBaseAndExtent) {
+      selection.removeAllRanges();
+      selection.setBaseAndExtent(
+        anchor.node,
+        anchor.offset,
+        focus.node,
+        focus.offset,
+      );
+      return true;
+    }
+
     const range = document.createRange();
     range.setStart(anchor.node, anchor.offset);
     range.setEnd(focus.node, focus.offset);

@@ -11,6 +11,47 @@ const hardPageBreak =
   '<div class="page-break" data-break-type="hard"></div>';
 
 describe('A4PageEditor', () => {
+  it('renders one editable document root for every physical page', async () => {
+    render(
+      <A4PageEditor
+        value={`<p>First page</p>${hardPageBreak}<p>Second page</p>`}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getAllByTestId(/a4-page-content-/)).toHaveLength(2),
+    );
+    expect(screen.getByTestId('a4-document-surface')).toHaveAttribute(
+      'contenteditable',
+      'true',
+    );
+    screen.getAllByTestId(/a4-page-content-/).forEach((page) => {
+      expect(page).not.toHaveAttribute('contenteditable', 'true');
+    });
+  });
+
+  it('keeps a native range spanning two physical pages', async () => {
+    render(
+      <A4PageEditor
+        value={`<p>First page</p>${hardPageBreak}<p>Second page</p>`}
+      />,
+    );
+
+    const surface = screen.getByTestId('a4-document-surface');
+    const pages = screen.getAllByTestId(/a4-page-content-/);
+    const range = document.createRange();
+    range.setStart(pages[0].querySelector('p')!.firstChild!, 1);
+    range.setEnd(pages[1].querySelector('p')!.firstChild!, 2);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    expect(surface.contains(selection.anchorNode)).toBe(true);
+    expect(surface.contains(selection.focusNode)).toBe(true);
+    expect(selection.toString()).toContain('irst');
+    expect(selection.toString()).toContain('Se');
+  });
+
   it('applies document line spacing to editable pages', () => {
     render(<A4PageEditor value="<p>Hello</p>" />);
 
@@ -623,6 +664,69 @@ describe('A4PageEditor', () => {
       expect(onChange).not.toHaveBeenLastCalledWith(
         expect.stringContaining('pha'),
       );
+    });
+  });
+
+  it('preserves a reversed non-collapsed selection through reflow', async () => {
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        value={`<p>Alpha</p>${hardPageBreak}<p>Beta</p>`}
+        onChange={onChange}
+      />,
+    );
+    const surface = screen.getByTestId('a4-document-surface');
+    const firstPage = screen.getByTestId('a4-page-content-1');
+    const secondPage = screen.getByTestId('a4-page-content-2');
+    const firstText = firstPage.querySelector('p')!.firstChild!;
+    const secondText = secondPage.querySelector('p')!.firstChild!;
+
+    act(() => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      selection.setBaseAndExtent(secondText, 2, firstText, 2);
+      firstPage.querySelector('p')!.setAttribute('style', 'color: red');
+      fireEvent.input(surface);
+    });
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(expect.stringContaining('color: red'));
+      const selection = window.getSelection()!;
+      expect(selection.isCollapsed).toBe(false);
+      expect(selection.anchorNode?.textContent).toBe('Beta');
+      expect(selection.anchorOffset).toBe(2);
+      expect(selection.focusNode?.textContent).toBe('Alpha');
+      expect(selection.focusOffset).toBe(2);
+    });
+  });
+
+  it('collapses a reversed cross-page deletion at the logical range start', async () => {
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        value={`<p>Alpha</p>${hardPageBreak}<p>Beta</p>`}
+        onChange={onChange}
+      />,
+    );
+    const surface = screen.getByTestId('a4-document-surface');
+    const firstText = screen.getByTestId('a4-page-content-1').querySelector('p')!
+      .firstChild!;
+    const secondText = screen.getByTestId('a4-page-content-2').querySelector('p')!
+      .firstChild!;
+
+    act(() => {
+      surface.focus();
+      window.getSelection()!.setBaseAndExtent(secondText, 2, firstText, 2);
+    });
+    fireEvent.keyDown(surface, { key: 'Delete' });
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('Al'));
+      expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('ta'));
+      const selection = window.getSelection()!;
+      expect(selection.isCollapsed).toBe(true);
+      expect(selection.anchorNode?.textContent).toBe('Al');
+      expect(selection.anchorOffset).toBe(2);
     });
   });
 

@@ -1,5 +1,6 @@
 import { act, createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { cdp, page as vitestPage } from 'vitest/browser';
 import {
   afterAll,
   afterEach,
@@ -14,6 +15,75 @@ import {
   A4PageEditor,
   type A4PageEditorRef,
 } from '@/components/documents/a4-page-editor';
+
+let mouseX = 0;
+let mouseY = 0;
+let mousePressed = false;
+
+const page = Object.assign(vitestPage, {
+  mouse: {
+    async move(x: number, y: number, options: { steps?: number } = {}) {
+      const steps = Math.max(1, options.steps ?? 1);
+      for (let step = 1; step <= steps; step += 1) {
+        const nextX = mouseX + ((x - mouseX) * step) / steps;
+        const nextY = mouseY + ((y - mouseY) * step) / steps;
+        await cdp().send('Input.dispatchMouseEvent', {
+          type: 'mouseMoved',
+          x: nextX,
+          y: nextY,
+          button: mousePressed ? 'left' : 'none',
+          buttons: mousePressed ? 1 : 0,
+        });
+      }
+      mouseX = x;
+      mouseY = y;
+    },
+    async down() {
+      mousePressed = true;
+      await cdp().send('Input.dispatchMouseEvent', {
+        type: 'mousePressed',
+        x: mouseX,
+        y: mouseY,
+        button: 'left',
+        buttons: 1,
+        clickCount: 1,
+      });
+    },
+    async up() {
+      await cdp().send('Input.dispatchMouseEvent', {
+        type: 'mouseReleased',
+        x: mouseX,
+        y: mouseY,
+        button: 'left',
+        buttons: 0,
+        clickCount: 1,
+      });
+      mousePressed = false;
+    },
+  },
+});
+
+function viewportPoint(rect: DOMRect, edge: 'start' | 'end') {
+  let x = edge === 'start' ? rect.left + 1 : rect.right - 1;
+  let y = rect.top + rect.height / 2;
+  let currentWindow: Window = window;
+
+  while (currentWindow.frameElement) {
+    const frameElement = currentWindow.frameElement as HTMLElement;
+    const frameRect = frameElement.getBoundingClientRect();
+    const scaleX = frameElement.clientWidth
+      ? frameRect.width / frameElement.clientWidth
+      : 1;
+    const scaleY = frameElement.clientHeight
+      ? frameRect.height / frameElement.clientHeight
+      : 1;
+    x = frameRect.left + x * scaleX;
+    y = frameRect.top + y * scaleY;
+    currentWindow = currentWindow.parent;
+  }
+
+  return { x, y };
+}
 
 describe('A4PageEditor real layout pagination', () => {
   let host: HTMLDivElement;
@@ -104,6 +174,48 @@ describe('A4PageEditor real layout pagination', () => {
       });
     });
     expect(host.querySelectorAll('tbody tr')).toHaveLength(80);
+  });
+
+  it('keeps a native mouse selection spanning two physical pages', async () => {
+    host.style.zoom = '0.25';
+    await page.viewport(1280, 900);
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value={'<p>First page text</p><div class="page-break" data-break-type="hard"></div><p>Second page text</p>'}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(host.querySelectorAll('[data-testid^="a4-page-content-"]')).toHaveLength(2);
+      });
+    });
+
+    const contents = host.querySelectorAll<HTMLElement>(
+      '[data-testid^="a4-page-content-"]',
+    );
+    const firstText = contents[0].querySelector('p')!.firstChild!;
+    const secondText = contents[1].querySelector('p')!.firstChild!;
+    const startRange = document.createRange();
+    startRange.setStart(firstText, 0);
+    startRange.setEnd(firstText, 1);
+    const endRange = document.createRange();
+    endRange.setStart(secondText, 0);
+    endRange.setEnd(secondText, 6);
+    const start = viewportPoint(startRange.getBoundingClientRect(), 'start');
+    const end = viewportPoint(endRange.getBoundingClientRect(), 'end');
+
+    await act(async () => {
+      await page.mouse.move(start.x, start.y);
+      await page.mouse.down();
+      await page.mouse.move(end.x, end.y, { steps: 20 });
+      await page.mouse.up();
+    });
+
+    const selectedText = window.getSelection()?.toString() ?? '';
+    expect(selectedText).toContain('First page text');
+    expect(selectedText).toContain('Second');
   });
 });
   beforeAll(() => {
