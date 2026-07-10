@@ -797,6 +797,84 @@ describe('A4PageEditor', () => {
     });
   });
 
+  it('repairs a non-cancelable cross-page composition as one canonical transaction', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        ref={editorRef}
+        value={`<p>Alpha</p>${hardPageBreak}<p>Beta</p>`}
+        onChange={onChange}
+      />,
+    );
+    const surface = screen.getByTestId('a4-document-surface');
+    const firstPage = screen.getByTestId('a4-page-content-1');
+    const secondPage = screen.getByTestId('a4-page-content-2');
+    const firstText = firstPage.querySelector('p')!.firstChild!;
+    const secondText = secondPage.querySelector('p')!.firstChild!;
+
+    act(() => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(firstText, 2);
+      range.setEnd(secondText, 2);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    surface.dispatchEvent(
+      new InputEvent('beforeinput', {
+        bubbles: true,
+        cancelable: false,
+        data: '文',
+        inputType: 'insertCompositionText',
+        isComposing: true,
+      }),
+    );
+    firstPage.parentElement!.insertBefore(
+      document.createTextNode('ROGUE_IME_TEXT'),
+      firstPage,
+    );
+    fireEvent.input(surface, {
+      data: '文',
+      inputType: 'insertCompositionText',
+      isComposing: true,
+    });
+
+    await waitFor(() => {
+      const canonical = editorRef.current?.getContent() ?? '';
+      const text = new DOMParser()
+        .parseFromString(canonical, 'text/html')
+        .body.textContent ?? '';
+      expect(text).toBe('Al文ta');
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId('a4-document-surface').textContent).not.toContain(
+        'ROGUE_IME_TEXT',
+      );
+    });
+
+    const repairedSurface = screen.getByTestId('a4-document-surface');
+    const repairedSelection = window.getSelection()!;
+    const selectionElement =
+      repairedSelection.anchorNode?.nodeType === Node.ELEMENT_NODE
+        ? (repairedSelection.anchorNode as HTMLElement)
+        : repairedSelection.anchorNode?.parentElement;
+    expect(repairedSelection.isCollapsed).toBe(true);
+    expect(
+      selectionElement?.closest('[data-testid^="a4-page-content-"]'),
+    ).toBeTruthy();
+
+    fireEvent.keyDown(repairedSurface, { key: 'z', ctrlKey: true });
+    await waitFor(() => {
+      const canonical = editorRef.current?.getContent() ?? '';
+      const text = new DOMParser()
+        .parseFromString(canonical, 'text/html')
+        .body.textContent ?? '';
+      expect(text).toBe('AlphaBeta');
+    });
+  });
+
   it('replaces a selection spanning pages with pasted content', async () => {
     const onChange = vi.fn();
     render(

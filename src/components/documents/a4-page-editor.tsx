@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type ClipboardEvent as ReactClipboardEvent,
+  type CompositionEvent as ReactCompositionEvent,
   type FormEvent as ReactFormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
@@ -1301,6 +1302,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const reflowGenerationRef = useRef(0);
     const pendingUpdateRef = useRef(false);
     const pendingFlowSelectionRef = useRef<FlowSelectionBookmark | null>(null);
+    const pendingNonCancelableMutationRef = useRef<{
+      pages: PageData[];
+      canonical: string;
+      bookmark: FlowSelectionBookmark;
+      collapsePoint: FlowSelectionBookmark['anchor'];
+      inputType: string;
+      data: string | null;
+    } | null>(null);
     const [activePageId, setActivePageId] = useState<string>(
       pages[0]?.id || '',
     );
@@ -1309,6 +1318,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const [paragraphSpacing, setParagraphSpacing] = useState('0.5em');
     const [pageMarginMm, setPageMarginMm] = useState(DEFAULT_PAGE_MARGIN_MM);
     const [showPageNumbers, setShowPageNumbers] = useState(true);
+    const [surfaceRepairGeneration, setSurfaceRepairGeneration] = useState(0);
     const pageLayout = useMemo(
       () => createPageLayout(pageMarginMm),
       [pageMarginMm],
@@ -1417,7 +1427,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       });
 
       return () => cancelAnimationFrame(frame);
-    }, [pages]);
+    }, [pages, surfaceRepairGeneration]);
 
     // Expose methods via ref
     useImperativeHandle(
@@ -1772,46 +1782,61 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     }, [effectivePreviewMode, parsePages, pushHistorySnapshot, scheduleReflow]);
 
     const handleReplaceAcrossPages = useCallback(
-      (html: string) => {
+      (
+        html: string,
+        transaction?: {
+          pages: PageData[];
+          canonical: string;
+          bookmark: FlowSelectionBookmark;
+          replacementPoint: FlowSelectionBookmark['anchor'];
+          repairSurface: boolean;
+        },
+      ) => {
         if (effectivePreviewMode || !documentSurfaceRef.current) return;
-        const bookmark = captureFlowSelection(documentSurfaceRef.current);
+        const bookmark =
+          transaction?.bookmark ??
+          captureFlowSelection(documentSurfaceRef.current);
         if (!bookmark || bookmark.collapsed) return;
-        const replacementPoint = selectionStartPoint(bookmark);
-
-        setPages((prev) => {
-          pushHistorySnapshot(prev);
-          const canonical = reassemblePageFragments(
-            prev.map((page) => ({
+        const replacementPoint =
+          transaction?.replacementPoint ?? selectionStartPoint(bookmark);
+        const sourcePages = transaction?.pages ?? pagesRef.current;
+        const canonical =
+          transaction?.canonical ??
+          reassemblePageFragments(
+            sourcePages.map((page) => ({
               content: page.content,
               hardBreakBefore: page.hardBreakBefore,
             })),
           );
-          const replacementStartOffset = documentTextOffsetForFlowPoint(
-            canonical,
-            replacementPoint,
-          );
-          const replacementText = document.createElement('div');
-          replacementText.innerHTML = html;
-          const nextCanonical = replaceFlowSelection(canonical, bookmark, html);
-          const hydratedNextCanonical = hydrateFlowHtml(nextCanonical);
-          const replacementLength = replacementText.textContent?.length ?? 0;
-          const replacementCaret =
-            replacementStartOffset === null
-              ? replacementPoint
-              : flowPointAtDocumentTextOffset(
-                  hydratedNextCanonical,
-                  replacementStartOffset + replacementLength,
-                ) ?? replacementPoint;
-          const nextPages = parsePages(hydratedNextCanonical, prev);
-          pendingFlowSelectionRef.current = {
-            anchor: replacementCaret,
-            focus: replacementCaret,
-            collapsed: true,
-          };
-          pagesRef.current = nextPages;
-          scheduleReflow(nextPages, true);
-          return nextPages;
-        });
+        pushHistorySnapshot(sourcePages);
+        const replacementStartOffset = documentTextOffsetForFlowPoint(
+          canonical,
+          replacementPoint,
+        );
+        const replacementText = document.createElement('div');
+        replacementText.innerHTML = html;
+        const nextCanonical = replaceFlowSelection(canonical, bookmark, html);
+        const hydratedNextCanonical = hydrateFlowHtml(nextCanonical);
+        const replacementLength = replacementText.textContent?.length ?? 0;
+        const replacementCaret =
+          replacementStartOffset === null
+            ? replacementPoint
+            : flowPointAtDocumentTextOffset(
+                hydratedNextCanonical,
+                replacementStartOffset + replacementLength,
+              ) ?? replacementPoint;
+        const nextPages = parsePages(hydratedNextCanonical, sourcePages);
+        pendingFlowSelectionRef.current = {
+          anchor: replacementCaret,
+          focus: replacementCaret,
+          collapsed: true,
+        };
+        pagesRef.current = nextPages;
+        if (transaction?.repairSurface) {
+          setSurfaceRepairGeneration((generation) => generation + 1);
+        }
+        setPages(nextPages);
+        scheduleReflow(nextPages, true);
       },
       [effectivePreviewMode, parsePages, pushHistorySnapshot, scheduleReflow],
     );
@@ -1967,9 +1992,94 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       return pageContent;
     }, []);
 
-    const handleDocumentInput = useCallback(() => {
+    const repairPendingNonCancelableMutation = useCallback(
+      (followup?: { inputType?: string; data?: string | null }) => {
+        const pending = pendingNonCancelableMutationRef.current;
+        if (!pending) return false;
+        pendingNonCancelableMutationRef.current = null;
+
+        const inputType = followup?.inputType || pending.inputType;
+        const inputData = followup?.data ?? pending.data;
+        if (inputType.startsWith('delete')) {
+          pushHistorySnapshot(pending.pages);
+          const deleted = deleteFlowSelection(
+            pending.canonical,
+            pending.bookmark,
+          );
+          const nextPages = parsePages(deleted, pending.pages);
+          pendingFlowSelectionRef.current = {
+            anchor: pending.collapsePoint,
+            focus: pending.collapsePoint,
+            collapsed: true,
+          };
+          pagesRef.current = nextPages;
+          setSurfaceRepairGeneration((generation) => generation + 1);
+          setPages(nextPages);
+          scheduleReflow(nextPages, true);
+          return true;
+        }
+
+        const isSupportedTextReplacement =
+          typeof inputData === 'string' &&
+          [
+            'insertText',
+            'insertReplacementText',
+            'insertCompositionText',
+            'insertFromComposition',
+          ].includes(inputType);
+        if (isSupportedTextReplacement) {
+          const replacement = document.createElement('div');
+          replacement.textContent = inputData;
+          handleReplaceAcrossPages(replacement.innerHTML, {
+            pages: pending.pages,
+            canonical: pending.canonical,
+            bookmark: pending.bookmark,
+            replacementPoint: pending.collapsePoint,
+            repairSurface: true,
+          });
+          return true;
+        }
+
+        pagesRef.current = pending.pages;
+        pendingFlowSelectionRef.current = {
+          anchor: pending.collapsePoint,
+          focus: pending.collapsePoint,
+          collapsed: true,
+        };
+        setSurfaceRepairGeneration((generation) => generation + 1);
+        setPages(pending.pages.map((page) => ({ ...page })));
+        return true;
+      },
+      [
+        handleReplaceAcrossPages,
+        parsePages,
+        pushHistorySnapshot,
+        scheduleReflow,
+      ],
+    );
+
+    const handleDocumentInput = useCallback((event: ReactFormEvent<HTMLDivElement>) => {
+      const inputEvent = event.nativeEvent as InputEvent;
+      if (
+        repairPendingNonCancelableMutation({
+          inputType: inputEvent.inputType,
+          data: inputEvent.data,
+        })
+      ) {
+        return;
+      }
       commitDocumentSurface();
-    }, [commitDocumentSurface]);
+    }, [commitDocumentSurface, repairPendingNonCancelableMutation]);
+
+    const handleDocumentCompositionEnd = useCallback(
+      (event: ReactCompositionEvent<HTMLDivElement>) => {
+        repairPendingNonCancelableMutation({
+          inputType: 'insertCompositionText',
+          data: event.data,
+        });
+      },
+      [repairPendingNonCancelableMutation],
+    );
 
     const handleDocumentPaste = useCallback(
       (event: ReactClipboardEvent<HTMLDivElement>) => {
@@ -2055,20 +2165,40 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     );
 
     const handleBeforeInput = useCallback(
-      (event: ReactFormEvent<HTMLDivElement>) => {
-        const inputEvent = event.nativeEvent as InputEvent;
+      (inputEvent: InputEvent) => {
         const surface = documentSurfaceRef.current;
         if (
           !effectivePreviewMode &&
           surface &&
           !selectionIsWithinPageContents(surface)
         ) {
-          event.preventDefault();
+          if (inputEvent.cancelable) inputEvent.preventDefault();
           return;
         }
 
         if (!effectivePreviewMode && surface && selectionSpansPages(surface)) {
-          event.preventDefault();
+          const bookmark = captureFlowSelection(surface);
+          if (!bookmark || bookmark.collapsed) return;
+          const collapsePoint = selectionStartPoint(bookmark);
+          if (!inputEvent.cancelable) {
+            const snapshotPages = pagesRef.current;
+            pendingNonCancelableMutationRef.current = {
+              pages: snapshotPages,
+              canonical: reassemblePageFragments(
+                snapshotPages.map((page) => ({
+                  content: page.content,
+                  hardBreakBefore: page.hardBreakBefore,
+                })),
+              ),
+              bookmark,
+              collapsePoint,
+              inputType: inputEvent.inputType,
+              data: inputEvent.data,
+            };
+            return;
+          }
+
+          inputEvent.preventDefault();
 
           if (inputEvent.inputType?.startsWith('delete')) {
             handleDeleteAcrossPages();
@@ -2078,9 +2208,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           const isCompositionInput =
             inputEvent.isComposing ||
             inputEvent.inputType?.toLowerCase().includes('composition');
-          const inputData =
-            inputEvent.data ??
-            (event as ReactFormEvent<HTMLDivElement> & { data?: string }).data;
+          const inputData = inputEvent.data;
           const isTextReplacement =
             !isCompositionInput &&
             typeof inputData === 'string' &&
@@ -2100,6 +2228,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         handleReplaceAcrossPages,
       ],
     );
+
+    useEffect(() => {
+      const surface = documentSurfaceRef.current;
+      if (!surface || effectivePreviewMode) return;
+
+      surface.addEventListener('beforeinput', handleBeforeInput);
+      return () => surface.removeEventListener('beforeinput', handleBeforeInput);
+    }, [effectivePreviewMode, handleBeforeInput, surfaceRepairGeneration]);
 
     const splitActivePageAtSelection = useCallback(() => {
       if (effectivePreviewMode) return;
@@ -2677,12 +2813,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
         <div ref={scrollContainerRef} className="flex-1 overflow-auto py-8">
           <div
+            key={surfaceRepairGeneration}
             ref={documentSurfaceRef}
             data-testid="a4-document-surface"
             contentEditable={!effectivePreviewMode}
             suppressContentEditableWarning
-            onBeforeInput={handleBeforeInput}
             onInput={handleDocumentInput}
+            onCompositionEnd={handleDocumentCompositionEnd}
             onKeyDown={handleDocumentKeyDown}
             onPaste={handleDocumentPaste}
             onMouseUp={(event) => {
