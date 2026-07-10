@@ -217,6 +217,47 @@ describe('A4PageEditor real layout pagination', () => {
     expect(selectedText).toContain('First page text');
     expect(selectedText).toContain('Second');
   });
+
+  it('prevents text insertion at an inter-page editing-host boundary', async () => {
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          value={'<p>First page</p><div class="page-break" data-break-type="hard"></div><p>Second page</p>'}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(host.querySelectorAll('[data-testid^="a4-page-content-"]')).toHaveLength(2);
+      });
+    });
+
+    const surface = host.querySelector<HTMLElement>('[data-testid="a4-document-surface"]')!;
+    const firstPageContent = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const paperContainer = firstPageContent.parentElement!;
+    surface.focus();
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(paperContainer, 0);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    await act(async () => {
+      await cdp().send('Input.insertText', { text: 'ROGUE_BOUNDARY_TEXT' });
+    });
+
+    expect(surface.textContent).not.toContain('ROGUE_BOUNDARY_TEXT');
+    expect(
+      Array.from(surface.childNodes).some(
+        (node) =>
+          node.nodeType === Node.TEXT_NODE &&
+          node.textContent?.includes('ROGUE_BOUNDARY_TEXT'),
+      ),
+    ).toBe(false);
+  });
 });
   beforeAll(() => {
     (

@@ -25,9 +25,39 @@ describe('A4PageEditor', () => {
       'contenteditable',
       'true',
     );
+    expect(document.querySelectorAll('[contenteditable="true"]')).toHaveLength(1);
     screen.getAllByTestId(/a4-page-content-/).forEach((page) => {
       expect(page).not.toHaveAttribute('contenteditable', 'true');
     });
+  });
+
+  it('commits page fragments in rendered DOM order', async () => {
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        value={`<p>First page</p>${hardPageBreak}<p>Second page</p>`}
+        onChange={onChange}
+      />,
+    );
+
+    const surface = screen.getByTestId('a4-document-surface');
+    const firstPage = screen.getByTestId('a4-page-content-1');
+    const secondPage = screen.getByTestId('a4-page-content-2');
+    const firstWrapper = firstPage.parentElement!.parentElement!;
+    const secondWrapper = secondPage.parentElement!.parentElement!;
+
+    surface.insertBefore(secondWrapper, firstWrapper);
+    secondPage.innerHTML = '<p>Second page edited</p>';
+    fireEvent.input(surface);
+
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    const emittedHtml = onChange.mock.calls.at(-1)?.[0] as string;
+    const emittedText = new DOMParser()
+      .parseFromString(emittedHtml, 'text/html')
+      .body.textContent ?? '';
+    expect(emittedText.indexOf('Second page edited')).toBeLessThan(
+      emittedText.indexOf('First page'),
+    );
   });
 
   it('keeps a native range spanning two physical pages', async () => {

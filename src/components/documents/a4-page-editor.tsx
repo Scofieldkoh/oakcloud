@@ -211,6 +211,31 @@ function pageContentFromTarget(
   ).find((candidate) => candidate.dataset.pageId === pageElement.dataset.pageId) ?? null;
 }
 
+function pageContentContainingNode(
+  root: HTMLElement,
+  target: Node | null,
+): HTMLElement | null {
+  if (!target || !root.contains(target)) return null;
+
+  const element =
+    target.nodeType === Node.ELEMENT_NODE
+      ? (target as HTMLElement)
+      : target.parentElement;
+  return element?.closest<HTMLElement>(
+    '[data-testid^="a4-page-content-"][data-page-id]',
+  ) ?? null;
+}
+
+function selectionIsWithinPageContents(root: HTMLElement): boolean {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return false;
+
+  return Boolean(
+    pageContentContainingNode(root, selection.anchorNode) &&
+      pageContentContainingNode(root, selection.focusNode),
+  );
+}
+
 function selectionPageContents(root: HTMLElement): {
   anchor: HTMLElement | null;
   focus: HTMLElement | null;
@@ -1534,22 +1559,22 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       const surface = documentSurfaceRef.current;
       if (effectivePreviewMode || !surface) return;
 
-      const contentByPageId = new Map(
-        Array.from(
-          surface.querySelectorAll<HTMLElement>(
-            '[data-testid^="a4-page-content-"][data-page-id]',
-          ),
-        ).map((element) => [
-          element.dataset.pageId!,
-          sanitizeHtml(replaceTypedPageBreaks(element.innerHTML)),
-        ]),
-      );
       const currentPages = pagesRef.current;
-      const nextPages = currentPages.map((page) => {
-        const content = contentByPageId.get(page.id);
-        return content === undefined || content === page.content
-          ? page
-          : { ...page, content };
+      const metadataByPageId = new Map(
+        currentPages.map((page) => [page.id, page]),
+      );
+      const nextPages = Array.from(
+        surface.querySelectorAll<HTMLElement>(
+          '[data-testid^="a4-page-content-"][data-page-id]',
+        ),
+      ).flatMap((element) => {
+        const page = metadataByPageId.get(element.dataset.pageId!);
+        if (!page) return [];
+
+        const content = sanitizeHtml(
+          replaceTypedPageBreaks(element.innerHTML),
+        );
+        return [content === page.content ? page : { ...page, content }];
       });
       if (nextPages.every((page, index) => page === currentPages[index])) {
         return;
@@ -1868,10 +1893,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       (event: ReactClipboardEvent<HTMLDivElement>) => {
         if (effectivePreviewMode) return;
         event.preventDefault();
+
+        const surface = documentSurfaceRef.current;
+        if (!surface || !selectionIsWithinPageContents(surface)) return;
+
         const html = clipboardHtml(event.clipboardData);
         if (!html) return;
 
-        const surface = documentSurfaceRef.current;
         if (surface && selectionSpansPages(surface)) {
           handlePasteAcrossPages(html);
           return;
@@ -1951,7 +1979,16 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (
           !effectivePreviewMode &&
           surface &&
-          inputEvent.inputType.startsWith('delete') &&
+          !selectionIsWithinPageContents(surface)
+        ) {
+          event.preventDefault();
+          return;
+        }
+
+        if (
+          !effectivePreviewMode &&
+          surface &&
+          inputEvent.inputType?.startsWith('delete') &&
           selectionSpansPages(surface)
         ) {
           event.preventDefault();
