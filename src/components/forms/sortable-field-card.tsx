@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Copy, GripVertical, MoreHorizontal, MoveHorizontal, Plus, SquarePen, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip } from '@/components/ui/tooltip';
-import { FIELD_TYPE_LABEL, FIELD_TYPE_OPTIONS, WIDTH_CLASS, WIDTH_OPTIONS, isBlockDividerInputType } from './builder-utils';
+import { FIELD_TYPE_LABEL, WIDTH_CLASS, WIDTH_OPTIONS, isBlockDividerInputType } from './builder-utils';
 import type { BuilderField } from './builder-utils';
 
 const ADD_FIELD_GROUPS: Array<{ label: string; types: Array<BuilderField['type']> }> = [

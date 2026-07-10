@@ -10,6 +10,7 @@ import {
   DocumentGenerationWizard,
   type GenerateDocumentData,
   type GeneratedDocumentResult,
+  type DocumentContact,
   type TemplatePartial,
 } from '@/components/documents/document-generation-wizard';
 import type { DocumentTemplate } from '@/components/documents/template-selector';
@@ -38,11 +39,67 @@ export default function GenerateDocumentPage() {
   // State
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [contacts, setContacts] = useState<DocumentContact[]>([]);
   const [partials, setPartials] = useState<TemplatePartial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch templates, companies, and partials
+  const mapCompanyOption = (company: {
+    id: string;
+    name: string;
+    uen?: string | null;
+  }): Company => ({
+    id: company.id,
+    name: company.name,
+    uen: company.uen || '',
+    status: '',
+  });
+
+  const mapContactOption = (contact: {
+    id: string;
+    name: string;
+  }): DocumentContact => ({
+    id: contact.id,
+    fullName: contact.name,
+    email: null,
+    phone: null,
+    designation: null,
+  });
+
+  const searchTemplates = useCallback(async (query: string) => {
+    const params = new URLSearchParams({ isActive: 'true', limit: '100' });
+    if (query.trim()) params.set('query', query.trim());
+
+    const response = await fetch(`/api/document-templates?${params}`);
+    if (!response.ok) return;
+
+    const data = await response.json();
+    setTemplates(data.templates || []);
+  }, []);
+
+  const searchCompanies = useCallback(async (query: string) => {
+    const params = new URLSearchParams({ limit: '50' });
+    if (query.trim()) params.set('q', query.trim());
+
+    const response = await fetch(`/api/companies/options?${params}`);
+    if (!response.ok) return;
+
+    const data = await response.json();
+    setCompanies((data.options || []).map(mapCompanyOption));
+  }, []);
+
+  const searchContacts = useCallback(async (query: string) => {
+    const params = new URLSearchParams({ limit: '50' });
+    if (query.trim()) params.set('q', query.trim());
+
+    const response = await fetch(`/api/contacts/options?${params}`);
+    if (!response.ok) return;
+
+    const data = await response.json();
+    setContacts((data.options || []).map(mapContactOption));
+  }, []);
+
+  // Fetch templates, companies, contacts, and partials
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -51,11 +108,13 @@ export default function GenerateDocumentPage() {
       try {
         const templatesParams = new URLSearchParams({ isActive: 'true', limit: '100' });
         const companiesParams = new URLSearchParams({ limit: '50' });
+        const contactsParams = new URLSearchParams({ limit: '50' });
         const partialsParams = new URLSearchParams({ all: 'true' });
 
-        const [templatesRes, companiesRes, partialsRes] = await Promise.all([
+        const [templatesRes, companiesRes, contactsRes, partialsRes] = await Promise.all([
           fetch(`/api/document-templates?${templatesParams}`),
           fetch(`/api/companies/options?${companiesParams}`),
+          fetch(`/api/contacts/options?${contactsParams}`),
           fetch(`/api/template-partials?${partialsParams}`),
         ]);
 
@@ -65,22 +124,18 @@ export default function GenerateDocumentPage() {
         if (!companiesRes.ok) {
           throw new Error('Failed to fetch companies');
         }
+        if (!contactsRes.ok) {
+          throw new Error('Failed to fetch contacts');
+        }
 
         const templatesData = await templatesRes.json();
         const companiesData = await companiesRes.json();
+        const contactsData = await contactsRes.json();
         const partialsData = partialsRes.ok ? await partialsRes.json() : { partials: [] };
 
         setTemplates(templatesData.templates || []);
-        setCompanies((companiesData.options || []).map((company: {
-          id: string;
-          name: string;
-          uen?: string | null;
-        }) => ({
-          id: company.id,
-          name: company.name,
-          uen: company.uen || '',
-          status: '',
-        })));
+        setCompanies((companiesData.options || []).map(mapCompanyOption));
+        setContacts((contactsData.options || []).map(mapContactOption));
         setPartials(partialsData.partials || []);
       } catch (err) {
         console.error('Fetch error:', err);
@@ -99,11 +154,11 @@ export default function GenerateDocumentPage() {
       const requestBody: Record<string, unknown> = {
         templateId: data.templateId,
         companyId: data.companyId,
+        contactIds: data.contactIds || [],
         title: data.title,
         customData: data.customData,
         useLetterhead: data.useLetterhead,
         editedContent: data.editedContent,
-        status: 'FINALIZED', // Set as finalized by default
       };
 
       const response = await fetch('/api/generated-documents', {
@@ -142,11 +197,17 @@ export default function GenerateDocumentPage() {
 
   // Handle validation
   const handleValidate = useCallback(
-    async (templateId: string, companyId: string | undefined, customData: Record<string, string>) => {
+    async (
+      templateId: string,
+      companyId: string | undefined,
+      customData: Record<string, string>,
+      contactIds: string[] = []
+    ) => {
       try {
         const requestBody: Record<string, unknown> = {
           templateId,
           companyId,
+          contactIds,
           customData,
         };
 
@@ -238,9 +299,13 @@ export default function GenerateDocumentPage() {
           <DocumentGenerationWizard
             templates={templates}
             companies={companies}
+            contacts={contacts}
             partials={partials}
             onGenerate={handleGenerate}
             onPreviewTemplate={handlePreviewTemplate}
+            onSearchTemplates={searchTemplates}
+            onSearchCompanies={searchCompanies}
+            onSearchContacts={searchContacts}
             onValidate={handleValidate}
             isLoading={isLoading}
           />

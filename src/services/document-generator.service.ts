@@ -13,9 +13,12 @@ import {
   prepareCompanyContext,
   extractPartialReferences,
   type PlaceholderContext,
+  type ContactData,
 } from '@/lib/placeholder-resolver';
 import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
 import { getCompanyById } from '@/services/company.service';
+import { addSectionAnchors, extractSections } from '@/services/document-validation.service';
+import { analyzeTemplateContent, type TemplateDiagnostics } from '@/lib/template-analysis';
 import type {
   CreateDocumentFromTemplateInput,
   CreateBlankDocumentInput,
@@ -76,6 +79,55 @@ export interface DocumentCommentWithReplies extends DocumentComment {
   parent?: DocumentComment | null;
 }
 
+export interface RenderTemplateForGenerationParams {
+  templateId?: string;
+  templateContent?: string;
+  templateName?: string;
+  templateCategory?: string;
+  templateVersion?: number;
+  tenantId: string;
+  companyId?: string | null;
+  contactIds?: string[];
+  customData?: Record<string, unknown>;
+  contextOverride?: PlaceholderContext;
+  generatedBy?: string;
+  mode?: 'preview' | 'test' | 'generate' | 'validate';
+}
+
+export interface RenderTemplateForGenerationResult {
+  template: {
+    id: string;
+    name: string;
+    category: string;
+    version: number;
+  };
+  content: string;
+  contentHtml: string;
+  rawResolvedContent: string;
+  sections: ReturnType<typeof extractSections>;
+  missingPlaceholders: string[];
+  missingPartials: string[];
+  contextSummary: {
+    hasCompany: boolean;
+    hasContacts: boolean;
+    hasCustomData: boolean;
+  };
+  blockingErrors: string[];
+  context: PlaceholderContext;
+  diagnostics: TemplateDiagnostics;
+  dependencySnapshot: {
+    templateId: string;
+    templateName: string;
+    templateVersion: number;
+    partials: Array<{
+      name: string;
+      found: boolean;
+      version?: number | null;
+      updatedAt?: string | null;
+    }>;
+  };
+}
+
 // Re-export shared type for backwards compatibility
 export type { TenantAwareParams } from '@/lib/types';
 
@@ -87,6 +139,277 @@ const TRACKED_FIELDS: (keyof GeneratedDocument)[] = [
   'useLetterhead',
 ];
 
+async function buildContactsContext(
+  contactIds: string[] | undefined,
+  tenantId: string
+): Promise<{ firstContact?: ContactData; contacts: ContactData[] }> {
+  if (!contactIds || contactIds.length === 0) {
+    return { contacts: [] };
+  }
+
+  const contacts = await prisma.contact.findMany({
+    where: { id: { in: contactIds }, tenantId, deletedAt: null },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      fullName: true,
+      contactType: true,
+      fullAddress: true,
+      nationality: true,
+      identificationNumber: true,
+      contactDetails: {
+        where: { deletedAt: null, companyId: null },
+        select: { detailType: true, value: true },
+      },
+    },
+  });
+
+  const orderedContacts = contactIds
+    .map((id) => contacts.find((contact) => contact.id === id))
+    .filter((contact): contact is NonNullable<typeof contact> => Boolean(contact));
+
+  const mappedContacts = orderedContacts.map((contact) => {
+    const email = contact.contactDetails?.find((detail) => detail.detailType === 'EMAIL');
+    const phone = contact.contactDetails?.find((detail) => detail.detailType === 'PHONE');
+    return {
+      id: contact.id,
+      fullName: contact.fullName || `${contact.firstName || ''} ${contact.lastName || ''}`.trim(),
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      contactType: contact.contactType,
+      email: email?.value || null,
+      phone: phone?.value || null,
+      fullAddress: contact.fullAddress,
+      nationality: contact.nationality,
+      identificationNumber: contact.identificationNumber,
+    } satisfies ContactData;
+  });
+
+  return {
+    firstContact: mappedContacts[0],
+    contacts: mappedContacts,
+  };
+}
+
+function metadataHasUnresolvedTemplateData(metadata: unknown): boolean {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return false;
+  }
+
+  const data = metadata as Record<string, unknown>;
+  const missingPlaceholders = Array.isArray(data.missingPlaceholders)
+    ? data.missingPlaceholders
+    : [];
+  const missingPartials = Array.isArray(data.missingPartials)
+    ? data.missingPartials
+    : [];
+  const circularPartials = Array.isArray(data.circularPartials)
+    ? data.circularPartials
+    : [];
+  const syntaxErrors = Array.isArray(data.syntaxErrors)
+    ? data.syntaxErrors
+    : [];
+  const unknownPlaceholders = Array.isArray(data.unknownPlaceholders)
+    ? data.unknownPlaceholders
+    : [];
+
+  return (
+    missingPlaceholders.length > 0
+    || missingPartials.length > 0
+    || circularPartials.length > 0
+    || syntaxErrors.length > 0
+    || unknownPlaceholders.length > 0
+  );
+}
+
+function buildBlockingErrors(
+  missingPlaceholders: string[],
+  missingPartials: string[],
+  diagnostics?: Pick<TemplateDiagnostics, 'circularPartials' | 'syntaxErrors'>
+): string[] {
+  const errors: string[] = [];
+
+  if (missingPlaceholders.length > 0) {
+    errors.push(`Unresolved placeholders: ${missingPlaceholders.join(', ')}`);
+  }
+
+  if (missingPartials.length > 0) {
+    errors.push(`Missing partials: ${missingPartials.join(', ')}`);
+  }
+
+  if (diagnostics?.circularPartials.length) {
+    errors.push(`Circular partial references: ${diagnostics.circularPartials.join(', ')}`);
+  }
+
+  if (diagnostics?.syntaxErrors.length) {
+    errors.push(`Template syntax errors: ${diagnostics.syntaxErrors.join('; ')}`);
+  }
+
+  return errors;
+}
+
+export async function renderTemplateForGeneration(
+  params: RenderTemplateForGenerationParams
+): Promise<RenderTemplateForGenerationResult> {
+  const {
+    templateId,
+    tenantId,
+    companyId,
+    contactIds = [],
+    customData = {},
+    contextOverride,
+    generatedBy,
+    mode = 'preview',
+    templateContent,
+    templateName = 'Unsaved template',
+    templateCategory = 'OTHER',
+    templateVersion = 1,
+  } = params;
+
+  if (!tenantId) {
+    throw new Error('Tenant ID is required for template rendering');
+  }
+
+  const template = templateId
+    ? await prisma.documentTemplate.findFirst({
+        where: { id: templateId, tenantId, deletedAt: null },
+      })
+    : null;
+
+  if (templateId && !template) {
+    throw new NotFoundError('Template not found');
+  }
+
+  if (template && mode !== 'test' && !template.isActive) {
+    throw new Error('Template is not active');
+  }
+
+  const renderContent = template?.content ?? templateContent;
+  if (!renderContent) {
+    throw new Error('Template content is required for rendering');
+  }
+
+  let context: PlaceholderContext = contextOverride
+    ? {
+        ...contextOverride,
+        custom: {
+          ...contextOverride.custom,
+          ...customData,
+        },
+        system: {
+          ...(contextOverride.system ?? {}),
+          ...(generatedBy ? { generatedBy } : {}),
+          currentDate: contextOverride.system?.currentDate ?? new Date(),
+        },
+      }
+    : {
+        custom: customData,
+        system: {
+          currentDate: new Date(),
+          ...(generatedBy ? { generatedBy } : {}),
+        },
+      };
+
+  if (companyId && !context.company) {
+    const company = await getCompanyById(companyId, tenantId);
+    if (!company) {
+      throw new NotFoundError('Company not found');
+    }
+    const companyContext = prepareCompanyContext(
+      company as unknown as Parameters<typeof prepareCompanyContext>[0]
+    );
+    context = {
+      ...context,
+      ...companyContext,
+      system: {
+        ...companyContext.system,
+        ...context.system,
+        currentDate: context.system?.currentDate ?? companyContext.system?.currentDate ?? new Date(),
+      },
+      custom: {
+        ...companyContext.custom,
+        ...context.custom,
+      },
+    };
+  }
+
+  const contactContext = context.contacts?.length
+    ? { firstContact: context.contact, contacts: context.contacts }
+    : await buildContactsContext(contactIds, tenantId);
+  if (contactContext.contacts.length > 0) {
+    context = {
+      ...context,
+      contact: contactContext.firstContact,
+      contacts: contactContext.contacts,
+      custom: {
+        ...context.custom,
+        contacts: contactContext.contacts,
+      },
+    };
+  }
+
+  const partialRefs = extractPartialReferences(renderContent);
+  let partials: Awaited<ReturnType<typeof getPartialsUsedInTemplate>> = [];
+  let partialsMap = new Map<string, string>();
+
+  if (partialRefs.length > 0) {
+    partials = await getPartialsUsedInTemplate(renderContent, tenantId);
+    partialsMap = new Map(partials.map((partial) => [partial.name, partial.content]));
+  }
+  const diagnostics = analyzeTemplateContent({
+    content: renderContent,
+    placeholders: template?.placeholders,
+    partials,
+  });
+
+  const {
+    resolved,
+    missing,
+    missingPartials,
+  } = resolvePlaceholders(renderContent, context, {
+    missingPlaceholder: 'highlight',
+    partialsMap,
+  });
+
+  const contentWithAnchors = addSectionAnchors(resolved);
+  const sections = extractSections(contentWithAnchors);
+
+  return {
+    template: {
+      id: template?.id ?? 'ad-hoc',
+      name: template?.name ?? templateName,
+      category: template?.category ?? templateCategory,
+      version: template?.version ?? templateVersion,
+    },
+    content: contentWithAnchors,
+    contentHtml: contentWithAnchors,
+    rawResolvedContent: resolved,
+    sections,
+    missingPlaceholders: missing,
+    missingPartials,
+    contextSummary: {
+      hasCompany: Boolean(companyId || context.company),
+      hasContacts: contactContext.contacts.length > 0,
+      hasCustomData: Object.keys(customData).length > 0,
+    },
+    blockingErrors: buildBlockingErrors(missing, missingPartials, diagnostics),
+    context,
+    diagnostics,
+    dependencySnapshot: {
+      templateId: template?.id ?? 'ad-hoc',
+      templateName: template?.name ?? templateName,
+      templateVersion: template?.version ?? templateVersion,
+      partials: diagnostics.dependencies.map((dependency) => ({
+        name: dependency.name,
+        found: dependency.found,
+        version: dependency.version,
+        updatedAt: dependency.updatedAt,
+      })),
+    },
+  };
+}
+
 // ============================================================================
 // Create Document from Template
 // ============================================================================
@@ -96,6 +419,8 @@ export async function createDocumentFromTemplate(
   params: TenantAwareParams
 ): Promise<GeneratedDocument> {
   const { tenantId, userId } = params;
+  const contactIds = data.contactIds ?? [];
+  const useLetterhead = data.useLetterhead ?? true;
 
   // Get template
   const template = await prisma.documentTemplate.findFirst({
@@ -110,38 +435,14 @@ export async function createDocumentFromTemplate(
     throw new Error('Template is not active');
   }
 
-  // Get company data if provided
-  let context: PlaceholderContext = {
-    custom: data.customData || {},
-    system: { currentDate: new Date() },
-  };
-
-  if (data.companyId) {
-    const company = await getCompanyById(data.companyId, tenantId);
-    if (!company) {
-      throw new NotFoundError('Company not found');
-    }
-    context = {
-      ...prepareCompanyContext(company as unknown as Parameters<typeof prepareCompanyContext>[0]),
-      custom: { ...context.custom, ...data.customData },
-    };
-  }
-
-  // Fetch partials used in the template
-  const partialRefs = extractPartialReferences(template.content);
-  let partialsMap = new Map<string, string>();
-
-  if (partialRefs.length > 0) {
-    const partials = await getPartialsUsedInTemplate(template.content, tenantId);
-    partialsMap = new Map(partials.map((p) => [p.name, p.content]));
-  }
-
-  // Resolve placeholders (with partials)
-  const { resolved: resolvedContent, missing, missingPartials } = resolvePlaceholders(
-    template.content,
-    context,
-    { missingPlaceholder: 'highlight', partialsMap }
-  );
+  const rendered = await renderTemplateForGeneration({
+    templateId: data.templateId,
+    tenantId,
+    companyId: data.companyId,
+    contactIds,
+    customData: data.customData,
+    mode: 'generate',
+  });
 
   // Create document
   const document = await prisma.generatedDocument.create({
@@ -151,15 +452,19 @@ export async function createDocumentFromTemplate(
       templateVersion: template.version,
       companyId: data.companyId,
       title: data.title,
-      content: resolvedContent,
-      contentJson: template.contentJson ?? undefined,
-      status: 'FINALIZED',
-      useLetterhead: data.useLetterhead,
-      placeholderData: context as Prisma.InputJsonValue,
-      metadata:
-        missing.length > 0 || missingPartials.length > 0
-          ? { missingPlaceholders: missing, missingPartials }
-          : undefined,
+      content: data.editedContent ?? rendered.content,
+      contentJson: data.editedContentJson ?? template.contentJson ?? undefined,
+      status: 'DRAFT',
+      useLetterhead,
+      placeholderData: rendered.context as Prisma.InputJsonValue,
+      metadata: {
+        missingPlaceholders: rendered.missingPlaceholders,
+        missingPartials: rendered.missingPartials,
+        circularPartials: rendered.diagnostics.circularPartials,
+        syntaxErrors: rendered.diagnostics.syntaxErrors,
+        unknownPlaceholders: rendered.diagnostics.unknownPlaceholders,
+        dependencySnapshot: rendered.dependencySnapshot,
+      },
       createdById: userId,
     },
   });
@@ -177,8 +482,9 @@ export async function createDocumentFromTemplate(
     metadata: {
       templateId: template.id,
       templateName: template.name,
-      missingPlaceholders: missing,
-      missingPartials,
+      missingPlaceholders: rendered.missingPlaceholders,
+      missingPartials: rendered.missingPartials,
+      dependencySnapshot: rendered.dependencySnapshot,
     },
   });
 
@@ -327,6 +633,10 @@ export async function finalizeDocument(
 
   if (existing.status === 'ARCHIVED') {
     throw new Error('Cannot finalize an archived document');
+  }
+
+  if (metadataHasUnresolvedTemplateData(existing.metadata)) {
+    throw new Error('Cannot finalize document with unresolved placeholders or partials');
   }
 
   const document = await prisma.generatedDocument.update({

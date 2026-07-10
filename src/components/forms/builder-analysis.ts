@@ -27,10 +27,6 @@ function isConditionGroup(condition: FieldConditionConfig | null): condition is 
   return !!condition && 'rules' in condition;
 }
 
-function isConditionRule(condition: FieldConditionConfig | null): condition is ConditionConfig {
-  return !!condition && !isConditionGroup(condition);
-}
-
 function fieldNameByKey(fields: BuilderField[], key: string): string {
   const field = fields.find((candidate) => candidate.key === key);
   if (!field) return key;

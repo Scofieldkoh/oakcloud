@@ -42,6 +42,8 @@ export interface Contact {
   designation?: string | null;
 }
 
+export type DocumentContact = Contact;
+
 export interface TemplatePartial {
   id: string;
   name: string;
@@ -54,10 +56,19 @@ export interface TemplatePartial {
 export interface GenerationWizardProps {
   templates: DocumentTemplate[];
   companies: Company[];
+  contacts?: DocumentContact[];
   partials?: TemplatePartial[];
   onGenerate: (data: GenerateDocumentData) => Promise<GeneratedDocumentResult>;
   onPreviewTemplate?: (template: DocumentTemplate) => void;
-  onValidate?: (templateId: string, companyId: string | undefined, customData: Record<string, string>) => Promise<ValidationResult>;
+  onSearchTemplates?: (query: string) => void | Promise<void>;
+  onSearchCompanies?: (query: string) => void | Promise<void>;
+  onSearchContacts?: (query: string) => void | Promise<void>;
+  onValidate?: (
+    templateId: string,
+    companyId: string | undefined,
+    customData: Record<string, string>,
+    contactIds?: string[]
+  ) => Promise<ValidationResult>;
   isLoading?: boolean;
   className?: string;
 }
@@ -65,6 +76,7 @@ export interface GenerationWizardProps {
 export interface GenerateDocumentData {
   templateId: string;
   companyId?: string;
+  contactIds?: string[];
   title: string;
   customData: Record<string, string>;
   useLetterhead: boolean;
@@ -82,6 +94,7 @@ export interface GeneratedDocumentResult {
 interface WizardState {
   selectedTemplate: DocumentTemplate | null;
   selectedCompany: Company | null;
+  selectedContacts: DocumentContact[];
   title: string;
   customData: Record<string, string>;
   useLetterhead: boolean;
@@ -89,6 +102,10 @@ interface WizardState {
   generatedDocument: GeneratedDocumentResult | null;
   previewContent: string | null;
   editedContent: string | null;
+  missingPlaceholders: string[];
+  missingPartials: string[];
+  blockingErrors: string[];
+  fieldErrors: string[];
 }
 
 // ============================================================================
@@ -98,9 +115,25 @@ interface WizardState {
 const WIZARD_STEPS: Step[] = [
   { id: 'template', label: 'Template' },
   { id: 'company', label: 'Company' },
+  { id: 'contacts', label: 'Contacts' },
   { id: 'customize', label: 'Custom Fields' },
   { id: 'edit', label: 'Edit & Preview' },
 ];
+
+const WIZARD_DRAFT_STORAGE_KEY = 'oakcloud:document-generation-wizard-draft';
+
+interface WizardDraftState {
+  templateId: string | null;
+  companyId: string | null;
+  contactIds: string[];
+  title: string;
+  customData: Record<string, string>;
+  useLetterhead: boolean;
+  previewContent: string | null;
+  editedContent: string | null;
+  currentStep: number;
+  savedAt: string;
+}
 
 // ============================================================================
 // Summary Card Component
@@ -109,15 +142,16 @@ const WIZARD_STEPS: Step[] = [
 interface SummaryCardProps {
   template: DocumentTemplate | null;
   company: Company | null;
+  contactCount: number;
   title: string;
   customFieldCount: number;
 }
 
-function SummaryCard({ template, company, title, customFieldCount }: SummaryCardProps) {
+function SummaryCard({ template, company, contactCount, title, customFieldCount }: SummaryCardProps) {
   return (
     <div className="p-4 bg-background-secondary border border-border-primary rounded-lg">
       <h4 className="text-sm font-medium text-text-primary mb-3">Summary</h4>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
         <div>
           <span className="text-text-muted block">Template</span>
           <span className={cn(
@@ -126,6 +160,10 @@ function SummaryCard({ template, company, title, customFieldCount }: SummaryCard
           )}>
             {template?.name || 'Not selected'}
           </span>
+        </div>
+        <div>
+          <span className="text-text-muted block">Contacts</span>
+          <span className="text-text-primary font-medium">{contactCount}</span>
         </div>
         <div>
           <span className="text-text-muted block">Company</span>
@@ -164,6 +202,7 @@ interface CompanySelectorProps {
   companies: Company[];
   selected: Company | null;
   onSelect: (company: Company | null) => void;
+  onSearch?: (query: string) => void | Promise<void>;
   isLoading?: boolean;
 }
 
@@ -171,6 +210,7 @@ function CompanySelector({
   companies,
   selected,
   onSelect,
+  onSearch,
   isLoading,
 }: CompanySelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -197,7 +237,8 @@ function CompanySelector({
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
     setPage(1);
-  }, []);
+    void onSearch?.(value);
+  }, [onSearch]);
 
   const handleLimitChange = useCallback((newLimit: number) => {
     setLimit(newLimit);
@@ -323,6 +364,168 @@ function CompanySelector({
           limit={limit}
           onPageChange={setPage}
           onLimitChange={handleLimitChange}
+        />
+      )}
+    </div>
+  );
+}
+
+interface ContactSelectorProps {
+  contacts: DocumentContact[];
+  selected: DocumentContact[];
+  onChange: (contacts: DocumentContact[]) => void;
+  onSearch?: (query: string) => void | Promise<void>;
+  isLoading?: boolean;
+}
+
+function ContactSelector({
+  contacts,
+  selected,
+  onChange,
+  onSearch,
+  isLoading,
+}: ContactSelectorProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  const selectedIds = useMemo(() => new Set(selected.map((contact) => contact.id)), [selected]);
+
+  const filteredContacts = useMemo(() => {
+    if (!searchQuery) return contacts;
+    const query = searchQuery.toLowerCase();
+    return contacts.filter(
+      (contact) =>
+        contact.fullName.toLowerCase().includes(query) ||
+        contact.email?.toLowerCase().includes(query) ||
+        contact.phone?.toLowerCase().includes(query)
+    );
+  }, [contacts, searchQuery]);
+
+  const paginatedContacts = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    return filteredContacts.slice(startIndex, startIndex + limit);
+  }, [filteredContacts, page, limit]);
+
+  const totalPages = Math.ceil(filteredContacts.length / limit);
+
+  const toggleContact = (contact: DocumentContact) => {
+    if (selectedIds.has(contact.id)) {
+      onChange(selected.filter((item) => item.id !== contact.id));
+    } else {
+      onChange([...selected, contact]);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => {
+            const nextQuery = e.target.value;
+            setSearchQuery(nextQuery);
+            setPage(1);
+            void onSearch?.(nextQuery);
+          }}
+          placeholder="Search contacts..."
+          className="w-full pl-9 pr-4 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
+        />
+      </div>
+
+      <div className="border border-border-primary rounded-lg overflow-hidden">
+        <div
+          className={cn(
+            'flex items-center gap-4 p-3 border-b border-border-secondary cursor-pointer transition-all',
+            'hover:bg-background-secondary',
+            selected.length === 0 && 'bg-accent-primary/5'
+          )}
+          onClick={() => onChange([])}
+          role="button"
+          tabIndex={0}
+        >
+          <div
+            className={cn(
+              'w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0',
+              selected.length === 0
+                ? 'border-oak-primary bg-oak-primary'
+                : 'border-gray-400 dark:border-gray-500'
+            )}
+          >
+            {selected.length === 0 && <div className="w-2.5 h-2.5 rounded-sm bg-white" />}
+          </div>
+          <div className="flex-1">
+            <p className="font-medium text-text-primary">No contacts selected</p>
+            <p className="text-sm text-text-muted">
+              Generate without contact-specific placeholders
+            </p>
+          </div>
+        </div>
+
+        {paginatedContacts.map((contact) => {
+          const isSelected = selectedIds.has(contact.id);
+          return (
+            <div
+              key={contact.id}
+              className={cn(
+                'flex items-center gap-4 p-3 border-b border-border-secondary last:border-b-0 cursor-pointer transition-all',
+                'hover:bg-background-secondary',
+                isSelected && 'bg-accent-primary/5'
+              )}
+              onClick={() => toggleContact(contact)}
+              role="button"
+              tabIndex={0}
+            >
+              <div
+                className={cn(
+                  'w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0',
+                  isSelected
+                    ? 'border-oak-primary bg-oak-primary'
+                    : 'border-gray-400 dark:border-gray-500'
+                )}
+              >
+                {isSelected && <div className="w-2.5 h-2.5 rounded-sm bg-white" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-text-primary truncate">{contact.fullName}</p>
+                {(contact.email || contact.phone) && (
+                  <p className="text-sm text-text-muted truncate">
+                    {[contact.email, contact.phone].filter(Boolean).join(' · ')}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {filteredContacts.length === 0 && searchQuery && (
+        <div className="py-8 text-center text-text-muted">
+          <p>No contacts match your search</p>
+        </div>
+      )}
+
+      {filteredContacts.length > 0 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={filteredContacts.length}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
         />
       )}
     </div>
@@ -568,12 +771,24 @@ function CustomDataForm({
 interface EditStepProps {
   content: string;
   validationResult: ValidationResult | null;
+  missingPlaceholders: string[];
+  missingPartials: string[];
+  blockingErrors: string[];
   isLoading: boolean;
   onChange: (content: string) => void;
   onRefresh: () => void;
 }
 
-function EditStep({ content, validationResult, isLoading, onChange, onRefresh }: EditStepProps) {
+function EditStep({
+  content,
+  validationResult,
+  missingPlaceholders,
+  missingPartials,
+  blockingErrors,
+  isLoading,
+  onChange,
+  onRefresh,
+}: EditStepProps) {
   const editorRef = useRef<A4PageEditorRef>(null);
 
   if (isLoading) {
@@ -610,6 +825,30 @@ function EditStep({ content, validationResult, isLoading, onChange, onRefresh }:
                   ))}
                 </ul>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(missingPlaceholders.length > 0 || missingPartials.length > 0 || blockingErrors.length > 0) && (
+        <div className="p-4 bg-status-warning/10 border border-status-warning/30 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-status-warning flex-shrink-0 mt-0.5" />
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-text-primary">
+                Template Data Needs Attention
+              </p>
+              <ul className="text-sm text-status-warning space-y-1">
+                {blockingErrors.map((message) => (
+                  <li key={message}>{message}</li>
+                ))}
+                {blockingErrors.length === 0 && missingPlaceholders.length > 0 && (
+                  <li>Unresolved placeholders: {missingPlaceholders.join(', ')}</li>
+                )}
+                {blockingErrors.length === 0 && missingPartials.length > 0 && (
+                  <li>Missing partials: {missingPartials.join(', ')}</li>
+                )}
+              </ul>
             </div>
           </div>
         </div>
@@ -653,9 +892,13 @@ function EditStep({ content, validationResult, isLoading, onChange, onRefresh }:
 export function DocumentGenerationWizard({
   templates,
   companies,
+  contacts = [],
   partials = [],
   onGenerate,
   onPreviewTemplate,
+  onSearchTemplates,
+  onSearchCompanies,
+  onSearchContacts,
   onValidate,
   isLoading = false,
   className,
@@ -664,10 +907,13 @@ export function DocumentGenerationWizard({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const hasLoadedDraftRef = useRef(false);
 
   const [state, setState] = useState<WizardState>({
     selectedTemplate: null,
     selectedCompany: null,
+    selectedContacts: [],
     title: '',
     customData: {},
     useLetterhead: true,
@@ -675,6 +921,10 @@ export function DocumentGenerationWizard({
     generatedDocument: null,
     previewContent: null,
     editedContent: null,
+    missingPlaceholders: [],
+    missingPartials: [],
+    blockingErrors: [],
+    fieldErrors: [],
   });
 
   // Update title when template is selected
@@ -686,6 +936,77 @@ export function DocumentGenerationWizard({
       }));
     }
   }, [state.selectedTemplate, state.title]);
+
+  useEffect(() => {
+    if (hasLoadedDraftRef.current || templates.length === 0) return;
+    hasLoadedDraftRef.current = true;
+
+    try {
+      const rawDraft = window.localStorage.getItem(WIZARD_DRAFT_STORAGE_KEY);
+      if (!rawDraft) return;
+
+      const draft = JSON.parse(rawDraft) as Partial<WizardDraftState>;
+      const selectedTemplate = templates.find((template) => template.id === draft.templateId) || null;
+      if (!selectedTemplate) return;
+
+      const selectedCompany = companies.find((company) => company.id === draft.companyId) || null;
+      const selectedContactIds = new Set(draft.contactIds || []);
+      const selectedContacts = contacts.filter((contact) => selectedContactIds.has(contact.id));
+      const restoredStep = Math.max(0, Math.min(Number(draft.currentStep) || 0, WIZARD_STEPS.length - 1));
+
+      setState((prev) => ({
+        ...prev,
+        selectedTemplate,
+        selectedCompany,
+        selectedContacts,
+        title: typeof draft.title === 'string' ? draft.title : '',
+        customData: draft.customData && typeof draft.customData === 'object' ? draft.customData : {},
+        useLetterhead: typeof draft.useLetterhead === 'boolean' ? draft.useLetterhead : true,
+        previewContent: typeof draft.previewContent === 'string' ? draft.previewContent : null,
+        editedContent: typeof draft.editedContent === 'string' ? draft.editedContent : null,
+      }));
+      setCurrentStep(restoredStep);
+      setDraftRestored(true);
+    } catch (err) {
+      console.error('Failed to restore document generation draft:', err);
+    }
+  }, [companies, contacts, templates]);
+
+  useEffect(() => {
+    if (!hasLoadedDraftRef.current) return;
+
+    try {
+      if (!state.selectedTemplate && !state.title && Object.keys(state.customData).length === 0) {
+        window.localStorage.removeItem(WIZARD_DRAFT_STORAGE_KEY);
+        return;
+      }
+
+      const draft: WizardDraftState = {
+        templateId: state.selectedTemplate?.id || null,
+        companyId: state.selectedCompany?.id || null,
+        contactIds: state.selectedContacts.map((contact) => contact.id),
+        title: state.title,
+        customData: state.customData,
+        useLetterhead: state.useLetterhead,
+        previewContent: state.previewContent,
+        editedContent: state.editedContent,
+        currentStep,
+        savedAt: new Date().toISOString(),
+      };
+      window.localStorage.setItem(WIZARD_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch (err) {
+      console.error('Failed to save document generation draft:', err);
+    }
+  }, [currentStep, state]);
+
+  const clearWizardDraft = useCallback(() => {
+    try {
+      window.localStorage.removeItem(WIZARD_DRAFT_STORAGE_KEY);
+    } catch (err) {
+      console.error('Failed to clear document generation draft:', err);
+    }
+    setDraftRestored(false);
+  }, []);
 
   // Count filled custom fields for summary
   const filledCustomFieldCount = useMemo(() => {
@@ -700,9 +1021,11 @@ export function DocumentGenerationWizard({
           return state.selectedTemplate !== null;
         case 1: // Company
           return true; // Company is optional
-        case 2: // Customize
+        case 2: // Contacts
+          return true;
+        case 3: // Customize
           return state.title.trim().length > 0;
-        case 3: // Edit & Preview
+        case 4: // Edit & Preview
           return true;
         default:
           return false;
@@ -711,12 +1034,38 @@ export function DocumentGenerationWizard({
     [state.selectedTemplate, state.title]
   );
 
+  const getRequiredCustomFieldErrors = useCallback((): string[] => {
+    if (!state.selectedTemplate) return [];
+
+    const requiredPlaceholders = (state.selectedTemplate.placeholders || []).filter(
+      (placeholder) =>
+        (placeholder.category === 'custom' || placeholder.category === 'Custom') &&
+        placeholder.required
+    );
+
+    return requiredPlaceholders
+      .filter((placeholder) => {
+        const key = placeholder.key.replace(/^custom\./, '');
+        const value = state.customData[key];
+        return value === undefined || value === null || value.trim() === '';
+      })
+      .map((placeholder) => `${placeholder.label} is required`);
+  }, [state.customData, state.selectedTemplate]);
+
   // Handle step navigation
   const goToNextStep = async () => {
     if (!isStepValid(currentStep)) return;
+    const currentStepId = WIZARD_STEPS[currentStep]?.id;
 
     // Generate preview and move to edit step
-    if (currentStep === 2) {
+    if (currentStepId === 'customize') {
+      const fieldErrors = getRequiredCustomFieldErrors();
+      if (fieldErrors.length > 0) {
+        setState((prev) => ({ ...prev, fieldErrors }));
+        return;
+      }
+
+      setState((prev) => ({ ...prev, fieldErrors: [] }));
       setIsValidating(true);
 
       // Optionally validate
@@ -725,7 +1074,8 @@ export function DocumentGenerationWizard({
           const result = await onValidate(
             state.selectedTemplate.id,
             state.selectedCompany?.id,
-            state.customData
+            state.customData,
+            state.selectedContacts.map((contact) => contact.id)
           );
           setState((prev) => ({ ...prev, validationResult: result }));
         } catch (err) {
@@ -739,7 +1089,7 @@ export function DocumentGenerationWizard({
     }
 
     // Generate document at edit step
-    if (currentStep === 3) {
+    if (currentStepId === 'edit') {
       await handleGenerate();
       return;
     }
@@ -763,6 +1113,7 @@ export function DocumentGenerationWizard({
       const requestBody: Record<string, unknown> = {
         templateId: state.selectedTemplate.id,
         companyId: state.selectedCompany?.id,
+        contactIds: state.selectedContacts.map((contact) => contact.id),
         customData: state.customData,
       };
 
@@ -782,6 +1133,9 @@ export function DocumentGenerationWizard({
       setState((prev) => ({
         ...prev,
         previewContent: data.preview?.content || data.content,
+        missingPlaceholders: data.preview?.unresolvedPlaceholders || [],
+        missingPartials: data.preview?.missingPartials || [],
+        blockingErrors: data.preview?.blockingErrors || [],
       }));
     } catch (err) {
       console.error('Preview error:', err);
@@ -801,6 +1155,7 @@ export function DocumentGenerationWizard({
       const result = await onGenerate({
         templateId: state.selectedTemplate.id,
         companyId: state.selectedCompany?.id,
+        contactIds: state.selectedContacts.map((contact) => contact.id),
         title: state.title,
         customData: state.customData,
         useLetterhead: state.useLetterhead,
@@ -809,6 +1164,7 @@ export function DocumentGenerationWizard({
 
       // onGenerate will redirect to the view page
       setState((prev) => ({ ...prev, generatedDocument: result }));
+      clearWizardDraft();
     } catch (err) {
       console.error('Generation error:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate document');
@@ -822,6 +1178,7 @@ export function DocumentGenerationWizard({
     setState({
       selectedTemplate: null,
       selectedCompany: null,
+      selectedContacts: [],
       title: '',
       customData: {},
       useLetterhead: true,
@@ -829,9 +1186,14 @@ export function DocumentGenerationWizard({
       generatedDocument: null,
       previewContent: null,
       editedContent: null,
+      missingPlaceholders: [],
+      missingPartials: [],
+      blockingErrors: [],
+      fieldErrors: [],
     });
     setCurrentStep(0);
     setError(null);
+    clearWizardDraft();
   };
 
   // Render step content
@@ -846,6 +1208,7 @@ export function DocumentGenerationWizard({
               setState((prev) => ({ ...prev, selectedTemplate: template }))
             }
             onPreview={onPreviewTemplate}
+            onSearch={onSearchTemplates}
             isLoading={isLoading}
           />
         );
@@ -858,32 +1221,62 @@ export function DocumentGenerationWizard({
             onSelect={(company) =>
               setState((prev) => ({ ...prev, selectedCompany: company }))
             }
+            onSearch={onSearchCompanies}
           />
         );
 
       case 2:
-        return state.selectedTemplate ? (
-          <CustomDataForm
-            template={state.selectedTemplate}
-            title={state.title}
-            customData={state.customData}
-            useLetterhead={state.useLetterhead}
-            partials={partials}
-            onTitleChange={(title) => setState((prev) => ({ ...prev, title }))}
-            onCustomDataChange={(data) =>
-              setState((prev) => ({ ...prev, customData: data }))
+        return (
+          <ContactSelector
+            contacts={contacts}
+            selected={state.selectedContacts}
+            onChange={(selectedContacts) =>
+              setState((prev) => ({ ...prev, selectedContacts }))
             }
-            onLetterheadChange={(value) =>
-              setState((prev) => ({ ...prev, useLetterhead: value }))
-            }
+            onSearch={onSearchContacts}
           />
-        ) : null;
+        );
 
       case 3:
+        return state.selectedTemplate ? (
+          <div className="space-y-4">
+            {state.fieldErrors.length > 0 && (
+              <div className="p-4 bg-status-error/10 border border-status-error/30 rounded-lg">
+                <div className="flex items-start gap-3 text-status-error">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <ul className="text-sm space-y-1">
+                    {state.fieldErrors.map((message) => (
+                      <li key={message}>{message}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+            <CustomDataForm
+              template={state.selectedTemplate}
+              title={state.title}
+              customData={state.customData}
+              useLetterhead={state.useLetterhead}
+              partials={partials}
+              onTitleChange={(title) => setState((prev) => ({ ...prev, title }))}
+              onCustomDataChange={(data) =>
+                setState((prev) => ({ ...prev, customData: data, fieldErrors: [] }))
+              }
+              onLetterheadChange={(value) =>
+                setState((prev) => ({ ...prev, useLetterhead: value }))
+              }
+            />
+          </div>
+        ) : null;
+
+      case 4:
         return (
           <EditStep
             content={state.previewContent || ''}
             validationResult={state.validationResult}
+            missingPlaceholders={state.missingPlaceholders}
+            missingPartials={state.missingPartials}
+            blockingErrors={state.blockingErrors}
             isLoading={isValidating}
             onChange={(content) =>
               setState((prev) => ({ ...prev, previewContent: content }))
@@ -900,13 +1293,28 @@ export function DocumentGenerationWizard({
   return (
     <div className={cn('flex flex-col', className)}>
       {/* Summary Card (always visible except on complete step) */}
-      {currentStep < 4 && (
+      {currentStep < WIZARD_STEPS.length && (
         <SummaryCard
           template={state.selectedTemplate}
           company={state.selectedCompany}
+          contactCount={state.selectedContacts.length}
           title={state.title}
           customFieldCount={filledCustomFieldCount}
         />
+      )}
+
+      {draftRestored && (
+        <div className="mt-4 p-3 bg-accent-primary/5 border border-accent-primary/20 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-2 text-sm text-text-secondary">
+              <AlertTriangle className="w-4 h-4 mt-0.5 text-accent-primary flex-shrink-0" />
+              <span>Recovered your last unsaved document draft.</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={clearWizardDraft}>
+              Dismiss
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Stepper */}
@@ -936,7 +1344,7 @@ export function DocumentGenerationWizard({
       <div className="flex-1 min-h-[400px]">{renderStepContent()}</div>
 
       {/* Navigation buttons */}
-      {currentStep < 4 && (
+      {currentStep < WIZARD_STEPS.length && (
         <div className="flex items-center justify-between mt-8 pt-4 border-t border-border-secondary">
           <Button
             variant="ghost"
@@ -958,7 +1366,7 @@ export function DocumentGenerationWizard({
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   {isValidating ? 'Processing...' : 'Generating...'}
                 </>
-              ) : currentStep === 3 ? (
+              ) : WIZARD_STEPS[currentStep]?.id === 'edit' ? (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
                   Generate Document

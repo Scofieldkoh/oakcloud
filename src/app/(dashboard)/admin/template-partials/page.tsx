@@ -86,6 +86,15 @@ interface TemplateSearchResult {
   totalPages: number;
 }
 
+interface TemplateStats {
+  health?: {
+    activeTemplatesCanGenerateCleanly: number;
+    activeTemplatesWithMissingPartials: number;
+    missingPartialReferences: Array<{ templateId: string; templateName: string; partialName: string }>;
+    requiredCustomFields: Array<{ templateId: string; templateName: string; key: string; label: string }>;
+  };
+}
+
 // PartialFormData moved to editor page for full-page editing
 
 const CATEGORIES = [
@@ -117,6 +126,18 @@ async function fetchTemplates(
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch templates');
+  }
+  return response.json();
+}
+
+async function fetchTemplateStats(tenantId?: string): Promise<TemplateStats> {
+  const searchParams = new URLSearchParams();
+  if (tenantId) searchParams.set('tenantId', tenantId);
+
+  const response = await fetch(`/api/document-templates/stats?${searchParams}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch template stats');
   }
   return response.json();
 }
@@ -257,12 +278,19 @@ function DocumentTemplatesTab({
     enabled: !!activeTenantId,
   });
 
+  const { data: templateStats } = useQuery({
+    queryKey: ['document-templates-stats', activeTenantId],
+    queryFn: () => fetchTemplateStats(activeTenantId),
+    enabled: !!activeTenantId,
+  });
+
   // Mutations
   const deleteMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       deleteTemplate(id, reason, activeTenantId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['document-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['document-templates-stats'] });
       success('Template deleted successfully');
       setDeletingTemplate(null);
     },
@@ -274,6 +302,7 @@ function DocumentTemplatesTab({
       duplicateTemplate(id, name, activeTenantId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['document-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['document-templates-stats'] });
       success('Template duplicated successfully');
       setDuplicatingTemplate(null);
       setDuplicateName('');
@@ -291,6 +320,7 @@ function DocumentTemplatesTab({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['document-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['document-templates-stats'] });
       success('Template status updated');
     },
     onError: (err: Error) => showError(err.message),
@@ -326,6 +356,7 @@ function DocumentTemplatesTab({
   };
 
   const templates = data?.templates || [];
+  const health = templateStats?.health;
 
   return (
     <div>
@@ -365,6 +396,49 @@ function DocumentTemplatesTab({
           </Button>
         )}
       </div>
+
+      {health && (
+        <div className="card mb-6 border-border-primary bg-background-secondary">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-accent-primary" />
+                <h3 className="text-sm font-medium text-text-primary">Template Health</h3>
+              </div>
+              <p className="text-xs text-text-muted mt-1">
+                {health.activeTemplatesCanGenerateCleanly} active templates can render without missing partials.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+              <div>
+                <p className="text-text-muted text-xs">Missing Partials</p>
+                <p className={cn(
+                  'font-semibold',
+                  health.activeTemplatesWithMissingPartials > 0 ? 'text-status-error' : 'text-status-success'
+                )}>
+                  {health.activeTemplatesWithMissingPartials}
+                </p>
+              </div>
+              <div>
+                <p className="text-text-muted text-xs">Required Fields</p>
+                <p className="font-semibold text-text-primary">{health.requiredCustomFields.length}</p>
+              </div>
+              <div>
+                <p className="text-text-muted text-xs">Last Successful Test</p>
+                <p className="font-semibold text-text-primary">Not tracked</p>
+              </div>
+            </div>
+          </div>
+          {health.missingPartialReferences.length > 0 && (
+            <p className="mt-3 text-xs text-status-error">
+              Missing: {health.missingPartialReferences.slice(0, 3).map((item) => (
+                `${item.templateName} -> ${item.partialName}`
+              )).join(', ')}
+              {health.missingPartialReferences.length > 3 ? '...' : ''}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Loading */}
       {isLoading && (

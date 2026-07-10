@@ -9,6 +9,12 @@
 import { format as formatDate, parseISO } from 'date-fns';
 import { Prisma } from '@/generated/prisma';
 import { Decimal as PrismaDecimal } from '@prisma/client/runtime/client';
+import {
+  PARTIAL_REFERENCE_REGEX,
+  extractPartialReferences,
+  hasPartialReferences,
+  extractTemplatePlaceholderKeys,
+} from '@/lib/template-analysis';
 
 type Decimal = Prisma.Decimal;
 
@@ -25,6 +31,7 @@ export interface PlaceholderContext {
   directors?: OfficerData[];
   secretaries?: OfficerData[];
   shareholders?: ShareholderData[];
+  contacts?: ContactData[];
 }
 
 export interface CompanyData {
@@ -42,6 +49,15 @@ export interface CompanyData {
   financialYearEndDay?: number | null;
   isGstRegistered?: boolean;
   gstRegistrationNumber?: string | null;
+  address?: {
+    block?: string | null;
+    street?: string | null;
+    level?: string | null;
+    unit?: string | null;
+    building?: string | null;
+    postalCode?: string | null;
+  } | null;
+  capital?: Decimal | number | null;
   addresses?: CompanyAddressData[];
   officers?: OfficerData[];
   shareholders?: ShareholderData[];
@@ -51,6 +67,12 @@ export interface CompanyAddressData {
   addressType: string;
   fullAddress: string;
   isCurrent: boolean;
+  block?: string | null;
+  streetName?: string | null;
+  level?: string | null;
+  unit?: string | null;
+  buildingName?: string | null;
+  postalCode?: string | null;
 }
 
 export interface OfficerData {
@@ -118,35 +140,11 @@ const DEFAULT_OPTIONS: ResolveOptions = {
   numberLocale: 'en-SG',
 };
 
-// Regex to find partial references: {{> partial-name}} or {{>partial-name}}
-// Also handles HTML-encoded variants: {{&gt; partial-name}}, {{&#62; partial-name}}, {{&#x3e; partial-name}}
-const PARTIAL_REFERENCE_REGEX = /\{\{(?:>|&gt;|&#62;|&#x3[eE];)\s*([a-zA-Z][a-zA-Z0-9_-]*)\s*\}\}/g;
-
 // ============================================================================
 // Partial Processing
 // ============================================================================
 
-/**
- * Extracts all partial references from template content.
- * Returns array of partial names.
- */
-export function extractPartialReferences(content: string): string[] {
-  const partialNames = new Set<string>();
-  const matches = content.matchAll(PARTIAL_REFERENCE_REGEX);
-
-  for (const match of matches) {
-    partialNames.add(match[1]);
-  }
-
-  return Array.from(partialNames);
-}
-
-/**
- * Checks if content contains any partial references.
- */
-export function hasPartialReferences(content: string): boolean {
-  return PARTIAL_REFERENCE_REGEX.test(content);
-}
+export { extractPartialReferences, hasPartialReferences };
 
 /**
  * Resolves partial references in content using the provided partials map.
@@ -308,8 +306,9 @@ function processEachBlocks(
         // Create context with current item and index
         let itemContent = blockContent;
 
-        // Replace @index, @first, @last
+        // Replace @index, @number, @first, @last
         itemContent = itemContent.replace(/\{\{@index\}\}/g, String(index));
+        itemContent = itemContent.replace(/\{\{@number\}\}/g, String(index + 1));
         itemContent = itemContent.replace(/\{\{@first\}\}/g, String(index === 0));
         itemContent = itemContent.replace(/\{\{@last\}\}/g, String(index === items.length - 1));
 
@@ -372,17 +371,15 @@ function processIfBlocks(
 ): string {
   // Handle if-else blocks
   const ifElseRegex =
-    /\{\{#if\s+([a-zA-Z_][a-zA-Z0-9_.]*)\}\}([\s\S]*?)\{\{else\}\}([\s\S]*?)\{\{\/if\}\}/g;
-  content = content.replace(ifElseRegex, (_, path, trueBlock, falseBlock) => {
-    const value = getValueByPath(context, path);
-    return isTruthy(value) ? trueBlock : falseBlock;
+    /\{\{#if\s+([^}]+?)\}\}([\s\S]*?)\{\{else\}\}([\s\S]*?)\{\{\/if\}\}/g;
+  content = content.replace(ifElseRegex, (_, expression, trueBlock, falseBlock) => {
+    return evaluateCondition(expression, context) ? trueBlock : falseBlock;
   });
 
   // Handle simple if blocks (no else)
-  const ifRegex = /\{\{#if\s+([a-zA-Z_][a-zA-Z0-9_.]*)\}\}([\s\S]*?)\{\{\/if\}\}/g;
-  content = content.replace(ifRegex, (_, path, block) => {
-    const value = getValueByPath(context, path);
-    return isTruthy(value) ? block : '';
+  const ifRegex = /\{\{#if\s+([^}]+?)\}\}([\s\S]*?)\{\{\/if\}\}/g;
+  content = content.replace(ifRegex, (_, expression, block) => {
+    return evaluateCondition(expression, context) ? block : '';
   });
 
   // Handle unless blocks (inverse of if)
@@ -393,6 +390,20 @@ function processIfBlocks(
   });
 
   return content;
+}
+
+function evaluateCondition(expression: string, context: PlaceholderContext): boolean {
+  const trimmed = expression.trim();
+  const comparison = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\s*(==|!=)\s*(['"]?)(.*?)\3$/);
+
+  if (comparison) {
+    const [, path, operator, , expected] = comparison;
+    const actual = getValueByPath(context, path);
+    const actualText = formatValue(actual, DEFAULT_OPTIONS) ?? '';
+    return operator === '==' ? actualText === expected : actualText !== expected;
+  }
+
+  return isTruthy(getValueByPath(context, trimmed));
 }
 
 /**
@@ -440,9 +451,15 @@ const VALUE_MODIFIERS: Record<string, (value: string) => string> = {
   LCASE: (v) => v.toLowerCase(),
   LOWERCASE: (v) => v.toLowerCase(),
   CAPITALIZE: (v) => v.charAt(0).toUpperCase() + v.slice(1).toLowerCase(),
-  TITLECASE: (v) => v.replace(/\b\w/g, (c) => c.toUpperCase()),
+  PCASE: (v) => toProperCase(v),
+  PROPERCASE: (v) => toProperCase(v),
+  TITLECASE: (v) => toProperCase(v),
   TRIM: (v) => v.trim(),
 };
+
+function toProperCase(value: string): string {
+  return value.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 /**
  * Process MODIFIER({{placeholder}}) syntax - modifier wraps the placeholder from outside
@@ -653,61 +670,7 @@ function isTruthy(value: unknown): boolean {
  * Extracts all placeholder keys from template content.
  */
 export function extractPlaceholders(content: string): string[] {
-  const placeholders = new Set<string>();
-
-  // Loop-context-only placeholders that should be skipped (used inside {{#each}} blocks)
-  const loopOnlyPlaceholders = [
-    'this.name', 'this.identificationNumber', 'this.nationality', 'this.address',
-    'this.role', 'this.shareClass', 'this.numberOfShares', 'this.percentageHeld',
-    'this.appointmentDate', 'this.cessationDate', 'this.email', 'this.phone',
-    // Short forms used inside loops
-    'name', 'identificationNumber', 'nationality', 'address', 'role',
-    'shareClass', 'numberOfShares', 'percentageHeld', 'appointmentDate',
-    'cessationDate', 'email', 'phone'
-  ];
-
-  // Placeholders with internal modifiers: {{UCASE(company.name)}}
-  const internalModifierRegex = /\{\{[A-Z_]+\(([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\)\}\}/g;
-  let match;
-  while ((match = internalModifierRegex.exec(content)) !== null) {
-    const placeholder = match[1];
-    if (!loopOnlyPlaceholders.includes(placeholder)) {
-      placeholders.add(placeholder);
-    }
-  }
-
-  // Placeholders with external modifiers: UCASE({{company.name}})
-  const externalModifierRegex = /[A-Z_]+\(\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}\)/g;
-  while ((match = externalModifierRegex.exec(content)) !== null) {
-    const placeholder = match[1];
-    if (!loopOnlyPlaceholders.includes(placeholder)) {
-      placeholders.add(placeholder);
-    }
-  }
-
-  // Simple placeholders: {{company.name}}
-  const simpleRegex = /\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}/g;
-  while ((match = simpleRegex.exec(content)) !== null) {
-    const placeholder = match[1];
-    // Skip helpers, loop-context placeholders, and Handlebars keywords
-    if (
-      !placeholder.startsWith('#') &&
-      !placeholder.startsWith('/') &&
-      !placeholder.startsWith('@') &&
-      !loopOnlyPlaceholders.includes(placeholder) &&
-      !['if', 'each', 'unless', 'with', 'else'].includes(placeholder)
-    ) {
-      placeholders.add(placeholder);
-    }
-  }
-
-  // Block paths: {{#each directors}}
-  const blockRegex = /\{\{#(each|with)\s+([a-zA-Z_][a-zA-Z0-9_.]*)\}\}/g;
-  while ((match = blockRegex.exec(content)) !== null) {
-    placeholders.add(match[2]);
-  }
-
-  return Array.from(placeholders);
+  return extractTemplatePlaceholderKeys(content);
 }
 
 // ============================================================================
@@ -753,12 +716,26 @@ export function prepareCompanyContext(company: CompanyData): PlaceholderContext 
   const secretaries = getCurrentSecretaries(company.officers || []);
   const shareholders = getCurrentShareholders(company.shareholders || []);
   const registeredAddress = getRegisteredAddress(company.addresses || []);
+  const registeredAddressRecord = (company.addresses || []).find(
+    (a) => a.addressType === 'REGISTERED_OFFICE' && a.isCurrent
+  ) || (company.addresses || []).find((a) => a.isCurrent);
 
   return {
     company: {
       ...company,
       // Add convenience accessors
       registeredAddress,
+      address: registeredAddressRecord
+        ? {
+            block: registeredAddressRecord.block ?? null,
+            street: registeredAddressRecord.streetName ?? null,
+            level: registeredAddressRecord.level ?? null,
+            unit: registeredAddressRecord.unit ?? null,
+            building: registeredAddressRecord.buildingName ?? null,
+            postalCode: registeredAddressRecord.postalCode ?? null,
+          }
+        : null,
+      capital: company.paidUpCapitalAmount ?? company.issuedCapitalAmount ?? null,
     } as CompanyData,
     // Add directors/shareholders/secretaries at root level for {{#each directors}} syntax
     directors,

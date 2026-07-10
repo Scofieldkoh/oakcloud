@@ -13,12 +13,15 @@ export const generatedDocumentStatusEnum = z.enum(['DRAFT', 'FINALIZED', 'ARCHIV
 export const createDocumentFromTemplateSchema = z.object({
   templateId: z.string().uuid(),
   companyId: z.string().uuid().optional().nullable(),
+  contactIds: z.array(z.string().uuid()).optional().default([]),
   title: z.string().min(1, 'Title is required').max(300),
   customData: z.record(z.unknown()).optional(), // Custom placeholder values
   useLetterhead: z.boolean().default(true),
+  editedContent: z.string().optional(),
+  editedContentJson: z.any().optional().nullable(),
 });
 
-export type CreateDocumentFromTemplateInput = z.infer<typeof createDocumentFromTemplateSchema>;
+export type CreateDocumentFromTemplateInput = z.input<typeof createDocumentFromTemplateSchema>;
 
 // ============================================================================
 // Create Blank Document

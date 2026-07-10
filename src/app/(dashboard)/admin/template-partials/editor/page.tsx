@@ -2105,265 +2105,45 @@ function TemplateEditorContent() {
 
     setIsPreviewLoading(true);
     try {
-      let preview = formData.content;
-      const { company, directors, shareholders, custom, system } = mockData;
-
-      // Pattern to match # and its HTML-encoded variants (&#35; or &#x23;)
-      // Used for conditionals ({{#if}}) and loops ({{#each}})
-      const hashPattern = '(?:#|&#35;|&#x23;)';
-
-      // Resolve partials first ({{>partial-name}}) so their content also gets placeholder processing
-      // Get partials from the query data
-      const availablePartials = partialsData?.partials || [];
-
-      // Handle raw > and all HTML-encoded variations (rich text editors encode special chars)
-      // Pattern: {{> partial-name }} or {{&gt; partial-name }} or {{&#62; partial-name }} or {{&#x3e; partial-name }}
-      const partialRegex = /\{\{(?:>|&gt;|&#62;|&#x3[eE];)\s*([a-zA-Z0-9_-]+)\s*\}\}/g;
-      preview = preview.replace(partialRegex, (_match, partialName) => {
-        const partial = availablePartials.find((p: TemplatePartial) => p.name === partialName);
-        if (partial?.content) {
-          // Return the partial content (HTML preserved)
-          return partial.content;
-        }
-        // If partial not found, return a placeholder message
-        return `<span style="color: #ef4444; background: #fef2f2; padding: 2px 6px; border-radius: 4px; font-size: 12px;">[Partial "${partialName}" not found]</span>`;
+      const response = await fetch('/api/document-templates/render-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: formData.content,
+          name: formData.name || 'Unsaved template',
+          category: formData.category,
+          customData: mockData.custom,
+          context: mockData,
+        }),
       });
 
-      // Company placeholders
-      preview = preview.replace(/\{\{company\.name\}\}/g, company.name || '');
-      preview = preview.replace(/\{\{company\.uen\}\}/g, company.uen || '');
-      preview = preview.replace(/\{\{company\.registeredAddress\}\}/g, company.registeredAddress || '');
-      preview = preview.replace(/\{\{company\.entityType\}\}/g, company.entityType || '');
-      preview = preview.replace(/\{\{company\.capital\}\}/g, company.capital ? `$${company.capital.toLocaleString()}` : '');
-      preview = preview.replace(/\{\{company\.incorporationDate\}\}/g, company.incorporationDate ? new Date(company.incorporationDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to generate preview');
+      }
 
-      // Address breakdown placeholders
-      preview = preview.replace(/\{\{company\.address\.block\}\}/g, company.address?.block || '');
-      preview = preview.replace(/\{\{company\.address\.street\}\}/g, company.address?.street || '');
-      preview = preview.replace(/\{\{company\.address\.level\}\}/g, company.address?.level || '');
-      preview = preview.replace(/\{\{company\.address\.unit\}\}/g, company.address?.unit || '');
-      preview = preview.replace(/\{\{company\.address\.building\}\}/g, company.address?.building || '');
-      preview = preview.replace(/\{\{company\.address\.postalCode\}\}/g, company.address?.postalCode || '');
+      const data = await response.json();
+      let renderedPreview = data.preview?.content || data.preview?.contentHtml || '<p>No content to preview</p>';
 
-      // User-defined custom placeholders (dynamic) - use merged placeholders if available
-      const customData = custom as unknown as Record<string, string | number | undefined>;
-      const placeholdersToProcess = mergedPlaceholders.length > 0 ? mergedPlaceholders : formData.customPlaceholders;
-      placeholdersToProcess.forEach((placeholder) => {
-        const regex = new RegExp(`\\{\\{custom\\.${placeholder.key}\\}\\}`, 'g');
-        let value = customData[placeholder.key] || '';
-
-        // Format based on type
-        if (placeholder.type === 'date' && value) {
-          try {
-            value = new Date(value as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-          } catch {
-            // Keep original value if date parsing fails
-          }
-        } else if ((placeholder.type === 'currency' || placeholder.type === 'number') && value) {
-          const num = Number(value);
-          if (!isNaN(num)) {
-            value = placeholder.type === 'currency' ? `$${num.toLocaleString()}` : num.toLocaleString();
-          }
-        } else if (placeholder.type === 'boolean') {
-          // Boolean values render as 'true'/'false' for conditionals
-          // The value is already stored as 'true' or 'false' string
-          value = value === 'true' || value === '1' ? 'true' : 'false';
-        }
-
-        preview = preview.replace(regex, String(value));
-      });
-
-      // System placeholders
-      preview = preview.replace(/\{\{system\.currentDate\}\}/g, new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }));
-      preview = preview.replace(/\{\{system\.generatedBy\}\}/g, system.generatedBy || '');
-
-      // Indexed director placeholders (directors[0], directors[1], etc.)
-      directors.forEach((director, index) => {
-        preview = preview.replace(new RegExp(`\\{\\{directors\\[${index}\\]\\.name\\}\\}`, 'g'), director.name || '');
-        preview = preview.replace(new RegExp(`\\{\\{directors\\[${index}\\]\\.identificationNumber\\}\\}`, 'g'), director.identificationNumber || '');
-        preview = preview.replace(new RegExp(`\\{\\{directors\\[${index}\\]\\.nationality\\}\\}`, 'g'), director.nationality || '');
-        preview = preview.replace(new RegExp(`\\{\\{directors\\[${index}\\]\\.address\\}\\}`, 'g'), director.address || '');
-        preview = preview.replace(new RegExp(`\\{\\{directors\\[${index}\\]\\.role\\}\\}`, 'g'), director.role || '');
-      });
-
-      // Indexed shareholder placeholders (shareholders[0], shareholders[1], etc.)
-      shareholders.forEach((shareholder, index) => {
-        preview = preview.replace(new RegExp(`\\{\\{shareholders\\[${index}\\]\\.name\\}\\}`, 'g'), shareholder.name || '');
-        preview = preview.replace(new RegExp(`\\{\\{shareholders\\[${index}\\]\\.identificationNumber\\}\\}`, 'g'), shareholder.identificationNumber || '');
-        preview = preview.replace(new RegExp(`\\{\\{shareholders\\[${index}\\]\\.nationality\\}\\}`, 'g'), shareholder.nationality || '');
-        preview = preview.replace(new RegExp(`\\{\\{shareholders\\[${index}\\]\\.shareClass\\}\\}`, 'g'), shareholder.shareClass || '');
-        preview = preview.replace(new RegExp(`\\{\\{shareholders\\[${index}\\]\\.numberOfShares\\}\\}`, 'g'), shareholder.numberOfShares?.toLocaleString() || '');
-        preview = preview.replace(new RegExp(`\\{\\{shareholders\\[${index}\\]\\.percentageHeld\\}\\}`, 'g'), shareholder.percentageHeld ? `${shareholder.percentageHeld}%` : '');
-      });
-
-      // Handle director loops - support both {{name}} and {{this.name}} syntax
-      // Also handle HTML-encoded # as &#35; or &#x23;
-      const directorLoopRegex = new RegExp(`\\{\\{${hashPattern}each directors\\}\\}([\\s\\S]*?)\\{\\{\\/${hashPattern}?each\\}\\}`, 'gi');
-      preview = preview.replace(directorLoopRegex, (_match, template) => {
-        return directors.map((director, index) => {
-          let item = template;
-          // Support both {{this.field}} and {{field}} syntax
-          item = item.replace(/\{\{(?:this\.)?name\}\}/g, director.name || '');
-          item = item.replace(/\{\{(?:this\.)?identificationNumber\}\}/g, director.identificationNumber || '');
-          item = item.replace(/\{\{(?:this\.)?nationality\}\}/g, director.nationality || '');
-          item = item.replace(/\{\{(?:this\.)?address\}\}/g, director.address || '');
-          item = item.replace(/\{\{(?:this\.)?role\}\}/g, director.role || '');
-          item = item.replace(/\{\{@index\}\}/g, String(index));
-          item = item.replace(/\{\{@number\}\}/g, String(index + 1));
-          return item;
-        }).join('');
-      });
-
-      // Handle shareholder loops - support both {{name}} and {{this.name}} syntax
-      const shareholderLoopRegex = new RegExp(`\\{\\{${hashPattern}each shareholders\\}\\}([\\s\\S]*?)\\{\\{\\/${hashPattern}?each\\}\\}`, 'gi');
-      preview = preview.replace(shareholderLoopRegex, (_match, template) => {
-        return shareholders.map((shareholder, index) => {
-          let item = template;
-          // Support both {{this.field}} and {{field}} syntax
-          item = item.replace(/\{\{(?:this\.)?name\}\}/g, shareholder.name || '');
-          item = item.replace(/\{\{(?:this\.)?identificationNumber\}\}/g, shareholder.identificationNumber || '');
-          item = item.replace(/\{\{(?:this\.)?nationality\}\}/g, shareholder.nationality || '');
-          item = item.replace(/\{\{(?:this\.)?shareClass\}\}/g, shareholder.shareClass || '');
-          item = item.replace(/\{\{(?:this\.)?numberOfShares\}\}/g, shareholder.numberOfShares?.toLocaleString() || '');
-          item = item.replace(/\{\{(?:this\.)?percentageHeld\}\}/g, shareholder.percentageHeld ? `${shareholder.percentageHeld}%` : '');
-          item = item.replace(/\{\{@index\}\}/g, String(index));
-          item = item.replace(/\{\{@number\}\}/g, String(index + 1));
-          return item;
-        }).join('');
-      });
-
-      // Helper to get value by path
-      const getValueByPath = (path: string): unknown => {
-        const context: Record<string, unknown> = { company, directors, shareholders, custom, system };
-        const value = path.trim().split('.').reduce<unknown>((obj, key) => {
-          if (obj && typeof obj === 'object') return (obj as Record<string, unknown>)[key];
-          return undefined;
-        }, context);
-
-        // For custom placeholders, fall back to defaultValue if value is undefined
-        // Use merged placeholders if available for better coverage
-        if (value === undefined && path.startsWith('custom.')) {
-          const customKey = path.replace('custom.', '');
-          const allPlaceholders = mergedPlaceholders.length > 0 ? mergedPlaceholders : formData.customPlaceholders;
-          const placeholder = allPlaceholders.find(p => p.key === customKey);
-          if (placeholder?.defaultValue !== undefined) {
-            return placeholder.defaultValue;
-          }
-        }
-
-        return value;
-      };
-
-      // Helper to strip HTML tags from expression (rich text editors wrap text in spans)
-      const stripHtmlTags = (str: string): string => {
-        return str.replace(/<[^>]*>/g, '').trim();
-      };
-
-      // Helper to evaluate conditional expressions (supports == and != comparisons)
-      const evaluateCondition = (expression: string): boolean => {
-        // Strip HTML tags that rich text editors may have inserted
-        const cleanExpression = stripHtmlTags(expression);
-
-        // Check for comparison operators
-        const eqMatch = cleanExpression.match(/^(.+?)\s*==\s*['"](.+?)['"]$/);
-        const neqMatch = cleanExpression.match(/^(.+?)\s*!=\s*['"](.+?)['"]$/);
-
-        if (eqMatch) {
-          const [, fieldPath, compareValue] = eqMatch;
-          const value = getValueByPath(fieldPath);
-          return String(value) === compareValue;
-        }
-
-        if (neqMatch) {
-          const [, fieldPath, compareValue] = neqMatch;
-          const value = getValueByPath(fieldPath);
-          return String(value) !== compareValue;
-        }
-
-        // Simple truthy check (handle string boolean values)
-        const value = getValueByPath(cleanExpression);
-        if (value === 'false' || value === '0' || value === false) return false;
-        return !!value;
-      };
-
-      // Handle conditionals - {{#if field}}...{{/if}} and {{#if field}}...{{else}}...{{/if}}
-      const ifElseRegex = new RegExp(`\\{\\{${hashPattern}if\\s+([^}]+)\\}\\}([\\s\\S]*?)\\{\\{else\\}\\}([\\s\\S]*?)\\{\\{\\/${hashPattern}?if\\}\\}`, 'gi');
-      preview = preview.replace(ifElseRegex, (_match, expression, ifContent, elseContent) => {
-        return evaluateCondition(expression) ? ifContent : elseContent;
-      });
-
-      const ifRegex = new RegExp(`\\{\\{${hashPattern}if\\s+([^}]+)\\}\\}([\\s\\S]*?)\\{\\{\\/${hashPattern}?if\\}\\}`, 'gi');
-      preview = preview.replace(ifRegex, (_match, expression, content) => {
-        return evaluateCondition(expression) ? content : '';
-      });
-
-      // Handle {{#unless field}}...{{/unless}} (opposite of if)
-      const unlessRegex = new RegExp(`\\{\\{${hashPattern}unless\\s+([^}]+)\\}\\}([\\s\\S]*?)\\{\\{\\/${hashPattern}?unless\\}\\}`, 'gi');
-      preview = preview.replace(unlessRegex, (_match, expression, content) => {
-        return !evaluateCondition(expression) ? content : '';
-      });
-
-      // Text modifiers - UCASE(), LCASE(), PCASE()
-      // Helper for proper case conversion
-      const toProperCase = (str: string): string => {
-        return str.replace(/\w\S*/g, (txt) =>
-          txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase()
-        );
-      };
-
-      // Process UCASE modifier - converts text to uppercase
-      const ucaseRegex = /UCASE\(([^)]+)\)/g;
-      preview = preview.replace(ucaseRegex, (_match, content) => {
-        return content.toUpperCase();
-      });
-
-      // Process LCASE modifier - converts text to lowercase
-      const lcaseRegex = /LCASE\(([^)]+)\)/g;
-      preview = preview.replace(lcaseRegex, (_match, content) => {
-        return content.toLowerCase();
-      });
-
-      // Process PCASE modifier - converts text to proper/title case
-      const pcaseRegex = /PCASE\(([^)]+)\)/g;
-      preview = preview.replace(pcaseRegex, (_match, content) => {
-        return toProperCase(content);
-      });
-
-      // Preserve empty paragraphs by replacing empty <p></p> with <p>&nbsp;</p>
-      preview = preview.replace(/<p><\/p>/g, '<p>&nbsp;</p>');
-      preview = preview.replace(/<p>\s*<\/p>/g, '<p>&nbsp;</p>');
-
-      // Remove pages marked with [Remove Page]
-      // Split by page breaks, filter out pages that only contain [Remove Page], rejoin
-      const PAGE_BREAK_MARKER = '<!-- PAGE_BREAK -->';
-
-      // Normalize page breaks to a consistent marker for splitting
-      const normalizedPreview = preview.replace(/<div[^>]*class\s*=\s*["'][^"']*page-break[^"']*["'][^>]*>(?:<\/div>)?/gi, PAGE_BREAK_MARKER);
-
-      // Split into pages
+      // Preserve the editor's page filtering behavior after the shared renderer has resolved content.
+      const PAGE_BREAK_MARKER = '[[PAGE_BREAK_MARKER]]';
+      const normalizedPreview = renderedPreview.replace(/<div[^>]*class\s*=\s*["'][^"']*page-break[^"']*["'][^>]*>(?:<\/div>)?/gi, PAGE_BREAK_MARKER);
       const pages = normalizedPreview.split(PAGE_BREAK_MARKER);
-
-      // Filter out pages that only contain [Remove Page] (ignoring HTML tags and whitespace)
-      const filteredPages = pages.filter(pageContent => {
-        // Strip HTML tags and check if the text content is just [Remove Page]
+      const filteredPages = pages.filter((pageContent: string) => {
         const textContent = pageContent.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
-        return !/^\[Remove\s*Page\]$/i.test(textContent);
+        return textContent !== '[Remove Page]';
       });
+      renderedPreview = filteredPages.join('<div class="page-break"></div>');
 
-      // Rejoin with page break divs
-      preview = filteredPages.join('<div class="page-break"></div>');
-
-      setPreviewContent(preview);
-      // Preview will be shown inline in the A4PageEditor via the previewContent prop
+      setPreviewContent(renderedPreview);
     } catch (error) {
       console.error('Preview error:', error);
       setPreviewContent('<p class="text-red-500">Error generating preview</p>');
     } finally {
       setIsPreviewLoading(false);
     }
-  }, [formData.content, formData.customPlaceholders, mockData, partialsData, mergedPlaceholders]);
+  }, [formData.category, formData.content, formData.name, mockData]);
 
-  // Handle save
   // Helper to convert custom placeholders to storage format
   const customPlaceholdersToStorageFormat = (
     customPlaceholders: CustomPlaceholderDefinition[]

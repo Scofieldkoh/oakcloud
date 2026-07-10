@@ -4,11 +4,11 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import {
-  resolvePlaceholders,
   extractPlaceholders,
   type PlaceholderContext,
 } from '@/lib/placeholder-resolver';
-import { extractSections, addSectionAnchors } from '@/services/document-validation.service';
+import { resolvePartials } from '@/services/template-partial.service';
+import { renderTemplateForGeneration } from '@/services/document-generator.service';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -248,8 +248,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Template not found' }, { status: 404 });
     }
 
-    // Extract placeholders from template
-    const placeholderKeys = extractPlaceholders(template.content);
+    let contentWithPartials = template.content;
+    try {
+      contentWithPartials = await resolvePartials(template.content, tenantId);
+    } catch (partialError) {
+      console.warn('Failed to resolve partials for template test:', partialError);
+    }
+
+    // Extract placeholders from template with partials resolved
+    const placeholderKeys = extractPlaceholders(contentWithPartials);
 
     // Build context with sample or real data
     let companyData: TestCompanyData = SAMPLE_COMPANY_DATA;
@@ -350,20 +357,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
     };
 
-    // Resolve placeholders
-    const { resolved, missing } = resolvePlaceholders(template.content, context);
-
-    // Add section anchors
-    const contentWithAnchors = addSectionAnchors(resolved);
-
-    // Extract sections
-    const sections = extractSections(contentWithAnchors);
+    const rendered = await renderTemplateForGeneration({
+      templateId: id,
+      tenantId,
+      customData: data.customData,
+      contextOverride: context,
+      generatedBy: `${session.firstName} ${session.lastName}`.trim(),
+      mode: 'test',
+    });
 
     return NextResponse.json({
       test: {
-        content: contentWithAnchors,
-        sections,
-        unresolvedPlaceholders: missing,
+        content: rendered.content,
+        sections: rendered.sections,
+        unresolvedPlaceholders: rendered.missingPlaceholders,
+        missingPartials: rendered.missingPartials,
+        blockingErrors: rendered.blockingErrors,
         usingSampleData,
       },
       template: {

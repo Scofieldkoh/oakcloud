@@ -3,8 +3,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     generatedDocument: {
+      create: vi.fn(),
+      update: vi.fn(),
+      findFirst: vi.fn(),
       findMany: vi.fn(),
       count: vi.fn(),
+    },
+    documentTemplate: {
+      findFirst: vi.fn(),
+    },
+    contact: {
+      findMany: vi.fn(),
     },
   },
 }));
@@ -34,13 +43,32 @@ vi.mock('@/lib/encryption', () => ({
 }));
 
 import { prisma } from '@/lib/prisma';
-import { searchGeneratedDocuments } from '@/services/document-generator.service';
+import {
+  createDocumentFromTemplate,
+  finalizeDocument,
+  renderTemplateForGeneration,
+  searchGeneratedDocuments,
+} from '@/services/document-generator.service';
+import { extractPartialReferences, resolvePlaceholders } from '@/lib/placeholder-resolver';
+import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
 
 describe('Document generator service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(prisma.generatedDocument.findMany).mockResolvedValue([]);
     vi.mocked(prisma.generatedDocument.count).mockResolvedValue(0);
+    vi.mocked(prisma.generatedDocument.update).mockResolvedValue({
+      id: 'doc-1',
+      title: 'Updated document',
+      companyId: null,
+    } as never);
+    vi.mocked(getPartialsUsedInTemplate).mockResolvedValue([]);
+    vi.mocked(resolvePlaceholders).mockReturnValue({
+      resolved: '<p>Resolved template content</p>',
+      missing: [],
+      missingPartials: [],
+    });
+    vi.mocked(prisma.contact.findMany).mockResolvedValue([]);
   });
 
   it('requires a workspace id for generated document search', async () => {
@@ -89,5 +117,193 @@ describe('Document generator service', () => {
         deletedAt: null,
       }),
     });
+  });
+
+  it('creates template-generated documents as editable drafts', async () => {
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: 'template-1',
+      tenantId: 'workspace-1',
+      name: 'Resolution',
+      content: '<p>{{company.name}}</p>',
+      contentJson: null,
+      version: 3,
+      isActive: true,
+    } as never);
+    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({
+      id: 'doc-1',
+      status: 'DRAFT',
+    } as never);
+
+    const document = await createDocumentFromTemplate(
+      {
+        templateId: 'template-1',
+        title: 'Generated resolution',
+        customData: {},
+        useLetterhead: true,
+      },
+      { tenantId: 'workspace-1', userId: 'user-1' }
+    );
+
+    expect(document.status).toBe('DRAFT');
+    expect(prisma.generatedDocument.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'DRAFT' }),
+      })
+    );
+  });
+
+  it('persists user-edited preview content when supplied', async () => {
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: 'template-1',
+      tenantId: 'workspace-1',
+      name: 'Resolution',
+      content: '<p>Original {{custom.value}}</p>',
+      contentJson: { type: 'doc', content: [] },
+      version: 1,
+      isActive: true,
+    } as never);
+    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({
+      id: 'doc-1',
+    } as never);
+
+    await createDocumentFromTemplate(
+      {
+        templateId: 'template-1',
+        title: 'Edited document',
+        customData: { value: 'value' },
+        useLetterhead: false,
+        editedContent: '<p>User edited content</p>',
+        editedContentJson: { type: 'doc', content: [{ type: 'paragraph' }] },
+      },
+      { tenantId: 'workspace-1', userId: 'user-1' }
+    );
+
+    expect(prisma.generatedDocument.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          content: '<p>User edited content</p>',
+          contentJson: { type: 'doc', content: [{ type: 'paragraph' }] },
+        }),
+      })
+    );
+  });
+
+  it('does not finalize documents with unresolved placeholders or partials', async () => {
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
+      id: 'doc-1',
+      tenantId: 'workspace-1',
+      title: 'Incomplete document',
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: {
+        missingPlaceholders: ['company.name'],
+        missingPartials: ['signing-block'],
+      },
+    } as never);
+
+    await expect(
+      finalizeDocument('doc-1', { tenantId: 'workspace-1', userId: 'user-1' })
+    ).rejects.toThrow('Cannot finalize document with unresolved placeholders or partials');
+
+    expect(prisma.generatedDocument.update).not.toHaveBeenCalled();
+  });
+
+  it('renders templates through one shared path with contacts, sections, and unresolved data', async () => {
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: 'template-1',
+      tenantId: 'workspace-1',
+      name: 'Resolution',
+      category: 'RESOLUTION',
+      content: '<h1>{{contact.fullName}}</h1><p>{{> signing-block}}</p>',
+      contentJson: null,
+      version: 1,
+      isActive: true,
+    } as never);
+    vi.mocked(prisma.contact.findMany).mockResolvedValue([
+      {
+        id: 'contact-1',
+        firstName: 'Jane',
+        lastName: 'Tan',
+        fullName: 'Jane Tan',
+        contactType: 'CLIENT',
+        fullAddress: '1 Example Road',
+        nationality: 'Singaporean',
+        identificationNumber: 'S1234567A',
+        contactDetails: [{ detailType: 'EMAIL', value: 'jane@example.com' }],
+      },
+    ] as never);
+    vi.mocked(getPartialsUsedInTemplate).mockResolvedValue([
+      { name: 'signing-block', content: '<p>{{missing.value}}</p>' },
+    ] as never);
+    vi.mocked(extractPartialReferences).mockReturnValue(['signing-block']);
+    vi.mocked(resolvePlaceholders).mockReturnValue({
+      resolved: '<h1>Jane Tan</h1><p><span class="placeholder-missing">[missing.value]</span></p>',
+      missing: ['missing.value'],
+      missingPartials: [],
+    });
+
+    const result = await renderTemplateForGeneration({
+      templateId: 'template-1',
+      tenantId: 'workspace-1',
+      contactIds: ['contact-1'],
+      customData: {},
+      mode: 'preview',
+    });
+
+    expect(resolvePlaceholders).toHaveBeenCalledWith(
+      '<h1>{{contact.fullName}}</h1><p>{{> signing-block}}</p>',
+      expect.objectContaining({
+        contact: expect.objectContaining({ fullName: 'Jane Tan' }),
+        contacts: [expect.objectContaining({ fullName: 'Jane Tan' })],
+      }),
+      expect.objectContaining({
+        missingPlaceholder: 'highlight',
+        partialsMap: new Map([['signing-block', '<p>{{missing.value}}</p>']]),
+      })
+    );
+    expect(result.content).toContain('id="section-0"');
+    expect(result.sections).toEqual([
+      expect.objectContaining({ id: 'section-0', title: 'Jane Tan', level: 1 }),
+    ]);
+    expect(result.missingPlaceholders).toEqual(['missing.value']);
+    expect(result.contextSummary).toEqual({
+      hasCompany: false,
+      hasContacts: true,
+      hasCustomData: false,
+    });
+    expect(result.blockingErrors).toContain('Unresolved placeholders: missing.value');
+  });
+
+  it('renders unsaved template content through the shared path', async () => {
+    vi.mocked(extractPartialReferences).mockReturnValue([]);
+    vi.mocked(resolvePlaceholders).mockReturnValue({
+      resolved: '<h1>Preview Draft</h1>',
+      missing: [],
+      missingPartials: [],
+    });
+
+    const result = await renderTemplateForGeneration({
+      tenantId: 'workspace-1',
+      templateContent: '<h1>{{custom.title}}</h1>',
+      templateName: 'Editor draft',
+      customData: { title: 'Preview Draft' },
+      mode: 'test',
+    });
+
+    expect(prisma.documentTemplate.findFirst).not.toHaveBeenCalled();
+    expect(resolvePlaceholders).toHaveBeenCalledWith(
+      '<h1>{{custom.title}}</h1>',
+      expect.objectContaining({
+        custom: expect.objectContaining({ title: 'Preview Draft' }),
+      }),
+      expect.objectContaining({ missingPlaceholder: 'highlight' })
+    );
+    expect(result.template).toEqual({
+      id: 'ad-hoc',
+      name: 'Editor draft',
+      category: 'OTHER',
+      version: 1,
+    });
+    expect(result.content).toContain('Preview Draft');
   });
 });

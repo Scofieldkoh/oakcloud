@@ -103,6 +103,35 @@ describe('Generated documents workspace scoping', () => {
     );
   });
 
+  it('forwards contact ids and edited preview content when creating from a template', async () => {
+    const response = await createGeneratedDocument(
+      request('http://localhost/api/generated-documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templateId,
+          title: 'Generated document',
+          customData: { resolutionNumber: '2026-001' },
+          useLetterhead: true,
+          contactIds: ['44444444-4444-4444-8444-444444444444'],
+          editedContent: '<p>User edited preview</p>',
+          editedContentJson: { type: 'doc', content: [] },
+        }),
+      })
+    );
+
+    expect(response.status).toBe(201);
+    expect(createDocumentFromTemplate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        templateId,
+        contactIds: ['44444444-4444-4444-8444-444444444444'],
+        editedContent: '<p>User edited preview</p>',
+        editedContentJson: { type: 'doc', content: [] },
+      }),
+      { tenantId: workspaceId, userId: mockSession.id }
+    );
+  });
+
   it('ignores tenantId query params on document detail routes', async () => {
     const response = await getGeneratedDocument(
       request(`http://localhost/api/generated-documents/doc-1?tenantId=${attackerWorkspaceId}`),

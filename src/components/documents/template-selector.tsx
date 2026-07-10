@@ -27,6 +27,9 @@ export interface DocumentTemplate {
     category: string;
     type: string;
     required: boolean;
+    defaultValue?: string;
+    linkedTo?: string;
+    sourcePartial?: string;
   }>;
   isActive: boolean;
   version: number;
@@ -46,6 +49,7 @@ export interface TemplateSelectorProps {
   selectedTemplate?: DocumentTemplate | null;
   onSelect: (template: DocumentTemplate) => void;
   onPreview?: (template: DocumentTemplate) => void;
+  onSearch?: (query: string) => void | Promise<void>;
   isLoading?: boolean;
   className?: string;
   showCategories?: boolean;
@@ -290,6 +294,7 @@ export function TemplateSelector({
   selectedTemplate,
   onSelect,
   onPreview,
+  onSearch,
   isLoading = false,
   className,
   showCategories = true,
@@ -339,7 +344,8 @@ export function TemplateSelector({
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
     setPage(1);
-  }, []);
+    void onSearch?.(value);
+  }, [onSearch]);
 
   const handleCategoryChange = useCallback((category: string | null) => {
     setSelectedCategory(category);

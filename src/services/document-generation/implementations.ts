@@ -35,6 +35,7 @@ import {
   unfinalizeDocument,
   cloneDocument,
   getGeneratedDocumentById,
+  renderTemplateForGeneration,
 } from '@/services/document-generator.service';
 
 import {
@@ -43,14 +44,11 @@ import {
 } from '@/services/document-export.service';
 
 import { getDocumentTemplateById } from '@/services/document-template.service';
-import { extractSections } from '@/services/document-validation.service';
 import {
   resolvePlaceholders as resolveTemplatePlaceholders,
-  prepareCompanyContext,
   type PlaceholderContext as ResolverPlaceholderContext,
 } from '@/lib/placeholder-resolver';
 import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
-import { getCompanyById } from '@/services/company.service';
 import { prisma } from '@/lib/prisma';
 
 // ============================================================================
@@ -75,54 +73,25 @@ class DocumentGeneratorImpl implements IDocumentGenerator {
   }
 
   async preview(params: PreviewDocumentParams): Promise<PreviewResult> {
-    const { tenantId, templateId, companyId, customData } = params;
-
-    // Get template
-    const template = await getDocumentTemplateById(templateId, tenantId);
-    if (!template) {
-      throw new Error('Template not found');
-    }
-
-    // Build placeholder context
-    let context: ResolverPlaceholderContext = {
-      custom: customData || {},
-      system: { currentDate: new Date() },
-    };
-
-    if (companyId) {
-      const company = await getCompanyById(companyId, tenantId);
-      if (company) {
-        context = {
-          ...prepareCompanyContext(company as Parameters<typeof prepareCompanyContext>[0]),
-          custom: { ...context.custom, ...customData },
-        };
-      }
-    }
-
-    // Get partials for resolution
-    const partials = await getPartialsUsedInTemplate(template.content, tenantId);
-    const partialsMap = new Map(partials.map((p) => [p.name, p.content]));
-
-    // Resolve placeholders
-    const result = resolveTemplatePlaceholders(template.content, context, {
-      missingPlaceholder: 'highlight',
-      partialsMap,
+    const rendered = await renderTemplateForGeneration({
+      tenantId: params.tenantId,
+      templateId: params.templateId,
+      companyId: params.companyId,
+      customData: params.customData,
+      mode: 'preview',
     });
 
-    // Extract sections from resolved content
-    const sections = extractSections(result.resolved);
-
     return {
-      html: result.resolved,
-      sections: sections.map((s) => ({
+      html: rendered.content,
+      sections: rendered.sections.map((s) => ({
         id: s.id,
         title: s.title,
         level: s.level,
         startIndex: 0,
         endIndex: 0,
       })),
-      unresolvedPlaceholders: result.missing,
-      missingPartials: result.missingPartials,
+      unresolvedPlaceholders: rendered.missingPlaceholders,
+      missingPartials: rendered.missingPartials,
     };
   }
 
@@ -222,11 +191,6 @@ class DocumentExporterImpl implements IDocumentExporter {
     });
   }
 
-  async applyLetterhead(tenantId: string, pdfBuffer: Buffer): Promise<Buffer> {
-    // Currently letterhead is applied during PDF generation
-    // This method is a placeholder for future separate letterhead application
-    return pdfBuffer;
-  }
 }
 
 // ============================================================================
@@ -289,6 +253,7 @@ class DocumentWorkflowStepImpl implements IDocumentWorkflowStep {
           includeLetterhead: config.includeLetterhead,
         });
         pdfBuffer = pdf.buffer;
+        pdfUrl = `/api/generated-documents/${document.id}/export/pdf`;
       }
 
       // Extract signatories from document content (basic extraction)

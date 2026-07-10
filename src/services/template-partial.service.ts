@@ -11,6 +11,7 @@ import { createAuditLog, computeChanges } from '@/lib/audit';
 import { Prisma } from '@/generated/prisma';
 import type { TemplatePartial } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
+import { PARTIAL_REFERENCE_REGEX, extractPartialReferences } from '@/lib/template-analysis';
 
 // ============================================================================
 // Types
@@ -76,10 +77,6 @@ const TRACKED_FIELDS: (keyof TemplatePartial)[] = [
   'description',
   'content',
 ];
-
-// Regex to find partial references in template content
-// Also handles HTML-encoded variants: {{&gt; partial-name}}, {{&#62; partial-name}}, {{&#x3e; partial-name}}
-const PARTIAL_REFERENCE_REGEX = /\{\{(?:>|&gt;|&#62;|&#x3[eE];)\s*([a-zA-Z0-9_-]+)\s*\}\}/g;
 
 // ============================================================================
 // Create Partial
@@ -399,27 +396,21 @@ export async function getPartialUsage(
 
   if (!partial) return [];
 
-  // Search for templates using this partial
-  const partialPattern = `{{> ${partial.name}}}`;
-  const partialPatternAlt = `{{>${partial.name}}}`;
-
   const templates = await prisma.documentTemplate.findMany({
     where: {
       tenantId,
       deletedAt: null,
-      OR: [
-        { content: { contains: partialPattern } },
-        { content: { contains: partialPatternAlt } },
-      ],
     },
-    select: { id: true, name: true, category: true },
+    select: { id: true, name: true, category: true, content: true },
   });
 
-  return templates.map((t) => ({
-    templateId: t.id,
-    templateName: t.name,
-    category: t.category,
-  }));
+  return templates
+    .filter((template) => extractPartialReferences(template.content).includes(partial.name))
+    .map((template) => ({
+      templateId: template.id,
+      templateName: template.name,
+      category: template.category,
+    }));
 }
 
 /**
@@ -440,22 +431,34 @@ export async function getPartialsUsedInTemplate(
   templateContent: string,
   tenantId: string
 ): Promise<TemplatePartial[]> {
-  const matches = templateContent.matchAll(PARTIAL_REFERENCE_REGEX);
-  const partialNames = new Set<string>();
+  const initialPartialNames = extractPartialReferences(templateContent);
 
-  for (const match of matches) {
-    partialNames.add(match[1]);
-  }
+  if (initialPartialNames.length === 0) return [];
 
-  if (partialNames.size === 0) return [];
-
-  return prisma.templatePartial.findMany({
+  const allPartials = await prisma.templatePartial.findMany({
     where: {
       tenantId,
-      name: { in: Array.from(partialNames) },
       deletedAt: null,
     },
   });
+  const partialByName = new Map(allPartials.map((partial) => [partial.name, partial]));
+  const resolvedNames = new Set<string>();
+
+  const visit = (partialName: string) => {
+    if (resolvedNames.has(partialName)) return;
+    resolvedNames.add(partialName);
+    const partial = partialByName.get(partialName);
+    if (!partial) return;
+    for (const nestedName of extractPartialReferences(partial.content)) {
+      visit(nestedName);
+    }
+  };
+
+  initialPartialNames.forEach(visit);
+
+  return Array.from(resolvedNames)
+    .map((partialName) => partialByName.get(partialName))
+    .filter((partial): partial is TemplatePartial => Boolean(partial));
 }
 
 /**

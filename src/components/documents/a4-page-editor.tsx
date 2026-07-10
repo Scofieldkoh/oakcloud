@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type ClipboardEvent as ReactClipboardEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import DOMPurify from 'dompurify';
 import {
@@ -31,6 +32,7 @@ import {
   Printer,
   Redo,
   SeparatorHorizontal,
+  Table2,
   Trash2,
   Type,
   Underline,
@@ -62,6 +64,7 @@ function sanitizeHtml(html: string): string {
       'ul',
       'ol',
       'li',
+      'blockquote',
       'h1',
       'h2',
       'h3',
@@ -70,8 +73,29 @@ function sanitizeHtml(html: string): string {
       'h6',
       'a',
       'hr',
+      'table',
+      'thead',
+      'tbody',
+      'tfoot',
+      'tr',
+      'th',
+      'td',
+      'caption',
     ],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class'],
+    ALLOWED_ATTR: [
+      'href',
+      'target',
+      'rel',
+      'style',
+      'class',
+      'colspan',
+      'rowspan',
+      'scope',
+      'align',
+      'valign',
+      'width',
+      'height',
+    ],
     ALLOWED_URI_REGEXP:
       /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
   });
@@ -362,6 +386,257 @@ function hasRenderableContent(html: string): boolean {
   );
 }
 
+function hasMeaningfulContentBeforeCaret(html: string): boolean {
+  if (!html) return false;
+
+  const textContent = html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+
+  if (textContent.length > 0) {
+    return true;
+  }
+
+  return /<(img|svg|object|embed|video|audio|canvas|table|tr|td|th|li|ul|ol|hr)\b/i.test(
+    html,
+  );
+}
+
+function isCaretAtEditorStart(editor: HTMLElement): boolean {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return false;
+  if (!selection.isCollapsed || !editor.contains(selection.anchorNode)) {
+    return false;
+  }
+
+  const range = selection.getRangeAt(0);
+  const before = document.createRange();
+  before.setStart(editor, 0);
+
+  try {
+    before.setEnd(range.startContainer, range.startOffset);
+  } catch {
+    return false;
+  }
+
+  const beforeHtml = fragmentToHtml(before.cloneContents());
+  return !hasMeaningfulContentBeforeCaret(beforeHtml);
+}
+
+function getEditorSelectionRange(editor: HTMLElement): Range | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+
+  const range = selection.getRangeAt(0);
+  if (!editor.contains(range.commonAncestorContainer)) return null;
+
+  return range;
+}
+
+function selectNodeContents(node: Node): void {
+  const selection = window.getSelection();
+  if (!selection) return;
+
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function dispatchEditorInput(editor: HTMLElement): void {
+  editor.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function applyInlineStyleToSelection(
+  editor: HTMLElement,
+  styles: Record<string, string>,
+): boolean {
+  const range = getEditorSelectionRange(editor);
+  if (!range || range.collapsed) return false;
+
+  const span = document.createElement('span');
+  Object.entries(styles).forEach(([key, value]) => {
+    if (value) {
+      const cssProperty = key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
+      span.style.setProperty(cssProperty, value);
+    }
+  });
+
+  span.appendChild(range.extractContents());
+  range.insertNode(span);
+  selectNodeContents(span);
+  dispatchEditorInput(editor);
+  return true;
+}
+
+function findEditableBlock(start: Node, editor: HTMLElement): HTMLElement | null {
+  let node: Node | null = start.nodeType === Node.TEXT_NODE ? start.parentNode : start;
+  const blockTags = new Set([
+    'P',
+    'DIV',
+    'H1',
+    'H2',
+    'H3',
+    'H4',
+    'H5',
+    'H6',
+    'BLOCKQUOTE',
+    'LI',
+    'TD',
+    'TH',
+  ]);
+
+  while (node && node !== editor) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as HTMLElement;
+      if (blockTags.has(element.tagName)) {
+        return element;
+      }
+    }
+    node = node.parentNode;
+  }
+
+  return null;
+}
+
+function applyBlockTagToSelection(editor: HTMLElement, tagName: string): boolean {
+  const range = getEditorSelectionRange(editor);
+  if (!range) return false;
+
+  const block = findEditableBlock(range.startContainer, editor);
+  const replacement = document.createElement(tagName);
+
+  if (block) {
+    replacement.innerHTML = block.innerHTML;
+    block.parentNode?.replaceChild(replacement, block);
+  } else {
+    replacement.appendChild(range.extractContents());
+    range.insertNode(replacement);
+  }
+
+  selectNodeContents(replacement);
+  dispatchEditorInput(editor);
+  return true;
+}
+
+function insertHtmlIntoEditor(editor: HTMLElement, html: string): boolean {
+  const selection = window.getSelection();
+  let range = getEditorSelectionRange(editor);
+
+  if (!range) {
+    range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }
+
+  const template = document.createElement('template');
+  template.innerHTML = sanitizeHtml(html);
+  const fragment = template.content;
+  const insertedNodes = Array.from(fragment.childNodes);
+
+  range.deleteContents();
+  range.insertNode(fragment);
+
+  const lastNode = insertedNodes[insertedNodes.length - 1];
+  if (lastNode && selection) {
+    const afterRange = document.createRange();
+    afterRange.setStartAfter(lastNode);
+    afterRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(afterRange);
+  }
+
+  dispatchEditorInput(editor);
+  return insertedNodes.length > 0;
+}
+
+function findSelectedTableCell(editor: HTMLElement): HTMLTableCellElement | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+
+  let node: Node | null = selection.anchorNode;
+  while (node && node !== editor) {
+    if (
+      node.nodeType === Node.ELEMENT_NODE &&
+      ['TD', 'TH'].includes((node as HTMLElement).tagName)
+    ) {
+      return node as HTMLTableCellElement;
+    }
+    node = node.parentNode;
+  }
+
+  return null;
+}
+
+function addTableRowAtSelection(editor: HTMLElement): boolean {
+  const cell = findSelectedTableCell(editor);
+  const row = cell?.closest('tr');
+  if (!cell || !row) return false;
+
+  const newRow = document.createElement('tr');
+  Array.from(row.children).forEach((sourceCell) => {
+    const tagName = sourceCell.tagName.toLowerCase() === 'th' ? 'th' : 'td';
+    const newCell = document.createElement(tagName);
+    newCell.innerHTML = '<br>';
+    newRow.appendChild(newCell);
+  });
+
+  row.insertAdjacentElement('afterend', newRow);
+  dispatchEditorInput(editor);
+  return true;
+}
+
+function addTableColumnAtSelection(editor: HTMLElement): boolean {
+  const cell = findSelectedTableCell(editor);
+  const table = cell?.closest('table');
+  const row = cell?.closest('tr');
+  if (!cell || !table || !row) return false;
+
+  const columnIndex = Array.from(row.children).indexOf(cell);
+  if (columnIndex === -1) return false;
+
+  Array.from(table.querySelectorAll('tr')).forEach((tableRow) => {
+    const cells = Array.from(tableRow.children);
+    const referenceCell = cells[Math.min(columnIndex, cells.length - 1)] as
+      | HTMLTableCellElement
+      | undefined;
+    const tagName = referenceCell?.tagName.toLowerCase() === 'th' ? 'th' : 'td';
+    const newCell = document.createElement(tagName);
+    newCell.innerHTML = '<br>';
+
+    if (referenceCell) {
+      referenceCell.insertAdjacentElement('afterend', newCell);
+    } else {
+      tableRow.appendChild(newCell);
+    }
+  });
+
+  dispatchEditorInput(editor);
+  return true;
+}
+
+function stripInlineLineHeight(html: string): string {
+  if (!html) return html;
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = sanitizeHtml(html);
+  wrapper.querySelectorAll<HTMLElement>('[style]').forEach((element) => {
+    element.style.lineHeight = '';
+    if (!element.getAttribute('style')?.trim()) {
+      element.removeAttribute('style');
+    }
+  });
+
+  return wrapper.innerHTML;
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -396,23 +671,37 @@ interface PageData {
 // A4 Constants - 96 DPI (standard screen) for true WYSIWYG
 // ============================================================================
 
+const DEFAULT_PAGE_MARGIN_MM = 20;
+
 const A4 = {
   WIDTH_PX: 794,
   HEIGHT_PX: 1123,
-  MARGIN_MM: 20,
-  MARGIN_PX: 76,
-  get CONTENT_WIDTH_PX() {
-    return this.WIDTH_PX - this.MARGIN_PX * 2;
-  },
-  get CONTENT_HEIGHT_PX() {
-    return this.HEIGHT_PX - this.MARGIN_PX * 2;
-  },
+  MARGIN_MM: DEFAULT_PAGE_MARGIN_MM,
 };
 
 // Shared font styles
 const FONT_FAMILY = "'Times New Roman', Times, serif";
 const FONT_SIZE = '12pt';
 const LINE_HEIGHT = '1.5';
+const MM_TO_PX = 96 / 25.4;
+
+interface PageLayout {
+  marginMm: number;
+  marginPx: number;
+  contentWidthPx: number;
+  contentHeightPx: number;
+}
+
+function createPageLayout(marginMm: number): PageLayout {
+  const marginPx = Math.round(marginMm * MM_TO_PX);
+
+  return {
+    marginMm,
+    marginPx,
+    contentWidthPx: A4.WIDTH_PX - marginPx * 2,
+    contentHeightPx: A4.HEIGHT_PX - marginPx * 2,
+  };
+}
 
 // ============================================================================
 // Toolbar Component
@@ -452,13 +741,53 @@ const LINE_SPACING_OPTIONS = [
   { value: '3', label: 'Triple' },
 ];
 
+const PAGE_MARGIN_OPTIONS = [
+  { value: 10, label: '10mm' },
+  { value: 15, label: '15mm' },
+  { value: 20, label: '20mm' },
+  { value: 25, label: '25mm' },
+  { value: 30, label: '30mm' },
+];
+
+const PARAGRAPH_STYLE_OPTIONS = [
+  { value: 'p', label: 'Normal' },
+  { value: 'h1', label: 'Heading 1' },
+  { value: 'h2', label: 'Heading 2' },
+  { value: 'h3', label: 'Heading 3' },
+  { value: 'blockquote', label: 'Quote' },
+];
+
+const PARAGRAPH_SPACING_OPTIONS = [
+  { value: '0', label: 'No spacing' },
+  { value: '0.25em', label: 'Compact' },
+  { value: '0.5em', label: 'Normal' },
+  { value: '1em', label: 'Loose' },
+  { value: '1.5em', label: 'Wide' },
+];
+
 function Toolbar({
   onCommand,
   onSaveSelection,
+  lineHeight,
+  onLineHeightChange,
+  paragraphSpacing,
+  onParagraphSpacingChange,
+  pageMarginMm,
+  onPageMarginChange,
+  showPageNumbers,
+  onShowPageNumbersChange,
   disabled,
 }: {
   onCommand: (cmd: string, value?: string) => void;
   onSaveSelection: () => void;
+  lineHeight: string;
+  onLineHeightChange: (value: string) => void;
+  paragraphSpacing: string;
+  onParagraphSpacingChange: (value: string) => void;
+  pageMarginMm: number;
+  onPageMarginChange: (value: number) => void;
+  showPageNumbers: boolean;
+  onShowPageNumbersChange: (value: boolean) => void;
   disabled?: boolean;
 }) {
   const Button = ({
@@ -545,9 +874,52 @@ function Toolbar({
 
       <div className="w-px h-5 bg-border-primary mx-1" />
 
+      <select
+        onMouseDown={handleSelectMouseDown}
+        onChange={(e) => onCommand('paragraphStyle', e.target.value)}
+        disabled={disabled}
+        className={selectClass}
+        defaultValue="p"
+        title="Paragraph Style"
+      >
+        {PARAGRAPH_STYLE_OPTIONS.map((style) => (
+          <option key={style.value} value={style.value}>
+            {style.label}
+          </option>
+        ))}
+      </select>
+
+      <div className="w-px h-5 bg-border-primary mx-1" />
+
       <Button cmd="bold" icon={Bold} title="Bold (Ctrl+B)" />
       <Button cmd="italic" icon={Italic} title="Italic (Ctrl+I)" />
       <Button cmd="underline" icon={Underline} title="Underline (Ctrl+U)" />
+
+      <label className="flex items-center gap-1 px-1 text-xs text-text-secondary">
+        A
+        <input
+          type="color"
+          title="Text Color"
+          defaultValue="#000000"
+          onMouseDown={handleSelectMouseDown}
+          onChange={(e) => onCommand('textColor', e.target.value)}
+          disabled={disabled}
+          className="h-6 w-7 cursor-pointer rounded border border-border-primary bg-background-elevated"
+        />
+      </label>
+
+      <label className="flex items-center gap-1 px-1 text-xs text-text-secondary">
+        HL
+        <input
+          type="color"
+          title="Highlight Color"
+          defaultValue="#ffffff"
+          onMouseDown={handleSelectMouseDown}
+          onChange={(e) => onCommand('highlightColor', e.target.value)}
+          disabled={disabled}
+          className="h-6 w-7 cursor-pointer rounded border border-border-primary bg-background-elevated"
+        />
+      </label>
 
       <div className="w-px h-5 bg-border-primary mx-1" />
 
@@ -569,10 +941,13 @@ function Toolbar({
 
       <select
         onMouseDown={handleSelectMouseDown}
-        onChange={(e) => onCommand('lineSpacing', e.target.value)}
+        onChange={(e) => {
+          onLineHeightChange(e.target.value);
+          onCommand('lineSpacing', e.target.value);
+        }}
         disabled={disabled}
         className={selectClass}
-        defaultValue="1.5"
+        value={lineHeight}
         title="Line Spacing"
       >
         {LINE_SPACING_OPTIONS.map((spacing) => (
@@ -582,8 +957,56 @@ function Toolbar({
         ))}
       </select>
 
+      <select
+        onMouseDown={handleSelectMouseDown}
+        onChange={(e) => {
+          onParagraphSpacingChange(e.target.value);
+          onCommand('paragraphSpacing', e.target.value);
+        }}
+        disabled={disabled}
+        className={selectClass}
+        value={paragraphSpacing}
+        title="Paragraph Spacing"
+      >
+        {PARAGRAPH_SPACING_OPTIONS.map((spacing) => (
+          <option key={spacing.value} value={spacing.value}>
+            {spacing.label}
+          </option>
+        ))}
+      </select>
+
+      <select
+        onMouseDown={handleSelectMouseDown}
+        onChange={(e) => onPageMarginChange(Number(e.target.value))}
+        disabled={disabled}
+        className={selectClass}
+        value={pageMarginMm}
+        title="Page Margin"
+      >
+        {PAGE_MARGIN_OPTIONS.map((margin) => (
+          <option key={margin.value} value={margin.value}>
+            {margin.label}
+          </option>
+        ))}
+      </select>
+
+      <label className="flex items-center gap-1.5 px-2 py-1 text-xs text-text-secondary">
+        <input
+          type="checkbox"
+          aria-label="Show page numbers"
+          checked={showPageNumbers}
+          onChange={(e) => onShowPageNumbersChange(e.target.checked)}
+          disabled={disabled}
+          className="h-3.5 w-3.5"
+        />
+        Page #
+      </label>
+
       <div className="w-px h-5 bg-border-primary mx-1" />
 
+      <Button cmd="insertTable" icon={Table2} title="Insert Table" />
+      <Button cmd="addTableRow" icon={Plus} title="Add Table Row" />
+      <Button cmd="addTableColumn" icon={Plus} title="Add Table Column" />
       <Button cmd="pageBreak" icon={SeparatorHorizontal} title="Insert Page Break" />
     </div>
   );
@@ -604,9 +1027,17 @@ interface PageProps {
   onBlur?: () => void;
   onDelete: (id: string) => void;
   onOverflow?: (id: string, overflowContent: string) => void;
+  onBackspaceAtStart?: (id: string, currentContent: string) => void;
+  onSelectAllDocument?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  onSelectionChange?: () => void;
   canDelete: boolean;
   editorRef: React.RefObject<HTMLDivElement | null>;
   placeholder?: string;
+  pageLayout: PageLayout;
+  lineHeight: string;
+  showPageNumbers: boolean;
   maxContentHeight: number;
 }
 
@@ -621,9 +1052,17 @@ function Page({
   onBlur,
   onDelete,
   onOverflow,
+  onBackspaceAtStart,
+  onSelectAllDocument,
+  onUndo,
+  onRedo,
+  onSelectionChange,
   canDelete,
   editorRef,
   placeholder,
+  pageLayout,
+  lineHeight,
+  showPageNumbers,
   maxContentHeight,
 }: PageProps) {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -634,11 +1073,20 @@ function Page({
   useEffect(() => {
     if (contentRef.current) {
       const sanitized = sanitizeHtml(page.content || '');
-      if (contentRef.current.innerHTML !== sanitized) {
+      const isFocused = document.activeElement === contentRef.current;
+      const currentHtml = contentRef.current.innerHTML;
+      if (
+        !isPreviewMode &&
+        isFocused &&
+        sanitizeHtml(currentHtml) === sanitized
+      ) {
+        return;
+      }
+      if (currentHtml !== sanitized) {
         contentRef.current.innerHTML = sanitized;
       }
     }
-  }, [page.content]);
+  }, [isPreviewMode, page.content]);
 
   const checkOverflow = useCallback(() => {
     const el = contentRef.current;
@@ -797,6 +1245,54 @@ function Page({
     [checkOverflow, handleInput, isPreviewMode],
   );
 
+  const handleKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+        event.preventDefault();
+        onSelectAllDocument?.();
+        return;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        if (event.shiftKey) {
+          onRedo?.();
+        } else {
+          onUndo?.();
+        }
+        return;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') {
+        event.preventDefault();
+        onRedo?.();
+        return;
+      }
+
+      const el = contentRef.current;
+      if (
+        event.key !== 'Backspace' ||
+        !el ||
+        isPreviewMode ||
+        !onBackspaceAtStart ||
+        !isCaretAtEditorStart(el)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      onBackspaceAtStart(page.id, el.innerHTML);
+    },
+    [
+      isPreviewMode,
+      onBackspaceAtStart,
+      onRedo,
+      onSelectAllDocument,
+      onUndo,
+      page.id,
+    ],
+  );
+
   return (
     <div
       className="relative group"
@@ -845,19 +1341,31 @@ function Page({
           suppressContentEditableWarning
           onPaste={handlePaste}
           onInput={handleInput}
-          onFocus={() => !isPreviewMode && onFocus(page.id)}
+          onKeyDown={handleKeyDown}
+          onKeyUp={() => !isPreviewMode && onSelectionChange?.()}
+          onMouseUp={() => !isPreviewMode && onSelectionChange?.()}
+          onFocus={() => {
+            if (!isPreviewMode) {
+              onFocus(page.id);
+              setTimeout(() => onSelectionChange?.(), 0);
+            }
+          }}
           onBlur={() => !isPreviewMode && onBlur?.()}
           data-placeholder={placeholder}
-          className={cn('outline-none', isPreviewMode && 'cursor-default')}
+          data-testid={`a4-page-content-${pageNumber}`}
+          className={cn(
+            'a4-page-content outline-none',
+            isPreviewMode && 'cursor-default',
+          )}
           style={{
             position: 'absolute',
-            top: A4.MARGIN_PX,
-            left: A4.MARGIN_PX,
-            width: A4.CONTENT_WIDTH_PX,
-            height: A4.CONTENT_HEIGHT_PX,
+            top: pageLayout.marginPx,
+            left: pageLayout.marginPx,
+            width: pageLayout.contentWidthPx,
+            height: pageLayout.contentHeightPx,
             fontFamily: 'Arial, Helvetica, sans-serif',
             fontSize: '11pt',
-            lineHeight: '1.5',
+            lineHeight,
             color: '#000',
             overflow: 'hidden',
             overflowWrap: 'break-word',
@@ -871,27 +1379,30 @@ function Page({
             className="pointer-events-none select-none text-gray-400"
             style={{
               position: 'absolute',
-              top: A4.MARGIN_PX,
-              left: A4.MARGIN_PX,
+              top: pageLayout.marginPx,
+              left: pageLayout.marginPx,
               fontFamily: FONT_FAMILY,
               fontSize: FONT_SIZE,
-              lineHeight: LINE_HEIGHT,
+              lineHeight,
             }}
           >
             {placeholder}
           </div>
         )}
 
-        <div
-          className="absolute left-1/2 -translate-x-1/2 text-gray-400"
-          style={{
-            fontFamily: FONT_FAMILY,
-            fontSize: '10pt',
-            bottom: '30px',
-          }}
-        >
-          {pageNumber}
-        </div>
+        {showPageNumbers && (
+          <div
+            className="absolute left-1/2 -translate-x-1/2 text-gray-400"
+            data-testid={`a4-page-number-${pageNumber}`}
+            style={{
+              fontFamily: FONT_FAMILY,
+              fontSize: '10pt',
+              bottom: '30px',
+            }}
+          >
+            {pageNumber}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1056,6 +1567,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       pages[0]?.id || '',
     );
     const [isPreviewMode, setIsPreviewMode] = useState(readOnly);
+    const [lineHeight, setLineHeight] = useState(LINE_HEIGHT);
+    const [paragraphSpacing, setParagraphSpacing] = useState('0.5em');
+    const [pageMarginMm, setPageMarginMm] = useState(DEFAULT_PAGE_MARGIN_MM);
+    const [showPageNumbers, setShowPageNumbers] = useState(true);
+    const pageLayout = useMemo(
+      () => createPageLayout(pageMarginMm),
+      [pageMarginMm],
+    );
 
     // Expose methods via ref
     useImperativeHandle(
@@ -1131,35 +1650,109 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     }, [value, parsePages, isPreviewMode, activePageId]);
 
     const pendingUpdateRef = useRef(false);
+    const historyRef = useRef<{ past: string[]; future: string[] }>({
+      past: [],
+      future: [],
+    });
+
+    const serializePages = useCallback(
+      (pageList: PageData[]) => pageList.map((p) => p.content).join(PAGE_SEPARATOR),
+      [PAGE_SEPARATOR],
+    );
+
+    const pushHistorySnapshot = useCallback(
+      (pageList: PageData[]) => {
+        const snapshot = serializePages(pageList);
+        const lastSnapshot =
+          historyRef.current.past[historyRef.current.past.length - 1];
+
+        if (snapshot === lastSnapshot) return;
+
+        historyRef.current.past.push(snapshot);
+        if (historyRef.current.past.length > 100) {
+          historyRef.current.past.shift();
+        }
+        historyRef.current.future = [];
+      },
+      [serializePages],
+    );
 
     useEffect(() => {
       if (pendingUpdateRef.current && onChange) {
         pendingUpdateRef.current = false;
-        const html = pages.map((p) => p.content).join(PAGE_SEPARATOR);
+        const html = serializePages(pages);
         isInternalUpdate.current = true;
         lastValueRef.current = html;
         onChange(html);
       }
-    }, [pages, onChange]);
+    }, [pages, onChange, serializePages]);
+
+    const handleUndo = useCallback(() => {
+      if (effectivePreviewMode) return;
+
+      setPages((prev) => {
+        const previousSnapshot = historyRef.current.past.pop();
+        if (!previousSnapshot) return prev;
+
+        historyRef.current.future.push(serializePages(prev));
+        pendingUpdateRef.current = true;
+
+        const nextPages = parsePages(previousSnapshot, prev);
+        if (nextPages.length > 0) {
+          setActivePageId(nextPages[0].id);
+        }
+        return nextPages;
+      });
+    }, [effectivePreviewMode, parsePages, serializePages]);
+
+    const handleRedo = useCallback(() => {
+      if (effectivePreviewMode) return;
+
+      setPages((prev) => {
+        const nextSnapshot = historyRef.current.future.pop();
+        if (!nextSnapshot) return prev;
+
+        historyRef.current.past.push(serializePages(prev));
+        pendingUpdateRef.current = true;
+
+        const nextPages = parsePages(nextSnapshot, prev);
+        if (nextPages.length > 0) {
+          setActivePageId(nextPages[0].id);
+        }
+        return nextPages;
+      });
+    }, [effectivePreviewMode, parsePages, serializePages]);
 
     const handleContentChange = useCallback(
       (id: string, content: string) => {
         if (effectivePreviewMode) return;
-        pendingUpdateRef.current = true;
-        setPages((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, content } : p)),
-        );
+        const sanitizedContent = sanitizeHtml(content);
+        setPages((prev) => {
+          const currentPage = prev.find((p) => p.id === id);
+          if (!currentPage || currentPage.content === sanitizedContent) {
+            return prev;
+          }
+
+          pushHistorySnapshot(prev);
+          pendingUpdateRef.current = true;
+          return prev.map((p) =>
+            p.id === id ? { ...p, content: sanitizedContent } : p,
+          );
+        });
       },
-      [effectivePreviewMode],
+      [effectivePreviewMode, pushHistorySnapshot],
     );
 
     const handleAddPage = useCallback(() => {
       if (effectivePreviewMode) return;
       const newPage: PageData = { id: crypto.randomUUID(), content: '' };
       pendingUpdateRef.current = true;
-      setPages((prev) => [...prev, newPage]);
+      setPages((prev) => {
+        pushHistorySnapshot(prev);
+        return [...prev, newPage];
+      });
       setActivePageId(newPage.id);
-    }, [effectivePreviewMode]);
+    }, [effectivePreviewMode, pushHistorySnapshot]);
 
     const handleDeletePage = useCallback(
       (id: string) => {
@@ -1167,6 +1760,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         pendingUpdateRef.current = true;
         setPages((prev) => {
           if (prev.length <= 1) return prev;
+          pushHistorySnapshot(prev);
           const newPages = prev.filter((p) => p.id !== id);
           const deletedIndex = prev.findIndex((p) => p.id === id);
           const newActiveIndex = Math.min(deletedIndex, newPages.length - 1);
@@ -1177,11 +1771,16 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return newPages;
         });
       },
-      [effectivePreviewMode],
+      [effectivePreviewMode, pushHistorySnapshot],
     );
 
     const isHandlingOverflow = useRef(false);
     const pendingFocusPageId = useRef<string | null>(null);
+    const pendingFocusStartPageId = useRef<string | null>(null);
+    const pendingBoundaryFocusRef = useRef<{
+      pageId: string;
+      previousContent: string;
+    } | null>(null);
 
     const focusPageAtEnd = useCallback((pageId: string) => {
       const pageEl = document.querySelector(
@@ -1200,6 +1799,83 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
       }
     }, []);
+
+    const focusPageAtStart = useCallback((pageId: string) => {
+      const pageEl = document.querySelector(
+        `[data-page-id="${pageId}"] [contenteditable]`,
+      ) as HTMLDivElement | null;
+
+      if (pageEl) {
+        pageEl.focus();
+        const selection = window.getSelection();
+        if (selection) {
+          const range = document.createRange();
+          range.selectNodeContents(pageEl);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      }
+    }, []);
+
+    const selectAllDocument = useCallback(() => {
+      const container = scrollContainerRef.current;
+      const editors = Array.from(
+        container?.querySelectorAll('[contenteditable]') ?? [],
+      ) as HTMLDivElement[];
+      const firstEditor = editors[0];
+      const lastEditor = editors[editors.length - 1];
+      const selection = window.getSelection();
+
+      if (!firstEditor || !lastEditor || !selection) return;
+
+      const range = document.createRange();
+      range.setStart(firstEditor, 0);
+      range.setEnd(lastEditor, lastEditor.childNodes.length);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }, []);
+
+    const syncFormattingFromSelection = useCallback(() => {
+      // Reserved for selection-aware controls that should not affect document-level settings.
+    }, []);
+
+    const focusPageAtContentBoundary = useCallback(
+      (pageId: string, previousContent: string) => {
+        const pageEl = document.querySelector(
+          `[data-page-id="${pageId}"] [contenteditable]`,
+        ) as HTMLDivElement | null;
+
+        if (!pageEl) return;
+
+        pageEl.focus();
+        const selection = window.getSelection();
+        if (!selection) return;
+
+        const temp = document.createElement('div');
+        temp.innerHTML = sanitizeHtml(previousContent || '');
+        const boundaryIndex = temp.childNodes.length;
+        const range = document.createRange();
+
+        if (boundaryIndex <= 0) {
+          range.setStart(pageEl, 0);
+        } else {
+          const boundaryNode =
+            pageEl.childNodes[Math.min(boundaryIndex - 1, pageEl.childNodes.length - 1)];
+          if (boundaryNode) {
+            range.setStartAfter(boundaryNode);
+          } else {
+            range.selectNodeContents(pageEl);
+            range.collapse(false);
+          }
+        }
+
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      },
+      [],
+    );
 
     const handleOverflow = useCallback(
       (pageId: string, overflowContent: string) => {
@@ -1254,15 +1930,183 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       }
     }, [pages, focusPageAtEnd]);
 
+    useEffect(() => {
+      if (!pendingFocusStartPageId.current) return;
+
+      const targetId = pendingFocusStartPageId.current;
+      const timer = setTimeout(() => {
+        focusPageAtStart(targetId);
+        pendingFocusStartPageId.current = null;
+      }, 0);
+
+      return () => clearTimeout(timer);
+    }, [pages, focusPageAtStart]);
+
+    useEffect(() => {
+      const pending = pendingBoundaryFocusRef.current;
+      if (!pending) return;
+
+      const timer = setTimeout(() => {
+        focusPageAtContentBoundary(pending.pageId, pending.previousContent);
+        pendingBoundaryFocusRef.current = null;
+      }, 0);
+
+      return () => clearTimeout(timer);
+    }, [pages, focusPageAtContentBoundary]);
+
+    const handleBackspaceAtPageStart = useCallback(
+      (pageId: string, currentContent?: string) => {
+        if (effectivePreviewMode) return;
+
+        const currentPageIndex = pages.findIndex((p) => p.id === pageId);
+        if (currentPageIndex <= 0) return;
+
+        const previousPage = pages[currentPageIndex - 1];
+        pendingBoundaryFocusRef.current = {
+          pageId: previousPage.id,
+          previousContent: previousPage.content,
+        };
+
+        pendingUpdateRef.current = true;
+        setActivePageId(previousPage.id);
+        setPages((prev) => {
+          const pageIndex = prev.findIndex((p) => p.id === pageId);
+          if (pageIndex <= 0) return prev;
+
+          pushHistorySnapshot(prev);
+          const previousPage = prev[pageIndex - 1];
+          const currentPage = prev[pageIndex];
+          const contentToMerge =
+            currentContent === undefined
+              ? currentPage.content
+              : sanitizeHtml(currentContent);
+          const updatedPages = [...prev];
+
+          updatedPages[pageIndex - 1] = {
+            ...previousPage,
+            content: `${previousPage.content}${contentToMerge}`,
+          };
+          updatedPages.splice(pageIndex, 1);
+          return updatedPages;
+        });
+      },
+      [effectivePreviewMode, pages, pushHistorySnapshot],
+    );
+
+    const splitActivePageAtSelection = useCallback(() => {
+      if (effectivePreviewMode) return;
+
+      const editor = activeEditorRef.current;
+      if (!editor) return;
+
+      const pageContainer = editor.closest('[data-page-id]') as HTMLElement | null;
+      const pageId = pageContainer?.dataset.pageId;
+      if (!pageId) return;
+
+      const selection = window.getSelection();
+      const activeRange =
+        selection &&
+        selection.rangeCount > 0 &&
+        editor.contains(selection.getRangeAt(0).commonAncestorContainer)
+          ? selection.getRangeAt(0)
+          : null;
+
+      const splitRange = activeRange ?? document.createRange();
+      if (!activeRange) {
+        splitRange.selectNodeContents(editor);
+        splitRange.collapse(false);
+      }
+
+      const beforeRange = document.createRange();
+      beforeRange.setStart(editor, 0);
+      beforeRange.setEnd(splitRange.startContainer, splitRange.startOffset);
+
+      const afterRange = document.createRange();
+      afterRange.setStart(splitRange.endContainer, splitRange.endOffset);
+      afterRange.setEnd(editor, editor.childNodes.length);
+
+      const beforeHtml = sanitizeHtml(fragmentToHtml(beforeRange.cloneContents()));
+      const afterHtml = sanitizeHtml(fragmentToHtml(afterRange.cloneContents()));
+      const newPage: PageData = {
+        id: crypto.randomUUID(),
+        content: afterHtml,
+      };
+
+      pendingUpdateRef.current = true;
+      pendingFocusStartPageId.current = newPage.id;
+      setActivePageId(newPage.id);
+      setPages((prev) => {
+        const pageIndex = prev.findIndex((p) => p.id === pageId);
+        if (pageIndex === -1) return prev;
+
+        pushHistorySnapshot(prev);
+        const updatedPages = [...prev];
+        updatedPages[pageIndex] = {
+          ...updatedPages[pageIndex],
+          content: beforeHtml,
+        };
+        updatedPages.splice(pageIndex + 1, 0, newPage);
+        return updatedPages;
+      });
+    }, [effectivePreviewMode, pushHistorySnapshot]);
+
     const handleCommand = useCallback(
       (cmd: string, val?: string) => {
         if (effectivePreviewMode) return;
+
+        if (cmd === 'undo') {
+          handleUndo();
+          return;
+        }
+
+        if (cmd === 'redo') {
+          handleRedo();
+          return;
+        }
 
         const editor = activeEditorRef.current;
         if (!editor) return;
 
         editor.focus();
         restoreSelection();
+
+        if (cmd === 'paragraphStyle' && val) {
+          applyBlockTagToSelection(editor, val);
+          return;
+        }
+
+        if (cmd === 'textColor' && val) {
+          applyInlineStyleToSelection(editor, { color: val });
+          return;
+        }
+
+        if (cmd === 'highlightColor' && val) {
+          applyInlineStyleToSelection(editor, { backgroundColor: val });
+          return;
+        }
+
+        if (cmd === 'paragraphSpacing' && val) {
+          setParagraphSpacing(val);
+          return;
+        }
+
+        if (cmd === 'insertTable') {
+          insertHtmlIntoEditor(
+            editor,
+            '<table><tbody><tr><th>Header</th><th>Header</th></tr><tr><td>Cell</td><td>Cell</td></tr></tbody></table><p><br /></p>',
+          );
+          return;
+        }
+
+        if (cmd === 'addTableRow') {
+          addTableRowAtSelection(editor);
+          return;
+        }
+
+        if (cmd === 'addTableColumn') {
+          addTableColumnAtSelection(editor);
+          return;
+        }
 
         if (cmd === 'customFontSize' && val) {
           const selection = window.getSelection();
@@ -1305,71 +2149,40 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         if (cmd === 'lineSpacing' && val) {
-          const selection = window.getSelection();
-          if (selection && selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            let blockElement: HTMLElement | null = null;
-            let node: Node | null = range.startContainer;
+          setLineHeight(val);
+          setPages((prev) => {
+            const next = prev.map((page) => ({
+              ...page,
+              content: stripInlineLineHeight(page.content),
+            }));
+            const changed = next.some(
+              (page, index) => page.content !== prev[index]?.content,
+            );
 
-            while (node && node !== editor) {
-              if (node.nodeType === Node.ELEMENT_NODE) {
-                const element = node as HTMLElement;
-                const display = window.getComputedStyle(element).display;
-                if (
-                  display === 'block' ||
-                  display === 'list-item' ||
-                  element.tagName === 'P' ||
-                  element.tagName === 'DIV'
-                ) {
-                  blockElement = element;
-                  break;
-                }
-              }
-              node = node.parentNode;
-            }
+            if (!changed) return prev;
 
-            if (blockElement && blockElement !== editor) {
-              blockElement.style.lineHeight = val;
-            } else {
-              if (!range.collapsed) {
-                const div = document.createElement('div');
-                div.style.lineHeight = val;
-                try {
-                  range.surroundContents(div);
-                } catch {
-                  const firstChild = editor.firstElementChild as HTMLElement;
-                  if (firstChild) {
-                    firstChild.style.lineHeight = val;
-                  }
-                }
-              } else {
-                const firstChild = editor.firstElementChild as HTMLElement;
-                if (firstChild) {
-                  firstChild.style.lineHeight = val;
-                }
-              }
-            }
-
-            const event = new Event('input', { bubbles: true });
-            editor.dispatchEvent(event);
-          }
+            pushHistorySnapshot(prev);
+            pendingUpdateRef.current = true;
+            return next;
+          });
           return;
         }
 
         if (cmd === 'pageBreak') {
-          document.execCommand(
-            'insertHTML',
-            false,
-            '<div class="page-break"></div><p></p>',
-          );
-          const event = new Event('input', { bubbles: true });
-          editor.dispatchEvent(event);
+          splitActivePageAtSelection();
           return;
         }
 
         document.execCommand(cmd, false, val);
       },
-      [effectivePreviewMode, restoreSelection],
+      [
+        effectivePreviewMode,
+        handleRedo,
+        handleUndo,
+        pushHistorySnapshot,
+        restoreSelection,
+        splitActivePageAtSelection,
+      ],
     );
 
     const handlePrint = useCallback(() => {
@@ -1378,13 +2191,17 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       // Filter out pages that only contain [Remove Page]
       const filteredPages = printPages.filter((page) => !shouldRemovePage(page.content));
 
-      // Join pages with page-break divs to trigger CSS page breaks on print
-      const allContent = filteredPages
-        .map((page) => sanitizeHtml(page.content) || '')
-        .join('<div class="page-break"></div>')
-        .trim();
-
-      const pagesHtml = `<div class="content">${allContent || '&nbsp;'}</div>`;
+      const pagesHtml = filteredPages.length > 0
+        ? filteredPages
+            .map((page, index) => {
+              const content = sanitizeHtml(page.content) || '&nbsp;';
+              const pageNumberHtml = showPageNumbers
+                ? `<div class="print-page-number">${index + 1}</div>`
+                : '';
+              return `<section class="print-page"><div class="content">${content}</div>${pageNumberHtml}</section>`;
+            })
+            .join('')
+        : '<section class="print-page"><div class="content">&nbsp;</div></section>';
 
       // Create a hidden iframe for printing (stays on same page)
       const printFrame = document.createElement('iframe');
@@ -1410,7 +2227,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
   <style>
     @page {
       size: 210mm 297mm;
-      margin: ${A4.MARGIN_MM}mm;
+      margin: ${pageLayout.marginMm}mm;
     }
     * {
       box-sizing: border-box;
@@ -1420,8 +2237,18 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     html, body {
       font-family: Arial, Helvetica, sans-serif;
       font-size: 11pt;
-      line-height: 1.5;
+      line-height: ${lineHeight};
       color: #000;
+    }
+    .print-page {
+      position: relative;
+      min-height: calc(297mm - ${pageLayout.marginMm * 2}mm);
+      page-break-after: always;
+      break-after: page;
+    }
+    .print-page:last-child {
+      page-break-after: auto;
+      break-after: auto;
     }
     .content {
       width: 100%;
@@ -1429,10 +2256,57 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       overflow-wrap: break-word;
       word-break: break-word;
     }
+    .print-page-number {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      text-align: center;
+      font-family: ${FONT_FAMILY};
+      font-size: 10pt;
+      color: #555;
+    }
     p:empty, div:empty { min-height: 1em; }
-    p { margin: 0 0 0.5em 0; }
+    p { margin: 0 0 ${paragraphSpacing} 0; }
+    p, div, span, li, blockquote, th, td {
+      line-height: inherit;
+    }
+    h1, h2, h3 {
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 700;
+      line-height: inherit;
+      margin: 0 0 ${paragraphSpacing} 0;
+    }
+    h1 { font-size: 24pt; }
+    h2 { font-size: 18pt; }
+    h3 { font-size: 14pt; }
     br { display: block; content: ""; margin-top: 0.5em; }
-    ul, ol { margin: 0 0 0.5em 0; padding-left: 1.5em; }
+    ul, ol { margin: 0 0 ${paragraphSpacing} 0; padding-left: 1.5em; }
+    ul { list-style-type: disc; }
+    ol { list-style-type: decimal; }
+    li { display: list-item; margin: 0 0 0.25em 0; }
+    blockquote { margin: 0 0 ${paragraphSpacing} 40px; padding: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      margin: 0 0 ${paragraphSpacing} 0;
+    }
+    th, td {
+      border: 1px solid #9ca3af;
+      padding: 6px 8px;
+      vertical-align: top;
+      min-height: 1.5em;
+      word-break: break-word;
+    }
+    th {
+      background: #f3f4f6;
+      font-weight: 700;
+    }
+    a {
+      color: #1155cc;
+      text-decoration: underline;
+    }
     .page-break {
       display: block;
       page-break-before: always !important;
@@ -1468,7 +2342,16 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           document.body.removeChild(printFrame);
         }, 1000);
       }, 200);
-    }, [pages, previewPages, isPreviewMode, shouldRemovePage]);
+    }, [
+      isPreviewMode,
+      lineHeight,
+      paragraphSpacing,
+      pageLayout.marginMm,
+      pages,
+      previewPages,
+      shouldRemovePage,
+      showPageNumbers,
+    ]);
 
     const scrollToPage = useCallback(
       (dir: 'up' | 'down') => {
@@ -1493,6 +2376,77 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
     return (
       <div className={cn('flex flex-col h-full bg-background-secondary', className)}>
+        <style>{`
+          .a4-page-content p {
+            margin: 0 0 ${paragraphSpacing} 0;
+          }
+          .a4-page-content p,
+          .a4-page-content div,
+          .a4-page-content span,
+          .a4-page-content li,
+          .a4-page-content blockquote,
+          .a4-page-content th,
+          .a4-page-content td {
+            line-height: inherit;
+          }
+          .a4-page-content h1,
+          .a4-page-content h2,
+          .a4-page-content h3 {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: 700;
+            line-height: inherit;
+            margin: 0 0 ${paragraphSpacing} 0;
+          }
+          .a4-page-content h1 {
+            font-size: 24pt;
+          }
+          .a4-page-content h2 {
+            font-size: 18pt;
+          }
+          .a4-page-content h3 {
+            font-size: 14pt;
+          }
+          .a4-page-content ul {
+            list-style-type: disc;
+            margin: 0 0 ${paragraphSpacing} 0;
+            padding-left: 1.5em;
+          }
+          .a4-page-content ol {
+            list-style-type: decimal;
+            margin: 0 0 ${paragraphSpacing} 0;
+            padding-left: 1.5em;
+          }
+          .a4-page-content li {
+            display: list-item;
+            margin: 0 0 0.25em 0;
+          }
+          .a4-page-content blockquote {
+            margin: 0 0 ${paragraphSpacing} 40px;
+            padding: 0;
+          }
+          .a4-page-content table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            margin: 0 0 ${paragraphSpacing} 0;
+          }
+          .a4-page-content th,
+          .a4-page-content td {
+            border: 1px solid #9ca3af;
+            padding: 6px 8px;
+            vertical-align: top;
+            min-height: 1.5em;
+            word-break: break-word;
+          }
+          .a4-page-content th {
+            background: #f3f4f6;
+            font-weight: 700;
+          }
+          .a4-page-content a {
+            color: #1155cc;
+            text-decoration: underline;
+          }
+        `}</style>
         <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-background-elevated border-b border-border-primary">
           <div className="flex items-center gap-3">
             <FileText className="w-4 h-4 text-text-muted" />
@@ -1594,6 +2548,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           <Toolbar
             onCommand={handleCommand}
             onSaveSelection={saveCursorPosition}
+            lineHeight={lineHeight}
+            onLineHeightChange={setLineHeight}
+            paragraphSpacing={paragraphSpacing}
+            onParagraphSpacingChange={setParagraphSpacing}
+            pageMarginMm={pageMarginMm}
+            onPageMarginChange={setPageMarginMm}
+            showPageNumbers={showPageNumbers}
+            onShowPageNumbersChange={setShowPageNumbers}
             disabled={effectivePreviewMode}
           />
         )}
@@ -1613,10 +2575,18 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                   onBlur={saveCursorPosition}
                   onDelete={handleDeletePage}
                   onOverflow={handleOverflow}
+                  onBackspaceAtStart={handleBackspaceAtPageStart}
+                  onSelectAllDocument={selectAllDocument}
+                  onUndo={handleUndo}
+                  onRedo={handleRedo}
+                  onSelectionChange={syncFormattingFromSelection}
                   canDelete={displayPages.length > 1 && !readOnly}
                   editorRef={activeEditorRef}
                   placeholder={index === 0 ? placeholder : undefined}
-                  maxContentHeight={A4.CONTENT_HEIGHT_PX}
+                  pageLayout={pageLayout}
+                  lineHeight={lineHeight}
+                  showPageNumbers={showPageNumbers}
+                  maxContentHeight={pageLayout.contentHeightPx}
                 />
               </div>
             ))}

@@ -3,53 +3,62 @@ import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { requireSessionWorkspaceId } from '@/lib/api-helpers';
-import { renderTemplateForGeneration } from '@/services/document-generator.service';
+import {
+  renderTemplateForGeneration,
+  type RenderTemplateForGenerationResult,
+} from '@/services/document-generator.service';
+import type { PlaceholderContext } from '@/lib/placeholder-resolver';
 
-// Validation schema for preview request
-const previewSchema = z.object({
-  templateId: z.string().uuid(),
-  companyId: z.string().uuid().optional(),
+const renderTestSchema = z.object({
+  templateId: z.string().uuid().optional(),
+  content: z.string().optional(),
+  name: z.string().optional(),
+  category: z.string().optional(),
+  companyId: z.string().uuid().optional().nullable(),
   contactIds: z.array(z.string().uuid()).optional(),
   customData: z.record(z.unknown()).optional(),
+  context: z.record(z.unknown()).optional(),
 });
 
-/**
- * POST /api/generated-documents/preview
- * Preview a document without saving
- */
+function toResponse(rendered: RenderTemplateForGenerationResult) {
+  return {
+    preview: {
+      template: rendered.template,
+      content: rendered.content,
+      contentHtml: rendered.contentHtml,
+      sections: rendered.sections,
+      unresolvedPlaceholders: rendered.missingPlaceholders,
+      missingPartials: rendered.missingPartials,
+      blockingErrors: rendered.blockingErrors,
+      contextSummary: rendered.contextSummary,
+    },
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth();
-
-    // Check read permission (preview only requires read)
     await requirePermission(session, 'document', 'read');
 
     const body = await request.json();
-    const data = previewSchema.parse(body);
-
+    const data = renderTestSchema.parse(body);
     const tenantId = requireSessionWorkspaceId(session);
+
     const rendered = await renderTemplateForGeneration({
       templateId: data.templateId,
       tenantId,
+      templateContent: data.content,
+      templateName: data.name,
+      templateCategory: data.category,
       companyId: data.companyId,
       contactIds: data.contactIds,
       customData: data.customData,
+      contextOverride: data.context as PlaceholderContext | undefined,
       generatedBy: `${session.firstName} ${session.lastName}`.trim(),
-      mode: 'preview',
+      mode: 'test',
     });
 
-    return NextResponse.json({
-      preview: {
-        content: rendered.content,
-        contentHtml: rendered.contentHtml,
-        sections: rendered.sections,
-        unresolvedPlaceholders: rendered.missingPlaceholders,
-        missingPartials: rendered.missingPartials,
-        blockingErrors: rendered.blockingErrors,
-      },
-      template: rendered.template,
-      context: rendered.contextSummary,
-    });
+    return NextResponse.json(toResponse(rendered));
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

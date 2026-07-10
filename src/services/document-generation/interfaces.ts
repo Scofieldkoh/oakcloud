@@ -148,15 +148,6 @@ export interface IDocumentExporter {
    * @returns HTML content with styles
    */
   toHTML(params: ExportHTMLParams): Promise<HTMLResult>;
-
-  /**
-   * Apply letterhead to an existing PDF.
-   *
-   * @param tenantId - Tenant ID
-   * @param pdfBuffer - Original PDF buffer
-   * @returns PDF buffer with letterhead applied
-   */
-  applyLetterhead(tenantId: string, pdfBuffer: Buffer): Promise<Buffer>;
 }
 
 // ============================================================================

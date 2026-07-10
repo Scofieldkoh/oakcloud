@@ -16,6 +16,13 @@ import type {
 import { Prisma } from '@/generated/prisma';
 import type { DocumentTemplate, DocumentTemplateCategory } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
+import {
+  analyzeTemplateContent,
+  extractPartialReferences,
+  normalizePlaceholderKey,
+  normalizeStoredPlaceholders,
+  type StoredPlaceholderLike,
+} from '@/lib/template-analysis';
 
 // ============================================================================
 // Types
@@ -478,8 +485,35 @@ export async function getTemplateStats(tenantId: string): Promise<{
   byCategory: Record<string, number>;
   recentlyCreated: number;
   mostUsed: Array<{ id: string; name: string; usageCount: number }>;
+  health: {
+    activeTemplatesCanGenerateCleanly: number;
+    activeTemplatesWithMissingPartials: number;
+    missingPartialReferences: Array<{ templateId: string; templateName: string; partialName: string }>;
+    inactivePartialReferences: Array<{ templateId: string; templateName: string; partialName: string }>;
+    circularPartialReferences: Array<{ templateId: string; templateName: string; cycle: string }>;
+    unknownPlaceholders: Array<{ templateId: string; templateName: string; key: string }>;
+    syntaxErrors: Array<{ templateId: string; templateName: string; message: string }>;
+    stalePartialMetadata: Array<{ templateId: string; templateName: string; partialName: string; key: string }>;
+    requiredCustomFields: Array<{ templateId: string; templateName: string; key: string; label: string }>;
+    templates: Array<{
+      id: string;
+      name: string;
+      isActive: boolean;
+      missingPartials: string[];
+      inactivePartials: string[];
+      circularPartials: string[];
+      unknownPlaceholders: string[];
+      syntaxErrors: string[];
+      stalePartialMetadata: Array<{ partialName: string; key: string }>;
+      requiredCustomFields: Array<{ key: string; label: string }>;
+      lastSuccessfulTest: string | null;
+      canGenerateCleanly: boolean;
+      canGenerateWithSampleData: boolean;
+      dependencyCount: number;
+    }>;
+  };
 }> {
-  const [total, active, byCategory, recentlyCreated, mostUsed] = await Promise.all([
+  const [total, active, byCategory, recentlyCreated, mostUsed, templatesForHealth, partials] = await Promise.all([
     prisma.documentTemplate.count({
       where: { tenantId, deletedAt: null },
     }),
@@ -514,7 +548,87 @@ export async function getTemplateStats(tenantId: string): Promise<{
       },
       take: 5,
     }),
+    prisma.documentTemplate.findMany({
+      where: { tenantId, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        content: true,
+        placeholders: true,
+        isActive: true,
+      },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.templatePartial.findMany({
+      where: { tenantId },
+      select: {
+        name: true,
+        displayName: true,
+        content: true,
+        placeholders: true,
+        updatedAt: true,
+        deletedAt: true,
+      },
+    }),
   ]);
+
+  const activePartials = partials.filter((partial) => !partial.deletedAt);
+  const activePartialNames = new Set(activePartials.map((partial) => partial.name));
+  const allPartialsByName = new Map(partials.map((partial) => [partial.name, partial]));
+  const templateHealth = templatesForHealth.map((template) => {
+    const diagnostics = analyzeTemplateContent({
+      content: template.content,
+      placeholders: template.placeholders,
+      partials: activePartials,
+    });
+    const inactivePartials = extractPartialReferences(template.content)
+      .filter((partialName) => allPartialsByName.get(partialName)?.deletedAt);
+    const stalePartialMetadata = findStalePartialMetadata(
+      template.placeholders,
+      template.content,
+      activePartials
+    );
+    const missingPartials = diagnostics.missingPartials
+      .filter((partialName) => !activePartialNames.has(partialName));
+    const requiredCustomFields = normalizeStoredPlaceholders(template.placeholders)
+      .filter((placeholder) => (
+        placeholder.required
+        && !placeholder.sourcePartial
+        && (placeholder.category === 'custom' || placeholder.key?.startsWith('custom.'))
+      ))
+      .map((placeholder) => ({
+        key: (placeholder.key || '').replace(/^custom\./, ''),
+        label: placeholder.label || (placeholder.key || '').replace(/^custom\./, ''),
+      }))
+      .filter((placeholder) => placeholder.key);
+
+    return {
+      id: template.id,
+      name: template.name,
+      isActive: template.isActive,
+      missingPartials,
+      inactivePartials,
+      circularPartials: diagnostics.circularPartials,
+      unknownPlaceholders: diagnostics.unknownPlaceholders,
+      syntaxErrors: diagnostics.syntaxErrors,
+      stalePartialMetadata,
+      requiredCustomFields,
+      lastSuccessfulTest: null,
+      canGenerateCleanly:
+        template.isActive
+        && missingPartials.length === 0
+        && inactivePartials.length === 0
+        && diagnostics.circularPartials.length === 0
+        && diagnostics.syntaxErrors.length === 0,
+      canGenerateWithSampleData:
+        missingPartials.length === 0
+        && inactivePartials.length === 0
+        && diagnostics.circularPartials.length === 0
+        && diagnostics.syntaxErrors.length === 0
+        && diagnostics.unknownPlaceholders.length === 0,
+      dependencyCount: diagnostics.dependencies.filter((dependency) => dependency.found).length,
+    };
+  });
 
   return {
     total,
@@ -528,7 +642,105 @@ export async function getTemplateStats(tenantId: string): Promise<{
       name: t.name,
       usageCount: t._count.generatedDocuments,
     })),
+    health: {
+      activeTemplatesCanGenerateCleanly: templateHealth.filter(
+        (template) => template.isActive && template.canGenerateCleanly
+      ).length,
+      activeTemplatesWithMissingPartials: templateHealth.filter(
+        (template) => template.isActive && template.missingPartials.length > 0
+      ).length,
+      missingPartialReferences: templateHealth.flatMap((template) => (
+        template.missingPartials.map((partialName) => ({
+          templateId: template.id,
+          templateName: template.name,
+          partialName,
+        }))
+      )),
+      inactivePartialReferences: templateHealth.flatMap((template) => (
+        template.inactivePartials.map((partialName) => ({
+          templateId: template.id,
+          templateName: template.name,
+          partialName,
+        }))
+      )),
+      circularPartialReferences: templateHealth.flatMap((template) => (
+        template.circularPartials.map((cycle) => ({
+          templateId: template.id,
+          templateName: template.name,
+          cycle,
+        }))
+      )),
+      unknownPlaceholders: templateHealth.flatMap((template) => (
+        template.unknownPlaceholders.map((key) => ({
+          templateId: template.id,
+          templateName: template.name,
+          key,
+        }))
+      )),
+      syntaxErrors: templateHealth.flatMap((template) => (
+        template.syntaxErrors.map((message) => ({
+          templateId: template.id,
+          templateName: template.name,
+          message,
+        }))
+      )),
+      stalePartialMetadata: templateHealth.flatMap((template) => (
+        template.stalePartialMetadata.map((item) => ({
+          templateId: template.id,
+          templateName: template.name,
+          partialName: item.partialName,
+          key: item.key,
+        }))
+      )),
+      requiredCustomFields: templateHealth.flatMap((template) => (
+        template.requiredCustomFields.map((field) => ({
+          templateId: template.id,
+          templateName: template.name,
+          key: field.key,
+          label: field.label,
+        }))
+      )),
+      templates: templateHealth,
+    },
   };
+}
+
+function findStalePartialMetadata(
+  templatePlaceholders: unknown,
+  templateContent: string,
+  activePartials: Array<{ name: string; placeholders: unknown }>
+): Array<{ partialName: string; key: string }> {
+  const referencedPartials = new Set(extractPartialReferences(templateContent));
+  const partialCustomKeys = new Map<string, Set<string>>();
+  for (const partial of activePartials) {
+    partialCustomKeys.set(
+      partial.name,
+      new Set(
+        normalizeStoredPlaceholders(partial.placeholders)
+          .filter((placeholder) => (
+            placeholder.category === 'custom'
+            || placeholder.source === 'custom'
+            || placeholder.key?.startsWith('custom.')
+          ))
+          .map((placeholder) => normalizePlaceholderKey(placeholder.key))
+          .filter(Boolean)
+      )
+    );
+  }
+
+  return normalizeStoredPlaceholders(templatePlaceholders)
+    .filter((placeholder): placeholder is StoredPlaceholderLike & { sourcePartial: string } => (
+      Boolean(placeholder.sourcePartial)
+    ))
+    .map((placeholder) => ({
+      partialName: placeholder.sourcePartial,
+      key: normalizePlaceholderKey(placeholder.key),
+    }))
+    .filter((item) => {
+      if (!referencedPartials.has(item.partialName)) return true;
+      const currentKeys = partialCustomKeys.get(item.partialName);
+      return !currentKeys || !currentKeys.has(item.key);
+    });
 }
 
 // ============================================================================
