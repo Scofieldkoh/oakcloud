@@ -21,6 +21,11 @@ export interface PageFragment {
   oversized?: boolean;
 }
 
+export interface DomPoint {
+  node: Node;
+  offset: number;
+}
+
 function nextFlowId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -41,13 +46,11 @@ export function splitHardSections(input: string): string[] {
   return splitHardPageSections(normalizeCanonicalHtml(input));
 }
 
-function hydrateSection(section: string): string {
-  const container = document.createElement('div');
-  container.innerHTML = section;
-
+export function hydrateFlowContainer(container: HTMLElement): void {
   Array.from(container.childNodes).forEach((node) => {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as HTMLElement;
+      if (element.classList.contains('page-break')) return;
       if (!element.dataset.flowId) {
         element.dataset.flowId = nextFlowId();
       }
@@ -66,6 +69,12 @@ function hydrateSection(section: string): string {
       container.replaceChild(paragraph, node);
     }
   });
+}
+
+function hydrateSection(section: string): string {
+  const container = document.createElement('div');
+  container.innerHTML = section;
+  hydrateFlowContainer(container);
 
   return container.innerHTML;
 }
@@ -220,24 +229,49 @@ export function deleteCharacterBeforeTextOffset(
   return container.innerHTML;
 }
 
-function domPointForFlowPoint(
-  root: HTMLElement,
-  point: FlowPoint,
-): { node: Node; offset: number } | null {
-  const element = Array.from(
-    root.querySelectorAll<HTMLElement>('[data-flow-id]'),
-  ).find((candidate) => candidate.dataset.flowId === point.flowId);
-  if (!element) return null;
-
+function textPointForOffset(
+  element: HTMLElement,
+  requestedOffset: number,
+): DomPoint {
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-  let remaining = point.offset;
+  let remaining = requestedOffset;
   let node: Node | null;
+
   while ((node = walker.nextNode())) {
     const length = node.textContent?.length ?? 0;
     if (remaining <= length) return { node, offset: remaining };
     remaining -= length;
   }
+
   return { node: element, offset: element.childNodes.length };
+}
+
+export function domPointForFlowPoint(
+  root: HTMLElement,
+  point: FlowPoint,
+): DomPoint | null {
+  const fragments = Array.from(
+    root.querySelectorAll<HTMLElement>('[data-flow-id]'),
+  ).filter((candidate) => candidate.dataset.flowId === point.flowId);
+  if (fragments.length === 0) return null;
+
+  let consumed = 0;
+  for (const fragment of fragments) {
+    const length = fragment.textContent?.length ?? 0;
+    if (point.offset <= consumed + length) {
+      return textPointForOffset(
+        fragment,
+        Math.max(0, point.offset - consumed),
+      );
+    }
+    consumed += length;
+  }
+
+  const lastFragment = fragments[fragments.length - 1];
+  return textPointForOffset(
+    lastFragment,
+    lastFragment.textContent?.length ?? 0,
+  );
 }
 
 export function deleteFlowSelection(
