@@ -60,6 +60,41 @@ describe('A4PageEditor', () => {
     );
   });
 
+  it('retains filtered pages while committing visible fragments in DOM order', async () => {
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        value={
+          `<p>First visible</p>${hardPageBreak}` +
+          `<p>[Remove Page]</p>${hardPageBreak}` +
+          '<p>Second visible</p>'
+        }
+        onChange={onChange}
+      />,
+    );
+
+    const surface = screen.getByTestId('a4-document-surface');
+    const firstPage = screen.getByTestId('a4-page-content-1');
+    const secondPage = screen.getByTestId('a4-page-content-2');
+    const firstWrapper = firstPage.parentElement!.parentElement!;
+    const secondWrapper = secondPage.parentElement!.parentElement!;
+
+    expect(screen.getAllByTestId(/a4-page-content-/)).toHaveLength(2);
+    surface.insertBefore(secondWrapper, firstWrapper);
+    secondPage.innerHTML = '<p>Second visible edited</p>';
+    fireEvent.input(surface);
+
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    const emittedHtml = onChange.mock.calls.at(-1)?.[0] as string;
+    const emittedText = new DOMParser()
+      .parseFromString(emittedHtml, 'text/html')
+      .body.textContent ?? '';
+    expect(emittedText).toContain('[Remove Page]');
+    expect(emittedText.indexOf('Second visible edited')).toBeLessThan(
+      emittedText.indexOf('First visible'),
+    );
+  });
+
   it('keeps a native range spanning two physical pages', async () => {
     render(
       <A4PageEditor
@@ -191,9 +226,11 @@ describe('A4PageEditor', () => {
     expect(screen.getByTestId('a4-page-content-1').innerHTML).toContain(
       'Second page',
     );
-    expect(onChange).toHaveBeenLastCalledWith(
-      expect.not.stringContaining(pageBreak),
-    );
+    await waitFor(() => {
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.not.stringContaining(pageBreak),
+      );
+    });
   });
 
   it('preserves live page content when backspacing from a later page', async () => {

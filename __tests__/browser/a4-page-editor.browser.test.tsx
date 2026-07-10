@@ -258,6 +258,133 @@ describe('A4PageEditor real layout pagination', () => {
       ),
     ).toBe(false);
   });
+
+  it('routes native cross-page text replacement through the canonical document', async () => {
+    host.style.zoom = '0.25';
+    await page.viewport(1280, 900);
+    const editorRef = createRef<A4PageEditorRef>();
+    const onChange = vi.fn();
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value={'<p>Alpha</p><div class="page-break" data-break-type="hard"></div><p>Beta</p>'}
+          onChange={onChange}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(host.querySelectorAll('[data-testid^="a4-page-content-"]')).toHaveLength(2);
+      });
+    });
+
+    const contents = host.querySelectorAll<HTMLElement>(
+      '[data-testid^="a4-page-content-"]',
+    );
+    const firstText = contents[0].querySelector('p')!.firstChild!;
+    const secondText = contents[1].querySelector('p')!.firstChild!;
+    const startRange = document.createRange();
+    startRange.setStart(firstText, 2);
+    startRange.setEnd(firstText, 3);
+    const endRange = document.createRange();
+    endRange.setStart(secondText, 1);
+    endRange.setEnd(secondText, 2);
+    const start = viewportPoint(startRange.getBoundingClientRect(), 'start');
+    const end = viewportPoint(endRange.getBoundingClientRect(), 'end');
+
+    await act(async () => {
+      await page.mouse.move(start.x, start.y);
+      await page.mouse.down();
+      await page.mouse.move(end.x, end.y, { steps: 20 });
+      await page.mouse.up();
+    });
+    const selectedText = window.getSelection()?.toString() ?? '';
+    expect(selectedText).toContain('pha');
+    expect(selectedText).toContain('Be');
+
+    await act(async () => {
+      await cdp().send('Input.insertText', { text: 'X' });
+    });
+
+    await act(async () => {
+      await vi.waitFor(() => {
+        const canonical = editorRef.current?.getContent() ?? '';
+        const text = new DOMParser()
+          .parseFromString(canonical, 'text/html')
+          .body.textContent ?? '';
+        expect(text).toBe('AlXta');
+        expect(onChange).toHaveBeenCalled();
+      });
+    });
+    expect(
+      Array.from(
+        host.querySelectorAll<HTMLElement>('[data-testid^="a4-page-content-"]'),
+      ).some((content) => content.textContent?.includes('X')),
+    ).toBe(true);
+    expect(
+      Array.from(
+        host.querySelectorAll<HTMLElement>('[data-testid="a4-document-surface"] > *'),
+      ).some((wrapper) =>
+        Array.from(wrapper.childNodes).some(
+          (node) =>
+            node.nodeType === Node.TEXT_NODE && node.textContent?.includes('X'),
+        ),
+      ),
+    ).toBe(false);
+
+    await act(async () => {
+      await vi.waitFor(() => {
+        const replacementSelection = window.getSelection()!;
+        expect(replacementSelection.isCollapsed).toBe(true);
+        const anchorNode = replacementSelection.anchorNode!;
+        const anchorPage =
+          (anchorNode.nodeType === Node.ELEMENT_NODE
+            ? (anchorNode as HTMLElement)
+            : anchorNode.parentElement
+          )?.closest<HTMLElement>('[data-testid^="a4-page-content-"]') ?? null;
+        expect(anchorPage).toBeTruthy();
+        const currentPageRange = document.createRange();
+        currentPageRange.setStart(anchorPage!, 0);
+        currentPageRange.setEnd(
+          anchorNode,
+          replacementSelection.anchorOffset,
+        );
+        const pageContents = Array.from(
+          host.querySelectorAll<HTMLElement>(
+            '[data-testid^="a4-page-content-"]',
+          ),
+        );
+        const precedingTextLength = pageContents
+          .slice(0, pageContents.indexOf(anchorPage!))
+          .reduce((length, content) => length + (content.textContent?.length ?? 0), 0);
+        expect(precedingTextLength + currentPageRange.toString().length).toBe(3);
+      });
+    });
+
+    const surface = host.querySelector<HTMLElement>(
+      '[data-testid="a4-document-surface"]',
+    )!;
+    await act(async () => {
+      surface.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'z',
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    });
+    await act(async () => {
+      await vi.waitFor(() => {
+        const canonical = editorRef.current?.getContent() ?? '';
+        const text = new DOMParser()
+          .parseFromString(canonical, 'text/html')
+          .body.textContent ?? '';
+        expect(text).toBe('AlphaBeta');
+      });
+    });
+  });
 });
   beforeAll(() => {
     (

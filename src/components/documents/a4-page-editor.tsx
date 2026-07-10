@@ -270,6 +270,66 @@ function selectionStartPoint(
   return anchorIsStart ? bookmark.anchor : bookmark.focus;
 }
 
+function documentTextOffsetForFlowPoint(
+  html: string,
+  point: FlowSelectionBookmark['anchor'],
+): number | null {
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let documentOffset = 0;
+  let flowOffset = 0;
+  let node: Node | null;
+
+  while ((node = walker.nextNode())) {
+    const length = node.textContent?.length ?? 0;
+    const flowElement = node.parentElement?.closest<HTMLElement>('[data-flow-id]');
+    if (flowElement?.dataset.flowId === point.flowId) {
+      if (point.offset <= flowOffset + length) {
+        return documentOffset + Math.max(0, point.offset - flowOffset);
+      }
+      flowOffset += length;
+    }
+    documentOffset += length;
+  }
+
+  return null;
+}
+
+function flowPointAtDocumentTextOffset(
+  html: string,
+  requestedOffset: number,
+): FlowSelectionBookmark['anchor'] | null {
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const offsetsByFlowId = new Map<string, number>();
+  let remaining = Math.max(0, requestedOffset);
+  let fallback: FlowSelectionBookmark['anchor'] | null = null;
+  let node: Node | null;
+
+  while ((node = walker.nextNode())) {
+    const length = node.textContent?.length ?? 0;
+    const flowElement = node.parentElement?.closest<HTMLElement>('[data-flow-id]');
+    const flowId = flowElement?.dataset.flowId;
+    if (!flowId) {
+      remaining = Math.max(0, remaining - length);
+      continue;
+    }
+
+    const flowOffset = offsetsByFlowId.get(flowId) ?? 0;
+    fallback = { flowId, offset: flowOffset + length };
+    if (remaining <= length) {
+      return { flowId, offset: flowOffset + remaining };
+    }
+
+    offsetsByFlowId.set(flowId, flowOffset + length);
+    remaining -= length;
+  }
+
+  return fallback;
+}
+
 function replaceTypedPageBreaks(html: string): string {
   const pageBreakReplacement = '<div class="page-break"></div>';
   return html
@@ -1563,7 +1623,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       const metadataByPageId = new Map(
         currentPages.map((page) => [page.id, page]),
       );
-      const nextPages = Array.from(
+      const renderedPages = Array.from(
         surface.querySelectorAll<HTMLElement>(
           '[data-testid^="a4-page-content-"][data-page-id]',
         ),
@@ -1576,7 +1636,18 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         );
         return [content === page.content ? page : { ...page, content }];
       });
-      if (nextPages.every((page, index) => page === currentPages[index])) {
+      const renderedPageIds = new Set(renderedPages.map((page) => page.id));
+      let renderedIndex = 0;
+      const nextPages = currentPages.map((page) => {
+        if (!renderedPageIds.has(page.id)) return page;
+        return renderedPages[renderedIndex++] ?? page;
+      });
+      nextPages.push(...renderedPages.slice(renderedIndex));
+
+      if (
+        nextPages.length === currentPages.length &&
+        nextPages.every((page, index) => page === currentPages[index])
+      ) {
         return;
       }
 
@@ -1700,7 +1771,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       });
     }, [effectivePreviewMode, parsePages, pushHistorySnapshot, scheduleReflow]);
 
-    const handlePasteAcrossPages = useCallback(
+    const handleReplaceAcrossPages = useCallback(
       (html: string) => {
         if (effectivePreviewMode || !documentSurfaceRef.current) return;
         const bookmark = captureFlowSelection(documentSurfaceRef.current);
@@ -1715,15 +1786,26 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               hardBreakBefore: page.hardBreakBefore,
             })),
           );
+          const replacementStartOffset = documentTextOffsetForFlowPoint(
+            canonical,
+            replacementPoint,
+          );
           const replacementText = document.createElement('div');
           replacementText.innerHTML = html;
           const nextCanonical = replaceFlowSelection(canonical, bookmark, html);
-          const nextPages = parsePages(nextCanonical, prev);
-          const caretOffset =
-            replacementPoint.offset + (replacementText.textContent?.length ?? 0);
+          const hydratedNextCanonical = hydrateFlowHtml(nextCanonical);
+          const replacementLength = replacementText.textContent?.length ?? 0;
+          const replacementCaret =
+            replacementStartOffset === null
+              ? replacementPoint
+              : flowPointAtDocumentTextOffset(
+                  hydratedNextCanonical,
+                  replacementStartOffset + replacementLength,
+                ) ?? replacementPoint;
+          const nextPages = parsePages(hydratedNextCanonical, prev);
           pendingFlowSelectionRef.current = {
-            anchor: { ...replacementPoint, offset: caretOffset },
-            focus: { ...replacementPoint, offset: caretOffset },
+            anchor: replacementCaret,
+            focus: replacementCaret,
             collapsed: true,
           };
           pagesRef.current = nextPages;
@@ -1901,14 +1983,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (!html) return;
 
         if (surface && selectionSpansPages(surface)) {
-          handlePasteAcrossPages(html);
+          handleReplaceAcrossPages(html);
           return;
         }
 
         document.execCommand('insertHTML', false, html);
         setTimeout(commitDocumentSurface, 0);
       },
-      [commitDocumentSurface, effectivePreviewMode, handlePasteAcrossPages],
+      [commitDocumentSurface, effectivePreviewMode, handleReplaceAcrossPages],
     );
 
     const handleDocumentKeyDown = useCallback(
@@ -1985,17 +2067,38 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return;
         }
 
-        if (
-          !effectivePreviewMode &&
-          surface &&
-          inputEvent.inputType?.startsWith('delete') &&
-          selectionSpansPages(surface)
-        ) {
+        if (!effectivePreviewMode && surface && selectionSpansPages(surface)) {
           event.preventDefault();
-          handleDeleteAcrossPages();
+
+          if (inputEvent.inputType?.startsWith('delete')) {
+            handleDeleteAcrossPages();
+            return;
+          }
+
+          const isCompositionInput =
+            inputEvent.isComposing ||
+            inputEvent.inputType?.toLowerCase().includes('composition');
+          const inputData =
+            inputEvent.data ??
+            (event as ReactFormEvent<HTMLDivElement> & { data?: string }).data;
+          const isTextReplacement =
+            !isCompositionInput &&
+            typeof inputData === 'string' &&
+            (!inputEvent.inputType ||
+              inputEvent.inputType === 'insertText' ||
+              inputEvent.inputType === 'insertReplacementText');
+          if (isTextReplacement) {
+            const replacement = document.createElement('div');
+            replacement.textContent = inputData;
+            handleReplaceAcrossPages(replacement.innerHTML);
+          }
         }
       },
-      [effectivePreviewMode, handleDeleteAcrossPages],
+      [
+        effectivePreviewMode,
+        handleDeleteAcrossPages,
+        handleReplaceAcrossPages,
+      ],
     );
 
     const splitActivePageAtSelection = useCallback(() => {
