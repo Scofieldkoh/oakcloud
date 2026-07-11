@@ -2,7 +2,7 @@
 
 ## Scope
 
-Rebrand the user-facing Document Processing module as **Document Vault** and move document template navigation into the Document Generation experience. Existing routes and internal processing identifiers remain unchanged.
+Rebrand the user-facing Document Processing module as **Document Vault** and move document template navigation into the Document Generation experience. The processing route and internal processing identifiers remain unchanged; the Templates page moves out of the `/admin` route namespace.
 
 ## Navigation
 
