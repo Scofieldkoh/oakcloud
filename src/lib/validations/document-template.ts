@@ -40,10 +40,10 @@ const a4LayoutSchema = z.object({
   lineHeight: z.number().min(1).max(3),
   paragraphSpacing: z.string(),
   marginsMm: z.object({
-    top: z.number(),
-    right: z.number(),
-    bottom: z.number(),
-    left: z.number(),
+    top: z.number().finite().min(5).max(60),
+    right: z.number().finite().min(5).max(60),
+    bottom: z.number().finite().min(5).max(60),
+    left: z.number().finite().min(5).max(60),
   }),
 });
 

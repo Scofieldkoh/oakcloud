@@ -585,21 +585,6 @@ function addTableColumnAtSelection(editor: HTMLElement): boolean {
   return true;
 }
 
-function stripInlineLineHeight(html: string): string {
-  if (!html) return html;
-
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = sanitizeHtml(html);
-  wrapper.querySelectorAll<HTMLElement>('[style]').forEach((element) => {
-    element.style.lineHeight = '';
-    if (!element.getAttribute('style')?.trim()) {
-      element.removeAttribute('style');
-    }
-  });
-
-  return wrapper.innerHTML;
-}
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -2607,21 +2592,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
         if (cmd === 'lineSpacing' && val) {
           updateLayout({ ...effectiveLayout, lineHeight: Number(val) });
-          setPages((prev) => {
-            const next = prev.map((page) => ({
-              ...page,
-              content: stripInlineLineHeight(page.content),
-            }));
-            const changed = next.some(
-              (page, index) => page.content !== prev[index]?.content,
-            );
-
-            if (!changed) return prev;
-
-            pushHistorySnapshot(prev);
-            pendingUpdateRef.current = true;
-            return next;
-          });
           return;
         }
 
@@ -2637,7 +2607,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         effectivePreviewMode,
         handleRedo,
         handleUndo,
-        pushHistorySnapshot,
         restoreSelection,
         splitActivePageAtSelection,
         updateLayout,

@@ -117,11 +117,20 @@ describe('A4PageEditor', () => {
     expect(selection.toString()).toContain('Se');
   });
 
-  it('applies document line spacing to editable pages', () => {
-    render(<A4PageEditor value="<p>Hello</p>" />);
+  it('applies document line spacing without mutating canonical content or history', () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const onChange = vi.fn();
+    render(
+      <A4PageEditor
+        ref={editorRef}
+        value={'<p style="line-height: 1.15;">Hello</p>'}
+        onChange={onChange}
+      />,
+    );
 
     const editor = screen.getByTestId('a4-page-content-1');
     const paragraph = editor.querySelector('p');
+    const canonicalBefore = editorRef.current?.getContent();
     fireEvent.change(screen.getByTitle('Line Spacing'), {
       target: { value: '2' },
     });
@@ -131,6 +140,13 @@ describe('A4PageEditor', () => {
     expect(editor).toHaveStyle({ lineHeight: '2' });
     expect(paragraph).not.toHaveStyle({ lineHeight: '2' });
     expect(lineSpacing.value).toBe('2');
+    expect(editorRef.current?.getContent()).toBe(canonicalBefore);
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByLabelText('Undo'));
+
+    expect(editorRef.current?.getContent()).toBe(canonicalBefore);
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('keeps document line spacing unchanged when selecting paragraphs with inline spacing', () => {

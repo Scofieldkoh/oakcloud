@@ -96,4 +96,28 @@ describe('document template layout API persistence', () => {
     expect(response.status).toBe(400);
     expect(createDocumentTemplate).not.toHaveBeenCalled();
   });
+
+  it('rejects unsafe layout margins on POST and PUT', async () => {
+    const base = {
+      name: 'Unsafe margins',
+      category: 'OTHER',
+      content: '<p>Hello</p>',
+      contentJson: {
+        layout: {
+          version: 1,
+          lineHeight: 1.5,
+          paragraphSpacing: '0.5em',
+          marginsMm: { top: 4, right: 15, bottom: 20, left: 61 },
+        },
+      },
+    };
+
+    expect((await POST(request('POST', base))).status).toBe(400);
+    expect(createDocumentTemplate).not.toHaveBeenCalled();
+
+    expect(
+      (await PUT(request('PUT', base), { params: Promise.resolve({ id: templateId }) })).status,
+    ).toBe(400);
+    expect(updateDocumentTemplate).not.toHaveBeenCalled();
+  });
 });
