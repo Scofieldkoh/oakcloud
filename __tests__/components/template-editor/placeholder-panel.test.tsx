@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PlaceholderPanel } from '@/components/documents/template-editor/placeholder-panel';
@@ -18,6 +18,12 @@ const defaultProps = {
   isLoadingPartials: false,
   customPlaceholders: [] as CustomPlaceholderDefinition[],
   onCustomPlaceholdersChange: vi.fn(),
+};
+
+const partial = {
+  id: 'letterhead',
+  name: 'letterhead',
+  displayName: 'Letterhead',
 };
 
 function openCustomFieldForm() {
@@ -65,5 +71,85 @@ describe('PlaceholderPanel', () => {
     fillLabelAndKey('Duplicate', existingField.key);
 
     expect(screen.getByText('This placeholder key already exists.')).toBeVisible();
+  });
+
+  it('searches each field source and exposes filtered category counts', () => {
+    render(
+      <PlaceholderPanel
+        {...defaultProps}
+        customPlaceholders={[existingField]}
+        partials={[partial]}
+      />,
+    );
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search fields' }), {
+      target: { value: 'reference number' },
+    });
+
+    expect(screen.getByRole('button', { name: 'Custom, 1 result' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: /Company,/ })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search fields' }), {
+      target: { value: 'letterhead' },
+    });
+    expect(screen.getByRole('button', { name: 'Partials, 1 result' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Insert Letterhead' })).toBeVisible();
+  });
+
+  it('surfaces separate loops, conditions, and modifiers categories', () => {
+    render(<PlaceholderPanel {...defaultProps} />);
+
+    expect(screen.getByRole('button', { name: 'Loops, 2 results' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Conditions, 1 result' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Modifiers, 3 results' })).toBeVisible();
+  });
+
+  it('offers usable Copy actions for normal, custom, and partial fields but not builders', () => {
+    render(
+      <PlaceholderPanel
+        {...defaultProps}
+        customPlaceholders={[existingField]}
+        partials={[partial]}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Copy Company Name' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Copy Reference number' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Copy Letterhead' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Copy Directors loop' })).not.toBeInTheDocument();
+  });
+
+  it('edits an existing custom field without replacing its identity', () => {
+    const onCustomPlaceholdersChange = vi.fn();
+    render(
+      <PlaceholderPanel
+        {...defaultProps}
+        customPlaceholders={[existingField]}
+        onCustomPlaceholdersChange={onCustomPlaceholdersChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Reference number' }));
+    fillLabelAndKey('Updated reference', 'updated_reference');
+    fireEvent.click(screen.getByRole('button', { name: 'Update field' }));
+
+    expect(onCustomPlaceholdersChange).toHaveBeenCalledWith([
+      expect.objectContaining({
+        id: existingField.id,
+        key: 'updated_reference',
+        label: 'Updated reference',
+      }),
+    ]);
+  });
+
+  it('keeps director and shareholder fields distinct in recent items', () => {
+    render(<PlaceholderPanel {...defaultProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Insert Director Name' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Insert Shareholder Name' }));
+
+    const recents = screen.getByRole('region', { name: 'Recently used' });
+    expect(within(recents).getByText('Director Name')).toBeVisible();
+    expect(within(recents).getByText('Shareholder Name')).toBeVisible();
   });
 });
