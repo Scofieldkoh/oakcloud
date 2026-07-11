@@ -10,6 +10,12 @@ import { useToast } from '@/components/ui/toast';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { AISidebar, useAISidebar, type DocumentCategory } from '@/components/documents/ai-sidebar';
 import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
+import {
+  DEFAULT_A4_DOCUMENT_LAYOUT,
+  extractA4DocumentLayout,
+  mergeA4DocumentLayout,
+  type A4DocumentLayout,
+} from '@/components/documents/a4-pagination/layout';
 import { cn } from '@/lib/utils';
 import {
   Save,
@@ -52,6 +58,7 @@ interface TemplateFormData {
   content: string;
   isActive: boolean;
   customPlaceholders: CustomPlaceholderDefinition[];
+  layout: A4DocumentLayout;
 }
 
 interface PartialFormData {
@@ -1599,6 +1606,7 @@ function TemplateEditorContent() {
     content: '',
     isActive: true,
     customPlaceholders: [],
+    layout: DEFAULT_A4_DOCUMENT_LAYOUT,
   });
 
   // Form state for partials
@@ -1700,6 +1708,7 @@ function TemplateEditorContent() {
     category: string;
     content: string;
     isActive: boolean;
+    contentJson: Record<string, unknown>;
     placeholders: Array<{
       key: string;
       label: string;
@@ -1966,6 +1975,7 @@ function TemplateEditorContent() {
         content: existingTemplate.content || '',
         isActive: existingTemplate.isActive ?? true,
         customPlaceholders: templatePlaceholders,
+        layout: extractA4DocumentLayout(existingTemplate.contentJson),
       });
 
       // Restore partial placeholder linkings
@@ -2249,6 +2259,7 @@ function TemplateEditorContent() {
         content: formData.content,
         isActive: formData.isActive,
         placeholders,
+        contentJson: mergeA4DocumentLayout(existingTemplate?.contentJson, formData.layout),
       };
 
       if (isEditMode && itemId) {
@@ -2257,7 +2268,7 @@ function TemplateEditorContent() {
         await createMutation.mutateAsync({ tenantId: activeTenantId, ...dataToSave });
       }
     }
-  }, [formData, partialFormData, activeTenantId, isEditMode, itemId, isPartialMode, createMutation, updateMutation, createPartialMutation, updatePartialMutation, mergedPlaceholders]);
+  }, [formData, partialFormData, activeTenantId, isEditMode, itemId, isPartialMode, createMutation, updateMutation, createPartialMutation, updatePartialMutation, mergedPlaceholders, existingTemplate?.contentJson]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -2360,6 +2371,13 @@ function TemplateEditorContent() {
             showPreviewToggle={!isPartialMode}
             onPreview={isPartialMode ? undefined : handlePreview}
             isPreviewLoading={isPreviewLoading}
+            layout={isPartialMode ? undefined : formData.layout}
+            onLayoutChange={
+              isPartialMode
+                ? undefined
+                : (nextLayout) =>
+                    setFormData((previous) => ({ ...previous, layout: nextLayout }))
+            }
           />
         </div>
 

@@ -35,6 +35,41 @@ export const placeholderDefinitionSchema = z.object({
 
 export type PlaceholderDefinition = z.infer<typeof placeholderDefinitionSchema>;
 
+const a4LayoutSchema = z.object({
+  version: z.literal(1),
+  lineHeight: z.number().min(1).max(3),
+  paragraphSpacing: z.string(),
+  marginsMm: z.object({
+    top: z.number(),
+    right: z.number(),
+    bottom: z.number(),
+    left: z.number(),
+  }),
+});
+
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(jsonValueSchema),
+    z.record(jsonValueSchema),
+  ]),
+);
+const contentJsonSchema = z.record(jsonValueSchema).superRefine((value, context) => {
+  if (value.layout === undefined) return;
+  const parsed = a4LayoutSchema.safeParse(value.layout);
+  if (!parsed.success) {
+    context.addIssue({
+      code: 'custom',
+      path: ['layout'],
+      message: 'Invalid A4 document layout',
+    });
+  }
+});
+
 // ============================================================================
 // Create Template
 // ============================================================================
@@ -44,7 +79,7 @@ export const createDocumentTemplateSchema = z.object({
   description: z.string().max(5000).optional().nullable(),
   category: documentTemplateCategoryEnum.default('OTHER'),
   content: z.string().min(1, 'Template content is required'),
-  contentJson: z.any().optional().nullable(), // TipTap JSON, validated client-side
+  contentJson: contentJsonSchema.optional().nullable(),
   placeholders: z.array(placeholderDefinitionSchema).default([]),
   isActive: z.boolean().default(true),
 });
@@ -61,7 +96,7 @@ export const updateDocumentTemplateSchema = z.object({
   description: z.string().max(5000).optional().nullable(),
   category: documentTemplateCategoryEnum.optional(),
   content: z.string().min(1).optional(),
-  contentJson: z.any().optional().nullable(),
+  contentJson: contentJsonSchema.optional().nullable(),
   placeholders: z.array(placeholderDefinitionSchema).optional(),
   isActive: z.boolean().optional(),
 });

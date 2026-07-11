@@ -142,7 +142,11 @@ export async function updateDocumentTemplate(
   if (data.description !== undefined) updateData.description = data.description;
   if (data.category !== undefined) updateData.category = data.category;
   if (data.content !== undefined) updateData.content = data.content;
-  if (data.contentJson !== undefined) updateData.contentJson = data.contentJson;
+  if (data.contentJson !== undefined) {
+    updateData.contentJson = data.contentJson === null
+      ? Prisma.JsonNull
+      : data.contentJson;
+  }
   if (data.placeholders !== undefined) updateData.placeholders = data.placeholders;
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
 

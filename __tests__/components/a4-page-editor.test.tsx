@@ -177,6 +177,28 @@ describe('A4PageEditor', () => {
     });
   });
 
+  it('uses independent controlled margins for the measured content box', () => {
+    render(
+      <A4PageEditor
+        value="<p>Hello</p>"
+        layout={{
+          version: 1,
+          lineHeight: 2,
+          paragraphSpacing: '8px',
+          marginsMm: { top: 10, right: 15, bottom: 25, left: 30 },
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('a4-page-content-1')).toHaveStyle({
+      top: '38px',
+      right: '57px',
+      bottom: '94px',
+      left: '113px',
+      lineHeight: '2',
+    });
+  });
+
   it('toggles page numbers in the editor', () => {
     render(
       <A4PageEditor value={`<p>First</p>${hardPageBreak}<p>Second</p>`} />,

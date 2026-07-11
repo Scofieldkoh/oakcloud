@@ -66,6 +66,12 @@ import {
   deleteHardPageSection,
   type DocumentTransactionResult,
 } from './a4-pagination/document-actions';
+import {
+  DEFAULT_A4_DOCUMENT_LAYOUT,
+  normalizeA4DocumentLayout,
+  type A4DocumentLayout,
+  type A4MarginsMm,
+} from './a4-pagination/layout';
 
 // ============================================================================
 // HTML Sanitization
@@ -604,6 +610,8 @@ export interface A4PageEditorProps {
   onPreview?: () => void;
   isPreviewLoading?: boolean;
   readOnly?: boolean;
+  layout?: A4DocumentLayout;
+  onLayoutChange?: (layout: A4DocumentLayout) => void;
 }
 
 export interface A4PageEditorRef {
@@ -636,24 +644,32 @@ const A4 = {
 // Shared font styles
 const FONT_FAMILY = "'Times New Roman', Times, serif";
 const FONT_SIZE = '12pt';
-const LINE_HEIGHT = '1.5';
 const MM_TO_PX = 96 / 25.4;
 
 interface PageLayout {
-  marginMm: number;
-  marginPx: number;
+  marginsMm: A4MarginsMm;
+  topPx: number;
+  rightPx: number;
+  bottomPx: number;
+  leftPx: number;
   contentWidthPx: number;
   contentHeightPx: number;
 }
 
-function createPageLayout(marginMm: number): PageLayout {
-  const marginPx = Math.round(marginMm * MM_TO_PX);
+function createPageLayout(marginsMm: A4MarginsMm): PageLayout {
+  const topPx = Math.round(marginsMm.top * MM_TO_PX);
+  const rightPx = Math.round(marginsMm.right * MM_TO_PX);
+  const bottomPx = Math.round(marginsMm.bottom * MM_TO_PX);
+  const leftPx = Math.round(marginsMm.left * MM_TO_PX);
 
   return {
-    marginMm,
-    marginPx,
-    contentWidthPx: A4.WIDTH_PX - marginPx * 2,
-    contentHeightPx: A4.HEIGHT_PX - marginPx * 2,
+    marginsMm,
+    topPx,
+    rightPx,
+    bottomPx,
+    leftPx,
+    contentWidthPx: A4.WIDTH_PX - leftPx - rightPx,
+    contentHeightPx: A4.HEIGHT_PX - topPx - bottomPx,
   };
 }
 
@@ -1102,8 +1118,10 @@ function Page({
           )}
           style={{
             position: 'absolute',
-            top: pageLayout.marginPx,
-            left: pageLayout.marginPx,
+            top: pageLayout.topPx,
+            right: pageLayout.rightPx,
+            bottom: pageLayout.bottomPx,
+            left: pageLayout.leftPx,
             width: pageLayout.contentWidthPx,
             height: pageLayout.contentHeightPx,
             fontFamily: 'Arial, Helvetica, sans-serif',
@@ -1123,8 +1141,8 @@ function Page({
             className="pointer-events-none select-none text-gray-400"
             style={{
               position: 'absolute',
-              top: pageLayout.marginPx,
-              left: pageLayout.marginPx,
+              top: pageLayout.topPx,
+              left: pageLayout.leftPx,
               fontFamily: FONT_FAMILY,
               fontSize: FONT_SIZE,
               lineHeight,
@@ -1170,6 +1188,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       onPreview,
       isPreviewLoading = false,
       readOnly = false,
+      layout,
+      onLayoutChange,
     },
     ref,
   ) {
@@ -1348,14 +1368,29 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const activePageIdRef = useRef(activePageId);
     activePageIdRef.current = activePageId;
     const [isPreviewMode, setIsPreviewMode] = useState(readOnly);
-    const [lineHeight, setLineHeight] = useState(LINE_HEIGHT);
-    const [paragraphSpacing, setParagraphSpacing] = useState('0.5em');
-    const [pageMarginMm, setPageMarginMm] = useState(DEFAULT_PAGE_MARGIN_MM);
+    const [internalLayout, setInternalLayout] = useState<A4DocumentLayout>(() =>
+      normalizeA4DocumentLayout(DEFAULT_A4_DOCUMENT_LAYOUT),
+    );
+    const effectiveLayout = useMemo(
+      () => normalizeA4DocumentLayout(layout ?? internalLayout),
+      [internalLayout, layout],
+    );
+    const lineHeight = String(effectiveLayout.lineHeight);
+    const paragraphSpacing = effectiveLayout.paragraphSpacing;
+    const pageMarginMm = effectiveLayout.marginsMm.top;
+    const updateLayout = useCallback(
+      (next: A4DocumentLayout) => {
+        const normalized = normalizeA4DocumentLayout(next);
+        if (layout === undefined) setInternalLayout(normalized);
+        onLayoutChange?.(normalized);
+      },
+      [layout, onLayoutChange],
+    );
     const [showPageNumbers, setShowPageNumbers] = useState(true);
     const [surfaceRepairGeneration, setSurfaceRepairGeneration] = useState(0);
     const pageLayout = useMemo(
-      () => createPageLayout(pageMarginMm),
-      [pageMarginMm],
+      () => createPageLayout(effectiveLayout.marginsMm),
+      [effectiveLayout.marginsMm],
     );
 
     const scheduleReflow = useCallback(
@@ -2468,7 +2503,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         if (cmd === 'paragraphSpacing' && val) {
-          setParagraphSpacing(val);
+          updateLayout({ ...effectiveLayout, paragraphSpacing: val });
           return;
         }
 
@@ -2531,7 +2566,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
 
         if (cmd === 'lineSpacing' && val) {
-          setLineHeight(val);
+          updateLayout({ ...effectiveLayout, lineHeight: Number(val) });
           setPages((prev) => {
             const next = prev.map((page) => ({
               ...page,
@@ -2558,12 +2593,14 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         document.execCommand(cmd, false, val);
       },
       [
+        effectiveLayout,
         effectivePreviewMode,
         handleRedo,
         handleUndo,
         pushHistorySnapshot,
         restoreSelection,
         splitActivePageAtSelection,
+        updateLayout,
       ],
     );
 
@@ -2609,7 +2646,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
   <style>
     @page {
       size: 210mm 297mm;
-      margin: ${pageLayout.marginMm}mm;
+      margin: ${pageLayout.marginsMm.top}mm ${pageLayout.marginsMm.right}mm ${pageLayout.marginsMm.bottom}mm ${pageLayout.marginsMm.left}mm;
     }
     * {
       box-sizing: border-box;
@@ -2624,7 +2661,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     }
     .print-page {
       position: relative;
-      min-height: calc(297mm - ${pageLayout.marginMm * 2}mm);
+      min-height: calc(297mm - ${pageLayout.marginsMm.top + pageLayout.marginsMm.bottom}mm);
       page-break-after: always;
       break-after: page;
     }
@@ -2728,7 +2765,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       isPreviewMode,
       lineHeight,
       paragraphSpacing,
-      pageLayout.marginMm,
+      pageLayout.marginsMm,
       pages,
       previewPages,
       shouldRemovePage,
@@ -2931,11 +2968,20 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
             onCommand={handleCommand}
             onSaveSelection={saveCursorPosition}
             lineHeight={lineHeight}
-            onLineHeightChange={setLineHeight}
+            onLineHeightChange={(value) =>
+              updateLayout({ ...effectiveLayout, lineHeight: Number(value) })
+            }
             paragraphSpacing={paragraphSpacing}
-            onParagraphSpacingChange={setParagraphSpacing}
+            onParagraphSpacingChange={(value) =>
+              updateLayout({ ...effectiveLayout, paragraphSpacing: value })
+            }
             pageMarginMm={pageMarginMm}
-            onPageMarginChange={setPageMarginMm}
+            onPageMarginChange={(value) =>
+              updateLayout({
+                ...effectiveLayout,
+                marginsMm: { top: value, right: value, bottom: value, left: value },
+              })
+            }
             showPageNumbers={showPageNumbers}
             onShowPageNumbersChange={setShowPageNumbers}
             disabled={effectivePreviewMode}
