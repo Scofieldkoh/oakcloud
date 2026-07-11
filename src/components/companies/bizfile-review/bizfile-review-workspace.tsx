@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, Circle } from "lucide-react";
 import { ResizableSplitView } from "@/components/processing/resizable-split-view";
 import {
@@ -40,16 +40,51 @@ function repeatingRecordTotal(draft: BizFileReviewDraft) {
     (draft.officers?.length ?? 0) + (draft.shareholders?.length ?? 0) + (draft.charges?.length ?? 0);
 }
 
+function useLargeViewport() {
+  const [isLarge, setIsLarge] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(min-width: 1024px)").matches === true);
+  useEffect(() => {
+    const media = window.matchMedia?.("(min-width: 1024px)");
+    if (!media) return;
+    const update = () => setIsLarge(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  return isLarge;
+}
+
+function isEditableTarget(target: EventTarget | null) {
+  return target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+}
+
 export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, isSaving = false,
   serverIssues = [], onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
+  const workspaceRef = useRef<HTMLElement>(null);
+  const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveInFlightRef = useRef(false);
   const [draft, setDraft] = useState<BizFileReviewDraft>(() => clone(initialData));
   const [activeSection, setActiveSection] = useState<BizFileReviewSectionId>("entity");
+  const [visitedSections, setVisitedSections] = useState(() => new Set<BizFileReviewSectionId>(["entity"]));
   const [mobilePanel, setMobilePanel] = useState<"document" | "review">("review");
+  const [dismissedServerPaths, setDismissedServerPaths] = useState(() => new Set<string>());
+  const [locallySaving, setLocallySaving] = useState(false);
+  const [saveSummary, setSaveSummary] = useState<string | null>(null);
+  const isLarge = useLargeViewport();
   const validation = useMemo(() => validateBizFileReview(draft), [draft]);
-  const issues = useMemo(() => [...validation.issues.map((item) => item.path === "entityDetails.name" && item.message === "Required"
-    ? { ...item, message: "Company name is required" } : item), ...serverIssues], [validation.issues, serverIssues]);
+  const clientIssues = useMemo(() => validation.issues.map((item) => item.path === "entityDetails.name" && item.message === "Required"
+    ? { ...item, message: "Company name is required" } : item), [validation.issues]);
+  const issues = useMemo(() => {
+    const byPath = new Map(clientIssues.map((issue) => [issue.path, issue]));
+    for (const issue of serverIssues) {
+      if (!dismissedServerPaths.has(issue.path) && !byPath.has(issue.path)) byPath.set(issue.path, issue);
+    }
+    return Array.from(byPath.values());
+  }, [clientIssues, dismissedServerPaths, serverIssues]);
+  const serverSignature = JSON.stringify(serverIssues);
+  useEffect(() => setDismissedServerPaths(new Set()), [serverSignature]);
   const initialSnapshot = useState(() => JSON.stringify(normalizeBizFileReviewDraft(clone(initialData))))[0];
   const isDirty = JSON.stringify(normalizeBizFileReviewDraft(draft)) !== initialSnapshot;
+  const busy = isSaving || locallySaving;
 
   useEffect(() => {
     if (!isDirty) return;
@@ -58,77 +93,129 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
     return () => window.removeEventListener("beforeunload", warn);
   }, [isDirty]);
 
-  const confirm = useCallback(() => {
+  useEffect(() => () => {
+    if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
+  }, []);
+
+  const selectSection = useCallback((section: BizFileReviewSectionId) => {
+    setActiveSection(section);
+    setVisitedSections((current) => new Set(current).add(section));
+  }, []);
+
+  const changeDraft = useCallback((next: BizFileReviewDraft) => {
+    setDismissedServerPaths((dismissed) => {
+      const updated = new Set(dismissed);
+      for (const issue of serverIssues) {
+        const segments = issue.path.split(".");
+        const read = (value: unknown) => segments.reduce<unknown>((current, key) => current != null ? (current as Record<string, unknown>)[key] : undefined, value);
+        if (!Object.is(read(draft), read(next))) updated.add(issue.path);
+      }
+      return updated;
+    });
+    setDraft(next);
+  }, [draft, serverIssues]);
+
+  const focusIssue = useCallback((first: BizFileReviewIssue) => {
+    selectSection(first.section);
+    setMobilePanel("review");
+    if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
+    focusTimeoutRef.current = setTimeout(() => {
+      const selector = `[data-field-path="${CSS.escape(first.path)}"]`;
+      const target = workspaceRef.current?.querySelector<HTMLElement>(selector);
+      target?.focus();
+      if (!target) workspaceRef.current?.querySelector<HTMLElement>("main, [data-review-summary]")?.focus();
+      focusTimeoutRef.current = null;
+    });
+  }, [selectSection]);
+
+  const confirm = useCallback(async () => {
+    if (busy || saveInFlightRef.current) return;
     if (issues.length) {
-      const first = issues[0];
-      setActiveSection(first.section);
-      setMobilePanel("review");
-      window.setTimeout(() => {
-        const controls = document.querySelectorAll<HTMLElement>("input, select, textarea");
-        const target = Array.from(controls).find((control) => control.dataset.fieldPath === first.path ||
-          control.getAttribute("aria-describedby")?.split(" ").some((id) => document.getElementById(id)?.textContent === first.message));
-        target?.focus();
-      });
+      const sectionCount = new Set(issues.map((issue) => issue.section)).size;
+      setSaveSummary(`Save blocked: ${issues.length} ${issues.length === 1 ? "issue" : "issues"} in ${sectionCount} ${sectionCount === 1 ? "section" : "sections"}.`);
+      focusIssue(issues[0]);
       return;
     }
-    void onConfirm(normalizeBizFileReviewDraft(draft));
-  }, [draft, issues, onConfirm]);
+    saveInFlightRef.current = true;
+    setLocallySaving(true);
+    setSaveSummary("Saving reviewed information…");
+    try {
+      await onConfirm(normalizeBizFileReviewDraft(draft));
+      setSaveSummary("Save completed.");
+    } catch {
+      setSaveSummary("Save failed. Please try again.");
+    } finally {
+      saveInFlightRef.current = false;
+      setLocallySaving(false);
+    }
+  }, [busy, draft, focusIssue, issues, onConfirm]);
 
   useEffect(() => {
-    const save = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); confirm(); }
+    const shortcuts = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      if (event.key.toLowerCase() === "s") { event.preventDefault(); void confirm(); }
+      if (event.key === "Backspace" && !isEditableTarget(event.target)) { event.preventDefault(); onCancel(); }
     };
-    window.addEventListener("keydown", save);
-    return () => window.removeEventListener("keydown", save);
-  }, [confirm]);
+    window.addEventListener("keydown", shortcuts);
+    return () => window.removeEventListener("keydown", shortcuts);
+  }, [confirm, onCancel]);
 
   const issuesFor = (section: BizFileReviewSectionId) => issues.filter((item) => item.section === section);
-  const validSections = BIZFILE_REVIEW_SECTIONS.filter((section) => issuesFor(section).length === 0).length;
+  const reviewedValidSections = BIZFILE_REVIEW_SECTIONS.filter((section) => visitedSections.has(section) && issuesFor(section).length === 0).length;
+  const sectionNavigation = (
+    <nav aria-label="Review sections" className="hidden w-52 shrink-0 overflow-y-auto border-r border-border-primary p-2 md:block">
+      {BIZFILE_REVIEW_SECTIONS.map((section) => {
+        const count = issuesFor(section).length;
+        const state = count ? "Errors" : visitedSections.has(section) ? "Complete" : "Not reviewed";
+        const Icon = count ? AlertCircle : state === "Complete" ? CheckCircle2 : Circle;
+        return <button key={section} type="button" onClick={() => selectSection(section)}
+          aria-label={`${sectionLabels[section]}, ${count} ${count === 1 ? "error" : "errors"}, ${state}`}
+          className={`mb-1 flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs ${activeSection === section ? "bg-oak-primary/10" : ""}`}>
+          <Icon className="h-4 w-4" /><span className="flex-1">{sectionLabels[section]}</span><span>{count || state}</span>
+        </button>;
+      })}
+    </nav>
+  );
   const editor = (
-    <div className={`${mobilePanel === "review" ? "block" : "hidden"} lg:flex h-full min-h-0 flex-col bg-background-primary`}>
-      <div className="flex min-h-0 flex-1">
-        <nav aria-label="Review sections" className="hidden w-52 shrink-0 overflow-y-auto border-r border-border-primary p-2 md:block">
-          {BIZFILE_REVIEW_SECTIONS.map((section) => {
-            const count = issuesFor(section).length;
-            const state = count ? "Errors" : section === activeSection && isDirty ? "Needs attention" : "Complete";
-            const Icon = count ? AlertCircle : state === "Complete" ? CheckCircle2 : Circle;
-            return <button key={section} type="button" onClick={() => setActiveSection(section)}
-              aria-label={`${sectionLabels[section]}, ${count} ${count === 1 ? "error" : "errors"}, ${state}`}
-              className={`mb-1 flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs ${activeSection === section ? "bg-oak-primary/10" : ""}`}>
-              <Icon className="h-4 w-4" /><span className="flex-1">{sectionLabels[section]}</span>
-              <span>{count || state}</span>
-            </button>;
-          })}
-        </nav>
-        <main className="min-w-0 flex-1 overflow-y-auto p-4">
-          <BizFileReviewSections activeSection={activeSection} draft={draft} onChange={setDraft} issues={issues} />
+    <div className="flex h-full min-h-0 flex-col bg-background-primary">
+      <label className="border-b border-border-primary p-2 text-xs md:hidden">Review section
+        <select aria-label="Review section" value={activeSection} onChange={(event) => selectSection(event.target.value as BizFileReviewSectionId)}
+          className="ml-2 h-8 rounded-md border border-border-primary bg-background-primary px-2">
+          {BIZFILE_REVIEW_SECTIONS.map((section) => <option key={section} value={section}>{sectionLabels[section]}</option>)}
+        </select>
+      </label>
+      <div className="flex min-h-0 flex-1">{sectionNavigation}
+        <main tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto p-4">
+          <BizFileReviewSections activeSection={activeSection} draft={draft} onChange={changeDraft} issues={issues} />
         </main>
       </div>
-      <footer className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-border-primary bg-background-primary p-3">
+      <footer className="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 border-t border-border-primary bg-background-primary p-3">
+        {saveSummary && <p role="status" data-review-summary tabIndex={-1} className="mr-auto text-xs text-text-secondary">{saveSummary}</p>}
         <button type="button" onClick={onCancel}>Cancel</button>
-        <button type="button" onClick={onReset}>Reset</button>
-        <button type="button" disabled={isSaving} onClick={confirm} className="rounded bg-oak-primary px-4 py-2 text-white">
-          {isSaving ? "Saving…" : "Confirm & Save"}
+        <button type="button" onClick={onReset}>Upload Different File</button>
+        <button type="button" disabled={busy} onClick={() => void confirm()} className="rounded bg-oak-primary px-4 py-2 text-white disabled:opacity-50">
+          {busy ? "Saving…" : "Confirm & Save"}
         </button>
       </footer>
     </div>
   );
 
-  return <section className="flex h-full min-h-0 flex-col">
+  return <section ref={workspaceRef} className="flex h-full min-h-0 flex-col">
     <header className="border-b border-border-primary p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div><h1 className="font-semibold">Review extracted information</h1><p className="text-xs text-text-muted"><span>10 sections</span> · {validSections} valid · {issues.length} issues · {repeatingRecordTotal(draft)} records</p></div>
-        <span className="text-xs">{issues.length ? "Needs attention" : "Ready to save"}</span>
+        <div><h1 className="font-semibold">Review extracted information</h1><p className="text-xs text-text-muted"><span>10 sections</span> · {reviewedValidSections} reviewed · {issues.length} issues · {repeatingRecordTotal(draft)} records</p></div>
+        <span className="text-xs">{issues.length ? "Needs attention" : reviewedValidSections === 10 ? "Ready to save" : "Review in progress"}</span>
       </div>
-      {aiMetadata && <p className="mt-1 text-xs text-text-muted">{aiMetadata.modelName ?? aiMetadata.modelUsed} · {aiMetadata.providerUsed}{aiMetadata.formattedCost ? ` · ${aiMetadata.formattedCost}` : ""}</p>}
-      <div role="tablist" className="mt-3 flex gap-2 lg:hidden">
+      {aiMetadata && <div className="mt-1 text-xs text-text-muted"><p>{aiMetadata.modelName ?? aiMetadata.modelUsed} · {aiMetadata.providerUsed}{aiMetadata.formattedCost ? ` · ${aiMetadata.formattedCost}` : ""}</p><p className="text-text-secondary">AI-extracted data may be inaccurate. Verify it against the source document.</p></div>}
+      {!isLarge && <div role="tablist" className="mt-3 flex gap-2">
         {(["document", "review"] as const).map((panel) => <button key={panel} role="tab" aria-selected={mobilePanel === panel}
           onClick={() => setMobilePanel(panel)} className="rounded border px-3 py-1.5 text-xs">{panel === "document" ? "Document" : "Review"}</button>)}
-      </div>
+      </div>}
     </header>
     <div className="min-h-0 flex-1">
-      <ResizableSplitView className="h-full" leftPanel={<div className={`${mobilePanel === "document" ? "block" : "hidden"} h-full lg:block`}>{sourcePanel}</div>}
-        rightPanel={editor} defaultLeftWidth={45} minLeftWidth={30} maxLeftWidth={65} />
+      {isLarge ? <div data-testid="desktop-split" className="h-full"><ResizableSplitView className="h-full" leftPanel={sourcePanel}
+        rightPanel={editor} defaultLeftWidth={45} minLeftWidth={30} maxLeftWidth={65} /></div>
+        : <div data-testid="mobile-workspace" className="h-full">{mobilePanel === "document" ? sourcePanel : editor}</div>}
     </div>
   </section>;
 }

@@ -32,6 +32,19 @@ describe('BizFile review validation', () => {
     });
   });
 
+  it('omits empty optional arrays while preserving populated arrays', () => {
+    const draft = createEmptyBizFileReviewDraft();
+    draft.entityDetails = { uen: '202626103M', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };
+    draft.officers = [];
+    draft.charges = [];
+    draft.shareholders = [{ name: 'Owner', type: 'INDIVIDUAL', shareClass: 'ORDINARY', numberOfShares: 1 }];
+    expect(normalizeBizFileReviewDraft(draft)).toEqual(expect.objectContaining({
+      officers: undefined,
+      charges: undefined,
+      shareholders: draft.shareholders,
+    }));
+  });
+
   it('rejects invalid dates, percentages, and non-finite numbers', () => {
     const draft = createEmptyBizFileReviewDraft();
     draft.entityDetails = { uen: '202626103M', name: 'Example', entityType: 'PRIVATE_LIMITED', status: 'LIVE', incorporationDate: 'not-a-date' };

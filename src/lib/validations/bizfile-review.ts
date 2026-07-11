@@ -178,7 +178,7 @@ function isBlank(value: unknown): boolean {
 
 function normalize(value: unknown, root = false): unknown {
   if (typeof value === 'string') return value.trim();
-  if (Array.isArray(value)) return value.map((item) => normalize(item, true));
+  if (Array.isArray(value)) return value.length === 0 && !root ? undefined : value.map((item) => normalize(item, true));
   if (value !== null && typeof value === 'object') {
     const result: Record<string, unknown> = {};
     for (const [key, child] of Object.entries(value)) {
