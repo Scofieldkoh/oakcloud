@@ -64,7 +64,22 @@ export async function POST(
       );
     }
 
-    const body: unknown = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          error: 'Please correct the highlighted fields',
+          issues: [{
+            path: 'request',
+            message: 'Enter a valid request body',
+            section: 'entity',
+          }],
+        },
+        { status: 400 }
+      );
+    }
     const candidate = typeof body === 'object' && body !== null && 'extractedData' in body
       ? (body as { extractedData: unknown }).extractedData
       : undefined;
@@ -100,11 +115,8 @@ export async function POST(
     });
   } catch (error) {
     console.error('Document confirm error:', error);
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

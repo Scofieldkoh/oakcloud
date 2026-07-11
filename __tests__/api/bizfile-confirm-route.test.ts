@@ -39,9 +39,21 @@ function request(body: unknown = { extractedData: validPayload }) {
   });
 }
 
+function rawRequest(body: string) {
+  return new Request('http://localhost/api/documents/doc-1/confirm', {
+    method: 'POST',
+    body,
+  });
+}
+
 async function post(body?: unknown) {
   const { POST } = await import('@/app/api/documents/[documentId]/confirm/route');
   return POST(request(body) as never, { params: Promise.resolve({ documentId: 'doc-1' }) });
+}
+
+async function postRaw(body: string) {
+  const { POST } = await import('@/app/api/documents/[documentId]/confirm/route');
+  return POST(rawRequest(body) as never, { params: Promise.resolve({ documentId: 'doc-1' }) });
 }
 
 describe('POST /api/documents/:documentId/confirm', () => {
@@ -89,6 +101,22 @@ describe('POST /api/documents/:documentId/confirm', () => {
     expect(mockProcess).not.toHaveBeenCalled();
   });
 
+  it.each(['{', '{"extractedData":'])(
+    'returns request issues and makes no writes for invalid JSON: %s',
+    async (rawBody) => {
+      const response = await postRaw(rawBody);
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body).toEqual({
+        error: 'Please correct the highlighted fields',
+        issues: [expect.objectContaining({ path: 'request', section: 'entity' })],
+      });
+      expect(mockDocumentUpdate).not.toHaveBeenCalled();
+      expect(mockProcess).not.toHaveBeenCalled();
+    }
+  );
+
   it('returns 404 when the document does not exist', async () => {
     mockDocumentFindUnique.mockResolvedValue(null);
     expect((await post()).status).toBe(404);
@@ -121,14 +149,38 @@ describe('POST /api/documents/:documentId/confirm', () => {
     expect(mockProcess).not.toHaveBeenCalled();
   });
 
-  it('keeps the corrected extraction saved if downstream processing fails', async () => {
+  it('returns a generic 500 if saving corrected extraction fails', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    mockProcess.mockRejectedValue(new Error('processing failed'));
+    mockDocumentUpdate.mockRejectedValue(new Error('database host secret'));
     const response = await post();
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: 'Internal server error' });
+    expect(mockProcess).not.toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it('keeps the corrected extraction saved and returns a generic 500 if processing fails', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockProcess.mockRejectedValue(new Error('processor credential secret'));
+    const response = await post();
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: 'Internal server error' });
     expect(mockDocumentUpdate).toHaveBeenCalledOnce();
     expect(mockProcess).toHaveBeenCalledOnce();
+    consoleError.mockRestore();
+  });
+
+  it('preserves the known unauthorized mapping', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockRequireAuth.mockRejectedValue(new Error('Unauthorized'));
+
+    const response = await post();
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
+    expect(mockDocumentFindUnique).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
 });
