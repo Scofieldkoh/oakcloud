@@ -98,11 +98,18 @@ describe('A4EditorToolbar', () => {
         name: 'More toolbar actions',
       }),
     ).toBeVisible();
+    expect(
+      within(screen.getByRole('group', { name: 'Insert' })).getByRole('button', {
+        name: 'Insert actions',
+      }),
+    ).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Insert table' })).not.toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Show page numbers' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More toolbar actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Insert actions' }));
     expect(screen.getByRole('button', { name: 'Insert table' })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More toolbar actions' }));
     expect(screen.getByRole('checkbox', { name: 'Show page numbers' })).toBeVisible();
   });
 

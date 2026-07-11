@@ -205,8 +205,8 @@ function ToolbarMenu({
       </button>
       <div
         hidden={!isOpen}
-        role="menu"
-        aria-label={`${label} menu`}
+        role="dialog"
+        aria-label={`${label} popover`}
         className="absolute right-0 z-20 mt-2 w-72 rounded border border-border-primary bg-background-elevated p-3 shadow-lg"
       >
         {children}
@@ -389,7 +389,13 @@ export function A4EditorToolbar({
         <ToolbarButton label="Increase indent" icon={Indent} onSaveSelection={onSaveSelection} onClick={command({ type: 'indent' })} disabled={disabled} />
       </ToolbarGroup>
       <ToolbarGroup label="Insert">
-        <span className="px-1 text-xs text-text-muted">Insert</span>
+        <ToolbarMenu label="Insert actions" disabled={disabled}>
+          <div role="group" aria-label="Insert actions">
+            <ToolbarButton label="Insert table" title="Insert Table" icon={Table2} onSaveSelection={onSaveSelection} onClick={command({ type: 'insert-table' })} disabled={disabled} />
+            <ToolbarButton label="Add table row" title="Add Table Row" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={() => onLegacyCommand?.('addTableRow')} disabled={disabled || !onLegacyCommand} />
+            <ToolbarButton label="Add table column" title="Add Table Column" icon={Table2} onSaveSelection={onSaveSelection} onClick={() => onLegacyCommand?.('addTableColumn')} disabled={disabled || !onLegacyCommand} />
+          </div>
+        </ToolbarMenu>
       </ToolbarGroup>
       <ToolbarGroup label="Page">
         <MarginPopover disabled={disabled} layout={layout} onLayoutChange={onLayoutChange} onSaveSelection={onSaveSelection} />
@@ -399,11 +405,6 @@ export function A4EditorToolbar({
       </ToolbarGroup>
       <ToolbarGroup label="View">
         <ToolbarMenu label="More toolbar actions" disabled={disabled}>
-          <div role="group" aria-label="Insert actions" className="mb-3 border-b border-border-primary pb-3">
-            <ToolbarButton label="Insert table" title="Insert Table" icon={Table2} onSaveSelection={onSaveSelection} onClick={command({ type: 'insert-table' })} disabled={disabled} />
-            <ToolbarButton label="Add table row" title="Add Table Row" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={() => onLegacyCommand?.('addTableRow')} disabled={disabled || !onLegacyCommand} />
-            <ToolbarButton label="Add table column" title="Add Table Column" icon={Table2} onSaveSelection={onSaveSelection} onClick={() => onLegacyCommand?.('addTableColumn')} disabled={disabled || !onLegacyCommand} />
-          </div>
           <div role="group" aria-label="View actions" className="grid grid-cols-2 gap-2">
             <label className="text-xs font-medium text-text-secondary">Line spacing
               <select aria-label="Line spacing" title="Line Spacing" value={layout.lineHeight} disabled={disabled} onPointerDown={onSaveSelection} onChange={(event) => onLayoutChange({ ...layout, lineHeight: Number(event.target.value) })} className={cn(compactSelectClass, 'mt-1')}>
