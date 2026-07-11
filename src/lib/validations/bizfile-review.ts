@@ -1,0 +1,199 @@
+import { z } from 'zod';
+import type { ExtractedBizFileData } from '@/services/bizfile/types';
+
+export const BIZFILE_REVIEW_SECTIONS = [
+  'entity', 'addresses', 'activities', 'capital', 'officers',
+  'shareholders', 'auditor', 'compliance', 'charges', 'document',
+] as const;
+
+export type BizFileReviewSectionId = typeof BIZFILE_REVIEW_SECTIONS[number];
+export type BizFileReviewDraft = ExtractedBizFileData;
+export interface BizFileReviewIssue { path: string; message: string; section: BizFileReviewSectionId }
+export interface BizFileReviewValidation {
+  isValid: boolean;
+  issues: BizFileReviewIssue[];
+  issuesBySection: Record<BizFileReviewSectionId, BizFileReviewIssue[]>;
+}
+
+function emptyIssuesBySection(): Record<BizFileReviewSectionId, BizFileReviewIssue[]> {
+  return BIZFILE_REVIEW_SECTIONS.reduce((sections, section) => {
+    sections[section] = [];
+    return sections;
+  }, {} as Record<BizFileReviewSectionId, BizFileReviewIssue[]>);
+}
+
+const requiredString = z.string().trim().min(1, 'Required');
+const reviewString = z.string().trim();
+const optionalString = z.string().trim().optional();
+const nonNegativeNumber = z.number().finite('Must be finite').nonnegative('Must be non-negative');
+const percentage = nonNegativeNumber.max(100, 'Must be at most 100');
+const isoDate = z.string().trim().superRefine((value, context) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'Must be a valid date (YYYY-MM-DD)' });
+    return;
+  }
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'Must be a valid calendar date' });
+  }
+});
+const optionalDate = isoDate.optional();
+
+const addressSchema = z.object({
+  block: optionalString,
+  streetName: requiredString,
+  level: optionalString,
+  unit: optionalString,
+  buildingName: optionalString,
+  postalCode: requiredString,
+  country: optionalString,
+});
+
+export const bizFileReviewSchema = z.object({
+  entityDetails: z.object({
+    uen: reviewString,
+    name: reviewString,
+    formerName: optionalString,
+    dateOfNameChange: optionalDate,
+    formerNames: z.array(z.object({ name: requiredString, effectiveFrom: optionalDate, effectiveTo: optionalDate })).optional(),
+    entityType: reviewString,
+    status: reviewString,
+    statusDate: optionalDate,
+    incorporationDate: optionalDate,
+    registrationDate: optionalDate,
+  }).superRefine((entity, context) => {
+    for (const field of ['uen', 'name', 'entityType', 'status'] as const) {
+      if (!entity[field]) context.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: 'Required' });
+    }
+  }),
+  ssicActivities: z.object({
+    primary: z.object({ code: requiredString, description: requiredString }).optional(),
+    secondary: z.object({ code: requiredString, description: requiredString }).optional(),
+  }).optional(),
+  registeredAddress: addressSchema.extend({ effectiveFrom: optionalDate }).optional(),
+  mailingAddress: addressSchema.optional(),
+  paidUpCapital: z.object({ amount: nonNegativeNumber, currency: requiredString }).optional(),
+  issuedCapital: z.object({ amount: nonNegativeNumber, currency: requiredString }).optional(),
+  shareCapital: z.array(z.object({
+    shareClass: requiredString,
+    currency: requiredString,
+    numberOfShares: nonNegativeNumber,
+    parValue: nonNegativeNumber.optional(),
+    totalValue: nonNegativeNumber,
+    isPaidUp: z.boolean(),
+    isTreasury: z.boolean().optional(),
+  })).optional(),
+  treasuryShares: z.object({ numberOfShares: nonNegativeNumber, currency: optionalString }).optional(),
+  shareholders: z.array(z.object({
+    name: reviewString,
+    type: z.enum(['INDIVIDUAL', 'CORPORATE']),
+    identificationType: optionalString,
+    identificationNumber: optionalString,
+    nationality: optionalString,
+    placeOfOrigin: optionalString,
+    address: optionalString,
+    shareClass: reviewString,
+    numberOfShares: nonNegativeNumber,
+    percentageHeld: percentage.optional(),
+    currency: optionalString,
+  }).superRefine((shareholder, context) => {
+    for (const field of ['name', 'shareClass'] as const) {
+      if (!shareholder[field]) context.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: 'Required' });
+    }
+  })).optional(),
+  officers: z.array(z.object({
+    name: requiredString,
+    role: requiredString,
+    identificationType: optionalString,
+    identificationNumber: optionalString,
+    nationality: optionalString,
+    address: optionalString,
+    appointmentDate: optionalDate,
+    cessationDate: optionalDate,
+  })).optional(),
+  auditor: z.object({ name: requiredString, address: optionalString, appointmentDate: optionalDate }).optional(),
+  financialYear: z.object({
+    endDay: z.number().finite().int().min(1).max(31),
+    endMonth: z.number().finite().int().min(1).max(12),
+    fyeAsAtLastAr: optionalDate,
+  }).optional(),
+  homeCurrency: optionalString,
+  compliance: z.object({
+    lastAgmDate: optionalDate,
+    lastArFiledDate: optionalDate,
+    accountsDueDate: optionalDate,
+    fyeAsAtLastAr: optionalDate,
+  }).optional(),
+  charges: z.array(z.object({
+    chargeNumber: optionalString,
+    chargeType: optionalString,
+    description: optionalString,
+    chargeHolderName: requiredString,
+    amountSecured: nonNegativeNumber.optional(),
+    amountSecuredText: optionalString,
+    currency: optionalString,
+    registrationDate: optionalDate,
+    dischargeDate: optionalDate,
+  })).optional(),
+  documentMetadata: z.object({ receiptNo: optionalString, receiptDate: optionalDate }).optional(),
+});
+
+const sectionForPath: Record<string, BizFileReviewSectionId> = {
+  entityDetails: 'entity', registeredAddress: 'addresses', mailingAddress: 'addresses',
+  ssicActivities: 'activities', paidUpCapital: 'capital', issuedCapital: 'capital',
+  shareCapital: 'capital', treasuryShares: 'capital', homeCurrency: 'capital',
+  officers: 'officers', shareholders: 'shareholders', auditor: 'auditor',
+  financialYear: 'compliance', compliance: 'compliance', charges: 'charges',
+  documentMetadata: 'document',
+};
+
+export function issuesFromZodError(error: z.ZodError): BizFileReviewValidation {
+  const issuesBySection = emptyIssuesBySection();
+  const issues = error.issues.map((issue) => {
+    const path = issue.path.join('.');
+    const section = sectionForPath[String(issue.path[0])] ?? 'entity';
+    const mapped = { path, message: issue.message, section };
+    issuesBySection[section].push(mapped);
+    return mapped;
+  });
+  return { isValid: false, issues, issuesBySection };
+}
+
+function isBlank(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (typeof value === 'string') return value.trim() === '';
+  if (Array.isArray(value)) return value.length === 0;
+  return value !== null && typeof value === 'object' && Object.values(value).every(isBlank);
+}
+
+function normalize(value: unknown, root = false): unknown {
+  if (typeof value === 'string') return value.trim();
+  if (Array.isArray(value)) return value.map((item) => normalize(item, true));
+  if (value !== null && typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(value)) {
+      const normalized = normalize(child);
+      result[key] = normalized;
+    }
+    return !root && isBlank(result) ? undefined : result;
+  }
+  return value;
+}
+
+export function normalizeBizFileReviewDraft(draft: BizFileReviewDraft): ExtractedBizFileData {
+  const normalized = normalize(draft, true) as ExtractedBizFileData;
+  normalized.entityDetails = normalize(draft.entityDetails, true) as ExtractedBizFileData['entityDetails'];
+  return normalized;
+}
+
+export function createEmptyBizFileReviewDraft(): BizFileReviewDraft {
+  return { entityDetails: { uen: '', name: '', entityType: '', status: '' } };
+}
+
+export function validateBizFileReview(draft: BizFileReviewDraft): BizFileReviewValidation {
+  const result = bizFileReviewSchema.safeParse(normalizeBizFileReviewDraft(draft));
+  if (!result.success) return issuesFromZodError(result.error);
+  const issuesBySection = emptyIssuesBySection();
+  return { isValid: true, issues: [], issuesBySection };
+}
