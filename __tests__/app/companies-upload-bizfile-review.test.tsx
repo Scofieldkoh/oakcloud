@@ -58,6 +58,16 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 async function reachPreview(updateMode = false) {
   mocks.searchParams = new URLSearchParams(updateMode ? 'companyId=company-1' : '');
   mocks.upload.mockResolvedValueOnce(jsonResponse({ documentId: 'doc-1' }));
@@ -130,6 +140,37 @@ describe('companies upload BizFile review integration', () => {
 
     expect(await screen.findByText('Failed to save data (HTTP 500)')).toBeVisible();
     expect(screen.getByLabelText('Company name')).toHaveValue('Still Here Pte. Ltd.');
+  });
+
+  it('reports the exact JSON 400 error when no structured issues are returned', async () => {
+    await reachPreview();
+    mocks.fetch.mockResolvedValueOnce(jsonResponse({ error: 'The submitted company is no longer available' }, 400));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Save' }));
+
+    expect(await screen.findByText('The submitted company is no longer available')).toBeVisible();
+    expect(screen.queryByText('Failed to save data (HTTP 400)')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['resolution', (request: ReturnType<typeof deferred<Response>>) => request.resolve(jsonResponse({ companyId: 'stale-company' }))],
+    ['rejection', (request: ReturnType<typeof deferred<Response>>) => request.reject(new Error('stale failure'))],
+  ])('does not resurrect confirm state after cancel and late %s', async (_label, settle) => {
+    await reachPreview();
+    const request = deferred<Response>();
+    mocks.fetch.mockReturnValueOnce(request.promise);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Save' }));
+
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Upload Different File' })).toBeDisabled();
+    fireEvent.keyDown(window, { key: 'Backspace', ctrlKey: true });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Upload & Extract' })).toBeVisible());
+
+    settle(request);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(screen.queryByText('Company Created Successfully!')).not.toBeInTheDocument();
+    expect(screen.queryByText('stale failure')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Upload & Extract' })).toBeVisible();
   });
 
   it('preserves update-mode markup and sends saves to apply-update', async () => {

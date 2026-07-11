@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useDropzone } from 'react-dropzone';
@@ -176,6 +176,8 @@ export default function UploadBizFilePage() {
   const [extractedData, setExtractedData] = useState<ExtractedBizFileData | null>(null);
   const [serverIssues, setServerIssues] = useState<BizFileReviewIssue[]>([]);
   const [isConfirming, setIsConfirming] = useState(false);
+  const confirmGenerationRef = useRef(0);
+  const confirmAbortRef = useRef<AbortController | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [aiMetadata, setAiMetadata] = useState<AIMetadata | null>(null);
@@ -345,6 +347,10 @@ export default function UploadBizFilePage() {
   const handleConfirm = async (correctedData: ExtractedBizFileData) => {
     if (!documentId) return;
 
+    confirmAbortRef.current?.abort();
+    const generation = ++confirmGenerationRef.current;
+    const controller = new AbortController();
+    confirmAbortRef.current = controller;
     setIsConfirming(true);
     setServerIssues([]);
     setError(null);
@@ -355,28 +361,42 @@ export default function UploadBizFilePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ extractedData: correctedData }),
+        signal: controller.signal,
       });
+
+      if (generation !== confirmGenerationRef.current) return;
 
       if (!response.ok) {
         if (response.status === 400) {
           const result = await response.json().catch(() => null) as { error?: string; issues?: BizFileReviewIssue[] } | null;
-          if (Array.isArray(result?.issues)) {
-            setServerIssues(result.issues);
-            throw new Error(result.error || 'Please correct the highlighted fields');
+          if (generation !== confirmGenerationRef.current) return;
+          const responseIssues = Array.isArray(result?.issues) ? result.issues : null;
+          if (responseIssues) {
+            setServerIssues(responseIssues);
           }
+          const serverError = typeof result?.error === 'string' && result.error.trim() ? result.error : null;
+          throw new Error(serverError || (responseIssues
+            ? 'Please correct the highlighted fields'
+            : result ? 'Failed to save data' : `Failed to save data (HTTP ${response.status})`));
         }
         const err = await safeJsonError(response, 'Failed to save data');
+        if (generation !== confirmGenerationRef.current) return;
         throw new Error(err);
       }
 
       const { companyId: cId } = await response.json();
+      if (generation !== confirmGenerationRef.current) return;
       setCompanyId(cId);
       setStep('complete');
     } catch (err) {
+      if (generation !== confirmGenerationRef.current || controller.signal.aborted) return;
       setError(err instanceof Error ? err.message : 'An error occurred');
       throw err;
     } finally {
-      setIsConfirming(false);
+      if (generation === confirmGenerationRef.current) {
+        confirmAbortRef.current = null;
+        setIsConfirming(false);
+      }
     }
   };
 
@@ -417,6 +437,9 @@ export default function UploadBizFilePage() {
   };
 
   const handleReset = () => {
+    confirmGenerationRef.current += 1;
+    confirmAbortRef.current?.abort();
+    confirmAbortRef.current = null;
     setFile(null);
     setStep('upload');
     setError(null);
@@ -439,6 +462,11 @@ export default function UploadBizFilePage() {
     setConflictDialogOpen(false);
     setConflictLoading(false);
   };
+
+  useEffect(() => () => {
+    confirmGenerationRef.current += 1;
+    confirmAbortRef.current?.abort();
+  }, []);
 
   const cleanupDocument = async (docId: string) => {
     try {
@@ -768,7 +796,7 @@ export default function UploadBizFilePage() {
             serverIssues={serverIssues}
             onConfirm={handleConfirm}
             onReset={handleReset}
-            onCancel={() => router.push('/companies')}
+            onCancel={handleCancel}
           />
         </div>
       )}

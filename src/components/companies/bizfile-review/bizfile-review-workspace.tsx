@@ -191,8 +191,8 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
       </div>
       <footer className="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 border-t border-border-primary bg-background-primary p-3">
         {saveSummary && <p role="status" data-review-summary tabIndex={-1} className="mr-auto text-xs text-text-secondary">{saveSummary}</p>}
-        <button type="button" onClick={onCancel}>Cancel</button>
-        <button type="button" onClick={onReset}>Upload Different File</button>
+        <button type="button" disabled={busy} onClick={onCancel}>Cancel</button>
+        <button type="button" disabled={busy} onClick={onReset}>Upload Different File</button>
         <button type="button" disabled={busy} onClick={() => void confirm()} className="rounded bg-oak-primary px-4 py-2 text-white disabled:opacity-50">
           {busy ? "Saving…" : "Confirm & Save"}
         </button>
