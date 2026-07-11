@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -30,40 +31,98 @@ describe('BizFile review fields', () => {
 });
 
 describe('RepeatingRecordEditor', () => {
-  it('adds, duplicates, removes, and restores records', () => {
+  interface Officer { id: string; name: string; details: { role: string } }
+
+  const createOfficer = (): Officer => ({ id: 'new', name: '', details: { role: '' } });
+  const duplicateOfficer = (item: Officer): Officer => ({ ...item, id: `${item.id}-copy`, details: { ...item.details } });
+  const commonProps = {
+    title: 'Officers',
+    createItem: createOfficer,
+    duplicateItem: duplicateOfficer,
+    getItemKey: (item: Officer) => item.id,
+    getItemLabel: (item: Officer) => item.name || 'New officer',
+  };
+
+  it('adds, duplicates independently, removes, and restores records', () => {
     const onChange = vi.fn();
-    const items = [{ name: 'Alice' }];
+    const alice: Officer = { id: 'alice', name: 'Alice', details: { role: 'Director' } };
+    const items = [alice];
     const { rerender } = render(
-      <RepeatingRecordEditor title="Officers" items={items} onChange={onChange}
-        createItem={() => ({ name: '' })} getItemLabel={(item) => item.name || 'New officer'}
+      <RepeatingRecordEditor {...commonProps} items={items} onChange={onChange}
         renderItem={(item) => <input aria-label="Officer name" value={item.name} readOnly />} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Add Officers' }));
-    expect(onChange).toHaveBeenLastCalledWith([{ name: 'Alice' }, { name: '' }]);
+    expect(onChange).toHaveBeenLastCalledWith([alice, createOfficer()]);
     fireEvent.click(screen.getByRole('button', { name: 'Duplicate Alice' }));
-    expect(onChange).toHaveBeenLastCalledWith([{ name: 'Alice' }, { name: 'Alice' }]);
+    const duplicatedItems = onChange.mock.lastCall?.[0] as Officer[];
+    expect(duplicatedItems).toEqual([alice, { ...alice, id: 'alice-copy' }]);
+    expect(duplicatedItems[1]).not.toBe(alice);
+    expect(duplicatedItems[1].details).not.toBe(alice.details);
     fireEvent.click(screen.getByRole('button', { name: 'Remove Alice' }));
     expect(onChange).toHaveBeenLastCalledWith([]);
-    rerender(<RepeatingRecordEditor title="Officers" items={[]} onChange={onChange}
-      createItem={() => ({ name: '' })} getItemLabel={(item) => item.name || 'New officer'}
+    rerender(<RepeatingRecordEditor {...commonProps} items={[]} onChange={onChange}
       renderItem={() => null} />);
     fireEvent.click(screen.getByRole('button', { name: 'Undo remove Alice' }));
-    expect(onChange).toHaveBeenLastCalledWith([{ name: 'Alice' }]);
+    expect(onChange).toHaveBeenLastCalledWith([alice]);
   });
 
-  it('updates a row immutably and focuses a newly duplicated row', async () => {
-    const item = { name: 'Alice' };
+  it.each([
+    ['added', (buttonName: string) => buttonName === 'Add Officers'],
+    ['duplicated', (buttonName: string) => buttonName === 'Duplicate Alice'],
+  ])('focuses the first enabled, tabbable control in a newly %s row', async (_operation, matchesButton) => {
+    const item: Officer = { id: 'alice', name: 'Alice', details: { role: 'Director' } };
     const onChange = vi.fn();
-    const editor = (items: typeof item[]) => <RepeatingRecordEditor title="Officers" items={items} onChange={onChange}
-      createItem={() => ({ name: '' })} getItemLabel={(row) => row.name}
-      renderItem={(row, _index, update) => <input aria-label={`Edit ${row.name}`} value={row.name} onChange={(event) => update({ name: event.target.value })} />} />;
+    const editor = (items: Officer[]) => <RepeatingRecordEditor {...commonProps} items={items} onChange={onChange}
+      renderItem={(row) => <><input aria-label={`Disabled ${row.id}`} disabled /><button tabIndex={-1}>Skip {row.id}</button><input aria-label={`Edit ${row.id}`} /></>} />;
     const { rerender } = render(editor([item]));
 
+    const buttonName = matchesButton('Add Officers') ? 'Add Officers' : 'Duplicate Alice';
+    fireEvent.click(screen.getByRole('button', { name: buttonName }));
+    const nextItems = onChange.mock.lastCall?.[0] as Officer[];
+    rerender(editor(nextItems));
+    await vi.waitFor(() => expect(screen.getByLabelText(`Edit ${nextItems[1].id}`)).toHaveFocus());
+  });
+
+  it('updates a row without mutating the original item', () => {
+    const item: Officer = { id: 'alice', name: 'Alice', details: { role: 'Director' } };
+    const onChange = vi.fn();
+    render(<RepeatingRecordEditor {...commonProps} items={[item]} onChange={onChange}
+      renderItem={(row, _index, update) => <input aria-label="Edit Alice" value={row.name}
+        onChange={(event) => update({ ...row, name: event.target.value })} />} />);
+
     fireEvent.change(screen.getByLabelText('Edit Alice'), { target: { value: 'Alicia' } });
-    expect(onChange).toHaveBeenLastCalledWith([{ name: 'Alicia' }]);
-    expect(item).toEqual({ name: 'Alice' });
-    fireEvent.click(screen.getByRole('button', { name: 'Duplicate Alice' }));
-    rerender(editor([item, item]));
-    await vi.waitFor(() => expect(screen.getAllByLabelText('Edit Alice')[1]).toHaveFocus());
+    expect(onChange).toHaveBeenLastCalledWith([{ ...item, name: 'Alicia' }]);
+    expect(item.name).toBe('Alice');
+  });
+
+  it('restores a middle row at its original position without resetting surrounding row state', () => {
+    function StatefulRow({ item }: { item: Officer }) {
+      const [note, setNote] = useState('');
+      return <input aria-label={`Note ${item.name}`} value={note} onChange={(event) => setNote(event.target.value)} />;
+    }
+    const officers: Officer[] = [
+      { id: 'alice', name: 'Alice', details: { role: 'Director' } },
+      { id: 'bob', name: 'Bob', details: { role: 'Secretary' } },
+      { id: 'carol', name: 'Carol', details: { role: 'Member' } },
+    ];
+    let current = officers;
+    const onChange = vi.fn((next: Officer[]) => { current = next; });
+    const editor = () => <RepeatingRecordEditor {...commonProps} items={current} onChange={onChange}
+      renderItem={(item) => <StatefulRow item={item} />} />;
+    const { rerender } = render(editor());
+    fireEvent.change(screen.getByLabelText('Note Alice'), { target: { value: 'keep-alice' } });
+    fireEvent.change(screen.getByLabelText('Note Carol'), { target: { value: 'keep-carol' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Bob' }));
+    rerender(editor());
+    expect(screen.getByLabelText('Note Alice')).toHaveValue('keep-alice');
+    expect(screen.getByLabelText('Note Carol')).toHaveValue('keep-carol');
+    fireEvent.click(screen.getByRole('button', { name: 'Undo remove Bob' }));
+    rerender(editor());
+
+    expect(current.map((item) => item.name)).toEqual(['Alice', 'Bob', 'Carol']);
+    expect(screen.getAllByRole('textbox').map((control) => control.getAttribute('aria-label'))).toEqual(['Note Alice', 'Note Bob', 'Note Carol']);
+    expect(screen.getByLabelText('Note Alice')).toHaveValue('keep-alice');
+    expect(screen.getByLabelText('Note Carol')).toHaveValue('keep-carol');
   });
 });
