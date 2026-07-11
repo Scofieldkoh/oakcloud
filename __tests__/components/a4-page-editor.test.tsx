@@ -696,6 +696,84 @@ describe('A4PageEditor', () => {
     }
   });
 
+  it('uses forward Delete to remove content across a soft boundary', async () => {
+    const originalScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return (this.textContent?.length ?? 0) * 100;
+      },
+    });
+    const onChange = vi.fn();
+
+    try {
+      render(
+        <A4PageEditor value="<p>123456789012345</p>" onChange={onChange} />,
+      );
+      await screen.findByTestId('a4-page-content-2');
+      const firstPage = screen.getByTestId('a4-page-content-1');
+      const firstText = firstPage.querySelector('p')!.firstChild!;
+      act(() => {
+        firstPage.focus();
+        const selection = window.getSelection()!;
+        const range = document.createRange();
+        range.setStart(firstText, firstText.textContent!.length);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      });
+
+      fireEvent.keyDown(screen.getByTestId('a4-document-surface'), {
+        key: 'Delete',
+      });
+
+      await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.stringContaining('12345678912345'),
+      );
+    } finally {
+      if (originalScrollHeight) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          'scrollHeight',
+          originalScrollHeight,
+        );
+      }
+    }
+  });
+
+  it('keeps a hard blank page after the first Add Page click', async () => {
+    render(<A4PageEditor value="<p>One</p>" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Page' }));
+
+    await waitFor(() =>
+      expect(screen.getAllByTestId(/a4-page-content-/)).toHaveLength(2),
+    );
+    await act(async () => {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    });
+    expect(screen.getAllByTestId(/a4-page-content-/)).toHaveLength(2);
+  });
+
+  it('deletes a hard page after the first confirmation action', async () => {
+    render(
+      <A4PageEditor value={`<p>One</p>${hardPageBreak}<p>Two</p>`} />,
+    );
+    const secondPage = screen.getByTestId('a4-page-content-2');
+    fireEvent.mouseUp(secondPage);
+
+    fireEvent.click(screen.getAllByTitle('Delete page')[1]);
+
+    await waitFor(() =>
+      expect(screen.getAllByTestId(/a4-page-content-/)).toHaveLength(1),
+    );
+    expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent('One');
+  });
+
   it('deletes a selection spanning multiple pages as one document range', async () => {
     const onChange = vi.fn();
     render(

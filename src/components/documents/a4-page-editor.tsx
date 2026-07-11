@@ -60,6 +60,12 @@ import {
   restoreFlowSelection,
   type FlowSelectionBookmark,
 } from './a4-pagination/selection';
+import {
+  appendHardPage,
+  applyLogicalDelete,
+  deleteHardPageSection,
+  type DocumentTransactionResult,
+} from './a4-pagination/document-actions';
 
 // ============================================================================
 // HTML Sanitization
@@ -176,6 +182,20 @@ function isCaretAtEditorStart(editor: HTMLElement): boolean {
 
   const beforeHtml = fragmentToHtml(before.cloneContents());
   return !hasMeaningfulContentBeforeCaret(beforeHtml);
+}
+
+function isCaretAtEditorEnd(editor: HTMLElement): boolean {
+  const selection = window.getSelection();
+  if (!selection || !selection.isCollapsed || selection.rangeCount === 0) {
+    return false;
+  }
+
+  const range = selection.getRangeAt(0);
+  if (!editor.contains(range.startContainer)) return false;
+  const afterCaret = range.cloneRange();
+  afterCaret.selectNodeContents(editor);
+  afterCaret.setStart(range.startContainer, range.startOffset);
+  return afterCaret.toString().length === 0;
 }
 
 function getEditorSelectionRange(editor: HTMLElement): Range | null {
@@ -1290,6 +1310,16 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       return sanitizeHtml(stripFlowMetadata(reassemblePageFragments(fragments)));
     }, []);
 
+    const canonicalPagesHtml = useCallback((pageList: PageData[]) => {
+      return reassemblePageFragments(
+        pageList.map((page) => ({
+          content: page.content,
+          hardBreakBefore: page.hardBreakBefore,
+          oversized: page.oversized,
+        })),
+      );
+    }, []);
+
     const [pages, setPages] = useState<PageData[]>(() => [
       {
         id: 'a4-page-initial',
@@ -1549,7 +1579,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           pagesRef.current = newPages;
           scheduleReflow(newPages, false);
           if (
-            !newPages.find((p) => p.id === activePageId) &&
+            !newPages.find((p) => p.id === activePageIdRef.current) &&
             newPages.length > 0
           ) {
             setActivePageId(newPages[0].id);
@@ -1557,7 +1587,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return newPages;
         });
       }
-    }, [value, parsePages, isPreviewMode, activePageId, scheduleReflow]);
+    }, [value, parsePages, isPreviewMode, scheduleReflow]);
 
     const historyRef = useRef<{ past: string[]; future: string[] }>({
       past: [],
@@ -1672,42 +1702,38 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       scheduleReflow(nextPages, true);
     }, [effectivePreviewMode, pushHistorySnapshot, scheduleReflow]);
 
+    const commitUserTransaction = useCallback(
+      (result: DocumentTransactionResult) => {
+        if (effectivePreviewMode || !result.changed) return;
+        const sourcePages = pagesRef.current;
+        pushHistorySnapshot(sourcePages);
+        pendingFlowSelectionRef.current = result.selection;
+        const nextPages = parsePages(result.html, sourcePages);
+        pagesRef.current = nextPages;
+        setPages(nextPages);
+        scheduleReflow(nextPages, true);
+      },
+      [effectivePreviewMode, parsePages, pushHistorySnapshot, scheduleReflow],
+    );
+
     const handleAddPage = useCallback(() => {
       if (effectivePreviewMode) return;
-      const newPage: PageData = {
-        id: crypto.randomUUID(),
-        content: '<p><br></p>',
-        hardBreakBefore: true,
-      };
-      setPages((prev) => {
-        pushHistorySnapshot(prev);
-        const nextPages = [...prev, newPage];
-        pagesRef.current = nextPages;
-        scheduleReflow(nextPages, true);
-        return nextPages;
-      });
-      setActivePageId(newPage.id);
-    }, [effectivePreviewMode, pushHistorySnapshot, scheduleReflow]);
+      commitUserTransaction(appendHardPage(canonicalPagesHtml(pagesRef.current)));
+    }, [canonicalPagesHtml, commitUserTransaction, effectivePreviewMode]);
 
     const handleDeletePage = useCallback(
       (id: string) => {
         if (effectivePreviewMode) return;
-        setPages((prev) => {
-          if (prev.length <= 1) return prev;
-          pushHistorySnapshot(prev);
-          const newPages = prev.filter((p) => p.id !== id);
-          pagesRef.current = newPages;
-          scheduleReflow(newPages, true);
-          const deletedIndex = prev.findIndex((p) => p.id === id);
-          const newActiveIndex = Math.min(deletedIndex, newPages.length - 1);
-          setTimeout(
-            () => setActivePageId(newPages[newActiveIndex]?.id || ''),
-            0,
-          );
-          return newPages;
-        });
+        const pageIndex = pagesRef.current.findIndex((page) => page.id === id);
+        if (pageIndex < 0) return;
+        const sectionIndex = pagesRef.current
+          .slice(0, pageIndex + 1)
+          .filter((page, index) => index === 0 || page.hardBreakBefore).length - 1;
+        commitUserTransaction(
+          deleteHardPageSection(canonicalPagesHtml(pagesRef.current), sectionIndex),
+        );
       },
-      [effectivePreviewMode, pushHistorySnapshot, scheduleReflow],
+      [canonicalPagesHtml, commitUserTransaction, effectivePreviewMode],
     );
 
     const pendingFocusStartPageId = useRef<string | null>(null);
@@ -2163,6 +2189,26 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         const surface = documentSurfaceRef.current;
         if (
           surface &&
+          event.key === 'Delete' &&
+          pageContent &&
+          isCaretAtEditorEnd(pageContent)
+        ) {
+          const bookmark = captureFlowSelection(surface);
+          if (bookmark) {
+            event.preventDefault();
+            commitUserTransaction(
+              applyLogicalDelete(
+                canonicalPagesHtml(pagesRef.current),
+                bookmark,
+                'forward',
+              ),
+            );
+            return;
+          }
+        }
+
+        if (
+          surface &&
           (event.key === 'Backspace' || event.key === 'Delete') &&
           selectionSpansPages(surface)
         ) {
@@ -2186,6 +2232,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       [
         effectivePreviewMode,
         handleBackspaceAtPageStart,
+        canonicalPagesHtml,
+        commitUserTransaction,
         handleDeleteAcrossPages,
         handleRedo,
         handleUndo,
