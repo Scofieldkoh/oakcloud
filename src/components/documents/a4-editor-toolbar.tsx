@@ -389,6 +389,15 @@ export function A4EditorToolbar({
         <ToolbarButton label="Increase indent" icon={Indent} onSaveSelection={onSaveSelection} onClick={command({ type: 'indent' })} disabled={disabled} />
       </ToolbarGroup>
       <ToolbarGroup label="Insert">
+        <span className="px-1 text-xs text-text-muted">Insert</span>
+      </ToolbarGroup>
+      <ToolbarGroup label="Page">
+        <MarginPopover disabled={disabled} layout={layout} onLayoutChange={onLayoutChange} onSaveSelection={onSaveSelection} />
+        <ToolbarButton label="Insert page break" title="Insert Page Break" icon={SeparatorHorizontal} onSaveSelection={onSaveSelection} onClick={onInsertPageBreak} disabled={disabled} />
+        <ToolbarButton label="Add blank page" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={onAddBlankPage} disabled={disabled} />
+        <ToolbarButton label="Delete current page" icon={Trash2} onSaveSelection={onSaveSelection} onClick={onDeleteCurrentPage} disabled={disabled || !canDeletePage} destructive />
+      </ToolbarGroup>
+      <ToolbarGroup label="View">
         <ToolbarMenu label="More toolbar actions" disabled={disabled}>
           <div role="group" aria-label="Insert actions" className="mb-3 border-b border-border-primary pb-3">
             <ToolbarButton label="Insert table" title="Insert Table" icon={Table2} onSaveSelection={onSaveSelection} onClick={command({ type: 'insert-table' })} disabled={disabled} />
@@ -445,13 +454,6 @@ export function A4EditorToolbar({
           </div>
         </ToolbarMenu>
       </ToolbarGroup>
-      <ToolbarGroup label="Page">
-        <MarginPopover disabled={disabled} layout={layout} onLayoutChange={onLayoutChange} onSaveSelection={onSaveSelection} />
-        <ToolbarButton label="Insert page break" title="Insert Page Break" icon={SeparatorHorizontal} onSaveSelection={onSaveSelection} onClick={onInsertPageBreak} disabled={disabled} />
-        <ToolbarButton label="Add blank page" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={onAddBlankPage} disabled={disabled} />
-        <ToolbarButton label="Delete current page" icon={Trash2} onSaveSelection={onSaveSelection} onClick={onDeleteCurrentPage} disabled={disabled || !canDeletePage} destructive />
-      </ToolbarGroup>
-      <ToolbarGroup label="View"><span className="sr-only">View actions are available in More toolbar actions.</span></ToolbarGroup>
     </div>
   );
 }

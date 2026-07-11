@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
   A4EditorToolbar,
@@ -93,7 +93,11 @@ describe('A4EditorToolbar', () => {
     renderToolbar();
 
     expect(screen.getByLabelText('Document editor toolbar')).not.toHaveClass('flex-wrap');
-    expect(screen.getByRole('button', { name: 'More toolbar actions' })).toBeVisible();
+    expect(
+      within(screen.getByRole('group', { name: 'View' })).getByRole('button', {
+        name: 'More toolbar actions',
+      }),
+    ).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Insert table' })).not.toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Show page numbers' })).not.toBeInTheDocument();
 
