@@ -7,7 +7,16 @@ export const BIZFILE_REVIEW_SECTIONS = [
 ] as const;
 
 export type BizFileReviewSectionId = typeof BIZFILE_REVIEW_SECTIONS[number];
-export type BizFileReviewDraft = ExtractedBizFileData;
+type ReviewDraftValue<T> = T extends number
+  ? number | undefined
+  : T extends Array<infer Item>
+    ? Array<ReviewDraftValue<Item>>
+    : T extends object
+      ? { [Key in keyof T]: ReviewDraftValue<T[Key]> }
+      : T;
+
+/** Editable extraction data can temporarily hold blank required numeric controls. */
+export type BizFileReviewDraft = ReviewDraftValue<ExtractedBizFileData>;
 export interface BizFileReviewIssue { path: string; message: string; section: BizFileReviewSectionId }
 export interface BizFileReviewValidation {
   isValid: boolean;

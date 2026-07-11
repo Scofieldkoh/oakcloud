@@ -29,21 +29,10 @@ type Charge = NonNullable<BizFileReviewDraft["charges"]>[number];
 function issue(issues: BizFileReviewIssue[], path: string) {
   return issues.find((candidate) => candidate.path === path);
 }
-function numberValue(value: string): number {
-  if (value.trim() === "") return undefined as unknown as number;
+function numberValue(value: string): number | undefined {
+  if (value.trim() === "") return undefined;
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : (undefined as unknown as number);
-}
-function optionalNumber<T extends object, K extends keyof T>(
-  item: T,
-  field: K,
-  value: string,
-): T {
-  const next = { ...item };
-  const parsed = numberValue(value);
-  if (parsed === undefined) delete next[field];
-  else next[field] = parsed as T[K];
-  return next;
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 function Section({
   title,
@@ -477,9 +466,14 @@ export function CapitalSection({ draft, onChange, issues }: Props) {
               min="0"
               step="any"
               value={item.parValue ?? ""}
-              onChange={(e) =>
-                update(optionalNumber(item, "parValue", e.target.value))
-              }
+              onChange={(e) => {
+                const parValue = numberValue(e.target.value);
+                if (parValue === undefined) {
+                  const next = { ...item };
+                  delete next.parValue;
+                  update(next);
+                } else update({ ...item, parValue });
+              }}
               error={issue(issues, `shareCapital.${i}.parValue`)}
             />
             <ReviewField
@@ -715,9 +709,14 @@ export function ShareholdersSection({ draft, onChange, issues }: Props) {
               max="100"
               step="any"
               value={item.percentageHeld ?? ""}
-              onChange={(e) =>
-                update(optionalNumber(item, "percentageHeld", e.target.value))
-              }
+              onChange={(e) => {
+                const percentageHeld = numberValue(e.target.value);
+                if (percentageHeld === undefined) {
+                  const next = { ...item };
+                  delete next.percentageHeld;
+                  update(next);
+                } else update({ ...item, percentageHeld });
+              }}
               error={issue(issues, `shareholders.${i}.percentageHeld`)}
             />
           </div>
@@ -886,9 +885,14 @@ export function ChargesSection({ draft, onChange, issues }: Props) {
               min="0"
               step="any"
               value={item.amountSecured ?? ""}
-              onChange={(e) =>
-                update(optionalNumber(item, "amountSecured", e.target.value))
-              }
+              onChange={(e) => {
+                const amountSecured = numberValue(e.target.value);
+                if (amountSecured === undefined) {
+                  const next = { ...item };
+                  delete next.amountSecured;
+                  update(next);
+                } else update({ ...item, amountSecured });
+              }}
               error={issue(issues, `charges.${i}.amountSecured`)}
             />
             <ReviewField
