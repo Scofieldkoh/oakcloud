@@ -11,7 +11,7 @@ Rebrand the user-facing Document Processing module as **Document Vault** and mov
 - Remove the standalone `Templates` item from the Administration section.
 - Add a shared top-level tab bar to the Generated Documents and Templates pages:
   - `Generated Documents` links to `/generated-documents`.
-  - `Templates` links to `/admin/template-partials`.
+  - `Templates` links to `/template-partials`.
 - The active tab is derived from the current route. The tab bar uses link navigation so both existing pages retain their own loading, filtering, and query-string behavior.
 
 ## Templates Access
@@ -20,7 +20,7 @@ The Templates page will no longer be restricted to workspace administrators. Any
 
 Template and partial actions will use the existing document permission model instead of administrator-role checks. Viewing follows ordinary authenticated workspace access. Create, update, and delete controls remain hidden or unavailable when the corresponding document permissions are absent. Super-admin workspace selection behavior remains unchanged.
 
-The existing `/admin/template-partials` URL is retained to avoid route migration and broken bookmarks; its location no longer implies an administrator-only UI permission.
+Move the Templates page from `/admin/template-partials` to `/template-partials` so its URL matches its non-administrative placement. The old `/admin/template-partials` route redirects to `/template-partials`, preserving query parameters, so bookmarks and existing links continue to work during the migration.
 
 ## Document Vault Rebrand
 
@@ -36,12 +36,12 @@ Introduce a small shared Document Generation navigation component that owns the 
 
 - Verify the sidebar displays `Document Vault`, retains `/processing`, and no longer displays the Administration `Templates` item.
 - Verify both Document Generation tabs render with the correct destinations and active state.
+- Verify `/admin/template-partials` redirects to `/template-partials` without losing query parameters.
 - Verify a regular authenticated workspace user can view Templates and receives action controls according to document permissions rather than administrator status.
 - Run focused component tests, type/lint checks for touched files, and relevant existing tests.
 
 ## Non-goals
 
 - Renaming `/processing` or internal Document Processing symbols.
-- Moving or rewriting the Templates page route.
 - Combining Generated Documents and Templates into one page component.
 - Changing template data ownership, APIs, or workspace isolation.
