@@ -72,6 +72,11 @@ import {
   type A4DocumentLayout,
   type A4MarginsMm,
 } from './a4-pagination/layout';
+import {
+  A4EditorToolbar,
+  type EditorCommand,
+  type EditorFormatState,
+} from './a4-editor-toolbar';
 
 // ============================================================================
 // HTML Sanitization
@@ -774,7 +779,7 @@ const PARAGRAPH_SPACING_OPTIONS = [
   { value: '1.5em', label: 'Wide' },
 ];
 
-function Toolbar({
+function _LegacyToolbar({
   onCommand,
   onSaveSelection,
   lineHeight,
@@ -1208,6 +1213,13 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       endOffset: number;
       collapsed: boolean;
     } | null>(null);
+    const [activeFormats, setActiveFormats] = useState<EditorFormatState>({
+      bold: false,
+      italic: false,
+      underline: false,
+      alignment: 'left',
+      list: 'none',
+    });
 
     const saveCursorPosition = useCallback(() => {
       const selection = window.getSelection();
@@ -1377,7 +1389,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     );
     const lineHeight = String(effectiveLayout.lineHeight);
     const paragraphSpacing = effectiveLayout.paragraphSpacing;
-    const pageMarginMm = effectiveLayout.marginsMm.top;
+    const _pageMarginMm = effectiveLayout.marginsMm.top;
     const updateLayout = useCallback(
       (next: A4DocumentLayout) => {
         const normalized = normalizeA4DocumentLayout(next);
@@ -1816,7 +1828,35 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     }, []);
 
     const syncFormattingFromSelection = useCallback(() => {
-      // Reserved for selection-aware controls that should not affect document-level settings.
+      const surface = documentSurfaceRef.current;
+      const selection = window.getSelection();
+      if (!surface || !selection?.anchorNode || !surface.contains(selection.anchorNode)) {
+        return;
+      }
+      if (typeof document.queryCommandState !== 'function') {
+        return;
+      }
+
+      const alignment = document.queryCommandState('justifyCenter')
+        ? 'center'
+        : document.queryCommandState('justifyRight')
+          ? 'right'
+          : document.queryCommandState('justifyFull')
+            ? 'justify'
+            : 'left';
+      const list = document.queryCommandState('insertOrderedList')
+        ? 'ordered'
+        : document.queryCommandState('insertUnorderedList')
+          ? 'unordered'
+          : 'none';
+
+      setActiveFormats({
+        bold: document.queryCommandState('bold'),
+        italic: document.queryCommandState('italic'),
+        underline: document.queryCommandState('underline'),
+        alignment,
+        list,
+      });
     }, []);
 
     const handleDeleteAcrossPages = useCallback(() => {
@@ -2604,6 +2644,44 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       ],
     );
 
+    const handleToolbarCommand = useCallback(
+      (command: EditorCommand) => {
+        if (command.type === 'align') {
+          const alignmentCommands = {
+            left: 'justifyLeft',
+            center: 'justifyCenter',
+            right: 'justifyRight',
+            justify: 'justifyFull',
+          } as const;
+          handleCommand(alignmentCommands[command.value]);
+          return;
+        }
+
+        if (command.type === 'list') {
+          if (command.value === 'ordered') {
+            handleCommand('insertOrderedList');
+          } else if (command.value === 'unordered') {
+            handleCommand('insertUnorderedList');
+          }
+          return;
+        }
+
+        const commandMap = {
+          undo: 'undo',
+          redo: 'redo',
+          bold: 'bold',
+          italic: 'italic',
+          underline: 'underline',
+          'clear-formatting': 'removeFormat',
+          indent: 'indent',
+          outdent: 'outdent',
+          'insert-table': 'insertTable',
+        } as const;
+        handleCommand(commandMap[command.type]);
+      },
+      [handleCommand],
+    );
+
     const handlePrint = useCallback(() => {
       const printPages = isPreviewMode && previewPages ? previewPages : pages;
 
@@ -2964,26 +3042,19 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         </div>
 
         {!readOnly && (
-          <Toolbar
-            onCommand={handleCommand}
+          <A4EditorToolbar
+            onCommand={handleToolbarCommand}
             onSaveSelection={saveCursorPosition}
-            lineHeight={lineHeight}
-            onLineHeightChange={(value) =>
-              updateLayout({ ...effectiveLayout, lineHeight: Number(value) })
-            }
-            paragraphSpacing={paragraphSpacing}
-            onParagraphSpacingChange={(value) =>
-              updateLayout({ ...effectiveLayout, paragraphSpacing: value })
-            }
-            pageMarginMm={pageMarginMm}
-            onPageMarginChange={(value) =>
-              updateLayout({
-                ...effectiveLayout,
-                marginsMm: { top: value, right: value, bottom: value, left: value },
-              })
-            }
+            layout={effectiveLayout}
+            activeFormats={activeFormats}
+            onLayoutChange={updateLayout}
             showPageNumbers={showPageNumbers}
-            onShowPageNumbersChange={setShowPageNumbers}
+            canDeletePage={pages.some((page) => page.hardBreakBefore)}
+            onInsertPageBreak={splitActivePageAtSelection}
+            onAddBlankPage={handleAddPage}
+            onDeleteCurrentPage={() => handleDeletePage(activePageId)}
+            onTogglePageNumbers={setShowPageNumbers}
+            onLegacyCommand={handleCommand}
             disabled={effectivePreviewMode}
           />
         )}
