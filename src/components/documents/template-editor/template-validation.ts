@@ -80,7 +80,7 @@ export function validateTemplateSyntax(html: string, knownKeys: ReadonlySet<stri
           code: 'unmatched-block',
           message: `{{/${closingName}}} closes an {{#${opening.name}}} block. Close {{/${opening.name}}} first.`,
         });
-        stack.pop();
+        recoverFromMismatchedClose(stack, closingName);
         continue;
       }
 
@@ -121,6 +121,29 @@ export function validateTemplateSyntax(html: string, knownKeys: ReadonlySet<stri
       code: issue.code,
       message: issue.message,
     }));
+}
+
+/**
+ * Treat one wrong closer as a single structural error. If it matches a lower
+ * opener, consume that opener and every nested opener it invalidates; otherwise
+ * discard the top opener. This prevents one mismatch from causing duplicate
+ * end-of-file errors while allowing later independent tokens to be validated.
+ */
+function recoverFromMismatchedClose(stack: BlockEntry[], closingName: BlockName): void {
+  let matchingIndex = -1;
+  for (let index = stack.length - 2; index >= 0; index -= 1) {
+    if (stack[index].name === closingName) {
+      matchingIndex = index;
+      break;
+    }
+  }
+
+  if (matchingIndex >= 0) {
+    stack.splice(matchingIndex);
+    return;
+  }
+
+  stack.pop();
 }
 
 function validateConditionField(

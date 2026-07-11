@@ -55,4 +55,21 @@ describe('guided template builders', () => {
       bodyHtml: '<p>Unsafe</p>',
     })).toThrow('Unsupported condition field');
   });
+
+  it('rejects custom-shaped condition fields that are not explicitly allowlisted', () => {
+    expect(() => buildConditionBlock({
+      field: 'custom.uncheckedFlag',
+      operator: 'truthy',
+      bodyHtml: '<p>Unsafe</p>',
+    })).toThrow('Unsupported condition field');
+  });
+
+  it('rejects condition values that inject template tokens', () => {
+    expect(() => buildConditionBlock({
+      field: 'company.name',
+      operator: 'equals',
+      value: 'Acme"}}{{#each directors}}',
+      bodyHtml: '<p>Unsafe</p>',
+    })).toThrow('Condition value cannot contain template tokens');
+  });
 });

@@ -106,7 +106,7 @@ export function buildConditionBlock(input: ConditionBlockInput): string {
   }
 
   const comparison = operator === 'equals' ? '==' : '!=';
-  return `{{#if ${field} ${comparison} "${escapeHtml(input.value)}"}}${input.bodyHtml}{{/if}}`;
+  return `{{#if ${field} ${comparison} "${escapeHtml(assertSafeConditionValue(input.value))}"}}${input.bodyHtml}{{/if}}`;
 }
 
 function assertAllowedCollection(collection: unknown): TemplateCollection {
@@ -137,7 +137,7 @@ function assertAllowedConditionField(field: unknown): string {
     throw new Error('Unsupported condition field.');
   }
 
-  if (CONDITION_FIELDS.has(field) || /^custom\.[a-zA-Z_][a-zA-Z0-9_]*$/.test(field)) {
+  if (CONDITION_FIELDS.has(field)) {
     return field;
   }
 
@@ -147,6 +147,13 @@ function assertAllowedConditionField(field: unknown): string {
 function assertAllowedOperator(operator: unknown): ConditionOperator {
   if (operator === 'truthy' || operator === 'equals' || operator === 'notEquals') return operator;
   throw new Error('Unsupported condition operator.');
+}
+
+function assertSafeConditionValue(value: string): string {
+  if (value.includes('{{') || value.includes('}}')) {
+    throw new Error('Condition value cannot contain template tokens.');
+  }
+  return value;
 }
 
 function renderLoopLayout(layout: TemplateLoopLayout, fields: TemplateFieldOption[]): string {

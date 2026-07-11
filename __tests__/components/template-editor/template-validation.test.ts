@@ -45,4 +45,17 @@ describe('template syntax validation', () => {
 
     expect(issues).toEqual([]);
   });
+
+  it('recovers from a nested mismatch without adding an EOF error before later unknown keys', () => {
+    const issues = validateTemplateSyntax(
+      '{{#each directors}}{{#if company.name}}{{/each}}{{company.missing}}',
+      new Set(['company.name']),
+    );
+
+    expect(issues.map((issue) => issue.code)).toEqual([
+      'unmatched-block',
+      'unknown-placeholder',
+    ]);
+    expect(issues[0].message).toContain('{{/if}}');
+  });
 });
