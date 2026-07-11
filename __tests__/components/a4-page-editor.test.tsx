@@ -1181,4 +1181,19 @@ describe('A4PageEditor', () => {
       );
     });
   });
+
+  it('focuses an internal flow block when asked by the template validation panel', () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    render(<A4PageEditor ref={editorRef} value="<p>Focus this block</p>" />);
+
+    const flowBlock = screen.getByTestId('a4-page-content-1').querySelector<HTMLElement>('[data-flow-id]');
+    expect(flowBlock?.dataset.flowId).toBeTruthy();
+
+    expect(editorRef.current?.focusFlowBlock).toBeTypeOf('function');
+    act(() => {
+      editorRef.current!.focusFlowBlock!(flowBlock!.dataset.flowId!);
+    });
+
+    expect(document.activeElement).toBe(screen.getByTestId('a4-document-surface'));
+  });
 });

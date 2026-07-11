@@ -595,6 +595,7 @@ export interface A4PageEditorRef {
   focus: () => void;
   getContent: () => string;
   setContent: (html: string) => void;
+  focusFlowBlock?: (flowId: string) => void;
 }
 
 interface PageData {
@@ -1177,6 +1178,17 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         insertAtCursor,
         insertHtmlAtCursor,
         focus: () => documentSurfaceRef.current?.focus(),
+        focusFlowBlock: (flowId: string) => {
+          const root = documentSurfaceRef.current;
+          const target = Array.from(root?.querySelectorAll<HTMLElement>('[data-flow-id]') ?? []).find(
+            (element) => element.dataset.flowId === flowId,
+          );
+          if (!root || !target) return;
+          root.focus({ preventScroll: true });
+          target.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+          const pageElement = target.closest('[data-page-id]') as HTMLElement | null;
+          if (pageElement?.dataset.pageId) setActivePageId(pageElement.dataset.pageId);
+        },
         getContent: () => serializePages(pagesRef.current),
         setContent: (html: string) => {
           const newPages = parsePages(html, pagesRef.current);

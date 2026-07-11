@@ -11,6 +11,9 @@ import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { AISidebar, useAISidebar, type DocumentCategory } from '@/components/documents/ai-sidebar';
 import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
 import { PlaceholderPanel } from '@/components/documents/template-editor/placeholder-panel';
+import { TemplateEditorPanel } from '@/components/documents/template-editor/template-editor-panel';
+import type { TemplateEditorPartialForm, TemplateEditorTemplateForm } from '@/components/documents/template-editor/template-details-panel';
+import { validateTemplateSyntax } from '@/components/documents/template-editor/template-validation';
 import {
   DEFAULT_A4_DOCUMENT_LAYOUT,
   extractA4DocumentLayout,
@@ -20,16 +23,13 @@ import {
 import { cn } from '@/lib/utils';
 import {
   Save,
-  Sparkles,
   FileText,
-  Braces,
   TestTube,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
   Loader2,
   AlertCircle,
-  Settings,
   Building2,
   Code,
 } from 'lucide-react';
@@ -46,21 +46,12 @@ import type {
 
 type EditorType = 'template' | 'partial';
 
-interface TemplateFormData {
-  name: string;
-  description: string;
-  category: string;
-  content: string;
-  isActive: boolean;
+interface TemplateFormData extends TemplateEditorTemplateForm {
   customPlaceholders: CustomPlaceholderDefinition[];
   layout: A4DocumentLayout;
 }
 
-interface PartialFormData {
-  name: string;
-  displayName: string;
-  description: string;
-  content: string;
+interface PartialFormData extends TemplateEditorPartialForm {
   customPlaceholders: CustomPlaceholderDefinition[];
 }
 
@@ -130,6 +121,12 @@ const DEFAULT_MOCK_DATA: MockDataValues = {
 const MIN_PANEL_WIDTH = 320;
 const MAX_PANEL_WIDTH = 600;
 const DEFAULT_PANEL_WIDTH = 380;
+const STANDARD_TEMPLATE_KEYS = [
+  'company.name', 'company.uen', 'company.registeredAddress', 'company.address.block',
+  'company.address.street', 'company.address.level', 'company.address.unit',
+  'company.address.building', 'company.address.postalCode', 'company.incorporationDate',
+  'company.entityType', 'company.capital', 'system.currentDate', 'system.generatedBy',
+];
 
 // ============================================================================
 // Capital Amount Helper
@@ -221,7 +218,7 @@ interface DetailsTabProps {
   tenantName?: string;
 }
 
-function DetailsTab({ formData, onChange, isSuperAdmin, activeTenantId, tenantName }: DetailsTabProps) {
+function _DetailsTab({ formData, onChange, isSuperAdmin, activeTenantId, tenantName }: DetailsTabProps) {
   return (
     <div className="p-4 space-y-4">
       {/* Workspace context info for SUPER_ADMIN */}
@@ -314,7 +311,7 @@ interface PartialDetailsTabProps {
   tenantName?: string;
 }
 
-function PartialDetailsTab({ formData, onChange, isSuperAdmin, activeTenantId, tenantName }: PartialDetailsTabProps) {
+function _PartialDetailsTab({ formData, onChange, isSuperAdmin, activeTenantId, tenantName }: PartialDetailsTabProps) {
   // Auto-format partial identifier: convert spaces to hyphens, lowercase, remove invalid chars
   const handleIdentifierChange = (value: string) => {
     const formatted = value
@@ -910,7 +907,8 @@ function TemplateEditorContent() {
   const [partialPlaceholderLinkings, setPartialPlaceholderLinkings] = useState<Record<string, string>>({});
 
   // Panel states
-  const [activeTab, setActiveTab] = useState<'details' | 'placeholders' | 'testdata' | 'ai'>('details');
+  const [_activeTab, _setActiveTab] = useState<'details' | 'placeholders' | 'testdata' | 'ai'>('details');
+  const [isDirty, setIsDirty] = useState(false);
   const [mockData, setMockData] = useState<MockDataValues>(DEFAULT_MOCK_DATA);
   const [previewContent, setPreviewContent] = useState('');
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
@@ -1224,6 +1222,19 @@ function TemplateEditorContent() {
     return formData.customPlaceholders.filter((p) => p.type === 'boolean');
   }, [formData.customPlaceholders]);
 
+  const validationIssues = useMemo(() => {
+    const content = isPartialMode ? partialFormData.content : formData.content;
+    const knownKeys = new Set(STANDARD_TEMPLATE_KEYS);
+    for (const field of [...formData.customPlaceholders, ...mergedPlaceholders]) {
+      knownKeys.add(`custom.${field.key}`);
+    }
+    for (const partial of (partialsData?.partials || []) as TemplatePartial[]) {
+      knownKeys.add(partial.name);
+      knownKeys.add(`partial.${partial.name}`);
+    }
+    return validateTemplateSyntax(content, knownKeys);
+  }, [formData.content, formData.customPlaceholders, isPartialMode, mergedPlaceholders, partialFormData.content, partialsData?.partials]);
+
   // Load existing template data
   useEffect(() => {
     if (existingTemplate && !isPartialMode) {
@@ -1265,6 +1276,7 @@ function TemplateEditorContent() {
 
       // Restore partial placeholder linkings
       setPartialPlaceholderLinkings(linkings);
+      setIsDirty(false);
     }
   }, [existingTemplate, isPartialMode, itemId]);
 
@@ -1288,17 +1300,20 @@ function TemplateEditorContent() {
         content: existingPartial.content || '',
         customPlaceholders: storageFormatToCustomPlaceholders(placeholdersArray),
       });
+      setIsDirty(false);
     }
   }, [existingPartial, isPartialMode, itemId]);
 
   // Handle form change (template)
   const handleFormChange = useCallback((changes: Partial<TemplateFormData>) => {
     setFormData((prev) => ({ ...prev, ...changes }));
+    setIsDirty(true);
   }, []);
 
   // Handle form change (partial)
   const handlePartialFormChange = useCallback((changes: Partial<PartialFormData>) => {
     setPartialFormData((prev) => ({ ...prev, ...changes }));
+    setIsDirty(true);
   }, []);
 
   // Handle placeholder insertion at cursor position
@@ -1313,6 +1328,10 @@ function TemplateEditorContent() {
     if (editorRef.current) {
       editorRef.current.insertAtCursor(content);
     }
+  }, []);
+
+  const handleFocusIssue = useCallback((flowId: string) => {
+    editorRef.current?.focusFlowBlock?.(flowId);
   }, []);
 
   // Handle company selection for test data
@@ -1649,6 +1668,7 @@ function TemplateEditorContent() {
               } else {
                 setFormData((prev) => ({ ...prev, content: html }));
               }
+              setIsDirty(true);
             }}
             placeholder={isPartialMode ? "Start typing your partial content..." : "Start typing your template content..."}
             tenantId={activeTenantId}
@@ -1660,8 +1680,10 @@ function TemplateEditorContent() {
             onLayoutChange={
               isPartialMode
                 ? undefined
-                : (nextLayout) =>
-                    setFormData((previous) => ({ ...previous, layout: nextLayout }))
+                : (nextLayout) => {
+                    setFormData((previous) => ({ ...previous, layout: nextLayout }));
+                    setIsDirty(true);
+                  }
             }
           />
         </div>
@@ -1669,7 +1691,7 @@ function TemplateEditorContent() {
         {/* Right panel resize handle */}
         <div
           className={cn(
-            'flex-shrink-0 w-2 cursor-col-resize hover:bg-accent-primary/30 transition-colors flex items-center justify-center relative',
+            'hidden flex-shrink-0 w-2 cursor-col-resize hover:bg-accent-primary/30 transition-colors flex items-center justify-center relative',
             rightPanel.isResizing && 'bg-accent-primary/30'
           )}
           onMouseDown={(e) => rightPanel.startResize(e, 'left')}
@@ -1692,144 +1714,50 @@ function TemplateEditorContent() {
         <div
           className={cn(
             'flex-shrink-0 flex flex-col border-l border-border-primary bg-background-secondary transition-all duration-200',
-            rightPanel.isCollapsed && 'w-0 overflow-hidden border-l-0'
+            rightPanel.isCollapsed && 'w-10 overflow-hidden'
           )}
-          style={{ width: rightPanel.isCollapsed ? 0 : rightPanel.width }}
+          style={{ width: rightPanel.isCollapsed ? 40 : rightPanel.width }}
         >
-          {!rightPanel.isCollapsed && (
-            <>
-              {/* Panel tabs */}
-              <div className="flex border-b border-border-primary">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('details')}
-                  className={cn(
-                    'flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
-                    activeTab === 'details'
-                      ? 'text-accent-primary border-b-2 border-accent-primary'
-                      : 'text-text-muted hover:text-text-primary'
-                  )}
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  Details
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('placeholders')}
-                  className={cn(
-                    'flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
-                    activeTab === 'placeholders'
-                      ? 'text-accent-primary border-b-2 border-accent-primary'
-                      : 'text-text-muted hover:text-text-primary'
-                  )}
-                >
-                  <Braces className="w-3.5 h-3.5" />
-                  Placeholders
-                </button>
-                {/* Test Data tab - only for templates */}
-                {!isPartialMode && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('testdata')}
-                    className={cn(
-                      'flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
-                      activeTab === 'testdata'
-                        ? 'text-accent-primary border-b-2 border-accent-primary'
-                        : 'text-text-muted hover:text-text-primary'
-                    )}
-                  >
-                    <TestTube className="w-3.5 h-3.5" />
-                    Test
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('ai')}
-                  className={cn(
-                    'flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
-                    activeTab === 'ai'
-                      ? 'text-accent-primary border-b-2 border-accent-primary'
-                      : 'text-text-muted hover:text-text-primary'
-                  )}
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  AI
-                </button>
-              </div>
-
-              {/* Panel content */}
-              <div className="flex-1 overflow-hidden">
-                {activeTab === 'details' && (
-                  isPartialMode ? (
-                    <PartialDetailsTab
-                      formData={partialFormData}
-                      onChange={handlePartialFormChange}
-                      isSuperAdmin={session?.isSuperAdmin}
-                      activeTenantId={activeTenantId}
-                      tenantName={undefined}
-                    />
-                  ) : (
-                    <DetailsTab
-                      formData={formData}
-                      onChange={handleFormChange}
-                      isSuperAdmin={session?.isSuperAdmin}
-                      activeTenantId={activeTenantId}
-                      tenantName={undefined}
-                    />
-                  )
-                )}
-                {activeTab === 'placeholders' && (
-                  <PlaceholderPanel
-                    onInsert={handleInsertPlaceholder}
-                    partials={partials}
-                    isLoadingPartials={isLoadingPartials}
-                    customPlaceholders={isPartialMode ? partialFormData.customPlaceholders : formData.customPlaceholders}
-                    onCustomPlaceholdersChange={isPartialMode
-                      ? (placeholders) => setPartialFormData((prev) => ({ ...prev, customPlaceholders: placeholders }))
-                      : (placeholders) => setFormData((prev) => ({ ...prev, customPlaceholders: placeholders }))
-                    }
-                    mergedPlaceholders={mergedPlaceholders}
-                    templateBooleanPlaceholders={templateBooleanPlaceholders}
-                    partialPlaceholderLinkings={partialPlaceholderLinkings}
-                    onPartialPlaceholderLinkingChange={(key, linkedTo) => {
-                      setPartialPlaceholderLinkings((prev) => {
-                        if (linkedTo) {
-                          return { ...prev, [key]: linkedTo };
-                        } else {
-                          const { [key]: _, ...rest } = prev;
-                          return rest;
-                        }
-                      });
-                    }}
-                    isPartialMode={isPartialMode}
-                  />
-                )}
-                {activeTab === 'testdata' && !isPartialMode && (
-                  <TestDataTab
-                    mockData={mockData}
-                    onMockDataChange={setMockData}
-                    companies={companies}
-                    isLoadingCompanies={isLoadingCompanies}
-                    onSelectCompany={handleSelectCompany}
-                    customPlaceholders={formData.customPlaceholders}
-                    mergedPlaceholders={mergedPlaceholders}
-                  />
-                )}
-                {activeTab === 'ai' && (
-                  <AISidebar
-                    isOpen={true}
-                    onClose={() => rightPanel.toggle()}
-                    context={{
-                      ...aiSidebar.context,
-                    }}
-                    onInsert={handleAIInsert}
-                    onReplace={handleAIInsert}
-                    className="w-full h-full border-0"
-                  />
-                )}
-              </div>
-            </>
-          )}
+          <TemplateEditorPanel
+            mode={isPartialMode ? "partial" : "template"}
+            templateForm={formData}
+            partialForm={partialFormData}
+            onTemplateChange={handleFormChange}
+            onPartialChange={handlePartialFormChange}
+            panel={rightPanel}
+            isDirty={isDirty}
+            isSuperAdmin={session?.isSuperAdmin}
+            activeTenantId={activeTenantId}
+            fieldsContent={
+              <PlaceholderPanel
+                onInsert={handleInsertPlaceholder}
+                partials={partials}
+                isLoadingPartials={isLoadingPartials}
+                customPlaceholders={isPartialMode ? partialFormData.customPlaceholders : formData.customPlaceholders}
+                onCustomPlaceholdersChange={(placeholders) => {
+                  if (isPartialMode) setPartialFormData((previous) => ({ ...previous, customPlaceholders: placeholders }));
+                  else setFormData((previous) => ({ ...previous, customPlaceholders: placeholders }));
+                  setIsDirty(true);
+                }}
+                mergedPlaceholders={mergedPlaceholders}
+                templateBooleanPlaceholders={templateBooleanPlaceholders}
+                partialPlaceholderLinkings={partialPlaceholderLinkings}
+                onPartialPlaceholderLinkingChange={(key, linkedTo) => {
+                  setPartialPlaceholderLinkings((previous) => {
+                    if (linkedTo) return { ...previous, [key]: linkedTo };
+                    const { [key]: _, ...rest } = previous;
+                    return rest;
+                  });
+                  setIsDirty(true);
+                }}
+                isPartialMode={isPartialMode}
+              />
+            }
+            validationIssues={validationIssues}
+            onFocusIssue={handleFocusIssue}
+            testPreviewContent={!isPartialMode ? <TestDataTab mockData={mockData} onMockDataChange={setMockData} companies={companies} isLoadingCompanies={isLoadingCompanies} onSelectCompany={handleSelectCompany} customPlaceholders={formData.customPlaceholders} mergedPlaceholders={mergedPlaceholders} /> : <p className="text-xs text-text-muted">Previews are available when this partial is used in a template.</p>}
+            aiContent={<AISidebar isOpen onClose={() => undefined} context={{ ...aiSidebar.context }} onInsert={handleAIInsert} onReplace={handleAIInsert} className="h-96 w-full border-0" />}
+          />
         </div>
       </div>
     </div>
