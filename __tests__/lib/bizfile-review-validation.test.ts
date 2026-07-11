@@ -25,11 +25,10 @@ describe('BizFile review validation', () => {
     draft.entityDetails = { uen: '202626103M', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };
     draft.mailingAddress = { streetName: '', postalCode: '' };
     draft.auditor = { name: '', address: '', appointmentDate: '' };
-    expect(normalizeBizFileReviewDraft(draft)).toMatchObject({
-      entityDetails: draft.entityDetails,
-      mailingAddress: undefined,
-      auditor: undefined,
-    });
+    const normalized = normalizeBizFileReviewDraft(draft);
+    expect(normalized).toMatchObject({ entityDetails: draft.entityDetails });
+    expect(Object.hasOwn(normalized, 'mailingAddress')).toBe(false);
+    expect(Object.hasOwn(normalized, 'auditor')).toBe(false);
   });
 
   it('omits empty optional arrays while preserving populated arrays', () => {
@@ -38,11 +37,10 @@ describe('BizFile review validation', () => {
     draft.officers = [];
     draft.charges = [];
     draft.shareholders = [{ name: 'Owner', type: 'INDIVIDUAL', shareClass: 'ORDINARY', numberOfShares: 1 }];
-    expect(normalizeBizFileReviewDraft(draft)).toEqual(expect.objectContaining({
-      officers: undefined,
-      charges: undefined,
-      shareholders: draft.shareholders,
-    }));
+    const normalized = normalizeBizFileReviewDraft(draft);
+    expect(normalized).toEqual(expect.objectContaining({ shareholders: draft.shareholders }));
+    expect(Object.hasOwn(normalized, 'officers')).toBe(false);
+    expect(Object.hasOwn(normalized, 'charges')).toBe(false);
   });
 
   it('rejects invalid dates, percentages, and non-finite numbers', () => {
@@ -52,5 +50,41 @@ describe('BizFile review validation', () => {
     const paths = validateBizFileReview(draft).issues.map((issue) => issue.path);
     expect(paths).toContain('entityDetails.incorporationDate');
     expect(paths).toContain('shareholders.0.percentageHeld');
+  });
+
+  it.each([[30, 2], [31, 2], [31, 4]])('rejects impossible financial year end %i/%i', (endDay, endMonth) => {
+    const draft = createEmptyBizFileReviewDraft();
+    draft.entityDetails = { uen: '202626103M', name: 'Example', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };
+    draft.financialYear = { endDay, endMonth };
+    expect(validateBizFileReview(draft).issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'financialYear.endDay' }),
+    ]));
+  });
+
+  it.each([
+    ['entityDetails.entityType', { entityDetails: { uen: '1', name: 'X', entityType: 'MADE_UP', status: 'LIVE' } }],
+    ['entityDetails.status', { entityDetails: { uen: '1', name: 'X', entityType: 'PRIVATE_LIMITED', status: 'MADE_UP' } }],
+    ['officers.0.role', { officers: [{ name: 'A', role: 'MADE_UP' }] }],
+    ['officers.0.identificationType', { officers: [{ name: 'A', role: 'DIRECTOR', identificationType: 'MADE_UP' }] }],
+  ])('rejects unsupported enum at %s', (path, override) => {
+    const draft = createEmptyBizFileReviewDraft();
+    draft.entityDetails = { uen: '1', name: 'X', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };
+    Object.assign(draft, override);
+    expect(validateBizFileReview(draft).issues.map((issue) => issue.path)).toContain(path);
+  });
+
+  it('accepts supported extraction aliases', () => {
+    const draft = createEmptyBizFileReviewDraft();
+    draft.entityDetails = { uen: '1', name: 'X', entityType: 'PRIVATE COMPANY LIMITED BY SHARES', status: 'LIVE COMPANY' };
+    draft.officers = [{ name: 'A', role: 'COMPANY SECRETARY', identificationType: 'PASSPORT' }];
+    expect(validateBizFileReview(draft).isValid).toBe(true);
+  });
+
+  it('truly omits undefined normalized keys', () => {
+    const draft = createEmptyBizFileReviewDraft();
+    draft.entityDetails = { uen: '1', name: 'X', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };
+    draft.officers = [];
+    const normalized = normalizeBizFileReviewDraft(draft);
+    expect(Object.hasOwn(normalized, 'officers')).toBe(false);
   });
 });

@@ -203,7 +203,7 @@ describe("BizFileReviewSections", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remove Bob" }));
     expect(screen.getAllByLabelText("Name")[0]).toHaveFocus();
     fireEvent.click(screen.getByRole("button", { name: "Undo remove Bob" }));
-    expect(screen.getAllByLabelText("Name")[0]).toHaveFocus();
+    expect(screen.getAllByLabelText("Name")[1]).toHaveFocus();
     expect(
       screen
         .getAllByLabelText("Name")

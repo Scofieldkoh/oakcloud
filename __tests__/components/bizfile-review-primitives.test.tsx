@@ -125,4 +125,17 @@ describe('RepeatingRecordEditor', () => {
     expect(screen.getByLabelText('Note Alice')).toHaveValue('keep-alice');
     expect(screen.getByLabelText('Note Carol')).toHaveValue('keep-carol');
   });
+
+  it('focuses Undo after remove and the restored row control after undo', async () => {
+    const alice: Officer = { id: 'alice', name: 'Alice', details: { role: 'Director' } };
+    let current = [alice];
+    const onChange = vi.fn((next: Officer[]) => { current = next; });
+    const editor = () => <RepeatingRecordEditor {...commonProps} items={current} onChange={onChange}
+      renderItem={(item) => <input aria-label={`Edit ${item.name}`} />} />;
+    const { rerender } = render(editor());
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Alice' })); rerender(editor());
+    await vi.waitFor(() => expect(screen.getByRole('button', { name: 'Undo remove Alice' })).toHaveFocus());
+    fireEvent.click(document.activeElement as HTMLElement); rerender(editor());
+    await vi.waitFor(() => expect(screen.getByLabelText('Edit Alice')).toHaveFocus());
+  });
 });

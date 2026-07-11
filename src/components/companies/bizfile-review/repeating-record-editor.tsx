@@ -43,6 +43,7 @@ export function RepeatingRecordEditor<T>({
   const [removed, setRemoved] = useState<RemovedItem<T> | null>(null);
   const [focusKey, setFocusKey] = useState<React.Key | null>(null);
   const rowRefs = useRef(new Map<React.Key, HTMLDivElement>());
+  const undoRef = useRef<HTMLButtonElement>(null);
   const keys = useRef<React.Key[]>(
     items.map((item, index) => getItemKey(item, index)),
   );
@@ -105,6 +106,7 @@ export function RepeatingRecordEditor<T>({
     pendingKeys.current = nextKeys;
     setRemoved({ item, index, label, key });
     onChange(items.filter((_, itemIndex) => itemIndex !== index));
+    queueMicrotask(() => undoRef.current?.focus());
   };
 
   const undo = () => {
@@ -116,6 +118,7 @@ export function RepeatingRecordEditor<T>({
     nextKeys.splice(index, 0, removed.key);
     pendingKeys.current = nextKeys;
     onChange(next);
+    setFocusKey(removed.key);
     setRemoved(null);
   };
 
@@ -126,6 +129,7 @@ export function RepeatingRecordEditor<T>({
         <div className="flex items-center gap-2">
           {removed && (
             <button
+              ref={undoRef}
               type="button"
               onClick={undo}
               aria-label={`Undo remove ${removed.label}`}

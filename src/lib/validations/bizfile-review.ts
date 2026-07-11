@@ -49,6 +49,23 @@ const isoDate = z.string().trim().superRefine((value, context) => {
 });
 const optionalDate = isoDate.optional();
 
+export const BIZFILE_ENTITY_TYPE_OPTIONS = [
+  'PRIVATE_LIMITED', 'EXEMPTED_PRIVATE_LIMITED', 'PUBLIC_LIMITED', 'PUBLIC_COMPANY_LIMITED_BY_GUARANTEE',
+  'SOLE_PROPRIETORSHIP', 'PARTNERSHIP', 'LIMITED_PARTNERSHIP', 'LIMITED_LIABILITY_PARTNERSHIP',
+  'FOREIGN_COMPANY', 'VARIABLE_CAPITAL_COMPANY', 'OTHER',
+] as const;
+export const BIZFILE_ENTITY_TYPE_ALIASES = [
+  'PRIVATE LIMITED', 'PRIVATE COMPANY LIMITED BY SHARES', 'EXEMPTED PRIVATE LIMITED', 'EXEMPT PRIVATE LIMITED',
+  'EXEMPT PRIVATE COMPANY LIMITED BY SHARES', 'EXEMPTED PRIVATE COMPANY LIMITED BY SHARES', 'PUBLIC LIMITED',
+  'PUBLIC COMPANY LIMITED BY SHARES', 'SOLE PROPRIETORSHIP', 'LIMITED PARTNERSHIP', 'LLP', 'FOREIGN COMPANY', 'VCC',
+] as const;
+export const BIZFILE_STATUS_OPTIONS = ['LIVE', 'STRUCK_OFF', 'WINDING_UP', 'DISSOLVED', 'IN_LIQUIDATION', 'IN_RECEIVERSHIP', 'AMALGAMATED', 'CONVERTED', 'OTHER'] as const;
+export const BIZFILE_STATUS_ALIASES = ['LIVE COMPANY', 'STRUCK OFF', 'WINDING UP', 'IN LIQUIDATION', 'IN RECEIVERSHIP'] as const;
+export const BIZFILE_OFFICER_ROLE_OPTIONS = ['DIRECTOR', 'MANAGING_DIRECTOR', 'ALTERNATE_DIRECTOR', 'SECRETARY', 'CEO', 'CFO', 'AUDITOR', 'LIQUIDATOR', 'RECEIVER', 'JUDICIAL_MANAGER'] as const;
+export const BIZFILE_OFFICER_ROLE_ALIASES = ['MANAGING DIRECTOR', 'ALTERNATE DIRECTOR', 'COMPANY SECRETARY', 'CHIEF EXECUTIVE OFFICER', 'CHIEF FINANCIAL OFFICER', 'JUDICIAL MANAGER'] as const;
+export const BIZFILE_IDENTIFICATION_TYPE_OPTIONS = ['NRIC', 'FIN', 'PASSPORT', 'UEN', 'OTHER'] as const;
+const accepted = <T extends readonly string[]>(values: T, aliases: readonly string[] = []) => z.string().trim().refine((value) => [...values, ...aliases].includes(value), 'Unsupported value');
+
 const addressSchema = z.object({
   block: optionalString,
   streetName: requiredString,
@@ -66,8 +83,8 @@ export const bizFileReviewSchema = z.object({
     formerName: optionalString,
     dateOfNameChange: optionalDate,
     formerNames: z.array(z.object({ name: requiredString, effectiveFrom: optionalDate, effectiveTo: optionalDate })).optional(),
-    entityType: reviewString,
-    status: reviewString,
+    entityType: accepted(BIZFILE_ENTITY_TYPE_OPTIONS, BIZFILE_ENTITY_TYPE_ALIASES),
+    status: accepted(BIZFILE_STATUS_OPTIONS, BIZFILE_STATUS_ALIASES),
     statusDate: optionalDate,
     incorporationDate: optionalDate,
     registrationDate: optionalDate,
@@ -97,7 +114,7 @@ export const bizFileReviewSchema = z.object({
   shareholders: z.array(z.object({
     name: reviewString,
     type: z.enum(['INDIVIDUAL', 'CORPORATE']),
-    identificationType: optionalString,
+    identificationType: accepted(BIZFILE_IDENTIFICATION_TYPE_OPTIONS).optional(),
     identificationNumber: optionalString,
     nationality: optionalString,
     placeOfOrigin: optionalString,
@@ -113,8 +130,8 @@ export const bizFileReviewSchema = z.object({
   })).optional(),
   officers: z.array(z.object({
     name: requiredString,
-    role: requiredString,
-    identificationType: optionalString,
+    role: accepted(BIZFILE_OFFICER_ROLE_OPTIONS, BIZFILE_OFFICER_ROLE_ALIASES),
+    identificationType: accepted(BIZFILE_IDENTIFICATION_TYPE_OPTIONS).optional(),
     identificationNumber: optionalString,
     nationality: optionalString,
     address: optionalString,
@@ -126,6 +143,8 @@ export const bizFileReviewSchema = z.object({
     endDay: z.number().finite().int().min(1).max(31),
     endMonth: z.number().finite().int().min(1).max(12),
     fyeAsAtLastAr: optionalDate,
+  }).superRefine(({ endDay, endMonth }, context) => {
+    if (endDay > new Date(Date.UTC(2000, endMonth, 0)).getUTCDate()) context.addIssue({ code: z.ZodIssueCode.custom, path: ['endDay'], message: 'Must be a valid day for the selected month' });
   }).optional(),
   homeCurrency: optionalString,
   compliance: z.object({
@@ -183,7 +202,7 @@ function normalize(value: unknown, root = false): unknown {
     const result: Record<string, unknown> = {};
     for (const [key, child] of Object.entries(value)) {
       const normalized = normalize(child);
-      result[key] = normalized;
+      if (normalized !== undefined) result[key] = normalized;
     }
     return !root && isBlank(result) ? undefined : result;
   }

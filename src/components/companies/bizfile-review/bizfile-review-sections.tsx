@@ -1,6 +1,11 @@
 "use client";
 
-import type {
+import {
+  BIZFILE_ENTITY_TYPE_OPTIONS,
+  BIZFILE_IDENTIFICATION_TYPE_OPTIONS,
+  BIZFILE_OFFICER_ROLE_OPTIONS,
+  BIZFILE_STATUS_OPTIONS,
+  type
   BizFileReviewDraft,
   BizFileReviewIssue,
   BizFileReviewSectionId,
@@ -18,6 +23,7 @@ type Props = {
   onChange: (draft: BizFileReviewDraft) => void;
   issues: BizFileReviewIssue[];
 };
+const optionLabel = (value: string) => value.split("_").map((word) => word.charAt(0) + word.slice(1).toLowerCase()).join(" ");
 type Address = NonNullable<BizFileReviewDraft["registeredAddress"]>;
 type FormerName = NonNullable<
   BizFileReviewDraft["entityDetails"]["formerNames"]
@@ -94,25 +100,7 @@ export function EntitySection({ draft, onChange, issues }: Props) {
           error={issue(issues, "entityDetails.entityType")}
         >
           <option value="">Select</option>
-          <option value="PRIVATE_LIMITED">Private limited</option>
-          <option value="EXEMPTED_PRIVATE_LIMITED">
-            Exempted private limited
-          </option>
-          <option value="PUBLIC_LIMITED">Public limited</option>
-          <option value="PUBLIC_COMPANY_LIMITED_BY_GUARANTEE">
-            Public company limited by guarantee
-          </option>
-          <option value="SOLE_PROPRIETORSHIP">Sole proprietorship</option>
-          <option value="PARTNERSHIP">Partnership</option>
-          <option value="LIMITED_PARTNERSHIP">Limited partnership</option>
-          <option value="LIMITED_LIABILITY_PARTNERSHIP">
-            Limited liability partnership
-          </option>
-          <option value="FOREIGN_COMPANY">Foreign company</option>
-          <option value="VARIABLE_CAPITAL_COMPANY">
-            Variable capital company
-          </option>
-          <option value="OTHER">Other</option>
+          {BIZFILE_ENTITY_TYPE_OPTIONS.map((value) => <option key={value} value={value}>{optionLabel(value)}</option>)}
         </ReviewSelect>
         <ReviewSelect
           id="entity-status"
@@ -122,15 +110,7 @@ export function EntitySection({ draft, onChange, issues }: Props) {
           error={issue(issues, "entityDetails.status")}
         >
           <option value="">Select</option>
-          <option value="LIVE">Live</option>
-          <option value="STRUCK_OFF">Struck off</option>
-          <option value="WINDING_UP">Winding up</option>
-          <option value="DISSOLVED">Dissolved</option>
-          <option value="IN_LIQUIDATION">In liquidation</option>
-          <option value="IN_RECEIVERSHIP">In receivership</option>
-          <option value="AMALGAMATED">Amalgamated</option>
-          <option value="CONVERTED">Converted</option>
-          <option value="OTHER">Other</option>
+          {BIZFILE_STATUS_OPTIONS.map((value) => <option key={value} value={value}>{optionLabel(value)}</option>)}
         </ReviewSelect>
         <ReviewField
           id="entity-status-date"
@@ -514,11 +494,7 @@ export function CapitalSection({ draft, onChange, issues }: Props) {
 const identificationOptions = (
   <>
     <option value="">Select</option>
-    <option value="NRIC">NRIC</option>
-    <option value="FIN">FIN</option>
-    <option value="PASSPORT">Passport</option>
-    <option value="UEN">UEN</option>
-    <option value="OTHER">Other</option>
+    {BIZFILE_IDENTIFICATION_TYPE_OPTIONS.map((value) => <option key={value} value={value}>{optionLabel(value)}</option>)}
   </>
 );
 export function OfficersSection({ draft, onChange, issues }: Props) {
@@ -549,16 +525,7 @@ export function OfficersSection({ draft, onChange, issues }: Props) {
               onChange={(e) => update({ ...item, role: e.target.value })}
               error={issue(issues, `officers.${i}.role`)}
             >
-              <option value="DIRECTOR">Director</option>
-              <option value="MANAGING_DIRECTOR">Managing director</option>
-              <option value="ALTERNATE_DIRECTOR">Alternate director</option>
-              <option value="SECRETARY">Secretary</option>
-              <option value="CEO">CEO</option>
-              <option value="CFO">CFO</option>
-              <option value="AUDITOR">Auditor</option>
-              <option value="LIQUIDATOR">Liquidator</option>
-              <option value="RECEIVER">Receiver</option>
-              <option value="JUDICIAL_MANAGER">Judicial manager</option>
+              {BIZFILE_OFFICER_ROLE_OPTIONS.map((value) => <option key={value} value={value}>{optionLabel(value)}</option>)}
             </ReviewSelect>
             <ReviewSelect
               id={`officer-id-type-${i}`}

@@ -123,6 +123,29 @@ describe("BizFileReviewWorkspace", () => {
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
+  it.each(["Cancel", "Upload Different File"])("guards dirty %s and honors reject/accept", (name) => {
+    const onCancel = vi.fn(); const onReset = vi.fn();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
+    setup(vi.fn(), { onCancel, onReset });
+    fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
+    fireEvent.click(screen.getByRole("button", { name }));
+    expect(onCancel).not.toHaveBeenCalled(); expect(onReset).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name }));
+    expect(name === "Cancel" ? onCancel : onReset).toHaveBeenCalledOnce();
+    confirm.mockRestore();
+  });
+
+  it("does not prompt on clean exit and guards the dirty cancel keyboard shortcut", () => {
+    const onCancel = vi.fn(); const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    setup(vi.fn(), { onCancel });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(confirm).not.toHaveBeenCalled(); expect(onCancel).toHaveBeenCalledOnce();
+    fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
+    fireEvent.keyDown(window, { key: "Backspace", ctrlKey: true });
+    expect(confirm).toHaveBeenCalledOnce(); expect(onCancel).toHaveBeenCalledOnce();
+    confirm.mockRestore();
+  });
+
   it("awaits save, blocks duplicate saves, and reports rejection for retry", async () => {
     let reject!: (error: Error) => void;
     const onConfirm = vi.fn(() => new Promise<void>((_, rejectPromise) => { reject = rejectPromise; }));

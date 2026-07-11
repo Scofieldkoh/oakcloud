@@ -76,7 +76,6 @@ describe('POST /api/documents/:documentId/confirm', () => {
       where: { id: 'doc-1' },
       data: { extractedData: expect.objectContaining({
         entityDetails: expect.objectContaining({ name: 'Corrected Pte. Ltd.' }),
-        officers: undefined,
       }) },
     });
     expect(mockProcess).toHaveBeenCalledWith(
@@ -97,6 +96,20 @@ describe('POST /api/documents/:documentId/confirm', () => {
       expect.objectContaining({ path: 'entityDetails.uen', section: 'entity' }),
       expect.objectContaining({ path: 'entityDetails.entityType', section: 'entity' }),
     ]));
+    expect(mockDocumentUpdate).not.toHaveBeenCalled();
+    expect(mockProcess).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['invalid financial year date', { ...validPayload, financialYear: { endDay: 31, endMonth: 4 } }, 'financialYear.endDay'],
+    ['invalid entity type', { ...validPayload, entityDetails: { ...validPayload.entityDetails, entityType: 'MADE_UP' } }, 'entityDetails.entityType'],
+    ['invalid status', { ...validPayload, entityDetails: { ...validPayload.entityDetails, status: 'MADE_UP' } }, 'entityDetails.status'],
+    ['invalid officer role', { ...validPayload, officers: [{ name: 'A', role: 'MADE_UP' }] }, 'officers.0.role'],
+    ['invalid identification type', { ...validPayload, officers: [{ name: 'A', role: 'DIRECTOR', identificationType: 'MADE_UP' }] }, 'officers.0.identificationType'],
+  ])('rejects %s without writes', async (_label, extractedData, path) => {
+    const response = await post({ extractedData });
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual(expect.objectContaining({ issues: expect.arrayContaining([expect.objectContaining({ path })]) }));
     expect(mockDocumentUpdate).not.toHaveBeenCalled();
     expect(mockProcess).not.toHaveBeenCalled();
   });

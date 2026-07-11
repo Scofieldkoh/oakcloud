@@ -85,6 +85,9 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
   const initialSnapshot = useState(() => JSON.stringify(normalizeBizFileReviewDraft(clone(initialData))))[0];
   const isDirty = JSON.stringify(normalizeBizFileReviewDraft(draft)) !== initialSnapshot;
   const busy = isSaving || locallySaving;
+  const exit = useCallback((action: () => void) => {
+    if (!isDirty || window.confirm("Discard your unsaved BizFile review changes?")) action();
+  }, [isDirty]);
 
   useEffect(() => {
     if (!isDirty) return;
@@ -154,16 +157,16 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
     const shortcuts = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey)) return;
       if (event.key.toLowerCase() === "s") { event.preventDefault(); void confirm(); }
-      if (event.key === "Backspace" && !isEditableTarget(event.target)) { event.preventDefault(); onCancel(); }
+      if (event.key === "Backspace" && !isEditableTarget(event.target)) { event.preventDefault(); exit(onCancel); }
     };
     window.addEventListener("keydown", shortcuts);
     return () => window.removeEventListener("keydown", shortcuts);
-  }, [confirm, onCancel]);
+  }, [confirm, exit, onCancel]);
 
   const issuesFor = (section: BizFileReviewSectionId) => issues.filter((item) => item.section === section);
   const reviewedValidSections = BIZFILE_REVIEW_SECTIONS.filter((section) => visitedSections.has(section) && issuesFor(section).length === 0).length;
   const sectionNavigation = (
-    <nav aria-label="Review sections" className="hidden w-52 shrink-0 overflow-y-auto border-r border-border-primary p-2 md:block">
+    <nav aria-label="Review sections" className="hidden w-52 shrink-0 overflow-y-auto border-r border-border-primary p-2 lg:block">
       {BIZFILE_REVIEW_SECTIONS.map((section) => {
         const count = issuesFor(section).length;
         const state = count ? "Errors" : visitedSections.has(section) ? "Complete" : "Not reviewed";
@@ -178,7 +181,7 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
   );
   const editor = (
     <div className="flex h-full min-h-0 flex-col bg-background-primary">
-      <label className="border-b border-border-primary p-2 text-xs md:hidden">Review section
+      <label className="border-b border-border-primary p-2 text-xs lg:hidden">Review section
         <select aria-label="Review section" value={activeSection} onChange={(event) => selectSection(event.target.value as BizFileReviewSectionId)}
           className="ml-2 h-8 rounded-md border border-border-primary bg-background-primary px-2">
           {BIZFILE_REVIEW_SECTIONS.map((section) => <option key={section} value={section}>{sectionLabels[section]}</option>)}
@@ -191,8 +194,8 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
       </div>
       <footer className="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 border-t border-border-primary bg-background-primary p-3">
         {saveSummary && <p role="status" data-review-summary tabIndex={-1} className="mr-auto text-xs text-text-secondary">{saveSummary}</p>}
-        <button type="button" disabled={busy} onClick={onCancel}>Cancel</button>
-        <button type="button" disabled={busy} onClick={onReset}>Upload Different File</button>
+        <button type="button" disabled={busy} onClick={() => exit(onCancel)}>Cancel</button>
+        <button type="button" disabled={busy} onClick={() => exit(onReset)}>Upload Different File</button>
         <button type="button" disabled={busy} onClick={() => void confirm()} className="rounded bg-oak-primary px-4 py-2 text-white disabled:opacity-50">
           {busy ? "Saving…" : "Confirm & Save"}
         </button>
