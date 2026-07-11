@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { processBizFileExtraction } from '@/services/bizfile';
-import type { ExtractedBizFileData } from '@/services/bizfile/types';
+import {
+  bizFileReviewSchema,
+  issuesFromZodError,
+  normalizeBizFileReviewDraft,
+} from '@/lib/validations/bizfile-review';
 
 /**
  * POST /api/documents/:documentId/confirm
@@ -60,9 +64,29 @@ export async function POST(
       );
     }
 
+    const body: unknown = await request.json();
+    const candidate = typeof body === 'object' && body !== null && 'extractedData' in body
+      ? (body as { extractedData: unknown }).extractedData
+      : undefined;
+    const parsed = bizFileReviewSchema.safeParse(candidate);
+
+    if (!parsed.success) {
+      const validation = issuesFromZodError(parsed.error);
+      return NextResponse.json(
+        { error: 'Please correct the highlighted fields', issues: validation.issues },
+        { status: 400 }
+      );
+    }
+
+    const correctedData = normalizeBizFileReviewDraft(parsed.data);
+    await prisma.document.update({
+      where: { id: documentId },
+      data: { extractedData: correctedData as object },
+    });
+
     const result = await processBizFileExtraction(
       documentId,
-      document.extractedData as unknown as ExtractedBizFileData,
+      correctedData,
       session.id,
       document.tenantId,
       document.storageKey || undefined,
