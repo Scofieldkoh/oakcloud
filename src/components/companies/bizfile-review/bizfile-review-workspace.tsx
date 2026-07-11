@@ -30,6 +30,7 @@ const sectionLabels: Record<BizFileReviewSectionId, string> = {
   capital: "Capital", officers: "Officers", shareholders: "Shareholders",
   auditor: "Auditor", compliance: "Compliance", charges: "Charges", document: "Document metadata",
 };
+const EMPTY_SERVER_ISSUES: BizFileReviewIssue[] = [];
 
 function clone<T>(value: T): T {
   return typeof structuredClone === "function" ? structuredClone(value) : JSON.parse(JSON.stringify(value));
@@ -41,7 +42,7 @@ function repeatingRecordTotal(draft: BizFileReviewDraft) {
 }
 
 function useLargeViewport() {
-  const [isLarge, setIsLarge] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(min-width: 1024px)").matches === true);
+  const [isLarge, setIsLarge] = useState(false);
   useEffect(() => {
     const media = window.matchMedia?.("(min-width: 1024px)");
     if (!media) return;
@@ -58,7 +59,7 @@ function isEditableTarget(target: EventTarget | null) {
 }
 
 export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, isSaving = false,
-  serverIssues = [], onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
+  serverIssues = EMPTY_SERVER_ISSUES, onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
   const workspaceRef = useRef<HTMLElement>(null);
   const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveInFlightRef = useRef(false);
@@ -80,8 +81,7 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
     }
     return Array.from(byPath.values());
   }, [clientIssues, dismissedServerPaths, serverIssues]);
-  const serverSignature = JSON.stringify(serverIssues);
-  useEffect(() => setDismissedServerPaths(new Set()), [serverSignature]);
+  useEffect(() => setDismissedServerPaths(new Set()), [serverIssues]);
   const initialSnapshot = useState(() => JSON.stringify(normalizeBizFileReviewDraft(clone(initialData))))[0];
   const isDirty = JSON.stringify(normalizeBizFileReviewDraft(draft)) !== initialSnapshot;
   const busy = isSaving || locallySaving;
@@ -206,7 +206,10 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
         <div><h1 className="font-semibold">Review extracted information</h1><p className="text-xs text-text-muted"><span>10 sections</span> · {reviewedValidSections} reviewed · {issues.length} issues · {repeatingRecordTotal(draft)} records</p></div>
         <span className="text-xs">{issues.length ? "Needs attention" : reviewedValidSections === 10 ? "Ready to save" : "Review in progress"}</span>
       </div>
-      {aiMetadata && <div className="mt-1 text-xs text-text-muted"><p>{aiMetadata.modelName ?? aiMetadata.modelUsed} · {aiMetadata.providerUsed}{aiMetadata.formattedCost ? ` · ${aiMetadata.formattedCost}` : ""}</p><p className="text-text-secondary">AI-extracted data may be inaccurate. Verify it against the source document.</p></div>}
+      <div className="mt-1 text-xs text-text-muted">
+        {aiMetadata && <p>{aiMetadata.modelName ?? aiMetadata.modelUsed} · {aiMetadata.providerUsed}{aiMetadata.formattedCost ? ` · ${aiMetadata.formattedCost}` : ""}</p>}
+        <p className="text-text-secondary">AI-extracted data may be inaccurate. Verify it against the source document.</p>
+      </div>
       {!isLarge && <div role="tablist" className="mt-3 flex gap-2">
         {(["document", "review"] as const).map((panel) => <button key={panel} role="tab" aria-selected={mobilePanel === panel}
           onClick={() => setMobilePanel(panel)} className="rounded border px-3 py-1.5 text-xs">{panel === "document" ? "Document" : "Review"}</button>)}

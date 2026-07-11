@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { BizFileReviewWorkspace } from "@/components/companies/bizfile-review/bizfile-review-workspace";
 import type { ExtractedBizFileData } from "@/services/bizfile";
@@ -59,16 +60,33 @@ describe("BizFileReviewWorkspace", () => {
     expect(screen.getByText("Charges", { selector: "h2" })).toBeVisible();
   });
 
-  it("uses the resizable split only at lg and above", () => {
+  it("starts with the hydration-safe mobile tree and switches when the lg media query changes", () => {
+    let matches = false;
+    let notify = () => {};
     vi.stubGlobal("matchMedia", vi.fn(() => ({
-      matches: true, media: "(min-width: 1024px)", onchange: null,
-      addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
+      get matches() { return matches; }, media: "(min-width: 1024px)", onchange: null,
+      addEventListener: vi.fn((_type, listener: () => void) => { notify = listener; }),
+      removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
     })));
     setup();
+    expect(screen.getByTestId("mobile-workspace")).toBeVisible();
+    expect(screen.queryByTestId("desktop-split")).not.toBeInTheDocument();
+    act(() => { matches = true; notify(); });
     expect(screen.getByTestId("desktop-split")).toBeVisible();
     expect(screen.queryByTestId("mobile-workspace")).not.toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: "Document" })).not.toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it("does not read a wide viewport while producing the initial render tree", () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({
+      matches: true, media: "(min-width: 1024px)", onchange: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+    })));
+    const markup = renderToString(<BizFileReviewWorkspace initialData={fixture} sourcePanel={<div>PDF source</div>}
+      onCancel={vi.fn()} onReset={vi.fn()} onConfirm={vi.fn()} />);
+    expect(markup).toContain('data-testid="mobile-workspace"');
+    expect(markup).not.toContain('data-testid="desktop-split"');
     vi.unstubAllGlobals();
   });
 
@@ -135,6 +153,19 @@ describe("BizFileReviewWorkspace", () => {
     await waitFor(() => expect(screen.queryByText("Save blocked")).not.toBeInTheDocument());
   });
 
+  it("restores an identical server issue payload when a retry response arrives", async () => {
+    const issue = { path: "entityDetails.name", section: "entity" as const, message: "Server name issue" };
+    const props = { sourcePanel: <div>PDF source</div>, onCancel: vi.fn(), onReset: vi.fn(), onConfirm: vi.fn() };
+    const { rerender } = render(<BizFileReviewWorkspace {...props} initialData={fixture} serverIssues={[issue]} />);
+    fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Corrected Pte. Ltd." } });
+    expect(screen.queryByText("Server name issue")).not.toBeInTheDocument();
+    rerender(<BizFileReviewWorkspace {...props} initialData={fixture} serverIssues={[{ ...issue }]} />);
+    expect(await screen.findByText("Server name issue")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm & Save" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Save blocked");
+    expect(props.onConfirm).not.toHaveBeenCalled();
+  });
+
   it("does not mark untouched issue-free sections complete and marks visited valid sections reviewed", () => {
     setup();
     expect(screen.getByRole("button", { name: /Addresses.*Not reviewed/i })).toBeVisible();
@@ -149,5 +180,10 @@ describe("BizFileReviewWorkspace", () => {
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Confirm & Save" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Save blocked: 1 issue in 1 section.");
+  });
+
+  it("always presents neutral AI verification guidance without metadata", () => {
+    setup();
+    expect(screen.getByText(/AI-extracted data may be inaccurate/i)).toBeVisible();
   });
 });

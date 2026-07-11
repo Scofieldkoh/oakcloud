@@ -36,3 +36,11 @@ Server issues are deduplicated by path behind client-validation precedence and c
 
 - RED: 7 focused regressions failed across responsive layout/navigation, cancel shortcut semantics, async save guarding/retry, review-state labeling, save guidance, and optional-array normalization.
 - GREEN: workspace plus validation regressions pass 16/16; section plus primitive regressions pass 12/12.
+
+### Re-review fixes
+
+- Made the responsive viewport state hydration-safe: server and first client render always use the mobile tree, then the effect synchronizes and subscribes to the `lg` media query.
+- Reset dismissed server paths on server-response identity rather than serialized payload content, so an identical validation response returned by a retry reappears and blocks confirmation.
+- Show the neutral AI source-verification guidance for every extraction; model/provider metadata remains conditional.
+- RED: identical retry issues and metadata-free guidance failed; the initial-tree regression also explicitly protects the SSR render contract.
+- GREEN: focused workspace plus validation suites pass 19/19.
