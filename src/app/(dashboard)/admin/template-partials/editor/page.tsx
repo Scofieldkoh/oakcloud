@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/toast';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { AISidebar, useAISidebar, type DocumentCategory } from '@/components/documents/ai-sidebar';
 import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
+import { PlaceholderPanel } from '@/components/documents/template-editor/placeholder-panel';
 import {
   DEFAULT_A4_DOCUMENT_LAYOUT,
   extractA4DocumentLayout,
@@ -1101,6 +1102,10 @@ function PlaceholdersTab({
     </div>
   );
 }
+
+// Retained temporarily for backward-compatible extraction while the route uses
+// the searchable PlaceholderPanel implementation above.
+void PlaceholdersTab;
 
 // ============================================================================
 // Test Data Tab Component
@@ -2494,7 +2499,7 @@ function TemplateEditorContent() {
                   )
                 )}
                 {activeTab === 'placeholders' && (
-                  <PlaceholdersTab
+                  <PlaceholderPanel
                     onInsert={handleInsertPlaceholder}
                     partials={partials}
                     isLoadingPartials={isLoadingPartials}
