@@ -30,6 +30,9 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 import { DocumentPageViewer, ResizableSplitView } from '@/components/processing';
 import { postFormDataWithFallback } from '@/lib/browser-upload';
+import { BizFileReviewWorkspace } from '@/components/companies/bizfile-review/bizfile-review-workspace';
+import type { BizFileReviewIssue } from '@/lib/validations/bizfile-review';
+import type { ExtractedBizFileData } from '@/services/bizfile';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'diff-preview' | 'saving' | 'complete';
 
@@ -94,39 +97,6 @@ interface DiffResult {
     shareholdersAdded: number;
     shareholdersUpdated: number;
     shareholdersRemoved: number;
-  };
-}
-
-interface ExtractedData {
-  entityDetails: {
-    uen: string;
-    name: string;
-    entityType: string;
-    status: string;
-    incorporationDate?: string;
-  };
-  ssicActivities?: {
-    primary?: { code: string; description: string };
-    secondary?: { code: string; description: string };
-  };
-  officers?: Array<{
-    name: string;
-    role: string;
-    appointmentDate?: string;
-  }>;
-  shareholders?: Array<{
-    name: string;
-    numberOfShares: number;
-    percentageHeld?: number;
-  }>;
-  registeredAddress?: {
-    fullAddress?: string;
-    postalCode: string;
-    streetName: string;
-  };
-  financialYear?: {
-    endDay: number;
-    endMonth: number;
   };
 }
 
@@ -203,7 +173,9 @@ export default function UploadBizFilePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [step, setStep] = useState<UploadStep>('upload');
   const [error, setError] = useState<string | null>(null);
-  const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
+  const [extractedData, setExtractedData] = useState<ExtractedBizFileData | null>(null);
+  const [serverIssues, setServerIssues] = useState<BizFileReviewIssue[]>([]);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [aiMetadata, setAiMetadata] = useState<AIMetadata | null>(null);
@@ -354,6 +326,7 @@ export default function UploadBizFilePage() {
         const { extractedData: data, conflict: conflictData, aiMetadata: metadata } = await extractResponse.json();
         setExtractedData(data);
         setAiMetadata(metadata);
+        setServerIssues([]);
 
         if (conflictData) {
           setConflict(conflictData);
@@ -369,10 +342,11 @@ export default function UploadBizFilePage() {
     }
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = async (correctedData: ExtractedBizFileData) => {
     if (!documentId) return;
 
-    setStep('saving');
+    setIsConfirming(true);
+    setServerIssues([]);
     setError(null);
 
     try {
@@ -380,10 +354,17 @@ export default function UploadBizFilePage() {
       const response = await fetch(`/api/documents/${documentId}/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ extractedData }),
+        body: JSON.stringify({ extractedData: correctedData }),
       });
 
       if (!response.ok) {
+        if (response.status === 400) {
+          const result = await response.json().catch(() => null) as { error?: string; issues?: BizFileReviewIssue[] } | null;
+          if (Array.isArray(result?.issues)) {
+            setServerIssues(result.issues);
+            throw new Error(result.error || 'Please correct the highlighted fields');
+          }
+        }
         const err = await safeJsonError(response, 'Failed to save data');
         throw new Error(err);
       }
@@ -393,7 +374,9 @@ export default function UploadBizFilePage() {
       setStep('complete');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      setStep('preview');
+      throw err;
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -438,6 +421,8 @@ export default function UploadBizFilePage() {
     setStep('upload');
     setError(null);
     setExtractedData(null);
+    setServerIssues([]);
+    setIsConfirming(false);
     setDocumentId(null);
     setCompanyId(null);
     setAiMetadata(null);
@@ -559,12 +544,6 @@ export default function UploadBizFilePage() {
       handler: handleCancel,
       description: 'Cancel and go back',
     },
-    ...(step === 'preview' ? [{
-      key: 's',
-      ctrl: true,
-      handler: handleConfirm,
-      description: 'Confirm and save',
-    }] : []),
     ...(step === 'diff-preview' ? [{
       key: 's',
       ctrl: true,
@@ -576,7 +555,7 @@ export default function UploadBizFilePage() {
       handler: () => router.push('/companies/new'),
       description: 'Create company',
     },
-  ], step !== 'extracting' && step !== 'saving');
+  ], step !== 'extracting' && step !== 'saving' && step !== 'preview');
 
   // Handle officer action change (for potentially ceased officers)
   const handleOfficerActionChange = (officerId: string, action: 'cease' | 'follow_up', cessationDate?: string) => {
@@ -780,202 +759,18 @@ export default function UploadBizFilePage() {
 
       {/* Step: Preview */}
       {step === 'preview' && extractedData && (
-        <ResizableSplitView
-          className="h-[70vh] min-h-[520px]"
-          leftPanel={previewPanel}
-          rightPanel={
-            <div className="h-full overflow-y-auto bg-background-primary p-4">
-              <div className="space-y-6">
-            <div className="card bg-status-success/5 border-status-success">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 text-status-success">
-                  <CheckCircle className="w-5 h-5" />
-                <p className="font-medium">Successfully extracted data from BizFile</p>
-              </div>
-              {aiMetadata && (
-                <div className="flex items-center gap-2 text-xs text-text-secondary">
-                  <Sparkles className="w-3 h-3" />
-                  <span>
-                    {aiMetadata.modelName || aiMetadata.modelUsed} ({aiMetadata.providerUsed})
-                    {aiMetadata.usage && (
-                      <span className="ml-1 text-text-muted">
-                        • {aiMetadata.providerUsed === 'mistral' && aiMetadata.usage.pagesProcessed
-                          ? `${aiMetadata.usage.pagesProcessed.toLocaleString()} pages`
-                          : `${aiMetadata.usage.totalTokens.toLocaleString()} tokens`}
-                      </span>
-                    )}
-                    {aiMetadata.formattedCost && (
-                      <span className="ml-1 text-text-muted">
-                        • Est. {aiMetadata.formattedCost}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="p-4 border-b border-border-primary">
-              <h2 className="font-medium text-text-primary">Extracted Company Information</h2>
-              <p className="text-sm text-text-tertiary mt-1">
-                Review the extracted data before saving
-              </p>
-            </div>
-
-            <div className="divide-y divide-border-primary">
-              {/* Entity Details */}
-              <div className="p-4">
-                <h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wide mb-3">
-                  Entity Details
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-text-muted mb-0.5">UEN</p>
-                    <p className="text-sm text-text-primary">{extractedData.entityDetails.uen}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-text-muted mb-0.5">Name</p>
-                    <p className="text-sm text-text-primary">{extractedData.entityDetails.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-text-muted mb-0.5">Entity Type</p>
-                    <p className="text-sm text-text-primary">
-                      {extractedData.entityDetails.entityType?.replace(/_/g, ' ')}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-text-muted mb-0.5">Status</p>
-                    <p className="text-sm text-text-primary">
-                      {extractedData.entityDetails.status?.replace(/_/g, ' ')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Business Activity */}
-              {extractedData.ssicActivities?.primary && (
-                <div className="p-4">
-                  <h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wide mb-3">
-                    Business Activity
-                  </h3>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs text-text-muted mb-0.5">Primary</p>
-                      <p className="text-sm text-text-primary">
-                        <code className="text-xs bg-background-elevated px-1.5 py-0.5 rounded mr-2">
-                          {extractedData.ssicActivities.primary.code}
-                        </code>
-                        {extractedData.ssicActivities.primary.description}
-                      </p>
-                    </div>
-                    {extractedData.ssicActivities.secondary && (
-                      <div>
-                        <p className="text-xs text-text-muted mb-0.5">Secondary</p>
-                        <p className="text-sm text-text-primary">
-                          <code className="text-xs bg-background-elevated px-1.5 py-0.5 rounded mr-2">
-                            {extractedData.ssicActivities.secondary.code}
-                          </code>
-                          {extractedData.ssicActivities.secondary.description}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Financial Year End */}
-              {extractedData.financialYear?.endDay && extractedData.financialYear?.endMonth && (
-                <div className="p-4">
-                  <h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wide mb-3">
-                    Financial Year End
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-text-muted mb-0.5">Day</p>
-                      <p className="text-sm text-text-primary">{extractedData.financialYear.endDay}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-text-muted mb-0.5">Month</p>
-                      <p className="text-sm text-text-primary">
-                        {new Date(2000, extractedData.financialYear.endMonth - 1).toLocaleString('default', { month: 'long' })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Officers */}
-              {extractedData.officers && extractedData.officers.length > 0 && (
-                <div className="p-4">
-                  <h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wide mb-3">
-                    Officers ({extractedData.officers.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {extractedData.officers.slice(0, 5).map((officer, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <p className="text-sm text-text-primary">{officer.name}</p>
-                        <span className="text-sm text-text-secondary">
-                          {officer.role?.replace(/_/g, ' ')}
-                        </span>
-                      </div>
-                    ))}
-                    {extractedData.officers.length > 5 && (
-                      <p className="text-sm text-text-muted">
-                        +{extractedData.officers.length - 5} more
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Shareholders */}
-              {extractedData.shareholders && extractedData.shareholders.length > 0 && (
-                <div className="p-4">
-                  <h3 className="text-xs font-medium text-text-tertiary uppercase tracking-wide mb-3">
-                    Shareholders ({extractedData.shareholders.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {extractedData.shareholders.slice(0, 5).map((sh, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <p className="text-sm text-text-primary">{sh.name}</p>
-                        <span className="text-sm text-text-secondary">
-                          {sh.numberOfShares?.toLocaleString()} shares
-                          {sh.percentageHeld && ` (${sh.percentageHeld}%)`}
-                        </span>
-                      </div>
-                    ))}
-                    {extractedData.shareholders.length > 5 && (
-                      <p className="text-sm text-text-muted">
-                        +{extractedData.shareholders.length - 5} more
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <button onClick={handleReset} className="btn-ghost btn-sm">
-              Upload Different File
-            </button>
-            <div className="flex items-center gap-3">
-              <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
-                <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
-                <span className="sm:hidden">Cancel</span>
-              </Link>
-              <button onClick={handleConfirm} className="btn-primary btn-sm flex items-center gap-2" title="Confirm & Save (Ctrl+S)">
-                <CheckCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Confirm & Save (Ctrl+S)</span>
-                <span className="sm:hidden">Confirm & Save</span>
-                </button>
-              </div>
-            </div>
-              </div>
-            </div>
-          }
-        />
+        <div className="h-[70vh] min-h-[520px]">
+          <BizFileReviewWorkspace
+            initialData={extractedData}
+            aiMetadata={aiMetadata}
+            sourcePanel={previewPanel}
+            isSaving={isConfirming}
+            serverIssues={serverIssues}
+            onConfirm={handleConfirm}
+            onReset={handleReset}
+            onCancel={() => router.push('/companies')}
+          />
+        </div>
       )}
 
       {/* Step: Diff Preview (Update Mode) */}
