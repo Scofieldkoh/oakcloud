@@ -149,6 +149,17 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
     const unload = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(unload);
     expect(unload.defaultPrevented).toBe(false);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    confirm.mockReturnValue(false);
+    const secondLink = applicationLink({ href: '/contacts' });
+    const secondClick = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    secondLink.dispatchEvent(secondClick);
+    expect(confirm).toHaveBeenCalledTimes(3);
+    expect(secondClick.defaultPrevented).toBe(true);
+    const laterUnload = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(laterUnload);
+    expect(laterUnload.defaultPrevented).toBe(true);
   });
 
   it.each([

@@ -67,9 +67,16 @@ function useDirtyHistoryGuard(isDirty: boolean) {
     if (!isDirty) return;
     const current = lifecycle.current;
     let mounted = true;
-    let popStateReset: ReturnType<typeof setTimeout> | null = null;
+    let exitReset: ReturnType<typeof setTimeout> | null = null;
     current.exiting = false;
     current.suppressNextPopState = false;
+    const resetExitingNextTask = () => {
+      if (exitReset) clearTimeout(exitReset);
+      exitReset = setTimeout(() => {
+        if (mounted) current.exiting = false;
+        exitReset = null;
+      }, 0);
+    };
     const handlePopState = () => {
       if (current.exiting) return;
       if (current.suppressNextPopState) {
@@ -78,10 +85,7 @@ function useDirtyHistoryGuard(isDirty: boolean) {
       }
       if (window.confirm("Discard your unsaved BizFile review changes?")) {
         current.exiting = true;
-        popStateReset = setTimeout(() => {
-          if (mounted) current.exiting = false;
-          popStateReset = null;
-        }, 0);
+        resetExitingNextTask();
         return;
       }
       current.suppressNextPopState = true;
@@ -105,6 +109,7 @@ function useDirtyHistoryGuard(isDirty: boolean) {
 
       if (window.confirm("Discard your unsaved BizFile review changes?")) {
         current.exiting = true;
+        resetExitingNextTask();
         return;
       }
       event.preventDefault();
@@ -116,7 +121,7 @@ function useDirtyHistoryGuard(isDirty: boolean) {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
       mounted = false;
-      if (popStateReset) clearTimeout(popStateReset);
+      if (exitReset) clearTimeout(exitReset);
       document.removeEventListener("click", handleNavigationClick, true);
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("beforeunload", handleBeforeUnload);
