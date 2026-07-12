@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, Circle } from "lucide-react";
 import { ResizableSplitView } from "@/components/processing/resizable-split-view";
 import {
@@ -58,12 +58,65 @@ function isEditableTarget(target: EventTarget | null) {
   return target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 }
 
+type HistoryGuardPhase = "idle" | "armed" | "collapsed" | "disarmed";
+
+function useDirtyHistoryGuard(isDirty: boolean) {
+  const sentinelId = useId();
+  const lifecycle = useRef({
+    phase: "idle" as HistoryGuardPhase, originalState: null as unknown, url: "", ownsSlot: false,
+    id: `bizfile-${sentinelId}`,
+  });
+  const isOwnSentinel = useCallback((state: unknown) => Boolean(state && typeof state === "object" &&
+    (state as Record<string, unknown>).__bizFileReviewGuard === lifecycle.current.id), []);
+  const restoreOriginal = useCallback(() => {
+    const current = lifecycle.current;
+    if (current.phase === "idle" || current.phase === "disarmed") return;
+    if (isOwnSentinel(window.history.state)) window.history.replaceState(current.originalState, "", current.url);
+    current.phase = "collapsed";
+  }, [isOwnSentinel]);
+  const arm = useCallback(() => {
+    const current = lifecycle.current;
+    if (current.phase === "armed" || current.phase === "disarmed") return;
+    if (current.phase === "idle") { current.originalState = window.history.state; current.url = window.location.href; }
+    const sentinel = { __bizFileReviewGuard: current.id };
+    if (current.ownsSlot) window.history.replaceState(sentinel, "", current.url);
+    else { window.history.pushState(sentinel, "", current.url); current.ownsSlot = true; }
+    current.phase = "armed";
+  }, []);
+  const disarm = useCallback(() => { restoreOriginal(); lifecycle.current.phase = "disarmed"; }, [restoreOriginal]);
+  const rearm = useCallback(() => {
+    if (lifecycle.current.phase === "disarmed") lifecycle.current.phase = "collapsed";
+    arm();
+  }, [arm]);
+
+  useEffect(() => { if (isDirty) arm(); else restoreOriginal(); }, [arm, isDirty, restoreOriginal]);
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const current = lifecycle.current;
+      if (current.phase !== "armed" || isOwnSentinel(event.state)) return;
+      if (window.confirm("Discard your unsaved BizFile review changes?")) {
+        current.phase = "disarmed";
+        window.history.replaceState(current.originalState, "", current.url);
+        window.history.back();
+      } else window.history.pushState({ __bizFileReviewGuard: current.id }, "", current.url);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isOwnSentinel]);
+  useEffect(() => () => {
+    const current = lifecycle.current;
+    if (current.phase === "armed" && isOwnSentinel(window.history.state)) window.history.replaceState(current.originalState, "", current.url);
+    current.phase = "disarmed";
+  }, [isOwnSentinel]);
+  return { disarm, rearm };
+}
+
 export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, isSaving = false,
   serverIssues = EMPTY_SERVER_ISSUES, onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
   const workspaceRef = useRef<HTMLElement>(null);
   const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveInFlightRef = useRef(false);
-  const [draft, setDraft] = useState<BizFileReviewDraft>(() => clone(initialData));
+  const [draft, setDraft] = useState<BizFileReviewDraft>(() => normalizeBizFileReviewDraft(clone(initialData)));
   const [activeSection, setActiveSection] = useState<BizFileReviewSectionId>("entity");
   const [visitedSections, setVisitedSections] = useState(() => new Set<BizFileReviewSectionId>(["entity"]));
   const [mobilePanel, setMobilePanel] = useState<"document" | "review">("review");
@@ -84,37 +137,17 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
   useEffect(() => setDismissedServerPaths(new Set()), [serverIssues]);
   const initialSnapshot = useState(() => JSON.stringify(normalizeBizFileReviewDraft(clone(initialData))))[0];
   const isDirty = JSON.stringify(normalizeBizFileReviewDraft(draft)) !== initialSnapshot;
+  const historyGuard = useDirtyHistoryGuard(isDirty);
   const busy = isSaving || locallySaving;
   const exit = useCallback((action: () => void) => {
-    if (!isDirty || window.confirm("Discard your unsaved BizFile review changes?")) action();
-  }, [isDirty]);
+    if (!isDirty || window.confirm("Discard your unsaved BizFile review changes?")) { historyGuard.disarm(); action(); }
+  }, [historyGuard, isDirty]);
 
   useEffect(() => {
     if (!isDirty) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [isDirty]);
-
-  useEffect(() => {
-    if (!isDirty) return;
-    const guardState = { ...(window.history.state ?? {}), __bizFileReviewGuard: true };
-    window.history.replaceState(guardState, "", window.location.href);
-    window.history.pushState({ ...(window.history.state ?? {}), __bizFileReviewGuard: false }, "", window.location.href);
-    let restoring = false;
-    const guardHistory = (event: PopStateEvent) => {
-      if (restoring) { restoring = false; return; }
-      if (!event.state?.__bizFileReviewGuard) return;
-      if (window.confirm("Discard your unsaved BizFile review changes?")) {
-        window.removeEventListener("popstate", guardHistory);
-        window.history.back();
-      } else {
-        restoring = true;
-        window.history.forward();
-      }
-    };
-    window.addEventListener("popstate", guardHistory);
-    return () => window.removeEventListener("popstate", guardHistory);
   }, [isDirty]);
 
   useEffect(() => () => {
@@ -163,16 +196,18 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
     saveInFlightRef.current = true;
     setLocallySaving(true);
     setSaveSummary("Saving reviewed information…");
+    historyGuard.disarm();
     try {
       await onConfirm(normalizeBizFileReviewDraft(draft));
       setSaveSummary("Save completed.");
     } catch {
+      historyGuard.rearm();
       setSaveSummary("Save failed. Please try again.");
     } finally {
       saveInFlightRef.current = false;
       setLocallySaving(false);
     }
-  }, [busy, draft, focusIssue, issues, onConfirm]);
+  }, [busy, draft, focusIssue, historyGuard, issues, onConfirm]);
 
   useEffect(() => {
     const shortcuts = (event: KeyboardEvent) => {

@@ -4,7 +4,7 @@
  * Tests for BizFile extraction, normalization, and diff generation.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // Mock AI library
 vi.mock('@/lib/ai', () => ({
@@ -39,8 +39,25 @@ import {
   mapIdentificationType,
 } from '@/services/bizfile';
 import type { ExtractedBizFileData } from '@/services/bizfile';
+import {
+  BIZFILE_ENTITY_TYPE_OPTIONS,
+  BIZFILE_IDENTIFICATION_TYPE_OPTIONS,
+  BIZFILE_OFFICER_ROLE_OPTIONS,
+  BIZFILE_STATUS_OPTIONS,
+} from '@/services/bizfile/canonical-values';
+import { CompanyStatus, EntityType, IdentificationType, OfficerRole } from '@/generated/prisma/enums';
 
 describe('BizFile Service', () => {
+  it('keeps canonical review values in parity with Prisma-backed mappers', () => {
+    expect(BIZFILE_ENTITY_TYPE_OPTIONS).toEqual(Object.values(EntityType));
+    expect(BIZFILE_STATUS_OPTIONS).toEqual(Object.values(CompanyStatus));
+    expect(BIZFILE_OFFICER_ROLE_OPTIONS).toEqual(Object.values(OfficerRole));
+    expect(BIZFILE_IDENTIFICATION_TYPE_OPTIONS).toEqual(Object.values(IdentificationType));
+    expect(BIZFILE_ENTITY_TYPE_OPTIONS.map(mapEntityType)).toEqual([...BIZFILE_ENTITY_TYPE_OPTIONS]);
+    expect(BIZFILE_STATUS_OPTIONS.map(mapCompanyStatus)).toEqual([...BIZFILE_STATUS_OPTIONS]);
+    expect(BIZFILE_OFFICER_ROLE_OPTIONS.map(mapOfficerRole)).toEqual([...BIZFILE_OFFICER_ROLE_OPTIONS]);
+    expect(BIZFILE_IDENTIFICATION_TYPE_OPTIONS.map(mapIdentificationType)).toEqual([...BIZFILE_IDENTIFICATION_TYPE_OPTIONS]);
+  });
   describe('Entity Type Mapping', () => {
     it('should map PRIVATE_LIMITED correctly', () => {
       expect(mapEntityType('PRIVATE_LIMITED')).toBe('PRIVATE_LIMITED');

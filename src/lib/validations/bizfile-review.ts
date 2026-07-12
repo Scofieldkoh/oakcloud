@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
-import { canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from '@/services/bizfile/canonical-values';
+import { BIZFILE_ENTITY_TYPE_OPTIONS, BIZFILE_IDENTIFICATION_TYPE_OPTIONS, BIZFILE_OFFICER_ROLE_OPTIONS, BIZFILE_STATUS_OPTIONS, canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from '@/services/bizfile/canonical-values';
+export { BIZFILE_ENTITY_TYPE_OPTIONS, BIZFILE_IDENTIFICATION_TYPE_OPTIONS, BIZFILE_OFFICER_ROLE_OPTIONS, BIZFILE_STATUS_OPTIONS } from '@/services/bizfile/canonical-values';
 
 export const BIZFILE_REVIEW_SECTIONS = [
   'entity', 'addresses', 'activities', 'capital', 'officers',
@@ -50,21 +51,13 @@ const isoDate = z.string().trim().superRefine((value, context) => {
 });
 const optionalDate = isoDate.optional();
 
-export const BIZFILE_ENTITY_TYPE_OPTIONS = [
-  'PRIVATE_LIMITED', 'EXEMPTED_PRIVATE_LIMITED', 'PUBLIC_LIMITED', 'PUBLIC_COMPANY_LIMITED_BY_GUARANTEE',
-  'SOLE_PROPRIETORSHIP', 'PARTNERSHIP', 'LIMITED_PARTNERSHIP', 'LIMITED_LIABILITY_PARTNERSHIP',
-  'FOREIGN_COMPANY', 'VARIABLE_CAPITAL_COMPANY', 'OTHER',
-] as const;
 export const BIZFILE_ENTITY_TYPE_ALIASES = [
   'PRIVATE LIMITED', 'PRIVATE COMPANY LIMITED BY SHARES', 'EXEMPTED PRIVATE LIMITED', 'EXEMPT PRIVATE LIMITED',
   'EXEMPT PRIVATE COMPANY LIMITED BY SHARES', 'EXEMPTED PRIVATE COMPANY LIMITED BY SHARES', 'PUBLIC LIMITED',
   'PUBLIC COMPANY LIMITED BY SHARES', 'SOLE PROPRIETORSHIP', 'LIMITED PARTNERSHIP', 'LLP', 'FOREIGN COMPANY', 'VCC',
 ] as const;
-export const BIZFILE_STATUS_OPTIONS = ['LIVE', 'STRUCK_OFF', 'WINDING_UP', 'DISSOLVED', 'IN_LIQUIDATION', 'IN_RECEIVERSHIP', 'AMALGAMATED', 'CONVERTED', 'OTHER'] as const;
 export const BIZFILE_STATUS_ALIASES = ['LIVE COMPANY', 'STRUCK OFF', 'WINDING UP', 'IN LIQUIDATION', 'IN RECEIVERSHIP'] as const;
-export const BIZFILE_OFFICER_ROLE_OPTIONS = ['DIRECTOR', 'MANAGING_DIRECTOR', 'ALTERNATE_DIRECTOR', 'SECRETARY', 'CEO', 'CFO', 'AUDITOR', 'LIQUIDATOR', 'RECEIVER', 'JUDICIAL_MANAGER'] as const;
 export const BIZFILE_OFFICER_ROLE_ALIASES = ['MANAGING DIRECTOR', 'ALTERNATE DIRECTOR', 'COMPANY SECRETARY', 'CHIEF EXECUTIVE OFFICER', 'CHIEF FINANCIAL OFFICER', 'JUDICIAL MANAGER'] as const;
-export const BIZFILE_IDENTIFICATION_TYPE_OPTIONS = ['NRIC', 'FIN', 'PASSPORT', 'UEN', 'OTHER'] as const;
 const accepted = <T extends readonly string[]>(values: T, canonicalizer: (value: unknown) => unknown) => z.preprocess(canonicalizer, z.string().trim().refine((value) => values.includes(value as T[number]), 'Unsupported value'));
 const optionalAccepted = <T extends readonly string[]>(values: T, canonicalizer: (value: unknown) => unknown) => z.preprocess(
   (value) => typeof value === 'string' && value.trim() === '' ? undefined : canonicalizer(value),

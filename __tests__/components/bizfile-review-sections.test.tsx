@@ -326,13 +326,36 @@ describe("BizFileReviewSections", () => {
   });
 
   it("visibly selects canonical options for extraction aliases", () => {
-    const aliased = { ...fullDraft, entityDetails: { ...fullDraft.entityDetails, entityType: "PRIVATE LIMITED", status: "LIVE COMPANY" }, officers: [{ ...fullDraft.officers![0], role: "COMPANY SECRETARY" }] };
+    const aliased = { ...fullDraft, entityDetails: { ...fullDraft.entityDetails, entityType: "PRIVATE LIMITED", status: "LIVE COMPANY" }, officers: [{ ...fullDraft.officers![0], role: "COMPANY SECRETARY", identificationType: "NATIONAL REGISTRATION IDENTITY CARD" }], shareholders: [{ ...fullDraft.shareholders![0], identificationType: "UNIQUE ENTITY NUMBER" }] };
     let result = view(aliased, "entity");
     expect(screen.getByLabelText("Entity type")).toHaveValue("PRIVATE_LIMITED");
     expect(screen.getByLabelText("Status")).toHaveValue("LIVE");
     result.unmount();
     result = view(aliased, "officers");
     expect(screen.getByLabelText("Officer role")).toHaveValue("SECRETARY");
+    expect(screen.getByLabelText("Identification type")).toHaveValue("NRIC");
+    result.unmount();
+    result = view(aliased, "shareholders");
+    expect(screen.getByLabelText("Identification type")).toHaveValue("UEN");
+  });
+
+  it.each([
+    ["officers", "NATIONAL REGISTRATION IDENTITY CARD", "NRIC"],
+    ["officers", "FOREIGN IDENTIFICATION NUMBER", "FIN"],
+    ["shareholders", "UNIQUE ENTITY NUMBER", "UEN"],
+  ] as const)("edits and saves canonical %s identification aliases", (section, alias, canonical) => {
+    function Harness() {
+      const [draft, setDraft] = useState<BizFileReviewDraft>({
+        ...fullDraft,
+        officers: [{ ...fullDraft.officers![0], identificationType: section === "officers" ? alias : "NRIC" }],
+        shareholders: [{ ...fullDraft.shareholders![0], identificationType: section === "shareholders" ? alias : "NRIC" }],
+      });
+      return <><BizFileReviewSections draft={draft} onChange={setDraft} activeSection={section} issues={[]} /><output data-testid="draft">{JSON.stringify(draft)}</output></>;
+    }
+    render(<Harness />);
+    expect(screen.getByLabelText("Identification type")).toHaveValue(canonical);
+    fireEvent.change(screen.getByLabelText("Identification type"), { target: { value: canonical } });
+    expect(screen.getByTestId("draft")).toHaveTextContent(`"identificationType":"${canonical}"`);
   });
 
   it.each(["officers", "shareholders"] as const)("clears optional %s identification type", (section) => {

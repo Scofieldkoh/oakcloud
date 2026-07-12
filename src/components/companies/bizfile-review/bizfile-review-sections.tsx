@@ -17,7 +17,7 @@ import {
   ReviewTextarea,
 } from "./bizfile-review-fields";
 import { RepeatingRecordEditor } from "./repeating-record-editor";
-import { canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeOfficerRole } from "@/services/bizfile/canonical-values";
+import { canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from "@/services/bizfile/canonical-values";
 
 type Props = {
   draft: BizFileReviewDraft;
@@ -531,7 +531,7 @@ export function OfficersSection({ draft, onChange, issues }: Props) {
             <ReviewSelect
               id={`officer-id-type-${i}`}
               label="Identification type"
-              value={item.identificationType ?? ""}
+              value={(canonicalizeIdentificationType(item.identificationType) as string | undefined) ?? ""}
               onChange={(e) =>
                 update({ ...item, identificationType: e.target.value || undefined })
               }
@@ -630,7 +630,7 @@ export function ShareholdersSection({ draft, onChange, issues }: Props) {
             <ReviewSelect
               id={`holder-id-type-${i}`}
               label="Identification type"
-              value={item.identificationType ?? ""}
+              value={(canonicalizeIdentificationType(item.identificationType) as string | undefined) ?? ""}
               onChange={(e) =>
                 update({ ...item, identificationType: e.target.value || undefined })
               }
