@@ -66,6 +66,8 @@ function useDirtyHistoryGuard(isDirty: boolean) {
   useEffect(() => {
     if (!isDirty) return;
     const current = lifecycle.current;
+    let mounted = true;
+    let popStateReset: ReturnType<typeof setTimeout> | null = null;
     current.exiting = false;
     current.suppressNextPopState = false;
     const handlePopState = () => {
@@ -76,6 +78,10 @@ function useDirtyHistoryGuard(isDirty: boolean) {
       }
       if (window.confirm("Discard your unsaved BizFile review changes?")) {
         current.exiting = true;
+        popStateReset = setTimeout(() => {
+          if (mounted) current.exiting = false;
+          popStateReset = null;
+        }, 0);
         return;
       }
       current.suppressNextPopState = true;
@@ -86,9 +92,32 @@ function useDirtyHistoryGuard(isDirty: boolean) {
       event.preventDefault();
       event.returnValue = "";
     };
+    const handleNavigationClick = (event: MouseEvent) => {
+      if (current.exiting || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const target = event.target;
+      const anchor = target instanceof Element ? target.closest<HTMLAnchorElement>("a[href]") : null;
+      if (!anchor || anchor.hasAttribute("download") || (anchor.target && anchor.target.toLowerCase() !== "_self")) return;
+
+      const destination = new URL(anchor.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+      const currentUrl = new URL(window.location.href);
+      if (destination.pathname === currentUrl.pathname && destination.search === currentUrl.search) return;
+
+      if (window.confirm("Discard your unsaved BizFile review changes?")) {
+        current.exiting = true;
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      event.stopPropagation();
+    };
+    document.addEventListener("click", handleNavigationClick, true);
     window.addEventListener("popstate", handlePopState);
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
+      mounted = false;
+      if (popStateReset) clearTimeout(popStateReset);
+      document.removeEventListener("click", handleNavigationClick, true);
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("beforeunload", handleBeforeUnload);
       current.suppressNextPopState = false;

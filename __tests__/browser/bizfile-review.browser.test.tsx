@@ -43,6 +43,7 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     host.remove();
+    vi.restoreAllMocks();
   });
 
   async function mount(onConfirm = vi.fn()) {
@@ -66,6 +67,19 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
 
   async function fill(element: HTMLElement, value: string) {
     await act(async () => userEvent.fill(element, value));
+  }
+
+  async function makeDirty() {
+    await fill(screen.getByLabelText('Company name'), 'Changed Pte. Ltd.');
+  }
+
+  function applicationLink(attributes: Record<string, string> = {}) {
+    const anchor = document.createElement('a');
+    anchor.href = '/companies';
+    anchor.textContent = 'Application link';
+    for (const [name, value] of Object.entries(attributes)) anchor.setAttribute(name, value);
+    host.append(anchor);
+    return anchor;
   }
 
   it('keeps source and editor together while correcting and confirming on desktop', async () => {
@@ -110,6 +124,72 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
     await expect.element(screen.getByLabelText('Company name')).toBeVisible();
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(document.documentElement.clientWidth);
     await page.screenshot({ path: '__screenshots__/bizfile-review-mobile-390x844.png' });
+  });
+
+  it('guards ordinary same-origin application links while dirty', async () => {
+    await mount();
+    await makeDirty();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const anchor = applicationLink();
+    const bubble = vi.fn();
+    anchor.addEventListener('click', bubble);
+
+    const declined = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    anchor.dispatchEvent(declined);
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(declined.defaultPrevented).toBe(true);
+    expect(bubble).not.toHaveBeenCalled();
+
+    confirm.mockReturnValue(true);
+    anchor.addEventListener('click', (event) => event.preventDefault());
+    const accepted = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    anchor.dispatchEvent(accepted);
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(bubble).toHaveBeenCalledOnce();
+    const unload = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(false);
+  });
+
+  it.each([
+    ['modified', {}, { ctrlKey: true }],
+    ['external', { href: 'https://example.com/elsewhere' }, {}],
+    ['download', { download: 'file.pdf' }, {}],
+    ['new-tab', { target: '_blank' }, {}],
+  ])('does not guard %s links', async (_kind, attributes, init) => {
+    await mount();
+    await makeDirty();
+    const confirm = vi.spyOn(window, 'confirm');
+    const anchor = applicationLink(attributes);
+    anchor.addEventListener('click', (event) => event.preventDefault());
+    anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ...init }));
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it('lets clean application links pass without prompting', async () => {
+    await mount();
+    const confirm = vi.spyOn(window, 'confirm');
+    const anchor = applicationLink();
+    anchor.addEventListener('click', (event) => event.preventDefault());
+    anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it('rearms an accepted popstate on the next task while suppressing same-task unload', async () => {
+    await mount();
+    await makeDirty();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    const sameTaskUnload = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(sameTaskUnload);
+    expect(sameTaskUnload.defaultPrevented).toBe(false);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const laterUnload = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(laterUnload);
+    expect(laterUnload.defaultPrevented).toBe(true);
+    expect(confirm).toHaveBeenCalledOnce();
   });
 });
   beforeAll(() => {
