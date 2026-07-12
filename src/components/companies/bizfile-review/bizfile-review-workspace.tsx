@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, Circle } from "lucide-react";
 import { ResizableSplitView } from "@/components/processing/resizable-split-view";
 import {
@@ -58,57 +58,43 @@ function isEditableTarget(target: EventTarget | null) {
   return target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 }
 
-type HistoryGuardPhase = "idle" | "armed" | "collapsed" | "disarmed";
-
 function useDirtyHistoryGuard(isDirty: boolean) {
-  const sentinelId = useId();
-  const lifecycle = useRef({
-    phase: "idle" as HistoryGuardPhase, originalState: null as unknown, url: "", ownsSlot: false,
-    id: `bizfile-${sentinelId}`,
-  });
-  const isOwnSentinel = useCallback((state: unknown) => Boolean(state && typeof state === "object" &&
-    (state as Record<string, unknown>).__bizFileReviewGuard === lifecycle.current.id), []);
-  const restoreOriginal = useCallback(() => {
-    const current = lifecycle.current;
-    if (current.phase === "idle" || current.phase === "disarmed") return;
-    if (isOwnSentinel(window.history.state)) window.history.replaceState(current.originalState, "", current.url);
-    current.phase = "collapsed";
-  }, [isOwnSentinel]);
-  const arm = useCallback(() => {
-    const current = lifecycle.current;
-    if (current.phase === "armed" || current.phase === "disarmed") return;
-    if (current.phase === "idle") { current.originalState = window.history.state; current.url = window.location.href; }
-    const sentinel = { __bizFileReviewGuard: current.id };
-    if (current.ownsSlot) window.history.replaceState(sentinel, "", current.url);
-    else { window.history.pushState(sentinel, "", current.url); current.ownsSlot = true; }
-    current.phase = "armed";
-  }, []);
-  const disarm = useCallback(() => { restoreOriginal(); lifecycle.current.phase = "disarmed"; }, [restoreOriginal]);
-  const rearm = useCallback(() => {
-    if (lifecycle.current.phase === "disarmed") lifecycle.current.phase = "collapsed";
-    arm();
-  }, [arm]);
+  const lifecycle = useRef({ exiting: false, suppressNextPopState: false });
+  const disarm = useCallback(() => { lifecycle.current.exiting = true; }, []);
+  const rearm = useCallback(() => { lifecycle.current.exiting = false; }, []);
 
-  useEffect(() => { if (isDirty) arm(); else restoreOriginal(); }, [arm, isDirty, restoreOriginal]);
   useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      const current = lifecycle.current;
-      if (current.phase !== "armed" || isOwnSentinel(event.state)) return;
+    if (!isDirty) return;
+    const current = lifecycle.current;
+    current.exiting = false;
+    current.suppressNextPopState = false;
+    const handlePopState = () => {
+      if (current.exiting) return;
+      if (current.suppressNextPopState) {
+        current.suppressNextPopState = false;
+        return;
+      }
       if (window.confirm("Discard your unsaved BizFile review changes?")) {
-        current.phase = "disarmed";
-        window.history.replaceState(current.originalState, "", current.url);
-        window.history.back();
-      } else window.history.pushState({ __bizFileReviewGuard: current.id }, "", current.url);
+        current.exiting = true;
+        return;
+      }
+      current.suppressNextPopState = true;
+      window.history.forward();
+    };
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (current.exiting) return;
+      event.preventDefault();
+      event.returnValue = "";
     };
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [isOwnSentinel]);
-  useEffect(() => () => {
-    const current = lifecycle.current;
-    if (current.phase === "armed" && isOwnSentinel(window.history.state)) window.history.replaceState(current.originalState, "", current.url);
-    current.phase = "disarmed";
-  }, [isOwnSentinel]);
-  return { disarm, rearm };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      current.suppressNextPopState = false;
+    };
+  }, [isDirty]);
+  return useMemo(() => ({ disarm, rearm }), [disarm, rearm]);
 }
 
 export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, isSaving = false,
@@ -142,13 +128,6 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
   const exit = useCallback((action: () => void) => {
     if (!isDirty || window.confirm("Discard your unsaved BizFile review changes?")) { historyGuard.disarm(); action(); }
   }, [historyGuard, isDirty]);
-
-  useEffect(() => {
-    if (!isDirty) return;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [isDirty]);
 
   useEffect(() => () => {
     if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);

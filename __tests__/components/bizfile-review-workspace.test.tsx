@@ -162,52 +162,60 @@ describe("BizFileReviewWorkspace", () => {
     expect(onConfirm).toHaveBeenCalledTimes(2);
   });
 
-  it("guards dirty browser back navigation, restores on decline, and allows on accept", () => {
+  it("guards dirty browser back navigation without adding history entries", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
+    const push = vi.spyOn(window.history, "pushState");
     const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
     const forward = vi.spyOn(window.history, "forward").mockImplementation(() => undefined);
     setup();
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
+    expect(push).not.toHaveBeenCalled();
     fireEvent.popState(window, { state: { page: "previous" } });
-    expect(confirm).toHaveBeenCalledOnce(); expect(forward).not.toHaveBeenCalled();
+    expect(confirm).toHaveBeenCalledOnce(); expect(forward).toHaveBeenCalledOnce();
+    fireEvent.popState(window, { state: { page: "current" } });
+    expect(confirm).toHaveBeenCalledOnce();
     fireEvent.popState(window, { state: { page: "previous" } });
-    expect(confirm).toHaveBeenCalledTimes(2); expect(back).toHaveBeenCalledOnce();
-    confirm.mockRestore(); back.mockRestore(); forward.mockRestore();
+    expect(confirm).toHaveBeenCalledTimes(2); expect(back).not.toHaveBeenCalled(); expect(forward).toHaveBeenCalledOnce();
+    const unload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(false);
+    confirm.mockRestore(); push.mockRestore(); back.mockRestore(); forward.mockRestore();
   });
 
-  it("preserves original history state and never accumulates sentinels across dirty cycles", () => {
-    window.history.replaceState({ original: "state" }, "", window.location.href);
+  it("never mutates history across repeated dirty and clean cycles", () => {
     const push = vi.spyOn(window.history, "pushState");
     const replace = vi.spyOn(window.history, "replaceState");
-    setup();
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+    const forward = vi.spyOn(window.history, "forward").mockImplementation(() => undefined);
+    const rendered = setup();
     const name = screen.getByLabelText("Company name");
     fireEvent.change(name, { target: { value: "Changed" } });
-    expect(push).toHaveBeenCalledTimes(1);
-    expect(window.history.state.__bizFileReviewGuard).toMatch(/^bizfile-/);
     fireEvent.change(name, { target: { value: fixture.entityDetails.name } });
-    expect(window.history.state).toEqual({ original: "state" });
     fireEvent.change(name, { target: { value: "Changed again" } });
-    expect(push).toHaveBeenCalledTimes(1);
-    expect(replace).toHaveBeenLastCalledWith(expect.objectContaining({ __bizFileReviewGuard: expect.stringMatching(/^bizfile-/) }), "", window.location.href);
+    rendered.unmount();
+    expect(push).not.toHaveBeenCalled(); expect(replace).not.toHaveBeenCalled();
+    expect(back).not.toHaveBeenCalled(); expect(forward).not.toHaveBeenCalled();
   });
 
   it.each(["Cancel", "Upload Different File"])("disarms history before accepted %s navigation and ordinary unmount", (label) => {
-    window.history.replaceState({ original: label }, "", window.location.href);
-    const callback = vi.fn(() => expect(window.history.state).toEqual({ original: label }));
+    const callback = vi.fn();
     const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+    const forward = vi.spyOn(window.history, "forward").mockImplementation(() => undefined);
+    const push = vi.spyOn(window.history, "pushState");
+    const replace = vi.spyOn(window.history, "replaceState");
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const rendered = setup(vi.fn(), label === "Cancel" ? { onCancel: callback } : { onReset: callback });
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
     fireEvent.click(screen.getByRole("button", { name: label }));
     expect(callback).toHaveBeenCalledOnce();
     rendered.unmount();
-    expect(back).not.toHaveBeenCalled();
+    expect(back).not.toHaveBeenCalled(); expect(forward).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled(); expect(replace).not.toHaveBeenCalled();
     confirm.mockRestore(); back.mockRestore();
   });
 
-  it("removes the sentinel after save and leaves Back unguarded after completion", async () => {
-    window.history.replaceState({ original: "save" }, "", window.location.href);
-    const onConfirm = vi.fn(() => expect(window.history.state).toEqual({ original: "save" }));
+  it("disarms the Back guard after save", async () => {
+    const onConfirm = vi.fn();
     const confirm = vi.spyOn(window, "confirm");
     setup(onConfirm);
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
@@ -215,24 +223,22 @@ describe("BizFileReviewWorkspace", () => {
     await screen.findByText("Save completed.");
     fireEvent.popState(window, { state: { original: "previous" } });
     expect(confirm).not.toHaveBeenCalled();
-    expect(window.history.state).toEqual({ original: "save" });
     confirm.mockRestore();
   });
 
-  it("restores a declined Back with one sentinel and cleanup removes it", () => {
-    window.history.replaceState({ original: "decline" }, "", window.location.href);
+  it("restores a declined Back once and suppresses only its restoration popstate", () => {
     const push = vi.spyOn(window.history, "pushState");
     const forward = vi.spyOn(window.history, "forward").mockImplementation(() => undefined);
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     setup();
     const name = screen.getByLabelText("Company name");
-    push.mockClear();
     fireEvent.change(name, { target: { value: "Changed" } });
-    fireEvent.popState(window, { state: { original: "decline" } });
-    expect(push).toHaveBeenCalledTimes(2);
-    expect(forward).not.toHaveBeenCalled();
-    fireEvent.change(name, { target: { value: fixture.entityDetails.name } });
-    expect(window.history.state).toEqual({ original: "decline" });
+    fireEvent.popState(window, { state: { page: "previous" } });
+    expect(forward).toHaveBeenCalledOnce(); expect(confirm).toHaveBeenCalledOnce(); expect(push).not.toHaveBeenCalled();
+    fireEvent.popState(window, { state: { page: "current" } });
+    expect(confirm).toHaveBeenCalledOnce();
+    fireEvent.popState(window, { state: { page: "previous" } });
+    expect(confirm).toHaveBeenCalledTimes(2); expect(forward).toHaveBeenCalledTimes(2);
     confirm.mockRestore(); forward.mockRestore();
   });
 
