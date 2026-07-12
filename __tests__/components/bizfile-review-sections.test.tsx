@@ -324,4 +324,24 @@ describe("BizFileReviewSections", () => {
     ).toHaveAccessibleDescription("Invalid ID");
     result.unmount();
   });
+
+  it("visibly selects canonical options for extraction aliases", () => {
+    const aliased = { ...fullDraft, entityDetails: { ...fullDraft.entityDetails, entityType: "PRIVATE LIMITED", status: "LIVE COMPANY" }, officers: [{ ...fullDraft.officers![0], role: "COMPANY SECRETARY" }] };
+    let result = view(aliased, "entity");
+    expect(screen.getByLabelText("Entity type")).toHaveValue("PRIVATE_LIMITED");
+    expect(screen.getByLabelText("Status")).toHaveValue("LIVE");
+    result.unmount();
+    result = view(aliased, "officers");
+    expect(screen.getByLabelText("Officer role")).toHaveValue("SECRETARY");
+  });
+
+  it.each(["officers", "shareholders"] as const)("clears optional %s identification type", (section) => {
+    function Harness() {
+      const [draft, setDraft] = useState(fullDraft);
+      return <><BizFileReviewSections draft={draft} onChange={setDraft} activeSection={section} issues={[]} /><output data-testid="draft">{JSON.stringify(draft)}</output></>;
+    }
+    render(<Harness />);
+    fireEvent.change(screen.getByLabelText("Identification type"), { target: { value: "" } });
+    expect(screen.getByTestId("draft")).not.toHaveTextContent('"identificationType":""');
+  });
 });

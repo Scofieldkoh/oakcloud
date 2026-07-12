@@ -17,6 +17,7 @@ import {
   ReviewTextarea,
 } from "./bizfile-review-fields";
 import { RepeatingRecordEditor } from "./repeating-record-editor";
+import { canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeOfficerRole } from "@/services/bizfile/canonical-values";
 
 type Props = {
   draft: BizFileReviewDraft;
@@ -95,7 +96,7 @@ export function EntitySection({ draft, onChange, issues }: Props) {
         <ReviewSelect
           id="entity-type"
           label="Entity type"
-          value={entity.entityType}
+          value={canonicalizeEntityType(entity.entityType) as string}
           onChange={(e) => set("entityType", e.target.value)}
           error={issue(issues, "entityDetails.entityType")}
         >
@@ -105,7 +106,7 @@ export function EntitySection({ draft, onChange, issues }: Props) {
         <ReviewSelect
           id="entity-status"
           label="Status"
-          value={entity.status}
+          value={canonicalizeCompanyStatus(entity.status) as string}
           onChange={(e) => set("status", e.target.value)}
           error={issue(issues, "entityDetails.status")}
         >
@@ -521,7 +522,7 @@ export function OfficersSection({ draft, onChange, issues }: Props) {
             <ReviewSelect
               id={`officer-role-${i}`}
               label="Officer role"
-              value={item.role}
+              value={canonicalizeOfficerRole(item.role) as string}
               onChange={(e) => update({ ...item, role: e.target.value })}
               error={issue(issues, `officers.${i}.role`)}
             >
@@ -532,7 +533,7 @@ export function OfficersSection({ draft, onChange, issues }: Props) {
               label="Identification type"
               value={item.identificationType ?? ""}
               onChange={(e) =>
-                update({ ...item, identificationType: e.target.value })
+                update({ ...item, identificationType: e.target.value || undefined })
               }
               error={issue(issues, `officers.${i}.identificationType`)}
             >
@@ -631,7 +632,7 @@ export function ShareholdersSection({ draft, onChange, issues }: Props) {
               label="Identification type"
               value={item.identificationType ?? ""}
               onChange={(e) =>
-                update({ ...item, identificationType: e.target.value })
+                update({ ...item, identificationType: e.target.value || undefined })
               }
               error={issue(issues, `shareholders.${i}.identificationType`)}
             >

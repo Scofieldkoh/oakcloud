@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
+import { canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from '@/services/bizfile/canonical-values';
 
 export const BIZFILE_REVIEW_SECTIONS = [
   'entity', 'addresses', 'activities', 'capital', 'officers',
@@ -64,7 +65,11 @@ export const BIZFILE_STATUS_ALIASES = ['LIVE COMPANY', 'STRUCK OFF', 'WINDING UP
 export const BIZFILE_OFFICER_ROLE_OPTIONS = ['DIRECTOR', 'MANAGING_DIRECTOR', 'ALTERNATE_DIRECTOR', 'SECRETARY', 'CEO', 'CFO', 'AUDITOR', 'LIQUIDATOR', 'RECEIVER', 'JUDICIAL_MANAGER'] as const;
 export const BIZFILE_OFFICER_ROLE_ALIASES = ['MANAGING DIRECTOR', 'ALTERNATE DIRECTOR', 'COMPANY SECRETARY', 'CHIEF EXECUTIVE OFFICER', 'CHIEF FINANCIAL OFFICER', 'JUDICIAL MANAGER'] as const;
 export const BIZFILE_IDENTIFICATION_TYPE_OPTIONS = ['NRIC', 'FIN', 'PASSPORT', 'UEN', 'OTHER'] as const;
-const accepted = <T extends readonly string[]>(values: T, aliases: readonly string[] = []) => z.string().trim().refine((value) => [...values, ...aliases].includes(value), 'Unsupported value');
+const accepted = <T extends readonly string[]>(values: T, canonicalizer: (value: unknown) => unknown) => z.preprocess(canonicalizer, z.string().trim().refine((value) => values.includes(value as T[number]), 'Unsupported value'));
+const optionalAccepted = <T extends readonly string[]>(values: T, canonicalizer: (value: unknown) => unknown) => z.preprocess(
+  (value) => typeof value === 'string' && value.trim() === '' ? undefined : canonicalizer(value),
+  z.string().trim().refine((value) => values.includes(value as T[number]), 'Unsupported value').optional(),
+);
 
 const addressSchema = z.object({
   block: optionalString,
@@ -83,8 +88,8 @@ export const bizFileReviewSchema = z.object({
     formerName: optionalString,
     dateOfNameChange: optionalDate,
     formerNames: z.array(z.object({ name: requiredString, effectiveFrom: optionalDate, effectiveTo: optionalDate })).optional(),
-    entityType: accepted(BIZFILE_ENTITY_TYPE_OPTIONS, BIZFILE_ENTITY_TYPE_ALIASES),
-    status: accepted(BIZFILE_STATUS_OPTIONS, BIZFILE_STATUS_ALIASES),
+    entityType: accepted(BIZFILE_ENTITY_TYPE_OPTIONS, canonicalizeEntityType),
+    status: accepted(BIZFILE_STATUS_OPTIONS, canonicalizeCompanyStatus),
     statusDate: optionalDate,
     incorporationDate: optionalDate,
     registrationDate: optionalDate,
@@ -114,7 +119,7 @@ export const bizFileReviewSchema = z.object({
   shareholders: z.array(z.object({
     name: reviewString,
     type: z.enum(['INDIVIDUAL', 'CORPORATE']),
-    identificationType: accepted(BIZFILE_IDENTIFICATION_TYPE_OPTIONS).optional(),
+    identificationType: optionalAccepted(BIZFILE_IDENTIFICATION_TYPE_OPTIONS, canonicalizeIdentificationType),
     identificationNumber: optionalString,
     nationality: optionalString,
     placeOfOrigin: optionalString,
@@ -130,8 +135,8 @@ export const bizFileReviewSchema = z.object({
   })).optional(),
   officers: z.array(z.object({
     name: requiredString,
-    role: accepted(BIZFILE_OFFICER_ROLE_OPTIONS, BIZFILE_OFFICER_ROLE_ALIASES),
-    identificationType: accepted(BIZFILE_IDENTIFICATION_TYPE_OPTIONS).optional(),
+    role: accepted(BIZFILE_OFFICER_ROLE_OPTIONS, canonicalizeOfficerRole),
+    identificationType: optionalAccepted(BIZFILE_IDENTIFICATION_TYPE_OPTIONS, canonicalizeIdentificationType),
     identificationNumber: optionalString,
     nationality: optionalString,
     address: optionalString,
@@ -196,7 +201,10 @@ function isBlank(value: unknown): boolean {
 }
 
 function normalize(value: unknown, root = false): unknown {
-  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed === '' ? undefined : trimmed;
+  }
   if (Array.isArray(value)) return value.length === 0 && !root ? undefined : value.map((item) => normalize(item, true));
   if (value !== null && typeof value === 'object') {
     const result: Record<string, unknown> = {};
@@ -212,6 +220,10 @@ function normalize(value: unknown, root = false): unknown {
 export function normalizeBizFileReviewDraft(draft: BizFileReviewDraft): ExtractedBizFileData {
   const normalized = normalize(draft, true) as ExtractedBizFileData;
   normalized.entityDetails = normalize(draft.entityDetails, true) as ExtractedBizFileData['entityDetails'];
+  normalized.entityDetails.entityType = canonicalizeEntityType(normalized.entityDetails.entityType) as string;
+  normalized.entityDetails.status = canonicalizeCompanyStatus(normalized.entityDetails.status) as string;
+  normalized.officers?.forEach((officer) => { officer.role = canonicalizeOfficerRole(officer.role) as string; if (officer.identificationType) officer.identificationType = canonicalizeIdentificationType(officer.identificationType) as string; });
+  normalized.shareholders?.forEach((shareholder) => { if (shareholder.identificationType) shareholder.identificationType = canonicalizeIdentificationType(shareholder.identificationType) as string; });
   return normalized;
 }
 

@@ -78,6 +78,21 @@ describe('BizFile review validation', () => {
     draft.entityDetails = { uen: '1', name: 'X', entityType: 'PRIVATE COMPANY LIMITED BY SHARES', status: 'LIVE COMPANY' };
     draft.officers = [{ name: 'A', role: 'COMPANY SECRETARY', identificationType: 'PASSPORT' }];
     expect(validateBizFileReview(draft).isValid).toBe(true);
+    expect(normalizeBizFileReviewDraft(draft)).toMatchObject({
+      entityDetails: { entityType: 'PRIVATE_LIMITED', status: 'LIVE' },
+      officers: [{ role: 'SECRETARY', identificationType: 'PASSPORT' }],
+    });
+  });
+
+  it('normalizes cleared optional identification types to absent keys', () => {
+    const draft = createEmptyBizFileReviewDraft();
+    draft.entityDetails = { uen: '1', name: 'X', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };
+    draft.officers = [{ name: 'A', role: 'DIRECTOR', identificationType: '' }];
+    draft.shareholders = [{ name: 'B', type: 'INDIVIDUAL', shareClass: 'ORDINARY', numberOfShares: 1, identificationType: '' }];
+    const normalized = normalizeBizFileReviewDraft(draft);
+    expect(normalized.officers?.[0]).not.toHaveProperty('identificationType');
+    expect(normalized.shareholders?.[0]).not.toHaveProperty('identificationType');
+    expect(validateBizFileReview(draft).isValid).toBe(true);
   });
 
   it('truly omits undefined normalized keys', () => {

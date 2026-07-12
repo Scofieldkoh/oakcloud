@@ -162,6 +162,28 @@ describe("BizFileReviewWorkspace", () => {
     expect(onConfirm).toHaveBeenCalledTimes(2);
   });
 
+  it("guards dirty browser back navigation, restores on decline, and allows on accept", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
+    const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+    const forward = vi.spyOn(window.history, "forward").mockImplementation(() => undefined);
+    setup();
+    fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
+    fireEvent.popState(window, { state: { __bizFileReviewGuard: true } });
+    expect(confirm).toHaveBeenCalledOnce(); expect(forward).toHaveBeenCalledOnce();
+    fireEvent.popState(window, { state: { __bizFileReviewGuard: false } });
+    fireEvent.popState(window, { state: { __bizFileReviewGuard: true } });
+    expect(confirm).toHaveBeenCalledTimes(2); expect(back).toHaveBeenCalledOnce();
+    confirm.mockRestore(); back.mockRestore(); forward.mockRestore();
+  });
+
+  it("allows clean browser history navigation without prompting", () => {
+    const confirm = vi.spyOn(window, "confirm");
+    setup();
+    fireEvent.popState(window, { state: { __bizFileReviewGuard: true } });
+    expect(confirm).not.toHaveBeenCalled();
+    confirm.mockRestore();
+  });
+
   it("deduplicates server issues, gives client messages precedence, and clears an edited field issue", async () => {
     setup(vi.fn(), { serverIssues: [
       { path: "entityDetails.name", section: "entity", message: "Server name issue" },

@@ -100,6 +100,17 @@ describe('POST /api/documents/:documentId/confirm', () => {
     expect(mockProcess).not.toHaveBeenCalled();
   });
 
+  it('canonicalizes aliases and omits cleared identification types before saving and processing', async () => {
+    const extractedData = { ...validPayload, entityDetails: { ...validPayload.entityDetails, entityType: 'PRIVATE LIMITED', status: 'LIVE COMPANY' }, officers: [{ name: 'A', role: 'COMPANY SECRETARY', identificationType: '' }], shareholders: [{ name: 'B', type: 'INDIVIDUAL', shareClass: 'ORDINARY', numberOfShares: 1, identificationType: '' }] };
+    expect((await post({ extractedData })).status).toBe(200);
+    const corrected = mockProcess.mock.calls[0][1];
+    expect(corrected.entityDetails).toMatchObject({ entityType: 'PRIVATE_LIMITED', status: 'LIVE' });
+    expect(corrected.officers[0]).toMatchObject({ role: 'SECRETARY' });
+    expect(corrected.officers[0]).not.toHaveProperty('identificationType');
+    expect(corrected.shareholders[0]).not.toHaveProperty('identificationType');
+    expect(mockDocumentUpdate.mock.calls[0][0].data.extractedData).toEqual(corrected);
+  });
+
   it.each([
     ['invalid financial year date', { ...validPayload, financialYear: { endDay: 31, endMonth: 4 } }, 'financialYear.endDay'],
     ['invalid entity type', { ...validPayload, entityDetails: { ...validPayload.entityDetails, entityType: 'MADE_UP' } }, 'entityDetails.entityType'],

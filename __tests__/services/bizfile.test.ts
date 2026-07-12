@@ -51,6 +51,8 @@ describe('BizFile Service', () => {
     it('should map PUBLIC_LIMITED correctly', () => {
       expect(mapEntityType('PUBLIC_LIMITED')).toBe('PUBLIC_LIMITED');
       expect(mapEntityType('PUBLIC LIMITED')).toBe('PUBLIC_LIMITED');
+      expect(mapEntityType('PUBLIC_COMPANY_LIMITED_BY_GUARANTEE')).toBe('PUBLIC_COMPANY_LIMITED_BY_GUARANTEE');
+      expect(mapEntityType('PUBLIC COMPANY LIMITED BY GUARANTEE')).toBe('PUBLIC_COMPANY_LIMITED_BY_GUARANTEE');
     });
 
     it('should map LLP abbreviation', () => {

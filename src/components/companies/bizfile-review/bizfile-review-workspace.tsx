@@ -96,6 +96,27 @@ export function BizFileReviewWorkspace({ initialData, aiMetadata, sourcePanel, i
     return () => window.removeEventListener("beforeunload", warn);
   }, [isDirty]);
 
+  useEffect(() => {
+    if (!isDirty) return;
+    const guardState = { ...(window.history.state ?? {}), __bizFileReviewGuard: true };
+    window.history.replaceState(guardState, "", window.location.href);
+    window.history.pushState({ ...(window.history.state ?? {}), __bizFileReviewGuard: false }, "", window.location.href);
+    let restoring = false;
+    const guardHistory = (event: PopStateEvent) => {
+      if (restoring) { restoring = false; return; }
+      if (!event.state?.__bizFileReviewGuard) return;
+      if (window.confirm("Discard your unsaved BizFile review changes?")) {
+        window.removeEventListener("popstate", guardHistory);
+        window.history.back();
+      } else {
+        restoring = true;
+        window.history.forward();
+      }
+    };
+    window.addEventListener("popstate", guardHistory);
+    return () => window.removeEventListener("popstate", guardHistory);
+  }, [isDirty]);
+
   useEffect(() => () => {
     if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
   }, []);
