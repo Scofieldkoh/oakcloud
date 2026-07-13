@@ -15,6 +15,11 @@ import {
 } from '@/services/letterhead.service';
 import { extractSections, type DocumentSection } from '@/services/document-validation.service';
 import { splitHardPageSections } from '@/lib/document-page-breaks';
+import {
+  extractA4DocumentLayout,
+  normalizeA4DocumentLayout,
+  type A4DocumentLayout,
+} from '@/components/documents/a4-pagination/layout';
 import DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 
@@ -241,6 +246,19 @@ const DOCUMENT_STYLES = `
     }
   }
 `;
+
+export function buildA4PrintCss(layout: A4DocumentLayout): string {
+  const normalized = normalizeA4DocumentLayout(layout);
+  const { top, right, bottom, left } = normalized.marginsMm;
+
+  return DOCUMENT_STYLES
+    .replace(
+      /@page \{\s*size: 210mm 297mm;\s*margin: 20mm;\s*\}/,
+      `@page { margin: ${top}mm ${right}mm ${bottom}mm ${left}mm; }`,
+    )
+    .replace('line-height: 1.5;', `line-height: ${normalized.lineHeight};`)
+    .replace('p {\n    margin: 0 0 0.5em 0;\n  }', `p {\n    margin: 0 0 ${normalized.paragraphSpacing} 0;\n  }`);
+}
 
 // ============================================================================
 // PDF Export
@@ -469,7 +487,7 @@ export async function exportToHTML(params: ExportHTMLParams): Promise<HTMLResult
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${escapeHtml(document.title)}</title>
-      ${includeStyles ? `<style>${DOCUMENT_STYLES}</style>` : ''}
+      ${includeStyles ? `<style>${buildA4PrintCss(extractA4DocumentLayout(document.contentJson))}</style>` : ''}
     </head>
     <body>
       <div class="document-content">
@@ -520,6 +538,7 @@ function buildPDFHtml(
     title: string;
     content: string;
     status: string;
+    contentJson?: unknown;
   },
   _letterhead: Awaited<ReturnType<typeof getLetterhead>>,
   _margins: PageMargins
@@ -570,7 +589,7 @@ function buildPDFHtml(
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${escapeHtml(document.title)}</title>
-      <style>${DOCUMENT_STYLES}</style>
+      <style>${buildA4PrintCss(extractA4DocumentLayout(document.contentJson))}</style>
     </head>
     <body>
       ${watermark}
@@ -692,7 +711,7 @@ export async function generatePreviewHtml(
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${escapeHtml(document.title)}</title>
       <style>
-        ${DOCUMENT_STYLES}
+        ${buildA4PrintCss(extractA4DocumentLayout(document.contentJson))}
 
         .preview-page {
           background: white;

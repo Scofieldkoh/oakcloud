@@ -4428,6 +4428,14 @@ These are pages accessed via ID or for specific actions (view, edit, create).
 
 Complex editors with resizable sidebars and multiple tool panels.
 
+### Document editor toolbar and task panel
+
+Document-editor toolbars group actions by authoring purpose: History, Text, Paragraph, Insert, Page, and View. Use subtle separators between groups, 32px compact controls, visible pressed states, accessible names, shortcut-aware tooltips, and 150ms state transitions. Multi-setting actions belong in labeled popovers; narrow layouts move uncommon actions into an overflow menu without changing their accessible names.
+
+Editor side panels use a small set of task-oriented tabs rather than exposing implementation categories. For template authoring, use `Template`, `Fields`, and `Test & Preview`. Keep the panel collapsible and keyboard accessible, and constrain drag resizing to documented minimum and maximum widths. Preserve the selected task and usable content area at narrow viewport widths; avoid nested horizontal scroll traps.
+
+Guided template builders insert balanced constructs in one transaction. Show human-readable choices first and keep exact template syntax in a collapsed `View syntax` disclosure for advanced users. Validation actions should describe the corrective action and focus the relevant document block when a stable flow identifier is available.
+
 ```tsx
 <div className="h-screen flex flex-col bg-background-primary">
   {/* Fixed Header */}

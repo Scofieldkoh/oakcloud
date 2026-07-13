@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
+import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
 import { DraftRecoveryPrompt } from '@/components/documents/draft-recovery-prompt';
 
 // ============================================================================
@@ -373,6 +374,7 @@ export default function DocumentEditPage() {
           ref={editorRef}
           value={currentContent}
           onChange={handleContentChange}
+          layout={extractA4DocumentLayout(document?.contentJson)}
         />
       </div>
 

@@ -20,6 +20,10 @@ import { Pagination } from '@/components/ui/pagination';
 import { TemplateSelector, type DocumentTemplate } from './template-selector';
 import { type ValidationResult } from './validation-panel';
 import { A4PageEditor, type A4PageEditorRef } from './a4-page-editor';
+import {
+  extractA4DocumentLayout,
+  type A4DocumentLayout,
+} from './a4-pagination/layout';
 
 // ============================================================================
 // Types
@@ -770,6 +774,7 @@ function CustomDataForm({
 
 interface EditStepProps {
   content: string;
+  layout?: A4DocumentLayout;
   validationResult: ValidationResult | null;
   missingPlaceholders: string[];
   missingPartials: string[];
@@ -779,8 +784,9 @@ interface EditStepProps {
   onRefresh: () => void;
 }
 
-function EditStep({
+export function EditStep({
   content,
+  layout,
   validationResult,
   missingPlaceholders,
   missingPartials,
@@ -875,6 +881,7 @@ function EditStep({
           value={content}
           onChange={onChange}
           placeholder="Document content..."
+          layout={layout}
         />
       </div>
 
@@ -1273,6 +1280,7 @@ export function DocumentGenerationWizard({
         return (
           <EditStep
             content={state.previewContent || ''}
+            layout={extractA4DocumentLayout(state.selectedTemplate?.contentJson)}
             validationResult={state.validationResult}
             missingPlaceholders={state.missingPlaceholders}
             missingPartials={state.missingPartials}

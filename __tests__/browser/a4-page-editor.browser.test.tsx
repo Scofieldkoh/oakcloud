@@ -219,6 +219,11 @@ describe('A4PageEditor real layout pagination', () => {
   });
 
   it('prevents text insertion at an inter-page editing-host boundary', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation((...args) => {
+      if (!String(args[0]).includes('not wrapped in act')) {
+        throw new Error(args.map(String).join(' '));
+      }
+    });
     await act(async () => {
       root.render(
         <A4PageEditor
@@ -249,14 +254,56 @@ describe('A4PageEditor real layout pagination', () => {
       await cdp().send('Input.insertText', { text: 'ROGUE_BOUNDARY_TEXT' });
     });
 
-    expect(surface.textContent).not.toContain('ROGUE_BOUNDARY_TEXT');
-    expect(
-      Array.from(surface.childNodes).some(
-        (node) =>
-          node.nodeType === Node.TEXT_NODE &&
-          node.textContent?.includes('ROGUE_BOUNDARY_TEXT'),
-      ),
-    ).toBe(false);
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(surface.textContent).not.toContain('ROGUE_BOUNDARY_TEXT');
+        expect(
+          Array.from(surface.childNodes).some(
+            (node) =>
+              node.nodeType === Node.TEXT_NODE &&
+              node.textContent?.includes('ROGUE_BOUNDARY_TEXT'),
+          ),
+        ).toBe(false);
+      });
+    });
+    await act(async () => {
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+    });
+    consoleError.mockRestore();
+  });
+
+  it('adds and removes a persistent blank page with one action', async () => {
+    await act(async () => {
+      root.render(<A4PageEditor value="<p>First page</p>" />);
+    });
+
+    const addPage = Array.from(host.querySelectorAll('button')).find(
+      (button) => button.getAttribute('aria-label') === 'Add blank page',
+    );
+    expect(addPage).toBeTruthy();
+    await act(async () => addPage!.click());
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(host.querySelectorAll('[data-testid^="a4-page-content-"]')).toHaveLength(2);
+      });
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+    expect(host.querySelectorAll('[data-testid^="a4-page-content-"]')).toHaveLength(2);
+
+    const secondPage = host.querySelector<HTMLElement>('[data-testid="a4-page-content-2"]')!;
+    secondPage.focus();
+    const deletePage = Array.from(host.querySelectorAll('button')).find(
+      (button) => button.getAttribute('aria-label') === 'Delete current page',
+    );
+    expect(deletePage).toBeTruthy();
+    await act(async () => deletePage!.click());
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(host.querySelectorAll('[data-testid^="a4-page-content-"]')).toHaveLength(1);
+      });
+    });
   });
 
   it('routes native cross-page text replacement through the canonical document', async () => {

@@ -1,0 +1,1780 @@
+'use client';
+
+import { useState, useCallback, useEffect, useRef, Suspense, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from '@/hooks/use-auth';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { FormInput } from '@/components/ui/form-input';
+import { useToast } from '@/components/ui/toast';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import { AISidebar, useAISidebar, type DocumentCategory } from '@/components/documents/ai-sidebar';
+import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
+import { PlaceholderPanel } from '@/components/documents/template-editor/placeholder-panel';
+import { TemplateEditorPanel } from '@/components/documents/template-editor/template-editor-panel';
+import { insertTemplateSnippet } from '@/components/documents/template-editor/template-insertion';
+import type { TemplateEditorPartialForm, TemplateEditorTemplateForm } from '@/components/documents/template-editor/template-details-panel';
+import { validateTemplateSyntax } from '@/components/documents/template-editor/template-validation';
+import {
+  DEFAULT_A4_DOCUMENT_LAYOUT,
+  extractA4DocumentLayout,
+  mergeA4DocumentLayout,
+  type A4DocumentLayout,
+} from '@/components/documents/a4-pagination/layout';
+import { cn } from '@/lib/utils';
+import {
+  Save,
+  FileText,
+  TestTube,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  Loader2,
+  AlertCircle,
+  Building2,
+  Code,
+} from 'lucide-react';
+import type {
+  AddressData,
+  CustomPlaceholderDefinition,
+  MergedPlaceholder,
+  MockDataValues,
+} from '@/types/placeholders';
+
+// ============================================================================
+// Types
+// ============================================================================
+
+type EditorType = 'template' | 'partial';
+
+interface TemplateFormData extends TemplateEditorTemplateForm {
+  customPlaceholders: CustomPlaceholderDefinition[];
+  layout: A4DocumentLayout;
+}
+
+interface PartialFormData extends TemplateEditorPartialForm {
+  customPlaceholders: CustomPlaceholderDefinition[];
+}
+
+// Local interface for TemplatePartial as used in this component (content is optional for list views)
+interface TemplatePartial {
+  id: string;
+  name: string;
+  displayName?: string | null;
+  description?: string | null;
+  content?: string;
+  placeholders?: unknown;
+}
+
+interface Company {
+  id: string;
+  name: string;
+  uen: string;
+  registeredAddress?: string;
+  entityType?: string;
+}
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const CATEGORIES = [
+  { value: 'RESOLUTION', label: 'Resolution' },
+  { value: 'CONTRACT', label: 'Contract' },
+  { value: 'LETTER', label: 'Letter' },
+  { value: 'MINUTES', label: 'Minutes' },
+  { value: 'NOTICE', label: 'Notice' },
+  { value: 'CERTIFICATE', label: 'Certificate' },
+  { value: 'OTHER', label: 'Other' },
+];
+const DEFAULT_MOCK_DATA: MockDataValues = {
+  company: {
+    name: 'Sample Company Pte Ltd',
+    uen: '202312345A',
+    registeredAddress: '123 Sample Street, #01-01, Sample Building, Singapore 123456',
+    address: {
+      block: '123',
+      street: 'Sample Street',
+      level: '01',
+      unit: '01',
+      building: 'Sample Building',
+      postalCode: '123456',
+    },
+    incorporationDate: new Date('2023-01-15'),
+    entityType: 'Private Limited Company',
+    capital: 100000,
+  },
+  directors: [
+    { name: 'John Tan Wei Ming', identificationNumber: 'S1234567A', nationality: 'Singaporean', role: 'Director', address: '456 Director Road, Singapore 456789' },
+    { name: 'Mary Lee Mei Ling', identificationNumber: 'S7654321B', nationality: 'Singaporean', role: 'Director', address: '789 Officer Lane, Singapore 789012' },
+  ],
+  shareholders: [
+    { name: 'John Tan Wei Ming', shareClass: 'Ordinary', numberOfShares: 50000, percentageHeld: 50, identificationNumber: 'S8901234A', nationality: 'Singaporean' },
+    { name: 'Mary Lee Mei Ling', shareClass: 'Ordinary', numberOfShares: 50000, percentageHeld: 50, identificationNumber: 'S8502468B', nationality: 'Singaporean' },
+  ],
+  custom: {},
+  system: {
+    currentDate: new Date(),
+    generatedBy: 'System User',
+  },
+};
+
+const MIN_PANEL_WIDTH = 320;
+const MAX_PANEL_WIDTH = 600;
+const DEFAULT_PANEL_WIDTH = 380;
+const STANDARD_TEMPLATE_KEYS = [
+  'company.name', 'company.uen', 'company.registeredAddress', 'company.address.block',
+  'company.address.street', 'company.address.level', 'company.address.unit',
+  'company.address.building', 'company.address.postalCode', 'company.incorporationDate',
+  'company.entityType', 'company.capital', 'system.currentDate', 'system.generatedBy',
+];
+
+// ============================================================================
+// Capital Amount Helper
+// ============================================================================
+
+interface ShareCapitalItem {
+  totalValue?: number | string;
+}
+
+interface CompanyWithCapital {
+  paidUpCapitalAmount?: number | string | null;
+  shareCapital?: ShareCapitalItem[];
+}
+
+const getCapitalAmount = (company: CompanyWithCapital): number => {
+  // First try paidUpCapitalAmount (direct field on Company)
+  if (company.paidUpCapitalAmount) {
+    const amount = Number(company.paidUpCapitalAmount);
+    if (!isNaN(amount)) return amount;
+  }
+  // Then try summing shareCapital array totalValue
+  if (Array.isArray(company.shareCapital) && company.shareCapital.length > 0) {
+    const total = company.shareCapital.reduce((sum, sc) => {
+      const val = Number(sc.totalValue || 0);
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+    if (total > 0) return total;
+  }
+  return 0;
+};
+
+// ============================================================================
+// Resizable Panel Hook
+// ============================================================================
+
+function useResizablePanel(defaultWidth: number, minWidth: number, maxWidth: number) {
+  const [width, setWidth] = useState(defaultWidth);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const startXRef = useRef(0);
+  const startWidthRef = useRef(0);
+
+  const startResize = useCallback((e: React.MouseEvent, direction: 'left' | 'right') => {
+    e.preventDefault();
+    setIsResizing(true);
+    startXRef.current = e.clientX;
+    startWidthRef.current = width;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const delta = direction === 'right'
+        ? e.clientX - startXRef.current
+        : startXRef.current - e.clientX;
+      const newWidth = Math.min(maxWidth, Math.max(minWidth, startWidthRef.current + delta));
+      setWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [width, minWidth, maxWidth]);
+
+  const toggle = useCallback(() => {
+    setIsCollapsed((prev) => !prev);
+  }, []);
+
+  return {
+    width: isCollapsed ? 0 : width,
+    isCollapsed,
+    isResizing,
+    startResize,
+    toggle,
+  };
+}
+
+// ============================================================================
+// Details Tab Component
+// ============================================================================
+
+interface DetailsTabProps {
+  formData: TemplateFormData;
+  onChange: (data: Partial<TemplateFormData>) => void;
+  isSuperAdmin?: boolean;
+  activeTenantId?: string;
+  tenantName?: string;
+}
+
+function _DetailsTab({ formData, onChange, isSuperAdmin, activeTenantId, tenantName }: DetailsTabProps) {
+  return (
+    <div className="p-4 space-y-4">
+      {/* Workspace context info for SUPER_ADMIN */}
+      {isSuperAdmin && (
+        <div>
+          <label className="text-xs font-medium text-text-secondary block mb-1.5">Workspace</label>
+          {activeTenantId ? (
+            <div className="px-3 py-1.5 text-xs bg-accent-primary/10 text-accent-primary rounded-md border border-accent-primary/20">
+              {tenantName || 'Current Workspace'}
+            </div>
+          ) : (
+            <div className="px-3 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-md border border-amber-200 dark:border-amber-800">
+              Workspace context is required
+            </div>
+          )}
+        </div>
+      )}
+
+      <FormInput
+        label="Template Name"
+        value={formData.name}
+        onChange={(e) => onChange({ name: e.target.value })}
+        placeholder="e.g., Board Resolution - Director Appointment"
+        inputSize="xs"
+        required
+      />
+
+      <div>
+        <label className="text-xs font-medium text-text-secondary block mb-1.5">Category</label>
+        <select
+          value={formData.category}
+          onChange={(e) => onChange({ category: e.target.value })}
+          className="w-full h-7 px-3 text-xs border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
+        >
+          {CATEGORIES.map((cat) => (
+            <option key={cat.value} value={cat.value}>
+              {cat.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="text-xs font-medium text-text-secondary block mb-1.5">Description</label>
+        <textarea
+          value={formData.description}
+          onChange={(e) => onChange({ description: e.target.value })}
+          placeholder="Brief description of what this template is used for"
+          rows={3}
+          className="w-full px-3 py-2 text-xs border border-border-primary rounded-md bg-background-primary text-text-primary placeholder:text-text-muted placeholder:text-xs focus:outline-none focus:ring-2 focus:ring-accent-primary/50 resize-none"
+        />
+      </div>
+
+      <div className="flex items-center justify-between p-3 rounded-lg border border-border-primary bg-background-secondary">
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-text-primary">Template Status</span>
+          <span className="text-xs text-text-tertiary">
+            {formData.isActive ? 'Available for document generation' : 'Hidden from document generation'}
+          </span>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={formData.isActive}
+          onClick={() => onChange({ isActive: !formData.isActive })}
+          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${
+            formData.isActive ? 'bg-status-success' : 'bg-background-tertiary'
+          }`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              formData.isActive ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Partial Details Tab Component
+// ============================================================================
+
+interface PartialDetailsTabProps {
+  formData: PartialFormData;
+  onChange: (data: Partial<PartialFormData>) => void;
+  isSuperAdmin?: boolean;
+  activeTenantId?: string;
+  tenantName?: string;
+}
+
+function _PartialDetailsTab({ formData, onChange, isSuperAdmin, activeTenantId, tenantName }: PartialDetailsTabProps) {
+  // Auto-format partial identifier: convert spaces to hyphens, lowercase, remove invalid chars
+  const handleIdentifierChange = (value: string) => {
+    const formatted = value
+      .toLowerCase()
+      .replace(/\s+/g, '-')           // spaces to hyphens
+      .replace(/[^a-z0-9_-]/g, '');   // remove invalid characters
+    onChange({ name: formatted });
+  };
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Workspace context info for SUPER_ADMIN */}
+      {isSuperAdmin && (
+        <div>
+          <label className="text-xs font-medium text-text-secondary block mb-1.5">Workspace</label>
+          {activeTenantId ? (
+            <div className="px-3 py-1.5 text-xs bg-accent-primary/10 text-accent-primary rounded-md border border-accent-primary/20">
+              {tenantName || 'Current Workspace'}
+            </div>
+          ) : (
+            <div className="px-3 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-md border border-amber-200 dark:border-amber-800">
+              Workspace context is required
+            </div>
+          )}
+        </div>
+      )}
+
+      <FormInput
+        label="Name"
+        value={formData.displayName}
+        onChange={(e) => onChange({ displayName: e.target.value })}
+        placeholder="e.g., Director Resolution Header"
+        inputSize="xs"
+        hint="Human-readable name shown in the list"
+        required
+      />
+
+      <FormInput
+        label="Identifier"
+        value={formData.name}
+        onChange={(e) => handleIdentifierChange(e.target.value)}
+        placeholder="e.g., director-resolution-header"
+        inputSize="xs"
+        hint="Auto-formatted: lowercase, hyphens instead of spaces. Used in templates as {{> identifier }}"
+        required
+      />
+
+      <div>
+        <label className="text-xs font-medium text-text-secondary block mb-1.5">Description</label>
+        <textarea
+          value={formData.description}
+          onChange={(e) => onChange({ description: e.target.value })}
+          placeholder="Brief description of what this partial is used for"
+          rows={3}
+          className="w-full px-3 py-2 text-xs border border-border-primary rounded-md bg-background-primary text-text-primary placeholder:text-text-muted placeholder:text-xs focus:outline-none focus:ring-2 focus:ring-accent-primary/50 resize-none"
+        />
+      </div>
+
+      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+        <p className="text-xs text-blue-700 dark:text-blue-300">
+          <strong>Tip:</strong> Partials are reusable content blocks. Insert them into templates using{' '}
+          <code className="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-[10px]">
+            {'{{>'} {formData.name || 'identifier'} {'}}'}
+          </code>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+
+// ============================================================================
+// Test Data Tab Component
+// ============================================================================
+
+interface TestDataTabProps {
+  mockData: MockDataValues;
+  onMockDataChange: (data: MockDataValues) => void;
+  companies: Company[];
+  isLoadingCompanies: boolean;
+  onSelectCompany: (companyId: string) => void;
+  customPlaceholders: CustomPlaceholderDefinition[];
+  mergedPlaceholders?: MergedPlaceholder[];
+}
+
+function TestDataTab({
+  mockData,
+  onMockDataChange,
+  companies,
+  isLoadingCompanies,
+  onSelectCompany,
+  customPlaceholders,
+  mergedPlaceholders = [],
+}: TestDataTabProps) {
+  // Auto-expand custom section if custom placeholders exist
+  const [expandedSections, setExpandedSections] = useState<string[]>(['source']);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+
+  // Auto-expand custom section when custom placeholders are added
+  useEffect(() => {
+    if (customPlaceholders.length > 0 && !expandedSections.includes('custom')) {
+      setExpandedSections(prev => [...prev, 'custom']);
+    }
+  }, [customPlaceholders.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleSection = (key: string) => {
+    setExpandedSections((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
+
+  const handleReset = () => {
+    setSelectedCompanyId('');
+    onMockDataChange(DEFAULT_MOCK_DATA);
+  };
+
+  const handleCompanySelect = (companyId: string) => {
+    setSelectedCompanyId(companyId);
+    if (companyId) {
+      onSelectCompany(companyId);
+    } else {
+      onMockDataChange(DEFAULT_MOCK_DATA);
+    }
+  };
+
+  const updateValue = (path: string, value: string) => {
+    const parts = path.split('.');
+    const newData = JSON.parse(JSON.stringify(mockData)) as MockDataValues;
+
+    if (parts.length === 2) {
+      const [section, field] = parts;
+      if (section === 'company') {
+        const companyData = newData.company as unknown as Record<string, string>;
+        if (field in companyData) companyData[field] = value;
+      } else if (section === 'custom') {
+        // Allow dynamic custom fields
+        const customData = newData.custom as unknown as Record<string, string>;
+        customData[field] = value;
+      }
+    }
+
+    onMockDataChange(newData);
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-4 py-3 border-b border-border-primary">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TestTube className="w-4 h-4 text-accent-primary" />
+            <span className="font-medium text-text-primary text-sm">Test Data</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="text-xs text-text-muted hover:text-text-primary transition-colors"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Data Source Section */}
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => toggleSection('source')}
+            className="flex items-center gap-2 text-sm font-medium text-text-primary"
+          >
+            {expandedSections.includes('source') ? (
+              <ChevronDown className="w-3 h-3" />
+            ) : (
+              <ChevronRight className="w-3 h-3" />
+            )}
+            <Building2 className="w-4 h-4" />
+            Data Source
+          </button>
+
+          {expandedSections.includes('source') && (
+            <div className="space-y-2 pl-5">
+              <label className="text-xs text-text-muted">Select Company</label>
+              {isLoadingCompanies ? (
+                <div className="flex items-center gap-2 py-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-text-muted" />
+                  <span className="text-xs text-text-muted">Loading companies...</span>
+                </div>
+              ) : companies.length === 0 ? (
+                <div className="text-xs text-text-muted py-2 italic">
+                  {selectedCompanyId === '' ? 'Workspace context is required to load companies' : 'No companies found'}
+                </div>
+              ) : (
+                <select
+                  value={selectedCompanyId}
+                  onChange={(e) => handleCompanySelect(e.target.value)}
+                  className="w-full h-9 px-3 text-sm border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
+                >
+                  <option value="">Use sample data</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name} ({company.uen})
+                    </option>
+                  ))}
+                </select>
+              )}
+              <p className="text-xs text-text-muted">
+                {selectedCompanyId
+                  ? 'Using real company data for preview'
+                  : 'Using sample data for preview'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Company Section */}
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => toggleSection('company')}
+            className="flex items-center gap-2 text-sm font-medium text-text-primary"
+          >
+            {expandedSections.includes('company') ? (
+              <ChevronDown className="w-3 h-3" />
+            ) : (
+              <ChevronRight className="w-3 h-3" />
+            )}
+            Company
+          </button>
+
+          {expandedSections.includes('company') && (
+            <div className="space-y-2 pl-5">
+              <div>
+                <label className="text-xs text-text-muted">Name</label>
+                <input
+                  type="text"
+                  value={mockData.company.name || ''}
+                  onChange={(e) => updateValue('company.name', e.target.value)}
+                  className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-text-muted">UEN</label>
+                <input
+                  type="text"
+                  value={mockData.company.uen || ''}
+                  onChange={(e) => updateValue('company.uen', e.target.value)}
+                  className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-text-muted">Full Address</label>
+                <input
+                  type="text"
+                  value={mockData.company.registeredAddress || ''}
+                  onChange={(e) => updateValue('company.registeredAddress', e.target.value)}
+                  className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
+                />
+              </div>
+
+              {/* Address Breakdown */}
+              <div className="mt-2 pt-2 border-t border-border-secondary">
+                <div className="text-xs text-text-muted mb-1 font-medium">Address Breakdown</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-text-muted">Block</label>
+                    <input
+                      type="text"
+                      value={mockData.company.address?.block || ''}
+                      readOnly
+                      className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-tertiary text-text-secondary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-text-muted">Postal Code</label>
+                    <input
+                      type="text"
+                      value={mockData.company.address?.postalCode || ''}
+                      readOnly
+                      className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-tertiary text-text-secondary"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-[10px] text-text-muted">Street</label>
+                    <input
+                      type="text"
+                      value={mockData.company.address?.street || ''}
+                      readOnly
+                      className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-tertiary text-text-secondary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-text-muted">Level</label>
+                    <input
+                      type="text"
+                      value={mockData.company.address?.level || ''}
+                      readOnly
+                      className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-tertiary text-text-secondary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-text-muted">Unit</label>
+                    <input
+                      type="text"
+                      value={mockData.company.address?.unit || ''}
+                      readOnly
+                      className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-tertiary text-text-secondary"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-[10px] text-text-muted">Building</label>
+                    <input
+                      type="text"
+                      value={mockData.company.address?.building || ''}
+                      readOnly
+                      className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-tertiary text-text-secondary"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-text-muted/70 mt-1 italic">
+                  Auto-parsed from company address. Select a company to populate.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Directors Section */}
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => toggleSection('directors')}
+            className="flex items-center gap-2 text-sm font-medium text-text-primary"
+          >
+            {expandedSections.includes('directors') ? (
+              <ChevronDown className="w-3 h-3" />
+            ) : (
+              <ChevronRight className="w-3 h-3" />
+            )}
+            Directors ({mockData.directors.length})
+          </button>
+
+          {expandedSections.includes('directors') && (
+            <div className="space-y-2 pl-5">
+              {mockData.directors.length === 0 ? (
+                <div className="text-xs text-text-muted italic">No directors data</div>
+              ) : (
+                mockData.directors.map((director, index) => (
+                  <div key={index} className="p-2 bg-background-tertiary rounded">
+                    <div className="text-xs font-medium text-text-secondary mb-1">Director {index + 1}</div>
+                    <div className="text-xs text-text-primary">{director.name}</div>
+                    <div className="text-xs text-text-muted">{director.identificationNumber} • {director.nationality}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Shareholders Section */}
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => toggleSection('shareholders')}
+            className="flex items-center gap-2 text-sm font-medium text-text-primary"
+          >
+            {expandedSections.includes('shareholders') ? (
+              <ChevronDown className="w-3 h-3" />
+            ) : (
+              <ChevronRight className="w-3 h-3" />
+            )}
+            Shareholders ({mockData.shareholders.length})
+          </button>
+
+          {expandedSections.includes('shareholders') && (
+            <div className="space-y-2 pl-5">
+              {mockData.shareholders.length === 0 ? (
+                <div className="text-xs text-text-muted italic">No shareholders data</div>
+              ) : (
+                mockData.shareholders.map((shareholder, index) => (
+                  <div key={index} className="p-2 bg-background-tertiary rounded">
+                    <div className="text-xs font-medium text-text-secondary mb-1">Shareholder {index + 1}</div>
+                    <div className="text-xs text-text-primary">{shareholder.name}</div>
+                    <div className="text-xs text-text-muted">
+                      {shareholder.shareClass} • {shareholder.numberOfShares.toLocaleString()} shares ({shareholder.percentageHeld}%)
+                    </div>
+                    <div className="text-xs text-text-muted">{shareholder.identificationNumber} • {shareholder.nationality}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Custom Section - Dynamic based on customPlaceholders or mergedPlaceholders */}
+        {(() => {
+          // Use mergedPlaceholders if available, otherwise fallback to customPlaceholders
+          const placeholdersToShow = mergedPlaceholders.length > 0 ? mergedPlaceholders : customPlaceholders;
+
+          // Helper to check if a partial placeholder should be visible based on linkedTo boolean
+          const customValues = mockData.custom as unknown as Record<string, string>;
+          const isPlaceholderVisible = (placeholder: CustomPlaceholderDefinition | MergedPlaceholder) => {
+            // If it's a merged placeholder with linkedTo, check the boolean value
+            if ('linkedTo' in placeholder && placeholder.linkedTo) {
+              const booleanValue = customValues[placeholder.linkedTo];
+              // Hide if the linked boolean is false or not set
+              return booleanValue === 'true' || booleanValue === '1';
+            }
+            return true; // No linkedTo, always visible
+          };
+
+          // Group by source for display
+          const templatePlaceholders = placeholdersToShow.filter(
+            (p) => !('source' in p) || (p as MergedPlaceholder).source === 'template'
+          );
+          const partialGroups = placeholdersToShow
+            .filter((p) => 'source' in p && (p as MergedPlaceholder).source === 'partial')
+            .reduce((groups, p) => {
+              const mp = p as MergedPlaceholder;
+              const key = mp.sourceName || 'unknown';
+              if (!groups[key]) {
+                groups[key] = { displayName: mp.sourceDisplayName || key, placeholders: [] };
+              }
+              groups[key].placeholders.push(mp);
+              return groups;
+            }, {} as Record<string, { displayName: string; placeholders: MergedPlaceholder[] }>);
+
+          const renderPlaceholderInput = (placeholder: CustomPlaceholderDefinition | MergedPlaceholder) => {
+            const customValues = mockData.custom as unknown as Record<string, string>;
+            const fieldValue = customValues[placeholder.key] || placeholder.defaultValue || '';
+
+            return (
+              <div key={placeholder.id}>
+                <label className="text-xs text-text-muted flex items-center gap-1">
+                  {placeholder.label}
+                  {placeholder.required && <span className="text-red-500">*</span>}
+                </label>
+                {placeholder.type === 'textarea' ? (
+                  <textarea
+                    value={fieldValue}
+                    onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.value)}
+                    placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
+                    className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary resize-none"
+                    rows={2}
+                  />
+                ) : placeholder.type === 'boolean' ? (
+                  <input
+                    type="checkbox"
+                    checked={fieldValue === 'true' || fieldValue === '1'}
+                    onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.checked ? 'true' : 'false')}
+                    className="w-4 h-4 rounded border-border-primary text-accent-primary focus:ring-accent-primary"
+                  />
+                ) : (
+                  <input
+                    type={placeholder.type === 'date' ? 'date' : placeholder.type === 'number' || placeholder.type === 'currency' ? 'number' : 'text'}
+                    value={fieldValue}
+                    onChange={(e) => updateValue(`custom.${placeholder.key}`, e.target.value)}
+                    placeholder={`Enter ${placeholder.label.toLowerCase()}...`}
+                    className="w-full px-2 py-1 text-xs border border-border-primary rounded bg-background-primary text-text-primary"
+                  />
+                )}
+              </div>
+            );
+          };
+
+          if (placeholdersToShow.length === 0) {
+            return (
+              <div className="text-xs text-text-muted italic px-1 py-2">
+                No custom placeholders defined. Add them in the Placeholders tab.
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-3">
+              {/* Template's own custom fields */}
+              {templatePlaceholders.length > 0 && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('custom')}
+                    className="flex items-center gap-2 text-sm font-medium text-text-primary"
+                  >
+                    {expandedSections.includes('custom') ? (
+                      <ChevronDown className="w-3 h-3" />
+                    ) : (
+                      <ChevronRight className="w-3 h-3" />
+                    )}
+                    Template Fields ({templatePlaceholders.length})
+                  </button>
+
+                  {expandedSections.includes('custom') && (
+                    <div className="space-y-2 pl-5">
+                      {templatePlaceholders.map(renderPlaceholderInput)}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Partial groups */}
+              {Object.entries(partialGroups).map(([partialName, group]) => {
+                const sectionKey = `partial_${partialName}`;
+                // Filter visible placeholders based on linkedTo boolean values
+                const visiblePlaceholders = group.placeholders.filter(isPlaceholderVisible);
+
+                // Skip rendering this group if no placeholders are visible
+                if (visiblePlaceholders.length === 0) return null;
+
+                return (
+                  <div key={partialName} className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(sectionKey)}
+                      className="flex items-center gap-2 text-sm font-medium text-text-primary"
+                    >
+                      {expandedSections.includes(sectionKey) ? (
+                        <ChevronDown className="w-3 h-3" />
+                      ) : (
+                        <ChevronRight className="w-3 h-3" />
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Code className="w-3 h-3 text-accent-secondary" />
+                        {group.displayName} ({visiblePlaceholders.length})
+                      </span>
+                    </button>
+
+                    {expandedSections.includes(sectionKey) && (
+                      <div className="space-y-2 pl-5 border-l-2 border-accent-secondary/30 ml-1.5">
+                        {visiblePlaceholders.map(renderPlaceholderInput)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </div>
+
+    </div>
+  );
+}
+
+// ============================================================================
+// Main Page Component (wrapped for Suspense)
+// ============================================================================
+
+function TemplateEditorContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const { success } = useToast();
+  const queryClient = useQueryClient();
+
+  // Determine editor type from query params
+  const editorType: EditorType = (searchParams.get('type') as EditorType) || 'template';
+  const itemId = searchParams.get('id');
+  const isEditMode = !!itemId;
+  const isPartialMode = editorType === 'partial';
+
+  const activeTenantId = useActiveWorkspaceId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId
+  );
+
+  // Editor ref for cursor-based insertion
+  const editorRef = useRef<A4PageEditorRef>(null);
+
+  // Form state for templates
+  const [formData, setFormData] = useState<TemplateFormData>({
+    name: '',
+    description: '',
+    category: 'OTHER',
+    content: '',
+    isActive: true,
+    customPlaceholders: [],
+    layout: DEFAULT_A4_DOCUMENT_LAYOUT,
+  });
+
+  // Form state for partials
+  const [partialFormData, setPartialFormData] = useState<PartialFormData>({
+    name: '',
+    displayName: '',
+    description: '',
+    content: '',
+    customPlaceholders: [],
+  });
+
+  const [formError, setFormError] = useState('');
+
+  // State to track partial placeholder linkings (key: partialPlaceholderKey, value: templateBooleanKey)
+  // This stores the user's decisions about which partial placeholders are linked to which template booleans
+  const [partialPlaceholderLinkings, setPartialPlaceholderLinkings] = useState<Record<string, string>>({});
+
+  // Panel states
+  const [_activeTab, _setActiveTab] = useState<'details' | 'placeholders' | 'testdata' | 'ai'>('details');
+  const [isDirty, setIsDirty] = useState(false);
+  const [mockData, setMockData] = useState<MockDataValues>(DEFAULT_MOCK_DATA);
+  const [previewContent, setPreviewContent] = useState('');
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  // Resizable panel (combined right panel)
+  const rightPanel = useResizablePanel(DEFAULT_PANEL_WIDTH, MIN_PANEL_WIDTH, MAX_PANEL_WIDTH);
+
+  // AI sidebar
+  const aiSidebar = useAISidebar({
+    mode: 'template_editor',
+    templateCategory: formData.category as DocumentCategory,
+    templateName: formData.name,
+    tenantId: activeTenantId,
+  });
+
+  // Fetch existing template if editing (template mode)
+  const { data: existingTemplate, isLoading: isLoadingTemplate } = useQuery({
+    queryKey: ['document-template', itemId, activeTenantId],
+    queryFn: async () => {
+      if (!itemId || !activeTenantId) return null;
+      const res = await fetch(`/api/document-templates/${itemId}?tenantId=${activeTenantId}`);
+      if (!res.ok) throw new Error('Failed to fetch template');
+      return res.json();
+    },
+    enabled: !!itemId && !isPartialMode && !!activeTenantId,
+  });
+
+  // Fetch existing partial if editing (partial mode)
+  const { data: existingPartial, isLoading: isLoadingPartial } = useQuery({
+    queryKey: ['template-partial', itemId, activeTenantId],
+    queryFn: async () => {
+      if (!itemId || !activeTenantId) return null;
+      const res = await fetch(`/api/template-partials/${itemId}?tenantId=${activeTenantId}`);
+      if (!res.ok) throw new Error('Failed to fetch partial');
+      return res.json();
+    },
+    enabled: !!itemId && isPartialMode && !!activeTenantId,
+  });
+
+  // Fetch partials for placeholder palette (with content for preview resolution)
+  const { data: partialsData, isLoading: isLoadingPartials } = useQuery({
+    queryKey: ['template-partials', activeTenantId, 'all'],
+    queryFn: async () => {
+      if (!activeTenantId) return { partials: [] };
+      const res = await fetch(`/api/template-partials?tenantId=${activeTenantId}&all=true`);
+      if (!res.ok) throw new Error('Failed to fetch partials');
+      return res.json();
+    },
+    enabled: !!activeTenantId,
+  });
+
+  // Fetch companies for test data
+  const { data: companiesData, isLoading: isLoadingCompanies } = useQuery({
+    queryKey: ['companies-list', activeTenantId],
+    queryFn: async () => {
+      if (!activeTenantId) return { companies: [] };
+      const params = new URLSearchParams({ tenantId: activeTenantId, limit: '50' });
+      const res = await fetch(`/api/companies/options?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch companies');
+      const data = await res.json();
+      return {
+        companies: (data.options || []).map((company: {
+          id: string;
+          name: string;
+          uen?: string | null;
+        }) => ({
+          id: company.id,
+          name: company.name,
+          uen: company.uen || '',
+        })),
+      };
+    },
+    enabled: !!activeTenantId,
+  });
+
+  // Type for save data (storage format with placeholders array)
+  type TemplateSaveData = {
+    name: string;
+    description: string;
+    category: string;
+    content: string;
+    isActive: boolean;
+    contentJson: Record<string, unknown>;
+    placeholders: Array<{
+      key: string;
+      label: string;
+      type: string;
+      source: string;
+      category: string;
+      path: string;
+      defaultValue?: string;
+      required: boolean;
+    }>;
+  };
+
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: async (data: TemplateSaveData & { tenantId: string }) => {
+      const res = await fetch('/api/document-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to create template');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['document-templates'] });
+      success('Template created successfully');
+      router.push('/template-partials');
+    },
+    onError: (error: Error) => {
+      setFormError(error.message);
+    },
+  });
+
+  // Update mutation (template)
+  const updateMutation = useMutation({
+    mutationFn: async (data: TemplateSaveData & { id: string }) => {
+      const res = await fetch(`/api/document-templates/${data.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update template');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['document-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['document-template', itemId] });
+      success('Template updated successfully');
+      router.push('/template-partials');
+    },
+    onError: (error: Error) => {
+      setFormError(error.message);
+    },
+  });
+
+  // Type for partial save data
+  type PartialSaveData = {
+    name: string;
+    displayName: string;
+    description: string | null;
+    content: string;
+    placeholders: unknown[];
+  };
+
+  // Create mutation (partial)
+  const createPartialMutation = useMutation({
+    mutationFn: async (data: PartialSaveData & { tenantId: string }) => {
+      const res = await fetch('/api/template-partials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to create partial');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['template-partials'] });
+      success('Partial created successfully');
+      router.push('/template-partials?tab=partials');
+    },
+    onError: (error: Error) => {
+      setFormError(error.message);
+    },
+  });
+
+  // Update mutation (partial)
+  const updatePartialMutation = useMutation({
+    mutationFn: async (data: PartialSaveData & { id: string }) => {
+      const res = await fetch(`/api/template-partials/${data.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update partial');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['template-partials'] });
+      queryClient.invalidateQueries({ queryKey: ['template-partial', itemId] });
+      success('Partial updated successfully');
+      router.push('/template-partials?tab=partials');
+    },
+    onError: (error: Error) => {
+      setFormError(error.message);
+    },
+  });
+
+  // Helper to extract custom placeholders from storage format
+  const storageFormatToCustomPlaceholders = (
+    placeholders: Array<{ key: string; label: string; type: string; source?: string; category?: string; required?: boolean; defaultValue?: string; linkedTo?: string; sourcePartial?: string }>
+  ): CustomPlaceholderDefinition[] => {
+    return (placeholders || [])
+      .filter((p) => p.source === 'custom' || p.category === 'custom' || p.key?.startsWith('custom.'))
+      .map((p) => ({
+        id: crypto.randomUUID(),
+        key: p.key.replace('custom.', ''),
+        label: p.label,
+        type: (p.type === 'list' || p.type === 'conditional' ? 'text' : p.type) as CustomPlaceholderDefinition['type'],
+        required: p.required ?? true,
+        defaultValue: p.defaultValue,
+        linkedTo: p.linkedTo,
+        sourcePartial: p.sourcePartial,
+      }));
+  };
+
+  // Helper to extract partial references from content
+  const extractPartialReferences = useCallback((content: string): string[] => {
+    if (!content) return [];
+
+    // Pattern matches: {{> partial-name }} or HTML-encoded variants
+    // Handles: {{>name}}, {{> name}}, {{&gt; name}}, {{&#62; name}}, {{&#x3e; name}}
+    const partialRefPattern = /\{\{(?:>|&gt;|&#62;|&#x3[eE];)\s*([a-zA-Z][a-zA-Z0-9_-]*)\s*\}\}/g;
+
+    const matches = content.matchAll(partialRefPattern);
+    const partialNames = new Set<string>();
+
+    for (const match of matches) {
+      if (match[1]) {
+        partialNames.add(match[1]);
+      }
+    }
+
+    return Array.from(partialNames);
+  }, []);
+
+  // Compute merged placeholders (template's own + from referenced partials)
+  const mergedPlaceholders = useMemo((): MergedPlaceholder[] => {
+    // Only merge for templates, not for partials
+    if (isPartialMode) return [];
+
+    const result: MergedPlaceholder[] = [];
+    const seenKeys = new Set<string>();
+
+    // First, add template's own custom placeholders
+    formData.customPlaceholders.forEach((p) => {
+      result.push({
+        ...p,
+        source: 'template' as const,
+      });
+      seenKeys.add(p.key);
+    });
+
+    // Then, find all partial references in template content
+    const referencedPartialNames = extractPartialReferences(formData.content);
+    const availablePartials = (partialsData?.partials || []) as TemplatePartial[];
+
+    // For each referenced partial, add its placeholders
+    referencedPartialNames.forEach((partialName) => {
+      const partial = availablePartials.find((p: TemplatePartial) => p.name === partialName);
+      if (!partial) return;
+
+      // Parse partial's placeholders
+      let partialPlaceholders = partial.placeholders || [];
+      if (typeof partialPlaceholders === 'string') {
+        try {
+          partialPlaceholders = JSON.parse(partialPlaceholders);
+        } catch {
+          partialPlaceholders = [];
+        }
+      }
+
+      // Convert to CustomPlaceholderDefinition format
+      const customPlaceholders = storageFormatToCustomPlaceholders(
+        partialPlaceholders as Array<{ key: string; label: string; type: string; source?: string; category?: string; required?: boolean; defaultValue?: string }>
+      );
+
+      // Add each placeholder from this partial
+      customPlaceholders.forEach((p) => {
+        // Handle duplicate keys by prefixing with partial name
+        let key = p.key;
+        if (seenKeys.has(key)) {
+          key = `${partialName}_${p.key}`;
+        }
+
+        // Get linkedTo from state (if user has linked this placeholder to a boolean)
+        const linkedTo = partialPlaceholderLinkings[key];
+
+        result.push({
+          ...p,
+          key,
+          source: 'partial' as const,
+          sourceName: partialName,
+          sourceDisplayName: partial.displayName || partialName,
+          sourcePartial: partialName,
+          linkedTo,
+        });
+        seenKeys.add(key);
+      });
+    });
+
+    return result;
+  }, [isPartialMode, formData.customPlaceholders, formData.content, partialsData?.partials, extractPartialReferences, partialPlaceholderLinkings]);
+
+  // Get template boolean placeholders for linking dropdown
+  const templateBooleanPlaceholders = useMemo(() => {
+    return formData.customPlaceholders.filter((p) => p.type === 'boolean');
+  }, [formData.customPlaceholders]);
+
+  const validationIssues = useMemo(() => {
+    const content = isPartialMode ? partialFormData.content : formData.content;
+    const knownKeys = new Set(STANDARD_TEMPLATE_KEYS);
+    for (const field of [...formData.customPlaceholders, ...mergedPlaceholders]) {
+      knownKeys.add(`custom.${field.key}`);
+    }
+    for (const partial of (partialsData?.partials || []) as TemplatePartial[]) {
+      knownKeys.add(partial.name);
+      knownKeys.add(`partial.${partial.name}`);
+    }
+    return validateTemplateSyntax(content, knownKeys);
+  }, [formData.content, formData.customPlaceholders, isPartialMode, mergedPlaceholders, partialFormData.content, partialsData?.partials]);
+
+  // Load existing template data
+  useEffect(() => {
+    if (existingTemplate && !isPartialMode) {
+      // Handle case where placeholders might be a string (JSON) or already parsed
+      let placeholdersArray = existingTemplate.placeholders || [];
+      if (typeof placeholdersArray === 'string') {
+        try {
+          placeholdersArray = JSON.parse(placeholdersArray);
+        } catch {
+          placeholdersArray = [];
+        }
+      }
+
+      // Extract only template's own custom placeholders (those without sourcePartial)
+      const templatePlaceholders = storageFormatToCustomPlaceholders(
+        placeholdersArray.filter((p: { sourcePartial?: string }) => !p.sourcePartial)
+      );
+
+      // Extract linkings from partial placeholders stored in template
+      const linkings: Record<string, string> = {};
+      placeholdersArray
+        .filter((p: { sourcePartial?: string; linkedTo?: string }) => p.sourcePartial && p.linkedTo)
+        .forEach((p: { key: string; linkedTo?: string }) => {
+          const key = p.key.replace('custom.', '');
+          if (p.linkedTo) {
+            linkings[key] = p.linkedTo;
+          }
+        });
+
+      setFormData({
+        name: existingTemplate.name || '',
+        description: existingTemplate.description || '',
+        category: existingTemplate.category || 'OTHER',
+        content: existingTemplate.content || '',
+        isActive: existingTemplate.isActive ?? true,
+        customPlaceholders: templatePlaceholders,
+        layout: extractA4DocumentLayout(existingTemplate.contentJson),
+      });
+
+      // Restore partial placeholder linkings
+      setPartialPlaceholderLinkings(linkings);
+      setIsDirty(false);
+    }
+  }, [existingTemplate, isPartialMode, itemId]);
+
+  // Load existing partial data
+  useEffect(() => {
+    if (existingPartial && isPartialMode) {
+      // Parse placeholders from JSON if it's a string
+      let placeholdersArray = existingPartial.placeholders || [];
+      if (typeof placeholdersArray === 'string') {
+        try {
+          placeholdersArray = JSON.parse(placeholdersArray);
+        } catch {
+          placeholdersArray = [];
+        }
+      }
+
+      setPartialFormData({
+        name: existingPartial.name || '',
+        displayName: existingPartial.displayName || existingPartial.name || '',
+        description: existingPartial.description || '',
+        content: existingPartial.content || '',
+        customPlaceholders: storageFormatToCustomPlaceholders(placeholdersArray),
+      });
+      setIsDirty(false);
+    }
+  }, [existingPartial, isPartialMode, itemId]);
+
+  // Handle form change (template)
+  const handleFormChange = useCallback((changes: Partial<TemplateFormData>) => {
+    setFormData((prev) => ({ ...prev, ...changes }));
+    setIsDirty(true);
+  }, []);
+
+  // Handle form change (partial)
+  const handlePartialFormChange = useCallback((changes: Partial<PartialFormData>) => {
+    setPartialFormData((prev) => ({ ...prev, ...changes }));
+    setIsDirty(true);
+  }, []);
+
+  // Handle placeholder insertion at cursor position
+  const handleInsertPlaceholder = useCallback((placeholder: string) => {
+    insertTemplateSnippet(editorRef.current, placeholder);
+  }, []);
+
+  // Handle AI content insertion at cursor position
+  const handleAIInsert = useCallback((content: string) => {
+    if (editorRef.current) {
+      editorRef.current.insertAtCursor(content);
+    }
+  }, []);
+
+  const handleFocusIssue = useCallback((flowId: string) => {
+    editorRef.current?.focusFlowBlock?.(flowId);
+  }, []);
+
+  // Handle company selection for test data
+  const handleSelectCompany = useCallback(async (companyId: string) => {
+    try {
+      const res = await fetch(`/api/companies/${companyId}?full=true`);
+      if (!res.ok) throw new Error('Failed to fetch company');
+      const company = await res.json();
+
+      setMockData((prev) => {
+        // Get registered office address from addresses array
+        interface CompanyAddressData {
+          addressType: string;
+          fullAddress?: string;
+          block?: string;
+          streetName?: string;
+          level?: string;
+          unit?: string;
+          buildingName?: string;
+          postalCode?: string;
+          isCurrent?: boolean;
+        }
+        const registeredAddress = company.addresses?.find(
+          (a: CompanyAddressData) => a.addressType === 'REGISTERED_OFFICE' && a.isCurrent
+        ) || company.addresses?.[0];
+
+        // Format entity type to proper case (e.g., "PRIVATE_LIMITED" -> "Private Limited")
+        const formatEntityType = (type: string | undefined): string => {
+          if (!type) return prev.company.entityType;
+          return type
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+        };
+
+        // Build address data from CompanyAddress fields
+        const addressData: AddressData = registeredAddress ? {
+          block: registeredAddress.block || '',
+          street: registeredAddress.streetName || '',
+          level: registeredAddress.level || '',
+          unit: registeredAddress.unit || '',
+          building: registeredAddress.buildingName || '',
+          postalCode: registeredAddress.postalCode || '',
+        } : prev.company.address;
+
+        return {
+        ...prev,
+        company: {
+          name: company.name || prev.company.name,
+          uen: company.uen || prev.company.uen,
+          registeredAddress: registeredAddress?.fullAddress || prev.company.registeredAddress,
+          address: addressData,
+          incorporationDate: company.incorporationDate ? new Date(company.incorporationDate) : prev.company.incorporationDate,
+          entityType: formatEntityType(company.entityType),
+          capital: getCapitalAmount(company) || prev.company.capital,
+        },
+        directors: company.officers?.filter((o: { role: string }) => o.role === 'DIRECTOR').map((d: { name: string; identificationNumber?: string; nationality: string; address?: string; role: string; contact?: { identificationNumber?: string } }) => ({
+          name: d.name,
+          identificationNumber: d.identificationNumber || d.contact?.identificationNumber || '',
+          nationality: d.nationality || '',
+          role: d.role ? d.role.charAt(0) + d.role.slice(1).toLowerCase() : 'Director',
+          address: d.address || '',
+        })) || prev.directors,
+        shareholders: company.shareholders?.map((s: { name: string; shareClass: string; numberOfShares: number; percentageHeld: number; identificationNumber?: string; nationality?: string; contact?: { identificationNumber?: string } }) => ({
+          name: s.name,
+          shareClass: s.shareClass || 'Ordinary',
+          numberOfShares: s.numberOfShares || 0,
+          percentageHeld: s.percentageHeld || 0,
+          identificationNumber: s.identificationNumber || s.contact?.identificationNumber || '',
+          nationality: s.nationality || '',
+        })) || prev.shareholders,
+        };
+      });
+    } catch (error) {
+      console.error('Failed to fetch company data:', error);
+    }
+  }, []);
+
+  // Handle preview generation
+  const handlePreview = useCallback(async () => {
+    if (!formData.content.trim()) {
+      setPreviewContent('<p>No content to preview</p>');
+      return;
+    }
+
+    setIsPreviewLoading(true);
+    try {
+      const response = await fetch('/api/document-templates/render-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: formData.content,
+          name: formData.name || 'Unsaved template',
+          category: formData.category,
+          customData: mockData.custom,
+          context: mockData,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to generate preview');
+      }
+
+      const data = await response.json();
+      let renderedPreview = data.preview?.content || data.preview?.contentHtml || '<p>No content to preview</p>';
+
+      // Preserve the editor's page filtering behavior after the shared renderer has resolved content.
+      const PAGE_BREAK_MARKER = '[[PAGE_BREAK_MARKER]]';
+      const normalizedPreview = renderedPreview.replace(/<div[^>]*class\s*=\s*["'][^"']*page-break[^"']*["'][^>]*>(?:<\/div>)?/gi, PAGE_BREAK_MARKER);
+      const pages = normalizedPreview.split(PAGE_BREAK_MARKER);
+      const filteredPages = pages.filter((pageContent: string) => {
+        const textContent = pageContent.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+        return textContent !== '[Remove Page]';
+      });
+      renderedPreview = filteredPages.join('<div class="page-break"></div>');
+
+      setPreviewContent(renderedPreview);
+    } catch (error) {
+      console.error('Preview error:', error);
+      setPreviewContent('<p class="text-red-500">Error generating preview</p>');
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  }, [formData.category, formData.content, formData.name, mockData]);
+
+  // Helper to convert custom placeholders to storage format
+  const customPlaceholdersToStorageFormat = (
+    customPlaceholders: CustomPlaceholderDefinition[]
+  ) => {
+    return customPlaceholders.map((p) => ({
+      key: `custom.${p.key}`,
+      label: p.label,
+      type: p.type === 'textarea' ? 'text' : p.type,
+      source: 'custom',
+      category: 'custom',
+      path: `custom.${p.key}`,
+      defaultValue: p.defaultValue,
+      required: p.required,
+      // Include linkedTo and sourcePartial if present
+      ...(p.linkedTo && { linkedTo: p.linkedTo }),
+      ...(p.sourcePartial && { sourcePartial: p.sourcePartial }),
+    }));
+  };
+
+  // Helper to convert merged placeholders (including partial placeholders with linkings) to storage format
+  const mergedPlaceholdersToStorageFormat = (
+    merged: MergedPlaceholder[]
+  ) => {
+    return merged
+      .filter((p) => p.source === 'partial') // Only partial placeholders (template's own are handled separately)
+      .map((p) => ({
+        key: `custom.${p.key}`,
+        label: p.label,
+        type: p.type === 'textarea' ? 'text' : p.type,
+        source: 'custom',
+        category: 'custom',
+        path: `custom.${p.key}`,
+        defaultValue: p.defaultValue,
+        required: p.required,
+        sourcePartial: p.sourcePartial || p.sourceName,
+        ...(p.linkedTo && { linkedTo: p.linkedTo }),
+      }));
+  };
+
+  const handleSave = useCallback(async () => {
+    setFormError('');
+
+    if (!activeTenantId) {
+      setFormError('Please select a tenant');
+      return;
+    }
+
+    if (isPartialMode) {
+      // Save partial
+      if (!partialFormData.displayName.trim()) {
+        setFormError('Partial name is required');
+        return;
+      }
+      if (!partialFormData.name.trim()) {
+        setFormError('Partial identifier is required');
+        return;
+      }
+      if (!partialFormData.content.trim()) {
+        setFormError('Partial content is required');
+        return;
+      }
+
+      // Convert custom placeholders to storage format
+      const placeholders = customPlaceholdersToStorageFormat(partialFormData.customPlaceholders);
+
+      const dataToSave = {
+        name: partialFormData.name,
+        displayName: partialFormData.displayName,
+        description: partialFormData.description || null,
+        content: partialFormData.content,
+        placeholders,
+      };
+
+      if (isEditMode && itemId) {
+        await updatePartialMutation.mutateAsync({ id: itemId, ...dataToSave });
+      } else {
+        await createPartialMutation.mutateAsync({ tenantId: activeTenantId, ...dataToSave });
+      }
+    } else {
+      // Save template
+      if (!formData.name.trim()) {
+        setFormError('Template name is required');
+        return;
+      }
+      if (!formData.content.trim()) {
+        setFormError('Template content is required');
+        return;
+      }
+
+      // Convert template's own custom placeholders to storage format
+      const templatePlaceholders = customPlaceholdersToStorageFormat(formData.customPlaceholders);
+
+      // Convert partial placeholders (with linkings) to storage format
+      const partialPlaceholders = mergedPlaceholdersToStorageFormat(mergedPlaceholders);
+
+      // Combine both: template's own placeholders + partial placeholders with linkings
+      const placeholders = [...templatePlaceholders, ...partialPlaceholders];
+
+      const dataToSave = {
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        content: formData.content,
+        isActive: formData.isActive,
+        placeholders,
+        contentJson: mergeA4DocumentLayout(existingTemplate?.contentJson, formData.layout),
+      };
+
+      if (isEditMode && itemId) {
+        await updateMutation.mutateAsync({ id: itemId, ...dataToSave });
+      } else {
+        await createMutation.mutateAsync({ tenantId: activeTenantId, ...dataToSave });
+      }
+    }
+  }, [formData, partialFormData, activeTenantId, isEditMode, itemId, isPartialMode, createMutation, updateMutation, createPartialMutation, updatePartialMutation, mergedPlaceholders, existingTemplate?.contentJson]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleSave]);
+
+  const isSaving = createMutation.isPending || updateMutation.isPending || createPartialMutation.isPending || updatePartialMutation.isPending;
+  const partials = partialsData?.partials || [];
+  const companies = companiesData?.companies || [];
+
+  // Show loading when fetching existing data
+  const isLoadingExisting = isPartialMode ? isLoadingPartial : isLoadingTemplate;
+  if (isLoadingExisting) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-accent-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen flex flex-col bg-background-primary">
+      {/* Header */}
+      <header className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border-primary bg-background-secondary">
+        <div className="flex items-center gap-2">
+          {isPartialMode ? (
+            <Code className="w-5 h-5 text-accent-primary" />
+          ) : (
+            <FileText className="w-5 h-5 text-accent-primary" />
+          )}
+          <h1 className="text-lg font-semibold text-text-primary">
+            {isPartialMode
+              ? (isEditMode ? 'Edit Partial' : 'Create Partial')
+              : (isEditMode ? 'Edit Template' : 'Create Template')
+            }
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {(isPartialMode ? partialFormData.displayName : formData.name) && (
+            <span className="text-sm text-text-muted mr-4">
+              {isPartialMode ? partialFormData.displayName : formData.name}
+            </span>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => router.push(isPartialMode ? '/template-partials?tab=partials' : '/template-partials')}
+            disabled={isSaving}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSave}
+            isLoading={isSaving}
+            leftIcon={<Save className="w-4 h-4" />}
+          >
+            {isPartialMode ? 'Save Partial' : 'Save Template'}
+          </Button>
+        </div>
+      </header>
+
+      {/* Error message */}
+      {formError && (
+        <div className="flex-shrink-0 px-4 py-3 bg-status-error/10 border-b border-status-error/30">
+          <div className="flex items-center gap-2 text-status-error text-sm">
+            <AlertCircle className="w-4 h-4" />
+            {formError}
+          </div>
+        </div>
+      )}
+
+      {/* Main content - Editor (left) + Combined Panel (right) */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* A4 Page Editor - takes up remaining space */}
+        <div className="flex-1 min-w-0">
+          <A4PageEditor
+            ref={editorRef}
+            value={isPartialMode ? partialFormData.content : formData.content}
+            onChange={(html) => {
+              if (isPartialMode) {
+                setPartialFormData((prev) => ({ ...prev, content: html }));
+              } else {
+                setFormData((prev) => ({ ...prev, content: html }));
+              }
+              setIsDirty(true);
+            }}
+            placeholder={isPartialMode ? "Start typing your partial content..." : "Start typing your template content..."}
+            tenantId={activeTenantId}
+            previewContent={isPartialMode ? '' : previewContent}
+            showPreviewToggle={!isPartialMode}
+            onPreview={isPartialMode ? undefined : handlePreview}
+            isPreviewLoading={isPreviewLoading}
+            layout={isPartialMode ? undefined : formData.layout}
+            onLayoutChange={
+              isPartialMode
+                ? undefined
+                : (nextLayout) => {
+                    setFormData((previous) => ({ ...previous, layout: nextLayout }));
+                    setIsDirty(true);
+                  }
+            }
+          />
+        </div>
+
+        {/* Right panel resize handle */}
+        <div
+          className={cn(
+            'hidden flex-shrink-0 w-2 cursor-col-resize hover:bg-accent-primary/30 transition-colors flex items-center justify-center relative',
+            rightPanel.isResizing && 'bg-accent-primary/30'
+          )}
+          onMouseDown={(e) => rightPanel.startResize(e, 'left')}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); rightPanel.toggle(); }}
+            className="absolute z-20 p-1.5 rounded-md bg-background-secondary border border-border-primary shadow-sm hover:bg-background-tertiary transition-colors"
+            title={rightPanel.isCollapsed ? 'Expand panel' : 'Collapse panel'}
+          >
+            {rightPanel.isCollapsed ? (
+              <ChevronLeft className="w-3 h-3 text-text-muted" />
+            ) : (
+              <ChevronRight className="w-3 h-3 text-text-muted" />
+            )}
+          </button>
+        </div>
+
+        {/* Combined Right Panel - All tools */}
+        <div
+          className={cn(
+            'flex-shrink-0 flex flex-col border-l border-border-primary bg-background-secondary transition-all duration-200',
+            rightPanel.isCollapsed && 'w-10 overflow-hidden'
+          )}
+          style={{ width: rightPanel.isCollapsed ? 40 : rightPanel.width }}
+        >
+          <TemplateEditorPanel
+            mode={isPartialMode ? "partial" : "template"}
+            templateForm={formData}
+            partialForm={partialFormData}
+            onTemplateChange={handleFormChange}
+            onPartialChange={handlePartialFormChange}
+            panel={rightPanel}
+            isDirty={isDirty}
+            isSuperAdmin={session?.isSuperAdmin}
+            activeTenantId={activeTenantId}
+            fieldsContent={
+              <PlaceholderPanel
+                onInsert={handleInsertPlaceholder}
+                partials={partials}
+                isLoadingPartials={isLoadingPartials}
+                customPlaceholders={isPartialMode ? partialFormData.customPlaceholders : formData.customPlaceholders}
+                onCustomPlaceholdersChange={(placeholders) => {
+                  if (isPartialMode) setPartialFormData((previous) => ({ ...previous, customPlaceholders: placeholders }));
+                  else setFormData((previous) => ({ ...previous, customPlaceholders: placeholders }));
+                  setIsDirty(true);
+                }}
+                mergedPlaceholders={mergedPlaceholders}
+                templateBooleanPlaceholders={templateBooleanPlaceholders}
+                partialPlaceholderLinkings={partialPlaceholderLinkings}
+                onPartialPlaceholderLinkingChange={(key, linkedTo) => {
+                  setPartialPlaceholderLinkings((previous) => {
+                    if (linkedTo) return { ...previous, [key]: linkedTo };
+                    const { [key]: _, ...rest } = previous;
+                    return rest;
+                  });
+                  setIsDirty(true);
+                }}
+                isPartialMode={isPartialMode}
+              />
+            }
+            validationIssues={validationIssues}
+            onFocusIssue={handleFocusIssue}
+            testPreviewContent={!isPartialMode ? <TestDataTab mockData={mockData} onMockDataChange={setMockData} companies={companies} isLoadingCompanies={isLoadingCompanies} onSelectCompany={handleSelectCompany} customPlaceholders={formData.customPlaceholders} mergedPlaceholders={mergedPlaceholders} /> : <p className="text-xs text-text-muted">Previews are available when this partial is used in a template.</p>}
+            aiContent={<AISidebar isOpen onClose={() => undefined} context={{ ...aiSidebar.context }} onInsert={handleAIInsert} onReplace={handleAIInsert} className="h-96 w-full border-0" />}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Page Export with Suspense
+// ============================================================================
+
+export default function TemplateEditorPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-accent-primary" />
+      </div>
+    }>
+      <TemplateEditorContent />
+    </Suspense>
+  );
+}

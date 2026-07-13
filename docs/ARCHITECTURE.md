@@ -195,6 +195,10 @@ The A4 editor stores one canonical HTML document and derives physical pages at r
 
 Pagination runs as one animation-frame transaction over hard-break-delimited sections. The engine reassembles continuation fragments, measures them against the active A4 content box, repacks content forward and backward, commits the full page set atomically, and restores selection through stable flow IDs. Paragraphs and list items may continue across pages, tables split between body rows, and oversized atomic blocks are rendered once instead of being requeued.
 
+The editor renders a single canonical `contenteditable` root. Physical A4 page wrappers are derived children of that root, while page chrome remains non-editable. Native browser selection can therefore span any number of physical pages. Content commands capture a logical selection, update canonical HTML once, increment the reflow generation, schedule one measurement frame, atomically commit only the newest generation, and restore the logical selection. Automatic reflow never creates a history entry or emits a content change.
+
+Document layout is versioned under `contentJson.layout`. The normalized model owns line height, paragraph spacing, and independent top, right, bottom, and left margins. Missing or invalid metadata falls back to the default A4 layout, and saves merge layout without discarding unrelated JSON keys. Template editing, generated-document editing, read-only preview, print CSS, and PDF export all extract and normalize this same metadata; newly generated documents inherit the template JSON unless the generation workflow supplies an explicit edited JSON value.
+
 Preview, read-only, print, and PDF paths share the same hard-versus-soft break contract. The deterministic engine is covered by DOM-independent measurement tests, while Chromium browser tests verify physical overflow, pullback, table integrity, and caret restoration using real layout.
 
 ## Implemented Modules
@@ -204,7 +208,7 @@ Preview, read-only, print, and PDF paths share the same hard-versus-soft break c
 | Companies | Core company data, BizFile ingestion, compliance metadata |
 | Contacts | Individual and corporate contacts |
 | Document Generation | Templates, sharing, comments, exports |
-| Document Processing | Extraction, revisions, duplicate detection; workspace-managed extraction prompts and quick context buttons |
+| Document Vault | Extraction, revisions, duplicate detection; workspace-managed extraction prompts and quick context buttons |
 | Forms | Builder, public forms, drafts, attachments, PDF export, AI review |
 | Workflow (Preview) | Project and task workspace |
 | Exchange Rates | MAS sync and overrides |

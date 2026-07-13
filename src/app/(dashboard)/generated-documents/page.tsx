@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { DocumentTable, type GeneratedDocument } from '@/components/documents/document-table';
+import { DocumentGenerationTabs } from '@/components/documents/document-generation-tabs';
 import { Pagination } from '@/components/ui/pagination';
 
 // ============================================================================
@@ -152,6 +153,7 @@ export default function GeneratedDocumentsPage() {
 
   return (
     <div className="p-4 sm:p-6">
+      <DocumentGenerationTabs />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>

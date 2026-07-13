@@ -29,6 +29,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { A4PageEditor } from '@/components/documents/a4-page-editor';
+import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
 
 // ============================================================================
 // Helper Functions
@@ -648,6 +649,7 @@ export default function DocumentViewPage() {
               <A4PageEditor
                 value={docData.content}
                 readOnly={true}
+                layout={extractA4DocumentLayout(docData.contentJson)}
               />
             </div>
           </div>

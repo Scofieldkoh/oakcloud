@@ -188,6 +188,40 @@ describe('Document generator service', () => {
     );
   });
 
+  it('copies template layout metadata when no edited JSON override is supplied', async () => {
+    const contentJson = {
+      version: 1,
+      customKey: true,
+      layout: {
+        version: 1,
+        lineHeight: 1.8,
+        paragraphSpacing: '8px',
+        marginsMm: { top: 10, right: 15, bottom: 20, left: 25 },
+      },
+    };
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: 'template-1',
+      tenantId: 'workspace-1',
+      name: 'Resolution',
+      content: '<p>Original</p>',
+      contentJson,
+      version: 1,
+      isActive: true,
+    } as never);
+    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({ id: 'doc-1' } as never);
+
+    await createDocumentFromTemplate(
+      { templateId: 'template-1', title: 'Generated document', customData: {} },
+      { tenantId: 'workspace-1', userId: 'user-1' },
+    );
+
+    expect(prisma.generatedDocument.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ contentJson }),
+      }),
+    );
+  });
+
   it('does not finalize documents with unresolved placeholders or partials', async () => {
     vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
       id: 'doc-1',

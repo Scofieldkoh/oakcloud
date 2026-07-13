@@ -41,52 +41,12 @@ describe('A4EditorToolbar', () => {
     expect(screen.getByRole('button', { name: 'Delete current page' })).toBeVisible();
   });
 
-  it('edits one margin without changing the other sides when unlinked', () => {
-    const onLayoutChange = vi.fn();
-    renderToolbar({ onLayoutChange });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Page margins' }));
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Same on all sides' }));
-    fireEvent.change(screen.getByLabelText('Left margin'), {
-      target: { value: '28' },
-    });
-
-    expect(onLayoutChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        marginsMm: { top: 20, right: 20, bottom: 20, left: 28 },
-      }),
-    );
-  });
-
-  it('applies a changed margin to every side when linked', () => {
-    const onLayoutChange = vi.fn();
-    renderToolbar({ onLayoutChange });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Page margins' }));
-    fireEvent.change(screen.getByLabelText('Margin for all sides'), {
-      target: { value: '28' },
-    });
-
-    expect(onLayoutChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        marginsMm: { top: 28, right: 28, bottom: 28, left: 28 },
-      }),
-    );
-  });
-
-  it('shows one margin input when linked and four side inputs when unlinked', () => {
+  it('leaves document layout controls to the template side panel', () => {
     renderToolbar();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Page margins' }));
-    expect(screen.getByLabelText('Margin for all sides')).toBeVisible();
-    expect(screen.queryByLabelText('Top margin')).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Same on all sides' }));
-    expect(screen.queryByLabelText('Margin for all sides')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Top margin')).toBeVisible();
-    expect(screen.getByLabelText('Right margin')).toBeVisible();
-    expect(screen.getByLabelText('Bottom margin')).toBeVisible();
-    expect(screen.getByLabelText('Left margin')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Page margins' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Line spacing')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Paragraph spacing')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Uniform page margin')).not.toBeInTheDocument();
   });
 
   it('keeps lower-frequency insert and view controls in the toolbar overflow menu', () => {
@@ -95,34 +55,30 @@ describe('A4EditorToolbar', () => {
     expect(screen.getByLabelText('Document editor toolbar')).not.toHaveClass('flex-wrap');
     expect(
       within(screen.getByRole('group', { name: 'View' })).getByRole('button', {
-        name: 'More toolbar actions',
+        name: 'Formats',
       }),
     ).toBeVisible();
     expect(
       within(screen.getByRole('group', { name: 'Insert' })).getByRole('button', {
-        name: 'Insert actions',
+        name: 'Tables',
       }),
     ).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Insert table' })).not.toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Show page numbers' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Insert actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tables' }));
     expect(screen.getByRole('button', { name: 'Insert table' })).toBeVisible();
+    expect(screen.getByRole('dialog', { name: 'Tables popover' }).parentElement).toBe(document.body);
 
-    fireEvent.click(screen.getByRole('button', { name: 'More toolbar actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
+    expect(screen.queryByRole('button', { name: 'Insert table' })).not.toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Show page numbers' })).toBeVisible();
   });
 
-  it('dismisses the margin panel and overflow menu with Escape and restores trigger focus', () => {
+  it('dismisses an overflow menu with Escape and restores trigger focus', () => {
     renderToolbar();
 
-    const margins = screen.getByRole('button', { name: 'Page margins' });
-    fireEvent.click(margins);
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByTestId('a4-margin-popover')).not.toBeInTheDocument();
-    expect(margins).toHaveFocus();
-
-    const overflow = screen.getByRole('button', { name: 'More toolbar actions' });
+    const overflow = screen.getByRole('button', { name: 'Formats' });
     fireEvent.click(overflow);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('button', { name: 'Insert table' })).not.toBeInTheDocument();
@@ -133,7 +89,7 @@ describe('A4EditorToolbar', () => {
     const onLegacyCommand = vi.fn();
     renderToolbar({ onLegacyCommand });
 
-    fireEvent.click(screen.getByRole('button', { name: 'More toolbar actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
     fireEvent.change(screen.getByLabelText('Font family'), {
       target: { value: 'Georgia, serif' },
     });

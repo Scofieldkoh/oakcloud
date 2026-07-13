@@ -1,7 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { prepareCompanyContext, resolvePlaceholders } from '@/lib/placeholder-resolver';
+import { buildEachBlock, type TemplateCollection, type TemplateLoopLayout } from '@/components/documents/template-editor/template-builders';
 
 describe('placeholder resolver', () => {
+  it.each([
+    ['directors', 'paragraphs'], ['directors', 'bullets'], ['directors', 'table'],
+    ['shareholders', 'paragraphs'], ['shareholders', 'bullets'], ['shareholders', 'table'],
+  ] as Array<[TemplateCollection, TemplateLoopLayout]>)('resolves generated %s %s loops without raw syntax or escaped structural HTML', (collection, layout) => {
+    const fields = collection === 'directors'
+      ? ['name', 'identificationNumber', 'nationality', 'role', 'address']
+      : ['name', 'identificationNumber', 'nationality', 'shareClass', 'numberOfShares', 'percentageHeld'];
+    const template = buildEachBlock({ collection, fields, layout });
+    const result = resolvePlaceholders(template, {
+      directors: [{ name: 'Alice Director', identificationNumber: 'D1', nationality: 'SG', role: 'Director', address: 'One Road' } as never],
+      shareholders: [{ name: 'Bob Shareholder', identificationNumber: 'S1', nationality: 'SG', shareClass: 'Ordinary', numberOfShares: 10, percentageHeld: 100 } as never],
+    });
+
+    expect(result.resolved).toContain(collection === 'directors' ? 'Alice Director' : 'Bob Shareholder');
+    expect(result.resolved).not.toContain('{{');
+    expect(result.resolved).not.toContain('&lt;table');
+    expect(result.resolved).not.toContain('&lt;ul');
+    expect(result.missing).toEqual([]);
+  });
   it('supports one-based @number inside each blocks', () => {
     const result = resolvePlaceholders(
       '{{#each directors}}<p>{{@number}}. {{name}}</p>{{/each}}',

@@ -21,6 +21,7 @@ export interface DocumentTemplate {
   description?: string | null;
   category: string;
   content: string;
+  contentJson?: Record<string, unknown> | null;
   placeholders: Array<{
     key: string;
     label: string;

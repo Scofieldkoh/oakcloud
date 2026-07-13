@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PlaceholderPanel } from '@/components/documents/template-editor/placeholder-panel';
@@ -36,6 +36,13 @@ function fillLabelAndKey(label: string, key: string) {
 }
 
 describe('PlaceholderPanel', () => {
+  it('offers collection fields only through their guided loop builders', () => {
+    render(<PlaceholderPanel {...defaultProps} />);
+    expect(screen.getByRole('button', { name: 'Build directors loop' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Build shareholders loop' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Insert Director Name' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Insert Shareholder Name' })).not.toBeInTheDocument();
+  });
   it('searches labels and inserts the selected placeholder', () => {
     const onInsert = vi.fn();
     render(<PlaceholderPanel {...defaultProps} onInsert={onInsert} />);
@@ -142,14 +149,4 @@ describe('PlaceholderPanel', () => {
     ]);
   });
 
-  it('keeps director and shareholder fields distinct in recent items', () => {
-    render(<PlaceholderPanel {...defaultProps} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Insert Director Name' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Insert Shareholder Name' }));
-
-    const recents = screen.getByRole('region', { name: 'Recently used' });
-    expect(within(recents).getByText('Director Name')).toBeVisible();
-    expect(within(recents).getByText('Shareholder Name')).toBeVisible();
-  });
 });

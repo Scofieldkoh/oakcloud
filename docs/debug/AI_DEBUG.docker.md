@@ -7,7 +7,7 @@ This file contains debug logs for AI extraction calls when `AI_DEBUG=true`.
 
 ## Related Documents
 
-- [Document Processing / Extraction](../features/document-processing/EXTRACTION.md) - AI extraction details
+- [Document Vault / Extraction](../features/document-processing/EXTRACTION.md) - AI extraction details
 - [Environment Variables](../reference/ENVIRONMENT_VARIABLES.md) - Configuration options
 
 ## How to Enable Debug Logging
@@ -671,4 +671,3 @@ IMPORTANT BUSINESS CONTEXT:
 | 1 | 7801 | 0.75 | Business Profile (Co) |
 
 ---
-

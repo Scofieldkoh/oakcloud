@@ -117,6 +117,21 @@ describe('A4PageEditor', () => {
     expect(selection.toString()).toContain('Se');
   });
 
+  it('keeps page chrome outside the native editable selection tree', async () => {
+    render(
+      <A4PageEditor
+        value={`<p>First page</p>${hardPageBreak}<p>Second page</p>`}
+      />,
+    );
+
+    const surface = screen.getByTestId('a4-document-surface');
+    await screen.findByTestId('a4-page-content-2');
+
+    expect(surface).not.toContainElement(screen.getByText('Page 1 of 2'));
+    expect(surface).not.toContainElement(screen.getByTestId('a4-page-number-1'));
+    expect(surface).not.toContainElement(screen.getAllByTitle('Delete page')[0]);
+  });
+
   it('applies document line spacing without mutating canonical content or history', () => {
     const editorRef = createRef<A4PageEditorRef>();
     const onChange = vi.fn();
@@ -125,21 +140,15 @@ describe('A4PageEditor', () => {
         ref={editorRef}
         value={'<p style="line-height: 1.15;">Hello</p>'}
         onChange={onChange}
+        layout={{ version: 1, lineHeight: 2, paragraphSpacing: '0.5em', marginsMm: { top: 20, right: 20, bottom: 20, left: 20 } }}
       />,
     );
 
     const editor = screen.getByTestId('a4-page-content-1');
     const paragraph = editor.querySelector('p');
     const canonicalBefore = editorRef.current?.getContent();
-    fireEvent.change(screen.getByTitle('Line Spacing'), {
-      target: { value: '2' },
-    });
-
-    const lineSpacing = screen.getByTitle('Line Spacing') as HTMLSelectElement;
-
     expect(editor).toHaveStyle({ lineHeight: '2' });
     expect(paragraph).not.toHaveStyle({ lineHeight: '2' });
-    expect(lineSpacing.value).toBe('2');
     expect(editorRef.current?.getContent()).toBe(canonicalBefore);
     expect(onChange).not.toHaveBeenCalled();
 
@@ -151,16 +160,11 @@ describe('A4PageEditor', () => {
 
   it('keeps document line spacing unchanged when selecting paragraphs with inline spacing', () => {
     render(
-      <A4PageEditor value={'<p style="line-height: 2;">Double</p><p style="line-height: 1.15;">Tight</p>'} />,
+      <A4PageEditor value={'<p style="line-height: 2;">Double</p><p style="line-height: 1.15;">Tight</p>'} layout={{ version: 1, lineHeight: 3, paragraphSpacing: '0.5em', marginsMm: { top: 20, right: 20, bottom: 20, left: 20 } }} />,
     );
 
     const editor = screen.getByTestId('a4-page-content-1');
-    const lineSpacing = screen.getByTitle('Line Spacing') as HTMLSelectElement;
     const paragraphs = editor.querySelectorAll('p');
-
-    fireEvent.change(lineSpacing, {
-      target: { value: '3' },
-    });
 
     act(() => {
       editor.focus();
@@ -173,18 +177,13 @@ describe('A4PageEditor', () => {
       fireEvent.keyUp(editor);
     });
 
-    expect(lineSpacing.value).toBe('3');
     expect(editor).toHaveStyle({ lineHeight: '3' });
   });
 
   it('updates editable page margins', () => {
-    render(<A4PageEditor value="<p>Hello</p>" />);
+    render(<A4PageEditor value="<p>Hello</p>" layout={{ version: 1, lineHeight: 1.5, paragraphSpacing: '0.5em', marginsMm: { top: 25, right: 25, bottom: 25, left: 25 } }} />);
 
     const editor = screen.getByTestId('a4-page-content-1');
-    fireEvent.change(screen.getByTitle('Page Margin'), {
-      target: { value: '25' },
-    });
-
     expect(editor).toHaveStyle({
       top: '94px',
       left: '94px',
@@ -223,6 +222,7 @@ describe('A4PageEditor', () => {
     expect(screen.getByTestId('a4-page-number-1')).toBeInTheDocument();
     expect(screen.getByTestId('a4-page-number-2')).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
     fireEvent.click(screen.getByLabelText('Show page numbers'));
 
     expect(screen.queryByTestId('a4-page-number-1')).not.toBeInTheDocument();
@@ -483,6 +483,7 @@ describe('A4PageEditor', () => {
       selection?.addRange(range);
     });
 
+    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
     fireEvent.change(screen.getByTitle('Text Color'), {
       target: { value: '#ff0000' },
     });
@@ -509,7 +510,7 @@ describe('A4PageEditor', () => {
   });
 
   it('applies paragraph styles and spacing to editor pages', () => {
-    render(<A4PageEditor value="<p>Heading text</p>" />);
+    render(<A4PageEditor value="<p>Heading text</p>" layout={{ version: 1, lineHeight: 1.5, paragraphSpacing: '1em', marginsMm: { top: 20, right: 20, bottom: 20, left: 20 } }} />);
 
     const editor = screen.getByTestId('a4-page-content-1');
     const textNode = editor.querySelector('p')?.firstChild;
@@ -525,11 +526,9 @@ describe('A4PageEditor', () => {
       selection?.addRange(range);
     });
 
+    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
     fireEvent.change(screen.getByTitle('Paragraph Style'), {
       target: { value: 'h1' },
-    });
-    fireEvent.change(screen.getByTitle('Paragraph Spacing'), {
-      target: { value: '1em' },
     });
 
     expect(editor.querySelector('h1')).not.toBeNull();
@@ -552,6 +551,7 @@ describe('A4PageEditor', () => {
       selection?.addRange(range);
     });
 
+    fireEvent.click(screen.getByRole('button', { name: 'Tables' }));
     await act(async () => {
       fireEvent.mouseDown(screen.getByTitle('Insert Table'));
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -582,6 +582,7 @@ describe('A4PageEditor', () => {
       selection?.addRange(range);
     });
 
+    fireEvent.click(screen.getByRole('button', { name: 'Tables' }));
     await act(async () => {
       fireEvent.mouseDown(screen.getByTitle('Add Table Row'));
       fireEvent.mouseDown(screen.getByTitle('Add Table Column'));
@@ -686,7 +687,7 @@ describe('A4PageEditor', () => {
     }
   });
 
-  it('deletes the preceding character when backspacing across a soft page boundary', async () => {
+  it('joins content without deleting the preceding character at a soft page boundary', async () => {
     const originalScrollHeight = Object.getOwnPropertyDescriptor(
       HTMLElement.prototype,
       'scrollHeight',
@@ -717,7 +718,7 @@ describe('A4PageEditor', () => {
 
       await waitFor(() => {
         expect(onChange).toHaveBeenLastCalledWith(
-          expect.stringContaining('12345678012345'),
+          expect.stringContaining('123456789012345'),
         );
       });
       expect(onChange).toHaveBeenLastCalledWith(
@@ -752,6 +753,9 @@ describe('A4PageEditor', () => {
         <A4PageEditor value="<p>123456789012345</p>" onChange={onChange} />,
       );
       await screen.findByTestId('a4-page-content-2');
+      await act(async () => {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      });
       const firstPage = screen.getByTestId('a4-page-content-1');
       const firstText = firstPage.querySelector('p')!.firstChild!;
       act(() => {

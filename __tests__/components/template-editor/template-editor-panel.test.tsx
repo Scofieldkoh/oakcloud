@@ -33,17 +33,34 @@ describe('TemplateEditorPanel', () => {
     expect(screen.queryByRole('tab', { name: 'AI' })).not.toBeInTheDocument();
   });
 
-  it('keeps layout controls synchronized with the editor', () => {
+  it('commits a valid margin only after the user finishes editing', () => {
     const onTemplateChange = vi.fn();
     render(<TemplateEditorPanel {...defaultProps} onTemplateChange={onTemplateChange} />);
 
-    fireEvent.change(screen.getByLabelText('Top margin'), { target: { value: '24' } });
+    const input = screen.getByLabelText('Top margin');
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.change(input, { target: { value: '4' } });
+    expect(onTemplateChange).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: '40' } });
+    expect(onTemplateChange).not.toHaveBeenCalled();
+    fireEvent.blur(input);
 
     expect(onTemplateChange).toHaveBeenCalledWith(expect.objectContaining({
       layout: expect.objectContaining({
-        marginsMm: expect.objectContaining({ top: 24 }),
+        marginsMm: expect.objectContaining({ top: 40 }),
       }),
     }));
+  });
+
+  it('shows an inline error for an out-of-range margin without overwriting the draft', () => {
+    const onTemplateChange = vi.fn();
+    render(<TemplateEditorPanel {...defaultProps} onTemplateChange={onTemplateChange} />);
+    const input = screen.getByLabelText('Top margin');
+    fireEvent.change(input, { target: { value: '4' } });
+    fireEvent.blur(input);
+    expect(input).toHaveValue(4);
+    expect(screen.getByText('Enter a value from 5 to 60 mm.')).toBeVisible();
+    expect(onTemplateChange).not.toHaveBeenCalled();
   });
 
   it('lists syntax issues and focuses their flow block', () => {

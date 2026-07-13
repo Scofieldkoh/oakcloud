@@ -66,20 +66,6 @@ const CATEGORIES: Category[] = [
     { key: 'company.entityType', label: 'Entity Type', example: 'Private Limited Company', category: 'Company' },
     { key: 'company.capital', label: 'Share Capital', example: '$100,000', category: 'Company' },
   ] },
-  { key: 'directors', label: 'Directors', fields: [
-    { key: 'this.name', label: 'Director Name', example: 'John Tan Wei Ming', category: 'Directors' },
-    { key: 'this.identificationNumber', label: 'Director ID', example: 'S1234567A', category: 'Directors' },
-    { key: 'this.nationality', label: 'Director Nationality', example: 'Singaporean', category: 'Directors' },
-    { key: 'this.address', label: 'Director Address', example: '123 Sample Street', category: 'Directors' },
-    { key: 'directors[0].name', label: 'First Director Name', example: 'John Tan Wei Ming', category: 'Directors' },
-  ] },
-  { key: 'shareholders', label: 'Shareholders', fields: [
-    { key: 'this.name', label: 'Shareholder Name', example: 'Mary Lee Mei Ling', category: 'Shareholders' },
-    { key: 'this.shareClass', label: 'Share Class', example: 'Ordinary', category: 'Shareholders' },
-    { key: 'this.numberOfShares', label: 'Number of Shares', example: '50,000', category: 'Shareholders' },
-    { key: 'this.percentageHeld', label: 'Percentage Held', example: '50%', category: 'Shareholders' },
-    { key: 'shareholders[0].name', label: 'First Shareholder Name', example: 'Mary Lee Mei Ling', category: 'Shareholders' },
-  ] },
   { key: 'loops', label: 'Loops', fields: [
     { key: 'directors', label: 'Directors loop', example: 'Repeat content for every director', category: 'Loops', builder: 'loop-directors' },
     { key: 'shareholders', label: 'Shareholders loop', example: 'Repeat content for every shareholder', category: 'Loops', builder: 'loop-shareholders' },
@@ -109,7 +95,7 @@ const resultLabel = (label: string, count: number) => `${label}, ${count} ${coun
 
 export function PlaceholderPanel({ onInsert, partials, isLoadingPartials, customPlaceholders, onCustomPlaceholdersChange, mergedPlaceholders = [], templateBooleanPlaceholders = [], partialPlaceholderLinkings = {}, onPartialPlaceholderLinkingChange, isPartialMode = false }: PlaceholderPanelProps) {
   const [query, setQuery] = useState('');
-  const [expanded, setExpanded] = useState(['company', 'directors', 'shareholders', 'loops', 'conditions']);
+  const [expanded, setExpanded] = useState(['company', 'loops', 'conditions']);
   const [recents, setRecents] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
   const [builder, setBuilder] = useState<Builder | null>(null);

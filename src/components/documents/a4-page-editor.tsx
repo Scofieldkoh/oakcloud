@@ -27,7 +27,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
-  deleteCharacterBeforeTextOffset,
   deleteFlowSelection,
   replaceFlowSelection,
   hydrateFlowHtml,
@@ -695,33 +694,21 @@ function createPageMeasurer(
 interface PageProps {
   page: PageData;
   pageNumber: number;
-  totalPages: number;
   isActive: boolean;
   isPreviewMode: boolean;
-  onDelete: (id: string) => void;
-  canDelete: boolean;
-  placeholder?: string;
   pageLayout: PageLayout;
   lineHeight: string;
-  showPageNumbers: boolean;
 }
 
 function Page({
   page,
   pageNumber,
-  totalPages,
   isActive,
   isPreviewMode,
-  onDelete,
-  canDelete,
-  placeholder,
   pageLayout,
   lineHeight,
-  showPageNumbers,
 }: PageProps) {
   const contentRef = useRef<HTMLDivElement>(null);
-  const isEmpty =
-    !page.content || page.content.replace(/<[^>]*>/g, '').trim() === '';
 
   useEffect(() => {
     if (contentRef.current) {
@@ -744,25 +731,6 @@ function Page({
       }}
     >
       <div
-        contentEditable={false}
-        className="absolute -top-6 left-1/2 -translate-x-1/2 px-3 py-1 bg-gray-700 text-white text-xs rounded-t-md z-10"
-      >
-        Page {pageNumber} of {totalPages}
-      </div>
-
-      {canDelete && !isPreviewMode && (
-        <button
-          type="button"
-          contentEditable={false}
-          onClick={() => onDelete(page.id)}
-          className="absolute -right-10 top-4 p-1.5 rounded bg-red-100 text-red-600 opacity-0 group-hover:opacity-100 hover:bg-red-200 transition-opacity z-10"
-          title="Delete page"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      )}
-
-      <div
         className={cn(
           'bg-white shadow-xl transition-all relative',
           isActive && !isPreviewMode && 'ring-2 ring-blue-500',
@@ -777,7 +745,6 @@ function Page({
         <div
           ref={contentRef}
           data-page-id={page.id}
-          data-placeholder={placeholder}
           data-testid={`a4-page-content-${pageNumber}`}
           className={cn(
             'a4-page-content outline-none',
@@ -802,38 +769,55 @@ function Page({
           }}
         />
 
-        {isEmpty && placeholder && !isPreviewMode && (
-          <div
-            contentEditable={false}
-            className="pointer-events-none select-none text-gray-400"
-            style={{
-              position: 'absolute',
-              top: pageLayout.topPx,
-              left: pageLayout.leftPx,
-              fontFamily: FONT_FAMILY,
-              fontSize: FONT_SIZE,
-              lineHeight,
-            }}
-          >
-            {placeholder}
-          </div>
-        )}
-
-        {showPageNumbers && (
-          <div
-            contentEditable={false}
-            className="absolute left-1/2 -translate-x-1/2 text-gray-400"
-            data-testid={`a4-page-number-${pageNumber}`}
-            style={{
-              fontFamily: FONT_FAMILY,
-              fontSize: '10pt',
-              bottom: '30px',
-            }}
-          >
-            {pageNumber}
-          </div>
-        )}
       </div>
+    </div>
+  );
+}
+
+function PageChrome({
+  page,
+  pageNumber,
+  totalPages,
+  isPreviewMode,
+  canDelete,
+  onDelete,
+  placeholder,
+  pageLayout,
+  lineHeight,
+  showPageNumbers,
+}: {
+  page: PageData;
+  pageNumber: number;
+  totalPages: number;
+  isPreviewMode: boolean;
+  canDelete: boolean;
+  onDelete(id: string): void;
+  placeholder?: string;
+  pageLayout: PageLayout;
+  lineHeight: string;
+  showPageNumbers: boolean;
+}) {
+  const isEmpty = !page.content || page.content.replace(/<[^>]*>/g, '').trim() === '';
+  return (
+    <div className="pointer-events-none relative select-none" style={{ width: A4.WIDTH_PX, height: A4.HEIGHT_PX }}>
+      <div className="absolute -top-6 left-1/2 z-10 -translate-x-1/2 rounded-t-md bg-gray-700 px-3 py-1 text-xs text-white">
+        Page {pageNumber} of {totalPages}
+      </div>
+      {canDelete && !isPreviewMode ? (
+        <button type="button" onClick={() => onDelete(page.id)} className="pointer-events-auto absolute -right-10 top-4 z-10 rounded bg-red-100 p-1.5 text-red-600 opacity-0 transition-opacity hover:bg-red-200 group-hover:opacity-100" title="Delete page">
+          <Trash2 className="h-4 w-4" />
+        </button>
+      ) : null}
+      {isEmpty && placeholder && !isPreviewMode ? (
+        <div className="absolute text-gray-400" style={{ top: pageLayout.topPx, left: pageLayout.leftPx, fontFamily: FONT_FAMILY, fontSize: FONT_SIZE, lineHeight }}>
+          {placeholder}
+        </div>
+      ) : null}
+      {showPageNumbers ? (
+        <div className="absolute left-1/2 -translate-x-1/2 text-gray-400" data-testid={`a4-page-number-${pageNumber}`} style={{ fontFamily: FONT_FAMILY, fontSize: '10pt', bottom: '30px' }}>
+          {pageNumber}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1024,6 +1008,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const pagesRef = useRef<PageData[]>(pages);
     const reflowFrameRef = useRef<number | null>(null);
     const reflowGenerationRef = useRef(0);
+    const pendingScrollTopRef = useRef<number | null>(null);
     const pendingUpdateRef = useRef(false);
     const pendingFlowSelectionRef = useRef<FlowSelectionBookmark | null>(null);
     const pendingNonCancelableMutationRef = useRef<{
@@ -1065,6 +1050,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       () => createPageLayout(effectiveLayout.marginsMm),
       [effectiveLayout.marginsMm],
     );
+
+    const preserveScrollPosition = useCallback(() => {
+      if (scrollContainerRef.current) pendingScrollTopRef.current = scrollContainerRef.current.scrollTop;
+    }, []);
 
     const scheduleReflow = useCallback(
       (sourcePages: PageData[], emitChange: boolean) => {
@@ -1164,6 +1153,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           if (pageElement?.dataset.pageId) {
             setActivePageId(pageElement.dataset.pageId);
           }
+        }
+        if (pendingScrollTopRef.current !== null && scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = pendingScrollTopRef.current;
+          pendingScrollTopRef.current = null;
         }
         pendingFlowSelectionRef.current = null;
       });
@@ -1415,15 +1408,17 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       }
 
       pendingFlowSelectionRef.current = captureFlowSelection(surface);
+      preserveScrollPosition();
       pushHistorySnapshot(currentPages);
       pagesRef.current = nextPages;
       setPages(nextPages);
       scheduleReflow(nextPages, true);
-    }, [effectivePreviewMode, pushHistorySnapshot, scheduleReflow]);
+    }, [effectivePreviewMode, preserveScrollPosition, pushHistorySnapshot, scheduleReflow]);
 
     const commitUserTransaction = useCallback(
       (result: DocumentTransactionResult) => {
         if (effectivePreviewMode || !result.changed) return;
+        preserveScrollPosition();
         const sourcePages = pagesRef.current;
         pushHistorySnapshot(sourcePages);
         pendingFlowSelectionRef.current = result.selection;
@@ -1432,7 +1427,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         setPages(nextPages);
         scheduleReflow(nextPages, true);
       },
-      [effectivePreviewMode, parsePages, pushHistorySnapshot, scheduleReflow],
+      [effectivePreviewMode, parsePages, preserveScrollPosition, pushHistorySnapshot, scheduleReflow],
     );
 
     const handleAddPage = useCallback(() => {
@@ -1577,6 +1572,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         const replacementPoint =
           transaction?.replacementPoint ?? selectionStartPoint(bookmark);
         const sourcePages = transaction?.pages ?? pagesRef.current;
+        preserveScrollPosition();
         const canonical =
           transaction?.canonical ??
           reassemblePageFragments(
@@ -1612,10 +1608,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         if (transaction?.repairSurface) {
           setSurfaceRepairGeneration((generation) => generation + 1);
         }
+        pendingUpdateRef.current = true;
         setPages(nextPages);
         scheduleReflow(nextPages, true);
       },
-      [effectivePreviewMode, parsePages, pushHistorySnapshot, scheduleReflow],
+      [effectivePreviewMode, parsePages, preserveScrollPosition, pushHistorySnapshot, scheduleReflow],
     );
 
     const focusPageAtContentBoundary = useCallback(
@@ -1682,6 +1679,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const handleBackspaceAtPageStart = useCallback(
       (pageId: string, currentContent?: string) => {
         if (effectivePreviewMode) return;
+        preserveScrollPosition();
 
         const currentPageIndex = pagesRef.current.findIndex((p) => p.id === pageId);
         if (currentPageIndex <= 0) return;
@@ -1705,11 +1703,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               ? currentPage.content
               : sanitizeHtml(currentContent);
           const updatedPages = [...prev];
-          const previousContentContainer = document.createElement('div');
-          previousContentContainer.innerHTML = previousPage.content;
-          const boundaryTextOffset =
-            previousContentContainer.textContent?.length ?? 0;
-          let mergedContent = reassemblePageFragments([
+          const mergedContent = reassemblePageFragments([
             {
               content: previousPage.content,
               hardBreakBefore: false,
@@ -1719,29 +1713,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
               hardBreakBefore: false,
             },
           ]);
-          if (!currentPage.hardBreakBefore) {
-            mergedContent = deleteCharacterBeforeTextOffset(
-              mergedContent,
-              boundaryTextOffset,
-            );
-
-            const bookmark = documentSurfaceRef.current
-              ? captureFlowSelection(documentSurfaceRef.current)
-              : null;
-            if (bookmark) {
-              pendingFlowSelectionRef.current = {
-                ...bookmark,
-                anchor: {
-                  ...bookmark.anchor,
-                  offset: Math.max(0, bookmark.anchor.offset - 1),
-                },
-                focus: {
-                  ...bookmark.focus,
-                  offset: Math.max(0, bookmark.focus.offset - 1),
-                },
-              };
-            }
-          }
 
           updatedPages[pageIndex - 1] = {
             ...previousPage,
@@ -1753,7 +1724,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return updatedPages;
         });
       },
-      [effectivePreviewMode, pushHistorySnapshot, scheduleReflow],
+      [effectivePreviewMode, preserveScrollPosition, pushHistorySnapshot, scheduleReflow],
     );
 
     const syncActivePage = useCallback((target?: EventTarget | null) => {
@@ -2716,6 +2687,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         )}
 
         <div ref={scrollContainerRef} className="flex-1 overflow-auto py-8">
+          <div className="relative mx-auto w-fit">
           <div
             key={surfaceRepairGeneration}
             ref={documentSurfaceRef}
@@ -2761,8 +2733,20 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                 key={page.id}
                 page={page}
                 pageNumber={index + 1}
-                totalPages={displayPages.length}
                 isActive={page.id === activePageId}
+                isPreviewMode={effectivePreviewMode}
+                pageLayout={pageLayout}
+                lineHeight={lineHeight}
+              />
+            ))}
+          </div>
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center gap-8">
+            {displayPages.map((page, index) => (
+              <PageChrome
+                key={page.id}
+                page={page}
+                pageNumber={index + 1}
+                totalPages={displayPages.length}
                 isPreviewMode={effectivePreviewMode}
                 onDelete={handleDeletePage}
                 canDelete={displayPages.length > 1 && !readOnly}
@@ -2772,6 +2756,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                 showPageNumbers={showPageNumbers}
               />
             ))}
+          </div>
           </div>
 
           {!readOnly && !effectivePreviewMode && (

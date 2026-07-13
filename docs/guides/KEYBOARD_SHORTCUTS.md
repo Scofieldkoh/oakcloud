@@ -3,7 +3,7 @@
 > **Last Updated**: 2026-02-06
 > **Audience**: Developers, QA
 
-This guide documents the current keyboard shortcut standard used across Companies, Contacts, and Document Processing pages.
+This guide documents the current keyboard shortcut standard used across Companies, Contacts, and Document Vault pages.
 
 ## Core Standard
 
@@ -37,7 +37,7 @@ This guide documents the current keyboard shortcut standard used across Companie
 | `/contacts/[id]/edit` | `Ctrl+Backspace` cancel, `Ctrl+S` save, `F1` add contact |
 | `/contacts/[id]/audit` | `Ctrl+Backspace` back, `Ctrl+R` refresh, `F1` add contact |
 
-## Document Processing
+## Document Vault
 
 | Page | Shortcuts |
 |------|-----------|

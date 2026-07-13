@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -8,6 +9,7 @@ import {
   type RefObject,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import {
   AlignCenter,
   AlignJustify,
@@ -23,7 +25,6 @@ import {
   Outdent,
   Redo2,
   RotateCcw,
-  Rows3,
   SeparatorHorizontal,
   Table2,
   Trash2,
@@ -31,7 +32,7 @@ import {
   Undo2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { A4DocumentLayout, A4MarginsMm } from './a4-pagination/layout';
+import type { A4DocumentLayout } from './a4-pagination/layout';
 
 export interface EditorFormatState {
   bold: boolean;
@@ -74,15 +75,6 @@ const FONT_OPTIONS = [
 ];
 
 const FONT_SIZE_OPTIONS = ['8pt', '9pt', '10pt', '11pt', '12pt', '14pt', '16pt', '18pt', '20pt', '24pt', '28pt', '36pt'];
-const LINE_HEIGHT_OPTIONS = [1, 1.15, 1.5, 2, 2.5, 3];
-const PARAGRAPH_SPACING_OPTIONS = [
-  { value: '0', label: 'No spacing' },
-  { value: '0.25em', label: 'Compact' },
-  { value: '0.5em', label: 'Normal' },
-  { value: '1em', label: 'Loose' },
-  { value: '1.5em', label: 'Wide' },
-];
-
 const compactControlClass =
   'inline-flex h-8 w-8 items-center justify-center rounded text-text-secondary transition-colors duration-150 hover:bg-background-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:cursor-not-allowed disabled:opacity-50';
 const compactSelectClass =
@@ -179,15 +171,46 @@ function ToolbarMenu({
   label,
   disabled,
   children,
+  isOpen,
+  onOpenChange,
 }: {
   label: string;
   disabled: boolean;
   children: ReactNode;
+  isOpen: boolean;
+  onOpenChange(open: boolean): void;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const dismiss = () => setIsOpen(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const dismiss = useCallback(() => onOpenChange(false), [onOpenChange]);
   useEscapeDismiss(isOpen, dismiss, triggerRef);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const updatePosition = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const width = 288;
+      setPosition({
+        top: rect.bottom + 8,
+        left: Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8)),
+      });
+    };
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!triggerRef.current?.contains(target) && !popoverRef.current?.contains(target)) dismiss();
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [dismiss, isOpen]);
 
   return (
     <div className="relative">
@@ -197,160 +220,36 @@ function ToolbarMenu({
         aria-label={label}
         aria-expanded={isOpen}
         disabled={disabled}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => onOpenChange(!isOpen)}
         className={cn(compactControlClass, 'w-auto gap-1 px-2')}
       >
         <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-        <span className="text-xs">More</span>
+        <span className="text-xs">{label}</span>
       </button>
-      <div
-        hidden={!isOpen}
-        role="dialog"
-        aria-label={`${label} popover`}
-        className="absolute right-0 z-20 mt-2 w-72 rounded border border-border-primary bg-background-elevated p-3 shadow-lg"
-      >
-        {children}
-      </div>
+      {isOpen && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              ref={popoverRef}
+              role="dialog"
+              aria-label={`${label} popover`}
+              style={position}
+              className="fixed z-[100] w-72 rounded border border-border-primary bg-background-elevated p-3 shadow-lg"
+            >
+              {children}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
-  );
-}
-
-function MarginPopover({
-  disabled,
-  layout,
-  onLayoutChange,
-  onSaveSelection,
-}: Pick<A4EditorToolbarProps, 'disabled' | 'layout' | 'onLayoutChange' | 'onSaveSelection'>) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [sameOnAllSides, setSameOnAllSides] = useState(true);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const dismiss = () => setIsOpen(false);
-  useEscapeDismiss(isOpen, dismiss, triggerRef);
-
-  const updateMargin = (side: keyof A4MarginsMm, rawValue: string) => {
-    const value = Number(rawValue);
-    if (!Number.isFinite(value)) return;
-
-    const margin = Math.min(60, Math.max(5, value));
-    onLayoutChange({
-      ...layout,
-      marginsMm: sameOnAllSides
-        ? { top: margin, right: margin, bottom: margin, left: margin }
-        : { ...layout.marginsMm, [side]: margin },
-    });
-  };
-
-  const inputs: Array<{ side: keyof A4MarginsMm; label: string }> = [
-    { side: 'top', label: 'Top margin' },
-    { side: 'right', label: 'Right margin' },
-    { side: 'bottom', label: 'Bottom margin' },
-    { side: 'left', label: 'Left margin' },
-  ];
-
-  return (
-    <div className="relative">
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label="Page margins"
-        aria-expanded={isOpen}
-        title="Page margins"
-        disabled={disabled}
-        onPointerDown={onSaveSelection}
-        onClick={() => setIsOpen((open) => !open)}
-        className={compactControlClass}
-      >
-        <Rows3 className="h-4 w-4" aria-hidden="true" />
-      </button>
-      {isOpen ? (
-        <div
-          data-testid="a4-margin-popover"
-          className="absolute left-0 z-20 mt-2 w-64 rounded border border-border-primary bg-background-elevated p-3 shadow-lg"
-        >
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <span className="text-xs font-medium text-text-primary">Page margins</span>
-            <label className="flex items-center gap-1.5 text-xs text-text-secondary">
-              <input
-                type="checkbox"
-                checked={sameOnAllSides}
-                onPointerDown={onSaveSelection}
-                onChange={(event) => setSameOnAllSides(event.target.checked)}
-                className="h-3.5 w-3.5 rounded border-border-primary text-oak-primary focus:ring-border-focus"
-              />
-              Same on all sides
-            </label>
-          </div>
-          {sameOnAllSides ? (
-            <MarginInput
-              label="Margin for all sides"
-              value={layout.marginsMm.top}
-              disabled={disabled}
-              onSaveSelection={onSaveSelection}
-              onChange={(value) => updateMargin('top', value)}
-            />
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              {inputs.map(({ side, label }) => (
-                <MarginInput
-                  key={side}
-                  label={label}
-                  value={layout.marginsMm[side]}
-                  disabled={disabled}
-                  onSaveSelection={onSaveSelection}
-                  onChange={(value) => updateMargin(side, value)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function MarginInput({
-  label,
-  value,
-  disabled,
-  onSaveSelection,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  disabled: boolean;
-  onSaveSelection(): void;
-  onChange(value: string): void;
-}) {
-  return (
-    <label className="block text-xs font-medium text-text-secondary">
-      {label}
-      <span className="mt-1 flex items-center rounded border border-border-primary bg-background-secondary focus-within:ring-2 focus-within:ring-border-focus">
-        <input
-          type="number"
-          aria-label={label}
-          min="5"
-          max="60"
-          step="1"
-          value={value}
-          disabled={disabled}
-          onPointerDown={onSaveSelection}
-          onChange={(event) => onChange(event.target.value)}
-          className="h-8 min-w-0 flex-1 bg-transparent px-2 text-sm text-text-primary outline-none disabled:cursor-not-allowed"
-        />
-        <span className="pr-2 text-2xs text-text-muted">mm</span>
-      </span>
-    </label>
   );
 }
 
 export function A4EditorToolbar({
   disabled,
-  layout,
   activeFormats,
   showPageNumbers,
   canDeletePage,
   onCommand,
-  onLayoutChange,
   onInsertPageBreak,
   onAddBlankPage,
   onDeleteCurrentPage,
@@ -359,6 +258,7 @@ export function A4EditorToolbar({
   onLegacyCommand,
 }: A4EditorToolbarProps) {
   const command = (nextCommand: EditorCommand) => () => onCommand(nextCommand);
+  const [openMenu, setOpenMenu] = useState<'tables' | 'formats' | null>(null);
 
   return (
     <div
@@ -389,7 +289,7 @@ export function A4EditorToolbar({
         <ToolbarButton label="Increase indent" icon={Indent} onSaveSelection={onSaveSelection} onClick={command({ type: 'indent' })} disabled={disabled} />
       </ToolbarGroup>
       <ToolbarGroup label="Insert">
-        <ToolbarMenu label="Insert actions" disabled={disabled}>
+        <ToolbarMenu label="Tables" disabled={disabled} isOpen={openMenu === 'tables'} onOpenChange={(open) => setOpenMenu(open ? 'tables' : null)}>
           <div role="group" aria-label="Insert actions">
             <ToolbarButton label="Insert table" title="Insert Table" icon={Table2} onSaveSelection={onSaveSelection} onClick={command({ type: 'insert-table' })} disabled={disabled} />
             <ToolbarButton label="Add table row" title="Add Table Row" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={() => onLegacyCommand?.('addTableRow')} disabled={disabled || !onLegacyCommand} />
@@ -398,33 +298,13 @@ export function A4EditorToolbar({
         </ToolbarMenu>
       </ToolbarGroup>
       <ToolbarGroup label="Page">
-        <MarginPopover disabled={disabled} layout={layout} onLayoutChange={onLayoutChange} onSaveSelection={onSaveSelection} />
         <ToolbarButton label="Insert page break" title="Insert Page Break" icon={SeparatorHorizontal} onSaveSelection={onSaveSelection} onClick={onInsertPageBreak} disabled={disabled} />
         <ToolbarButton label="Add blank page" icon={ListPlus} onSaveSelection={onSaveSelection} onClick={onAddBlankPage} disabled={disabled} />
         <ToolbarButton label="Delete current page" icon={Trash2} onSaveSelection={onSaveSelection} onClick={onDeleteCurrentPage} disabled={disabled || !canDeletePage} destructive />
       </ToolbarGroup>
       <ToolbarGroup label="View">
-        <ToolbarMenu label="More toolbar actions" disabled={disabled}>
+        <ToolbarMenu label="Formats" disabled={disabled} isOpen={openMenu === 'formats'} onOpenChange={(open) => setOpenMenu(open ? 'formats' : null)}>
           <div role="group" aria-label="View actions" className="grid grid-cols-2 gap-2">
-            <label className="text-xs font-medium text-text-secondary">Line spacing
-              <select aria-label="Line spacing" title="Line Spacing" value={layout.lineHeight} disabled={disabled} onPointerDown={onSaveSelection} onChange={(event) => onLayoutChange({ ...layout, lineHeight: Number(event.target.value) })} className={cn(compactSelectClass, 'mt-1')}>
-                {LINE_HEIGHT_OPTIONS.map((value) => <option key={value} value={value}>{value === 1 ? 'Single' : value}</option>)}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-text-secondary">Paragraph spacing
-              <select aria-label="Paragraph spacing" title="Paragraph Spacing" value={layout.paragraphSpacing} disabled={disabled} onPointerDown={onSaveSelection} onChange={(event) => onLayoutChange({ ...layout, paragraphSpacing: event.target.value })} className={cn(compactSelectClass, 'mt-1')}>
-                {PARAGRAPH_SPACING_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-text-secondary">Page margin
-              <select aria-label="Uniform page margin" title="Page Margin" value={layout.marginsMm.top === layout.marginsMm.right && layout.marginsMm.top === layout.marginsMm.bottom && layout.marginsMm.top === layout.marginsMm.left ? layout.marginsMm.top : ''} disabled={disabled} onPointerDown={onSaveSelection} onChange={(event) => {
-                const value = Number(event.target.value);
-                if (Number.isFinite(value)) onLayoutChange({ ...layout, marginsMm: { top: value, right: value, bottom: value, left: value } });
-              }} className={cn(compactSelectClass, 'mt-1')}>
-                <option value="" disabled>Mixed</option>
-                {[10, 15, 20, 25, 30].map((value) => <option key={value} value={value}>{value}mm</option>)}
-              </select>
-            </label>
             <label className="flex h-8 self-end items-center gap-2 text-xs text-text-secondary">
               <input type="checkbox" aria-label="Show page numbers" checked={showPageNumbers} disabled={disabled} onPointerDown={onSaveSelection} onChange={(event) => onTogglePageNumbers(event.target.checked)} className="h-3.5 w-3.5 rounded border-border-primary text-oak-primary focus:ring-border-focus" />
               Page #

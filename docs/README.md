@@ -62,7 +62,7 @@ Oakcloud is built around a few core principles:
 | Email Notifications | Graph API or SMTP delivery |
 | Connectors Hub | External service integrations |
 | Document Generation | Templates, PDF export, sharing, comments |
-| Document Processing | AI-powered ingestion, extraction, revisions |
+| Document Vault | AI-powered ingestion, extraction, revisions |
 | Forms | Builder, public links, drafts, uploads, PDF export, response review, AI review |
 | Exchange Rates | MAS API integration and manual overrides |
 | Chart Of Accounts | Hierarchical accounts and external mapping |

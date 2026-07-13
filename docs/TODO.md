@@ -35,7 +35,7 @@ Key principles:
 
 ## Known Issues
 
-### Document Processing
+### Document Vault
 
 | ID | Priority | Status | Description | Notes |
 |----|----------|--------|-------------|-------|

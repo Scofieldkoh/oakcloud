@@ -77,7 +77,7 @@ const workflowNavGroup: NavGroup = {
 };
 
 const secondaryNavigation: NavItem[] = [
-  { name: 'Document Processing', href: '/processing', icon: ScanText },
+  { name: 'Document Vault', href: '/processing', icon: ScanText },
   { name: 'Document Generation', href: '/generated-documents', icon: FileText },
   { name: 'E-Signing', href: '/esigning', icon: PenSquare },
   { name: 'Forms', href: '/forms', icon: ClipboardList },
@@ -87,7 +87,6 @@ const secondaryNavigation: NavItem[] = [
 
 // Ungrouped admin items (shown at top level)
 const ungroupedAdminItems: NavItem[] = [
-  { name: 'Templates', href: '/admin/template-partials', icon: FileText, adminOnly: true },
   { name: 'Connectors', href: '/admin/connectors', icon: Plug, adminOnly: true },
   { name: 'Recycle Bin', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
 ];
