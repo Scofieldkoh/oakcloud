@@ -388,6 +388,7 @@ model Contact {
   firstName                          String?
   lastName                           String?
   fullName                           String
+  canonicalName                      String?
   alias                              String?
   identificationType                 IdentificationType?
   identificationNumber               String?
@@ -417,6 +418,7 @@ model Contact {
   @@index([corporateUen])
   @@index([tenantId, deletedAt])
   @@index([tenantId, contactType, isActive])
+  @@index([tenantId, contactType, deletedAt, canonicalName])
   @@map("contacts")
 }
 
@@ -1344,6 +1346,7 @@ model DocumentRevision {
   vendorId                   String?                      @map("vendor_id")
   customerName               String?                      @map("customer_name")
   customerId                 String?                      @map("customer_id")
+  counterpartyIdentity       Json?                        @map("counterparty_identity")
   documentNumber             String?                      @map("document_number")
   documentDate               DateTime?                    @map("document_date") @db.Date
   dueDate                    DateTime?                    @map("due_date") @db.Date
@@ -1451,6 +1454,45 @@ model CustomerAlias {
   @@index([tenantId, rawName])
   @@index([companyId, rawName])
   @@map("customer_aliases")
+}
+
+model ContactDuplicateDecision {
+  id               String   @id @default(uuid())
+  tenantId         String
+  leftContactId    String
+  rightContactId   String
+  leftFingerprint  String
+  rightFingerprint String
+  decision         String
+  reason           String
+  decidedById      String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([tenantId, leftContactId, rightContactId])
+  @@index([tenantId, updatedAt])
+  @@map("contact_duplicate_decisions")
+}
+
+model ContactMergeOperation {
+  id                String   @id @default(uuid())
+  tenantId          String
+  idempotencyKey    String
+  masterContactId   String
+  masterSnapshot    Json
+  sourceContactIds  String[]
+  sourceSnapshots   Json
+  fingerprints      Json
+  fieldDecisions    Json
+  movedRecordCounts Json
+  matchingReasons   Json
+  approvedById      String
+  approvedAt        DateTime @default(now())
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, approvedAt])
+  @@index([masterContactId])
+  @@map("contact_merge_operations")
 }
 
 model DuplicateDecision {
@@ -2778,6 +2820,7 @@ enum AuditAction {
   EXPORT
   IMPORT
   BULK_UPDATE
+  MERGE
   CONNECTOR_CREATED
   CONNECTOR_UPDATED
   CONNECTOR_DELETED

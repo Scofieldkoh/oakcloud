@@ -268,6 +268,16 @@ export type VendorAlias = Prisma.VendorAliasModel
  */
 export type CustomerAlias = Prisma.CustomerAliasModel
 /**
+ * Model ContactDuplicateDecision
+ * 
+ */
+export type ContactDuplicateDecision = Prisma.ContactDuplicateDecisionModel
+/**
+ * Model ContactMergeOperation
+ * 
+ */
+export type ContactMergeOperation = Prisma.ContactMergeOperationModel
+/**
  * Model DuplicateDecision
  * 
  */

@@ -163,6 +163,7 @@ export type DocumentRevisionCountAggregateOutputType = {
   vendorId: number
   customerName: number
   customerId: number
+  counterpartyIdentity: number
   documentNumber: number
   documentDate: number
   dueDate: number
@@ -338,6 +339,7 @@ export type DocumentRevisionCountAggregateInputType = {
   vendorId?: true
   customerName?: true
   customerId?: true
+  counterpartyIdentity?: true
   documentNumber?: true
   documentDate?: true
   dueDate?: true
@@ -476,6 +478,7 @@ export type DocumentRevisionGroupByOutputType = {
   vendorId: string | null
   customerName: string | null
   customerId: string | null
+  counterpartyIdentity: runtime.JsonValue | null
   documentNumber: string | null
   documentDate: Date | null
   dueDate: Date | null
@@ -550,6 +553,7 @@ export type DocumentRevisionWhereInput = {
   vendorId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   customerName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   customerId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
+  counterpartyIdentity?: Prisma.JsonNullableFilter<"DocumentRevision">
   documentNumber?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
   dueDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
@@ -609,6 +613,7 @@ export type DocumentRevisionOrderByWithRelationInput = {
   vendorId?: Prisma.SortOrderInput | Prisma.SortOrder
   customerName?: Prisma.SortOrderInput | Prisma.SortOrder
   customerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  counterpartyIdentity?: Prisma.SortOrderInput | Prisma.SortOrder
   documentNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   documentDate?: Prisma.SortOrderInput | Prisma.SortOrder
   dueDate?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -672,6 +677,7 @@ export type DocumentRevisionWhereUniqueInput = Prisma.AtLeast<{
   vendorId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   customerName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   customerId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
+  counterpartyIdentity?: Prisma.JsonNullableFilter<"DocumentRevision">
   documentNumber?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
   dueDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
@@ -731,6 +737,7 @@ export type DocumentRevisionOrderByWithAggregationInput = {
   vendorId?: Prisma.SortOrderInput | Prisma.SortOrder
   customerName?: Prisma.SortOrderInput | Prisma.SortOrder
   customerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  counterpartyIdentity?: Prisma.SortOrderInput | Prisma.SortOrder
   documentNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   documentDate?: Prisma.SortOrderInput | Prisma.SortOrder
   dueDate?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -790,6 +797,7 @@ export type DocumentRevisionScalarWhereWithAggregatesInput = {
   vendorId?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
   customerName?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
   customerId?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
+  counterpartyIdentity?: Prisma.JsonNullableWithAggregatesFilter<"DocumentRevision">
   documentNumber?: Prisma.StringNullableWithAggregatesFilter<"DocumentRevision"> | string | null
   documentDate?: Prisma.DateTimeNullableWithAggregatesFilter<"DocumentRevision"> | Date | string | null
   dueDate?: Prisma.DateTimeNullableWithAggregatesFilter<"DocumentRevision"> | Date | string | null
@@ -838,6 +846,7 @@ export type DocumentRevisionCreateInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -897,6 +906,7 @@ export type DocumentRevisionUncheckedCreateInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -950,6 +960,7 @@ export type DocumentRevisionUpdateInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1009,6 +1020,7 @@ export type DocumentRevisionUncheckedUpdateInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1065,6 +1077,7 @@ export type DocumentRevisionCreateManyInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -1113,6 +1126,7 @@ export type DocumentRevisionUpdateManyMutationInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1164,6 +1178,7 @@ export type DocumentRevisionUncheckedUpdateManyInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1235,6 +1250,7 @@ export type DocumentRevisionCountOrderByAggregateInput = {
   vendorId?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
+  counterpartyIdentity?: Prisma.SortOrder
   documentNumber?: Prisma.SortOrder
   documentDate?: Prisma.SortOrder
   dueDate?: Prisma.SortOrder
@@ -1652,6 +1668,7 @@ export type DocumentRevisionCreateWithoutProcessingDocumentInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -1709,6 +1726,7 @@ export type DocumentRevisionUncheckedCreateWithoutProcessingDocumentInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -1772,6 +1790,7 @@ export type DocumentRevisionCreateWithoutCurrentForDocumentInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -1830,6 +1849,7 @@ export type DocumentRevisionUncheckedCreateWithoutCurrentForDocumentInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -1909,6 +1929,7 @@ export type DocumentRevisionScalarWhereInput = {
   vendorId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   customerName?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   customerId?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
+  counterpartyIdentity?: Prisma.JsonNullableFilter<"DocumentRevision">
   documentNumber?: Prisma.StringNullableFilter<"DocumentRevision"> | string | null
   documentDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
   dueDate?: Prisma.DateTimeNullableFilter<"DocumentRevision"> | Date | string | null
@@ -1968,6 +1989,7 @@ export type DocumentRevisionUpdateWithoutCurrentForDocumentInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2026,6 +2048,7 @@ export type DocumentRevisionUncheckedUpdateWithoutCurrentForDocumentInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2078,6 +2101,7 @@ export type DocumentRevisionCreateWithoutExtractionInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2135,6 +2159,7 @@ export type DocumentRevisionUncheckedCreateWithoutExtractionInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2214,6 +2239,7 @@ export type DocumentRevisionCreateWithoutDerivedRevisionsInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2272,6 +2298,7 @@ export type DocumentRevisionUncheckedCreateWithoutDerivedRevisionsInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2329,6 +2356,7 @@ export type DocumentRevisionCreateWithoutBasedOnRevisionInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2386,6 +2414,7 @@ export type DocumentRevisionUncheckedCreateWithoutBasedOnRevisionInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2460,6 +2489,7 @@ export type DocumentRevisionUpdateWithoutDerivedRevisionsInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2518,6 +2548,7 @@ export type DocumentRevisionUncheckedUpdateWithoutDerivedRevisionsInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2586,6 +2617,7 @@ export type DocumentRevisionCreateWithoutItemsInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2644,6 +2676,7 @@ export type DocumentRevisionUncheckedCreateWithoutItemsInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2712,6 +2745,7 @@ export type DocumentRevisionUpdateWithoutItemsInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2770,6 +2804,7 @@ export type DocumentRevisionUncheckedUpdateWithoutItemsInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2822,6 +2857,7 @@ export type DocumentRevisionCreateWithoutMatchGroupItemsInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2880,6 +2916,7 @@ export type DocumentRevisionUncheckedCreateWithoutMatchGroupItemsInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -2948,6 +2985,7 @@ export type DocumentRevisionUpdateWithoutMatchGroupItemsInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3006,6 +3044,7 @@ export type DocumentRevisionUncheckedUpdateWithoutMatchGroupItemsInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3058,6 +3097,7 @@ export type DocumentRevisionCreateWithoutPostingsInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -3116,6 +3156,7 @@ export type DocumentRevisionUncheckedCreateWithoutPostingsInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -3184,6 +3225,7 @@ export type DocumentRevisionUpdateWithoutPostingsInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3242,6 +3284,7 @@ export type DocumentRevisionUncheckedUpdateWithoutPostingsInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3296,6 +3339,7 @@ export type DocumentRevisionCreateManyProcessingDocumentInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -3344,6 +3388,7 @@ export type DocumentRevisionUpdateWithoutProcessingDocumentInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3401,6 +3446,7 @@ export type DocumentRevisionUncheckedUpdateWithoutProcessingDocumentInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3456,6 +3502,7 @@ export type DocumentRevisionUncheckedUpdateManyWithoutProcessingDocumentInput = 
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3506,6 +3553,7 @@ export type DocumentRevisionCreateManyExtractionInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -3554,6 +3602,7 @@ export type DocumentRevisionUpdateWithoutExtractionInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3611,6 +3660,7 @@ export type DocumentRevisionUncheckedUpdateWithoutExtractionInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3666,6 +3716,7 @@ export type DocumentRevisionUncheckedUpdateManyWithoutExtractionInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3716,6 +3767,7 @@ export type DocumentRevisionCreateManyBasedOnRevisionInput = {
   vendorId?: string | null
   customerName?: string | null
   customerId?: string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: string | null
   documentDate?: Date | string | null
   dueDate?: Date | string | null
@@ -3764,6 +3816,7 @@ export type DocumentRevisionUpdateWithoutBasedOnRevisionInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3821,6 +3874,7 @@ export type DocumentRevisionUncheckedUpdateWithoutBasedOnRevisionInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3876,6 +3930,7 @@ export type DocumentRevisionUncheckedUpdateManyWithoutBasedOnRevisionInput = {
   vendorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  counterpartyIdentity?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   documentNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3985,6 +4040,7 @@ export type DocumentRevisionSelect<ExtArgs extends runtime.Types.Extensions.Inte
   vendorId?: boolean
   customerName?: boolean
   customerId?: boolean
+  counterpartyIdentity?: boolean
   documentNumber?: boolean
   documentDate?: boolean
   dueDate?: boolean
@@ -4045,6 +4101,7 @@ export type DocumentRevisionSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   vendorId?: boolean
   customerName?: boolean
   customerId?: boolean
+  counterpartyIdentity?: boolean
   documentNumber?: boolean
   documentDate?: boolean
   dueDate?: boolean
@@ -4099,6 +4156,7 @@ export type DocumentRevisionSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   vendorId?: boolean
   customerName?: boolean
   customerId?: boolean
+  counterpartyIdentity?: boolean
   documentNumber?: boolean
   documentDate?: boolean
   dueDate?: boolean
@@ -4153,6 +4211,7 @@ export type DocumentRevisionSelectScalar = {
   vendorId?: boolean
   customerName?: boolean
   customerId?: boolean
+  counterpartyIdentity?: boolean
   documentNumber?: boolean
   documentDate?: boolean
   dueDate?: boolean
@@ -4189,7 +4248,7 @@ export type DocumentRevisionSelectScalar = {
   supersededAt?: boolean
 }
 
-export type DocumentRevisionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "processingDocumentId" | "basedOnRevisionId" | "extractionId" | "revisionNumber" | "revisionType" | "status" | "reason" | "documentCategory" | "documentSubCategory" | "vendorName" | "vendorId" | "customerName" | "customerId" | "documentNumber" | "documentDate" | "dueDate" | "currency" | "subtotal" | "taxAmount" | "totalAmount" | "roundingMode" | "gstTreatment" | "supplierGstNo" | "homeCurrency" | "homeExchangeRateSource" | "homeExchangeRate" | "exchangeRateDate" | "homeEquivalent" | "homeSubtotal" | "homeTaxAmount" | "isHomeExchangeRateOverride" | "validationStatus" | "validationIssues" | "documentKey" | "documentKeyVersion" | "documentKeyConfidence" | "headerEvidenceJson" | "postingStatus" | "postedAt" | "postingLock" | "reconciliationStatus" | "searchText" | "createdById" | "createdAt" | "approvedById" | "approvedAt" | "supersededAt", ExtArgs["result"]["documentRevision"]>
+export type DocumentRevisionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "processingDocumentId" | "basedOnRevisionId" | "extractionId" | "revisionNumber" | "revisionType" | "status" | "reason" | "documentCategory" | "documentSubCategory" | "vendorName" | "vendorId" | "customerName" | "customerId" | "counterpartyIdentity" | "documentNumber" | "documentDate" | "dueDate" | "currency" | "subtotal" | "taxAmount" | "totalAmount" | "roundingMode" | "gstTreatment" | "supplierGstNo" | "homeCurrency" | "homeExchangeRateSource" | "homeExchangeRate" | "exchangeRateDate" | "homeEquivalent" | "homeSubtotal" | "homeTaxAmount" | "isHomeExchangeRateOverride" | "validationStatus" | "validationIssues" | "documentKey" | "documentKeyVersion" | "documentKeyConfidence" | "headerEvidenceJson" | "postingStatus" | "postedAt" | "postingLock" | "reconciliationStatus" | "searchText" | "createdById" | "createdAt" | "approvedById" | "approvedAt" | "supersededAt", ExtArgs["result"]["documentRevision"]>
 export type DocumentRevisionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   items?: boolean | Prisma.DocumentRevision$itemsArgs<ExtArgs>
   basedOnRevision?: boolean | Prisma.DocumentRevision$basedOnRevisionArgs<ExtArgs>
@@ -4239,6 +4298,7 @@ export type $DocumentRevisionPayload<ExtArgs extends runtime.Types.Extensions.In
     vendorId: string | null
     customerName: string | null
     customerId: string | null
+    counterpartyIdentity: runtime.JsonValue | null
     documentNumber: string | null
     documentDate: Date | null
     dueDate: Date | null
@@ -4718,6 +4778,7 @@ export interface DocumentRevisionFieldRefs {
   readonly vendorId: Prisma.FieldRef<"DocumentRevision", 'String'>
   readonly customerName: Prisma.FieldRef<"DocumentRevision", 'String'>
   readonly customerId: Prisma.FieldRef<"DocumentRevision", 'String'>
+  readonly counterpartyIdentity: Prisma.FieldRef<"DocumentRevision", 'Json'>
   readonly documentNumber: Prisma.FieldRef<"DocumentRevision", 'String'>
   readonly documentDate: Prisma.FieldRef<"DocumentRevision", 'DateTime'>
   readonly dueDate: Prisma.FieldRef<"DocumentRevision", 'DateTime'>

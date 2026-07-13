@@ -101,6 +101,8 @@ export const ModelName = {
   DocumentRevisionLineItem: 'DocumentRevisionLineItem',
   VendorAlias: 'VendorAlias',
   CustomerAlias: 'CustomerAlias',
+  ContactDuplicateDecision: 'ContactDuplicateDecision',
+  ContactMergeOperation: 'ContactMergeOperation',
   DuplicateDecision: 'DuplicateDecision',
   ProcessingAttempt: 'ProcessingAttempt',
   ProcessingCheckpoint: 'ProcessingCheckpoint',
@@ -397,6 +399,7 @@ export const ContactScalarFieldEnum = {
   firstName: 'firstName',
   lastName: 'lastName',
   fullName: 'fullName',
+  canonicalName: 'canonicalName',
   alias: 'alias',
   identificationType: 'identificationType',
   identificationNumber: 'identificationNumber',
@@ -1108,6 +1111,7 @@ export const DocumentRevisionScalarFieldEnum = {
   vendorId: 'vendorId',
   customerName: 'customerName',
   customerId: 'customerId',
+  counterpartyIdentity: 'counterpartyIdentity',
   documentNumber: 'documentNumber',
   documentDate: 'documentDate',
   dueDate: 'dueDate',
@@ -1196,6 +1200,42 @@ export const CustomerAliasScalarFieldEnum = {
 } as const
 
 export type CustomerAliasScalarFieldEnum = (typeof CustomerAliasScalarFieldEnum)[keyof typeof CustomerAliasScalarFieldEnum]
+
+
+export const ContactDuplicateDecisionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  leftContactId: 'leftContactId',
+  rightContactId: 'rightContactId',
+  leftFingerprint: 'leftFingerprint',
+  rightFingerprint: 'rightFingerprint',
+  decision: 'decision',
+  reason: 'reason',
+  decidedById: 'decidedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ContactDuplicateDecisionScalarFieldEnum = (typeof ContactDuplicateDecisionScalarFieldEnum)[keyof typeof ContactDuplicateDecisionScalarFieldEnum]
+
+
+export const ContactMergeOperationScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  idempotencyKey: 'idempotencyKey',
+  masterContactId: 'masterContactId',
+  masterSnapshot: 'masterSnapshot',
+  sourceContactIds: 'sourceContactIds',
+  sourceSnapshots: 'sourceSnapshots',
+  fingerprints: 'fingerprints',
+  fieldDecisions: 'fieldDecisions',
+  movedRecordCounts: 'movedRecordCounts',
+  matchingReasons: 'matchingReasons',
+  approvedById: 'approvedById',
+  approvedAt: 'approvedAt'
+} as const
+
+export type ContactMergeOperationScalarFieldEnum = (typeof ContactMergeOperationScalarFieldEnum)[keyof typeof ContactMergeOperationScalarFieldEnum]
 
 
 export const DuplicateDecisionScalarFieldEnum = {

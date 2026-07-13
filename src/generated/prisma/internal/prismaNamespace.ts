@@ -434,6 +434,8 @@ export const ModelName = {
   DocumentRevisionLineItem: 'DocumentRevisionLineItem',
   VendorAlias: 'VendorAlias',
   CustomerAlias: 'CustomerAlias',
+  ContactDuplicateDecision: 'ContactDuplicateDecision',
+  ContactMergeOperation: 'ContactMergeOperation',
   DuplicateDecision: 'DuplicateDecision',
   ProcessingAttempt: 'ProcessingAttempt',
   ProcessingCheckpoint: 'ProcessingCheckpoint',
@@ -500,7 +502,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "workflow_artifacts" | "workflow_billing_states" | "workflow_blockers" | "workflow_client_group_members" | "workflow_client_groups" | "workflow_communication_log_entries" | "workflow_cross_dependencies" | "workflow_deviations" | "workflow_engagement_services" | "workflow_engagements" | "workflow_instances" | "workflow_milestone_templates" | "workflow_milestones" | "workflow_notification_log" | "workflow_program_requirements" | "workflow_project_instances" | "workflow_project_settings" | "workflow_scheduled_instances_queue" | "workflow_service_definitions" | "workflow_task_dependencies" | "workflow_task_items" | "workflow_task_templates"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -4201,6 +4203,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CustomerAliasCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CustomerAliasCountAggregateOutputType> | number
+        }
+      }
+    }
+    ContactDuplicateDecision: {
+      payload: Prisma.$ContactDuplicateDecisionPayload<ExtArgs>
+      fields: Prisma.ContactDuplicateDecisionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ContactDuplicateDecisionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDuplicateDecisionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ContactDuplicateDecisionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDuplicateDecisionPayload>
+        }
+        findFirst: {
+          args: Prisma.ContactDuplicateDecisionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDuplicateDecisionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ContactDuplicateDecisionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDuplicateDecisionPayload>
+        }
+        findMany: {
+          args: Prisma.ContactDuplicateDecisionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDuplicateDecisionPayload>[]
+        }
+        create: {
+          args: Prisma.ContactDuplicateDecisionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDuplicateDecisionPayload>
+        }
+        createMany: {
+          args: Prisma.ContactDuplicateDecisionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ContactDuplicateDecisionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDuplicateDecisionPayload>[]
+        }
+        delete: {
+          args: Prisma.ContactDuplicateDecisionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDuplicateDecisionPayload>
+        }
+        update: {
+          args: Prisma.ContactDuplicateDecisionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDuplicateDecisionPayload>
+        }
+        deleteMany: {
+          args: Prisma.ContactDuplicateDecisionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ContactDuplicateDecisionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ContactDuplicateDecisionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDuplicateDecisionPayload>[]
+        }
+        upsert: {
+          args: Prisma.ContactDuplicateDecisionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactDuplicateDecisionPayload>
+        }
+        aggregate: {
+          args: Prisma.ContactDuplicateDecisionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateContactDuplicateDecision>
+        }
+        groupBy: {
+          args: Prisma.ContactDuplicateDecisionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactDuplicateDecisionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ContactDuplicateDecisionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactDuplicateDecisionCountAggregateOutputType> | number
+        }
+      }
+    }
+    ContactMergeOperation: {
+      payload: Prisma.$ContactMergeOperationPayload<ExtArgs>
+      fields: Prisma.ContactMergeOperationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ContactMergeOperationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMergeOperationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ContactMergeOperationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMergeOperationPayload>
+        }
+        findFirst: {
+          args: Prisma.ContactMergeOperationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMergeOperationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ContactMergeOperationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMergeOperationPayload>
+        }
+        findMany: {
+          args: Prisma.ContactMergeOperationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMergeOperationPayload>[]
+        }
+        create: {
+          args: Prisma.ContactMergeOperationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMergeOperationPayload>
+        }
+        createMany: {
+          args: Prisma.ContactMergeOperationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ContactMergeOperationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMergeOperationPayload>[]
+        }
+        delete: {
+          args: Prisma.ContactMergeOperationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMergeOperationPayload>
+        }
+        update: {
+          args: Prisma.ContactMergeOperationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMergeOperationPayload>
+        }
+        deleteMany: {
+          args: Prisma.ContactMergeOperationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ContactMergeOperationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ContactMergeOperationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMergeOperationPayload>[]
+        }
+        upsert: {
+          args: Prisma.ContactMergeOperationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactMergeOperationPayload>
+        }
+        aggregate: {
+          args: Prisma.ContactMergeOperationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateContactMergeOperation>
+        }
+        groupBy: {
+          args: Prisma.ContactMergeOperationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactMergeOperationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ContactMergeOperationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactMergeOperationCountAggregateOutputType> | number
         }
       }
     }
@@ -8244,6 +8394,7 @@ export const ContactScalarFieldEnum = {
   firstName: 'firstName',
   lastName: 'lastName',
   fullName: 'fullName',
+  canonicalName: 'canonicalName',
   alias: 'alias',
   identificationType: 'identificationType',
   identificationNumber: 'identificationNumber',
@@ -8955,6 +9106,7 @@ export const DocumentRevisionScalarFieldEnum = {
   vendorId: 'vendorId',
   customerName: 'customerName',
   customerId: 'customerId',
+  counterpartyIdentity: 'counterpartyIdentity',
   documentNumber: 'documentNumber',
   documentDate: 'documentDate',
   dueDate: 'dueDate',
@@ -9043,6 +9195,42 @@ export const CustomerAliasScalarFieldEnum = {
 } as const
 
 export type CustomerAliasScalarFieldEnum = (typeof CustomerAliasScalarFieldEnum)[keyof typeof CustomerAliasScalarFieldEnum]
+
+
+export const ContactDuplicateDecisionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  leftContactId: 'leftContactId',
+  rightContactId: 'rightContactId',
+  leftFingerprint: 'leftFingerprint',
+  rightFingerprint: 'rightFingerprint',
+  decision: 'decision',
+  reason: 'reason',
+  decidedById: 'decidedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ContactDuplicateDecisionScalarFieldEnum = (typeof ContactDuplicateDecisionScalarFieldEnum)[keyof typeof ContactDuplicateDecisionScalarFieldEnum]
+
+
+export const ContactMergeOperationScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  idempotencyKey: 'idempotencyKey',
+  masterContactId: 'masterContactId',
+  masterSnapshot: 'masterSnapshot',
+  sourceContactIds: 'sourceContactIds',
+  sourceSnapshots: 'sourceSnapshots',
+  fingerprints: 'fingerprints',
+  fieldDecisions: 'fieldDecisions',
+  movedRecordCounts: 'movedRecordCounts',
+  matchingReasons: 'matchingReasons',
+  approvedById: 'approvedById',
+  approvedAt: 'approvedAt'
+} as const
+
+export type ContactMergeOperationScalarFieldEnum = (typeof ContactMergeOperationScalarFieldEnum)[keyof typeof ContactMergeOperationScalarFieldEnum]
 
 
 export const DuplicateDecisionScalarFieldEnum = {
@@ -11599,6 +11787,8 @@ export type GlobalOmitConfig = {
   documentRevisionLineItem?: Prisma.DocumentRevisionLineItemOmit
   vendorAlias?: Prisma.VendorAliasOmit
   customerAlias?: Prisma.CustomerAliasOmit
+  contactDuplicateDecision?: Prisma.ContactDuplicateDecisionOmit
+  contactMergeOperation?: Prisma.ContactMergeOperationOmit
   duplicateDecision?: Prisma.DuplicateDecisionOmit
   processingAttempt?: Prisma.ProcessingAttemptOmit
   processingCheckpoint?: Prisma.ProcessingCheckpointOmit
