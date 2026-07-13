@@ -3,6 +3,8 @@ import { createAuditLog } from '@/lib/audit';
 import type { CreateContactInput, UpdateContactInput, ContactSearchInput } from '@/lib/validations/contact';
 import { Prisma } from '@/generated/prisma';
 import type { Contact, ContactType, PrismaClient } from '@/generated/prisma';
+import type { ContactIdentityCandidate } from '@/types/contact-identity';
+import { canonicalizeContactName } from '@/lib/contact-identity-normalization';
 
 /**
  * Type for Prisma transaction client (interactive transaction)
@@ -56,6 +58,7 @@ export async function createContact(
       firstName: data.firstName,
       lastName: data.lastName,
       fullName,
+      canonicalName: canonicalizeContactName(fullName),
       alias: data.alias,
       identificationType: data.identificationType,
       identificationNumber,
@@ -77,7 +80,7 @@ export async function createContact(
     summary: `Created contact "${contact.fullName}"`,
     changeSource: 'MANUAL',
     metadata: { fullName: contact.fullName },
-  });
+  }, tx as Prisma.TransactionClient | undefined);
 
   return contact;
 }
@@ -122,6 +125,7 @@ export async function updateContact(
   });
 
   updateData.fullName = newFullName;
+  updateData.canonicalName = canonicalizeContactName(newFullName);
 
   const contact = await prisma.contact.update({
     where: { id: data.id },
@@ -146,50 +150,26 @@ export async function findOrCreateContact(
   data: CreateContactInput,
   params: TenantAwareParams
 ): Promise<{ contact: Contact; isNew: boolean }> {
-  const { tenantId, tx } = params;
-  const db = tx || prisma;
-  const identificationNumber = normalizeOptionalString(data.identificationNumber);
-  const corporateUen = normalizeOptionalString(data.corporateUen);
-
-  // Enforce tenant context - this function must always be called with a valid tenantId
-  if (!tenantId) {
+  if (!params.tenantId) {
     throw new Error('Tenant context required for findOrCreateContact');
   }
-
-  // Try to find existing contact by identification number within tenant
-  if (identificationNumber && data.identificationType) {
-    const existing = await db.contact.findFirst({
-      where: {
-        tenantId,
-        identificationType: data.identificationType,
-        identificationNumber,
-        deletedAt: null,
-      },
-    });
-
-    if (existing) {
-      return { contact: existing, isNew: false };
-    }
-  }
-
-  // Try to find by corporate UEN within tenant
-  if (corporateUen) {
-    const existing = await db.contact.findFirst({
-      where: {
-        tenantId,
-        corporateUen,
-        deletedAt: null,
-      },
-    });
-
-    if (existing) {
-      return { contact: existing, isNew: false };
-    }
-  }
-
-  // Create new contact
-  const contact = await createContact(data, params);
-  return { contact, isNew: true };
+  const candidate: ContactIdentityCandidate = {
+    source: 'MANUAL',
+    contactType: data.contactType,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    corporateName: data.corporateName,
+    alias: data.alias,
+    identificationType: data.identificationType,
+    identificationNumber: data.identificationNumber,
+    corporateUen: data.corporateUen,
+    nationality: data.nationality,
+    dateOfBirth: data.dateOfBirth,
+    fullAddress: data.fullAddress,
+  };
+  const { resolveOrCreateContact } = await import('@/services/contact-identity.service');
+  const result = await resolveOrCreateContact(candidate, { action: 'AUTO' }, params);
+  return { contact: result.contact, isNew: result.outcome === 'CREATED' };
 }
 
 /**

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { normalizeContactDetailValue } from '@/lib/contact-identity-normalization';
 import type { ContactDetail, ContactDetailType, Prisma, PrismaClient } from '@/generated/prisma';
 
 /**
@@ -104,15 +105,11 @@ export async function createContactDetail(
     }
   }
 
-  // Uniqueness validation: Only one EMAIL and one PHONE per scope (for contact-level details only)
-  // Scope is defined by: contactId + companyId combination
-  // - Default detail: contactId set, companyId null - RESTRICTED to one per type
-  // - Company-specific: contactId set, companyId set - RESTRICTED to one per type
-  // - Company-level: contactId null, companyId set - NO RESTRICTION (can have multiple)
+  // Consolidate equal normalized details while allowing genuinely distinct values per scope.
   const isCompanyLevelDetail = !data.contactId && data.companyId;
 
   if (!isCompanyLevelDetail && (data.detailType === 'EMAIL' || data.detailType === 'PHONE')) {
-    const existingDetail = await db.contactDetail.findFirst({
+    const existingDetails = await db.contactDetail.findMany({
       where: {
         tenantId,
         detailType: data.detailType,
@@ -121,15 +118,12 @@ export async function createContactDetail(
         deletedAt: null,
       },
     });
-
-    if (existingDetail) {
-      const scopeDesc = data.contactId && data.companyId
-        ? 'company-specific'
-        : 'default';
-      throw new Error(
-        `A ${scopeDesc} ${data.detailType.toLowerCase()} already exists. ` +
-        `Each contact can only have one ${data.detailType.toLowerCase()} per scope.`
-      );
+    const normalizedValue = normalizeContactDetailValue(data.detailType, data.value);
+    const duplicate = existingDetails.find(
+      (detail) => normalizeContactDetailValue(detail.detailType, detail.value) === normalizedValue,
+    );
+    if (duplicate) {
+      return duplicate;
     }
   }
 
@@ -184,7 +178,7 @@ export async function createContactDetail(
       contactId: data.contactId,
       companyId: data.companyId,
     },
-  });
+  }, tx as Prisma.TransactionClient | undefined);
 
   return contactDetail;
 }
@@ -251,7 +245,7 @@ export async function updateContactDetail(
     entityName,
     summary: `Updated ${contactDetail.detailType.toLowerCase()} contact detail`,
     changeSource: 'MANUAL',
-  });
+  }, tx as Prisma.TransactionClient | undefined);
 
   return contactDetail;
 }
@@ -291,7 +285,7 @@ export async function deleteContactDetail(
     entityName,
     summary: `Deleted ${existing.detailType.toLowerCase()} contact detail "${existing.value}"`,
     changeSource: 'MANUAL',
-  });
+  }, tx as Prisma.TransactionClient | undefined);
 
   return contactDetail;
 }
@@ -537,7 +531,7 @@ export async function toggleContactPoc(
       summary: `Set ${contact.fullName} as Point of Contact`,
       changeSource: 'MANUAL',
       metadata: { isPoc, contactId },
-    });
+    }, tx as Prisma.TransactionClient | undefined);
     return;
   }
 
@@ -562,7 +556,7 @@ export async function toggleContactPoc(
       : `Removed ${contact.fullName} as Point of Contact`,
     changeSource: 'MANUAL',
     metadata: { isPoc, contactId },
-  });
+  }, tx as Prisma.TransactionClient | undefined);
 }
 
 /**
