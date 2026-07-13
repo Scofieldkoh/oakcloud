@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-14
 
-**Status:** Approved
+**Status:** Approved; revised after implementation-readiness review
 
 ## Objective
 
@@ -37,11 +37,11 @@ The identity service produces a comparison-only `canonicalName`; display values 
 Normalization must:
 
 - Apply Unicode NFKC normalization.
-- Apply locale-independent Unicode-aware case normalization.
+- Apply Unicode Default Case Folding through one pinned implementation shared by runtime and backfill code.
 - Collapse all Unicode whitespace.
-- Remove comparison-safe punctuation and separators while preserving Unicode letters and numbers.
+- Remove characters outside Unicode letter, combining-mark, and number categories (`\p{L}`, `\p{M}`, and `\p{N}`).
 - Preserve Chinese characters and all other scripts.
-- Normalize corporate legal suffixes only for corporate comparison variants; the original legal name remains unchanged.
+- Produce a second corporate comparison form that removes only terminal legal suffix tokens from this initial list: `pte`, `private`, `ltd`, `limited`, `llp`, `llc`, `inc`, `incorporated`, `corp`, `corporation`, `co`, and `company`. Non-Latin legal suffixes are retained unless an alias is approved.
 - Keep individual and corporate namespaces separate.
 
 Examples:
@@ -79,6 +79,31 @@ The following conditions create recommendations but never merge automatically:
 
 Short Chinese names are not automatically matched through fuzzy similarity because a one-character difference can identify a different person. Exact canonical Chinese name matches remain eligible for automatic reuse.
 
+### Scores and Thresholds
+
+The scoring contract is deterministic:
+
+- Matching normalized identification type/number: `1.00`, automatic reuse.
+- Matching normalized corporate UEN: `1.00`, automatic reuse.
+- Approved alias: `1.00`, automatic reuse.
+- Exact tenant/contact-type/canonical-name match: `1.00`, automatic reuse.
+- Corporate names differing only by an allowed terminal legal suffix: `0.99`, automatic reuse.
+- Other fuzzy names: recommendation only when similarity is at least `0.93`, the canonical name contains at least five Unicode code points, both names use the same script class, and any token guard passes.
+- Short CJK names below five code points: exact matching or an approved alias only; fuzzy similarity never triggers automatic reuse.
+- Scores below `0.93`: no recommendation.
+
+Identifier conflicts override every name score. Mixed-script confusables and transliterations are not treated as equivalent automatically.
+
+### Legitimate Same-Name Contacts
+
+Exact name-only reuse remains the default, including for individuals, but user-facing creation paths provide an escape hatch:
+
+- Manual and company-level creation show the proposed existing contact and allow `Use existing` or `Create separate contact`.
+- BizFile review shows the proposed contact beside each officer or shareholder and allows the reviewer to create a separate contact before confirmation.
+- Document Vault counterparties are corporate contacts and reuse exact canonical corporate names automatically on approval.
+- `Create separate contact` requires explicit confirmation, records the override reason, and suppresses that pair as a duplicate recommendation until either identity fingerprint changes.
+- A later conflicting identifier never enriches or reuses the name-only match; it creates a conflict for review.
+
 ### Master Selection
 
 The recommended master is selected in this order:
@@ -103,23 +128,59 @@ The centralized identity service is used by:
 Each creation request follows this flow:
 
 1. Validate and normalize identifiers and the canonical name.
-2. Acquire a short PostgreSQL transaction-scoped advisory lock derived from tenant, contact type, and canonical name or strong identifier.
-3. Recheck matching contacts inside the transaction.
-4. Reuse the deterministic match or create one new contact.
-5. Return confidence, matching reasons, and any reviewable duplicate group.
-6. Preserve or learn approved aliases where the existing vendor/customer workflow requires them.
+2. Build lock keys for tenant/contact type/canonical name and every available normalized identifier.
+3. Acquire all PostgreSQL transaction-scoped advisory locks in sorted order. The canonical-name lock is always acquired; identifier locks are additional, never alternatives.
+4. Recheck matching contacts inside the transaction.
+5. Reuse the deterministic match or create one new contact.
+6. Enrich the reused or newly created contact from validated source data without overwriting conflicting non-empty values.
+7. Return confidence, matching reasons, captured-field results, conflicts, and any reviewable duplicate group.
+8. Preserve or learn approved aliases where the existing vendor/customer workflow requires them.
 
 This lock prevents simultaneous document approvals or imports from creating the same canonical contact concurrently.
 
+## Source Data Capture and Enrichment
+
+Every creation path supplies one typed contact identity candidate containing all available fields:
+
+- Contact type, first name, last name, full or corporate name, and alias.
+- Identification type and identification number, or corporate UEN/registration number.
+- Nationality, date of birth, and full address.
+- Email and phone contact details.
+- Source type, source record ID, extraction confidence, and the user who confirmed the source.
+
+Identifier normalization is type-specific. All identifiers receive NFKC normalization, trimming, and uppercase comparison. NRIC, FIN, and Singapore UEN comparison additionally removes spaces and hyphens. Passport and `OTHER` identifiers preserve internal punctuation after whitespace normalization. Values containing mask characters, known placeholder phrases, or too few visible alphanumeric characters are not deterministic keys.
+
+Source-specific requirements:
+
+- BizFile passes every available officer/shareholder identifier, identification type, nationality, address, and corporate registration number instead of passing name alone. Masked or placeholder identifiers are retained in source metadata but are not used as deterministic IDs.
+- Document extraction adds typed counterparty fields for identification type, identification number or UEN, address, email, and phone. A validated `DocumentRevision.counterpartyIdentity` JSON field persists these draft values plus per-field confidence so the reviewer can correct them and approval can pass them to the identity service.
+- Manual and company-level creation pass all entered identity and contact-detail fields through the same service.
+- Other future importers must use the typed candidate rather than calling `prisma.contact.create` directly.
+
+Only identifiers that pass format validation and the configured extraction-confidence threshold of `0.90` may become deterministic match keys. Lower-confidence values remain visible for review but do not populate the canonical contact automatically.
+
+When a contact is reused, validated source data fills empty master fields. Existing non-empty values are never silently overwritten. Equal normalized contact details are consolidated; new distinct email or phone values are added. Conflicting identifiers, names, dates of birth, or addresses are returned for review. Every enrichment records its source and changed fields in the audit log.
+
 ## Persistence and Backfill
 
-Add a nullable `canonicalName` field to `Contact` and an index covering tenant, contact type, deletion state, and canonical name. New and updated contacts always populate it.
+Add a nullable `canonicalName` field to `Contact` and an index covering tenant, contact type, deletion state, and canonical name. New and updated contacts always populate it. Add PostgreSQL `pg_trgm` support and an index for bounded fuzzy recommendation lookup; exact matching continues to use the canonical-name index.
 
 Backfill existing contacts in bounded batches through the application normalizer so the stored value exactly matches runtime behavior for every script. The backfill is idempotent and reports processed, updated, skipped, and failed counts.
 
+Rollout is staged:
+
+1. Add the nullable field and indexes.
+2. Deploy writes plus a temporary dual-read fallback that computes canonical names for legacy null rows.
+3. Run the resumable backfill and verify that no eligible active contacts remain null.
+4. Remove the dual-read fallback and make `canonicalName` required in a later migration.
+
 The migration does not add a unique name constraint because different people or companies can legitimately have the same name and existing duplicates must remain deployable. Existing duplicate groups are resolved through review.
 
-Rejected recommendations are stored as tenant-scoped pair decisions using stable, sorted contact IDs. A rejection suppresses the same pair until one record's identity fields or canonical name changes, at which point the pair becomes eligible for recalculation.
+Rejected recommendations are stored as tenant-scoped pair decisions using stable, sorted contact IDs plus a fingerprint for each contact. The fingerprint hashes canonical name, contact type, normalized identifiers, date of birth, address, and normalized contact details. A rejection is suppressed only while both fingerprints remain unchanged.
+
+Recommendation discovery avoids all-pairs scans. Exact groups use indexed canonical names and identifiers. Fuzzy candidates use indexed trigram lookup, contact type, script class, and length bounds, then run the pure scorer on the bounded result set. Results are paginated and computed per tenant.
+
+Add an immutable `ContactMergeOperation` ledger containing an idempotency key, tenant, master contact ID and snapshot, source contact IDs and snapshots, fingerprints, field decisions, moved-record counts, matching reasons, approving user, and timestamp. Source IDs are stored as values rather than foreign keys because approved merged source contacts are hard-deleted.
 
 ## Duplicate Review Experience
 
@@ -134,37 +195,41 @@ Each group shows:
 - Identifier conflicts that block approval.
 - The recommended master and controls to choose another master.
 
-The reviewer may approve the merge, reject the recommendation, or leave it pending. Conflicting non-empty fields are presented for explicit selection. Non-empty master fields are retained by default; missing master fields are filled from duplicates.
+The reviewer may approve the merge, reject the recommendation, or leave it pending. Conflicting non-empty fields are presented for explicit selection. Non-empty master fields are retained by default; missing master fields are filled from duplicates. A group of two or more duplicate sources is approved as one atomic group merge, not as sequential pair merges.
 
 The interface uses existing Button, Modal, confirmation, responsive card, table, toast, and permission patterns from the design guidelines. Interactive controls meet the existing mobile touch-target and keyboard-accessibility requirements.
 
 ## Merge Transaction
 
-Approval recalculates the recommendation and verifies tenant, permission, record versions, deletion state, and identifier conflicts immediately before mutation.
+Approval recalculates the recommendation and verifies tenant, permission, `updatedAt` snapshots, deletion state, and identifier conflicts immediately before mutation. The request includes a client-generated idempotency key protected by a unique database constraint. Repeating a completed request returns the existing merge result; a competing request with changed membership is rejected as stale.
 
 One database transaction:
 
 1. Applies the approved field selections to the master.
-2. Reassigns or consolidates `CompanyContact` rows without violating the company/contact/relationship unique constraint.
-3. Reassigns `CompanyOfficer`, `CompanyShareholder`, and `CompanyCharge` references.
-4. Reassigns and consolidates contact details while preserving primary and purpose metadata.
-5. Reassigns note tabs, workflow communication entries, and workflow milestone approval contacts.
-6. Updates document revision `vendorId` and `customerId` values.
-7. Updates vendor and customer alias `normalizedContactId` values.
-8. Soft-deletes duplicate contacts and marks them inactive.
-9. Writes audit records containing the master, merged IDs, field decisions, moved relationship counts, matching reasons, and approving user.
+2. Consolidates active `CompanyContact` rows by company and relationship. The oldest active row survives; `isPrimary` and `isPoc` are OR-combined. Soft-deleted relationship rows are discarded with the source.
+3. Reassigns `CompanyOfficer`, `CompanyShareholder`, and `CompanyCharge` references. Their denormalized name fields remain unchanged as historical snapshots.
+4. Consolidates contact details by tenant, company scope, detail type, and normalized value. Purposes are unioned, `isPoc` is OR-combined, and an existing master primary wins; otherwise the oldest primary wins. Distinct values are retained.
+5. Reassigns note tabs without merging content, preserving each note and ordering master notes before source notes.
+6. Reassigns workflow communication entries and workflow milestone approval contacts.
+7. Updates every non-foreign-key pointer, including document revision `vendorId` and `customerId`, and vendor/customer alias `normalizedContactId`. Document revision display names remain historical snapshots.
+8. Consolidates aliases by tenant, company scope, and canonical raw name; the highest confidence survives and points to the master.
+9. Asserts that no known foreign-key or non-foreign-key reference still points to a source contact.
+10. Writes the immutable `ContactMergeOperation` ledger and an audit event using a new `MERGE` audit action inside the same transaction.
+11. Hard-deletes all approved source contacts. Existing audit records remain because they store entity IDs as values rather than contact foreign keys.
 
-Soft-deleted duplicates remain traceable. A merge does not physically delete source records or their audit history.
+The merge ledger preserves traceability after hard deletion. Hard deletion is irreversible through the normal restore-contact function, so the confirmation explicitly states that only the selected master will remain.
 
 ## Error Handling and Safety
 
 - A merge is atomic. Any validation, relationship, or database error rolls back all changes.
 - A stale recommendation is recalculated before approval, and the UI asks for review again if material inputs changed.
+- Duplicate submissions are idempotent; concurrent approvals lock the same contacts in sorted ID order.
 - Conflicting strong identifiers block approval until the reviewer explicitly selects or clears the correct value.
 - Cross-tenant candidates and mutations are rejected.
 - A failed review request remains open and displays a recoverable error.
 - Creation-path matching failures do not silently bypass identity controls. They return an actionable error and leave the transaction unchanged.
 - Exact high-confidence reuse does not imply automatic merging of already duplicated records.
+- Hard deletion occurs only after reference assertions, merge-ledger creation, and audit creation succeed in the same transaction.
 
 ## API and Service Boundaries
 
@@ -174,7 +239,7 @@ The implementation separates responsibilities:
 - A pure scoring module owns match reasons, confidence, conflict detection, and master ranking.
 - A contact identity service owns tenant-scoped lookup, advisory locking, reuse, and creation.
 - A duplicate recommendation service owns grouped discovery and rejected-pair suppression.
-- A merge service owns preview validation and the merge transaction.
+- A merge service owns preview validation, reference inventory, idempotency, ledger creation, and the merge transaction.
 - Thin API routes own authentication, permission checks, validation, and response mapping.
 - Contact hooks and review components own client state and presentation.
 
@@ -182,9 +247,9 @@ Vendor and customer resolution retain their alias behavior but delegate name nor
 
 ## Permissions and Auditing
 
-Reading recommendations requires contact read access. Approving or rejecting recommendations requires contact update access. Merge operations also verify access to every affected tenant-scoped record.
+Reading recommendations requires contact read access plus workspace-wide company access. Approving or rejecting recommendations requires contact update access and either workspace-administrator status or explicit all-company access. Company-scoped users cannot view duplicate groups containing hidden relationships or execute merges. Merge operations verify access to every affected tenant-scoped record.
 
-Creation, reuse, recommendation rejection, and merge approval produce auditable events using existing audit infrastructure. Audit metadata records whether a contact was created, reused by identifier, reused by name, resolved by alias, or merged after approval.
+Creation, reuse, enrichment, separate-contact overrides, recommendation rejection, and merge approval produce auditable events using existing audit infrastructure. Add a `MERGE` audit action. Audit metadata records whether a contact was created, reused by identifier, reused by name, resolved by alias, enriched from a source, or merged after approval. Merge audit creation uses the transaction-aware audit API.
 
 ## Test Strategy
 
@@ -200,17 +265,22 @@ Creation, reuse, recommendation rejection, and merge approval produce auditable 
 - Identifier conflict detection.
 - Deterministic master ranking.
 - Rejected-pair invalidation when identity data changes.
+- Exact score thresholds and mixed-script safeguards.
+- Identifier validation, masked-ID rejection, and extraction-confidence handling.
 
 ### Service and Integration Tests
 
 - Manual creation and company quick creation use the identity service.
 - Both BizFile confirmation paths reuse Chinese name-only contacts.
+- BizFile and Document Vault capture and enrich valid IDs and other available contact data.
 - Document Vault extraction resolves without creating, and approval reuses or creates exactly one corporate contact.
 - Accounts-payable vendor and accounts-receivable customer paths behave consistently.
 - Simultaneous approvals result in one canonical contact.
 - Tenant and permission boundaries are enforced.
 - Existing vendor/customer aliases remain functional with Unicode names.
 - Backfill is batched and idempotent.
+- Dual-read rollout behavior and bounded indexed recommendation lookup.
+- Explicit separate-contact overrides prevent incorrect same-name reuse.
 
 ### Merge Tests
 
@@ -218,7 +288,9 @@ Creation, reuse, recommendation rejection, and merge approval produce auditable 
 - Document revision IDs and alias pointers are updated.
 - Conflicting company relationships do not violate uniqueness.
 - Field selections and missing-field enrichment are applied.
-- Source records are soft-deleted only after all references move.
+- Source records are hard-deleted only after all references move and reference assertions pass.
+- Merge ledger snapshots preserve deleted-source traceability.
+- Repeated or concurrent approvals are idempotent.
 - Audit metadata is complete.
 - Any forced failure rolls back the whole merge.
 - A stale recommendation cannot be approved without recalculation.
@@ -241,5 +313,5 @@ Update the existing documentation index and relevant contact/database/API refere
 - Transliteration-based automatic identity matching.
 - Automatic simplified/traditional Chinese conversion.
 - Cross-tenant contact matching or merging.
-- Physical deletion of merged contacts.
+- Physical deletion of contacts except source records in an explicitly approved merge.
 - AI or embedding-based matching.
