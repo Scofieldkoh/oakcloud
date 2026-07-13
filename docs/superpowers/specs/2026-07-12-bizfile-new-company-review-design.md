@@ -254,3 +254,72 @@ No generated imagery is needed because this is an existing product surface using
 - Adding field-level document coordinates or click-to-highlight source citations, because the current extraction schema does not provide page/box provenance.
 - Changing extraction models or prompts.
 - Altering company-domain fields that are not represented by the BizFile extraction schema.
+
+## Review Workspace Enhancement Addendum (2026-07-13)
+
+### Goal
+
+Make the desktop review workspace less horizontally constrained while preserving a continuously visible, side-by-side BizFile viewer. Align the document and editor content heights, increase the working area, remove low-value extraction metadata, and allow users to switch review sections quickly with either pointer or keyboard controls.
+
+### Desktop Layout
+
+- The BizFile viewer and review editor remain side by side at desktop widths.
+- Replace the 208px review-section sidebar with a compact tab strip across the top of the editor. Use concise labels: Entity, Addresses, Activities, Capital, Officers, Shareholders, Auditor, Compliance, Charges, and Document.
+- Each tab retains a text label and semantic state icon. Tabs with validation issues show their issue count. The selected tab scrolls into view when necessary.
+- Previous and next icon buttons sit beside the tab strip so switching sections is always available without scrolling the tab list.
+- The tab strip and editor form share the right panel width. Officer and other field grids use two columns only when the available editor width can support them; otherwise they stack to one column.
+- The document viewer and the right-side review content, excluding the action footer, have identical heights. The footer is a distinct row below the review content and does not reduce or alter that equality.
+- Increase the review content area from the current `70vh`/520px minimum to `105vh`/780px minimum, preserving the requested 1.5-times scale. The page may scroll vertically while each panel keeps its existing internal scrolling behavior.
+
+### Compact Header
+
+Keep only the `Review extracted information` heading and the current workflow status (`Needs attention`, `Review in progress`, or `Ready to save`). Remove these visible lines:
+
+- Section, reviewed, issue, and record totals.
+- AI model, provider, usage, and cost metadata.
+- The generic AI accuracy warning.
+
+The underlying validation and AI metadata may remain available to application logic, but the removed copy must not occupy review-screen space.
+
+### Section Navigation
+
+- Clicking a tab selects its section without changing or resetting draft data.
+- The previous and next buttons move one section at a time and wrap between the first and last sections.
+- `Ctrl + <` selects the previous section and `Ctrl + >` selects the next section. The equivalent macOS Command modifier may continue to follow the workspace's existing shortcut convention.
+- Section shortcuts do not run when focus is inside an input, textarea, select, or content-editable element, preventing interference with data entry.
+- Previous and next buttons expose descriptive accessible names and shortcut hints. Tabs expose selected, validation, and reviewed state through accessible semantics rather than color alone.
+- On narrow viewports, retain the existing Document/Review switch and compact section selector instead of forcing the desktop tab strip into the mobile layout.
+
+### Optional Cessation Date
+
+The extraction contract permits `cessationDate: null` for a current officer, while the current review schema accepts only a date string or `undefined`. This contract mismatch is the cause of the erroneous required-looking validation message.
+
+- Treat `null`, `undefined`, and a blank cessation date as the same absent optional value.
+- Do not show an error or block saving when an officer has no cessation date.
+- If a cessation date is entered, continue to require a valid ISO calendar date.
+- Normalize an absent cessation date out of the submitted officer record so downstream processing receives the established optional representation.
+
+### Component Boundaries
+
+- Keep draft ownership, validation aggregation, and shortcut registration in `BizFileReviewWorkspace`.
+- Extract or isolate the desktop tab-strip behavior sufficiently for focused interaction tests, without introducing a new dependency.
+- Keep section field rendering in `BizFileReviewSections`; only responsive grid classes should change there when necessary.
+- Keep the upload page responsible for the overall workspace height contract and the review workspace responsible for equal-height internal panel composition.
+- Do not change the existing-company diff preview.
+
+### Error Handling and Accessibility
+
+- Existing validation focus behavior continues to select the affected section and focus the first invalid control.
+- A selected issue tab must remain visible after automatic section selection.
+- Save status and server errors remain visible in the action footer even though extraction metadata is removed.
+- Keyboard section navigation must call `preventDefault` only when it handles the configured shortcut.
+- Focus, labels, semantic selected state, and light/dark theme behavior continue to follow the Oakcloud design guideline.
+
+### Testing and Verification
+
+- Add a validation regression test proving an officer with `cessationDate: null` is valid and normalizes to an absent key.
+- Add component tests proving the removed metadata copy is absent.
+- Add component tests for tab selection, previous/next buttons, shortcut navigation, wrap-around, automatic selection state, and shortcut suppression while editing a field.
+- Assert the desktop layout exposes equal-height content regions with the footer outside the measured editor panel.
+- Update browser tests for the compact desktop tabs and verify no horizontal page overflow at desktop and mobile viewports.
+- Run focused validation and workspace tests, browser tests, type checking, and the production build.
