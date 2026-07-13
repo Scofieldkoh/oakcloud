@@ -44,6 +44,21 @@ CREATE TABLE "contact_merge_operations" (
     CONSTRAINT "contact_merge_operations_pkey" PRIMARY KEY ("id")
 );
 
+-- Reject mutation of recorded merge operations while allowing new ledger entries.
+CREATE FUNCTION "prevent_contact_merge_operation_mutation"()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RAISE EXCEPTION 'contact_merge_operations is append-only';
+END;
+$$;
+
+CREATE TRIGGER "contact_merge_operations_append_only"
+BEFORE UPDATE OR DELETE ON "contact_merge_operations"
+FOR EACH ROW
+EXECUTE FUNCTION "prevent_contact_merge_operation_mutation"();
+
 -- Exact-match lookup for active contacts within a tenant and contact type.
 CREATE INDEX "contacts_tenantId_contactType_deletedAt_canonicalName_idx"
     ON "contacts"("tenantId", "contactType", "deletedAt", "canonicalName");
