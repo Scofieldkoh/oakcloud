@@ -89,9 +89,10 @@ export async function updateContact(
   data: UpdateContactInput,
   params: TenantAwareParams
 ): Promise<Contact> {
-  const { tenantId, userId } = params;
+  const { tenantId, userId, tx } = params;
+  const db = tx ?? prisma;
 
-  const existing = await prisma.contact.findFirst({
+  const existing = await db.contact.findFirst({
     where: { id: data.id, tenantId },
   });
 
@@ -127,7 +128,7 @@ export async function updateContact(
   updateData.fullName = newFullName;
   updateData.canonicalName = canonicalizeContactName(newFullName);
 
-  const contact = await prisma.contact.update({
+  const contact = await db.contact.update({
     where: { id: data.id },
     data: updateData,
   });
@@ -141,7 +142,7 @@ export async function updateContact(
     entityName: contact.fullName,
     summary: `Updated contact "${contact.fullName}"`,
     changeSource: 'MANUAL',
-  });
+  }, tx as Prisma.TransactionClient | undefined);
 
   return contact;
 }

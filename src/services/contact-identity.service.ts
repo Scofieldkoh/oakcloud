@@ -4,6 +4,7 @@ import { scoreContactIdentityMatch } from '@/lib/contact-identity-matching';
 import {
   buildContactIdentityFingerprint,
   canonicalizeContactName,
+  canonicalizeCorporateComparisonName,
   isDeterministicIdentifier,
   normalizeContactDetailValue,
   normalizeContactIdentifier,
@@ -129,17 +130,91 @@ async function findCandidates(
 function rankMatches(
   candidate: ContactIdentityCandidate,
   contacts: ContactWithIdentityRelations[],
+  forceContactId?: string,
 ): Array<{ contact: ContactWithIdentityRelations; record: ContactIdentityRecord; match: ContactMatchResult }> {
   return contacts
+    .filter(
+      (contact) =>
+        contact.id === forceContactId || isPlausibleCandidate(candidate, toIdentityRecord(contact)),
+    )
     .map((contact) => {
       const record = toIdentityRecord(contact);
-      return { contact, record, match: scoreContactIdentityMatch(candidate, record) };
+      const pairConflict = identificationPairConflict(candidate, record);
+      const match = pairConflict
+        ? {
+            contactId: record.id,
+            score: 0,
+            automatic: false,
+            blockedByIdentifierConflict: true,
+            reasons: [],
+            conflicts: [pairConflict],
+          } satisfies ContactMatchResult
+        : scoreContactIdentityMatch(candidate, record);
+      return { contact, record, match };
     })
     .sort((left, right) => {
       const identifierLeft = Number(left.match.reasons.includes('IDENTIFIER') || left.match.reasons.includes('CORPORATE_UEN'));
       const identifierRight = Number(right.match.reasons.includes('IDENTIFIER') || right.match.reasons.includes('CORPORATE_UEN'));
       return identifierRight - identifierLeft || right.match.score - left.match.score || left.contact.createdAt.getTime() - right.contact.createdAt.getTime() || left.contact.id.localeCompare(right.contact.id);
     });
+}
+
+function isPlausibleCandidate(
+  incoming: ContactIdentityCandidate,
+  existing: ContactIdentityRecord,
+): boolean {
+  const incomingName = canonicalizeContactName(identityName(incoming));
+  const existingName = canonicalizeContactName(identityName(existing));
+  const incomingAlias = canonicalizeContactName(incoming.alias);
+  const existingAlias = canonicalizeContactName(existing.alias);
+  if (incomingName && (
+    (existingName && incomingName === existingName) ||
+    (existingAlias && incomingName === existingAlias) ||
+    (incomingAlias && incomingAlias === existingName)
+  )) {
+    return true;
+  }
+  const incomingCorporate = canonicalizeCorporateComparisonName(incoming.corporateName);
+  const existingCorporate = canonicalizeCorporateComparisonName(existing.corporateName);
+  if (
+    incoming.contactType === 'CORPORATE' &&
+    incomingCorporate &&
+    incomingCorporate === existingCorporate
+  ) {
+    return true;
+  }
+
+  const incomingId = hasUsableIdentificationNumber(incoming)
+    ? normalizeContactIdentifier(incoming.identificationNumber, incoming.identificationType)
+    : null;
+  const existingHasId = isDeterministicIdentifier(
+    existing.identificationNumber,
+    existing.identificationType,
+  );
+  const existingId = existingHasId
+    ? normalizeContactIdentifier(existing.identificationNumber, existing.identificationType)
+    : null;
+  if (incomingId && incomingId === existingId) return true;
+  if (
+    incomingId &&
+    existing.identificationType &&
+    existing.identificationType !== incoming.identificationType
+  ) {
+    return false;
+  }
+
+  const incomingUen = hasUsableCorporateUen(incoming)
+    ? normalizeContactIdentifier(incoming.corporateUen, 'UEN')
+    : null;
+  const existingHasUen = isDeterministicIdentifier(existing.corporateUen, 'UEN');
+  const existingUen = existingHasUen
+    ? normalizeContactIdentifier(existing.corporateUen, 'UEN')
+    : null;
+  if (incomingUen && incomingUen === existingUen) return true;
+
+  // Name-only records remain eligible for fuzzy scoring. Differing strong keys are not
+  // plausible unless one of the shared name/alias/corporate rules above qualified them.
+  return !(incomingId && existingHasId) && !(incomingUen && existingHasUen);
 }
 
 export async function previewContactIdentity(
@@ -154,7 +229,11 @@ export async function previewContactIdentity(
     .find((match) => match.score > 0 || match.conflicts.length > 0) ?? null;
 }
 
-function buildLockKeys(candidate: ContactIdentityCandidate, tenantId: string): string[] {
+function buildLockKeys(
+  candidate: ContactIdentityCandidate,
+  tenantId: string,
+  decision: ContactResolutionDecision,
+): string[] {
   const prefix = `contact-identity:${tenantId}:${candidate.contactType}`;
   const keys = [`${prefix}:name:${canonicalizeContactName(identityName(candidate))}`];
   if (hasUsableIdentificationNumber(candidate)) {
@@ -162,6 +241,9 @@ function buildLockKeys(candidate: ContactIdentityCandidate, tenantId: string): s
   }
   if (hasUsableCorporateUen(candidate)) {
     keys.push(`${prefix}:uen:${normalizeContactIdentifier(candidate.corporateUen, 'UEN')}`);
+  }
+  if (decision.action === 'REUSE') {
+    keys.push(`${prefix}:contact:${decision.contactId}`);
   }
   return [...new Set(keys)].sort();
 }
@@ -171,13 +253,40 @@ function meetsDeterministicConfidence(confidence: number | undefined): boolean {
 }
 
 function hasUsableIdentificationNumber(candidate: ContactIdentityCandidate): boolean {
-  return meetsDeterministicConfidence(candidate.confidence?.identificationNumber) &&
+  return Boolean(candidate.identificationType) &&
+    meetsDeterministicConfidence(candidate.confidence?.identificationNumber) &&
     isDeterministicIdentifier(candidate.identificationNumber, candidate.identificationType);
 }
 
 function hasUsableCorporateUen(candidate: ContactIdentityCandidate): boolean {
   return meetsDeterministicConfidence(candidate.confidence?.corporateUen) &&
     isDeterministicIdentifier(candidate.corporateUen, 'UEN');
+}
+
+function identificationPairConflict(
+  incoming: ContactIdentityCandidate,
+  existing: ContactIdentityRecord,
+): ContactIdentityConflict | null {
+  if (!hasUsableIdentificationNumber(incoming)) return null;
+  const incomingType = incoming.identificationType!;
+  const incomingNumber = normalizeContactIdentifier(incoming.identificationNumber, incomingType);
+  if (existing.identificationType && existing.identificationType !== incomingType) {
+    return conflict(
+      'identificationNumber',
+      `${incomingType}:${incomingNumber}`,
+      `${existing.identificationType}:${existing.identificationNumber ?? ''}`,
+    );
+  }
+  if (existing.identificationNumber) {
+    const existingNumber = normalizeContactIdentifier(
+      existing.identificationNumber,
+      existing.identificationType ?? incomingType,
+    );
+    if (incomingNumber !== existingNumber) {
+      return conflict('identificationNumber', incomingNumber, existingNumber);
+    }
+  }
+  return null;
 }
 
 function conflict(
@@ -209,8 +318,6 @@ function buildEnrichment(
     ['lastName', candidate.lastName, existing.lastName],
     ['corporateName', candidate.corporateName, existing.corporateName],
     ['alias', candidate.alias, existing.alias],
-    ['identificationType', hasUsableIdentificationNumber(candidate) ? candidate.identificationType : null, existing.identificationType],
-    ['identificationNumber', hasUsableIdentificationNumber(candidate) ? candidate.identificationNumber : null, existing.identificationNumber],
     ['corporateUen', hasUsableCorporateUen(candidate) ? candidate.corporateUen : null, existing.corporateUen],
     ['nationality', candidate.nationality, existing.nationality],
     ['dateOfBirth', incomingDob, existing.dateOfBirth],
@@ -229,8 +336,59 @@ function buildEnrichment(
       conflicts.push(conflict(field as ContactIdentityConflict['field'], incoming, current));
     }
   }
+
+  if (hasUsableIdentificationNumber(candidate)) {
+    const incomingType = candidate.identificationType!;
+    const incomingNumber = candidate.identificationNumber!;
+    const existingType = existing.identificationType;
+    const existingNumber = existing.identificationNumber;
+    if (isBlank(existingType) && isBlank(existingNumber)) {
+      data.identificationType = incomingType;
+      data.identificationNumber = incomingNumber;
+      fields.push('identificationType', 'identificationNumber');
+    } else if (existingType === incomingType && isBlank(existingNumber)) {
+      data.identificationNumber = incomingNumber;
+      fields.push('identificationNumber');
+    } else if (
+      isBlank(existingType) &&
+      normalizeContactIdentifier(existingNumber, incomingType) ===
+        normalizeContactIdentifier(incomingNumber, incomingType)
+    ) {
+      data.identificationType = incomingType;
+      fields.push('identificationType');
+    }
+  }
+
+  if (fields.some((field) => field === 'firstName' || field === 'lastName' || field === 'corporateName')) {
+    const updatedIdentity: ContactIdentityCandidate = {
+      source: candidate.source,
+      contactType: existing.contactType,
+      firstName: (data.firstName as string | null | undefined) ?? existing.firstName,
+      lastName: (data.lastName as string | null | undefined) ?? existing.lastName,
+      corporateName: (data.corporateName as string | null | undefined) ?? existing.corporateName,
+    };
+    const updatedFullName = fullName(updatedIdentity);
+    data.fullName = updatedFullName;
+    data.canonicalName = canonicalizeContactName(identityName(updatedIdentity));
+    fields.push('fullName', 'canonicalName');
+  }
   return { data, fields, conflicts };
 }
+
+const identityRelationsInclude = {
+  contactDetails: {
+    where: { deletedAt: null },
+    select: { detailType: true, value: true, companyId: true },
+  },
+  _count: {
+    select: {
+      companyRelations: true,
+      officerPositions: true,
+      shareholdings: true,
+      contactDetails: true,
+    },
+  },
+} as const;
 
 function sourceChangeSource(source: ContactIdentityCandidate['source']): 'MANUAL' | 'BIZFILE_UPLOAD' | 'API' {
   if (source === 'BIZFILE') return 'BIZFILE_UPLOAD';
@@ -309,11 +467,29 @@ async function resolveInTransaction(
   params: TenantAwareParams,
   tx: PrismaTransactionClient,
 ): Promise<ResolveContactIdentityResult> {
-  for (const lockKey of buildLockKeys(candidate, params.tenantId)) {
+  for (const lockKey of buildLockKeys(candidate, params.tenantId, decision)) {
     await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
   }
-  const contacts = await findCandidates(candidate, params.tenantId, tx);
-  const ranked = rankMatches(candidate, contacts);
+  let contacts = await findCandidates(candidate, params.tenantId, tx);
+  if (decision.action === 'REUSE') {
+    const selectedContact = await tx.contact.findFirst({
+      where: {
+        id: decision.contactId,
+        tenantId: params.tenantId,
+        contactType: candidate.contactType,
+        deletedAt: null,
+        isActive: true,
+      },
+      include: identityRelationsInclude,
+    }) as ContactWithIdentityRelations | null;
+    if (!selectedContact) throw new Error('Selected contact was not found in this tenant');
+    contacts = [...contacts.filter((contact) => contact.id !== decision.contactId), selectedContact];
+  }
+  const ranked = rankMatches(
+    candidate,
+    contacts,
+    decision.action === 'REUSE' ? decision.contactId : undefined,
+  );
   const allConflicts = ranked.flatMap(({ match }) => match.conflicts);
   let selected = decision.action === 'REUSE'
     ? ranked.find(({ contact }) => contact.id === decision.contactId)
@@ -325,13 +501,22 @@ async function resolveInTransaction(
   if (decision.action === 'CREATE_SEPARATE') selected = undefined;
 
   if (!selected) {
+    const reviewMatch = ranked.find(({ match }) => match.score > 0 || match.conflicts.length > 0);
+    if (decision.action === 'CREATE_SEPARATE') {
+      if (!reviewMatch) {
+        throw new Error('A current review match is required to create a separate contact');
+      }
+    }
     const created = await createNewContact(candidate, params, tx);
     const enrichedFields = await addDistinctDetails(candidate, { ...created, contactDetails: [] }, params, tx);
-    const reviewMatch = ranked.find(({ match }) => match.score > 0 || match.conflicts.length > 0);
-    if (decision.action === 'CREATE_SEPARATE' && reviewMatch) {
-      const ordered = [reviewMatch.contact.id, created.id].sort();
+    if (decision.action === 'CREATE_SEPARATE') {
+      const target = reviewMatch;
+      if (!target) {
+        throw new Error('A current review match is required to create a separate contact');
+      }
+      const ordered = [target.contact.id, created.id].sort();
       const fingerprints = new Map([
-        [reviewMatch.contact.id, buildContactIdentityFingerprint(reviewMatch.record)],
+        [target.contact.id, buildContactIdentityFingerprint(target.record)],
         [created.id, buildContactIdentityFingerprint({ ...candidate })],
       ]);
       await tx.contactDuplicateDecision.create({

@@ -32,7 +32,7 @@ vi.mock('@/services/contact-detail.service', () => ({ createContactDetail: vi.fn
 import { createAuditLog } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
 import { createContactDetail } from '@/services/contact-detail.service';
-import { createContact } from '@/services/contact.service';
+import { createContact, updateContact } from '@/services/contact.service';
 import {
   previewContactIdentity,
   resolveOrCreateContact,
@@ -333,5 +333,187 @@ describe('contact identity service', () => {
     expect(prisma.contact.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ canonicalName: 'wang小明' }),
     });
+  });
+
+  it('ignores unrelated contacts with different strong identifiers during preview', async () => {
+    vi.mocked(prisma.contact.findMany).mockResolvedValue([
+      existingContact({
+        id: 'unrelated',
+        firstName: 'Unrelated Person',
+        fullName: 'Unrelated Person',
+        canonicalName: 'unrelatedperson',
+        identificationType: 'NRIC',
+        identificationNumber: 'S7654321A',
+      }),
+    ] as never);
+
+    await expect(
+      previewContactIdentity(
+        candidate({ identificationType: 'NRIC', identificationNumber: 'S1234567A' }),
+        'tenant-1',
+      ),
+    ).resolves.toBeNull();
+  });
+
+  it('does not attach unrelated identifier conflicts to a newly created contact', async () => {
+    tx.contact.findMany.mockResolvedValue([
+      existingContact({
+        id: 'unrelated',
+        firstName: 'Unrelated Person',
+        fullName: 'Unrelated Person',
+        canonicalName: 'unrelatedperson',
+        identificationType: 'NRIC',
+        identificationNumber: 'S7654321A',
+      }),
+    ]);
+
+    const result = await resolveOrCreateContact(
+      candidate({ identificationType: 'NRIC', identificationNumber: 'S1234567A' }),
+      { action: 'AUTO' },
+      params,
+    );
+
+    expect(result.outcome).toBe('CREATED');
+    expect(result.match).toBeNull();
+    expect(result.conflicts).toEqual([]);
+  });
+
+  it('updates display and canonical names when identifier reuse fills a blank name', async () => {
+    tx.contact.findMany.mockResolvedValue([
+      existingContact({
+        firstName: '',
+        lastName: null,
+        fullName: 'Unknown',
+        canonicalName: '',
+        identificationType: 'NRIC',
+        identificationNumber: 'S1234567A',
+      }),
+    ]);
+
+    await resolveOrCreateContact(
+      candidate({ firstName: 'Ｗａｎｇ', lastName: '小明', identificationType: 'NRIC', identificationNumber: 'S1234567A' }),
+      { action: 'AUTO' },
+      params,
+    );
+
+    expect(tx.contact.update).toHaveBeenCalledWith({
+      where: { id: 'contact-1' },
+      data: expect.objectContaining({
+        firstName: 'Ｗａｎｇ',
+        lastName: '小明',
+        fullName: 'Ｗａｎｇ 小明',
+        canonicalName: 'wang小明',
+      }),
+    });
+  });
+
+  it('updates corporate display and canonical names when identifier reuse enriches corporateName', async () => {
+    tx.contact.findMany.mockResolvedValue([
+      existingContact({
+        contactType: 'CORPORATE',
+        firstName: null,
+        corporateName: '',
+        fullName: 'Unknown Corporate',
+        canonicalName: '',
+        corporateUen: '202400001A',
+      }),
+    ]);
+
+    await resolveOrCreateContact(
+      candidate({ contactType: 'CORPORATE', firstName: null, corporateName: 'Acme Pte Ltd', corporateUen: '202400001A' }),
+      { action: 'AUTO' },
+      params,
+    );
+
+    expect(tx.contact.update).toHaveBeenCalledWith({
+      where: { id: 'contact-1' },
+      data: expect.objectContaining({ fullName: 'Acme Pte Ltd', canonicalName: 'acmepteltd' }),
+    });
+  });
+
+  it('does not combine an incoming identification number with an incompatible existing type', async () => {
+    tx.contact.findMany.mockResolvedValue([
+      existingContact({ identificationType: 'PASSPORT', identificationNumber: null }),
+    ]);
+
+    const result = await resolveOrCreateContact(
+      candidate({ identificationType: 'NRIC', identificationNumber: 'S1234567A' }),
+      { action: 'AUTO' },
+      params,
+    );
+
+    expect(result.outcome).toBe('CREATED');
+    expect(result.conflicts).toEqual([expect.objectContaining({ field: 'identificationNumber' })]);
+    expect(tx.contact.update).not.toHaveBeenCalled();
+  });
+
+  it('fills a compatible missing identification half without changing the other half', async () => {
+    tx.contact.findMany.mockResolvedValue([
+      existingContact({ identificationType: 'NRIC', identificationNumber: null }),
+    ]);
+
+    await resolveOrCreateContact(
+      candidate({ identificationType: 'NRIC', identificationNumber: 'S1234567A' }),
+      { action: 'AUTO' },
+      params,
+    );
+
+    expect(tx.contact.update).toHaveBeenCalledWith({
+      where: { id: 'contact-1' },
+      data: expect.objectContaining({ identificationNumber: 'S1234567A' }),
+    });
+    expect(tx.contact.update.mock.calls[0][0].data).not.toHaveProperty('identificationType');
+  });
+
+  it('locks explicit reuse by selected contact ID in sorted order and uses the post-lock requery', async () => {
+    const stale = existingContact({ id: 'selected', nationality: null });
+    const current = existingContact({ id: 'selected', nationality: 'Current value' });
+    tx.contact.findMany.mockResolvedValue([stale]);
+    tx.contact.findFirst.mockResolvedValue(current);
+
+    const result = await resolveOrCreateContact(
+      candidate({ nationality: 'Incoming value' }),
+      { action: 'REUSE', contactId: 'selected' },
+      params,
+    );
+
+    const lockKeys = tx.$executeRaw.mock.calls.map(([query]) => query.values[0]);
+    expect(lockKeys).toContain('contact-identity:tenant-1:INDIVIDUAL:contact:selected');
+    expect(lockKeys).toEqual([...lockKeys].sort());
+    expect(tx.contact.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'selected', tenantId: 'tenant-1', contactType: 'INDIVIDUAL', deletedAt: null, isActive: true },
+      include: expect.objectContaining({ contactDetails: expect.anything() }),
+    }));
+    expect(result.conflicts).toEqual([]);
+    expect(tx.contact.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects stale create-separate decisions with no current review match', async () => {
+    tx.contact.findMany.mockResolvedValue([]);
+
+    await expect(
+      resolveOrCreateContact(
+        candidate(),
+        { action: 'CREATE_SEPARATE', reason: 'Confirmed to be another person' },
+        params,
+      ),
+    ).rejects.toThrow('review match');
+    expect(tx.contact.create).not.toHaveBeenCalled();
+    expect(tx.contactDuplicateDecision.create).not.toHaveBeenCalled();
+  });
+
+  it('uses a supplied transaction for updateContact lookup, mutation, and audit', async () => {
+    const current = existingContact({ firstName: 'Old', fullName: 'Old' });
+    tx.contact.findFirst.mockResolvedValue(current);
+    tx.contact.update.mockResolvedValue(existingContact({ firstName: 'New', fullName: 'New' }));
+
+    await updateContact(
+      { id: 'contact-1', firstName: 'New' },
+      { ...params, tx: tx as never },
+    );
+
+    expect(tx.contact.findFirst).toHaveBeenCalledWith({ where: { id: 'contact-1', tenantId: 'tenant-1' } });
+    expect(tx.contact.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'contact-1' } }));
+    expect(createAuditLog).toHaveBeenCalledWith(expect.objectContaining({ entityId: 'contact-1' }), tx);
   });
 });
