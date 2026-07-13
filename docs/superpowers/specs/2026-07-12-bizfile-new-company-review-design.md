@@ -269,7 +269,7 @@ Make the desktop review workspace less horizontally constrained while preserving
 - Previous and next icon buttons sit beside the tab strip so switching sections is always available without scrolling the tab list.
 - The tab strip and editor form share the right panel width. Officer and other field grids use two columns only when the available editor width can support them; otherwise they stack to one column.
 - The document viewer and the right-side review content, excluding the action footer, have identical heights. The footer is a distinct row below the review content and does not reduce or alter that equality.
-- Increase the review content area from the current `70vh`/520px minimum to `105vh`/780px minimum, preserving the requested 1.5-times scale. The page may scroll vertically while each panel keeps its existing internal scrolling behavior.
+- Increase the review content area's target size from the current `70vh`/520px baseline toward the requested 1.5-times scale, but cap the content viewport at `100dvh`. On viewports shorter than the 780px target, the viewport cap takes precedence rather than forcing the content beyond the screen. Both panels keep independent internal scrolling.
 
 ### Compact Header
 
@@ -321,5 +321,6 @@ The extraction contract permits `cessationDate: null` for a current officer, whi
 - Add component tests proving the removed metadata copy is absent.
 - Add component tests for tab selection, previous/next buttons, shortcut navigation, wrap-around, automatic selection state, and shortcut suppression while editing a field.
 - Assert the desktop layout exposes equal-height content regions with the footer outside the measured editor panel.
+- Assert the equal-height content region does not exceed the dynamic viewport height.
 - Update browser tests for the compact desktop tabs and verify no horizontal page overflow at desktop and mobile viewports.
 - Run focused validation and workspace tests, browser tests, type checking, and the production build.
