@@ -24,8 +24,8 @@ The preview remains a resizable two-panel workspace:
 
 The review workspace has three persistent layers:
 
-1. A compact summary header describing the extraction result and review state.
-2. Section navigation showing completeness and validation state.
+1. A compact header containing only the review title and workflow status.
+2. Sticky section navigation showing reviewed and validation state.
 3. A sticky action footer containing upload-again, cancel, and confirm-and-save actions.
 
 The editable content is divided into these sections:
@@ -133,13 +133,15 @@ Optional fields remain visible even when extraction returns no value, allowing t
 
 ## Interaction Design
 
-The section navigator uses compact rows with section names, record counts where relevant, and one of three states: complete, needs attention, or contains errors. Selecting a section scrolls or switches the editor to that section without affecting the document viewer.
+At desktop widths, section navigation is a sticky tab strip across the top of the editor rather than a vertical sidebar. It uses concise labels: Entity, Addresses, Activities, Capital, Officers, Shareholders, Auditor, Compliance, Charges, and Document. Each tab retains a text label and semantic state icon; tabs with validation issues show their issue count. Selecting a section does not affect the document viewer or draft data, and the selected tab scrolls into view when necessary.
+
+Previous and next icon buttons beside the tab strip move one section at a time and wrap at the ends. They expose descriptive accessible labels and shortcut hints. `Ctrl + <` and `Ctrl + >` provide the same wrapped navigation unless focus is in an input, textarea, select, or content-editable element. When focus is within the tab list, Left Arrow and Right Arrow move focus and selection using a roving `tabIndex`. The navigation uses `tablist`, `tab`, and `tabpanel` semantics, and handled shortcuts alone call `preventDefault`.
 
 Scalar fields use the application's standard inputs, selects, date controls, number controls, and checkboxes. Enumerated fields use constrained selects when the accepted values are known. Codes and identifiers use a monospace value style while retaining the standard input appearance.
 
 Former names, share-capital classes, officers, shareholders, and charges are repeating row editors. Each supports add, duplicate, and remove. Destructive removal is reversible during the unsaved editing session through an inline undo affordance. Empty optional singleton groups such as auditor or mailing address remain available as editable groups rather than disappearing.
 
-The header reports the number of reviewed sections, validation issues, and repeating records. It includes a neutral warning that AI-extracted information must be verified. AI provider, model, usage, and cost metadata remains available as secondary metadata without competing with the review task.
+The compact header contains only the `Review extracted information` title and the current workflow status. Section totals, reviewed totals, issue totals, record totals, AI provider/model/usage/cost metadata, and the generic AI accuracy warning are not displayed in this workspace.
 
 The sticky footer keeps these actions visible:
 
@@ -147,20 +149,20 @@ The sticky footer keeps these actions visible:
 - Cancel
 - Confirm & Save
 
-The existing keyboard shortcuts remain: `Ctrl+Backspace` cancels and `Ctrl+S` attempts save. If validation fails, save is prevented and focus moves to the first invalid field. Navigating away after any edit prompts for confirmation.
+The existing keyboard shortcuts remain: `Ctrl+Backspace` cancels and `Ctrl+S` attempts save. The equivalent macOS Command modifier follows the workspace's existing shortcut convention. If validation fails, save is prevented, the affected tab is scrolled into view, and focus moves to the first invalid field. Navigating away after any edit prompts for confirmation.
 
 ## Responsive Behavior
 
-At desktop widths, the document and form stay side by side with the existing resizable divider. The right panel owns its internal scrolling so the summary, navigation, and action footer can remain accessible.
+At desktop widths, the document and form stay side by side with the existing resizable divider. The document panel and review-content panel have equal heights, with the action footer outside that measurement. Their shared content height is exactly `min(780px, 100dvh)`. Each panel owns its internal scrolling, and the review tabs remain sticky at the top of the editor.
 
-At narrower widths, the interface uses document and review tabs rather than compressing both panels. The review section navigation becomes a compact horizontal or select-based control. Editable row layouts stack into labeled field groups while keeping row actions accessible.
+At narrower widths, the interface uses document and review tabs rather than compressing both panels. The review section navigation becomes a compact select control. Editable row layouts stack into labeled field groups while keeping row actions accessible.
 
 ## Component Boundaries
 
 The large upload page should delegate the new-company review UI to focused components:
 
-- Review workspace: owns section selection, summary, and footer composition.
-- Section navigation: derives completeness and error states.
+- Review workspace: owns section selection, compact header, shortcut registration, and footer composition. Its public props do not include unused AI metadata.
+- Sticky tab navigation: derives reviewed and error states and provides accessible pointer, button, and keyboard navigation without a new dependency.
 - Field sections: render and update their corresponding schema slice.
 - Repeating record editor: provides consistent add, duplicate, remove, and undo behavior.
 - Validation summary: maps issues to sections and fields.
@@ -196,6 +198,8 @@ Required fields for save are:
 
 Dates must use valid ISO date values. Financial year day and month must form a valid calendar date. Amounts, share counts, and percentages must be finite; share counts and monetary values cannot be negative, and percentages must be between 0 and 100. Blank optional groups are omitted from the submitted normalized structure instead of being saved as meaningless empty objects.
 
+All optional date fields share one normalization rule: `null`, `undefined`, and blank strings are treated as absent and omitted from normalized output. Any populated optional date must still be a valid ISO calendar date. This shared rule prevents extraction-contract mismatches such as a current officer's `cessationDate: null` from becoming a validation error.
+
 Validation messages appear next to the affected input, at section level in navigation, and in a concise save-attempt summary. Validation does not require users to manually mark each field as reviewed.
 
 ## Error Handling
@@ -211,6 +215,7 @@ Validation messages appear next to the affected input, at section level in navig
 
 - Each input has a programmatic label and associated error description.
 - Section navigation is keyboard reachable and exposes its selected and error states.
+- Desktop section tabs use roving focus, remain sticky while form content scrolls, and expose reviewed/error state in their accessible names rather than color alone.
 - Row actions have descriptive accessible names including the record name or row number.
 - Focus moves predictably after adding, removing, undoing, and attempting an invalid save.
 - Status is communicated with text and icons, not color alone.
@@ -231,6 +236,10 @@ No generated imagery is needed because this is an existing product surface using
 - Scalar and nested field edits update the draft without mutating the extraction snapshot.
 - Repeating rows can be added, duplicated, removed, and restored.
 - Validation derives correct section states and focuses the first error.
+- Null and blank optional dates are accepted and omitted, while populated invalid dates are rejected.
+- Desktop tabs support pointer selection, previous/next controls, roving focus with Left/Right Arrow, and wrapped `Ctrl + <` / `Ctrl + >` navigation.
+- Removed summary and AI metadata copy is absent from the rendered workspace.
+- The equal-height desktop content panels use `min(780px, 100dvh)`, and the action footer remains outside that measurement.
 - Confirm submits the edited draft rather than the original extraction.
 - Unsaved-change protection activates only after the draft changes.
 - The existing update/diff flow continues to render unchanged.
@@ -245,6 +254,7 @@ No generated imagery is needed because this is an existing product surface using
 ### Browser Verification
 
 - Desktop: upload result to editable preview, edit fields, add and remove people, trigger and resolve validation, then save.
+- Desktop layout: verify sticky tabs, pointer/button/keyboard section navigation, equal panel heights, the footer outside the content measurement, the `min(780px, 100dvh)` cap, and no horizontal page overflow.
 - Narrow viewport: switch between document and review, edit a repeating row, and access sticky actions without overflow.
 - Verify page identity, meaningful content, absence of framework overlays, console health, dark mode, keyboard shortcuts, and visible focus states.
 
@@ -254,73 +264,3 @@ No generated imagery is needed because this is an existing product surface using
 - Adding field-level document coordinates or click-to-highlight source citations, because the current extraction schema does not provide page/box provenance.
 - Changing extraction models or prompts.
 - Altering company-domain fields that are not represented by the BizFile extraction schema.
-
-## Review Workspace Enhancement Addendum (2026-07-13)
-
-### Goal
-
-Make the desktop review workspace less horizontally constrained while preserving a continuously visible, side-by-side BizFile viewer. Align the document and editor content heights, increase the working area, remove low-value extraction metadata, and allow users to switch review sections quickly with either pointer or keyboard controls.
-
-### Desktop Layout
-
-- The BizFile viewer and review editor remain side by side at desktop widths.
-- Replace the 208px review-section sidebar with a compact tab strip across the top of the editor. Use concise labels: Entity, Addresses, Activities, Capital, Officers, Shareholders, Auditor, Compliance, Charges, and Document.
-- Each tab retains a text label and semantic state icon. Tabs with validation issues show their issue count. The selected tab scrolls into view when necessary.
-- Previous and next icon buttons sit beside the tab strip so switching sections is always available without scrolling the tab list.
-- The tab strip and editor form share the right panel width. Officer and other field grids use two columns only when the available editor width can support them; otherwise they stack to one column.
-- The document viewer and the right-side review content, excluding the action footer, have identical heights. The footer is a distinct row below the review content and does not reduce or alter that equality.
-- Increase the review content area's target size from the current `70vh`/520px baseline toward the requested 1.5-times scale, but cap the content viewport at `100dvh`. On viewports shorter than the 780px target, the viewport cap takes precedence rather than forcing the content beyond the screen. Both panels keep independent internal scrolling.
-
-### Compact Header
-
-Keep only the `Review extracted information` heading and the current workflow status (`Needs attention`, `Review in progress`, or `Ready to save`). Remove these visible lines:
-
-- Section, reviewed, issue, and record totals.
-- AI model, provider, usage, and cost metadata.
-- The generic AI accuracy warning.
-
-The underlying validation and AI metadata may remain available to application logic, but the removed copy must not occupy review-screen space.
-
-### Section Navigation
-
-- Clicking a tab selects its section without changing or resetting draft data.
-- The previous and next buttons move one section at a time and wrap between the first and last sections.
-- `Ctrl + <` selects the previous section and `Ctrl + >` selects the next section. The equivalent macOS Command modifier may continue to follow the workspace's existing shortcut convention.
-- Section shortcuts do not run when focus is inside an input, textarea, select, or content-editable element, preventing interference with data entry.
-- Previous and next buttons expose descriptive accessible names and shortcut hints. Tabs expose selected, validation, and reviewed state through accessible semantics rather than color alone.
-- On narrow viewports, retain the existing Document/Review switch and compact section selector instead of forcing the desktop tab strip into the mobile layout.
-
-### Optional Cessation Date
-
-The extraction contract permits `cessationDate: null` for a current officer, while the current review schema accepts only a date string or `undefined`. This contract mismatch is the cause of the erroneous required-looking validation message.
-
-- Treat `null`, `undefined`, and a blank cessation date as the same absent optional value.
-- Do not show an error or block saving when an officer has no cessation date.
-- If a cessation date is entered, continue to require a valid ISO calendar date.
-- Normalize an absent cessation date out of the submitted officer record so downstream processing receives the established optional representation.
-
-### Component Boundaries
-
-- Keep draft ownership, validation aggregation, and shortcut registration in `BizFileReviewWorkspace`.
-- Extract or isolate the desktop tab-strip behavior sufficiently for focused interaction tests, without introducing a new dependency.
-- Keep section field rendering in `BizFileReviewSections`; only responsive grid classes should change there when necessary.
-- Keep the upload page responsible for the overall workspace height contract and the review workspace responsible for equal-height internal panel composition.
-- Do not change the existing-company diff preview.
-
-### Error Handling and Accessibility
-
-- Existing validation focus behavior continues to select the affected section and focus the first invalid control.
-- A selected issue tab must remain visible after automatic section selection.
-- Save status and server errors remain visible in the action footer even though extraction metadata is removed.
-- Keyboard section navigation must call `preventDefault` only when it handles the configured shortcut.
-- Focus, labels, semantic selected state, and light/dark theme behavior continue to follow the Oakcloud design guideline.
-
-### Testing and Verification
-
-- Add a validation regression test proving an officer with `cessationDate: null` is valid and normalizes to an absent key.
-- Add component tests proving the removed metadata copy is absent.
-- Add component tests for tab selection, previous/next buttons, shortcut navigation, wrap-around, automatic selection state, and shortcut suppression while editing a field.
-- Assert the desktop layout exposes equal-height content regions with the footer outside the measured editor panel.
-- Assert the equal-height content region does not exceed the dynamic viewport height.
-- Update browser tests for the compact desktop tabs and verify no horizontal page overflow at desktop and mobile viewports.
-- Run focused validation and workspace tests, browser tests, type checking, and the production build.
