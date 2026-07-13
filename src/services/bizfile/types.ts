@@ -6,6 +6,7 @@
 
 import type { EntityType, CompanyStatus, OfficerRole, ContactType, IdentificationType } from '@/generated/prisma';
 import type { AIModel } from '@/lib/ai';
+import { canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from './canonical-values';
 
 // ============================================================================
 // Extracted Data Types
@@ -330,6 +331,7 @@ export function mapEntityType(type: string | null | undefined): EntityType {
     PUBLIC_LIMITED: 'PUBLIC_LIMITED',
     'PUBLIC LIMITED': 'PUBLIC_LIMITED',
     'PUBLIC COMPANY LIMITED BY SHARES': 'PUBLIC_LIMITED',
+    PUBLIC_COMPANY_LIMITED_BY_GUARANTEE: 'PUBLIC_COMPANY_LIMITED_BY_GUARANTEE',
     SOLE_PROPRIETORSHIP: 'SOLE_PROPRIETORSHIP',
     'SOLE PROPRIETORSHIP': 'SOLE_PROPRIETORSHIP',
     PARTNERSHIP: 'PARTNERSHIP',
@@ -342,7 +344,8 @@ export function mapEntityType(type: string | null | undefined): EntityType {
     VARIABLE_CAPITAL_COMPANY: 'VARIABLE_CAPITAL_COMPANY',
     VCC: 'VARIABLE_CAPITAL_COMPANY',
   };
-  return mapping[type.toUpperCase()] || 'OTHER';
+  const canonical = canonicalizeEntityType(type) as string;
+  return mapping[canonical] ?? 'OTHER';
 }
 
 /**
@@ -365,7 +368,8 @@ export function mapCompanyStatus(status: string | null | undefined): CompanyStat
     AMALGAMATED: 'AMALGAMATED',
     CONVERTED: 'CONVERTED',
   };
-  return mapping[status.toUpperCase()] || 'OTHER';
+  const canonical = canonicalizeCompanyStatus(status) as string;
+  return mapping[canonical] ?? 'OTHER';
 }
 
 /**
@@ -391,7 +395,8 @@ export function mapOfficerRole(role: string | null | undefined): OfficerRole {
     JUDICIAL_MANAGER: 'JUDICIAL_MANAGER',
     'JUDICIAL MANAGER': 'JUDICIAL_MANAGER',
   };
-  return mapping[role.toUpperCase()] || 'DIRECTOR';
+  const canonical = canonicalizeOfficerRole(role) as string;
+  return mapping[canonical] ?? 'DIRECTOR';
 }
 
 /**
@@ -413,5 +418,6 @@ export function mapIdentificationType(type: string | undefined): IdentificationT
     PASSPORT: 'PASSPORT',
     UEN: 'UEN',
   };
-  return mapping[type.toUpperCase()] || 'OTHER';
+  const canonical = canonicalizeIdentificationType(type) as string;
+  return mapping[canonical] ?? 'OTHER';
 }

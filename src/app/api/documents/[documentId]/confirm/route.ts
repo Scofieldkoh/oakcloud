@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { processBizFileExtraction } from '@/services/bizfile';
-import type { ExtractedBizFileData } from '@/services/bizfile/types';
+import {
+  bizFileReviewSchema,
+  issuesFromZodError,
+  normalizeBizFileReviewDraft,
+} from '@/lib/validations/bizfile-review';
 
 /**
  * POST /api/documents/:documentId/confirm
@@ -60,9 +64,44 @@ export async function POST(
       );
     }
 
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          error: 'Please correct the highlighted fields',
+          issues: [{
+            path: 'request',
+            message: 'Enter a valid request body',
+            section: 'entity',
+          }],
+        },
+        { status: 400 }
+      );
+    }
+    const candidate = typeof body === 'object' && body !== null && 'extractedData' in body
+      ? (body as { extractedData: unknown }).extractedData
+      : undefined;
+    const parsed = bizFileReviewSchema.safeParse(candidate);
+
+    if (!parsed.success) {
+      const validation = issuesFromZodError(parsed.error);
+      return NextResponse.json(
+        { error: 'Please correct the highlighted fields', issues: validation.issues },
+        { status: 400 }
+      );
+    }
+
+    const correctedData = normalizeBizFileReviewDraft(parsed.data);
+    await prisma.document.update({
+      where: { id: documentId },
+      data: { extractedData: correctedData as object },
+    });
+
     const result = await processBizFileExtraction(
       documentId,
-      document.extractedData as unknown as ExtractedBizFileData,
+      correctedData,
       session.id,
       document.tenantId,
       document.storageKey || undefined,
@@ -76,11 +115,8 @@ export async function POST(
     });
   } catch (error) {
     console.error('Document confirm error:', error);
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
