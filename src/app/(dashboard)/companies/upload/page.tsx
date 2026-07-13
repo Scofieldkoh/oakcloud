@@ -787,10 +787,9 @@ export default function UploadBizFilePage() {
 
       {/* Step: Preview */}
       {step === 'preview' && extractedData && (
-        <div className="h-[70vh] min-h-[520px]">
+        <div>
           <BizFileReviewWorkspace
             initialData={extractedData}
-            aiMetadata={aiMetadata}
             sourcePanel={previewPanel}
             isSaving={isConfirming}
             serverIssues={serverIssues}

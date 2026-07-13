@@ -568,12 +568,216 @@ git add __tests__/browser/bizfile-review.browser.test.tsx src/components/compani
 git commit -m "test: verify BizFile review workflow"
 ```
 
+---
+
+## 2026-07-14 Review Workspace Enhancement
+
+Tasks 1-7 document the implemented baseline review workspace. Tasks 8-10 are the authoritative plan for the approved enhancement and supersede earlier task examples that show the vertical desktop section rail, extraction-summary/AI metadata copy, the `aiMetadata` workspace prop, or the former `70vh` height contract.
+
+### Task 8: Normalize Null Optional Dates
+
+**Files:**
+- Modify: `src/lib/validations/bizfile-review.ts`
+- Test: `__tests__/lib/bizfile-review-validation.test.ts`
+
+**Interfaces:**
+- Consumes: extracted optional dates that may be `string`, `null`, blank, or absent.
+- Produces: one shared `optionalDate` schema that omits null/blank values and validates populated ISO calendar dates.
+
+- [x] **Step 1: Write failing regression tests**
+
+Add tests that place `null` in officer cessation and a representative entity date, then require valid parsing and omission:
+
+```ts
+it('accepts and omits null optional dates from extraction', () => {
+  const draft = createEmptyBizFileReviewDraft();
+  draft.entityDetails = {
+    uen: '202626103M', name: 'Example', entityType: 'PRIVATE_LIMITED', status: 'LIVE',
+    incorporationDate: null,
+  } as typeof draft.entityDetails;
+  draft.officers = [{ name: 'Current Director', role: 'DIRECTOR', cessationDate: null }] as typeof draft.officers;
+
+  expect(validateBizFileReview(draft).isValid).toBe(true);
+  const normalized = normalizeBizFileReviewDraft(draft);
+  expect(normalized.entityDetails).not.toHaveProperty('incorporationDate');
+  expect(normalized.officers?.[0]).not.toHaveProperty('cessationDate');
+});
+
+it('still rejects a populated invalid optional date', () => {
+  const draft = createEmptyBizFileReviewDraft();
+  draft.entityDetails = { uen: '1', name: 'X', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };
+  draft.officers = [{ name: 'A', role: 'DIRECTOR', cessationDate: '2026-02-30' }];
+  expect(validateBizFileReview(draft).issues.map((issue) => issue.path))
+    .toContain('officers.0.cessationDate');
+});
+```
+
+- [x] **Step 2: Run the focused test and verify RED**
+
+Run: `npm test -- --run __tests__/lib/bizfile-review-validation.test.ts`
+
+Expected: the null-date test fails with an `Expected string, received null` issue.
+
+- [x] **Step 3: Implement one reusable optional-date preprocessor**
+
+Replace `const optionalDate = isoDate.optional()` with:
+
+```ts
+const optionalDate = z.preprocess(
+  (value) => value == null || (typeof value === 'string' && value.trim() === '') ? undefined : value,
+  isoDate.optional(),
+);
+```
+
+Ensure the draft's recursive review type can represent extraction-time `null` values without weakening normalized `ExtractedBizFileData` output.
+
+- [x] **Step 4: Run focused validation tests and verify GREEN**
+
+Run: `npm test -- --run __tests__/lib/bizfile-review-validation.test.ts`
+
+Expected: all validation tests PASS.
+
+---
+
+### Task 9: Compact Accessible Section Tabs and Equal-Height Layout
+
+**Files:**
+- Modify: `src/components/companies/bizfile-review/bizfile-review-workspace.tsx`
+- Modify: `src/components/companies/bizfile-review/bizfile-review-sections.tsx`
+- Modify: `src/app/(dashboard)/companies/upload/page.tsx`
+- Test: `__tests__/components/bizfile-review-workspace.test.tsx`
+- Test: `__tests__/app/companies-upload-bizfile-review.test.tsx`
+
+**Interfaces:**
+- Consumes: `activeSection`, per-section issues, visited state, and the existing source panel.
+- Produces: sticky `tablist` navigation, wrapped previous/next selection, `Ctrl + <` / `Ctrl + >`, roving Arrow navigation, and equal content panels sized `min(780px, 100dvh)` with the footer outside.
+
+- [x] **Step 1: Write failing component tests for removed copy and tabs**
+
+Update the existing metadata test to assert the removed text is absent, and add desktop tab assertions after matching `(min-width: 1024px)`:
+
+```tsx
+expect(screen.queryByText(/10 sections/i)).not.toBeInTheDocument();
+expect(screen.queryByText(/AI-extracted data may be inaccurate/i)).not.toBeInTheDocument();
+expect(screen.queryByText(/model.*provider/i)).not.toBeInTheDocument();
+
+const tablist = screen.getByRole('tablist', { name: 'Review sections' });
+expect(within(tablist).getByRole('tab', { name: /Entity.*selected/i })).toHaveAttribute('aria-selected', 'true');
+await user.click(screen.getByRole('button', { name: /Next section.*Ctrl \+ >/i }));
+expect(screen.getByRole('tab', { name: /Addresses.*selected/i })).toHaveAttribute('aria-selected', 'true');
+```
+
+Add tests that start at Entity, navigate previous to Document, navigate next back to Entity, dispatch `Ctrl + >`, and verify the shortcut does nothing when dispatched from the Company name input. Add tab-focused Left/Right Arrow assertions for roving selection.
+
+- [x] **Step 2: Write failing structure tests for height and footer placement**
+
+Require stable test ids and the exact viewport cap:
+
+```tsx
+const content = screen.getByTestId('review-content-region');
+expect(content.className).toContain('h-[min(780px,100dvh)]');
+expect(within(content).queryByRole('contentinfo')).not.toBeInTheDocument();
+expect(screen.getByRole('contentinfo')).toBeVisible();
+```
+
+Update the upload-page test to require that the workspace invocation no longer receives or depends on `aiMetadata`.
+
+- [x] **Step 3: Run focused component tests and verify RED**
+
+Run: `npm test -- --run __tests__/components/bizfile-review-workspace.test.tsx __tests__/app/companies-upload-bizfile-review.test.tsx`
+
+Expected: failures show the old vertical navigation, visible metadata copy, missing section controls, and old `70vh` container.
+
+- [x] **Step 4: Implement section-selection helpers and shortcuts**
+
+Add a wrapped selector based on `BIZFILE_REVIEW_SECTIONS`:
+
+```ts
+const moveSection = useCallback((direction: -1 | 1) => {
+  const index = BIZFILE_REVIEW_SECTIONS.indexOf(activeSection);
+  const next = (index + direction + BIZFILE_REVIEW_SECTIONS.length) % BIZFILE_REVIEW_SECTIONS.length;
+  selectSection(BIZFILE_REVIEW_SECTIONS[next]);
+}, [activeSection, selectSection]);
+```
+
+Extend the existing keydown handler to recognize `<`/`,` and `>`/`.` with Ctrl or Command, skip editable targets, and prevent default only when navigation is handled. On a focused tab, Left/Right Arrow calls the same wrapped selector and moves focus to the selected tab.
+
+- [x] **Step 5: Replace the desktop sidebar with sticky semantic tabs**
+
+Render previous/next icon buttons around an overflow-x-auto `role="tablist"` strip. Each tab uses `role="tab"`, `aria-selected`, `aria-controls`, roving `tabIndex`, a concise visible label, semantic status icon, issue count when nonzero, and a ref used to `scrollIntoView({ block: 'nearest', inline: 'nearest' })` after selection. Wrap the active section in `role="tabpanel"` with the matching id and label.
+
+Keep the current mobile Document/Review switch and section `<select>` unchanged. Make officer and other dense section grids use a container-responsive one-column fallback before the fields become cramped.
+
+- [x] **Step 6: Separate content height from the action footer**
+
+Move the footer outside the desktop `ResizableSplitView` content region. Apply `h-[min(780px,100dvh)]` and `min-h-0` to `data-testid="review-content-region"`, with both split children filling that same height. Keep the footer immediately below the region and preserve its save-status behavior. Remove `aiMetadata` from `BizFileReviewWorkspaceProps`, its destructuring, and the upload-page invocation.
+
+- [x] **Step 7: Run focused component tests and verify GREEN**
+
+Run: `npm test -- --run __tests__/components/bizfile-review-workspace.test.tsx __tests__/components/bizfile-review-sections.test.tsx __tests__/app/companies-upload-bizfile-review.test.tsx`
+
+Expected: all focused tests PASS with no React accessibility or state-update warnings.
+
+---
+
+### Task 10: Responsive Browser QA and Final Verification
+
+**Files:**
+- Modify: `__tests__/browser/bizfile-review.browser.test.tsx`
+- Modify if a verified mismatch exists: `src/components/companies/bizfile-review/*.tsx`
+
+**Interfaces:**
+- Consumes: the completed compact-tab review workspace.
+- Produces: rendered evidence for panel sizing, navigation, responsive overflow, and the preserved edit/save workflow.
+
+- [x] **Step 1: Extend the browser test before layout polish**
+
+At 1440x900, assert all desktop section tabs are reachable, click Officers, use previous/next and keyboard navigation, and compare panel rectangles:
+
+```ts
+const sourceBox = document.querySelector('[data-review-source]')!.getBoundingClientRect();
+const editorBox = document.querySelector('[data-review-editor]')!.getBoundingClientRect();
+expect(Math.abs(sourceBox.height - editorBox.height)).toBeLessThanOrEqual(1);
+expect(sourceBox.height).toBeLessThanOrEqual(window.innerHeight);
+expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(document.documentElement.clientWidth);
+```
+
+Retain the 390x844 Document/Review switch and overflow assertions.
+
+- [x] **Step 2: Run browser tests and capture any RED mismatch**
+
+Run: `npm run test:browser -- __tests__/browser/bizfile-review.browser.test.tsx`
+
+Expected before final CSS adjustments: any remaining sizing, sticky, or overflow mismatch fails with a concrete assertion.
+
+- [x] **Step 3: Fix only evidenced responsive mismatches and rerun**
+
+Adjust container/grid utility classes without changing the approved copy or interaction model. Re-run the same browser test until desktop and mobile assertions PASS.
+
+- [x] **Step 4: Run final verification**
+
+Run: `npm test -- --run __tests__/lib/bizfile-review-validation.test.ts __tests__/components/bizfile-review-primitives.test.tsx __tests__/components/bizfile-review-sections.test.tsx __tests__/components/bizfile-review-workspace.test.tsx __tests__/app/companies-upload-bizfile-review.test.tsx __tests__/api/bizfile-confirm-route.test.ts __tests__/services/bizfile.test.ts`
+
+Run: `npm run test:browser -- __tests__/browser/bizfile-review.browser.test.tsx`
+
+Run: `npx tsc --noEmit`
+
+Run: `npx eslint 'src/app/(dashboard)/companies/upload/page.tsx' src/components/companies/bizfile-review src/lib/validations/bizfile-review.ts __tests__/lib/bizfile-review-validation.test.ts __tests__/components/bizfile-review-workspace.test.tsx __tests__/browser/bizfile-review.browser.test.tsx`
+
+Run: `npm run build`
+
+Expected: every command exits 0, all tests pass, and the production build completes.
+
 ## Final Acceptance Checklist
 
 - Every property in `ExtractedBizFileData` has a visible editable control.
 - Blank optional singleton groups can be filled.
 - Former names, share classes, officers, shareholders, and charges support add, duplicate, remove, and undo.
 - Section navigation reports issues and invalid save focuses the first error.
+- Desktop section navigation uses sticky semantic tabs, previous/next buttons, Arrow keys, and wrapped `Ctrl + <` / `Ctrl + >` shortcuts without intercepting field input.
+- Null and blank optional dates do not block saving or survive normalized output; populated invalid dates still fail validation.
+- The document and review content panels are equal-height at `min(780px, 100dvh)`, with the action footer outside the measured region.
+- Review summary totals, AI model/provider/cost copy, and the generic AI warning are absent.
 - Confirm persists and processes the corrected draft.
 - Existing-company diff preview and selective update remain unchanged.
 - Desktop split and narrow Document/Review tabs pass rendered QA in light and dark modes.

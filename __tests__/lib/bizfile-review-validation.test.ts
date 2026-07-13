@@ -52,6 +52,36 @@ describe('BizFile review validation', () => {
     expect(paths).toContain('shareholders.0.percentageHeld');
   });
 
+  it('accepts and omits null optional dates from extraction', () => {
+    const draft = createEmptyBizFileReviewDraft();
+    draft.entityDetails = {
+      uen: '202626103M',
+      name: 'Example',
+      entityType: 'PRIVATE_LIMITED',
+      status: 'LIVE',
+      incorporationDate: null as never,
+    };
+    draft.officers = [{
+      name: 'Current Director',
+      role: 'DIRECTOR',
+      cessationDate: null as never,
+    }];
+
+    expect(validateBizFileReview(draft).isValid).toBe(true);
+    const normalized = normalizeBizFileReviewDraft(draft);
+    expect(normalized.entityDetails).not.toHaveProperty('incorporationDate');
+    expect(normalized.officers?.[0]).not.toHaveProperty('cessationDate');
+  });
+
+  it('still rejects a populated invalid optional date', () => {
+    const draft = createEmptyBizFileReviewDraft();
+    draft.entityDetails = { uen: '1', name: 'X', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };
+    draft.officers = [{ name: 'A', role: 'DIRECTOR', cessationDate: '2026-02-30' }];
+
+    expect(validateBizFileReview(draft).issues.map((issue) => issue.path))
+      .toContain('officers.0.cessationDate');
+  });
+
   it.each([[30, 2], [31, 2], [31, 4]])('rejects impossible financial year end %i/%i', (endDay, endMonth) => {
     const draft = createEmptyBizFileReviewDraft();
     draft.entityDetails = { uen: '202626103M', name: 'Example', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };

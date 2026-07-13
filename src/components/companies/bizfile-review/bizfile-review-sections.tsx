@@ -63,7 +63,7 @@ export function EntitySection({ draft, onChange, issues }: Props) {
   const formerNames = entity.formerNames ?? [];
   return (
     <Section title="Entity details">
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
         <ReviewField
           id="entity-uen"
           label="UEN"
@@ -152,7 +152,7 @@ export function EntitySection({ draft, onChange, issues }: Props) {
         getItemKey={(_item, index) => `former-name-${index}`}
         getItemLabel={(item, i) => item.name || `Former name ${i + 1}`}
         renderItem={(item, i, update) => (
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-3">
             <ReviewField
               id={`former-name-${i}`}
               label="Name"
@@ -211,7 +211,7 @@ function AddressFields({
   const set = (field: keyof Address, next: string) =>
     onChange({ streetName: "", postalCode: "", ...value, [field]: next });
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
       {(
         [
           ["block", "block"],
@@ -294,7 +294,7 @@ export function ActivitiesSection({ draft, onChange, issues }: Props) {
   return (
     <Section title="Business activities">
       {(["primary", "secondary"] as const).map((kind) => (
-        <div key={kind} className="grid gap-3 md:grid-cols-2">
+        <div key={kind} className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
           <ReviewField
             id={`${kind}-ssic-code`}
             label={`${kind === "primary" ? "Primary" : "Secondary"} SSIC code`}
@@ -333,7 +333,7 @@ export function CapitalSection({ draft, onChange, issues }: Props) {
     });
   return (
     <Section title="Capital">
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
         {(["paidUpCapital", "issuedCapital"] as const).flatMap((kind) => [
           <ReviewField
             key={`${kind}-amount`}
@@ -413,7 +413,7 @@ export function CapitalSection({ draft, onChange, issues }: Props) {
         getItemKey={(_item, index) => `share-capital-${index}`}
         getItemLabel={(item, i) => item.shareClass || `Share class ${i + 1}`}
         renderItem={(item, i, update) => (
-          <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
             <ReviewField
               id={`share-class-${i}`}
               label="Share class"
@@ -511,7 +511,7 @@ export function OfficersSection({ draft, onChange, issues }: Props) {
         getItemKey={(_item, index) => `officer-${index}`}
         getItemLabel={(item, i) => item.name || `Officer ${i + 1}`}
         renderItem={(item, i, update) => (
-          <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
             <ReviewField
               id={`officer-name-${i}`}
               label="Name"
@@ -607,7 +607,7 @@ export function ShareholdersSection({ draft, onChange, issues }: Props) {
         getItemKey={(_item, index) => `shareholder-${index}`}
         getItemLabel={(item, i) => item.name || `Shareholder ${i + 1}`}
         renderItem={(item, i, update) => (
-          <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
             <ReviewField
               id={`holder-name-${i}`}
               label="Name"
@@ -700,7 +700,7 @@ export function AuditorSection({ draft, onChange, issues }: Props) {
     onChange({ ...draft, auditor: { ...auditor, [field]: value } });
   return (
     <Section title="Auditor">
-      <fieldset aria-label="Auditor" className="grid gap-3 md:grid-cols-2">
+      <fieldset aria-label="Auditor" className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
         <ReviewField
           id="auditor-name"
           label="Auditor name"
@@ -733,7 +733,7 @@ export function ComplianceSection({ draft, onChange, issues }: Props) {
   const compliance = draft.compliance ?? {};
   return (
     <Section title="Compliance">
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
         <ReviewField
           id="fye-day"
           label="Financial year end day"
@@ -826,7 +826,7 @@ export function ChargesSection({ draft, onChange, issues }: Props) {
         getItemKey={(_item, index) => `charge-${index}`}
         getItemLabel={(item, i) => item.chargeNumber || `Charge ${i + 1}`}
         renderItem={(item, i, update) => (
-          <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
             {(
               [
                 ["chargeNumber", "Charge number"],
@@ -894,7 +894,7 @@ export function DocumentSection({ draft, onChange, issues }: Props) {
   const metadata = draft.documentMetadata ?? {};
   return (
     <Section title="Document">
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
         <ReviewField
           id="receipt-number"
           label="Receipt number"

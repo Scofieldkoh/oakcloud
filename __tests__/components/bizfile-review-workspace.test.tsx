@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { BizFileReviewWorkspace } from "@/components/companies/bizfile-review/bizfile-review-workspace";
 import type { ExtractedBizFileData } from "@/services/bizfile";
 
@@ -13,12 +13,21 @@ function setup(onConfirm = vi.fn(), overrides: Partial<React.ComponentProps<type
     onCancel={vi.fn()} onReset={vi.fn()} onConfirm={onConfirm} {...overrides} />);
 }
 
+function useLargeViewport() {
+  vi.stubGlobal("matchMedia", vi.fn(() => ({
+    matches: true, media: "(min-width: 1024px)", onchange: null,
+    addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+  })));
+}
+
 describe("BizFileReviewWorkspace", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
   it("blocks invalid confirmation, focuses the field, and submits normalized corrections", async () => {
     const onConfirm = vi.fn();
     setup(onConfirm);
     expect(screen.getByText("Review extracted information")).toBeVisible();
-    expect(screen.getByText("10 sections")).toBeVisible();
+    expect(screen.queryByText("10 sections")).not.toBeInTheDocument();
     const name = screen.getByLabelText("Company name");
     fireEvent.change(name, { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Confirm & Save" }));
@@ -34,10 +43,49 @@ describe("BizFileReviewWorkspace", () => {
   });
 
   it("shows section issue counts and attention states", () => {
+    useLargeViewport();
     setup();
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "" } });
-    expect(screen.getByRole("button", { name: /Entity details.*1 error/i })).toBeVisible();
+    expect(screen.getByRole("tab", { name: /Entity.*1 error/i })).toBeVisible();
     expect(screen.getByText("Needs attention")).toBeVisible();
+  });
+
+  it("uses compact desktop tabs with wrapped pointer and keyboard navigation", () => {
+    useLargeViewport();
+    setup();
+
+    const tabs = screen.getByRole("tablist", { name: "Review sections" });
+    expect(within(tabs).getAllByRole("tab")).toHaveLength(10);
+    expect(screen.getByRole("tab", { name: /Entity.*Complete/i })).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: /Previous section.*Ctrl \+ </i }));
+    expect(screen.getByRole("tab", { name: /Document.*Complete/i })).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(screen.getByRole("button", { name: /Next section.*Ctrl \+ >/i }));
+    expect(screen.getByRole("tab", { name: /Entity.*Complete/i })).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.keyDown(window, { key: ">", ctrlKey: true });
+    expect(screen.getByRole("tab", { name: /Addresses.*Complete/i })).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(screen.getByRole("tab", { name: /Entity.*Complete/i }));
+    fireEvent.keyDown(screen.getByLabelText("Company name"), { key: ">", ctrlKey: true });
+    expect(screen.getByRole("tab", { name: /Entity.*Complete/i })).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.click(screen.getByRole("tab", { name: /Addresses.*Complete/i }));
+    const addresses = screen.getByRole("tab", { name: /Addresses.*Complete/i });
+    addresses.focus();
+    fireEvent.keyDown(addresses, { key: "ArrowRight" });
+    expect(screen.getByRole("tab", { name: /Activities.*Complete/i })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("keeps the footer outside the equal-height viewport-capped content region", () => {
+    useLargeViewport();
+    setup();
+
+    const content = screen.getByTestId("review-content-region");
+    expect(content.className).toContain("h-[min(780px,100dvh)]");
+    expect(within(screen.getByTestId("review-editor")).queryByRole("contentinfo")).not.toBeInTheDocument();
+    expect(screen.getByRole("contentinfo")).toBeVisible();
+    expect(screen.getByTestId("review-source")).toHaveClass("h-full");
+    expect(screen.getByTestId("review-editor")).toHaveClass("h-full");
   });
 
   it("provides responsive Document and Review panels", () => {
@@ -278,23 +326,21 @@ describe("BizFileReviewWorkspace", () => {
   });
 
   it("does not mark untouched issue-free sections complete and marks visited valid sections reviewed", () => {
+    useLargeViewport();
     setup();
-    expect(screen.getByRole("button", { name: /Addresses.*Not reviewed/i })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: /Addresses/i }));
-    expect(screen.getByRole("button", { name: /Addresses.*Complete/i })).toBeVisible();
+    expect(screen.getByRole("tab", { name: /Addresses.*Not reviewed/i })).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: /Addresses/i }));
+    expect(screen.getByRole("tab", { name: /Addresses.*Complete/i })).toBeVisible();
   });
 
-  it("labels reset precisely and presents verification guidance and invalid-attempt summary", async () => {
-    setup(vi.fn(), { aiMetadata: { modelUsed: "model", providerUsed: "provider" } });
+  it("labels reset precisely, removes extraction metadata, and presents invalid-attempt summary", async () => {
+    setup();
     expect(screen.getByRole("button", { name: "Upload Different File" })).toBeVisible();
-    expect(screen.getByText(/AI-extracted data may be inaccurate/i)).toBeVisible();
+    expect(screen.queryByText(/AI-extracted data may be inaccurate/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/10 sections/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/openai|openrouter|provider|model/i)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Confirm & Save" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Save blocked: 1 issue in 1 section.");
-  });
-
-  it("always presents neutral AI verification guidance without metadata", () => {
-    setup();
-    expect(screen.getByText(/AI-extracted data may be inaccurate/i)).toBeVisible();
   });
 });

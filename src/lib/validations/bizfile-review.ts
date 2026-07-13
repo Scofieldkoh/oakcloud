@@ -49,7 +49,10 @@ const isoDate = z.string().trim().superRefine((value, context) => {
     context.addIssue({ code: z.ZodIssueCode.custom, message: 'Must be a valid calendar date' });
   }
 });
-const optionalDate = isoDate.optional();
+const optionalDate = z.preprocess(
+  (value) => value == null || (typeof value === 'string' && value.trim() === '') ? undefined : value,
+  isoDate.optional(),
+);
 
 export const BIZFILE_ENTITY_TYPE_ALIASES = [
   'PRIVATE LIMITED', 'PRIVATE COMPANY LIMITED BY SHARES', 'EXEMPTED PRIVATE LIMITED', 'EXEMPT PRIVATE LIMITED',
@@ -194,6 +197,7 @@ function isBlank(value: unknown): boolean {
 }
 
 function normalize(value: unknown, root = false): unknown {
+  if (value === null) return undefined;
   if (typeof value === 'string') {
     const trimmed = value.trim();
     return trimmed === '' ? undefined : trimmed;

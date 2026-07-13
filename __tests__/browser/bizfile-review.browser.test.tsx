@@ -88,17 +88,29 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
 
     await expect.element(screen.getByTestId('desktop-split')).toBeVisible();
     await expect.element(screen.getByLabelText('Source document')).toBeVisible();
+    expect(screen.getAllByRole('tab', { hidden: true }).filter((tab) => tab.closest('[aria-label="Review sections"]'))).toHaveLength(10);
+    const sourceBox = screen.getByTestId('review-source').getBoundingClientRect();
+    const editorBox = screen.getByTestId('review-editor').getBoundingClientRect();
+    expect(Math.abs(sourceBox.height - editorBox.height)).toBeLessThanOrEqual(1);
+    expect(sourceBox.height).toBeLessThanOrEqual(window.innerHeight);
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(document.documentElement.clientWidth);
+    expect(screen.queryByText(/AI-extracted data may be inaccurate/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/10 sections/i)).not.toBeInTheDocument();
     await page.screenshot({ path: '__screenshots__/bizfile-review-desktop-1440x900.png' });
     const name = screen.getByLabelText('Company name');
     await fill(name, 'Corrected Pte. Ltd.');
 
-    await click(screen.getByRole('button', { name: /Officers,/ }));
+    await click(screen.getByRole('tab', { name: /Officers,/ }));
+    await click(screen.getByRole('button', { name: /Next section/ }));
+    await expect.element(screen.getByRole('tab', { name: /Shareholders,/ })).toHaveAttribute('aria-selected', 'true');
+    await click(screen.getByRole('button', { name: /Previous section/ }));
+    await expect.element(screen.getByRole('tab', { name: /Officers,/ })).toHaveAttribute('aria-selected', 'true');
     await click(screen.getByRole('button', { name: 'Add Officers' }));
     expect(screen.getAllByLabelText('Name')).toHaveLength(2);
     await click(screen.getByRole('button', { name: 'Remove Officer 2' }));
     expect(screen.getAllByLabelText('Name')).toHaveLength(1);
 
-    await click(screen.getByRole('button', { name: /Entity details,/ }));
+    await click(screen.getByRole('tab', { name: /Entity,/ }));
     const returnedName = screen.getByLabelText('Company name');
     await fill(returnedName, '');
     await click(screen.getByRole('button', { name: 'Confirm & Save' }));
@@ -122,6 +134,8 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
     await expect.element(screen.getByLabelText('Source document')).toBeVisible();
     await click(screen.getByRole('tab', { name: 'Review' }));
     await expect.element(screen.getByLabelText('Company name')).toBeVisible();
+    const confirmBox = screen.getByRole('button', { name: 'Confirm & Save' }).getBoundingClientRect();
+    expect(confirmBox.bottom).toBeLessThanOrEqual(window.innerHeight);
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(document.documentElement.clientWidth);
     await page.screenshot({ path: '__screenshots__/bizfile-review-mobile-390x844.png' });
   });
