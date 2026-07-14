@@ -37,6 +37,9 @@ export interface ContactIdentityDetail {
   value: string;
   companyId?: string;
   purposes?: string[];
+  label?: string;
+  description?: string;
+  displayOrder?: number;
   isPrimary?: boolean;
   isPoc?: boolean;
 }

@@ -4,7 +4,6 @@ import { requirePermission } from '@/lib/rbac';
 import { requireWorkspaceContext } from '@/lib/api-helpers';
 import { prisma } from '@/lib/prisma';
 import { linkContactToCompany } from '@/services/contact.service';
-import { createContactDetail } from '@/services/contact-detail.service';
 import { createContactWithDetailsSchema } from '@/lib/validations/contact-detail';
 import { contactResolutionSchema } from '@/lib/validations/contact';
 import { previewContactIdentity, resolveOrCreateContact } from '@/services/contact-identity.service';
@@ -47,7 +46,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const resolution = rawResolution === undefined
       ? undefined
       : contactResolutionSchema.parse(rawResolution);
-    const candidate = { ...data.contact, source: 'COMPANY_QUICK_CREATE' as const };
+    const { email, phone, ...identityContact } = data.contact;
+    const defaultDetails = [
+      ...(email ? [{ detailType: 'EMAIL' as const, value: email }] : []),
+      ...(phone ? [{ detailType: 'PHONE' as const, value: phone }] : []),
+    ];
+    const companyDetails = (data.contactDetails ?? []).map((detail, index) => ({
+      ...detail,
+      companyId,
+      displayOrder: index,
+    }));
+    const candidate = {
+      ...identityContact,
+      source: 'COMPANY_QUICK_CREATE' as const,
+      ...(defaultDetails.length > 0 || companyDetails.length > 0
+        ? { contactDetails: [...defaultDetails, ...companyDetails] }
+        : {}),
+    };
     const match = await previewContactIdentity(candidate, tenantId);
     if (resolution && !match) {
       return NextResponse.json(
@@ -86,30 +101,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         userId: session.id,
         tx,
       });
-
-      // Create additional contact details if provided
-      if (data.contactDetails && data.contactDetails.length > 0) {
-        for (let i = 0; i < data.contactDetails.length; i++) {
-          const detail = data.contactDetails[i];
-          await createContactDetail(
-            {
-              contactId: contact.id,
-              companyId,
-              detailType: detail.detailType,
-              value: detail.value,
-              label: detail.label,
-              description: detail.description,
-              displayOrder: i,
-              isPrimary: detail.isPrimary,
-            },
-            {
-              tenantId,
-              userId: session.id,
-              tx,
-            }
-          );
-        }
-      }
 
       return contact;
     });

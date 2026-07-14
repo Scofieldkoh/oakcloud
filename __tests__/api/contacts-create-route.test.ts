@@ -233,9 +233,91 @@ describe('contact creation identity decisions', () => {
       'Director',
       expect.objectContaining({ tx: { tx: true } }),
     );
-    expect(mocks.createContactDetail).toHaveBeenCalledWith(
-      expect.objectContaining({ contactId, companyId: '22222222-2222-4222-8222-222222222222' }),
+    expect(mocks.resolveOrCreateContact).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contactDetails: [expect.objectContaining({
+          detailType: 'PHONE',
+          value: '+65 8123 4567',
+          companyId: '22222222-2222-4222-8222-222222222222',
+        })],
+      }),
+      { action: 'REUSE', contactId },
       expect.objectContaining({ tx: { tx: true } }),
     );
+    expect(mocks.createContactDetail).not.toHaveBeenCalled();
+  });
+
+  it('passes top-level defaults and company-scoped purposes through reuse enrichment without duplicate route writes', async () => {
+    const response = await postCompany({
+      relationship: 'Director',
+      contact: {
+        contactType: 'INDIVIDUAL',
+        firstName: 'çŽ‹å°æ˜Ž',
+        email: 'default@example.com',
+        phone: '+65 8123 4567',
+      },
+      contactDetails: [{
+        detailType: 'EMAIL',
+        value: 'director@example.com',
+        label: 'Work',
+        purposes: ['FINANCE', 'HR'],
+        description: 'Company inbox',
+        isPrimary: true,
+      }],
+      resolution: { action: 'REUSE', contactId },
+    });
+
+    expect(response.status).toBe(201);
+    expect(mocks.resolveOrCreateContact).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contactDetails: expect.arrayContaining([
+          expect.objectContaining({ detailType: 'EMAIL', value: 'default@example.com' }),
+          expect.objectContaining({ detailType: 'PHONE', value: '+65 8123 4567' }),
+          expect.objectContaining({
+            detailType: 'EMAIL',
+            value: 'director@example.com',
+            companyId: '22222222-2222-4222-8222-222222222222',
+            purposes: ['FINANCE', 'HR'],
+            label: 'Work',
+            description: 'Company inbox',
+          }),
+        ]),
+      }),
+      { action: 'REUSE', contactId },
+      expect.objectContaining({ tx: { tx: true } }),
+    );
+    expect(mocks.createContactDetail).not.toHaveBeenCalled();
+  });
+
+  it('passes all company quick-create details to identity resolution for a new contact', async () => {
+    mocks.previewContactIdentity.mockResolvedValue(null);
+    mocks.resolveOrCreateContact.mockResolvedValue({
+      contact: { id: 'new-contact', fullName: 'New Person' },
+      outcome: 'CREATED',
+    });
+
+    const response = await postCompany({
+      relationship: 'Client Contact',
+      contact: { contactType: 'INDIVIDUAL', firstName: 'New Person', email: 'new@example.com' },
+      contactDetails: [{ detailType: 'PHONE', value: '+65 9000 0000', purposes: ['FINANCE'] }],
+    });
+
+    expect(response.status).toBe(201);
+    expect(mocks.resolveOrCreateContact).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contactDetails: [
+          expect.objectContaining({ detailType: 'EMAIL', value: 'new@example.com' }),
+          expect.objectContaining({
+            detailType: 'PHONE',
+            value: '+65 9000 0000',
+            companyId: '22222222-2222-4222-8222-222222222222',
+            purposes: ['FINANCE'],
+          }),
+        ],
+      }),
+      { action: 'AUTO' },
+      expect.objectContaining({ tx: { tx: true } }),
+    );
+    expect(mocks.createContactDetail).not.toHaveBeenCalled();
   });
 });

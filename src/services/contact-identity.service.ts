@@ -15,6 +15,7 @@ import type { PrismaTransactionClient, TenantAwareParams } from '@/services/cont
 import type {
   ContactIdentityCandidate,
   ContactIdentityConflict,
+  ContactIdentityDetail,
   ContactIdentityRecord,
   ContactMatchResult,
   ContactResolutionDecision,
@@ -438,21 +439,33 @@ async function addDistinctDetails(
   params: TenantAwareParams,
   tx: PrismaTransactionClient,
 ): Promise<string[]> {
-  const seen = new Set(
+  const existing = new Set(
     (contact.contactDetails ?? []).map((detail) => `${detail.detailType}:${detail.companyId ?? ''}:${normalizeContactDetailValue(detail.detailType, detail.value)}`),
   );
-  const added: string[] = [];
+  const incoming = new Map<string, ContactIdentityDetail>();
   for (const detail of candidate.contactDetails ?? []) {
     const normalized = normalizeContactDetailValue(detail.detailType, detail.value);
+    if (!normalized) continue;
     const key = `${detail.detailType}:${detail.companyId ?? ''}:${normalized}`;
-    if (!normalized || seen.has(key)) continue;
-    seen.add(key);
+    const prior = incoming.get(key);
+    incoming.set(key, prior
+      ? { ...prior, purposes: [...new Set([...(prior.purposes ?? []), ...(detail.purposes ?? [])])] }
+      : detail);
+  }
+  const added: string[] = [];
+  for (const [key, detail] of incoming) {
+    const normalized = normalizeContactDetailValue(detail.detailType, detail.value);
+    if (!normalized || existing.has(key)) continue;
+    existing.add(key);
     await createContactDetail({
       contactId: contact.id,
       companyId: detail.companyId,
       detailType: detail.detailType,
       value: detail.value.trim(),
       purposes: detail.purposes,
+      label: detail.label,
+      description: detail.description,
+      displayOrder: detail.displayOrder,
       isPrimary: detail.isPrimary,
       isPoc: detail.isPoc,
     }, { ...params, tx });
@@ -497,6 +510,13 @@ async function resolveInTransaction(
 
   if (decision.action === 'REUSE' && !selected) {
     throw new Error('Selected contact was not found in this tenant');
+  }
+  if (
+    decision.action === 'REUSE' &&
+    selected &&
+    (selected.match.score <= 0 || selected.match.blockedByIdentifierConflict)
+  ) {
+    throw new Error('Selected contact is no longer a qualifying identity match');
   }
   if (decision.action === 'CREATE_SEPARATE') selected = undefined;
 

@@ -258,6 +258,8 @@ export default function NewContactPage() {
       setSubmitError(null);
       return;
     }
+    setPendingMatch(null);
+    setPendingPayload(null);
     setSubmitError(error instanceof Error ? error.message : 'Failed to create contact');
   };
 
@@ -349,7 +351,7 @@ export default function NewContactPage() {
 
       {/* Error */}
       {submitError && (
-        <div className="card border-status-error bg-status-error/5 mb-4">
+        <div role="alert" className="card border-status-error bg-status-error/5 mb-4">
           <div className="flex items-center gap-3 text-status-error">
             <AlertCircle className="w-5 h-5" />
             <p>{submitError}</p>

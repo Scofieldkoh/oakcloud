@@ -265,6 +265,62 @@ describe('contact identity service', () => {
     );
   });
 
+  it('persists purposes and company detail metadata through identity enrichment', async () => {
+    tx.contact.findMany.mockResolvedValue([existingContact()]);
+
+    await resolveOrCreateContact(
+      candidate({
+        contactDetails: [{
+          detailType: 'EMAIL',
+          value: ' work@example.com ',
+          companyId: 'company-1',
+          purposes: ['FINANCE', 'HR'],
+          label: 'Work',
+          description: 'Company inbox',
+          displayOrder: 2,
+          isPrimary: true,
+        }],
+      }),
+      { action: 'AUTO' },
+      params,
+    );
+
+    expect(createContactDetail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contactId: 'contact-1',
+        companyId: 'company-1',
+        value: 'work@example.com',
+        purposes: ['FINANCE', 'HR'],
+        label: 'Work',
+        description: 'Company inbox',
+        displayOrder: 2,
+        isPrimary: true,
+      }),
+      { ...params, tx },
+    );
+  });
+
+  it('combines purposes from duplicate normalized incoming details without duplicate writes', async () => {
+    tx.contact.findMany.mockResolvedValue([existingContact()]);
+
+    await resolveOrCreateContact(
+      candidate({
+        contactDetails: [
+          { detailType: 'EMAIL', value: 'Work@Example.com', companyId: 'company-1', purposes: ['FINANCE'] },
+          { detailType: 'EMAIL', value: ' work@example.COM ', companyId: 'company-1', purposes: ['HR'] },
+        ],
+      }),
+      { action: 'AUTO' },
+      params,
+    );
+
+    expect(createContactDetail).toHaveBeenCalledTimes(1);
+    expect(createContactDetail).toHaveBeenCalledWith(
+      expect.objectContaining({ purposes: ['FINANCE', 'HR'] }),
+      { ...params, tx },
+    );
+  });
+
   it('acquires canonical and usable identifier locks in sorted order before requerying', async () => {
     tx.contact.findMany.mockResolvedValue([]);
 
@@ -486,6 +542,30 @@ describe('contact identity service', () => {
     }));
     expect(result.conflicts).toEqual([]);
     expect(tx.contact.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects explicit reuse when the selected contact gains a conflicting identifier after preview', async () => {
+    const candidateWithId = candidate({
+      identificationType: 'NRIC',
+      identificationNumber: 'S1234567A',
+    });
+    tx.contact.findMany.mockResolvedValue([existingContact({ id: 'selected' })]);
+    tx.contact.findFirst.mockResolvedValue(existingContact({
+      id: 'selected',
+      identificationType: 'NRIC',
+      identificationNumber: 'S7654321A',
+    }));
+
+    await expect(
+      resolveOrCreateContact(
+        candidateWithId,
+        { action: 'REUSE', contactId: 'selected' },
+        params,
+      ),
+    ).rejects.toThrow(/no longer.*qualifying.*match/i);
+
+    expect(tx.contact.update).not.toHaveBeenCalled();
+    expect(createContactDetail).not.toHaveBeenCalled();
   });
 
   it('rejects stale create-separate decisions with no current review match', async () => {
