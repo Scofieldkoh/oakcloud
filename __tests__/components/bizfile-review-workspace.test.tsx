@@ -158,7 +158,8 @@ describe("BizFileReviewWorkspace", () => {
     setup();
 
     const content = screen.getByTestId("review-content-region");
-    expect(content.className).toContain("h-[min(780px,100dvh)]");
+    expect(content).toHaveClass("absolute", "inset-x-0", "bottom-16", "top-0", "min-h-0");
+    expect(content.closest("section")).toHaveClass("lg:h-[calc(100dvh-7rem)]");
     expect(within(screen.getByTestId("review-editor")).queryByRole("contentinfo")).not.toBeInTheDocument();
     expect(screen.getByRole("contentinfo")).toBeVisible();
     expect(screen.getByTestId("review-source")).toHaveClass("h-full");

@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getPublicFormBySlug } from '@/services/form-submission.service';
 
-const mockFormFindFirst = vi.fn();
-const mockIncrementViewCount = vi.fn();
+const { mockFormFindFirst, mockIncrementViewCount } = vi.hoisted(() => ({
+  mockFormFindFirst: vi.fn(),
+  mockIncrementViewCount: vi.fn(),
+}));
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -28,7 +31,6 @@ describe('public form access', () => {
   it('does not resolve archived forms by public slug', async () => {
     mockFormFindFirst.mockResolvedValue(null);
 
-    const { getPublicFormBySlug } = await import('@/services/form-submission.service');
     const form = await getPublicFormBySlug('client-intake');
 
     expect(form).toBeNull();
