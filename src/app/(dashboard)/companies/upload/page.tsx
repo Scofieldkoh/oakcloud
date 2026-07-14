@@ -33,7 +33,7 @@ import { postFormDataWithFallback } from '@/lib/browser-upload';
 import { BizFileReviewWorkspace, buildBizFileContactIdentityCandidates } from '@/components/companies/bizfile-review/bizfile-review-workspace';
 import { ContactMatchPanel } from '@/components/companies/bizfile-review/bizfile-review-sections';
 import type { BizFileReviewIssue } from '@/lib/validations/bizfile-review';
-import type { ExtractedBizFileData } from '@/services/bizfile';
+import type { ExtractedBizFileData } from '@/services/bizfile/types';
 import type { ContactMatchPreview, ContactResolutionDecision } from '@/types/contact-identity';
 import { fetchBizFileContactMatchPreviews } from '@/services/bizfile/contact-match-preview.client';
 

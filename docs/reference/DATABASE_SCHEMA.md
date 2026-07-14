@@ -2412,7 +2412,7 @@ The seed script is idempotent and can be run multiple times safely.
 
 ### Contact identity rollout and operational verification
 
-Apply migrations in timestamp order: `20260714090000_contact_identity_and_merge` first (extension, nullable canonical/counterparty fields, decision and ledger tables, indexes and trigger), then `20260714130000_contact_duplicate_normalized_identifier_indexes` (normalized active-identifier indexes). Generate the Prisma client before running application code.
+Apply migrations in timestamp order: `20260714090000_contact_identity_and_merge` first (extension, nullable canonical/counterparty fields, decision and ledger tables, indexes and trigger), then `20260714130000_contact_duplicate_normalized_identifier_indexes` (normalized active-identifier indexes), and finally `20260714140000_contact_canonical_alias` (nullable canonical alias plus its lookup index). Generate the Prisma client before running application code.
 
 Backfill active contacts in stable ID batches after migrations:
 

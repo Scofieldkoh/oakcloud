@@ -11,8 +11,7 @@ import {
   type BizFileReviewIssue,
   type BizFileReviewSectionId,
 } from "@/lib/validations/bizfile-review";
-import type { ExtractedBizFileData } from "@/services/bizfile";
-import { mapIdentificationType } from "@/services/bizfile";
+import { mapIdentificationType, type ExtractedBizFileData } from "@/services/bizfile/types";
 import type { ContactIdentityCandidate, ContactMatchPreview } from "@/types/contact-identity";
 import { fetchBizFileContactMatchPreviews } from "@/services/bizfile/contact-match-preview.client";
 import { BizFileReviewSections } from "./bizfile-review-sections";
