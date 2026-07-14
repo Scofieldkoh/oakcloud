@@ -4,6 +4,7 @@ import {
   type ContactType,
   type IdentificationType,
 } from '@/generated/prisma';
+import { createAuditLog } from '@/lib/audit';
 import { scoreContactIdentityMatch, rankContactMaster } from '@/lib/contact-identity-matching';
 import { buildContactIdentityFingerprint } from '@/lib/contact-identity-normalization';
 import { prisma } from '@/lib/prisma';
@@ -18,6 +19,7 @@ const MAX_FUZZY_SEEDS = 200;
 const MAX_FUZZY_MATCHES_PER_SEED = 10;
 const MAX_FUZZY_PAIRS = 500;
 const MAX_DISCOVERY_CONTACTS = 1_000;
+const MAX_CANDIDATE_PAIRS = 1_500;
 
 type DiscoveryContact = {
   id: string;
@@ -101,6 +103,7 @@ export interface ContactDuplicateGroup {
   reasons: ContactMatchReason[];
   confidence: number;
   conflicts: ContactIdentityConflict[];
+  blockedByIdentifierConflict: boolean;
   fingerprints: Record<string, string>;
   recommendedMasterId: string;
 }
@@ -229,11 +232,12 @@ function addPair(
   const [leftContactId, rightContactId] = sortedPair(left.id, right.id);
   const key = pairKey(leftContactId, rightContactId);
   const prior = pairs.get(key);
+  if (!prior && pairs.size >= MAX_CANDIDATE_PAIRS) return;
   pairs.set(key, {
     leftContactId,
     rightContactId,
     reasons: [...new Set([...(prior?.reasons ?? []), ...reasons])].sort() as ContactMatchReason[],
-    confidence: Math.max(prior?.confidence ?? 0, score.score || (fallbackReason ? 1 : 0)),
+    confidence: Math.max(prior?.confidence ?? 0, score.score),
     conflicts: [...(prior?.conflicts ?? []), ...score.conflicts],
   });
 }
@@ -289,12 +293,24 @@ function buildGroups(
     const contactIds = [...ids].sort();
     const records = contactIds.map((id) => toIdentityRecord(contactById.get(id)!));
     const groupPairs = pairs.filter((pair) => contactIds.includes(pair.leftContactId) && contactIds.includes(pair.rightContactId));
+    const allMemberConflicts = combinations(contactIds).flatMap(([leftId, rightId]) =>
+      scoreContactIdentityMatch(
+        toIdentityRecord(contactById.get(leftId)!),
+        toIdentityRecord(contactById.get(rightId)!),
+      ).conflicts,
+    );
+    const conflicts = uniqueConflicts([
+      ...groupPairs.flatMap((pair) => pair.conflicts),
+      ...allMemberConflicts,
+    ]);
+    const blockedByIdentifierConflict = conflicts.length > 0;
     return {
       contactIds,
       contacts: contactIds.map((id) => preview(contactById.get(id)!)),
       reasons: [...new Set(groupPairs.flatMap((pair) => pair.reasons))].sort() as ContactMatchReason[],
-      confidence: Math.max(...groupPairs.map((pair) => pair.confidence)),
-      conflicts: uniqueConflicts(groupPairs.flatMap((pair) => pair.conflicts)),
+      confidence: blockedByIdentifierConflict ? 0 : Math.max(...groupPairs.map((pair) => pair.confidence)),
+      conflicts,
+      blockedByIdentifierConflict,
       fingerprints: Object.fromEntries(contactIds.map((id) => [id, fingerprints.get(id)!])),
       recommendedMasterId: rankContactMaster(records)[0].id,
     };
@@ -353,7 +369,7 @@ export async function listContactDuplicateGroups({
   limit: number;
 }): Promise<ListContactDuplicateGroupsResult> {
   const activeScope = { tenantId, deletedAt: null, isActive: true } as const;
-  const [canonicalGroups, identifierGroups, uenGroups, fuzzyRows] = await Promise.all([
+  const [canonicalGroups, identifierRows, fuzzyRows] = await Promise.all([
     prisma.contact.groupBy({
       by: ['contactType', 'canonicalName'],
       where: { ...activeScope, canonicalName: { not: null } },
@@ -362,26 +378,55 @@ export async function listContactDuplicateGroups({
       take: MAX_EXACT_GROUPS_PER_KEY,
       _count: { _all: true },
     }),
-    prisma.contact.groupBy({
-      by: ['identificationType', 'identificationNumber'],
-      where: {
-        ...activeScope,
-        identificationType: { not: null },
-        identificationNumber: { not: null },
-      },
-      having: { identificationNumber: { _count: { gt: 1 } } },
-      orderBy: [{ identificationType: 'asc' }, { identificationNumber: 'asc' }],
-      take: MAX_EXACT_GROUPS_PER_KEY,
-      _count: { _all: true },
-    }),
-    prisma.contact.groupBy({
-      by: ['corporateUen'],
-      where: { ...activeScope, corporateUen: { not: null } },
-      having: { corporateUen: { _count: { gt: 1 } } },
-      orderBy: { corporateUen: 'asc' },
-      take: MAX_EXACT_GROUPS_PER_KEY,
-      _count: { _all: true },
-    }),
+    prisma.$queryRaw<Array<{ leftContactId: string; rightContactId: string }>>(Prisma.sql`
+      WITH normalized_identifier_candidates AS (
+        SELECT id, "contactType",
+          'IDENTIFICATION:' || "identificationType"::text AS "matchKind",
+          CASE
+            WHEN "identificationType" IN ('NRIC', 'FIN', 'UEN')
+              THEN regexp_replace(upper(normalize("identificationNumber", NFKC)), '[[:space:]-]+', '', 'g')
+            ELSE regexp_replace(trim(upper(normalize("identificationNumber", NFKC))), '[[:space:]]+', ' ', 'g')
+          END AS "normalizedIdentifier"
+        FROM contacts
+        WHERE "tenantId" = ${tenantId}
+          AND "deletedAt" IS NULL
+          AND "isActive" = true
+          AND "identificationType" IS NOT NULL
+          AND "identificationNumber" IS NOT NULL
+
+        UNION ALL
+
+        SELECT id, "contactType", 'CORPORATE_UEN' AS "matchKind",
+          regexp_replace(upper(normalize("corporateUen", NFKC)), '[[:space:]-]+', '', 'g') AS "normalizedIdentifier"
+        FROM contacts
+        WHERE "tenantId" = ${tenantId}
+          AND "deletedAt" IS NULL
+          AND "isActive" = true
+          AND "corporateUen" IS NOT NULL
+      ), duplicate_identifier_keys AS (
+        SELECT "contactType", "matchKind", "normalizedIdentifier"
+        FROM normalized_identifier_candidates
+        WHERE "normalizedIdentifier" <> ''
+        GROUP BY "contactType", "matchKind", "normalizedIdentifier"
+        HAVING count(*) > 1
+        ORDER BY "contactType", "matchKind", "normalizedIdentifier"
+        LIMIT ${MAX_EXACT_GROUPS_PER_KEY}
+      )
+      SELECT left_candidate.id AS "leftContactId", right_candidate.id AS "rightContactId"
+      FROM duplicate_identifier_keys duplicate_key
+      JOIN normalized_identifier_candidates left_candidate
+        ON left_candidate."contactType" = duplicate_key."contactType"
+        AND left_candidate."matchKind" = duplicate_key."matchKind"
+        AND left_candidate."normalizedIdentifier" = duplicate_key."normalizedIdentifier"
+      JOIN normalized_identifier_candidates right_candidate
+        ON right_candidate."contactType" = duplicate_key."contactType"
+        AND right_candidate."matchKind" = duplicate_key."matchKind"
+        AND right_candidate."normalizedIdentifier" = duplicate_key."normalizedIdentifier"
+        AND right_candidate.id > left_candidate.id
+      ORDER BY duplicate_key."contactType", duplicate_key."matchKind",
+        duplicate_key."normalizedIdentifier", left_candidate.id, right_candidate.id
+      LIMIT ${MAX_FUZZY_PAIRS}
+    `),
     prisma.$queryRaw<Array<{ leftContactId: string; rightContactId: string }>>(Prisma.sql`
       WITH seeds AS (
         SELECT id, "contactType", "canonicalName"
@@ -397,7 +442,7 @@ export async function listContactDuplicateGroups({
       SELECT seed.id AS "leftContactId", candidate.id AS "rightContactId"
       FROM seeds seed
       CROSS JOIN LATERAL (
-        SELECT contact.id
+        SELECT contact.id, similarity(contact."canonicalName", seed."canonicalName") AS similarity
         FROM contacts contact
         WHERE contact."tenantId" = ${tenantId}
           AND contact."deletedAt" IS NULL
@@ -411,6 +456,7 @@ export async function listContactDuplicateGroups({
         ORDER BY similarity(contact."canonicalName", seed."canonicalName") DESC, contact.id
         LIMIT ${MAX_FUZZY_MATCHES_PER_SEED}
       ) candidate
+      ORDER BY seed.id, candidate.similarity DESC, candidate.id
       LIMIT ${MAX_FUZZY_PAIRS}
     `),
   ]);
@@ -418,17 +464,11 @@ export async function listContactDuplicateGroups({
   const canonicalKeys = (canonicalGroups ?? []).flatMap((group) => group.canonicalName
     ? [{ contactType: group.contactType, canonicalName: group.canonicalName }]
     : []);
-  const identifiers = (identifierGroups ?? []).flatMap((group) =>
-    group.identificationType && group.identificationNumber
-      ? [{ identificationType: group.identificationType, identificationNumber: group.identificationNumber }]
-      : [],
-  );
-  const corporateUens = (uenGroups ?? []).flatMap((group) => group.corporateUen ? [group.corporateUen] : []);
+  const identifierIds = [...new Set((identifierRows ?? []).flatMap((row) => [row.leftContactId, row.rightContactId]))];
   const fuzzyIds = [...new Set((fuzzyRows ?? []).flatMap((row) => [row.leftContactId, row.rightContactId]))];
   const candidateFilters: Prisma.ContactWhereInput[] = [];
   if (canonicalKeys.length > 0) candidateFilters.push(...canonicalKeys);
-  if (identifiers.length > 0) candidateFilters.push(...identifiers);
-  if (corporateUens.length > 0) candidateFilters.push({ corporateUen: { in: corporateUens } });
+  if (identifierIds.length > 0) candidateFilters.push({ id: { in: identifierIds } });
   if (fuzzyIds.length > 0) candidateFilters.push({ id: { in: fuzzyIds } });
 
   if (candidateFilters.length === 0) {
@@ -441,7 +481,6 @@ export async function listContactDuplicateGroups({
     orderBy: { id: 'asc' },
     take: MAX_DISCOVERY_CONTACTS,
   }) as DiscoveryContact[];
-  const contactById = new Map(contacts.map((contact) => [contact.id, contact]));
   const records = new Map(contacts.map((contact) => [contact.id, toIdentityRecord(contact)]));
   const pairs = new Map<string, CandidatePair>();
 
@@ -457,19 +496,10 @@ export async function listContactDuplicateGroups({
       addPair(pairs, records.get(leftId)!, records.get(rightId)!, 'EXACT_CANONICAL_NAME');
     }
   }
-  for (const bucket of groupBy(contacts, (contact) =>
-    contact.identificationType && contact.identificationNumber
-      ? `${contact.identificationType}\u0000${contact.identificationNumber}`
-      : null,
-  ).values()) {
-    for (const [leftId, rightId] of combinations(bucket.map(({ id }) => id))) {
-      addPair(pairs, records.get(leftId)!, records.get(rightId)!);
-    }
-  }
-  for (const bucket of groupBy(contacts, (contact) => contact.corporateUen).values()) {
-    for (const [leftId, rightId] of combinations(bucket.map(({ id }) => id))) {
-      addPair(pairs, records.get(leftId)!, records.get(rightId)!);
-    }
+  for (const identifier of identifierRows ?? []) {
+    const left = records.get(identifier.leftContactId);
+    const right = records.get(identifier.rightContactId);
+    if (left && right) addPair(pairs, left, right);
   }
   for (const fuzzy of fuzzyRows ?? []) {
     const left = records.get(fuzzy.leftContactId);
@@ -478,15 +508,17 @@ export async function listContactDuplicateGroups({
   }
 
   const fingerprints = new Map([...records].map(([id, record]) => [id, buildContactIdentityFingerprint(record)]));
-  const decisions = pairs.size === 0 ? [] : await prisma.contactDuplicateDecision.findMany({
+  const pairFilters = [...pairs.values()].map(({ leftContactId, rightContactId }) => ({
+    leftContactId,
+    rightContactId,
+  }));
+  const decisions = pairFilters.length === 0 ? [] : await prisma.contactDuplicateDecision.findMany({
     where: {
       tenantId,
       decision: { in: ['REJECTED', 'CREATE_SEPARATE'] },
-      leftContactId: { in: [...contactById.keys()] },
-      rightContactId: { in: [...contactById.keys()] },
+      OR: pairFilters,
     },
     select: { leftContactId: true, rightContactId: true, leftFingerprint: true, rightFingerprint: true },
-    take: MAX_FUZZY_PAIRS + MAX_DISCOVERY_CONTACTS,
   });
   const rejected = new Set((decisions ?? []).flatMap((decision) => {
     const current = fingerprints.get(decision.leftContactId) === decision.leftFingerprint &&
@@ -512,54 +544,84 @@ export async function rejectContactDuplicatePair(
 ): Promise<{ rejected: true }> {
   if (input.leftContactId === input.rightContactId) throw new Error('Contact IDs must be different');
   if (input.reason.trim().length < 10) throw new Error('Rejection reason must be at least 10 characters');
-  const contacts = await prisma.contact.findMany({
-    where: {
-      id: { in: [input.leftContactId, input.rightContactId] },
-      tenantId: params.tenantId,
-      deletedAt: null,
-      isActive: true,
-    },
-    select: contactSelection,
-    orderBy: { id: 'asc' },
-    take: 2,
-  }) as DiscoveryContact[];
-  if (contacts.length !== 2) throw new Error('Duplicate contact pair not found');
-
   const suppliedFingerprints = new Map([
     [input.leftContactId, input.leftFingerprint],
     [input.rightContactId, input.rightFingerprint],
   ]);
   const [leftContactId, rightContactId] = sortedPair(input.leftContactId, input.rightContactId);
-  const contactById = new Map(contacts.map((contact) => [contact.id, contact]));
-  const leftFingerprint = buildContactIdentityFingerprint(toIdentityRecord(contactById.get(leftContactId)!));
-  const rightFingerprint = buildContactIdentityFingerprint(toIdentityRecord(contactById.get(rightContactId)!));
-  if (
-    suppliedFingerprints.get(leftContactId) !== leftFingerprint ||
-    suppliedFingerprints.get(rightContactId) !== rightFingerprint
-  ) {
-    throw new Error('Duplicate recommendation is stale');
-  }
-
-  const data = {
-    tenantId: params.tenantId,
-    leftContactId,
-    rightContactId,
-    leftFingerprint,
-    rightFingerprint,
-    decision: 'REJECTED',
-    reason: input.reason.trim(),
-    decidedById: params.userId,
-  };
-  await prisma.contactDuplicateDecision.upsert({
-    where: {
-      tenantId_leftContactId_rightContactId: {
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+      SELECT id
+      FROM contacts
+      WHERE "tenantId" = ${params.tenantId}
+        AND id IN (${Prisma.join([leftContactId, rightContactId])})
+        AND "deletedAt" IS NULL
+        AND "isActive" = true
+      ORDER BY id
+      FOR UPDATE
+    `);
+    const contacts = await tx.contact.findMany({
+      where: {
+        id: { in: [leftContactId, rightContactId] },
         tenantId: params.tenantId,
+        deletedAt: null,
+        isActive: true,
+      },
+      select: contactSelection,
+      orderBy: { id: 'asc' },
+      take: 2,
+    }) as DiscoveryContact[];
+    if (contacts.length !== 2) throw new Error('Duplicate contact pair not found');
+
+    const contactById = new Map(contacts.map((contact) => [contact.id, contact]));
+    const leftFingerprint = buildContactIdentityFingerprint(toIdentityRecord(contactById.get(leftContactId)!));
+    const rightFingerprint = buildContactIdentityFingerprint(toIdentityRecord(contactById.get(rightContactId)!));
+    if (
+      suppliedFingerprints.get(leftContactId) !== leftFingerprint ||
+      suppliedFingerprints.get(rightContactId) !== rightFingerprint
+    ) {
+      throw new Error('Duplicate recommendation is stale');
+    }
+
+    const reason = input.reason.trim();
+    const data = {
+      tenantId: params.tenantId,
+      leftContactId,
+      rightContactId,
+      leftFingerprint,
+      rightFingerprint,
+      decision: 'REJECTED',
+      reason,
+      decidedById: params.userId,
+    };
+    const decision = await tx.contactDuplicateDecision.upsert({
+      where: {
+        tenantId_leftContactId_rightContactId: {
+          tenantId: params.tenantId,
+          leftContactId,
+          rightContactId,
+        },
+      },
+      create: data,
+      update: data,
+    });
+    await createAuditLog({
+      tenantId: params.tenantId,
+      userId: params.userId,
+      action: 'UPDATE',
+      entityType: 'ContactDuplicateDecision',
+      entityId: decision.id,
+      reason,
+      summary: `Rejected duplicate recommendation for contacts ${leftContactId} and ${rightContactId}`,
+      metadata: {
         leftContactId,
         rightContactId,
+        leftFingerprint,
+        rightFingerprint,
+        reason,
+        reviewerId: params.userId,
       },
-    },
-    create: data,
-    update: data,
+    }, tx);
+    return { rejected: true } as const;
   });
-  return { rejected: true };
 }

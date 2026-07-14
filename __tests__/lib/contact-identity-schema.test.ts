@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 describe('contact identity Prisma schema', () => {
@@ -7,6 +7,8 @@ describe('contact identity Prisma schema', () => {
     'prisma/migrations/20260714090000_contact_identity_and_merge/migration.sql',
     'utf8',
   );
+  const normalizedIdentifierMigrationPath =
+    'prisma/migrations/20260714130000_contact_duplicate_normalized_identifier_indexes/migration.sql';
 
   it('stores canonical names, counterparty identity, decisions, and merge ledgers', () => {
     expect(schema).toContain('canonicalName');
@@ -34,6 +36,17 @@ describe('contact identity Prisma schema', () => {
     expect(migration).toMatch(
       /CREATE INDEX "contacts_canonicalName_active_trgm_idx"\s+ON "contacts" USING GIN \("canonicalName" gin_trgm_ops\)\s+WHERE "deletedAt" IS NULL AND "canonicalName" IS NOT NULL/,
     );
+  });
+
+  it('indexes the same type-specific normalized identifier expressions used by discovery', () => {
+    expect(existsSync(normalizedIdentifierMigrationPath)).toBe(true);
+    if (!existsSync(normalizedIdentifierMigrationPath)) return;
+    const normalizedIdentifierMigration = readFileSync(normalizedIdentifierMigrationPath, 'utf8');
+    expect(normalizedIdentifierMigration).toMatch(/normalize\("identificationNumber", NFKC\)/);
+    expect(normalizedIdentifierMigration).toMatch(/normalize\("corporateUen", NFKC\)/);
+    expect(normalizedIdentifierMigration).toMatch(/contacts_active_normalized_identification_idx/);
+    expect(normalizedIdentifierMigration).toMatch(/contacts_active_normalized_corporate_uen_idx/);
+    expect(normalizedIdentifierMigration).toMatch(/WHERE "deletedAt" IS NULL\s+AND "isActive" = true/);
   });
 
   it('enforces tenant-scoped decision and idempotency keys', () => {

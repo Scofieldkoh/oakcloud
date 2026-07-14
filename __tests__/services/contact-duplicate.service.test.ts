@@ -6,6 +6,11 @@ const mocks = vi.hoisted(() => ({
   queryRaw: vi.fn(),
   decisionFindMany: vi.fn(),
   decisionUpsert: vi.fn(),
+  transaction: vi.fn(),
+  txQueryRaw: vi.fn(),
+  txFindMany: vi.fn(),
+  txDecisionUpsert: vi.fn(),
+  createAuditLog: vi.fn(),
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -16,8 +21,11 @@ vi.mock('@/lib/prisma', () => ({
       upsert: mocks.decisionUpsert,
     },
     $queryRaw: mocks.queryRaw,
+    $transaction: mocks.transaction,
   },
 }));
+
+vi.mock('@/lib/audit', () => ({ createAuditLog: mocks.createAuditLog }));
 
 import {
   listContactDuplicateGroups,
@@ -71,6 +79,15 @@ function exactGroups(names: string[] = [], identifiers: Array<Record<string, unk
   });
 }
 
+function rawCandidates(
+  identifiers: Array<{ leftContactId: string; rightContactId: string }> = [],
+  fuzzy: Array<{ leftContactId: string; rightContactId: string }> = [],
+) {
+  mocks.queryRaw.mockImplementation(async (query: { sql: string }) =>
+    query.sql.includes('normalized_identifier_candidates') ? identifiers : fuzzy,
+  );
+}
+
 describe('contact duplicate service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -78,6 +95,15 @@ describe('contact duplicate service', () => {
     mocks.findMany.mockResolvedValue([]);
     mocks.queryRaw.mockResolvedValue([]);
     mocks.decisionFindMany.mockResolvedValue([]);
+    mocks.txQueryRaw.mockResolvedValue([]);
+    mocks.txFindMany.mockResolvedValue([]);
+    mocks.txDecisionUpsert.mockResolvedValue({ id: 'decision-1' });
+    mocks.createAuditLog.mockResolvedValue({ id: 'audit-1' });
+    mocks.transaction.mockImplementation(async (callback: (tx: unknown) => unknown) => callback({
+      $queryRaw: mocks.txQueryRaw,
+      contact: { findMany: mocks.txFindMany },
+      contactDuplicateDecision: { upsert: mocks.txDecisionUpsert },
+    }));
   });
 
   it('discovers exact canonical and deterministic identifier groups within the tenant', async () => {
@@ -85,6 +111,7 @@ describe('contact duplicate service', () => {
       ['王小明'],
       [{ identificationType: 'NRIC', identificationNumber: 'S1234567A', _count: { _all: 2 } }],
     );
+    rawCandidates([{ leftContactId: 'c3', rightContactId: 'c4' }]);
     mocks.findMany.mockResolvedValue([
       duplicateContact('c1', '王小明'),
       duplicateContact('c2', ' 王小明 ', { canonicalName: '王小明' }),
@@ -124,9 +151,88 @@ describe('contact duplicate service', () => {
 
     expect(result.groups).toHaveLength(1);
     expect(result.groups[0]).toMatchObject({ contactIds: ['c1', 'c2'], reasons: ['FUZZY_NAME'] });
-    const query = (mocks.queryRaw.mock.calls[0][0] as { sql: string }).sql;
+    const query = (mocks.queryRaw.mock.calls.find(([candidate]) =>
+      !(candidate as { sql: string }).sql.includes('normalized_identifier_candidates'))?.[0] as { sql: string }).sql;
     expect(query).toContain('similarity');
     expect(query).toContain('0.3');
+  });
+
+  it('discovers normalized NRIC and UEN variants but excludes non-deterministic identifiers', async () => {
+    rawCandidates([
+      { leftContactId: 'n1', rightContactId: 'n2' },
+      { leftContactId: 'u1', rightContactId: 'u2' },
+      { leftContactId: 'bad1', rightContactId: 'bad2' },
+    ]);
+    mocks.findMany.mockResolvedValue([
+      duplicateContact('n1', 'Alice One', { identificationType: 'NRIC', identificationNumber: 's 123-4567 a' }),
+      duplicateContact('n2', 'Alice Two', { identificationType: 'NRIC', identificationNumber: 'Ｓ１２３４５６７Ａ' }),
+      duplicateContact('u1', 'Company One', {
+        contactType: 'CORPORATE', firstName: null, corporateName: 'Company One', corporateUen: '2024-00001-a',
+      }),
+      duplicateContact('u2', 'Company Two', {
+        contactType: 'CORPORATE', firstName: null, corporateName: 'Company Two', corporateUen: '２０２４００００１Ａ',
+      }),
+      duplicateContact('bad1', 'Masked One', { identificationType: 'NRIC', identificationNumber: '*****' }),
+      duplicateContact('bad2', 'Masked Two', { identificationType: 'NRIC', identificationNumber: '*****' }),
+    ]);
+
+    const result = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+
+    expect(result.groups.map(({ contactIds }) => contactIds)).toEqual([
+      ['n1', 'n2'],
+      ['u1', 'u2'],
+    ]);
+    expect(mocks.queryRaw.mock.calls.some(([query]) =>
+      (query as { sql: string }).sql.includes('normalized_identifier_candidates') &&
+      (query as { sql: string }).sql.includes('normalize'),
+    )).toBe(true);
+  });
+
+  it('keeps conflict-bearing exact-name edges blocked at zero confidence', async () => {
+    exactGroups(['sameperson']);
+    mocks.findMany.mockResolvedValue([
+      duplicateContact('c1', 'Same Person', {
+        canonicalName: 'sameperson', identificationType: 'NRIC', identificationNumber: 'S1234567A',
+      }),
+      duplicateContact('c2', 'Same Person', {
+        canonicalName: 'sameperson', identificationType: 'NRIC', identificationNumber: 'S7654321A',
+      }),
+    ]);
+
+    const result = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+
+    expect(result.groups[0]).toMatchObject({
+      contactIds: ['c1', 'c2'],
+      reasons: ['EXACT_CANONICAL_NAME'],
+      confidence: 0,
+      blockedByIdentifierConflict: true,
+      conflicts: [expect.objectContaining({ field: 'identificationNumber' })],
+    });
+  });
+
+  it('detects strong identifier conflicts between non-edge members of a fuzzy chain', async () => {
+    rawCandidates([], [
+      { leftContactId: 'c1', rightContactId: 'c2' },
+      { leftContactId: 'c2', rightContactId: 'c3' },
+    ]);
+    mocks.findMany.mockResolvedValue([
+      duplicateContact('c1', 'Alexander Hamilton', {
+        identificationType: 'NRIC', identificationNumber: 'S1234567A',
+      }),
+      duplicateContact('c2', 'Alexander Hamilto'),
+      duplicateContact('c3', 'Alexander Hamiltx', {
+        identificationType: 'NRIC', identificationNumber: 'S7654321A',
+      }),
+    ]);
+
+    const result = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+
+    expect(result.groups[0]).toMatchObject({
+      contactIds: ['c1', 'c2', 'c3'],
+      confidence: 0,
+      blockedByIdentifierConflict: true,
+      conflicts: [expect.objectContaining({ field: 'identificationNumber' })],
+    });
   });
 
   it('unions overlapping pairs stably, ranks the master, and paginates groups', async () => {
@@ -180,6 +286,52 @@ describe('contact duplicate service', () => {
       .resolves.toMatchObject({ total: 1 });
   });
 
+  it('orders every capped query and fetches decisions only for actual sorted candidate pairs', async () => {
+    exactGroups(['alpha']);
+    mocks.findMany.mockResolvedValue([
+      duplicateContact('c2', 'alpha', { canonicalName: 'alpha' }),
+      duplicateContact('c1', 'alpha', { canonicalName: 'alpha' }),
+    ]);
+
+    await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+
+    for (const [args] of mocks.groupBy.mock.calls) {
+      expect(args).toMatchObject({ take: 200, orderBy: expect.anything() });
+    }
+    const fuzzySql = (mocks.queryRaw.mock.calls.find(([query]) =>
+      !(query as { sql: string }).sql.includes('normalized_identifier_candidates'))?.[0] as { sql: string }).sql;
+    expect(fuzzySql).toMatch(/ORDER BY seed\.id[\s\S]*LIMIT/);
+    expect(mocks.decisionFindMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        tenantId: 'tenant-1',
+        OR: [{ leftContactId: 'c1', rightContactId: 'c2' }],
+      }),
+    }));
+    expect(mocks.decisionFindMany.mock.calls[0][0]).not.toHaveProperty('take');
+    const normalizedSql = mocks.queryRaw.mock.calls.find(([query]) =>
+      (query as { sql: string }).sql.includes('normalized_identifier_candidates'))?.[0] as { values: unknown[] };
+    expect(normalizedSql.values).toEqual(expect.arrayContaining([200, 500]));
+    const fuzzyQuery = mocks.queryRaw.mock.calls.find(([query]) =>
+      !(query as { sql: string }).sql.includes('normalized_identifier_candidates'))?.[0] as { values: unknown[] };
+    expect(fuzzyQuery.values).toEqual(expect.arrayContaining([200, 10, 500]));
+  });
+
+  it('caps exact-name pair expansion deterministically at the candidate boundary', async () => {
+    exactGroups(['alpha']);
+    mocks.findMany.mockResolvedValue(Array.from({ length: 56 }, (_, index) =>
+      duplicateContact(`c${String(index).padStart(2, '0')}`, 'alpha', { canonicalName: 'alpha' }),
+    ));
+
+    await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+    const firstFilters = mocks.decisionFindMany.mock.calls[0][0].where.OR;
+    await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+    const secondFilters = mocks.decisionFindMany.mock.calls[1][0].where.OR;
+
+    expect(firstFilters).toHaveLength(1_500);
+    expect(firstFilters[0]).toEqual({ leftContactId: 'c00', rightContactId: 'c01' });
+    expect(secondFilters).toEqual(firstFilters);
+  });
+
   it('rejects a sorted tenant-scoped pair only when supplied fingerprints are current', async () => {
     const contacts = [duplicateContact('c2', '王小明'), duplicateContact('c1', '王小明')];
     mocks.findMany.mockResolvedValue(contacts);
@@ -187,6 +339,7 @@ describe('contact duplicate service', () => {
     const discovered = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
     const fingerprints = discovered.groups[0].fingerprints;
 
+    mocks.txFindMany.mockResolvedValue(contacts);
     await rejectContactDuplicatePair({
       leftContactId: 'c2',
       rightContactId: 'c1',
@@ -195,7 +348,8 @@ describe('contact duplicate service', () => {
       reason: 'Confirmed to be different people',
     }, { tenantId: 'tenant-1', userId: 'user-1' });
 
-    expect(mocks.decisionUpsert).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+    expect(mocks.txDecisionUpsert).toHaveBeenCalledWith(expect.objectContaining({
       where: { tenantId_leftContactId_rightContactId: {
         tenantId: 'tenant-1', leftContactId: 'c1', rightContactId: 'c2',
       } },
@@ -203,10 +357,49 @@ describe('contact duplicate service', () => {
         leftContactId: 'c1', rightContactId: 'c2', decidedById: 'user-1', decision: 'REJECTED',
       }),
     }));
+    const lockQuery = mocks.txQueryRaw.mock.calls[0][0] as { sql: string; values: unknown[] };
+    expect(lockQuery.sql).toMatch(/ORDER BY id\s+FOR UPDATE/);
+    expect(lockQuery.values).toEqual(expect.arrayContaining(['tenant-1', 'c1', 'c2']));
+    expect(lockQuery.values.indexOf('c1')).toBeLessThan(lockQuery.values.indexOf('c2'));
+    expect(mocks.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      action: 'UPDATE',
+      entityType: 'ContactDuplicateDecision',
+      entityId: 'decision-1',
+      reason: 'Confirmed to be different people',
+      metadata: expect.objectContaining({
+        leftContactId: 'c1', rightContactId: 'c2', reviewerId: 'user-1',
+      }),
+    }), expect.objectContaining({ contact: expect.anything() }));
 
+    mocks.txFindMany.mockResolvedValue(contacts);
     await expect(rejectContactDuplicatePair({
       leftContactId: 'c1', rightContactId: 'c2', leftFingerprint: 'stale', rightFingerprint: fingerprints.c2,
       reason: 'Confirmed to be different people',
     }, { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow('stale');
+  });
+
+  it('re-reads after locking and writes neither decision nor audit when identity changed in the race', async () => {
+    const original = [duplicateContact('c1', 'Original Person'), duplicateContact('c2', 'Original Person')];
+    exactGroups(['Original Person']);
+    mocks.findMany.mockResolvedValue(original);
+    const discovered = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+    mocks.txFindMany.mockResolvedValue([
+      original[0],
+      duplicateContact('c2', 'Changed Person', { canonicalName: 'changedperson' }),
+    ]);
+
+    await expect(rejectContactDuplicatePair({
+      leftContactId: 'c1', rightContactId: 'c2',
+      leftFingerprint: discovered.groups[0].fingerprints.c1,
+      rightFingerprint: discovered.groups[0].fingerprints.c2,
+      reason: 'Confirmed to be different people',
+    }, { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow('stale');
+
+    expect(mocks.txQueryRaw).toHaveBeenCalledTimes(1);
+    expect(mocks.txFindMany).toHaveBeenCalledTimes(1);
+    expect(mocks.txDecisionUpsert).not.toHaveBeenCalled();
+    expect(mocks.createAuditLog).not.toHaveBeenCalled();
   });
 });
