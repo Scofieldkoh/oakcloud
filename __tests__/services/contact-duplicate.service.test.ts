@@ -235,6 +235,60 @@ describe('contact duplicate service', () => {
     });
   });
 
+  it('does not give conflicting identifiers a master-ranking boost over a richer no-ID contact', async () => {
+    rawCandidates([], [
+      { leftContactId: 'c1', rightContactId: 'c3' },
+      { leftContactId: 'c2', rightContactId: 'c3' },
+    ]);
+    mocks.findMany.mockResolvedValue([
+      duplicateContact('c1', 'Alexander Hamilton', {
+        identificationType: 'NRIC', identificationNumber: 'S1234567A',
+      }),
+      duplicateContact('c2', 'Alexander Hamiltx', {
+        identificationType: 'NRIC', identificationNumber: 'S7654321A',
+      }),
+      duplicateContact('c3', 'Alexander Hamilto', {
+        alias: 'Alex Hamilton', nationality: 'Singaporean',
+        dateOfBirth: new Date('1980-01-01T00:00:00.000Z'), fullAddress: '1 Rich Street',
+      }),
+    ]);
+
+    const result = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+
+    expect(result.groups[0]).toMatchObject({
+      blockedByIdentifierConflict: true,
+      recommendedMasterId: 'c3',
+    });
+  });
+
+  it('filters more than 200 invalid normalized keys before the ordered group cap', async () => {
+    rawCandidates([{ leftContactId: 'valid1', rightContactId: 'valid2' }]);
+    mocks.findMany.mockResolvedValue([
+      duplicateContact('valid1', 'Valid One', {
+        identificationType: 'NRIC', identificationNumber: 's 123-4567 a',
+      }),
+      duplicateContact('valid2', 'Valid Two', {
+        identificationType: 'NRIC', identificationNumber: 'S1234567A',
+      }),
+    ]);
+
+    const result = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+    const identifierSql = (mocks.queryRaw.mock.calls.find(([query]) =>
+      (query as { sql: string }).sql.includes('normalized_identifier_candidates'))?.[0] as { sql: string }).sql;
+
+    expect(result.groups[0].contactIds).toEqual(['valid1', 'valid2']);
+    expect(identifierSql).toContain('valid_identifier_candidates');
+    expect(identifierSql).toMatch(/[*•●]/u);
+    expect(identifierSql).toContain('notavailable');
+    expect(identifierSql).toContain('[^A-Z0-9]');
+    expect(identifierSql.indexOf('valid_identifier_candidates')).toBeLessThan(
+      identifierSql.indexOf('duplicate_identifier_keys'),
+    );
+    expect(identifierSql.indexOf('valid_identifier_candidates')).toBeLessThan(
+      identifierSql.indexOf('LIMIT'),
+    );
+  });
+
   it('unions overlapping pairs stably, ranks the master, and paginates groups', async () => {
     exactGroups(['alpha', 'bravo']);
     mocks.queryRaw.mockResolvedValue([{ leftContactId: 'c2', rightContactId: 'c3' }]);
@@ -349,6 +403,7 @@ describe('contact duplicate service', () => {
     }, { tenantId: 'tenant-1', userId: 'user-1' });
 
     expect(mocks.transaction).toHaveBeenCalledTimes(1);
+    expect(mocks.transaction.mock.calls[0][1]).toEqual({ isolationLevel: 'Serializable' });
     expect(mocks.txDecisionUpsert).toHaveBeenCalledWith(expect.objectContaining({
       where: { tenantId_leftContactId_rightContactId: {
         tenantId: 'tenant-1', leftContactId: 'c1', rightContactId: 'c2',
@@ -401,5 +456,45 @@ describe('contact duplicate service', () => {
     expect(mocks.txFindMany).toHaveBeenCalledTimes(1);
     expect(mocks.txDecisionUpsert).not.toHaveBeenCalled();
     expect(mocks.createAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('treats a concurrent contact-detail change as stale before decision and audit writes', async () => {
+    const original = [
+      duplicateContact('c1', 'Detail Person', {
+        contactDetails: [{ detailType: 'EMAIL', value: 'one@example.com', companyId: null }],
+      }),
+      duplicateContact('c2', 'Detail Person', {
+        contactDetails: [{ detailType: 'EMAIL', value: 'two@example.com', companyId: null }],
+      }),
+    ];
+    exactGroups(['Detail Person']);
+    mocks.findMany.mockResolvedValue(original);
+    const discovered = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+    mocks.txFindMany.mockResolvedValue([
+      original[0],
+      duplicateContact('c2', 'Detail Person', {
+        contactDetails: [{ detailType: 'EMAIL', value: 'changed@example.com', companyId: null }],
+      }),
+    ]);
+
+    await expect(rejectContactDuplicatePair({
+      leftContactId: 'c1', rightContactId: 'c2',
+      leftFingerprint: discovered.groups[0].fingerprints.c1,
+      rightFingerprint: discovered.groups[0].fingerprints.c2,
+      reason: 'Confirmed to be different people',
+    }, { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow('stale');
+
+    expect(mocks.txDecisionUpsert).not.toHaveBeenCalled();
+    expect(mocks.createAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('maps a serializable transaction conflict to a stale recommendation error', async () => {
+    mocks.transaction.mockRejectedValueOnce(Object.assign(new Error('write conflict'), { code: 'P2034' }));
+
+    await expect(rejectContactDuplicatePair({
+      leftContactId: 'c1', rightContactId: 'c2',
+      leftFingerprint: 'a'.repeat(64), rightFingerprint: 'b'.repeat(64),
+      reason: 'Confirmed to be different people',
+    }, { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow('stale');
   });
 });

@@ -211,6 +211,12 @@ function pairKey(leftContactId: string, rightContactId: string): string {
   return sortedPair(leftContactId, rightContactId).join('\u0000');
 }
 
+function isSerializationFailure(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('code' in error)) return false;
+  const code = String(error.code);
+  return code === 'P2034' || code === '40001';
+}
+
 function combinations(contactIds: string[]): Array<[string, string]> {
   const ids = [...contactIds].sort();
   const pairs: Array<[string, string]> = [];
@@ -254,6 +260,25 @@ function groupBy<T>(items: T[], key: (item: T) => string | null): Map<string, T[
 
 function uniqueConflicts(conflicts: ContactIdentityConflict[]): ContactIdentityConflict[] {
   return [...new Map(conflicts.map((conflict) => [JSON.stringify(conflict), conflict])).values()];
+}
+
+function rankGroupMaster(
+  records: ContactIdentityRecord[],
+  conflicts: ContactIdentityConflict[],
+): ContactIdentityRecord {
+  const identificationConflicts = conflicts.some(({ field }) => field === 'identificationNumber');
+  const corporateUenConflicts = conflicts.some(({ field }) => field === 'corporateUen');
+  const rankingRecords = records.map((record) => ({
+    ...record,
+    identificationType: identificationConflicts ? null : record.identificationType,
+    identificationNumber: identificationConflicts ? null : record.identificationNumber,
+    corporateUen: corporateUenConflicts ? null : record.corporateUen,
+    populatedFieldCount:
+      record.populatedFieldCount -
+      (identificationConflicts && record.identificationNumber ? 1 : 0) -
+      (corporateUenConflicts && record.corporateUen ? 1 : 0),
+  }));
+  return rankContactMaster(rankingRecords)[0];
 }
 
 function buildGroups(
@@ -312,7 +337,7 @@ function buildGroups(
       conflicts,
       blockedByIdentifierConflict,
       fingerprints: Object.fromEntries(contactIds.map((id) => [id, fingerprints.get(id)!])),
-      recommendedMasterId: rankContactMaster(records)[0].id,
+      recommendedMasterId: rankGroupMaster(records, conflicts).id,
     };
   }).sort((left, right) =>
     right.confidence - left.confidence || left.contactIds.join('\u0000').localeCompare(right.contactIds.join('\u0000')),
@@ -403,10 +428,17 @@ export async function listContactDuplicateGroups({
           AND "deletedAt" IS NULL
           AND "isActive" = true
           AND "corporateUen" IS NOT NULL
-      ), duplicate_identifier_keys AS (
-        SELECT "contactType", "matchKind", "normalizedIdentifier"
+      ), valid_identifier_candidates AS (
+        SELECT id, "contactType", "matchKind", "normalizedIdentifier"
         FROM normalized_identifier_candidates
         WHERE "normalizedIdentifier" <> ''
+          AND "normalizedIdentifier" !~ '[*•●]'
+          AND lower(regexp_replace("normalizedIdentifier", '[[:space:]]+', '', 'g'))
+            NOT IN ('unknown', 'notavailable', 'n/a', 'na', 'redacted', 'masked')
+          AND length(regexp_replace("normalizedIdentifier", '[^A-Z0-9]', '', 'g')) >= 5
+      ), duplicate_identifier_keys AS (
+        SELECT "contactType", "matchKind", "normalizedIdentifier"
+        FROM valid_identifier_candidates
         GROUP BY "contactType", "matchKind", "normalizedIdentifier"
         HAVING count(*) > 1
         ORDER BY "contactType", "matchKind", "normalizedIdentifier"
@@ -414,11 +446,11 @@ export async function listContactDuplicateGroups({
       )
       SELECT left_candidate.id AS "leftContactId", right_candidate.id AS "rightContactId"
       FROM duplicate_identifier_keys duplicate_key
-      JOIN normalized_identifier_candidates left_candidate
+      JOIN valid_identifier_candidates left_candidate
         ON left_candidate."contactType" = duplicate_key."contactType"
         AND left_candidate."matchKind" = duplicate_key."matchKind"
         AND left_candidate."normalizedIdentifier" = duplicate_key."normalizedIdentifier"
-      JOIN normalized_identifier_candidates right_candidate
+      JOIN valid_identifier_candidates right_candidate
         ON right_candidate."contactType" = duplicate_key."contactType"
         AND right_candidate."matchKind" = duplicate_key."matchKind"
         AND right_candidate."normalizedIdentifier" = duplicate_key."normalizedIdentifier"
@@ -549,79 +581,84 @@ export async function rejectContactDuplicatePair(
     [input.rightContactId, input.rightFingerprint],
   ]);
   const [leftContactId, rightContactId] = sortedPair(input.leftContactId, input.rightContactId);
-  return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
-      SELECT id
-      FROM contacts
-      WHERE "tenantId" = ${params.tenantId}
-        AND id IN (${Prisma.join([leftContactId, rightContactId])})
-        AND "deletedAt" IS NULL
-        AND "isActive" = true
-      ORDER BY id
-      FOR UPDATE
-    `);
-    const contacts = await tx.contact.findMany({
-      where: {
-        id: { in: [leftContactId, rightContactId] },
-        tenantId: params.tenantId,
-        deletedAt: null,
-        isActive: true,
-      },
-      select: contactSelection,
-      orderBy: { id: 'asc' },
-      take: 2,
-    }) as DiscoveryContact[];
-    if (contacts.length !== 2) throw new Error('Duplicate contact pair not found');
-
-    const contactById = new Map(contacts.map((contact) => [contact.id, contact]));
-    const leftFingerprint = buildContactIdentityFingerprint(toIdentityRecord(contactById.get(leftContactId)!));
-    const rightFingerprint = buildContactIdentityFingerprint(toIdentityRecord(contactById.get(rightContactId)!));
-    if (
-      suppliedFingerprints.get(leftContactId) !== leftFingerprint ||
-      suppliedFingerprints.get(rightContactId) !== rightFingerprint
-    ) {
-      throw new Error('Duplicate recommendation is stale');
-    }
-
-    const reason = input.reason.trim();
-    const data = {
-      tenantId: params.tenantId,
-      leftContactId,
-      rightContactId,
-      leftFingerprint,
-      rightFingerprint,
-      decision: 'REJECTED',
-      reason,
-      decidedById: params.userId,
-    };
-    const decision = await tx.contactDuplicateDecision.upsert({
-      where: {
-        tenantId_leftContactId_rightContactId: {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+        SELECT id
+        FROM contacts
+        WHERE "tenantId" = ${params.tenantId}
+          AND id IN (${Prisma.join([leftContactId, rightContactId])})
+          AND "deletedAt" IS NULL
+          AND "isActive" = true
+        ORDER BY id
+        FOR UPDATE
+      `);
+      const contacts = await tx.contact.findMany({
+        where: {
+          id: { in: [leftContactId, rightContactId] },
           tenantId: params.tenantId,
-          leftContactId,
-          rightContactId,
+          deletedAt: null,
+          isActive: true,
         },
-      },
-      create: data,
-      update: data,
-    });
-    await createAuditLog({
-      tenantId: params.tenantId,
-      userId: params.userId,
-      action: 'UPDATE',
-      entityType: 'ContactDuplicateDecision',
-      entityId: decision.id,
-      reason,
-      summary: `Rejected duplicate recommendation for contacts ${leftContactId} and ${rightContactId}`,
-      metadata: {
+        select: contactSelection,
+        orderBy: { id: 'asc' },
+        take: 2,
+      }) as DiscoveryContact[];
+      if (contacts.length !== 2) throw new Error('Duplicate contact pair not found');
+
+      const contactById = new Map(contacts.map((contact) => [contact.id, contact]));
+      const leftFingerprint = buildContactIdentityFingerprint(toIdentityRecord(contactById.get(leftContactId)!));
+      const rightFingerprint = buildContactIdentityFingerprint(toIdentityRecord(contactById.get(rightContactId)!));
+      if (
+        suppliedFingerprints.get(leftContactId) !== leftFingerprint ||
+        suppliedFingerprints.get(rightContactId) !== rightFingerprint
+      ) {
+        throw new Error('Duplicate recommendation is stale');
+      }
+
+      const reason = input.reason.trim();
+      const data = {
+        tenantId: params.tenantId,
         leftContactId,
         rightContactId,
         leftFingerprint,
         rightFingerprint,
+        decision: 'REJECTED',
         reason,
-        reviewerId: params.userId,
-      },
-    }, tx);
-    return { rejected: true } as const;
-  });
+        decidedById: params.userId,
+      };
+      const decision = await tx.contactDuplicateDecision.upsert({
+        where: {
+          tenantId_leftContactId_rightContactId: {
+            tenantId: params.tenantId,
+            leftContactId,
+            rightContactId,
+          },
+        },
+        create: data,
+        update: data,
+      });
+      await createAuditLog({
+        tenantId: params.tenantId,
+        userId: params.userId,
+        action: 'UPDATE',
+        entityType: 'ContactDuplicateDecision',
+        entityId: decision.id,
+        reason,
+        summary: `Rejected duplicate recommendation for contacts ${leftContactId} and ${rightContactId}`,
+        metadata: {
+          leftContactId,
+          rightContactId,
+          leftFingerprint,
+          rightFingerprint,
+          reason,
+          reviewerId: params.userId,
+        },
+      }, tx);
+      return { rejected: true } as const;
+    }, { isolationLevel: 'Serializable' });
+  } catch (error) {
+    if (isSerializationFailure(error)) throw new Error('Duplicate recommendation is stale');
+    throw error;
+  }
 }
