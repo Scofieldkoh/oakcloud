@@ -6,7 +6,9 @@ import { CompanyTable } from '@/components/companies/company-table';
 function detailHrefs(container: HTMLElement, detailPath: string): string[] {
   return Array.from(container.querySelectorAll<HTMLAnchorElement>('a'))
     .map((link) => link.getAttribute('href'))
-    .filter((href): href is string => href === detailPath || href.startsWith(`${detailPath}?`));
+    .filter((href): href is string => (
+      href !== null && (href === detailPath || href.startsWith(`${detailPath}?`))
+    ));
 }
 
 describe('list table detail navigation', () => {
