@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { contactResolutionSchema } from '@/lib/validations/contact';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
 import { BIZFILE_ENTITY_TYPE_OPTIONS, BIZFILE_IDENTIFICATION_TYPE_OPTIONS, BIZFILE_OFFICER_ROLE_OPTIONS, BIZFILE_STATUS_OPTIONS, canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from '@/services/bizfile/canonical-values';
 export { BIZFILE_ENTITY_TYPE_OPTIONS, BIZFILE_IDENTIFICATION_TYPE_OPTIONS, BIZFILE_OFFICER_ROLE_OPTIONS, BIZFILE_STATUS_OPTIONS } from '@/services/bizfile/canonical-values';
@@ -124,6 +125,7 @@ export const bizFileReviewSchema = z.object({
     numberOfShares: nonNegativeNumber,
     percentageHeld: percentage.optional(),
     currency: optionalString,
+    contactResolution: contactResolutionSchema.optional(),
   }).superRefine((shareholder, context) => {
     for (const field of ['name', 'shareClass'] as const) {
       if (!shareholder[field]) context.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: 'Required' });
@@ -138,6 +140,7 @@ export const bizFileReviewSchema = z.object({
     address: optionalString,
     appointmentDate: optionalDate,
     cessationDate: optionalDate,
+    contactResolution: contactResolutionSchema.optional(),
   })).optional(),
   auditor: z.object({ name: requiredString, address: optionalString, appointmentDate: optionalDate }).optional(),
   financialYear: z.object({

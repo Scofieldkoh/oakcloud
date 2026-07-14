@@ -1,5 +1,9 @@
 "use client";
 
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import type { ContactMatchPreview } from "@/types/contact-identity";
+import type { ContactResolutionDecision } from "@/types/contact-identity";
 import {
   BIZFILE_ENTITY_TYPE_OPTIONS,
   BIZFILE_IDENTIFICATION_TYPE_OPTIONS,
@@ -23,6 +27,7 @@ type Props = {
   draft: BizFileReviewDraft;
   onChange: (draft: BizFileReviewDraft) => void;
   issues: BizFileReviewIssue[];
+  matchPreviews?: Record<string, ContactMatchPreview | null>;
 };
 const optionLabel = (value: string) => value.split("_").map((word) => word.charAt(0) + word.slice(1).toLowerCase()).join(" ");
 type Address = NonNullable<BizFileReviewDraft["registeredAddress"]>;
@@ -498,7 +503,59 @@ const identificationOptions = (
     {BIZFILE_IDENTIFICATION_TYPE_OPTIONS.map((value) => <option key={value} value={value}>{optionLabel(value)}</option>)}
   </>
 );
-export function OfficersSection({ draft, onChange, issues }: Props) {
+
+const reasonLabels: Record<string, string> = {
+  IDENTIFIER: "Same identification number",
+  CORPORATE_UEN: "Same corporate UEN",
+  APPROVED_ALIAS: "Approved alias",
+  EXACT_CANONICAL_NAME: "Exact name",
+  CORPORATE_SUFFIX_VARIANT: "Equivalent company name",
+  FUZZY_NAME: "Similar name",
+};
+
+export function ContactMatchPanel({
+  path, match, resolution, onChange, error,
+}: {
+  path: string;
+  match: ContactMatchPreview;
+  resolution: Exclude<ContactResolutionDecision, { action: "AUTO" }> | undefined;
+  onChange: (resolution: Exclude<ContactResolutionDecision, { action: "AUTO" }>) => void;
+  error?: BizFileReviewIssue;
+}) {
+  return <div tabIndex={-1} data-field-path={`${path}.contactResolution`}
+    className="col-span-full rounded-md border border-oak-primary/30 bg-oak-primary/5 p-3">
+    <p className="text-sm font-medium text-text-primary">Existing contact match</p>
+    {match.contact ? <div className="mt-1 space-y-1 text-xs text-text-secondary">
+      <Link className="font-medium text-oak-primary hover:underline" href={`/contacts/${match.contact.id}`}>{match.contact.fullName}</Link>
+      {(match.contact.identificationNumber || match.contact.corporateUen) && <p>
+        {[match.contact.identificationType, match.contact.identificationNumber || match.contact.corporateUen].filter(Boolean).join(" ")}
+      </p>}
+      {match.contact.companies.length > 0 && <p className="flex flex-wrap gap-x-2">
+        {match.contact.companies.map((company) => <Link key={company.id} className="text-oak-primary hover:underline" href={`/companies/${company.id}`}>
+          {company.name} ({company.uen})
+        </Link>)}
+      </p>}
+    </div> : null}
+    <p className="mt-2 text-xs text-text-secondary">{match.reasons.map((reason) => reasonLabels[reason] ?? reason).join(" ")}</p>
+    {match.conflicts.length > 0 && <p className="mt-1 text-xs text-status-warning">Conflicting identity details require a reviewed decision.</p>}
+    {error && <p className="mt-2 text-xs text-status-error">{error.message}</p>}
+    {!resolution && !error && <p className="mt-2 text-xs text-status-error">Choose how to resolve this contact match</p>}
+    <div className="mt-2 flex flex-wrap gap-2">
+      <Button size="xs" variant={resolution?.action === "REUSE" ? "primary" : "secondary"}
+        disabled={match.blockedByIdentifierConflict}
+        onClick={() => onChange({ action: "REUSE", contactId: match.contactId })}>Use existing</Button>
+      <Button size="xs" variant={resolution?.action === "CREATE_SEPARATE" ? "primary" : "secondary"}
+        onClick={() => onChange({ action: "CREATE_SEPARATE", reason: "" })}>Create separate</Button>
+    </div>
+    {resolution?.action === "CREATE_SEPARATE" && <div className="mt-2">
+      <ReviewTextarea id={`${path.replace(".", "-")}-separate-reason`} label="Reason for separate contact"
+        value={resolution.reason} onChange={(event) => onChange({ action: "CREATE_SEPARATE", reason: event.target.value })}
+        error={error} />
+    </div>}
+  </div>;
+}
+
+export function OfficersSection({ draft, onChange, issues, matchPreviews = {} }: Props) {
   const items = draft.officers ?? [];
   return (
     <Section title="Officers">
@@ -582,6 +639,12 @@ export function OfficersSection({ draft, onChange, issues }: Props) {
               }
               error={issue(issues, `officers.${i}.cessationDate`)}
             />
+            {matchPreviews[`officers.${i}`] ? <ContactMatchPanel
+              path={`officers.${i}`} match={matchPreviews[`officers.${i}`]!}
+              resolution={item.contactResolution}
+              onChange={(contactResolution) => update({ ...item, contactResolution })}
+              error={issue(issues, `officers.${i}.contactResolution`) ?? issue(issues, `officers.${i}.contactResolution.reason`)}
+            /> : null}
           </div>
         )}
       />
@@ -589,7 +652,7 @@ export function OfficersSection({ draft, onChange, issues }: Props) {
   );
 }
 
-export function ShareholdersSection({ draft, onChange, issues }: Props) {
+export function ShareholdersSection({ draft, onChange, issues, matchPreviews = {} }: Props) {
   const items = draft.shareholders ?? [];
   return (
     <Section title="Shareholders">
@@ -687,6 +750,12 @@ export function ShareholdersSection({ draft, onChange, issues }: Props) {
               }}
               error={issue(issues, `shareholders.${i}.percentageHeld`)}
             />
+            {matchPreviews[`shareholders.${i}`] ? <ContactMatchPanel
+              path={`shareholders.${i}`} match={matchPreviews[`shareholders.${i}`]!}
+              resolution={item.contactResolution}
+              onChange={(contactResolution) => update({ ...item, contactResolution })}
+              error={issue(issues, `shareholders.${i}.contactResolution`) ?? issue(issues, `shareholders.${i}.contactResolution.reason`)}
+            /> : null}
           </div>
         )}
       />

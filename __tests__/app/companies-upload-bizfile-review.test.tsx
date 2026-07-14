@@ -181,4 +181,52 @@ describe('companies upload BizFile review integration', () => {
     await waitFor(() => expect(mocks.fetch.mock.calls.some(([url]) => String(url).endsWith('/apply-update'))).toBe(true));
     expect(mocks.fetch.mock.calls.some(([url]) => String(url).endsWith('/confirm'))).toBe(false);
   });
+
+  it('requires and sends an explicit contact decision for an update-mode match', async () => {
+    const officerData = {
+      ...extractedData,
+      officers: [{ name: '王小明', role: 'DIRECTOR' }],
+    };
+    const previewBody = { matches: {
+      'officers.0': {
+        contactId: '00000000-0000-4000-8000-000000000001', score: 1, automatic: true,
+        blockedByIdentifierConflict: false, reasons: ['EXACT_CANONICAL_NAME'], conflicts: [],
+        contact: {
+          id: '00000000-0000-4000-8000-000000000001', fullName: '王小明',
+          identificationType: null, identificationNumber: null, corporateUen: null, companies: [],
+        },
+      },
+    } };
+    mocks.searchParams = new URLSearchParams('companyId=company-1');
+    mocks.upload.mockResolvedValueOnce(jsonResponse({ documentId: 'doc-1' }));
+    mocks.fetch.mockImplementation(() => Promise.resolve(jsonResponse(previewBody)));
+    mocks.fetch.mockResolvedValueOnce(jsonResponse({
+      extractedData: officerData,
+      diff: {
+        hasDifferences: true, differences: [], existingCompany: { name: 'Existing Pte. Ltd.', uen: '202400001A' },
+        officerDiffs: [{ type: 'added', name: '王小明', role: 'DIRECTOR', extractedData: officerData.officers[0] }],
+      },
+      companyUpdatedAt: '2026-07-12T00:00:00.000Z',
+    }));
+
+    const view = render(<UploadBizFilePage />);
+    fireEvent.change(view.container.querySelector('input[type="file"]')!, {
+      target: { files: [new File(['pdf'], 'bizfile.pdf', { type: 'application/pdf' })] },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Upload & Extract' }));
+    expect(await screen.findByText('Existing contact match')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Use existing' }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Apply 1 Change/i })).toBeVisible());
+    mocks.fetch.mockResolvedValueOnce(jsonResponse(previewBody));
+    mocks.fetch.mockResolvedValueOnce(jsonResponse({ updatedFields: [] }));
+    fireEvent.click(screen.getByRole('button', { name: /Apply 1 Change/i }));
+    await waitFor(() => expect(mocks.fetch.mock.calls.some(([url]) => String(url).endsWith('/apply-update'))).toBe(true));
+    const applyCall = mocks.fetch.mock.calls.find(([url]) => String(url).endsWith('/apply-update'))!;
+    expect(JSON.parse(String(applyCall[1]?.body))).toMatchObject({
+      extractedData: { officers: [{ contactResolution: {
+        action: 'REUSE', contactId: '00000000-0000-4000-8000-000000000001',
+      } }] },
+    });
+  });
 });

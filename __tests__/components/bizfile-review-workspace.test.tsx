@@ -50,6 +50,58 @@ describe("BizFileReviewWorkspace", () => {
     expect(screen.getByText("Needs attention")).toBeVisible();
   });
 
+  it("previews officer matches, blocks an undecided save, and persists explicit reuse", async () => {
+    const onConfirm = vi.fn();
+    const previewFixture: ExtractedBizFileData = {
+      ...fixture,
+      officers: [{ name: "王小明", role: "DIRECTOR" }],
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        matches: {
+          "officers.0": {
+            contactId: "00000000-0000-4000-8000-000000000001",
+            score: 1,
+            automatic: true,
+            blockedByIdentifierConflict: false,
+            reasons: ["EXACT_CANONICAL_NAME"],
+            conflicts: [],
+            contact: {
+              id: "00000000-0000-4000-8000-000000000001",
+              fullName: "王小明",
+              identificationType: "NRIC",
+              identificationNumber: "S1234567A",
+              corporateUen: null,
+              companies: [{ id: "company-1", name: "Example Pte. Ltd.", uen: "202400001A" }],
+            },
+          },
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<BizFileReviewWorkspace initialData={previewFixture} sourcePanel={<div>PDF source</div>}
+      onCancel={vi.fn()} onReset={vi.fn()} onConfirm={onConfirm} />);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Review section" }), { target: { value: "officers" } });
+    expect(await screen.findByText("Existing contact match")).toBeVisible();
+    expect(fetchMock).toHaveBeenCalledWith("/api/contacts/match-preview", expect.objectContaining({ method: "POST" }));
+    expect(screen.getByRole("link", { name: "王小明" })).toHaveAttribute("href", "/contacts/00000000-0000-4000-8000-000000000001");
+    expect(screen.getByRole("link", { name: /Example Pte\. Ltd\./ })).toHaveAttribute("href", "/companies/company-1");
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirm & Save" }));
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(await screen.findByText("Choose how to resolve this contact match")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Use existing" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm & Save" }));
+    await waitFor(() => expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({
+      officers: [expect.objectContaining({
+        contactResolution: { action: "REUSE", contactId: "00000000-0000-4000-8000-000000000001" },
+      })],
+    })));
+  });
+
   it("uses compact desktop tabs with wrapped pointer and keyboard navigation", () => {
     useLargeViewport();
     setup();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { processBizFileExtractionSelective, type ExtractedBizFileData, type OfficerAction } from '@/services/bizfile';
+import { bizFileReviewSchema, normalizeBizFileReviewDraft } from '@/lib/validations/bizfile-review';
 
 /**
  * POST /api/documents/:documentId/apply-update
@@ -28,9 +29,9 @@ export async function POST(
 
     // Parse request body
     const body = await request.json();
-    const { companyId, extractedData, officerActions, expectedUpdatedAt } = body as {
+    const { companyId, extractedData: rawExtractedData, officerActions, expectedUpdatedAt } = body as {
       companyId: string;
-      extractedData: ExtractedBizFileData;
+      extractedData: unknown;
       officerActions?: OfficerAction[];
       expectedUpdatedAt?: string; // ISO string from preview-diff for concurrent update detection
     };
@@ -42,12 +43,14 @@ export async function POST(
       );
     }
 
-    if (!extractedData?.entityDetails?.uen) {
+    const parsed = bizFileReviewSchema.safeParse(rawExtractedData);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'extractedData is required with valid UEN' },
+        { error: 'Please correct the highlighted fields' },
         { status: 400 }
       );
     }
+    const extractedData = normalizeBizFileReviewDraft(parsed.data) as ExtractedBizFileData;
 
     // Get document
     const document = await prisma.document.findUnique({

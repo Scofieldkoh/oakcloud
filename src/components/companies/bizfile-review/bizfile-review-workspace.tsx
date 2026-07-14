@@ -12,6 +12,8 @@ import {
   type BizFileReviewSectionId,
 } from "@/lib/validations/bizfile-review";
 import type { ExtractedBizFileData } from "@/services/bizfile";
+import { mapIdentificationType } from "@/services/bizfile";
+import type { ContactIdentityCandidate, ContactMatchPreview } from "@/types/contact-identity";
 import { BizFileReviewSections } from "./bizfile-review-sections";
 
 export interface BizFileReviewWorkspaceProps {
@@ -30,6 +32,71 @@ const sectionLabels: Record<BizFileReviewSectionId, string> = {
   auditor: "Auditor", compliance: "Compliance", charges: "Charges", document: "Document",
 };
 const EMPTY_SERVER_ISSUES: BizFileReviewIssue[] = [];
+
+type MatchPreviews = Record<string, ContactMatchPreview | null>;
+
+export function buildBizFileContactIdentityCandidates(
+  draft: BizFileReviewDraft,
+  sections: Array<"officers" | "shareholders">,
+): ContactIdentityCandidate[] {
+  const candidates: ContactIdentityCandidate[] = [];
+  if (sections.includes("officers")) {
+    (draft.officers ?? []).forEach((officer, index) => {
+      const [firstName = "", ...rest] = officer.name.trim().split(/\s+/);
+      candidates.push({
+        source: "BIZFILE", sourceRecordId: `officers.${index}`, contactType: "INDIVIDUAL",
+        firstName, lastName: rest.join(" ") || undefined,
+        identificationType: mapIdentificationType(officer.identificationType) || undefined,
+        identificationNumber: officer.identificationNumber,
+        nationality: officer.nationality, fullAddress: officer.address,
+      });
+    });
+  }
+  if (sections.includes("shareholders")) {
+    (draft.shareholders ?? []).forEach((shareholder, index) => {
+      if (shareholder.type === "CORPORATE") {
+        candidates.push({
+          source: "BIZFILE", sourceRecordId: `shareholders.${index}`, contactType: "CORPORATE",
+          corporateName: shareholder.name, corporateUen: shareholder.identificationNumber,
+          fullAddress: shareholder.address,
+        });
+        return;
+      }
+      const [firstName = "", ...rest] = shareholder.name.trim().split(/\s+/);
+      candidates.push({
+        source: "BIZFILE", sourceRecordId: `shareholders.${index}`, contactType: "INDIVIDUAL",
+        firstName, lastName: rest.join(" ") || undefined,
+        identificationType: mapIdentificationType(shareholder.identificationType) || undefined,
+        identificationNumber: shareholder.identificationNumber,
+        nationality: shareholder.nationality, fullAddress: shareholder.address,
+      });
+    });
+  }
+  return candidates;
+}
+
+function unresolvedMatchIssues(draft: BizFileReviewDraft, previews: MatchPreviews): BizFileReviewIssue[] {
+  const issues: BizFileReviewIssue[] = [];
+  for (const section of ["officers", "shareholders"] as const) {
+    (draft[section] ?? []).forEach((record, index) => {
+      const preview = previews[`${section}.${index}`];
+      const resolution = record.contactResolution;
+      if (preview && (!resolution || (
+        resolution.action === "REUSE" &&
+        (resolution.contactId !== preview.contactId || preview.blockedByIdentifierConflict)
+      ))) {
+        issues.push({
+          path: `${section}.${index}.contactResolution`,
+          message: resolution
+            ? "Review the updated contact match and choose again"
+            : "Choose how to resolve this contact match",
+          section,
+        });
+      }
+    });
+  }
+  return issues;
+}
 
 function clone<T>(value: T): T {
   return typeof structuredClone === "function" ? structuredClone(value) : JSON.parse(JSON.stringify(value));
@@ -138,6 +205,7 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
   const [dismissedServerPaths, setDismissedServerPaths] = useState(() => new Set<string>());
   const [locallySaving, setLocallySaving] = useState(false);
   const [saveSummary, setSaveSummary] = useState<string | null>(null);
+  const [matchPreviews, setMatchPreviews] = useState<MatchPreviews>({});
   const isLarge = useLargeViewport();
   const validation = useMemo(() => validateBizFileReview(draft), [draft]);
   const clientIssues = useMemo(() => validation.issues.map((item) => item.path === "entityDetails.name" && item.message === "Required"
@@ -147,8 +215,11 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
     for (const issue of serverIssues) {
       if (!dismissedServerPaths.has(issue.path) && !byPath.has(issue.path)) byPath.set(issue.path, issue);
     }
+    for (const issue of unresolvedMatchIssues(draft, matchPreviews)) {
+      if (!byPath.has(issue.path)) byPath.set(issue.path, issue);
+    }
     return Array.from(byPath.values());
-  }, [clientIssues, dismissedServerPaths, serverIssues]);
+  }, [clientIssues, dismissedServerPaths, draft, matchPreviews, serverIssues]);
   useEffect(() => setDismissedServerPaths(new Set()), [serverIssues]);
   const initialSnapshot = useState(() => JSON.stringify(normalizeBizFileReviewDraft(clone(initialData))))[0];
   const isDirty = JSON.stringify(normalizeBizFileReviewDraft(draft)) !== initialSnapshot;
@@ -193,6 +264,32 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
     setDraft(next);
   }, [draft, serverIssues]);
 
+  const requestMatchPreviews = useCallback(async (
+    value: BizFileReviewDraft,
+    sections: Array<"officers" | "shareholders">,
+  ): Promise<MatchPreviews> => {
+    const candidates = buildBizFileContactIdentityCandidates(value, sections);
+    if (candidates.length === 0) return {};
+    const response = await fetch("/api/contacts/match-preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ candidates }),
+    });
+    if (!response.ok) throw new Error("Unable to preview contact matches");
+    const result = await response.json() as { matches: MatchPreviews };
+    setMatchPreviews((current) => ({ ...current, ...result.matches }));
+    return result.matches;
+  }, []);
+
+  const activeIdentitySnapshot = useMemo(() => activeSection === "officers" || activeSection === "shareholders"
+    ? JSON.stringify(buildBizFileContactIdentityCandidates(draft, [activeSection])) : "", [activeSection, draft]);
+  useEffect(() => {
+    if (activeSection !== "officers" && activeSection !== "shareholders") return;
+    void requestMatchPreviews(draft, [activeSection]).catch(() => undefined);
+    // Decisions do not affect identity preview; the snapshot retriggers only for identity edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIdentitySnapshot, activeSection, requestMatchPreviews]);
+
   const focusIssue = useCallback((first: BizFileReviewIssue) => {
     selectSection(first.section);
     setMobilePanel("review");
@@ -208,10 +305,23 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
 
   const confirm = useCallback(async () => {
     if (busy || saveInFlightRef.current) return;
-    if (issues.length) {
-      const sectionCount = new Set(issues.map((issue) => issue.section)).size;
-      setSaveSummary(`Save blocked: ${issues.length} ${issues.length === 1 ? "issue" : "issues"} in ${sectionCount} ${sectionCount === 1 ? "section" : "sections"}.`);
-      focusIssue(issues[0]);
+    let currentIssues = issues;
+    if (buildBizFileContactIdentityCandidates(draft, ["officers", "shareholders"]).length > 0) {
+      try {
+        const latest = await requestMatchPreviews(draft, ["officers", "shareholders"]);
+        const freshMatchIssues = unresolvedMatchIssues(draft, { ...matchPreviews, ...latest });
+        const byPath = new Map(currentIssues.map((item) => [item.path, item]));
+        freshMatchIssues.forEach((item) => byPath.set(item.path, item));
+        currentIssues = Array.from(byPath.values());
+      } catch {
+        setSaveSummary("Save blocked: contact matches could not be checked. Please try again.");
+        return;
+      }
+    }
+    if (currentIssues.length) {
+      const sectionCount = new Set(currentIssues.map((issue) => issue.section)).size;
+      setSaveSummary(`Save blocked: ${currentIssues.length} ${currentIssues.length === 1 ? "issue" : "issues"} in ${sectionCount} ${sectionCount === 1 ? "section" : "sections"}.`);
+      focusIssue(currentIssues[0]);
       return;
     }
     saveInFlightRef.current = true;
@@ -228,7 +338,7 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
       saveInFlightRef.current = false;
       setLocallySaving(false);
     }
-  }, [busy, draft, focusIssue, historyGuard, issues, onConfirm]);
+  }, [busy, draft, focusIssue, historyGuard, issues, matchPreviews, onConfirm, requestMatchPreviews]);
 
   useEffect(() => {
     const shortcuts = (event: KeyboardEvent) => {
@@ -290,7 +400,7 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
       <div className="flex min-h-0 flex-1">
         <main id="review-section-panel" role={isLarge ? "tabpanel" : undefined} aria-labelledby={isLarge ? `review-tab-${activeSection}` : undefined}
           tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto p-4">
-          <BizFileReviewSections activeSection={activeSection} draft={draft} onChange={changeDraft} issues={issues} />
+          <BizFileReviewSections activeSection={activeSection} draft={draft} onChange={changeDraft} issues={issues} matchPreviews={matchPreviews} />
         </main>
       </div>
     </div>

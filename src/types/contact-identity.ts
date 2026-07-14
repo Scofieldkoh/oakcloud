@@ -88,4 +88,15 @@ export interface ContactMatchResult {
   conflicts: ContactIdentityConflict[];
 }
 
+export interface ContactMatchPreview extends ContactMatchResult {
+  contact: {
+    id: string;
+    fullName: string;
+    identificationType: IdentificationType | null;
+    identificationNumber: string | null;
+    corporateUen: string | null;
+    companies: Array<{ id: string; name: string; uen: string }>;
+  } | null;
+}
+
 export type ContactIdentityFingerprint = string;

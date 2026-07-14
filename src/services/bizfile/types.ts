@@ -6,6 +6,7 @@
 
 import type { EntityType, CompanyStatus, OfficerRole, ContactType, IdentificationType } from '@/generated/prisma';
 import type { AIModel } from '@/lib/ai';
+import type { ContactResolutionDecision } from '@/types/contact-identity';
 import { canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from './canonical-values';
 
 // ============================================================================
@@ -85,6 +86,7 @@ export interface ExtractedBizFileData {
     numberOfShares: number;
     percentageHeld?: number;
     currency?: string;
+    contactResolution?: Exclude<ContactResolutionDecision, { action: 'AUTO' }>;
   }>;
   officers?: Array<{
     name: string;
@@ -95,6 +97,7 @@ export interface ExtractedBizFileData {
     address?: string;
     appointmentDate?: string;
     cessationDate?: string;
+    contactResolution?: Exclude<ContactResolutionDecision, { action: 'AUTO' }>;
   }>;
   auditor?: {
     name: string;
@@ -210,6 +213,7 @@ export interface ExtractedOfficerData {
   address?: string;
   appointmentDate?: string;
   cessationDate?: string;
+  contactResolution?: Exclude<ContactResolutionDecision, { action: 'AUTO' }>;
 }
 
 /**
@@ -227,6 +231,7 @@ export interface ExtractedShareholderData {
   numberOfShares: number;
   percentageHeld?: number;
   currency?: string;
+  contactResolution?: Exclude<ContactResolutionDecision, { action: 'AUTO' }>;
 }
 
 /**

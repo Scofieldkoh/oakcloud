@@ -132,4 +132,23 @@ describe('BizFile review validation', () => {
     const normalized = normalizeBizFileReviewDraft(draft);
     expect(Object.hasOwn(normalized, 'officers')).toBe(false);
   });
+
+  it('validates and preserves reviewed contact decisions', () => {
+    const draft = createEmptyBizFileReviewDraft();
+    draft.entityDetails = { uen: '1', name: 'X', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };
+    draft.officers = [{
+      name: '王小明', role: 'DIRECTOR',
+      contactResolution: { action: 'REUSE', contactId: '00000000-0000-4000-8000-000000000001' },
+    }];
+    draft.shareholders = [{
+      name: 'Acme', type: 'CORPORATE', shareClass: 'ORDINARY', numberOfShares: 1,
+      contactResolution: { action: 'CREATE_SEPARATE', reason: 'Different legal entity' },
+    }];
+
+    expect(validateBizFileReview(draft).isValid).toBe(true);
+    expect(normalizeBizFileReviewDraft(draft)).toMatchObject({
+      officers: [{ contactResolution: { action: 'REUSE' } }],
+      shareholders: [{ contactResolution: { action: 'CREATE_SEPARATE', reason: 'Different legal entity' } }],
+    });
+  });
 });

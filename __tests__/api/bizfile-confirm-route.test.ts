@@ -72,12 +72,7 @@ describe('POST /api/documents/:documentId/confirm', () => {
     const response = await post();
 
     expect(response.status).toBe(200);
-    expect(mockDocumentUpdate).toHaveBeenCalledWith({
-      where: { id: 'doc-1' },
-      data: { extractedData: expect.objectContaining({
-        entityDetails: expect.objectContaining({ name: 'Corrected Pte. Ltd.' }),
-      }) },
-    });
+    expect(mockDocumentUpdate).not.toHaveBeenCalled();
     expect(mockProcess).toHaveBeenCalledWith(
       'doc-1',
       expect.objectContaining({ entityDetails: expect.objectContaining({ name: 'Corrected Pte. Ltd.' }) }),
@@ -108,7 +103,7 @@ describe('POST /api/documents/:documentId/confirm', () => {
     expect(corrected.officers[0]).toMatchObject({ role: 'SECRETARY' });
     expect(corrected.officers[0]).not.toHaveProperty('identificationType');
     expect(corrected.shareholders[0]).not.toHaveProperty('identificationType');
-    expect(mockDocumentUpdate.mock.calls[0][0].data.extractedData).toEqual(corrected);
+    expect(mockDocumentUpdate).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -173,25 +168,14 @@ describe('POST /api/documents/:documentId/confirm', () => {
     expect(mockProcess).not.toHaveBeenCalled();
   });
 
-  it('returns a generic 500 if saving corrected extraction fails', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    mockDocumentUpdate.mockRejectedValue(new Error('database host secret'));
-    const response = await post();
-
-    expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({ error: 'Internal server error' });
-    expect(mockProcess).not.toHaveBeenCalled();
-    consoleError.mockRestore();
-  });
-
-  it('keeps the corrected extraction saved and returns a generic 500 if processing fails', async () => {
+  it('does not leave a partial corrected-data write if transactional processing fails', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     mockProcess.mockRejectedValue(new Error('processor credential secret'));
     const response = await post();
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({ error: 'Internal server error' });
-    expect(mockDocumentUpdate).toHaveBeenCalledOnce();
+    expect(mockDocumentUpdate).not.toHaveBeenCalled();
     expect(mockProcess).toHaveBeenCalledOnce();
     consoleError.mockRestore();
   });

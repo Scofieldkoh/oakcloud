@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useDropzone } from 'react-dropzone';
@@ -30,9 +30,11 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 import { DocumentPageViewer, ResizableSplitView } from '@/components/processing';
 import { postFormDataWithFallback } from '@/lib/browser-upload';
-import { BizFileReviewWorkspace } from '@/components/companies/bizfile-review/bizfile-review-workspace';
+import { BizFileReviewWorkspace, buildBizFileContactIdentityCandidates } from '@/components/companies/bizfile-review/bizfile-review-workspace';
+import { ContactMatchPanel } from '@/components/companies/bizfile-review/bizfile-review-sections';
 import type { BizFileReviewIssue } from '@/lib/validations/bizfile-review';
 import type { ExtractedBizFileData } from '@/services/bizfile';
+import type { ContactMatchPreview, ContactResolutionDecision } from '@/types/contact-identity';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'diff-preview' | 'saving' | 'complete';
 
@@ -182,6 +184,7 @@ export default function UploadBizFilePage() {
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [aiMetadata, setAiMetadata] = useState<AIMetadata | null>(null);
   const [diffResult, setDiffResult] = useState<DiffResult | null>(null);
+  const [contactMatchPreviews, setContactMatchPreviews] = useState<Record<string, ContactMatchPreview | null>>({});
   const [updatedFields, setUpdatedFields] = useState<string[]>([]);
   const [officerActions, setOfficerActions] = useState<OfficerAction[]>([]);
   const [officerChanges, setOfficerChanges] = useState<{ added: number; updated: number; ceased: number; followUp: number } | null>(null);
@@ -400,13 +403,75 @@ export default function UploadBizFilePage() {
     }
   };
 
+  const requestContactMatchPreviews = useCallback(async (data: ExtractedBizFileData) => {
+    const candidates = buildBizFileContactIdentityCandidates(data, ['officers', 'shareholders']);
+    if (candidates.length === 0) return {};
+    const response = await fetch('/api/contacts/match-preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidates }),
+    });
+    if (!response.ok) throw new Error(await safeJsonError(response, 'Failed to preview contact matches'));
+    const result = await response.json() as { matches: Record<string, ContactMatchPreview | null> };
+    setContactMatchPreviews(result.matches);
+    return result.matches;
+  }, []);
+
+  const updateIdentitySnapshot = useMemo(() => extractedData
+    ? JSON.stringify(buildBizFileContactIdentityCandidates(extractedData, ['officers', 'shareholders']))
+    : '', [extractedData]);
+  useEffect(() => {
+    if (step !== 'diff-preview' || !extractedData) return;
+    void requestContactMatchPreviews(extractedData).catch((previewError) => {
+      setError(previewError instanceof Error ? previewError.message : 'Failed to preview contact matches');
+    });
+    // Reviewed decisions do not change identity candidates, so they do not retrigger preview.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestContactMatchPreviews, step, updateIdentitySnapshot]);
+
+  const setContactResolution = useCallback((
+    section: 'officers' | 'shareholders',
+    index: number,
+    contactResolution: Exclude<ContactResolutionDecision, { action: 'AUTO' }>,
+  ) => {
+    setExtractedData((current) => {
+      if (!current) return current;
+      const records = current[section] ?? [];
+      return {
+        ...current,
+        [section]: records.map((record, recordIndex) => recordIndex === index
+          ? { ...record, contactResolution }
+          : record),
+      };
+    });
+  }, []);
+
+  const officerSourceIndex = useCallback((diff: OfficerDiffEntry) =>
+    extractedData?.officers?.findIndex((officer) => officer.name === diff.extractedData?.name
+      && officer.role === diff.extractedData?.role) ?? -1, [extractedData]);
+  const shareholderSourceIndex = useCallback((diff: ShareholderDiffEntry) =>
+    extractedData?.shareholders?.findIndex((shareholder) => shareholder.name === diff.extractedData?.name
+      && shareholder.type === diff.extractedData?.type) ?? -1, [extractedData]);
+
   const handleApplyUpdate = async () => {
     if (!documentId || !companyId || !extractedData) return;
 
-    setStep('saving');
     setError(null);
 
     try {
+      const latestMatches = await requestContactMatchPreviews(extractedData);
+      const unresolved = Object.entries(latestMatches).find(([path, match]) => {
+        if (!match) return false;
+        const [section, rawIndex] = path.split('.') as ['officers' | 'shareholders', string];
+        const resolution = extractedData[section]?.[Number(rawIndex)]?.contactResolution;
+        return !resolution || (resolution.action === 'REUSE'
+          && (resolution.contactId !== match.contactId || match.blockedByIdentifierConflict));
+      });
+      if (unresolved) {
+        setError(`Review the contact match for ${unresolved[0]} before applying changes.`);
+        return;
+      }
+      setStep('saving');
       // Apply selective update with only changed fields
       const response = await fetch(`/api/documents/${documentId}/apply-update`, {
         method: 'POST',
@@ -452,6 +517,7 @@ export default function UploadBizFilePage() {
     setAiContext('');
     setSelectedStandardContexts([]);
     setDiffResult(null);
+    setContactMatchPreviews({});
     setUpdatedFields([]);
     setOfficerActions([]);
     setOfficerChanges(null);
@@ -974,6 +1040,18 @@ export default function UploadBizFilePage() {
                       </div>
                     )}
 
+                    {officer.type === 'added' && officerSourceIndex(officer) >= 0
+                      && contactMatchPreviews[`officers.${officerSourceIndex(officer)}`] && (
+                      <div className="mt-3 ml-0 sm:ml-11">
+                        <ContactMatchPanel
+                          path={`officers.${officerSourceIndex(officer)}`}
+                          match={contactMatchPreviews[`officers.${officerSourceIndex(officer)}`]!}
+                          resolution={extractedData.officers?.[officerSourceIndex(officer)]?.contactResolution}
+                          onChange={(decision) => setContactResolution('officers', officerSourceIndex(officer), decision)}
+                        />
+                      </div>
+                    )}
+
                     {/* Action controls for potentially ceased officers */}
                     {officer.type === 'potentially_ceased' && officer.officerId && (
                       <div className="mt-3 ml-11 p-3 bg-background-elevated rounded-lg">
@@ -1141,6 +1219,17 @@ export default function UploadBizFilePage() {
                             <span className="text-text-primary">{shareholder.extractedData.percentageHeld}%</span>
                           </div>
                         )}
+                      </div>
+                    )}
+                    {shareholder.type === 'added' && shareholderSourceIndex(shareholder) >= 0
+                      && contactMatchPreviews[`shareholders.${shareholderSourceIndex(shareholder)}`] && (
+                      <div className="mt-3 ml-0 sm:ml-11">
+                        <ContactMatchPanel
+                          path={`shareholders.${shareholderSourceIndex(shareholder)}`}
+                          match={contactMatchPreviews[`shareholders.${shareholderSourceIndex(shareholder)}`]!}
+                          resolution={extractedData.shareholders?.[shareholderSourceIndex(shareholder)]?.contactResolution}
+                          onChange={(decision) => setContactResolution('shareholders', shareholderSourceIndex(shareholder), decision)}
+                        />
                       </div>
                     )}
                   </div>

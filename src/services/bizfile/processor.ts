@@ -7,7 +7,9 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { normalizeName, normalizeCompanyName } from '@/lib/utils';
-import { findOrCreateContact, createCompanyContactRelation, type PrismaTransactionClient } from '../contact.service';
+import { createCompanyContactRelation, type PrismaTransactionClient } from '../contact.service';
+import { previewContactIdentity, resolveOrCreateContact } from '../contact-identity.service';
+import type { ContactIdentityCandidate, ContactResolutionDecision } from '@/types/contact-identity';
 import type {
   ExtractedBizFileData,
   OfficerAction,
@@ -36,6 +38,74 @@ function parseOptionalDate(value: string | Date | null | undefined): Date | null
 
 function formatDateKey(date: Date): string {
   return date.toISOString().split('T')[0];
+}
+
+function splitIndividualName(name: string): { firstName: string; lastName?: string } {
+  const [firstName = '', ...rest] = name.trim().split(/\s+/);
+  const lastName = rest.join(' ');
+  return { firstName, ...(lastName ? { lastName } : {}) };
+}
+
+function officerIdentityCandidate(
+  officer: NonNullable<ExtractedBizFileData['officers']>[number],
+  index: number,
+): ContactIdentityCandidate {
+  return {
+    source: 'BIZFILE',
+    sourceRecordId: `officers.${index}`,
+    contactType: 'INDIVIDUAL',
+    ...splitIndividualName(officer.name),
+    identificationType: mapIdentificationType(officer.identificationType) || undefined,
+    identificationNumber: officer.identificationNumber,
+    nationality: officer.nationality,
+    fullAddress: officer.address,
+  };
+}
+
+function shareholderIdentityCandidate(
+  shareholder: NonNullable<ExtractedBizFileData['shareholders']>[number],
+  index: number,
+): ContactIdentityCandidate {
+  if (shareholder.type === 'CORPORATE') {
+    return {
+      source: 'BIZFILE',
+      sourceRecordId: `shareholders.${index}`,
+      contactType: 'CORPORATE',
+      corporateName: shareholder.name,
+      corporateUen: shareholder.identificationNumber,
+      fullAddress: shareholder.address,
+    };
+  }
+  return {
+    source: 'BIZFILE',
+    sourceRecordId: `shareholders.${index}`,
+    contactType: 'INDIVIDUAL',
+    ...splitIndividualName(shareholder.name),
+    identificationType: mapIdentificationType(shareholder.identificationType) || undefined,
+    identificationNumber: shareholder.identificationNumber,
+    nationality: shareholder.nationality,
+    fullAddress: shareholder.address,
+  };
+}
+
+function reviewedDecision(
+  decision: NonNullable<ExtractedBizFileData['officers']>[number]['contactResolution'] | undefined,
+): ContactResolutionDecision {
+  return decision ?? { action: 'AUTO' };
+}
+
+async function resolveBizFileContact(
+  candidate: ContactIdentityCandidate,
+  decision: NonNullable<ExtractedBizFileData['officers']>[number]['contactResolution'] | undefined,
+  params: { tenantId: string; userId: string; tx: PrismaTransactionClient },
+) {
+  if (!decision) {
+    const match = await previewContactIdentity(candidate, params.tenantId, params.tx);
+    if (match) {
+      throw new Error(`Review the contact match for ${candidate.sourceRecordId} before continuing`);
+    }
+  }
+  return resolveOrCreateContact(candidate, reviewedDecision(decision), params);
 }
 
 // ============================================================================
@@ -269,22 +339,11 @@ export async function processBizFileExtractionSelective(
       if (officerDiff.type === 'added' && officerDiff.extractedData) {
         // Add new officer
         const extracted = officerDiff.extractedData;
-        const nameParts = extracted.name.split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-
-        // Find or create contact
-        const { contact } = await findOrCreateContact(
-          {
-            contactType: 'INDIVIDUAL',
-            firstName: normalizeName(firstName) || firstName,
-            lastName: normalizeName(lastName) || lastName,
-            identificationType: mapIdentificationType(extracted.identificationType) || undefined,
-            identificationNumber: extracted.identificationNumber,
-            nationality: extracted.nationality,
-            fullAddress: extracted.address,
-          },
-          { tenantId, userId }
+        const index = normalizedData.officers?.indexOf(extracted) ?? -1;
+        const { contact } = await resolveBizFileContact(
+          officerIdentityCandidate(extracted, Math.max(index, 0)),
+          extracted.contactResolution,
+          { tenantId, userId, tx: tx as PrismaTransactionClient },
         );
 
         // Create officer record
@@ -305,7 +364,9 @@ export async function processBizFileExtractionSelective(
         });
 
         // Create company-contact relationship
-        await createCompanyContactRelation(contact.id, existingCompanyId, extracted.role);
+        await createCompanyContactRelation(
+          contact.id, existingCompanyId, extracted.role, false, tx as PrismaTransactionClient,
+        );
         officerChanges.added++;
       } else if (officerDiff.type === 'updated' && officerDiff.officerId && officerDiff.extractedData) {
         // Update existing officer
@@ -349,28 +410,12 @@ export async function processBizFileExtractionSelective(
         const extracted = shareholderDiff.extractedData;
         const contactType = extracted.type === 'CORPORATE' ? 'CORPORATE' : 'INDIVIDUAL';
 
-        let contactData;
-        if (contactType === 'CORPORATE') {
-          contactData = {
-            contactType: 'CORPORATE' as const,
-            corporateName: normalizeCompanyName(extracted.name) || extracted.name,
-            corporateUen: extracted.identificationNumber,
-            fullAddress: extracted.address,
-          };
-        } else {
-          const nameParts = extracted.name.split(' ');
-          contactData = {
-            contactType: 'INDIVIDUAL' as const,
-            firstName: normalizeName(nameParts[0]) || nameParts[0],
-            lastName: normalizeName(nameParts.slice(1).join(' ')) || undefined,
-            identificationType: mapIdentificationType(extracted.identificationType) || undefined,
-            identificationNumber: extracted.identificationNumber,
-            nationality: extracted.nationality,
-            fullAddress: extracted.address,
-          };
-        }
-
-        const { contact } = await findOrCreateContact(contactData, { tenantId, userId });
+        const index = normalizedData.shareholders?.indexOf(extracted) ?? -1;
+        const { contact } = await resolveBizFileContact(
+          shareholderIdentityCandidate(extracted, Math.max(index, 0)),
+          extracted.contactResolution,
+          { tenantId, userId, tx: tx as PrismaTransactionClient },
+        );
 
         await tx.companyShareholder.create({
           data: {
@@ -394,7 +439,9 @@ export async function processBizFileExtractionSelective(
           },
         });
 
-        await createCompanyContactRelation(contact.id, existingCompanyId, 'Shareholder');
+        await createCompanyContactRelation(
+          contact.id, existingCompanyId, 'Shareholder', false, tx as PrismaTransactionClient,
+        );
         shareholderChanges.added++;
       } else if (shareholderDiff.type === 'updated' && shareholderDiff.shareholderId && shareholderDiff.extractedData) {
         // Update existing shareholder
@@ -880,26 +927,13 @@ export async function processBizFileExtraction(
 
     // Process officers
     if (normalizedData.officers?.length) {
-      for (const officer of normalizedData.officers) {
+      for (const [officerIndex, officer] of normalizedData.officers.entries()) {
         const isCurrent = !officer.cessationDate;
 
-        // Parse name for individual
-        const nameParts = officer.name.split(' ');
-        const firstName = nameParts[0];
-        const lastName = nameParts.slice(1).join(' ');
-
-        // Find or create contact (using transaction)
-        const { contact } = await findOrCreateContact(
-          {
-            contactType: 'INDIVIDUAL',
-            firstName,
-            lastName,
-            identificationType: mapIdentificationType(officer.identificationType) || undefined,
-            identificationNumber: officer.identificationNumber,
-            nationality: officer.nationality,
-            fullAddress: officer.address,
-          },
-          { tenantId, userId, tx: tx as PrismaTransactionClient }
+        const { contact } = await resolveBizFileContact(
+          officerIdentityCandidate(officer, officerIndex),
+          officer.contactResolution,
+          { tenantId, userId, tx: tx as PrismaTransactionClient },
         );
 
         // Create officer record
@@ -929,31 +963,14 @@ export async function processBizFileExtraction(
 
     // Process shareholders
     if (normalizedData.shareholders?.length) {
-      for (const shareholder of normalizedData.shareholders) {
+      for (const [shareholderIndex, shareholder] of normalizedData.shareholders.entries()) {
         const contactType = mapContactType(shareholder.type);
 
-        let contactData;
-        if (contactType === 'CORPORATE') {
-          contactData = {
-            contactType: 'CORPORATE' as const,
-            corporateName: shareholder.name,
-            corporateUen: shareholder.identificationNumber,
-            fullAddress: shareholder.address,
-          };
-        } else {
-          const nameParts = shareholder.name.split(' ');
-          contactData = {
-            contactType: 'INDIVIDUAL' as const,
-            firstName: nameParts[0],
-            lastName: nameParts.slice(1).join(' ') || undefined,
-            identificationType: mapIdentificationType(shareholder.identificationType) || undefined,
-            identificationNumber: shareholder.identificationNumber,
-            nationality: shareholder.nationality,
-            fullAddress: shareholder.address,
-          };
-        }
-
-        const { contact } = await findOrCreateContact(contactData, { tenantId, userId, tx: tx as PrismaTransactionClient });
+        const { contact } = await resolveBizFileContact(
+          shareholderIdentityCandidate(shareholder, shareholderIndex),
+          shareholder.contactResolution,
+          { tenantId, userId, tx: tx as PrismaTransactionClient },
+        );
 
         await tx.companyShareholder.create({
           data: {

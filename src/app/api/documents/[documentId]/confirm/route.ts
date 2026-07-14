@@ -94,11 +94,6 @@ export async function POST(
     }
 
     const correctedData = normalizeBizFileReviewDraft(parsed.data);
-    await prisma.document.update({
-      where: { id: documentId },
-      data: { extractedData: correctedData as object },
-    });
-
     const result = await processBizFileExtraction(
       documentId,
       correctedData,
