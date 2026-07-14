@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   transaction: vi.fn(), ledgerFind: vi.fn(), lock: vi.fn(), contactFind: vi.fn(),
-  contactUpdate: vi.fn(), contactDelete: vi.fn(), ledgerCreate: vi.fn(), auditCreate: vi.fn(),
+  contactUpdate: vi.fn(), contactUpdateMany: vi.fn(), contactDelete: vi.fn(), ledgerCreate: vi.fn(), auditCreate: vi.fn(),
   companyContactFind: vi.fn(), companyContactUpdate: vi.fn(), companyContactDelete: vi.fn(),
   detailFind: vi.fn(), detailUpdate: vi.fn(), detailDelete: vi.fn(),
   noteFind: vi.fn(), noteUpdate: vi.fn(), officerUpdate: vi.fn(), shareholderUpdate: vi.fn(),
@@ -21,7 +21,7 @@ function delegate(name: string) {
 
 const tx = {
   $queryRaw: mocks.lock,
-  contact: { findMany: mocks.contactFind, update: mocks.contactUpdate, deleteMany: mocks.contactDelete },
+  contact: { findMany: mocks.contactFind, update: mocks.contactUpdate, updateMany: mocks.contactUpdateMany, deleteMany: mocks.contactDelete },
   contactMergeOperation: { findUnique: mocks.ledgerFind, create: mocks.ledgerCreate },
   auditLog: { create: mocks.auditCreate },
   companyContact: { ...delegate('companyContact'), findMany: mocks.companyContactFind, update: mocks.companyContactUpdate, deleteMany: mocks.companyContactDelete },
@@ -62,6 +62,7 @@ describe('contact merge service', () => {
     mocks.lock.mockResolvedValue(contacts.map(({ id, updatedAt }) => ({ id, updatedAt })));
     mocks.contactFind.mockResolvedValue(contacts);
     mocks.contactUpdate.mockResolvedValue(contacts[0]);
+    mocks.contactUpdateMany.mockResolvedValue({ count: 0 });
     mocks.contactDelete.mockResolvedValue({ count: 2 });
     mocks.ledgerCreate.mockResolvedValue({ id: 'ledger-1' });
     mocks.auditCreate.mockResolvedValue({ id: 'audit-1' });
@@ -188,5 +189,78 @@ describe('contact merge service', () => {
     await expect(mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' })).resolves.toEqual({
       ledgerId: 'winner', survivingContactId: 'master', movedCounts: { notes: 1 }, alreadyCompleted: true,
     });
+  });
+
+  it('neutralizes a source composite identifier before enriching an empty master', async () => {
+    const identifierContacts = contacts.map((contact, index) => index === 1 ? {
+      ...contact, identificationType: 'NRIC', identificationNumber: 'S1234567A',
+    } : contact);
+    mocks.contactFind.mockResolvedValueOnce(identifierContacts);
+    mocks.contactUpdate.mockImplementationOnce(async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
+      if (where.id === 'master' && data.identificationNumber === 'S1234567A' && mocks.contactUpdateMany.mock.calls.length === 0) {
+        throw new Error('unique constraint violation');
+      }
+      return identifierContacts[0];
+    });
+
+    await expect(mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' })).resolves.toMatchObject({ survivingContactId: 'master' });
+    expect(mocks.contactUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['source-1'] }, tenantId: 'tenant-1', identificationType: 'NRIC', identificationNumber: 'S1234567A' },
+      data: { identificationType: null, identificationNumber: null },
+    });
+    expect(mocks.contactUpdateMany.mock.invocationCallOrder[0]).toBeLessThan(mocks.contactUpdate.mock.invocationCallOrder[0]);
+    expect(mocks.ledgerCreate.mock.calls[0][0].data.sourceSnapshots[0]).toMatchObject({ identificationType: 'NRIC', identificationNumber: 'S1234567A' });
+  });
+
+  it('neutralizes only the source owning an explicitly selected identifier', async () => {
+    const identifierContacts = contacts.map((contact, index) => index === 0 ? {
+      ...contact, identificationType: 'NRIC', identificationNumber: 'S0000001A',
+    } : index === 1 ? {
+      ...contact, identificationType: 'NRIC', identificationNumber: 'S1234567A',
+    } : {
+      ...contact, identificationType: 'PASSPORT', identificationNumber: 'P7654321',
+    });
+    mocks.contactFind.mockResolvedValueOnce(identifierContacts);
+    const selectedInput = {
+      ...input(),
+      fieldDecisions: { identificationType: 'NRIC', identificationNumber: 'S1234567A' },
+    };
+
+    await mergeContacts(selectedInput, { tenantId: 'tenant-1', userId: 'user-1' });
+
+    expect(mocks.contactUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['source-1'] }, tenantId: 'tenant-1', identificationType: 'NRIC', identificationNumber: 'S1234567A' },
+      data: { identificationType: null, identificationNumber: null },
+    });
+    expect(mocks.contactUpdateMany.mock.calls[0][0].where.id.in).not.toContain('source-2');
+    expect(mocks.contactDelete.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.contactUpdateMany.mock.invocationCallOrder[0]);
+  });
+
+  it('orders reverse-lexical source note groups by submitted request order while locks stay sorted', async () => {
+    const orderedContacts = [
+      contacts[0],
+      { ...contacts[1], id: 'source-z' },
+      { ...contacts[2], id: 'source-a' },
+    ];
+    const orderedInput = {
+      ...input(),
+      sourceContactIds: ['source-z', 'source-a'],
+      expectedUpdatedAt: Object.fromEntries(orderedContacts.map(contact => [contact.id, stamp.toISOString()])),
+    };
+    mocks.lock.mockResolvedValueOnce(orderedContacts.map(({ id, updatedAt }) => ({ id, updatedAt })));
+    mocks.contactFind.mockResolvedValueOnce(orderedContacts);
+    mocks.noteFind.mockResolvedValueOnce([
+      { id: 'note-a', contactId: 'source-a', order: 0, createdAt: new Date('2021-01-01') },
+      { id: 'note-master', contactId: 'master', order: 0, createdAt: new Date('2020-01-01') },
+      { id: 'note-z', contactId: 'source-z', order: 0, createdAt: new Date('2022-01-01') },
+    ]);
+
+    await mergeContacts(orderedInput, { tenantId: 'tenant-1', userId: 'user-1' });
+
+    const lock = mocks.lock.mock.calls[0][0] as { values: string[] };
+    expect(lock.values.indexOf('source-a')).toBeLessThan(lock.values.indexOf('source-z'));
+    expect(mocks.noteUpdate).toHaveBeenNthCalledWith(1, { where: { id: 'note-master' }, data: { contactId: 'master', order: 0 } });
+    expect(mocks.noteUpdate).toHaveBeenNthCalledWith(2, { where: { id: 'note-z' }, data: { contactId: 'master', order: 1 } });
+    expect(mocks.noteUpdate).toHaveBeenNthCalledWith(3, { where: { id: 'note-a' }, data: { contactId: 'master', order: 2 } });
   });
 });

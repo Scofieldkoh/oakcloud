@@ -366,16 +366,41 @@ export async function mergeContacts(
     const byId = new Map(contacts.map(contact => [contact.id, contact]));
     const master = byId.get(input.masterContactId)!;
     const sources = input.sourceContactIds.map(id => byId.get(id)!);
+    const submittedSourceIds = [...input.sourceContactIds];
     const sourceIds = [...input.sourceContactIds].sort();
     const snapshots = JSON.parse(JSON.stringify(
       contacts.map(({ contactDetails: _contactDetails, ...contact }) => contact),
     )) as Array<Record<string, unknown>>;
+    const masterData = selectedMasterData(master, sources, input.fieldDecisions);
+    const selectedIdentificationType = Object.hasOwn(masterData, 'identificationType')
+      ? masterData.identificationType as MergeContact['identificationType']
+      : master.identificationType;
+    const selectedIdentificationNumber = Object.hasOwn(masterData, 'identificationNumber')
+      ? masterData.identificationNumber as string | null
+      : master.identificationNumber;
+    if (selectedIdentificationType && selectedIdentificationNumber) {
+      const conflictingSourceIds = sources
+        .filter(source => source.identificationType === selectedIdentificationType
+          && source.identificationNumber === selectedIdentificationNumber)
+        .map(source => source.id);
+      if (conflictingSourceIds.length) {
+        await tx.contact.updateMany({
+          where: {
+            id: { in: conflictingSourceIds },
+            tenantId: params.tenantId,
+            identificationType: selectedIdentificationType,
+            identificationNumber: selectedIdentificationNumber,
+          },
+          data: { identificationType: null, identificationNumber: null },
+        });
+      }
+    }
 
-    await tx.contact.update({ where: { id: master.id }, data: selectedMasterData(master, sources, input.fieldDecisions) });
+    await tx.contact.update({ where: { id: master.id }, data: masterData });
     const movedCounts: Record<string, number> = {};
     movedCounts.companyContacts = await consolidateCompanyRelations(tx, sortedIds, master.id, sourceIds);
     movedCounts.contactDetails = await consolidateDetails(tx, sortedIds, master.id, sourceIds, params.tenantId);
-    movedCounts.notes = await moveNotes(tx, sortedIds, master.id, sourceIds);
+    movedCounts.notes = await moveNotes(tx, sortedIds, master.id, submittedSourceIds);
     const officers = await tx.companyOfficer.updateMany({ where: { contactId: { in: sourceIds } }, data: { contactId: master.id } });
     const shareholders = await tx.companyShareholder.updateMany({ where: { contactId: { in: sourceIds } }, data: { contactId: master.id } });
     const charges = await tx.companyCharge.updateMany({ where: { chargeHolderId: { in: sourceIds } }, data: { chargeHolderId: master.id } });
