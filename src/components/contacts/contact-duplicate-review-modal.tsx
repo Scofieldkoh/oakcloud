@@ -259,7 +259,7 @@ function ReviewGroup({
             <div className="flex-1">
               <p>{reviewError}</p>
               {/changed.*review again/i.test(reviewError) ? (
-                <Button className="mt-2" size="xs" variant="secondary" leftIcon={<RefreshCw />} onClick={onRefresh}>Refresh recommendations</Button>
+                <Button className="mt-2 min-h-11 sm:min-h-7" size="xs" variant="secondary" leftIcon={<RefreshCw />} onClick={onRefresh}>Refresh recommendations</Button>
               ) : null}
             </div>
           </div>

@@ -91,6 +91,10 @@ describe('ConfirmDialog', () => {
 
     const cancel = screen.getByRole('button', { name: /cancel/i });
     const confirm = screen.getByRole('button', { name: /permanently merge/i });
+    expect(inner.firstElementChild).toHaveFocus();
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(confirm).toHaveFocus();
+
     confirm.focus();
     fireEvent.keyDown(document, { key: 'Tab' });
     expect(cancel).toHaveFocus();

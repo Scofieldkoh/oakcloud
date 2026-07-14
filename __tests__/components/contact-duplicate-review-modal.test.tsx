@@ -175,7 +175,9 @@ describe('ContactDuplicateReviewModal', () => {
     fireEvent.click(await screen.findByRole('button', { name: /permanently merge/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/changed.*review again/i);
-    fireEvent.click(screen.getByRole('button', { name: /refresh recommendations/i }));
+    const refresh = screen.getByRole('button', { name: /refresh recommendations/i });
+    expect(refresh).toHaveClass('min-h-11');
+    fireEvent.click(refresh);
     expect(mocks.refetch).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('dialog', { name: /review duplicate contacts/i })).toBeVisible();
   });

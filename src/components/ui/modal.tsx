@@ -91,7 +91,11 @@ export function Modal({
     }
     const first = focusable[0];
     const last = focusable.at(-1)!;
-    if (e.shiftKey && (document.activeElement === first || !content.contains(document.activeElement))) {
+    if (e.shiftKey && (
+      document.activeElement === content ||
+      document.activeElement === first ||
+      !content.contains(document.activeElement)
+    )) {
       e.preventDefault();
       last.focus();
     } else if (!e.shiftKey && (document.activeElement === last || !content.contains(document.activeElement))) {
