@@ -418,4 +418,3 @@ Run: `git diff --check HEAD~4..HEAD`
 Run: `git status --short`
 
 Expected: no whitespace errors and no unintended files.
-
