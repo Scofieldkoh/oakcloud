@@ -3,9 +3,11 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { requireWorkspaceContext } from '@/lib/api-helpers';
 import { prisma } from '@/lib/prisma';
-import { createContact, linkContactToCompany } from '@/services/contact.service';
+import { linkContactToCompany } from '@/services/contact.service';
 import { createContactDetail } from '@/services/contact-detail.service';
 import { createContactWithDetailsSchema } from '@/lib/validations/contact-detail';
+import { contactResolutionSchema } from '@/lib/validations/contact';
+import { previewContactIdentity, resolveOrCreateContact } from '@/services/contact-identity.service';
 import { ZodError } from 'zod';
 
 type RouteParams = {
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
 
     // Resolve tenant context - SUPER_ADMIN can specify via body
-    const { tenantId: bodyTenantId, ...contactData } = body;
+    const { tenantId: bodyTenantId, resolution: rawResolution, ...contactData } = body;
     const tenantResult = await requireWorkspaceContext(session, bodyTenantId);
     if (tenantResult.error) return tenantResult.error;
     const tenantId = tenantResult.tenantId;
@@ -42,20 +44,47 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       ...contactData,
       companyId,
     });
+    const resolution = rawResolution === undefined
+      ? undefined
+      : contactResolutionSchema.parse(rawResolution);
+    const candidate = { ...data.contact, source: 'COMPANY_QUICK_CREATE' as const };
+    const match = await previewContactIdentity(candidate, tenantId);
+    if (resolution && !match) {
+      return NextResponse.json(
+        { error: 'The contact match is no longer current; submit again to preview' },
+        { status: 400 },
+      );
+    }
+    if (match && (!resolution || (
+      resolution.action === 'REUSE' &&
+      (resolution.contactId !== match.contactId || match.blockedByIdentifierConflict)
+    ))) {
+      return NextResponse.json(
+        {
+          error: match.blockedByIdentifierConflict
+            ? 'A matching contact has a conflicting identifier and cannot be reused'
+            : 'Review the matching contact before continuing',
+          code: 'CONTACT_MATCH_REVIEW_REQUIRED',
+          match,
+        },
+        { status: 409 },
+      );
+    }
 
     // Use a transaction to ensure atomicity
     const result = await prisma.$transaction(async (tx) => {
-      // Create the contact
-      const contact = await createContact(data.contact, {
-        tenantId,
-        userId: session.id,
-        tx,
-      });
+      const resolved = await resolveOrCreateContact(
+        candidate,
+        resolution ?? { action: 'AUTO' },
+        { tenantId, userId: session.id, tx },
+      );
+      const contact = resolved.contact;
 
       // Link the contact to the company
       await linkContactToCompany(contact.id, companyId, data.relationship, {
         tenantId,
         userId: session.id,
+        tx,
       });
 
       // Create additional contact details if provided
@@ -65,6 +94,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           await createContactDetail(
             {
               contactId: contact.id,
+              companyId,
               detailType: detail.detailType,
               value: detail.value,
               label: detail.label,

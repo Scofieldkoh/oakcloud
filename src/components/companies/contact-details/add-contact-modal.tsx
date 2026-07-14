@@ -104,7 +104,7 @@ export function LinkContactModal({ isOpen, onClose, onSubmit, isLoading }: LinkC
         <div className="rounded-lg border border-border-primary bg-surface-tertiary/40 p-3">
           <p className="text-xs font-medium text-text-primary">Can&apos;t find the contact?</p>
           <p className="text-xs text-text-secondary mt-1">
-            Create it in a new tab, then refresh the list here.
+            Create it in a new tab, review any possible match, then refresh the list here.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Button variant="secondary" size="sm" onClick={handleCreateContact} disabled={isLoading}>

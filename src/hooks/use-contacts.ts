@@ -3,10 +3,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Contact, ContactType } from '@/generated/prisma';
 import type { CreateContactWithDetailsInput, UpdateContactInput } from '@/lib/validations/contact';
+import type { ContactMatchResult } from '@/types/contact-identity';
 
 type CreateContactPayload = CreateContactWithDetailsInput & {
   tenantId?: string;
 };
+
+export class ContactMatchReviewRequiredError extends Error {
+  readonly match: ContactMatchResult;
+
+  constructor(message: string, match: ContactMatchResult) {
+    super(message);
+    this.name = 'ContactMatchReviewRequiredError';
+    this.match = match;
+  }
+}
 
 interface ContactWithCount extends Contact {
   _count?: {
@@ -117,6 +128,16 @@ async function createContact(data: CreateContactPayload): Promise<Contact> {
   });
   if (!response.ok) {
     const error = await response.json();
+    if (
+      response.status === 409 &&
+      error.code === 'CONTACT_MATCH_REVIEW_REQUIRED' &&
+      error.match
+    ) {
+      throw new ContactMatchReviewRequiredError(
+        error.error || 'Review the matching contact before continuing',
+        error.match,
+      );
+    }
     throw new Error(error.error || 'Failed to create contact');
   }
   return response.json();

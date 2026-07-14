@@ -63,6 +63,17 @@ const contactBaseSchema = z.object({
   fullAddress: z.string().max(500).optional().nullable(),
 });
 
+export const contactResolutionSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('REUSE'),
+    contactId: z.string().uuid(),
+  }),
+  z.object({
+    action: z.literal('CREATE_SEPARATE'),
+    reason: z.string().trim().min(10, 'Reason must be at least 10 characters'),
+  }),
+]);
+
 export const createContactSchema = contactBaseSchema.refine(
   (data) => {
     if (data.contactType === 'INDIVIDUAL') {
@@ -88,6 +99,7 @@ const createContactDetailOnCreateSchema = z.object({
 
 export const createContactWithDetailsSchema = contactBaseSchema.extend({
   contactDetails: z.array(createContactDetailOnCreateSchema).optional(),
+  resolution: contactResolutionSchema.optional(),
 }).refine(
   (data) => {
     if (data.contactType === 'INDIVIDUAL') {
@@ -124,5 +136,6 @@ export const contactSearchSchema = z.object({
 
 export type CreateContactInput = z.infer<typeof createContactSchema>;
 export type CreateContactWithDetailsInput = z.infer<typeof createContactWithDetailsSchema>;
+export type ContactResolutionInput = z.infer<typeof contactResolutionSchema>;
 export type UpdateContactInput = z.infer<typeof updateContactSchema>;
 export type ContactSearchInput = z.infer<typeof contactSearchSchema>;

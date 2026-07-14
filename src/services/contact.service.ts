@@ -380,6 +380,7 @@ interface LinkContactOptions {
   shareClass?: string;
   tenantId: string;
   userId: string;
+  tx?: PrismaTransactionClient;
 }
 
 export async function linkContactToCompany(
@@ -388,12 +389,13 @@ export async function linkContactToCompany(
   relationship: string,
   options: LinkContactOptions
 ): Promise<void> {
-  const { isPrimary = false, appointmentDate, numberOfShares, shareClass, tenantId, userId } = options;
+  const { isPrimary = false, appointmentDate, numberOfShares, shareClass, tenantId, userId, tx } = options;
+  const db = tx ?? prisma;
 
   // Validate both contact and company belong to the same tenant
   const [contact, company] = await Promise.all([
-    prisma.contact.findUnique({ where: { id: contactId }, select: { tenantId: true, fullName: true } }),
-    prisma.company.findUnique({ where: { id: companyId }, select: { tenantId: true, name: true } }),
+    db.contact.findUnique({ where: { id: contactId }, select: { tenantId: true, fullName: true } }),
+    db.company.findUnique({ where: { id: companyId }, select: { tenantId: true, name: true } }),
   ]);
 
   if (!contact || !company) {
@@ -415,7 +417,7 @@ export async function linkContactToCompany(
   if (isOfficerRole) {
     // Check for existing active officer with same role at this company
     const officerRole = OFFICER_ROLE_MAP[relationship] || 'DIRECTOR';
-    const existingOfficer = await prisma.companyOfficer.findFirst({
+    const existingOfficer = await db.companyOfficer.findFirst({
       where: {
         companyId,
         contactId,
@@ -429,7 +431,7 @@ export async function linkContactToCompany(
     }
 
     // Create CompanyOfficer record
-    await prisma.companyOfficer.create({
+    await db.companyOfficer.create({
       data: {
         companyId,
         contactId,
@@ -450,7 +452,7 @@ export async function linkContactToCompany(
       entityName: contact.fullName,
       summary: `Linked "${contact.fullName}" as ${relationship} to "${company.name}"`,
       changeSource: 'MANUAL',
-    });
+    }, tx as Prisma.TransactionClient | undefined);
   } else if (isShareholder) {
     // Create CompanyShareholder record
     if (!numberOfShares || numberOfShares <= 0) {
@@ -458,7 +460,7 @@ export async function linkContactToCompany(
     }
 
     // Check for existing active shareholding at this company
-    const existingShareholder = await prisma.companyShareholder.findFirst({
+    const existingShareholder = await db.companyShareholder.findFirst({
       where: {
         companyId,
         contactId,
@@ -470,7 +472,7 @@ export async function linkContactToCompany(
       throw new Error('Contact already has an active shareholding at this company');
     }
 
-    await prisma.companyShareholder.create({
+    await db.companyShareholder.create({
       data: {
         companyId,
         contactId,
@@ -492,10 +494,10 @@ export async function linkContactToCompany(
       entityName: contact.fullName,
       summary: `Linked "${contact.fullName}" as shareholder with ${numberOfShares} ${shareClass || 'Ordinary'} shares to "${company.name}"`,
       changeSource: 'MANUAL',
-    });
+    }, tx as Prisma.TransactionClient | undefined);
   } else {
     // Create general CompanyContact relationship
-    await prisma.companyContact.upsert({
+    await db.companyContact.upsert({
       where: {
         companyId_contactId_relationship: {
           companyId,
@@ -524,7 +526,7 @@ export async function linkContactToCompany(
       entityName: contact.fullName,
       summary: `Linked "${contact.fullName}" as ${relationship} to "${company.name}"`,
       changeSource: 'MANUAL',
-    });
+    }, tx as Prisma.TransactionClient | undefined);
   }
 }
 

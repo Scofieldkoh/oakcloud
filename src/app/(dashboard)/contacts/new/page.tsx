@@ -7,7 +7,7 @@ import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert, Mail, Building2, Us
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createContactSchema, type CreateContactInput, type CreateContactWithDetailsInput } from '@/lib/validations/contact';
-import { useCreateContact } from '@/hooks/use-contacts';
+import { ContactMatchReviewRequiredError, useCreateContact } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
@@ -17,6 +17,8 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { PurposeToggle } from '@/components/contacts/purpose-toggle';
 import { AsyncSearchSelect } from '@/components/ui/async-search-select';
 import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
+import { ContactMatchDialog } from '@/components/contacts/contact-match-dialog';
+import type { ContactMatchResult } from '@/types/contact-identity';
 
 const contactTypes = [
   { value: 'INDIVIDUAL', label: 'Individual' },
@@ -75,6 +77,8 @@ export default function NewContactPage() {
   const createContact = useCreateContact();
   const { can, isLoading: permissionsLoading } = usePermissions();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pendingMatch, setPendingMatch] = useState<ContactMatchResult | null>(null);
+  const [pendingPayload, setPendingPayload] = useState<(CreateContactWithDetailsInput & { tenantId?: string }) | null>(null);
   const toast = useToast();
 
   // SUPER_ADMIN tenant selection (from centralized store)
@@ -225,16 +229,48 @@ export default function NewContactPage() {
       }
     }
 
+    const payload: CreateContactWithDetailsInput & { tenantId?: string } = {
+      ...data,
+      ...(contactDetails.length > 0 ? { contactDetails } : {}),
+      ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
+    };
     try {
-      const payload: CreateContactWithDetailsInput & { tenantId?: string } = {
-        ...data,
-        ...(contactDetails.length > 0 ? { contactDetails } : {}),
-        ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
-      };
-      const contact = await createContact.mutateAsync(payload);
-      router.push(`/contacts/${contact.id}`);
+      await submitPayload(payload);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to create contact');
+      handleCreateError(err, payload);
+    }
+  };
+
+  const submitPayload = async (payload: CreateContactWithDetailsInput & { tenantId?: string }) => {
+    const contact = await createContact.mutateAsync(payload);
+    setPendingMatch(null);
+    setPendingPayload(null);
+    router.push(`/contacts/${contact.id}`);
+  };
+
+  const handleCreateError = (
+    error: unknown,
+    payload: CreateContactWithDetailsInput & { tenantId?: string },
+  ) => {
+    if (error instanceof ContactMatchReviewRequiredError) {
+      setPendingPayload(payload);
+      setPendingMatch(error.match);
+      setSubmitError(null);
+      return;
+    }
+    setSubmitError(error instanceof Error ? error.message : 'Failed to create contact');
+  };
+
+  const resolvePendingMatch = async (
+    resolution: NonNullable<CreateContactWithDetailsInput['resolution']>,
+  ) => {
+    if (!pendingPayload) return;
+    const payload = { ...pendingPayload, resolution };
+    setSubmitError(null);
+    try {
+      await submitPayload(payload);
+    } catch (error) {
+      handleCreateError(error, payload);
     }
   };
 
@@ -282,6 +318,19 @@ export default function NewContactPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl">
+      {pendingMatch && (
+        <ContactMatchDialog
+          match={pendingMatch}
+          open
+          isLoading={createContact.isPending}
+          onUseExisting={() => resolvePendingMatch({ action: 'REUSE', contactId: pendingMatch.contactId })}
+          onCreateSeparate={(reason) => resolvePendingMatch({ action: 'CREATE_SEPARATE', reason })}
+          onClose={() => {
+            setPendingMatch(null);
+            setPendingPayload(null);
+          }}
+        />
+      )}
       {/* Header */}
       <div className="mb-6">
         <Link

@@ -3,6 +3,8 @@ import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import type { ContactDetailType } from '@/generated/prisma';
+import { ContactMatchReviewRequiredError } from '@/hooks/use-contacts';
+import type { ContactResolutionInput } from '@/lib/validations/contact';
 
 // ============================================================================
 // TYPES
@@ -80,6 +82,7 @@ export interface UpdateContactDetailInput {
 
 export interface CreateContactWithDetailsInput {
   relationship: string;
+  resolution?: ContactResolutionInput;
   contact: {
     contactType: 'INDIVIDUAL' | 'CORPORATE';
     firstName?: string;
@@ -339,6 +342,16 @@ export function useCreateContactWithDetails(companyId: string) {
       });
       if (!response.ok) {
         const err = await response.json();
+        if (
+          response.status === 409 &&
+          err.code === 'CONTACT_MATCH_REVIEW_REQUIRED' &&
+          err.match
+        ) {
+          throw new ContactMatchReviewRequiredError(
+            err.error || 'Review the matching contact before continuing',
+            err.match,
+          );
+        }
         throw new Error(err.error || 'Failed to create contact');
       }
       return response.json();
@@ -349,6 +362,7 @@ export function useCreateContactWithDetails(companyId: string) {
       queryClient.invalidateQueries({ queryKey: ['company', companyId] });
     },
     onError: (err: Error) => {
+      if (err instanceof ContactMatchReviewRequiredError) return;
       error(err.message);
     },
   });

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createContactWithDetailsSchema, contactSearchSchema } from '@/lib/validations/contact';
-import { createContact, searchContactsWithCounts } from '@/services/contact.service';
+import { searchContactsWithCounts } from '@/services/contact.service';
 import { createContactDetail } from '@/services/contact-detail.service';
+import { previewContactIdentity, resolveOrCreateContact } from '@/services/contact-identity.service';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const data = createContactWithDetailsSchema.parse(body);
-    const { contactDetails = [], ...createData } = data;
+    const { contactDetails = [], resolution, ...createData } = data;
 
     const tenantId = session.tenantId;
 
@@ -77,19 +78,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
 
+    const candidate = { ...createData, source: 'MANUAL' as const };
+    const match = await previewContactIdentity(candidate, tenantId);
+    if (resolution && !match) {
+      return NextResponse.json(
+        { error: 'The contact match is no longer current; submit again to preview' },
+        { status: 400 },
+      );
+    }
+    if (match && (!resolution || (
+      resolution.action === 'REUSE' &&
+      (resolution.contactId !== match.contactId || match.blockedByIdentifierConflict)
+    ))) {
+      return NextResponse.json(
+        {
+          error: match.blockedByIdentifierConflict
+            ? 'A matching contact has a conflicting identifier and cannot be reused'
+            : 'Review the matching contact before continuing',
+          code: 'CONTACT_MATCH_REVIEW_REQUIRED',
+          match,
+        },
+        { status: 409 },
+      );
+    }
+
     const contact = await prisma.$transaction(async (tx) => {
-      const createdContact = await createContact(createData, {
+      const resolved = await resolveOrCreateContact(
+        candidate,
+        resolution ?? { action: 'AUTO' },
+        {
         tenantId,
         userId: session.id,
         tx,
-      });
+        },
+      );
+      const resolvedContact = resolved.contact;
 
       if (contactDetails.length > 0) {
         for (let i = 0; i < contactDetails.length; i++) {
           const detail = contactDetails[i];
           await createContactDetail(
             {
-              contactId: createdContact.id,
+              contactId: resolvedContact.id,
               companyId: detail.companyId,
               detailType: detail.detailType,
               value: detail.value,
@@ -108,7 +138,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      return createdContact;
+      return resolvedContact;
     });
 
     return NextResponse.json(contact, { status: 201 });
