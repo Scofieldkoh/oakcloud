@@ -129,11 +129,13 @@ async function findCandidates(
     : null;
   const exactPredicates: Prisma.ContactWhereInput[] = [
     ...(canonicalName ? [{ canonicalName }, { alias: { equals: identityName(candidate), mode: 'insensitive' as const } }] : []),
+    ...(canonicalName ? [{ canonicalName: null, fullName: fullName(candidate) }] : []),
+    ...(canonicalizeContactName(candidate.alias) ? [{ canonicalName: canonicalizeContactName(candidate.alias) }] : []),
     ...(corporateComparison ? [{ canonicalName: { startsWith: corporateComparison } }] : []),
     ...(identificationNumber ? [{ identificationType: candidate.identificationType, identificationNumber }] : []),
     ...(corporateUen ? [{ corporateUen }] : []),
   ];
-  return db.contact.findMany({
+  const exact = await db.contact.findMany({
     where: {
       tenantId,
       contactType: candidate.contactType,
@@ -168,6 +170,50 @@ async function findCandidates(
     },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     take: 100,
+  }) as ContactWithIdentityRelations[];
+  const normalizedIdentifiers = await findNormalizedIdentifierCandidates(candidate, tenantId, db);
+  return [...new Map([...exact, ...normalizedIdentifiers].map((contact) => [contact.id, contact])).values()];
+}
+
+async function findNormalizedIdentifierCandidates(
+  candidate: ContactIdentityCandidate,
+  tenantId: string,
+  db: PrismaTransactionClient | typeof prisma,
+): Promise<ContactWithIdentityRelations[]> {
+  if (!('$queryRaw' in db) || typeof db.$queryRaw !== 'function') return [];
+  const identificationNumber = hasUsableIdentificationNumber(candidate)
+    ? normalizeContactIdentifier(candidate.identificationNumber, candidate.identificationType)
+    : null;
+  const corporateUen = hasUsableCorporateUen(candidate)
+    ? normalizeContactIdentifier(candidate.corporateUen, 'UEN')
+    : null;
+  if (!identificationNumber && !corporateUen) return [];
+  const rows = await db.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+    SELECT "id" FROM "contacts"
+    WHERE "tenantId" = ${tenantId}
+      AND "contactType" = ${candidate.contactType}::"ContactType"
+      AND "deletedAt" IS NULL AND "isActive" = true
+      AND (
+        (${identificationNumber}::text IS NOT NULL
+          AND "identificationType" = ${candidate.identificationType}::"IdentificationType"
+          AND (CASE
+            WHEN "identificationType" IN ('NRIC', 'FIN', 'UEN')
+              THEN regexp_replace(upper(normalize("identificationNumber", NFKC)), '[[:space:]-]+', '', 'g')
+            ELSE regexp_replace(trim(upper(normalize("identificationNumber", NFKC))), '[[:space:]]+', ' ', 'g')
+          END) = ${identificationNumber})
+        OR (${corporateUen}::text IS NOT NULL
+          AND regexp_replace(upper(normalize("corporateUen", NFKC)), '[[:space:]-]+', '', 'g') = ${corporateUen})
+      )
+    ORDER BY "createdAt" ASC, "id" ASC
+    LIMIT 100
+  `);
+  const ids = rows.map(({ id }) => id);
+  if (ids.length === 0) return [];
+  return db.contact.findMany({
+    where: { id: { in: ids }, tenantId, contactType: candidate.contactType, deletedAt: null, isActive: true },
+    include: identityRelationsInclude,
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    take: 100,
   }) as Promise<ContactWithIdentityRelations[]>;
 }
 
@@ -184,7 +230,8 @@ async function findFuzzyRecommendationCandidates(
       AND "contactType" = ${candidate.contactType}::"ContactType"
       AND "deletedAt" IS NULL AND "isActive" = true
       AND "canonicalName" IS NOT NULL
-      AND similarity("canonicalName", ${canonicalName}) >= 0.93
+      AND "canonicalName" % ${canonicalName}
+      AND similarity("canonicalName", ${canonicalName}) >= 0.3
     ORDER BY similarity("canonicalName", ${canonicalName}) DESC, "createdAt" ASC, "id" ASC
     LIMIT 20
   `);

@@ -4,6 +4,7 @@ const previewRaw = vi.hoisted(() => vi.fn());
 
 const tx = {
   $executeRaw: vi.fn(),
+  $queryRaw: vi.fn(),
   contact: {
     findMany: vi.fn(),
     findFirst: vi.fn(),
@@ -97,6 +98,7 @@ describe('contact identity service', () => {
     vi.clearAllMocks();
     previewRaw.mockResolvedValue([]);
     tx.contact.findMany.mockResolvedValue([]);
+    tx.$queryRaw.mockResolvedValue([]);
     tx.contact.findFirst.mockResolvedValue(null);
     tx.contactDetail.findMany.mockResolvedValue([]);
     tx.contactDetail.update.mockImplementation(async ({ where, data }) => ({
@@ -130,8 +132,8 @@ describe('contact identity service', () => {
     expect(match).toMatchObject({ contactId: 'contact-1', automatic: true });
   });
 
-  it('uses separately capped pg_trgm candidates only for fuzzy preview scoring', async () => {
-    previewRaw.mockResolvedValueOnce([{ id: 'fuzzy-1' }]);
+  it('lets the final scorer accept a candidate retrieved at DB similarity 0.5 below the 0.93 policy threshold', async () => {
+    previewRaw.mockResolvedValueOnce([{ id: 'fuzzy-1', similarity: 0.5 }]);
     vi.mocked(prisma.contact.findMany)
       .mockResolvedValueOnce([] as never)
       .mockResolvedValueOnce([existingContact({
@@ -144,13 +146,45 @@ describe('contact identity service', () => {
     const match = await previewContactIdentity(candidate({ firstName: 'Alexander Hamilton' }), 'tenant-1');
 
     const query = previewRaw.mock.calls[0][0] as { sql: string; values: unknown[] };
-    expect(query.sql).toMatch(/similarity\([\s\S]*LIMIT 20/);
+    expect(query.sql).toMatch(/%[\s\S]*similarity\([\s\S]*>= 0\.3[\s\S]*LIMIT 20/);
     expect(query.values).toContain('tenant-1');
     expect(prisma.contact.findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({
       where: expect.objectContaining({ id: { in: ['fuzzy-1'] }, tenantId: 'tenant-1' }),
       take: 20,
     }));
     expect(match).toMatchObject({ contactId: 'fuzzy-1', automatic: false });
+  });
+
+  it('reuses a differently named contact through a formatting-equivalent normalized NRIC', async () => {
+    tx.$queryRaw.mockResolvedValueOnce([{ id: 'contact-1' }]);
+    tx.contact.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      existingContact({ firstName: 'Different', fullName: 'Different', canonicalName: 'different', identificationType: 'NRIC', identificationNumber: 'S1234567A' }),
+    ]);
+    const result = await resolveOrCreateContact(candidate({ identificationType: 'NRIC', identificationNumber: 'S 1234-567 A' }), { action: 'AUTO' }, params);
+    expect(result.outcome).toBe('REUSED_IDENTIFIER');
+    expect(tx.$queryRaw.mock.calls[0][0].sql).toMatch(/regexp_replace[\s\S]*LIMIT 100/);
+  });
+
+  it('finds aliases in both incoming-alias and existing-alias directions', async () => {
+    tx.contact.findMany.mockResolvedValueOnce([existingContact({ firstName: 'Legal', fullName: 'Legal', canonicalName: 'legal' })]);
+    await resolveOrCreateContact(candidate({ firstName: 'Other', alias: 'Legal' }), { action: 'AUTO' }, params);
+    expect(tx.contact.findMany.mock.calls[0][0].where.OR).toEqual(expect.arrayContaining([{ canonicalName: 'legal' }]));
+
+    tx.contact.findMany.mockResolvedValueOnce([existingContact({ alias: 'Display Alias' })]);
+    await resolveOrCreateContact(candidate({ firstName: 'Display Alias' }), { action: 'AUTO' }, params);
+    expect(tx.contact.findMany.mock.calls[1][0].where.OR).toEqual(expect.arrayContaining([
+      { alias: { equals: 'Display Alias', mode: 'insensitive' } },
+    ]));
+  });
+
+  it('reuses an exact Chinese legacy row whose canonical name is still null', async () => {
+    tx.contact.findMany.mockResolvedValue([existingContact({ canonicalName: null })]);
+    const result = await resolveOrCreateContact(candidate(), { action: 'AUTO' }, params);
+    expect(tx.contact.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
+      where: expect.objectContaining({ OR: expect.arrayContaining([{ canonicalName: null, fullName: expect.any(String) }]) }),
+      take: 100,
+    }));
+    expect(result.outcome).toBe('REUSED_NAME');
   });
 
   it('reuses and enriches an exact Chinese name-only contact', async () => {

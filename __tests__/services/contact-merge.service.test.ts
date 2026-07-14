@@ -177,6 +177,33 @@ describe('contact merge service', () => {
       .rejects.toThrow(/field decision/i);
   });
 
+  it('rejects an identification type and number assembled from different locked contacts', async () => {
+    const identifierContacts = contacts.map((contact, index) => index === 0 ? {
+      ...contact, identificationType: 'NRIC', identificationNumber: 'S0000001A',
+    } : index === 1 ? {
+      ...contact, identificationType: 'PASSPORT', identificationNumber: 'P1234567',
+    } : contact);
+    mocks.contactFind.mockResolvedValueOnce(identifierContacts);
+
+    await expect(mergeContacts({
+      ...input(),
+      fieldDecisions: { identificationType: 'NRIC', identificationNumber: 'P1234567' },
+    }, { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(/identifier pair/i);
+  });
+
+  it('rejects a selected number incompatible with the retained master identification type', async () => {
+    const identifierContacts = contacts.map((contact, index) => index === 0 ? {
+      ...contact, identificationType: 'NRIC', identificationNumber: 'S0000001A',
+    } : index === 1 ? {
+      ...contact, identificationType: 'PASSPORT', identificationNumber: 'P1234567',
+    } : contact);
+    mocks.contactFind.mockResolvedValueOnce(identifierContacts);
+
+    await expect(mergeContacts({
+      ...input(), fieldDecisions: { identificationNumber: 'P1234567' },
+    }, { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(/identifier pair/i);
+  });
+
   it('rolls back by rejecting the transaction when a reference assertion fails', async () => {
     mocks.counts.get('milestone')!.mockResolvedValueOnce(1);
     await expect(mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(/reference/i);

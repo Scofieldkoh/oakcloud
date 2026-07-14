@@ -86,12 +86,13 @@ const EXCLUDED_DYNAMIC_DELEGATES = new Set([
 // ============================================================================
 
 export interface BackupManifest {
-  version: '1.1';
+  version: '1.1' | '1.2';
   backupId: string;
   tenantId: string;
   tenantName: string;
   tenantSlug: string;
   createdAt: string;
+  snapshotCutoff?: string;
   createdById: string;
 
   // Schema version for compatibility
@@ -141,12 +142,18 @@ export interface ListBackupsParams {
 }
 
 export function assertContactMergeRestoreSafety(
-  backupCreatedAt: string,
+  snapshotCutoff: string | undefined,
   laterMerge: { id: string; approvedAt: Date } | null,
 ): void {
   if (!laterMerge) return;
+  if (!snapshotCutoff) {
+    throw new Error(
+      `Unsafe legacy backup restore rejected because contact merge ${laterMerge.id} exists. ` +
+      'Choose a new backup created with a contact-merge snapshot cutoff.'
+    );
+  }
   throw new Error(
-    `Unsafe restore rejected: backup ${backupCreatedAt} predates contact merge ${laterMerge.id}. ` +
+    `Unsafe restore rejected: backup snapshot ${snapshotCutoff} predates contact merge ${laterMerge.id}. ` +
     'Choose a backup created after the latest contact merge to avoid resurrecting hard-deleted source contacts.'
   );
 }
@@ -170,7 +177,7 @@ function formatBytes(bytes: number): string {
 // Backup Service Class
 // ============================================================================
 
-class BackupService {
+export class BackupService {
   private dynamicTenantScopedModelDelegatesPromise: Promise<string[]> | null = null;
 
   private modelNameToDelegate(modelName: string): string {
@@ -447,6 +454,7 @@ class BackupService {
     userId: string | undefined,
     options: BackupOptions
   ): Promise<void> {
+    const snapshotCutoff = new Date().toISOString();
     try {
       // Update status to IN_PROGRESS
       await this.updateBackupProgress(backupId, 'IN_PROGRESS', 0, 'Starting backup...');
@@ -488,12 +496,13 @@ class BackupService {
       // 3. Generate and upload manifest (10% of progress)
       await this.updateBackupProgress(backupId, 'IN_PROGRESS', 92, 'Generating manifest...');
       const manifest: BackupManifest = {
-        version: '1.1',
+        version: '1.2',
         backupId,
         tenantId,
         tenantName,
         tenantSlug,
         createdAt: new Date().toISOString(),
+        snapshotCutoff,
         createdById: userId || 'system',
         schemaVersion: '1.0.0',
         stats,
@@ -957,12 +966,14 @@ class BackupService {
     const mergeAfterBackup = await prisma.contactMergeOperation.findFirst({
       where: {
         tenantId: backup.tenantId,
-        approvedAt: { gt: new Date(manifest.createdAt) },
+        ...(manifest.snapshotCutoff
+          ? { approvedAt: { gte: new Date(manifest.snapshotCutoff) } }
+          : {}),
       },
       select: { id: true, approvedAt: true },
       orderBy: { approvedAt: 'asc' },
     });
-    assertContactMergeRestoreSafety(manifest.createdAt, mergeAfterBackup);
+    assertContactMergeRestoreSafety(manifest.snapshotCutoff, mergeAfterBackup);
 
     if (options.dryRun) {
       return {

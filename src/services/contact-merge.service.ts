@@ -152,6 +152,22 @@ function validateContacts(contacts: MergeContact[], input: MergeContactsInput, t
     }
   }
 
+  const master = byId.get(input.masterContactId)!;
+  const selectedIdentificationType = Object.hasOwn(input.fieldDecisions, 'identificationType')
+    ? input.fieldDecisions.identificationType
+    : master.identificationType ?? contacts.find(contact => contact.identificationType != null)?.identificationType ?? null;
+  const selectedIdentificationNumber = Object.hasOwn(input.fieldDecisions, 'identificationNumber')
+    ? input.fieldDecisions.identificationNumber
+    : master.identificationNumber ?? contacts.find(contact => contact.identificationNumber != null)?.identificationNumber ?? null;
+  const bothCleared = selectedIdentificationType === null && selectedIdentificationNumber === null;
+  const pairBelongsToOneContact = selectedIdentificationType !== null && selectedIdentificationNumber !== null &&
+    contacts.some(contact => contact.identificationType === selectedIdentificationType &&
+      normalizeContactIdentifier(contact.identificationNumber, contact.identificationType) ===
+        normalizeContactIdentifier(selectedIdentificationNumber, selectedIdentificationType));
+  if (!bothCleared && !pairBelongsToOneContact) {
+    throw new ContactMergeConflictError('Selected composite identifier pair must come from one locked contact or both values must be cleared');
+  }
+
   const effectiveIdentificationNumbers = new Set(contacts.flatMap(contact => {
     const value = normalizeContactIdentifier(contact.identificationNumber, contact.identificationType);
     return value ? [value] : [];
