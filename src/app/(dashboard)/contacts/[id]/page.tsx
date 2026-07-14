@@ -30,6 +30,7 @@ import { ContactDetailsSection } from '@/components/contacts/contact-details-sec
 import { ContactAliasesModal } from '@/components/contacts/contact-aliases-modal';
 import { InternalNotes } from '@/components/notes/internal-notes';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { getSafeListReturnUrl } from '@/lib/list-navigation';
 import type { ContactType, IdentificationType } from '@/generated/prisma';
 
 // Company option type for AsyncSearchSelect
@@ -67,10 +68,17 @@ const _relationshipOptions = [...officerRoles, 'Shareholder', ...generalRelation
 
 export default function ContactDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ returnTo?: string | string[] }>;
 }) {
   const { id } = use(params);
+  const resolvedSearchParams = use(searchParams);
+  const rawReturnTo = Array.isArray(resolvedSearchParams.returnTo)
+    ? resolvedSearchParams.returnTo[0]
+    : resolvedSearchParams.returnTo;
+  const backHref = getSafeListReturnUrl(rawReturnTo, '/contacts');
   const router = useRouter();
   const { data: contact, isLoading, error, refetch, isFetching } = useContact(id);
   const deleteContact = useDeleteContact();
@@ -181,7 +189,7 @@ export default function ContactDetailPage({
     try {
       await deleteContact.mutateAsync({ id, reason });
       success('Contact deleted successfully');
-      router.push('/contacts');
+      router.push(backHref);
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to delete contact');
     }
@@ -302,7 +310,7 @@ export default function ContactDetailPage({
     {
       key: 'Backspace',
       ctrl: true,
-      handler: () => router.push('/contacts'),
+      handler: () => router.push(backHref),
       description: 'Back to contacts',
     },
     {
@@ -349,7 +357,7 @@ export default function ContactDetailPage({
           <p className="text-text-secondary mb-4">
             {error instanceof Error ? error.message : 'The contact you are looking for does not exist.'}
           </p>
-          <Link href="/contacts" className="btn-primary btn-sm inline-flex items-center gap-2">
+          <Link href={backHref} className="btn-primary btn-sm inline-flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Contacts
           </Link>
@@ -371,7 +379,7 @@ export default function ContactDetailPage({
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
         <div>
           <Link
-            href="/contacts"
+            href={backHref}
             className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />

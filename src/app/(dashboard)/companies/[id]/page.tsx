@@ -37,6 +37,7 @@ import {
 } from '@/components/companies/company-detail';
 import { EdenPanel } from '@/components/ai-helpbot';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { getSafeListReturnUrl } from '@/lib/list-navigation';
 
 // Inner component that uses useSearchParams (needs Suspense boundary)
 function CompanyDetailContent({ id }: { id: string }) {
@@ -89,7 +90,7 @@ function CompanyDetailContent({ id }: { id: string }) {
     try {
       await deleteCompany.mutateAsync({ id, reason });
       success('Company deleted successfully');
-      router.push('/companies');
+      router.push(backHref);
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Failed to delete company');
     }
@@ -104,6 +105,7 @@ function CompanyDetailContent({ id }: { id: string }) {
   ]);
 
   const searchParams = useSearchParams();
+  const backHref = getSafeListReturnUrl(searchParams.get('returnTo'), '/companies');
   const refreshToken = searchParams.get('refresh');
   const searchParamsString = searchParams.toString();
 
@@ -152,7 +154,7 @@ function CompanyDetailContent({ id }: { id: string }) {
     {
       key: 'Backspace',
       ctrl: true,
-      handler: () => router.push('/companies'),
+      handler: () => router.push(backHref),
       description: 'Back to companies',
     },
     {
@@ -204,7 +206,7 @@ function CompanyDetailContent({ id }: { id: string }) {
           <p className="text-text-secondary mb-4">
             {error instanceof Error ? error.message : 'The company you are looking for does not exist.'}
           </p>
-          <Link href="/companies" className="btn-primary btn-sm inline-flex items-center gap-2">
+          <Link href={backHref} className="btn-primary btn-sm inline-flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Companies
           </Link>
@@ -232,7 +234,7 @@ function CompanyDetailContent({ id }: { id: string }) {
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
         <div>
           <Link
-            href="/companies"
+            href={backHref}
             className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
