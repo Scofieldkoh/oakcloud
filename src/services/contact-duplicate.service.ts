@@ -285,6 +285,7 @@ function buildGroups(
   contacts: DiscoveryContact[],
   pairs: CandidatePair[],
   fingerprints: Map<string, string>,
+  rejectedPairs: Array<[string, string]> = [],
 ): ContactDuplicateGroup[] {
   const contactById = new Map(contacts.map((contact) => [contact.id, contact]));
   const parent = new Map(contacts.map((contact) => [contact.id, contact.id]));
@@ -304,10 +305,27 @@ function buildGroups(
       : [rightRoot, leftRoot];
     parent.set(child, root);
   };
-  pairs.forEach((pair) => union(pair.leftContactId, pair.rightContactId));
+  const orderedPairs = [...pairs].sort((left, right) =>
+    left.leftContactId.localeCompare(right.leftContactId) ||
+    left.rightContactId.localeCompare(right.rightContactId),
+  );
+  const groupedPairs: CandidatePair[] = [];
+  for (const pair of orderedPairs) {
+    const leftRoot = find(pair.leftContactId);
+    const rightRoot = find(pair.rightContactId);
+    const wouldReconnectRejectedPair = rejectedPairs.some(([rejectedLeftId, rejectedRightId]) => {
+      const rejectedLeftRoot = find(rejectedLeftId);
+      const rejectedRightRoot = find(rejectedRightId);
+      return (rejectedLeftRoot === leftRoot && rejectedRightRoot === rightRoot) ||
+        (rejectedLeftRoot === rightRoot && rejectedRightRoot === leftRoot);
+    });
+    if (wouldReconnectRejectedPair) continue;
+    union(pair.leftContactId, pair.rightContactId);
+    groupedPairs.push(pair);
+  }
 
   const members = new Map<string, string[]>();
-  for (const pair of pairs) {
+  for (const pair of groupedPairs) {
     for (const id of [pair.leftContactId, pair.rightContactId]) {
       const root = find(id);
       if (!members.get(root)?.includes(id)) members.set(root, [...(members.get(root) ?? []), id]);
@@ -317,7 +335,9 @@ function buildGroups(
   return [...members.values()].map((ids) => {
     const contactIds = [...ids].sort();
     const records = contactIds.map((id) => toIdentityRecord(contactById.get(id)!));
-    const groupPairs = pairs.filter((pair) => contactIds.includes(pair.leftContactId) && contactIds.includes(pair.rightContactId));
+    const groupPairs = groupedPairs.filter((pair) =>
+      contactIds.includes(pair.leftContactId) && contactIds.includes(pair.rightContactId),
+    );
     const allMemberConflicts = combinations(contactIds).flatMap(([leftId, rightId]) =>
       scoreContactIdentityMatch(
         toIdentityRecord(contactById.get(leftId)!),
@@ -552,13 +572,16 @@ export async function listContactDuplicateGroups({
     },
     select: { leftContactId: true, rightContactId: true, leftFingerprint: true, rightFingerprint: true },
   });
-  const rejected = new Set((decisions ?? []).flatMap((decision) => {
+  const currentRejectedPairs = (decisions ?? []).flatMap((decision): Array<[string, string]> => {
     const current = fingerprints.get(decision.leftContactId) === decision.leftFingerprint &&
       fingerprints.get(decision.rightContactId) === decision.rightFingerprint;
-    return current ? [pairKey(decision.leftContactId, decision.rightContactId)] : [];
-  }));
+    return current ? [sortedPair(decision.leftContactId, decision.rightContactId)] : [];
+  });
+  const rejected = new Set(currentRejectedPairs.map(([leftContactId, rightContactId]) =>
+    pairKey(leftContactId, rightContactId),
+  ));
   const activePairs = [...pairs.entries()].flatMap(([key, pair]) => rejected.has(key) ? [] : [pair]);
-  const groups = buildGroups(contacts, activePairs, fingerprints);
+  const groups = buildGroups(contacts, activePairs, fingerprints, currentRejectedPairs);
   const total = groups.length;
   const totalPages = Math.ceil(total / limit);
   return {

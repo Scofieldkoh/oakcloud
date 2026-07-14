@@ -340,6 +340,30 @@ describe('contact duplicate service', () => {
       .resolves.toMatchObject({ total: 1 });
   });
 
+  it('does not reconnect a currently rejected pair through a third duplicate candidate', async () => {
+    exactGroups(['sameperson']);
+    mocks.findMany.mockResolvedValue([
+      duplicateContact('c1', 'Same Person', { canonicalName: 'sameperson' }),
+      duplicateContact('c2', 'Same Person', { canonicalName: 'sameperson' }),
+      duplicateContact('c3', 'Same Person', { canonicalName: 'sameperson' }),
+    ]);
+
+    const initial = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+    mocks.decisionFindMany.mockResolvedValue([{
+      leftContactId: 'c1',
+      rightContactId: 'c2',
+      leftFingerprint: initial.groups[0].fingerprints.c1,
+      rightFingerprint: initial.groups[0].fingerprints.c2,
+    }]);
+
+    const result = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+
+    expect(result.groups.map(({ contactIds }) => contactIds)).toEqual([['c1', 'c3']]);
+    expect(result.groups.every(({ contactIds }) =>
+      !(contactIds.includes('c1') && contactIds.includes('c2')),
+    )).toBe(true);
+  });
+
   it('orders every capped query and fetches decisions only for actual sorted candidate pairs', async () => {
     exactGroups(['alpha']);
     mocks.findMany.mockResolvedValue([
