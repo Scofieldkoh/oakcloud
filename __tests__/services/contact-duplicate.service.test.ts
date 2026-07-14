@@ -364,7 +364,45 @@ describe('contact duplicate service', () => {
     )).toBe(true);
   });
 
-  it('orders every capped query and fetches decisions only for actual sorted candidate pairs', async () => {
+  it('loads a rejected pair between participating contacts even when it is not a candidate edge', async () => {
+    rawCandidates([], [
+      { leftContactId: 'c1', rightContactId: 'c3' },
+      { leftContactId: 'c2', rightContactId: 'c3' },
+    ]);
+    mocks.findMany.mockResolvedValue([
+      duplicateContact('c1', 'Alexander Hamilton'),
+      duplicateContact('c2', 'Alexander Hamiltx'),
+      duplicateContact('c3', 'Alexander Hamilto'),
+    ]);
+
+    const initial = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+    const rejection = {
+      leftContactId: 'c1',
+      rightContactId: 'c2',
+      leftFingerprint: initial.groups[0].fingerprints.c1,
+      rightFingerprint: initial.groups[0].fingerprints.c2,
+    };
+    mocks.decisionFindMany.mockImplementation(async ({ where }) => {
+      const leftIds = where.leftContactId?.in ?? [];
+      const rightIds = where.rightContactId?.in ?? [];
+      return leftIds.includes('c1') && rightIds.includes('c2') ? [rejection] : [];
+    });
+
+    const result = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+
+    expect(result.groups.map(({ contactIds }) => contactIds)).toEqual([['c1', 'c3']]);
+    expect(mocks.decisionFindMany).toHaveBeenLastCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        tenantId: 'tenant-1',
+        leftContactId: { in: ['c1', 'c2', 'c3'] },
+        rightContactId: { in: ['c1', 'c2', 'c3'] },
+      }),
+      orderBy: [{ leftContactId: 'asc' }, { rightContactId: 'asc' }],
+    }));
+    expect(mocks.decisionFindMany.mock.calls.at(-1)?.[0]).not.toHaveProperty('take');
+  });
+
+  it('orders every capped query and scopes decisions to sorted participating contacts', async () => {
     exactGroups(['alpha']);
     mocks.findMany.mockResolvedValue([
       duplicateContact('c2', 'alpha', { canonicalName: 'alpha' }),
@@ -382,8 +420,10 @@ describe('contact duplicate service', () => {
     expect(mocks.decisionFindMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({
         tenantId: 'tenant-1',
-        OR: [{ leftContactId: 'c1', rightContactId: 'c2' }],
+        leftContactId: { in: ['c1', 'c2'] },
+        rightContactId: { in: ['c1', 'c2'] },
       }),
+      orderBy: [{ leftContactId: 'asc' }, { rightContactId: 'asc' }],
     }));
     expect(mocks.decisionFindMany.mock.calls[0][0]).not.toHaveProperty('take');
     const normalizedSql = mocks.queryRaw.mock.calls.find(([query]) =>
@@ -394,20 +434,21 @@ describe('contact duplicate service', () => {
     expect(fuzzyQuery.values).toEqual(expect.arrayContaining([200, 10, 500]));
   });
 
-  it('caps exact-name pair expansion deterministically at the candidate boundary', async () => {
+  it('keeps the participating-contact decision scope deterministic at the candidate boundary', async () => {
     exactGroups(['alpha']);
     mocks.findMany.mockResolvedValue(Array.from({ length: 56 }, (_, index) =>
       duplicateContact(`c${String(index).padStart(2, '0')}`, 'alpha', { canonicalName: 'alpha' }),
     ));
 
     await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
-    const firstFilters = mocks.decisionFindMany.mock.calls[0][0].where.OR;
+    const firstIds = mocks.decisionFindMany.mock.calls[0][0].where.leftContactId.in;
     await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
-    const secondFilters = mocks.decisionFindMany.mock.calls[1][0].where.OR;
+    const secondIds = mocks.decisionFindMany.mock.calls[1][0].where.leftContactId.in;
 
-    expect(firstFilters).toHaveLength(1_500);
-    expect(firstFilters[0]).toEqual({ leftContactId: 'c00', rightContactId: 'c01' });
-    expect(secondFilters).toEqual(firstFilters);
+    expect(firstIds).toHaveLength(56);
+    expect(firstIds[0]).toBe('c00');
+    expect(firstIds.at(-1)).toBe('c55');
+    expect(secondIds).toEqual(firstIds);
   });
 
   it('rejects a sorted tenant-scoped pair only when supplied fingerprints are current', async () => {

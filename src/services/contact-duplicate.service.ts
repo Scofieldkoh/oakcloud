@@ -560,17 +560,18 @@ export async function listContactDuplicateGroups({
   }
 
   const fingerprints = new Map([...records].map(([id, record]) => [id, buildContactIdentityFingerprint(record)]));
-  const pairFilters = [...pairs.values()].map(({ leftContactId, rightContactId }) => ({
-    leftContactId,
-    rightContactId,
-  }));
-  const decisions = pairFilters.length === 0 ? [] : await prisma.contactDuplicateDecision.findMany({
+  const participatingContactIds = [...new Set([...pairs.values()].flatMap(({ leftContactId, rightContactId }) =>
+    [leftContactId, rightContactId],
+  ))].sort();
+  const decisions = participatingContactIds.length < 2 ? [] : await prisma.contactDuplicateDecision.findMany({
     where: {
       tenantId,
       decision: { in: ['REJECTED', 'CREATE_SEPARATE'] },
-      OR: pairFilters,
+      leftContactId: { in: participatingContactIds },
+      rightContactId: { in: participatingContactIds },
     },
     select: { leftContactId: true, rightContactId: true, leftFingerprint: true, rightFingerprint: true },
+    orderBy: [{ leftContactId: 'asc' }, { rightContactId: 'asc' }],
   });
   const currentRejectedPairs = (decisions ?? []).flatMap((decision): Array<[string, string]> => {
     const current = fingerprints.get(decision.leftContactId) === decision.leftFingerprint &&
