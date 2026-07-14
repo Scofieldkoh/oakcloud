@@ -12,6 +12,7 @@ const tx = {
     findMany: vi.fn(),
     findFirst: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
     updateMany: vi.fn(),
   },
   company: { findFirst: vi.fn() },
@@ -27,7 +28,10 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 vi.mock('@/lib/audit', () => ({ createAuditLog: vi.fn() }));
-vi.mock('@/services/contact-detail.service', () => ({ createContactDetail: vi.fn() }));
+vi.mock('@/services/contact-detail.service', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/services/contact-detail.service')>(),
+  createContactDetail: vi.fn(),
+}));
 
 import { createAuditLog } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
@@ -91,6 +95,13 @@ describe('contact identity service', () => {
     tx.contact.findMany.mockResolvedValue([]);
     tx.contact.findFirst.mockResolvedValue(null);
     tx.contactDetail.findMany.mockResolvedValue([]);
+    tx.contactDetail.update.mockImplementation(async ({ where, data }) => ({
+      id: where.id,
+      ...data,
+      detailType: data.detailType ?? 'EMAIL',
+      value: data.value ?? 'work@example.com',
+      label: data.label ?? null,
+    }));
     tx.contact.create.mockImplementation(async ({ data }) =>
       existingContact({ id: 'created-contact', ...data }),
     );
@@ -318,6 +329,69 @@ describe('contact identity service', () => {
     expect(createContactDetail).toHaveBeenCalledWith(
       expect.objectContaining({ purposes: ['FINANCE', 'HR'] }),
       { ...params, tx },
+    );
+  });
+
+  it('enriches an existing normalized detail safely with transaction-bound update and audit', async () => {
+    const existingDetail = {
+      id: 'detail-1',
+      tenantId: 'tenant-1',
+      contactId: 'contact-1',
+      companyId: 'company-1',
+      detailType: 'EMAIL',
+      value: 'work@example.com',
+      purposes: ['FINANCE'],
+      label: null,
+      description: '',
+      displayOrder: 0,
+      isPrimary: false,
+      isPoc: false,
+      deletedAt: null,
+    };
+    tx.contact.findMany.mockResolvedValue([existingContact({ contactDetails: [existingDetail] })]);
+    tx.contactDetail.findFirst.mockResolvedValue(existingDetail);
+
+    await resolveOrCreateContact(
+      candidate({
+        contactDetails: [{
+          detailType: 'EMAIL',
+          value: ' Work@Example.COM ',
+          companyId: 'company-1',
+          purposes: ['HR'],
+          label: 'Work',
+          description: 'Company inbox',
+          displayOrder: 2,
+          isPrimary: true,
+        }],
+      }),
+      { action: 'AUTO' },
+      params,
+    );
+
+    expect(tx.contactDetail.update).toHaveBeenCalledWith({
+      where: { id: 'detail-1' },
+      data: expect.objectContaining({
+        purposes: ['FINANCE', 'HR'],
+        label: 'Work',
+        description: 'Company inbox',
+        displayOrder: 2,
+        isPrimary: true,
+      }),
+    });
+    expect(tx.contactDetail.updateMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        tenantId: 'tenant-1',
+        contactId: 'contact-1',
+        companyId: 'company-1',
+        detailType: 'EMAIL',
+        isPrimary: true,
+      }),
+      data: { isPrimary: false },
+    });
+    expect(createContactDetail).not.toHaveBeenCalled();
+    expect(createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({ entityType: 'ContactDetail', entityId: 'detail-1' }),
+      tx,
     );
   });
 

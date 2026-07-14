@@ -10,7 +10,7 @@ import {
   normalizeContactIdentifier,
 } from '@/lib/contact-identity-normalization';
 import { prisma } from '@/lib/prisma';
-import { createContactDetail } from '@/services/contact-detail.service';
+import { createContactDetail, updateContactDetail } from '@/services/contact-detail.service';
 import type { PrismaTransactionClient, TenantAwareParams } from '@/services/contact.service';
 import type {
   ContactIdentityCandidate,
@@ -35,7 +35,18 @@ export interface ResolveContactIdentityResult {
 }
 
 type ContactWithIdentityRelations = Contact & {
-  contactDetails?: Array<{ detailType: Parameters<typeof normalizeContactDetailValue>[0]; value: string; companyId: string | null }>;
+  contactDetails?: Array<{
+    id?: string;
+    detailType: Parameters<typeof normalizeContactDetailValue>[0];
+    value: string;
+    companyId: string | null;
+    purposes?: string[];
+    label?: string | null;
+    description?: string | null;
+    displayOrder?: number;
+    isPrimary?: boolean;
+    isPoc?: boolean;
+  }>;
   _count?: {
     companyRelations: number;
     officerPositions: number;
@@ -113,7 +124,18 @@ async function findCandidates(
     include: {
       contactDetails: {
         where: { deletedAt: null },
-        select: { detailType: true, value: true, companyId: true },
+        select: {
+          id: true,
+          detailType: true,
+          value: true,
+          companyId: true,
+          purposes: true,
+          label: true,
+          description: true,
+          displayOrder: true,
+          isPrimary: true,
+          isPoc: true,
+        },
       },
       _count: {
         select: {
@@ -379,7 +401,18 @@ function buildEnrichment(
 const identityRelationsInclude = {
   contactDetails: {
     where: { deletedAt: null },
-    select: { detailType: true, value: true, companyId: true },
+    select: {
+      id: true,
+      detailType: true,
+      value: true,
+      companyId: true,
+      purposes: true,
+      label: true,
+      description: true,
+      displayOrder: true,
+      isPrimary: true,
+      isPoc: true,
+    },
   },
   _count: {
     select: {
@@ -439,8 +472,11 @@ async function addDistinctDetails(
   params: TenantAwareParams,
   tx: PrismaTransactionClient,
 ): Promise<string[]> {
-  const existing = new Set(
-    (contact.contactDetails ?? []).map((detail) => `${detail.detailType}:${detail.companyId ?? ''}:${normalizeContactDetailValue(detail.detailType, detail.value)}`),
+  const existing = new Map(
+    (contact.contactDetails ?? []).map((detail) => [
+      `${detail.detailType}:${detail.companyId ?? ''}:${normalizeContactDetailValue(detail.detailType, detail.value)}`,
+      detail,
+    ]),
   );
   const incoming = new Map<string, ContactIdentityDetail>();
   for (const detail of candidate.contactDetails ?? []) {
@@ -455,8 +491,35 @@ async function addDistinctDetails(
   const added: string[] = [];
   for (const [key, detail] of incoming) {
     const normalized = normalizeContactDetailValue(detail.detailType, detail.value);
-    if (!normalized || existing.has(key)) continue;
-    existing.add(key);
+    if (!normalized) continue;
+    const current = existing.get(key);
+    if (current) {
+      if (!current.id) continue;
+      const purposes = [...new Set([...(current.purposes ?? []), ...(detail.purposes ?? [])])];
+      const update: Parameters<typeof updateContactDetail>[0] = { id: current.id };
+      if (purposes.length !== (current.purposes ?? []).length) update.purposes = purposes;
+      if (isBlank(current.label) && !isBlank(detail.label)) update.label = detail.label!;
+      if (isBlank(current.description) && !isBlank(detail.description)) update.description = detail.description!;
+      if (detail.isPrimary && !current.isPrimary) update.isPrimary = true;
+      if (detail.isPoc && !current.isPoc) update.isPoc = true;
+      if (
+        detail.displayOrder !== undefined &&
+        detail.displayOrder !== 0 &&
+        (current.displayOrder ?? 0) === 0
+      ) {
+        update.displayOrder = detail.displayOrder;
+      }
+      if (Object.keys(update).length > 1) {
+        await updateContactDetail(update, { ...params, tx });
+        added.push(`contactDetails.${detail.detailType.toLowerCase()}`);
+      }
+      continue;
+    }
+    existing.set(key, {
+      detailType: detail.detailType,
+      value: detail.value,
+      companyId: detail.companyId ?? null,
+    });
     await createContactDetail({
       contactId: contact.id,
       companyId: detail.companyId,
