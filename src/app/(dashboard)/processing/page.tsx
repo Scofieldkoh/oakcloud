@@ -2067,6 +2067,7 @@ export default function ProcessingDocumentsPage() {
                         />
                       ) : columnId === 'pipeline' ? (
                         <SearchableSelect
+                          variant="table-filter"
                           options={[
                             { value: '', label: 'All' },
                             ...Object.entries(pipelineStatusConfig).map(([value, config]) => ({
@@ -2083,6 +2084,7 @@ export default function ProcessingDocumentsPage() {
                         />
                       ) : columnId === 'status' ? (
                         <SearchableSelect
+                          variant="table-filter"
                           options={[
                             { value: '', label: 'All' },
                             ...Object.entries(revisionStatusConfig).map(([value, config]) => ({
@@ -2099,6 +2101,7 @@ export default function ProcessingDocumentsPage() {
                         />
                       ) : columnId === 'duplicate' ? (
                         <SearchableSelect
+                          variant="table-filter"
                           options={[
                             { value: '', label: 'All' },
                             ...Object.entries(duplicateStatusConfig).map(([value, config]) => ({
@@ -2115,6 +2118,7 @@ export default function ProcessingDocumentsPage() {
                         />
                       ) : columnId === 'tags' ? (
                         <SearchableSelect
+                          variant="table-filter"
                           options={[
                             { value: '', label: 'All' },
                             ...tagsData?.map(tag => ({
@@ -2245,6 +2249,7 @@ export default function ProcessingDocumentsPage() {
                         />
                       ) : columnId === 'category' ? (
                         <SearchableSelect
+                          variant="table-filter"
                           options={[
                             { value: '', label: 'All' },
                             ...Object.entries(CATEGORY_LABELS).map(([value, label]) => ({
@@ -2261,6 +2266,7 @@ export default function ProcessingDocumentsPage() {
                         />
                       ) : columnId === 'subCategory' ? (
                         <SearchableSelect
+                          variant="table-filter"
                           options={[
                             { value: '', label: 'All' },
                             ...Object.entries(SUBCATEGORY_LABELS).map(([value, label]) => ({
@@ -2277,6 +2283,7 @@ export default function ProcessingDocumentsPage() {
                         />
                       ) : columnId === 'currency' ? (
                         <SearchableSelect
+                          variant="table-filter"
                           options={[
                             { value: '', label: 'All' },
                             ...SUPPORTED_CURRENCIES.map((code) => ({
@@ -2293,6 +2300,7 @@ export default function ProcessingDocumentsPage() {
                         />
                       ) : columnId === 'homeCurrency' ? (
                         <SearchableSelect
+                          variant="table-filter"
                           options={[
                             { value: '', label: 'All' },
                             ...SUPPORTED_CURRENCIES.map((code) => ({

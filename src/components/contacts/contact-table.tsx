@@ -375,6 +375,7 @@ export function ContactTable({
       case 'type':
         return (
           <SearchableSelect
+            variant="table-filter"
             options={CONTACT_TYPE_OPTIONS}
             value={inlineFilters.contactType || ''}
             onChange={(value) => onInlineFilterChange({ contactType: value as ContactType || undefined })}

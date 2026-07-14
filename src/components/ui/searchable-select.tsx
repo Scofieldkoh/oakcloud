@@ -35,6 +35,8 @@ export interface SearchableSelectProps {
   disabled?: boolean;
   /** Size variant */
   size?: 'sm' | 'md';
+  /** Visual treatment for the select trigger */
+  variant?: 'default' | 'table-filter';
   /** Additional class name */
   className?: string;
   /** Label for the select */
@@ -64,6 +66,7 @@ export function SearchableSelect({
   placeholder = 'Select...',
   disabled = false,
   size = 'sm',
+  variant = 'default',
   className,
   label,
   clearable = true,
@@ -318,6 +321,7 @@ export function SearchableSelect({
     sm: 'h-8 text-sm',
     md: 'h-9 text-sm',
   };
+  const triggerSizeClasses = variant === 'table-filter' ? 'h-9 text-sm' : sizeClasses[size];
 
   // Display value in input: show search when typing, otherwise show selected label
   const inputValue = isOpen ? search : (selectedOption?.label || '');
@@ -360,12 +364,16 @@ export function SearchableSelect({
         ref={containerRef}
         className={cn(
           'w-full flex items-center gap-2 rounded-lg border',
-          'bg-[#F4F7F6] border-[#D8E3DF]',
-          'hover:border-[#294D44]/50 focus-within:ring-2 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44]',
+          variant === 'table-filter'
+            ? 'bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-oak-primary/30 focus-within:border-oak-primary'
+            : 'bg-[#F4F7F6] border-[#D8E3DF] hover:border-[#294D44]/50 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44]',
+          'focus-within:ring-2',
           'transition-colors',
-          sizeClasses[size],
+          triggerSizeClasses,
           disabled && 'opacity-50 cursor-not-allowed',
-          isOpen && 'ring-2 ring-[#294D44]/20 border-[#294D44]',
+          isOpen && (variant === 'table-filter'
+            ? 'ring-2 ring-oak-primary/30 border-oak-primary'
+            : 'ring-2 ring-[#294D44]/20 border-[#294D44]'),
           containerClassName
         )}
       >
@@ -392,7 +400,7 @@ export function SearchableSelect({
             'placeholder:text-text-muted',
             // Use secondary color when showing placeholder-like "All" state (empty value)
             !value ? 'text-text-secondary' : 'text-text-primary',
-            sizeClasses[size]
+            triggerSizeClasses
           )}
         />
         {clearable && value && !disabled && (

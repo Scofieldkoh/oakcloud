@@ -506,6 +506,7 @@ export function CompanyTable({
       case 'type':
         return (
           <SearchableSelect
+            variant="table-filter"
             options={[
               { value: '', label: 'All' },
               ...ENTITY_TYPES.map(t => ({ value: t.value, label: t.shortLabel }))
@@ -522,6 +523,7 @@ export function CompanyTable({
       case 'status':
         return (
           <SearchableSelect
+            variant="table-filter"
             options={[
               { value: '', label: 'All' },
               ...COMPANY_STATUSES.map(s => ({ value: s.value, label: s.label }))
@@ -633,6 +635,7 @@ export function CompanyTable({
       case 'homeCurrency':
         return (
           <SearchableSelect
+            variant="table-filter"
             options={[
               { value: '', label: 'All' },
               ...SUPPORTED_CURRENCIES.map(c => ({ value: c, label: c }))
@@ -649,6 +652,7 @@ export function CompanyTable({
       case 'fye':
         return (
           <SearchableSelect
+            variant="table-filter"
             options={[
               { value: '', label: 'All' },
               ...MONTH_NAMES.map(m => ({ value: String(m.value), label: m.label.slice(0, 3) }))

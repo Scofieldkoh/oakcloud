@@ -368,6 +368,7 @@ export function WorkflowProjectTable({
       case 'project':
         return (
           <SearchableSelect
+            variant="table-filter"
             options={[
               { value: '', label: 'All' },
               ...projectOptions.map((projectName) => ({ value: projectName, label: projectName })),
@@ -383,6 +384,7 @@ export function WorkflowProjectTable({
       case 'client':
         return (
           <SearchableSelect
+            variant="table-filter"
             options={[
               { value: '', label: 'All' },
               ...clientOptions.map((clientName) => ({ value: clientName, label: clientName })),
@@ -398,6 +400,7 @@ export function WorkflowProjectTable({
       case 'template':
         return (
           <SearchableSelect
+            variant="table-filter"
             options={[
               { value: '', label: 'All' },
               ...templateOptions.map((templateName) => ({ value: templateName, label: templateName })),
@@ -413,6 +416,7 @@ export function WorkflowProjectTable({
       case 'status':
         return (
           <SearchableSelect
+            variant="table-filter"
             options={[
               { value: '', label: 'All' },
               ...Object.entries(WORKFLOW_PROJECT_STATUS_LABELS).map(([value, label]) => ({ value, label })),
@@ -532,6 +536,7 @@ export function WorkflowProjectTable({
       case 'assignees':
         return (
           <SearchableSelect
+            variant="table-filter"
             options={[
               { value: '', label: 'All' },
               ...assigneeOptions.map((assigneeName) => ({ value: assigneeName, label: assigneeName })),

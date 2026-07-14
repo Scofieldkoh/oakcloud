@@ -2913,6 +2913,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                     <tr className="bg-background-secondary/50">
                       <th className="px-3 py-2 max-w-0">
                         <SearchableSelect
+                          variant="table-filter"
                           options={filesLinkedAtFilterOptions}
                           value={filesInlineFilters.linkedAt}
                           onChange={(value) => setFilesInlineFilters((previous) => ({ ...previous, linkedAt: value }))}
@@ -2946,6 +2947,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                       </th>
                       <th className="px-3 py-2 max-w-0">
                         <SearchableSelect
+                          variant="table-filter"
                           options={filesCompanyFilterOptions.map((option) => ({ value: option, label: option }))}
                           value={filesInlineFilters.companyName}
                           onChange={(value) => setFilesInlineFilters((previous) => ({ ...previous, companyName: value }))}
@@ -2957,6 +2959,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                       </th>
                       <th className="px-3 py-2 max-w-0">
                         <SearchableSelect
+                          variant="table-filter"
                           options={filesRevisionFilterOptions.map((option) => ({ value: option, label: formatEnumLabel(option) }))}
                           value={filesInlineFilters.revisionStatus}
                           onChange={(value) => setFilesInlineFilters((previous) => ({ ...previous, revisionStatus: value }))}
@@ -2969,6 +2972,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                       <th className="px-3 py-2 max-w-0" />
                       <th className="px-3 py-2 max-w-0">
                         <SearchableSelect
+                          variant="table-filter"
                           options={filesCategoryFilterOptions.map((option) => ({ value: option, label: formatEnumLabel(option) }))}
                           value={filesInlineFilters.documentCategory}
                           onChange={(value) => setFilesInlineFilters((previous) => ({ ...previous, documentCategory: value }))}
@@ -2980,6 +2984,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                       </th>
                       <th className="px-3 py-2 max-w-0">
                         <SearchableSelect
+                          variant="table-filter"
                           options={filesSubCategoryFilterOptions.map((option) => ({ value: option, label: formatEnumLabel(option) }))}
                           value={filesInlineFilters.documentSubCategory}
                           onChange={(value) => setFilesInlineFilters((previous) => ({ ...previous, documentSubCategory: value }))}
@@ -3050,6 +3055,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                       </th>
                       <th className="px-3 py-2 max-w-0">
                         <SearchableSelect
+                          variant="table-filter"
                           options={filesCurrencyFilterOptions.map((option) => ({ value: option, label: option }))}
                           value={filesInlineFilters.currency}
                           onChange={(value) => setFilesInlineFilters((previous) => ({ ...previous, currency: value }))}
@@ -3091,6 +3097,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                       </th>
                       <th className="px-3 py-2 max-w-0">
                         <SearchableSelect
+                          variant="table-filter"
                           options={filesHomeCurrencyFilterOptions.map((option) => ({ value: option, label: option }))}
                           value={filesInlineFilters.homeCurrency}
                           onChange={(value) => setFilesInlineFilters((previous) => ({ ...previous, homeCurrency: value }))}
@@ -5277,6 +5284,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                   </th>
                   <th className="px-3 py-2 max-w-0">
                     <SearchableSelect
+                      variant="table-filter"
                       options={filesLinkPipelineFilterOptions.map((option) => ({ value: option, label: formatEnumLabel(option) }))}
                       value={filesLinkInlineFilters.pipelineStatus}
                       onChange={(value) => setFilesLinkInlineFilters((previous) => ({ ...previous, pipelineStatus: value }))}
@@ -5288,6 +5296,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                   </th>
                   <th className="px-3 py-2 max-w-0">
                     <SearchableSelect
+                      variant="table-filter"
                       options={filesLinkCategoryFilterOptions.map((option) => ({ value: option, label: formatEnumLabel(option) }))}
                       value={filesLinkInlineFilters.documentCategory}
                       onChange={(value) => setFilesLinkInlineFilters((previous) => ({ ...previous, documentCategory: value }))}
@@ -5299,6 +5308,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                   </th>
                   <th className="px-3 py-2 max-w-0">
                     <SearchableSelect
+                      variant="table-filter"
                       options={filesLinkSubCategoryFilterOptions.map((option) => ({ value: option, label: formatEnumLabel(option) }))}
                       value={filesLinkInlineFilters.documentSubCategory}
                       onChange={(value) => setFilesLinkInlineFilters((previous) => ({ ...previous, documentSubCategory: value }))}
@@ -5422,6 +5432,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                   </th>
                   <th className="px-3 py-2 max-w-0">
                     <SearchableSelect
+                      variant="table-filter"
                       options={attachPipelineFilterOptions.map((option) => ({ value: option, label: formatEnumLabel(option) }))}
                       value={attachInlineFilters.pipelineStatus}
                       onChange={(value) => setAttachInlineFilters((previous) => ({ ...previous, pipelineStatus: value }))}
@@ -5433,6 +5444,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                   </th>
                   <th className="px-3 py-2 max-w-0">
                     <SearchableSelect
+                      variant="table-filter"
                       options={attachCategoryFilterOptions.map((option) => ({ value: option, label: formatEnumLabel(option) }))}
                       value={attachInlineFilters.documentCategory}
                       onChange={(value) => setAttachInlineFilters((previous) => ({ ...previous, documentCategory: value }))}
@@ -5444,6 +5456,7 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
                   </th>
                   <th className="px-3 py-2 max-w-0">
                     <SearchableSelect
+                      variant="table-filter"
                       options={attachSubCategoryFilterOptions.map((option) => ({ value: option, label: formatEnumLabel(option) }))}
                       value={attachInlineFilters.documentSubCategory}
                       onChange={(value) => setAttachInlineFilters((previous) => ({ ...previous, documentSubCategory: value }))}
@@ -5515,4 +5528,3 @@ export function WorkflowProjectDetailPage({ projectId }: WorkflowProjectDetailPa
     </div>
   );
 }
-
