@@ -25,12 +25,19 @@ vi.mock('@/lib/logger', () => ({
   }),
 }));
 
+const { resolveOrCreateContact } = vi.hoisted(() => ({ resolveOrCreateContact: vi.fn() }));
+vi.mock('@/services/contact-identity.service', () => ({ resolveOrCreateContact }));
+
 import { prisma } from '@/lib/prisma';
 import { resolveCustomer, getOrCreateCustomerContact, learnCustomerAlias } from '@/services/customer-resolution.service';
 
 describe('Customer Resolution Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resolveOrCreateContact.mockResolvedValue({
+      contact: { id: 'new-contact', corporateName: 'New Customer', fullName: 'New Customer' },
+      outcome: 'CREATED', match: null, enrichedFields: [], conflicts: [],
+    });
   });
 
   it('resolves via alias match (normalized)', async () => {
@@ -81,11 +88,6 @@ describe('Customer Resolution Service', () => {
   it('creates a customer contact when no match found and learns alias', async () => {
     vi.mocked(prisma.customerAlias.findMany).mockResolvedValue([] as never);
     vi.mocked(prisma.contact.findMany).mockResolvedValue([] as never);
-    vi.mocked(prisma.contact.create).mockResolvedValue({
-      id: 'new-contact',
-      corporateName: 'New Customer',
-      fullName: 'New Customer',
-    } as never);
     vi.mocked(prisma.customerAlias.findFirst).mockResolvedValue(null as never);
     vi.mocked(prisma.customerAlias.create).mockResolvedValue({ id: 'ca1' } as never);
 
@@ -98,7 +100,37 @@ describe('Customer Resolution Service', () => {
 
     expect(result.strategy).toBe('CREATED');
     expect(result.customerId).toBe('new-contact');
+    expect(resolveOrCreateContact).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'DOCUMENT_VAULT', corporateName: 'New Customer' }),
+      { action: 'AUTO' },
+      expect.objectContaining({ tenantId: 't1', userId: 'u1' })
+    );
+    expect(prisma.contact.create).not.toHaveBeenCalled();
     expect(prisma.customerAlias.create).toHaveBeenCalled();
+  });
+
+  it('forwards high-confidence UEN and details with AR parity', async () => {
+    vi.mocked(prisma.customerAlias.findMany).mockResolvedValue([] as never);
+    vi.mocked(prisma.contact.findMany).mockResolvedValue([] as never);
+    vi.mocked(prisma.customerAlias.findFirst).mockResolvedValue(null as never);
+    vi.mocked(prisma.customerAlias.create).mockResolvedValue({ id: 'ca1' } as never);
+
+    await getOrCreateCustomerContact({
+      tenantId: 't1', companyId: 'co1', rawCustomerName: '王氏企业', createdById: 'u1',
+      counterpartyIdentity: {
+        identificationType: 'UEN', identificationNumber: '202012345A', email: 'billing@example.sg',
+        confidence: { identificationNumber: 0.98, email: 0.95 },
+      },
+    });
+
+    expect(resolveOrCreateContact).toHaveBeenCalledWith(
+      expect.objectContaining({
+        corporateName: '王氏企业', corporateUen: '202012345A',
+        contactDetails: [expect.objectContaining({ detailType: 'EMAIL', value: 'billing@example.sg' })],
+      }),
+      { action: 'AUTO' },
+      expect.objectContaining({ tenantId: 't1', userId: 'u1' })
+    );
   });
 
   it('upserts customer alias (update path)', async () => {

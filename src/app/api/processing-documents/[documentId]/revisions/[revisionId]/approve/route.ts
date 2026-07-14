@@ -184,6 +184,7 @@ export async function POST(
         totalAmount: approvedRevision.totalAmount.toString(),
         currency: approvedRevision.currency,
         homeEquivalent: approvedRevision.homeEquivalent?.toString(),
+        counterpartyIdentityCaptured: Boolean(approvedRevision.counterpartyIdentity),
       },
     });
 

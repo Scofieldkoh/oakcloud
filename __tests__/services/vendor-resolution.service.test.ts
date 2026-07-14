@@ -25,12 +25,22 @@ vi.mock('@/lib/logger', () => ({
   }),
 }));
 
+const { resolveOrCreateContact } = vi.hoisted(() => ({ resolveOrCreateContact: vi.fn() }));
+vi.mock('@/services/contact-identity.service', () => ({ resolveOrCreateContact }));
+
 import { prisma } from '@/lib/prisma';
 import { resolveVendor, getOrCreateVendorContact, learnVendorAlias } from '@/services/vendor-resolution.service';
 
 describe('Vendor Resolution Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resolveOrCreateContact.mockResolvedValue({
+      contact: { id: 'new-contact', corporateName: 'New Vendor', fullName: 'New Vendor' },
+      outcome: 'CREATED',
+      match: null,
+      enrichedFields: [],
+      conflicts: [],
+    });
   });
 
   it('resolves via alias match (normalized)', async () => {
@@ -99,11 +109,6 @@ describe('Vendor Resolution Service', () => {
   it('creates a vendor contact when no match found and learns alias', async () => {
     vi.mocked(prisma.vendorAlias.findMany).mockResolvedValue([] as never);
     vi.mocked(prisma.contact.findMany).mockResolvedValue([] as never);
-    vi.mocked(prisma.contact.create).mockResolvedValue({
-      id: 'new-contact',
-      corporateName: 'New Vendor',
-      fullName: 'New Vendor',
-    } as never);
     vi.mocked(prisma.vendorAlias.findFirst).mockResolvedValue(null as never);
     vi.mocked(prisma.vendorAlias.create).mockResolvedValue({ id: 'va1' } as never);
 
@@ -116,7 +121,60 @@ describe('Vendor Resolution Service', () => {
 
     expect(result.strategy).toBe('CREATED');
     expect(result.vendorId).toBe('new-contact');
+    expect(resolveOrCreateContact).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'DOCUMENT_VAULT', corporateName: 'New Vendor' }),
+      { action: 'AUTO' },
+      expect.objectContaining({ tenantId: 't1', userId: 'u1' })
+    );
+    expect(prisma.contact.create).not.toHaveBeenCalled();
     expect(prisma.vendorAlias.create).toHaveBeenCalled();
+  });
+
+  it('reuses an exact Chinese corporate name through Unicode identity scoring', async () => {
+    vi.mocked(prisma.vendorAlias.findMany).mockResolvedValue([] as never);
+    vi.mocked(prisma.contact.findMany).mockResolvedValue([
+      {
+        id: 'c-cn', tenantId: 't1', contactType: 'CORPORATE', corporateName: '王氏企业',
+        fullName: '王氏企业', alias: null, identificationType: null,
+        identificationNumber: null, corporateUen: null, nationality: null, dateOfBirth: null,
+        fullAddress: null, canonicalName: '王氏企业', createdAt: new Date(), updatedAt: new Date(),
+        _count: { companyRelations: 0, officerPositions: 0, shareholdings: 0, contactDetails: 0 },
+        contactDetails: [],
+      },
+    ] as never);
+
+    const result = await resolveVendor({ tenantId: 't1', companyId: 'co1', rawVendorName: '王氏企业' });
+
+    expect(result).toEqual(expect.objectContaining({ strategy: 'CONTACT', vendorId: 'c-cn' }));
+  });
+
+  it('forwards high-confidence UEN and available details to shared resolution', async () => {
+    vi.mocked(prisma.vendorAlias.findMany).mockResolvedValue([] as never);
+    vi.mocked(prisma.contact.findMany).mockResolvedValue([] as never);
+    vi.mocked(prisma.vendorAlias.findFirst).mockResolvedValue(null as never);
+    vi.mocked(prisma.vendorAlias.create).mockResolvedValue({ id: 'va1' } as never);
+
+    await getOrCreateVendorContact({
+      tenantId: 't1', companyId: 'co1', rawVendorName: '王氏企业', createdById: 'u1',
+      counterpartyIdentity: {
+        identificationType: 'UEN', identificationNumber: '202012345A',
+        fullAddress: '1 Raffles Place', email: 'accounts@example.sg', phone: '+65 6123 4567',
+        confidence: { identificationNumber: 0.98, fullAddress: 0.92, email: 0.95, phone: 0.91 },
+      },
+    });
+
+    expect(resolveOrCreateContact).toHaveBeenCalledWith(
+      expect.objectContaining({
+        corporateName: '王氏企业', corporateUen: '202012345A', fullAddress: '1 Raffles Place',
+        confidence: expect.objectContaining({ corporateUen: 0.98, fullAddress: 0.92 }),
+        contactDetails: expect.arrayContaining([
+          expect.objectContaining({ detailType: 'EMAIL', value: 'accounts@example.sg' }),
+          expect.objectContaining({ detailType: 'PHONE', value: '+65 6123 4567' }),
+        ]),
+      }),
+      { action: 'AUTO' },
+      expect.objectContaining({ tenantId: 't1', userId: 'u1' })
+    );
   });
 
   it('upserts vendor alias (update path)', async () => {

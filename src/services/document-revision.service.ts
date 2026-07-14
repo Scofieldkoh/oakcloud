@@ -30,6 +30,7 @@ import { jaroWinkler } from '@/lib/string-similarity';
 import { getOrCreateVendorContact, learnVendorAlias } from './vendor-resolution.service';
 import { getOrCreateCustomerContact, learnCustomerAlias } from './customer-resolution.service';
 import { jaccardSimilarity, tokenizeEntityName } from '@/lib/entity-name';
+import type { ContactIdentityCandidate } from '@/types/contact-identity';
 
 type Decimal = Prisma.Decimal;
 
@@ -100,6 +101,7 @@ export interface CreateRevisionInput {
   vendorId?: string;
   customerName?: string;
   customerId?: string;
+  counterpartyIdentity?: CounterpartyIdentityDraft;
   documentNumber?: string;
   documentDate?: Date;
   dueDate?: Date;
@@ -153,6 +155,7 @@ export interface RevisionPatchInput {
     vendorId?: string;
     customerName?: string;
     customerId?: string;
+    counterpartyIdentity?: CounterpartyIdentityDraft;
     documentNumber?: string;
     documentDate?: Date;
     dueDate?: Date;
@@ -167,6 +170,77 @@ export interface RevisionPatchInput {
   };
   itemsToUpsert?: LineItemInput[];
   itemsToDelete?: number[];
+}
+
+export interface CounterpartyIdentityDraft {
+  identificationType?: 'NRIC' | 'FIN' | 'PASSPORT' | 'UEN' | 'OTHER';
+  identificationNumber?: string;
+  fullAddress?: string;
+  email?: string;
+  phone?: string;
+  confidence: Partial<Record<'identificationNumber' | 'fullAddress' | 'email' | 'phone', number>>;
+}
+
+const IDENTIFICATION_TYPES = new Set(['NRIC', 'FIN', 'PASSPORT', 'UEN', 'OTHER']);
+
+export function normalizeCounterpartyIdentityDraft(value: unknown): CounterpartyIdentityDraft {
+  const input = value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  const confidenceInput = input.confidence && typeof input.confidence === 'object' && !Array.isArray(input.confidence)
+    ? input.confidence as Record<string, unknown>
+    : {};
+  const clean = (field: string): string | undefined => {
+    const raw = input[field];
+    return typeof raw === 'string' && raw.trim() ? raw.trim() : undefined;
+  };
+  const confidence: CounterpartyIdentityDraft['confidence'] = {};
+  for (const field of ['identificationNumber', 'fullAddress', 'email', 'phone'] as const) {
+    const raw = confidenceInput[field];
+    if (typeof raw === 'number' && Number.isFinite(raw)) confidence[field] = Math.max(0, Math.min(1, raw));
+  }
+  const rawType = clean('identificationType');
+  return {
+    ...(rawType && IDENTIFICATION_TYPES.has(rawType) ? { identificationType: rawType as CounterpartyIdentityDraft['identificationType'] } : {}),
+    ...(clean('identificationNumber') ? { identificationNumber: clean('identificationNumber') } : {}),
+    ...(clean('fullAddress') ? { fullAddress: clean('fullAddress') } : {}),
+    ...(clean('email') ? { email: clean('email') } : {}),
+    ...(clean('phone') ? { phone: clean('phone') } : {}),
+    confidence,
+  };
+}
+
+export function buildDocumentVaultContactCandidate(
+  counterpartyName: string,
+  identityValue: unknown,
+  revisionId: string,
+  companyId?: string,
+): ContactIdentityCandidate {
+  const identity = normalizeCounterpartyIdentityDraft(identityValue);
+  const isUen = identity.identificationType === 'UEN';
+  const contactDetails = [
+    identity.email ? { detailType: 'EMAIL' as const, value: identity.email, companyId, isPrimary: true } : null,
+    identity.phone ? { detailType: 'PHONE' as const, value: identity.phone, companyId, isPrimary: true } : null,
+  ].filter((detail): detail is NonNullable<typeof detail> => detail !== null);
+  return {
+    source: 'DOCUMENT_VAULT',
+    sourceRecordId: revisionId,
+    contactType: 'CORPORATE',
+    corporateName: counterpartyName.trim(),
+    identificationType: isUen ? undefined : identity.identificationType,
+    identificationNumber: isUen ? undefined : identity.identificationNumber,
+    corporateUen: isUen ? identity.identificationNumber : undefined,
+    fullAddress: identity.fullAddress,
+    contactDetails,
+    confidence: {
+      ...(isUen
+        ? { corporateUen: identity.confidence.identificationNumber }
+        : { identificationNumber: identity.confidence.identificationNumber }),
+      fullAddress: identity.confidence.fullAddress,
+      email: identity.confidence.email,
+      phone: identity.confidence.phone,
+    },
+  };
 }
 
 export interface ApproveRevisionInput {
@@ -267,6 +341,7 @@ export async function createRevision(input: CreateRevisionInput): Promise<Revisi
     vendorId,
     customerName,
     customerId,
+    counterpartyIdentity,
     documentNumber,
     documentDate,
     dueDate,
@@ -332,6 +407,9 @@ export async function createRevision(input: CreateRevisionInput): Promise<Revisi
         vendorId,
         customerName,
         customerId,
+        counterpartyIdentity: counterpartyIdentity
+          ? normalizeCounterpartyIdentityDraft(counterpartyIdentity) as unknown as Prisma.InputJsonValue
+          : undefined,
         documentNumber,
         documentDate,
         dueDate,
@@ -426,6 +504,8 @@ export async function createRevisionFromEdit(
     vendorId: patch.set?.vendorId ?? baseRevision.vendorId ?? undefined,
     customerName: patch.set?.customerName ?? (baseRevision as unknown as { customerName?: string | null }).customerName ?? undefined,
     customerId: patch.set?.customerId ?? (baseRevision as unknown as { customerId?: string | null }).customerId ?? undefined,
+    counterpartyIdentity: patch.set?.counterpartyIdentity
+      ?? normalizeCounterpartyIdentityDraft(baseRevision.counterpartyIdentity),
     documentNumber: patch.set?.documentNumber ?? baseRevision.documentNumber ?? undefined,
     documentDate: patch.set?.documentDate ?? baseRevision.documentDate ?? undefined,
     dueDate: patch.set?.dueDate ?? baseRevision.dueDate ?? undefined,
@@ -553,6 +633,7 @@ export async function approveRevision(
   const isReceivable = revision.documentCategory === 'ACCOUNTS_RECEIVABLE';
   const vendorAliasMode = input.aliasLearning?.vendor ?? 'AUTO';
   const customerAliasMode = input.aliasLearning?.customer ?? 'AUTO';
+  const counterpartyIdentity = normalizeCounterpartyIdentityDraft(revision.counterpartyIdentity);
 
   // Stabilize vendor identity/name on approval (learn aliases over time)
   let approvedVendorName: string | null | undefined = revision.vendorName;
@@ -567,6 +648,8 @@ export async function approveRevision(
         companyId,
         rawVendorName: revision.vendorName,
         createdById: userId,
+        counterpartyIdentity,
+        sourceRecordId: revision.id,
       });
 
       if (vendor.vendorId && vendor.vendorName) {
@@ -628,6 +711,8 @@ export async function approveRevision(
         companyId,
         rawCustomerName,
         createdById: userId,
+        counterpartyIdentity,
+        sourceRecordId: revision.id,
       });
 
       if (customer.customerId && customer.customerName) {

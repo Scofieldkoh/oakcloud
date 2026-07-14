@@ -563,6 +563,11 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     documentCategory: string;
     documentSubCategory: string;
     vendorName: string;
+    identificationType: string;
+    identificationNumber: string;
+    counterpartyAddress: string;
+    counterpartyEmail: string;
+    counterpartyPhone: string;
     documentNumber: string;
     documentDate: string;
     dueDate: string;
@@ -582,6 +587,11 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     documentCategory: '',
     documentSubCategory: '',
     vendorName: '',
+    identificationType: '',
+    identificationNumber: '',
+    counterpartyAddress: '',
+    counterpartyEmail: '',
+    counterpartyPhone: '',
     documentNumber: '',
     documentDate: '',
     dueDate: '',
@@ -717,6 +727,11 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
       documentCategory: revision.documentCategory || '',
       documentSubCategory: revision.documentSubCategory || '',
       vendorName: revision.vendorName || '',
+      identificationType: revision.counterpartyIdentity?.identificationType || '',
+      identificationNumber: revision.counterpartyIdentity?.identificationNumber || '',
+      counterpartyAddress: revision.counterpartyIdentity?.fullAddress || '',
+      counterpartyEmail: revision.counterpartyIdentity?.email || '',
+      counterpartyPhone: revision.counterpartyIdentity?.phone || '',
       documentNumber: revision.documentNumber || '',
       documentDate: revision.documentDate || '',
       dueDate: revision.dueDate || '',
@@ -796,7 +811,11 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     const boxes: BoundingBox[] = [];
 
     // Field keys that have evidence
-    const fieldKeys = ['vendorName', 'documentNumber', 'documentDate', 'totalAmount', 'subtotal', 'taxAmount', 'supplierGstNo'];
+    const fieldKeys = [
+      'vendorName', 'counterpartyIdentificationNumber', 'counterpartyAddress',
+      'counterpartyEmail', 'counterpartyPhone', 'documentNumber', 'documentDate',
+      'totalAmount', 'subtotal', 'taxAmount', 'supplierGstNo',
+    ];
 
     fieldKeys.forEach((key) => {
       const fieldEvidence = evidence[key];
@@ -842,6 +861,15 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
         value: revisionWithLineItems.vendorName,
         color: focusedField === 'vendorName' ? isFocusedColor : defaultColor,
       });
+    }
+    const identityValues = [
+      ['counterpartyIdentificationNumber', revisionWithLineItems.counterpartyIdentity?.identificationNumber],
+      ['counterpartyAddress', revisionWithLineItems.counterpartyIdentity?.fullAddress],
+      ['counterpartyEmail', revisionWithLineItems.counterpartyIdentity?.email],
+      ['counterpartyPhone', revisionWithLineItems.counterpartyIdentity?.phone],
+    ] as const;
+    for (const [label, value] of identityValues) {
+      if (value) values.push({ label, value, color: focusedField === label ? isFocusedColor : defaultColor });
     }
     if (revisionWithLineItems.documentNumber) {
       values.push({
@@ -1207,6 +1235,19 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
             documentCategory: editFormData.documentCategory || undefined,
             documentSubCategory: editFormData.documentSubCategory || undefined,
             vendorName: editFormData.vendorName || undefined,
+            counterpartyIdentity: {
+              identificationType: (editFormData.identificationType || undefined) as 'NRIC' | 'FIN' | 'PASSPORT' | 'UEN' | 'OTHER' | undefined,
+              identificationNumber: editFormData.identificationNumber || undefined,
+              fullAddress: editFormData.counterpartyAddress || undefined,
+              email: editFormData.counterpartyEmail || undefined,
+              phone: editFormData.counterpartyPhone || undefined,
+              confidence: {
+                identificationNumber: editFormData.identificationNumber ? 1 : undefined,
+                fullAddress: editFormData.counterpartyAddress ? 1 : undefined,
+                email: editFormData.counterpartyEmail ? 1 : undefined,
+                phone: editFormData.counterpartyPhone ? 1 : undefined,
+              },
+            },
             documentNumber: editFormData.documentNumber || undefined,
             documentDate: editFormData.documentDate || undefined,
             dueDate: editFormData.dueDate || undefined,
@@ -1639,6 +1680,14 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     documentCategory: (editFormData.documentCategory as DocumentCategory) || null,
     documentSubCategory: editFormData.documentSubCategory || null,
     vendorName: editFormData.vendorName || null,
+    counterpartyIdentity: {
+      identificationType: (editFormData.identificationType || undefined) as 'NRIC' | 'FIN' | 'PASSPORT' | 'UEN' | 'OTHER' | undefined,
+      identificationNumber: editFormData.identificationNumber || undefined,
+      fullAddress: editFormData.counterpartyAddress || undefined,
+      email: editFormData.counterpartyEmail || undefined,
+      phone: editFormData.counterpartyPhone || undefined,
+      confidence: {},
+    },
     documentNumber: editFormData.documentNumber || null,
     documentDate: editFormData.documentDate || null,
     dueDate: editFormData.dueDate || null,
@@ -1650,6 +1699,14 @@ export default function ProcessingDocumentDetailPage({ params }: PageProps) {
     documentCategory: DocumentCategory | null;
     documentSubCategory?: string | null;
     vendorName: string | null;
+    counterpartyIdentity?: {
+      identificationType?: 'NRIC' | 'FIN' | 'PASSPORT' | 'UEN' | 'OTHER';
+      identificationNumber?: string;
+      fullAddress?: string;
+      email?: string;
+      phone?: string;
+      confidence: Partial<Record<'identificationNumber' | 'fullAddress' | 'email' | 'phone', number>>;
+    } | null;
     documentNumber: string | null;
     documentDate: string | null;
     dueDate?: string | null;
@@ -2477,6 +2534,14 @@ function ExtractedHeaderFields({
     documentCategory: DocumentCategory | null;
     documentSubCategory?: string | null;
     vendorName: string | null;
+    counterpartyIdentity?: {
+      identificationType?: 'NRIC' | 'FIN' | 'PASSPORT' | 'UEN' | 'OTHER';
+      identificationNumber?: string;
+      fullAddress?: string;
+      email?: string;
+      phone?: string;
+      confidence: Partial<Record<'identificationNumber' | 'fullAddress' | 'email' | 'phone', number>>;
+    } | null;
     documentNumber: string | null;
     documentDate: string | null;
     dueDate?: string | null;
@@ -2490,6 +2555,11 @@ function ExtractedHeaderFields({
     documentCategory: string;
     documentSubCategory: string;
     vendorName: string;
+    identificationType: string;
+    identificationNumber: string;
+    counterpartyAddress: string;
+    counterpartyEmail: string;
+    counterpartyPhone: string;
     documentNumber: string;
     documentDate: string;
     dueDate: string;
@@ -2509,6 +2579,11 @@ function ExtractedHeaderFields({
     documentCategory: string;
     documentSubCategory: string;
     vendorName: string;
+    identificationType: string;
+    identificationNumber: string;
+    counterpartyAddress: string;
+    counterpartyEmail: string;
+    counterpartyPhone: string;
     documentNumber: string;
     documentDate: string;
     dueDate: string;
@@ -2619,6 +2694,69 @@ function ExtractedHeaderFields({
           </div>
         </div>
 
+        <div className="space-y-3 border-t border-border-secondary pt-3">
+          <p className="text-xs font-medium text-text-secondary">Counterparty identity</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Identification type</label>
+              <select
+                value={editFormData.identificationType}
+                onChange={(event) => setEditFormData({ ...editFormData, identificationType: event.target.value })}
+                className="min-h-[44px] w-full rounded border border-border-primary bg-background-secondary px-2.5 py-1.5 text-sm focus:border-oak-light focus:outline-none sm:min-h-0"
+              >
+                <option value="">Select type</option>
+                <option value="UEN">UEN</option>
+                <option value="NRIC">NRIC</option>
+                <option value="FIN">FIN</option>
+                <option value="PASSPORT">Passport</option>
+                <option value="OTHER">Other registration</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Identification / UEN</label>
+              <input
+                type="text"
+                value={editFormData.identificationNumber}
+                onChange={(event) => setEditFormData({ ...editFormData, identificationNumber: event.target.value })}
+                className="min-h-[44px] w-full rounded border border-border-primary bg-background-secondary px-2.5 py-1.5 text-sm focus:border-oak-light focus:outline-none sm:min-h-0"
+                placeholder="UEN or registration number"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Address</label>
+            <input
+              type="text"
+              value={editFormData.counterpartyAddress}
+              onChange={(event) => setEditFormData({ ...editFormData, counterpartyAddress: event.target.value })}
+              className="min-h-[44px] w-full rounded border border-border-primary bg-background-secondary px-2.5 py-1.5 text-sm focus:border-oak-light focus:outline-none sm:min-h-0"
+              placeholder="Counterparty address"
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Email</label>
+              <input
+                type="email"
+                value={editFormData.counterpartyEmail}
+                onChange={(event) => setEditFormData({ ...editFormData, counterpartyEmail: event.target.value })}
+                className="min-h-[44px] w-full rounded border border-border-primary bg-background-secondary px-2.5 py-1.5 text-sm focus:border-oak-light focus:outline-none sm:min-h-0"
+                placeholder="accounts@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Phone</label>
+              <input
+                type="tel"
+                value={editFormData.counterpartyPhone}
+                onChange={(event) => setEditFormData({ ...editFormData, counterpartyPhone: event.target.value })}
+                className="min-h-[44px] w-full rounded border border-border-primary bg-background-secondary px-2.5 py-1.5 text-sm focus:border-oak-light focus:outline-none sm:min-h-0"
+                placeholder="+65 6123 4567"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Dates */}
         <div className="grid grid-cols-2 gap-3">
           <SingleDateInput
@@ -2659,7 +2797,7 @@ function ExtractedHeaderFields({
       {/* Vendor and Document # */}
       <div className="grid grid-cols-2 gap-3">
         <FieldDisplay
-          label="Vendor"
+          label={revision.documentCategory === 'ACCOUNTS_RECEIVABLE' ? 'Customer' : 'Vendor'}
           value={revision.vendorName}
           fieldKey="vendorName"
           confidence={getFieldConfidence('vendorName')}
@@ -2673,6 +2811,58 @@ function ExtractedHeaderFields({
           value={revision.documentNumber}
           fieldKey="documentNumber"
           confidence={getFieldConfidence('documentNumber')}
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+          onCopy={onCopyFieldValue}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 border-t border-border-secondary pt-3 sm:grid-cols-2">
+        <FieldDisplay
+          label="Identification type"
+          value={revision.counterpartyIdentity?.identificationType ?? null}
+          fieldKey="counterpartyIdentificationType"
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+          onCopy={onCopyFieldValue}
+        />
+        <FieldDisplay
+          label="Identification / UEN"
+          value={revision.counterpartyIdentity?.identificationNumber ?? null}
+          fieldKey="counterpartyIdentificationNumber"
+          confidence={revision.counterpartyIdentity?.confidence.identificationNumber ?? getFieldConfidence('counterpartyIdentificationNumber')}
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+          onCopy={onCopyFieldValue}
+        />
+        <FieldDisplay
+          label="Address"
+          value={revision.counterpartyIdentity?.fullAddress ?? null}
+          fieldKey="counterpartyAddress"
+          confidence={revision.counterpartyIdentity?.confidence.fullAddress ?? getFieldConfidence('counterpartyAddress')}
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+          onCopy={onCopyFieldValue}
+        />
+        <FieldDisplay
+          label="Email"
+          value={revision.counterpartyIdentity?.email ?? null}
+          fieldKey="counterpartyEmail"
+          confidence={revision.counterpartyIdentity?.confidence.email ?? getFieldConfidence('counterpartyEmail')}
+          focusedField={focusedField}
+          onFocus={handleFieldFocus}
+          onBlur={handleFieldBlur}
+          onCopy={onCopyFieldValue}
+        />
+        <FieldDisplay
+          label="Phone"
+          value={revision.counterpartyIdentity?.phone ?? null}
+          fieldKey="counterpartyPhone"
+          confidence={revision.counterpartyIdentity?.confidence.phone ?? getFieldConfidence('counterpartyPhone')}
           focusedField={focusedField}
           onFocus={handleFieldFocus}
           onBlur={handleFieldBlur}
@@ -2799,6 +2989,11 @@ interface AmountsSectionProps {
     documentCategory: string;
     documentSubCategory: string;
     vendorName: string;
+    identificationType: string;
+    identificationNumber: string;
+    counterpartyAddress: string;
+    counterpartyEmail: string;
+    counterpartyPhone: string;
     documentNumber: string;
     documentDate: string;
     dueDate: string;

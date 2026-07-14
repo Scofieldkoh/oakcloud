@@ -751,6 +751,15 @@ export interface LineItemData {
   isHomeGstOverride: boolean;
 }
 
+export interface CounterpartyIdentityDraft {
+  identificationType?: 'NRIC' | 'FIN' | 'PASSPORT' | 'UEN' | 'OTHER';
+  identificationNumber?: string;
+  fullAddress?: string;
+  email?: string;
+  phone?: string;
+  confidence: Partial<Record<'identificationNumber' | 'fullAddress' | 'email' | 'phone', number>>;
+}
+
 export interface RevisionWithLineItems {
   id: string;
   revisionNumber: number;
@@ -758,6 +767,7 @@ export interface RevisionWithLineItems {
   documentCategory: DocumentCategory | null;
   documentSubCategory: string | null;
   vendorName: string | null;
+  counterpartyIdentity: CounterpartyIdentityDraft | null;
   documentNumber: string | null;
   documentDate: string | null;
   dueDate: string | null;
@@ -820,6 +830,7 @@ async function updateRevision(
       documentCategory: string;
       documentSubCategory: string | null;
       vendorName: string;
+      counterpartyIdentity: CounterpartyIdentityDraft;
       documentNumber: string;
       documentDate: string;
       dueDate: string;

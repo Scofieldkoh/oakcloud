@@ -101,6 +101,11 @@ Return a JSON object with these fields:
 - documentSubCategory
 - vendorName
 - customerName
+- counterpartyIdentificationType
+- counterpartyIdentificationNumber
+- counterpartyAddress
+- counterpartyEmail
+- counterpartyPhone
 - documentNumber
 - documentDate
 - dueDate
@@ -120,6 +125,8 @@ Each extracted field should include a value and confidence where the extraction 
 - For ACCOUNTS_RECEIVABLE documents, extract the buyer into customerName.
 - Do not put the uploading company as vendorName for payable documents or customerName for receivable documents.
 - Do not put a person's name unless the counterparty on the document is clearly an individual.
+- Prioritize the external counterparty's UEN or other registration identifier, then preserve every visible address, email, and phone value with confidence.
+- Use UEN for Singapore entity registration numbers and OTHER for other organization registration identifiers.
 
 ## Singapore GST Tax Codes
 Assign a taxCode to every line item:

@@ -10,7 +10,12 @@ import { createLogger } from '@/lib/logger';
 import { Prisma } from '@/generated/prisma';
 import type { DocumentExtraction } from '@/generated/prisma';
 import type { ExtractionType, DocumentCategory, DocumentSubCategory, ExchangeRateSource } from '@/generated/prisma';
-import { createRevision, type LineItemInput } from './document-revision.service';
+import {
+  createRevision,
+  normalizeCounterpartyIdentityDraft,
+  type CounterpartyIdentityDraft,
+  type LineItemInput,
+} from './document-revision.service';
 import { transitionPipelineStatus, recordProcessingAttempt, saveCheckpoint } from './document-processing.service';
 import { checkForDuplicates, updateDuplicateStatus } from './duplicate-detection.service';
 import {
@@ -47,8 +52,8 @@ import {
 import { getAccountsForSelect } from './chart-of-accounts.service';
 import { getRateWithPreference } from './exchange-rate.service';
 import type { SupportedCurrency } from '@/lib/validations/exchange-rate';
-import { learnVendorAlias, resolveVendor } from './vendor-resolution.service';
-import { learnCustomerAlias, resolveCustomer } from './customer-resolution.service';
+import { resolveVendor } from './vendor-resolution.service';
+import { resolveCustomer } from './customer-resolution.service';
 import { resolveLookupDate } from '@/lib/date-lookup';
 import { normalizeCompanyName } from '@/lib/utils';
 import { normalizeVendorName } from '@/lib/vendor-name';
@@ -125,6 +130,12 @@ export interface FieldExtractionResult {
   documentSubCategory?: ExtractedField<DocumentSubCategory>;
   vendorName?: ExtractedField<string>;
   customerName?: ExtractedField<string>;
+  counterpartyIdentificationType?: ExtractedField<string>;
+  counterpartyIdentificationNumber?: ExtractedField<string>;
+  counterpartyAddress?: ExtractedField<string>;
+  counterpartyEmail?: ExtractedField<string>;
+  counterpartyPhone?: ExtractedField<string>;
+  counterpartyIdentity?: CounterpartyIdentityDraft;
   documentNumber?: ExtractedField<string>;
   documentDate?: ExtractedField<string>;
   dueDate?: ExtractedField<string>;
@@ -216,6 +227,11 @@ const MISTRAL_DOCUMENT_EXTRACTION_JSON_SCHEMA: Record<string, unknown> = {
     documentSubCategory: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
     vendorName: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
     customerName: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    counterpartyIdentificationType: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    counterpartyIdentificationNumber: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    counterpartyAddress: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    counterpartyEmail: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
+    counterpartyPhone: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
     documentNumber: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
     documentDate: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
     dueDate: OCR_CONFIDENCE_FIELD_JSON_SCHEMA,
@@ -259,6 +275,14 @@ const LIGHTWEIGHT_COUNTERPARTY_JSON_SCHEMA: Record<string, unknown> = {
 };
 
 const LIGHTWEIGHT_COUNTERPARTY_MAX_OUTPUT_TOKENS = 80;
+const COUNTERPARTY_IDENTITY_PROMPT = `
+
+## Counterparty Identity
+Extract the external vendor/customer's identification data when visible. Prioritize UEN or registration identifiers, then preserve every available address, email, and phone value. Return confidence-bearing fields named counterpartyIdentificationType, counterpartyIdentificationNumber, counterpartyAddress, counterpartyEmail, and counterpartyPhone. Use UEN for Singapore entity registration numbers and OTHER for other organization registration identifiers. Do not return the uploading company's own identity.`;
+
+function withCounterpartyIdentityPrompt(prompt: string): string {
+  return `${prompt.trim()}${COUNTERPARTY_IDENTITY_PROMPT}`;
+}
 const LEARNING_CONTEXT_MAX_RECORDS = 3;
 const LEARNING_CONTEXT_FALLBACK_SCAN_LIMIT = 30;
 const LEARNING_CONTEXT_MAX_LINE_ITEMS_PER_RECORD = 8;
@@ -1247,62 +1271,6 @@ async function persistCompletedExtraction(params: {
     ? normalizedExtractionResult.customerName?.value ?? normalizedExtractionResult.vendorName?.value
     : normalizedExtractionResult.vendorName?.value;
 
-  const vendorResolution = isReceivable
-    ? { vendorName: undefined, vendorId: undefined, confidence: 0, strategy: 'NONE' as const }
-    : await resolveVendor({
-        tenantId,
-        companyId,
-        rawVendorName: rawCounterpartyName,
-        createdById: userId,
-      });
-
-  const customerResolution = isReceivable
-    ? await resolveCustomer({
-        tenantId,
-        companyId,
-        rawCustomerName: rawCounterpartyName,
-        createdById: userId,
-      })
-    : { customerName: undefined, customerId: undefined, confidence: 0, strategy: 'NONE' as const };
-
-  if (rawCounterpartyName) {
-    if (!isReceivable && vendorResolution.vendorId) {
-      try {
-        const conf = vendorResolution.confidence || normalizedExtractionResult.vendorName?.confidence || 0.9;
-        await learnVendorAlias({
-          tenantId,
-          companyId,
-          rawName: rawCounterpartyName,
-          vendorId: vendorResolution.vendorId,
-          confidence: conf,
-          createdById: userId,
-        });
-      } catch (e) {
-        log.warn(`Failed to learn vendor alias for "${rawCounterpartyName}"`, e);
-      }
-    }
-
-    if (isReceivable && customerResolution.customerId) {
-      try {
-          const conf =
-            customerResolution.confidence ||
-            normalizedExtractionResult.customerName?.confidence ||
-            normalizedExtractionResult.vendorName?.confidence ||
-            0.9;
-        await learnCustomerAlias({
-          tenantId,
-          companyId,
-          rawName: rawCounterpartyName,
-          customerId: customerResolution.customerId,
-          confidence: conf,
-          createdById: userId,
-        });
-      } catch (e) {
-        log.warn(`Failed to learn customer alias for "${rawCounterpartyName}"`, e);
-      }
-    }
-  }
-
   const revision = await createRevision({
     processingDocumentId,
     revisionType: 'EXTRACTION',
@@ -1310,10 +1278,9 @@ async function persistCompletedExtraction(params: {
     createdById: userId,
     documentCategory: normalizedExtractionResult.documentCategory.value,
     documentSubCategory: normalizedExtractionResult.documentSubCategory?.value,
-    vendorName: isReceivable ? customerResolution.customerName : vendorResolution.vendorName,
-    vendorId: isReceivable ? undefined : vendorResolution.vendorId,
-    customerName: isReceivable ? customerResolution.customerName : undefined,
-    customerId: isReceivable ? customerResolution.customerId : undefined,
+    vendorName: rawCounterpartyName,
+    customerName: isReceivable ? rawCounterpartyName : undefined,
+    counterpartyIdentity: normalizedExtractionResult.counterpartyIdentity,
     documentNumber: normalizedExtractionResult.documentNumber?.value,
     documentDate: normalizedExtractionResult.documentDate?.value
       ? new Date(normalizedExtractionResult.documentDate.value)
@@ -2001,11 +1968,11 @@ async function buildBatchExtractionPrompt(
   promptTemplate: string
 ): Promise<string> {
   const coaContext = await getCOAContextForExtraction(tenantId, companyId);
-  return resolveDocumentExtractionPrompt(promptTemplate, {
+  return withCounterpartyIdentityPrompt(resolveDocumentExtractionPrompt(promptTemplate, {
     additionalContext,
     chartOfAccounts: coaContext,
     recentTransactions,
-  });
+  }));
 }
 
 async function buildMistralLineItemSupplementPrompt(
@@ -2251,11 +2218,11 @@ async function performAIExtraction(
     log.info('[ai-debug] No COA context available - account codes will use fallback logic');
   }
 
-  const extractionPrompt = resolveDocumentExtractionPrompt(promptTemplate, {
+  const extractionPrompt = withCounterpartyIdentityPrompt(resolveDocumentExtractionPrompt(promptTemplate, {
     additionalContext: config.additionalContext,
     chartOfAccounts: coaContext,
     recentTransactions,
-  });
+  }));
 
   if (forceMistral) {
     try {
@@ -2432,6 +2399,30 @@ function extractFieldValue(field: unknown): { value: string; confidence: number 
 
   // Plain value format
   return { value: String(field), confidence: 0.8 };
+}
+
+export function mapCounterpartyIdentityDraft(
+  data: Record<string, unknown>,
+  _pages: { pageNumber: number; storageKey: string | null; imageFingerprint: string | null }[] = [],
+): CounterpartyIdentityDraft {
+  const identificationType = extractFieldValue(data.counterpartyIdentificationType);
+  const identificationNumber = extractFieldValue(data.counterpartyIdentificationNumber);
+  const fullAddress = extractFieldValue(data.counterpartyAddress);
+  const email = extractFieldValue(data.counterpartyEmail);
+  const phone = extractFieldValue(data.counterpartyPhone);
+  return normalizeCounterpartyIdentityDraft({
+    identificationType: identificationType?.value,
+    identificationNumber: identificationNumber?.value,
+    fullAddress: fullAddress?.value,
+    email: email?.value,
+    phone: phone?.value,
+    confidence: {
+      identificationNumber: identificationNumber?.confidence,
+      fullAddress: fullAddress?.confidence,
+      email: email?.confidence,
+      phone: phone?.confidence,
+    },
+  });
 }
 
 function mapLineItemsFromAIData(
@@ -2718,6 +2709,11 @@ function mapAIResponseToResult(
   // Handle optional header fields with bbox
   const vendorNameField = extractFieldValue(data.vendorName);
   const customerNameField = extractFieldValue(data.customerName);
+  const counterpartyIdentificationTypeField = extractFieldValue(data.counterpartyIdentificationType);
+  const counterpartyIdentificationNumberField = extractFieldValue(data.counterpartyIdentificationNumber);
+  const counterpartyAddressField = extractFieldValue(data.counterpartyAddress);
+  const counterpartyEmailField = extractFieldValue(data.counterpartyEmail);
+  const counterpartyPhoneField = extractFieldValue(data.counterpartyPhone);
   const documentNumberField = extractFieldValue(data.documentNumber);
   const documentDateField = extractFieldValue(data.documentDate);
   const dueDateField = extractFieldValue(data.dueDate);
@@ -2893,6 +2889,32 @@ function mapAIResponseToResult(
       confidence: customerNameField.confidence,
       evidence: createFieldEvidence(customerNameField.value, customerNameField.confidence, pageNum, fingerprint),
     } : undefined,
+    counterpartyIdentificationType: counterpartyIdentificationTypeField ? {
+      value: counterpartyIdentificationTypeField.value,
+      confidence: counterpartyIdentificationTypeField.confidence,
+      evidence: createFieldEvidence(counterpartyIdentificationTypeField.value, counterpartyIdentificationTypeField.confidence, pageNum, fingerprint),
+    } : undefined,
+    counterpartyIdentificationNumber: counterpartyIdentificationNumberField ? {
+      value: counterpartyIdentificationNumberField.value,
+      confidence: counterpartyIdentificationNumberField.confidence,
+      evidence: createFieldEvidence(counterpartyIdentificationNumberField.value, counterpartyIdentificationNumberField.confidence, pageNum, fingerprint),
+    } : undefined,
+    counterpartyAddress: counterpartyAddressField ? {
+      value: counterpartyAddressField.value,
+      confidence: counterpartyAddressField.confidence,
+      evidence: createFieldEvidence(counterpartyAddressField.value, counterpartyAddressField.confidence, pageNum, fingerprint),
+    } : undefined,
+    counterpartyEmail: counterpartyEmailField ? {
+      value: counterpartyEmailField.value,
+      confidence: counterpartyEmailField.confidence,
+      evidence: createFieldEvidence(counterpartyEmailField.value, counterpartyEmailField.confidence, pageNum, fingerprint),
+    } : undefined,
+    counterpartyPhone: counterpartyPhoneField ? {
+      value: counterpartyPhoneField.value,
+      confidence: counterpartyPhoneField.confidence,
+      evidence: createFieldEvidence(counterpartyPhoneField.value, counterpartyPhoneField.confidence, pageNum, fingerprint),
+    } : undefined,
+    counterpartyIdentity: mapCounterpartyIdentityDraft(data, pages),
     documentNumber: documentNumberField ? {
       value: documentNumberField.value,
       confidence: documentNumberField.confidence,
@@ -3099,6 +3121,11 @@ function buildEvidenceJson(result: FieldExtractionResult): Record<string, FieldE
   if (result.customerName?.evidence) {
     evidence.customerName = result.customerName.evidence;
   }
+  if (result.counterpartyIdentificationType?.evidence) evidence.counterpartyIdentificationType = result.counterpartyIdentificationType.evidence;
+  if (result.counterpartyIdentificationNumber?.evidence) evidence.counterpartyIdentificationNumber = result.counterpartyIdentificationNumber.evidence;
+  if (result.counterpartyAddress?.evidence) evidence.counterpartyAddress = result.counterpartyAddress.evidence;
+  if (result.counterpartyEmail?.evidence) evidence.counterpartyEmail = result.counterpartyEmail.evidence;
+  if (result.counterpartyPhone?.evidence) evidence.counterpartyPhone = result.counterpartyPhone.evidence;
   if (result.documentNumber?.evidence) {
     evidence.documentNumber = result.documentNumber.evidence;
   }
@@ -3138,6 +3165,10 @@ function buildConfidenceJson(result: FieldExtractionResult): Prisma.InputJsonVal
       documentSubCategory: result.documentSubCategory?.confidence,
       vendorName: result.vendorName?.confidence,
       customerName: result.customerName?.confidence,
+      counterpartyIdentificationNumber: result.counterpartyIdentificationNumber?.confidence,
+      counterpartyAddress: result.counterpartyAddress?.confidence,
+      counterpartyEmail: result.counterpartyEmail?.confidence,
+      counterpartyPhone: result.counterpartyPhone?.confidence,
       documentNumber: result.documentNumber?.confidence,
       documentDate: result.documentDate?.confidence,
       currency: result.currency.confidence,

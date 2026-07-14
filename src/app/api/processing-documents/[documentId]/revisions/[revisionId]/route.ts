@@ -11,7 +11,11 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { getProcessingDocument } from '@/services/document-processing.service';
-import { validateRevision } from '@/services/document-revision.service';
+import {
+  normalizeCounterpartyIdentityDraft,
+  validateRevision,
+  type CounterpartyIdentityDraft,
+} from '@/services/document-revision.service';
 import { createAuditLog } from '@/lib/audit';
 
 type Params = { documentId: string; revisionId: string };
@@ -111,6 +115,7 @@ export async function GET(
         documentCategory: revision.documentCategory,
         documentSubCategory: revision.documentSubCategory,
         vendorName: revision.vendorName,
+        counterpartyIdentity: revision.counterpartyIdentity,
         documentNumber: revision.documentNumber,
         documentDate: revision.documentDate?.toISOString().split('T')[0] || null,
         dueDate: revision.dueDate?.toISOString().split('T')[0] || null,
@@ -263,6 +268,7 @@ export async function PATCH(
     const { headerUpdates, itemsToUpsert, itemsToDelete } = body as {
       headerUpdates?: {
         vendorName?: string;
+        counterpartyIdentity?: CounterpartyIdentityDraft;
         documentNumber?: string;
         documentDate?: string;
         dueDate?: string;
@@ -307,6 +313,9 @@ export async function PATCH(
     const headerData: Record<string, unknown> = {};
     if (headerUpdates) {
       if (headerUpdates.vendorName !== undefined) headerData.vendorName = headerUpdates.vendorName;
+      if (headerUpdates.counterpartyIdentity !== undefined) {
+        headerData.counterpartyIdentity = normalizeCounterpartyIdentityDraft(headerUpdates.counterpartyIdentity);
+      }
       if (headerUpdates.documentNumber !== undefined) headerData.documentNumber = headerUpdates.documentNumber;
       if (headerUpdates.documentDate !== undefined) headerData.documentDate = headerUpdates.documentDate ? new Date(headerUpdates.documentDate) : null;
       if (headerUpdates.dueDate !== undefined) headerData.dueDate = headerUpdates.dueDate ? new Date(headerUpdates.dueDate) : null;
