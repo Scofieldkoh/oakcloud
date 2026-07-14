@@ -20,8 +20,8 @@ import {
 const mockedPrisma = vi.mocked(prisma);
 const findManyMock = vi.mocked(prisma.contact.findMany);
 
-function contact(id: string, fullName: string, canonicalName: string | null = null) {
-  return { id, fullName, canonicalName };
+function contact(id: string, fullName: string, canonicalName: string | null = null, alias: string | null = null, canonicalAlias: string | null = null) {
+  return { id, fullName, canonicalName, alias, canonicalAlias };
 }
 
 describe('contact canonical-name backfill', () => {
@@ -46,13 +46,13 @@ describe('contact canonical-name backfill', () => {
       where: { deletedAt: null, isActive: true, id: { gt: undefined } },
       orderBy: { id: 'asc' },
       take: 2,
-      select: { id: true, fullName: true, canonicalName: true },
+      select: { id: true, fullName: true, canonicalName: true, alias: true, canonicalAlias: true },
     });
     expect(mockedPrisma.contact.findMany).toHaveBeenNthCalledWith(2, {
       where: { deletedAt: null, isActive: true, id: { gt: 'b' } },
       orderBy: { id: 'asc' },
       take: 2,
-      select: { id: true, fullName: true, canonicalName: true },
+      select: { id: true, fullName: true, canonicalName: true, alias: true, canonicalAlias: true },
     });
     expect(tx.contact.update).toHaveBeenCalledTimes(2);
     expect(result).toEqual({
@@ -61,6 +61,32 @@ describe('contact canonical-name backfill', () => {
       skipped: 0,
       failed: 0,
       lastId: 'b',
+    });
+  });
+
+  it('backfills canonical aliases with the shared Unicode canonicalizer', async () => {
+    findManyMock.mockResolvedValueOnce([
+      contact('a', 'A Tan', 'atan', 'Ａ．Ｔａｎ', null),
+    ] as never).mockResolvedValueOnce([]);
+
+    await backfillContactCanonicalNames({ batchSize: 1 });
+
+    expect(tx.contact.update).toHaveBeenCalledWith({
+      where: { id: 'a' },
+      data: { canonicalName: 'atan', canonicalAlias: 'atan' },
+    });
+  });
+
+  it('marks a present alias that folds empty as backfilled', async () => {
+    findManyMock.mockResolvedValueOnce([
+      contact('a', 'A Tan', 'atan', ' . ', null),
+    ] as never).mockResolvedValueOnce([]);
+
+    await backfillContactCanonicalNames({ batchSize: 1 });
+
+    expect(tx.contact.update).toHaveBeenCalledWith({
+      where: { id: 'a' },
+      data: { canonicalName: 'atan', canonicalAlias: '' },
     });
   });
 
@@ -78,11 +104,11 @@ describe('contact canonical-name backfill', () => {
     expect(tx.contact.update).toHaveBeenCalledTimes(2);
     expect(tx.contact.update).toHaveBeenCalledWith({
       where: { id: 'b' },
-      data: { canonicalName: 'acmepteltd' },
+      data: { canonicalName: 'acmepteltd', canonicalAlias: null },
     });
     expect(tx.contact.update).toHaveBeenCalledWith({
       where: { id: 'c' },
-      data: { canonicalName: '王小明' },
+      data: { canonicalName: '王小明', canonicalAlias: null },
     });
     expect(result).toEqual({
       processed: 3,

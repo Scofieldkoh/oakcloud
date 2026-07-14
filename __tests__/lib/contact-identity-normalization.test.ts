@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildContactIdentityFingerprint,
+  canonicalizeContactAlias,
   canonicalizeContactName,
   canonicalizeCorporateComparisonName,
   isDeterministicIdentifier,
@@ -17,6 +18,11 @@ describe('contact identity normalization', () => {
 
   it('uses Unicode default case folding', () => {
     expect(canonicalizeContactName('Straße')).toBe('strasse');
+  });
+
+  it('distinguishes an absent alias from a present alias that canonicalizes empty', () => {
+    expect(canonicalizeContactAlias(null)).toBeNull();
+    expect(canonicalizeContactAlias(' . ')).toBe('');
   });
 
   it('removes only terminal corporate suffixes from comparison form', () => {

@@ -211,14 +211,14 @@ model UserPreference {
 }
 
 model PerformanceMeasurement {
-  id              String   @id @default(uuid())
-  route           String
-  metricType      String   @map("metric_type")
-  value           Decimal  @db.Decimal(18, 4)
-  unit            String
-  metadata        Json?
-  userAgent       String?  @map("user_agent")
-  createdAt       DateTime @default(now()) @map("created_at")
+  id         String   @id @default(uuid())
+  route      String
+  metricType String   @map("metric_type")
+  value      Decimal  @db.Decimal(18, 4)
+  unit       String
+  metadata   Json?
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([route, metricType, createdAt])
   @@index([createdAt])
@@ -390,6 +390,7 @@ model Contact {
   fullName                           String
   canonicalName                      String?
   alias                              String?
+  canonicalAlias                     String?
   identificationType                 IdentificationType?
   identificationNumber               String?
   nationality                        String?
@@ -419,6 +420,7 @@ model Contact {
   @@index([tenantId, deletedAt])
   @@index([tenantId, contactType, isActive])
   @@index([tenantId, contactType, deletedAt, canonicalName])
+  @@index([tenantId, contactType, deletedAt, canonicalAlias])
   @@map("contacts")
 }
 
@@ -669,25 +671,25 @@ model AuditLog {
 }
 
 model Connector {
-  id             String                  @id @default(uuid())
-  workspaceId    String?
-  name           String
-  type           ConnectorType
-  provider       ConnectorProvider
-  credentials    String
-  settings       Json?
-  isEnabled      Boolean                 @default(true)
-  isDefault      Boolean                 @default(false)
-  callCount      Int                     @default(0)
-  lastUsedAt     DateTime?
-  lastTestedAt   DateTime?
-  lastTestResult String?
-  createdAt      DateTime                @default(now())
-  updatedAt      DateTime                @updatedAt
-  deletedAt      DateTime?
-  modelConfigs   ConnectorModelConfig[]
-  usageLogs      ConnectorUsageLog[]
-  workspace      Workspace?              @relation(fields: [workspaceId], references: [id])
+  id              String                     @id @default(uuid())
+  workspaceId     String?
+  name            String
+  type            ConnectorType
+  provider        ConnectorProvider
+  credentials     String
+  settings        Json?
+  isEnabled       Boolean                    @default(true)
+  isDefault       Boolean                    @default(false)
+  callCount       Int                        @default(0)
+  lastUsedAt      DateTime?
+  lastTestedAt    DateTime?
+  lastTestResult  String?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  deletedAt       DateTime?
+  modelConfigs    ConnectorModelConfig[]
+  usageLogs       ConnectorUsageLog[]
+  workspace       Workspace?                 @relation(fields: [workspaceId], references: [id])
   workspaceAccess WorkspaceConnectorAccess[]
 
   @@unique([workspaceId, provider, deletedAt])
@@ -717,25 +719,25 @@ model WorkspaceConnectorAccess {
 }
 
 model ConnectorUsageLog {
-  id           String    @id @default(uuid())
+  id           String     @id @default(uuid())
   connectorId  String
   workspaceId  String?
   userId       String?
   model        String
   provider     String
-  inputTokens  Int       @default(0)
-  outputTokens Int       @default(0)
-  totalTokens  Int       @default(0)
-  costCents    Int       @default(0)
+  inputTokens  Int        @default(0)
+  outputTokens Int        @default(0)
+  totalTokens  Int        @default(0)
+  costCents    Int        @default(0)
   latencyMs    Int?
   operation    String?
-  success      Boolean   @default(true)
+  success      Boolean    @default(true)
   errorMessage String?
   metadata     Json?
-  createdAt    DateTime  @default(now())
-  connector    Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  connector    Connector  @relation(fields: [connectorId], references: [id], onDelete: Cascade)
   workspace    Workspace? @relation(fields: [workspaceId], references: [id])
-  user         User?     @relation(fields: [userId], references: [id])
+  user         User?      @relation(fields: [userId], references: [id])
 
   @@index([connectorId])
   @@index([workspaceId])
@@ -779,23 +781,23 @@ model NoteTab {
 }
 
 model DocumentTemplate {
-  id                      String                   @id @default(uuid())
-  tenantId                String                   @map("tenant_id")
-  name                    String                   @db.VarChar(200)
-  description             String?
-  category                DocumentTemplateCategory @default(OTHER)
-  content                 String
-  contentJson             Json?                    @map("content_json")
-  placeholders            Json                     @default("[]")
-  isActive                Boolean                  @default(true) @map("is_active")
-  version                 Int                      @default(1)
-  createdById             String                   @map("created_by_id")
-  createdAt               DateTime                 @default(now()) @map("created_at")
-  updatedAt               DateTime                 @updatedAt @map("updated_at")
-  deletedAt               DateTime?                @map("deleted_at")
-  createdBy               User                     @relation("TemplateCreator", fields: [createdById], references: [id])
-  tenant                  Workspace                @relation(fields: [tenantId], references: [id])
-  generatedDocuments      GeneratedDocument[]
+  id                 String                   @id @default(uuid())
+  tenantId           String                   @map("tenant_id")
+  name               String                   @db.VarChar(200)
+  description        String?
+  category           DocumentTemplateCategory @default(OTHER)
+  content            String
+  contentJson        Json?                    @map("content_json")
+  placeholders       Json                     @default("[]")
+  isActive           Boolean                  @default(true) @map("is_active")
+  version            Int                      @default(1)
+  createdById        String                   @map("created_by_id")
+  createdAt          DateTime                 @default(now()) @map("created_at")
+  updatedAt          DateTime                 @updatedAt @map("updated_at")
+  deletedAt          DateTime?                @map("deleted_at")
+  createdBy          User                     @relation("TemplateCreator", fields: [createdById], references: [id])
+  tenant             Workspace                @relation(fields: [tenantId], references: [id])
+  generatedDocuments GeneratedDocument[]
 
   @@index([tenantId])
   @@index([category])
@@ -863,17 +865,17 @@ model DocumentSection {
 }
 
 model WorkspaceLetterhead {
-  id             String   @id @default(uuid())
-  tenantId       String   @unique @map("tenant_id")
-  headerHtml     String?  @map("header_html")
-  footerHtml     String?  @map("footer_html")
-  headerImageUrl String?  @map("header_image_url") @db.VarChar(500)
-  footerImageUrl String?  @map("footer_image_url") @db.VarChar(500)
-  logoUrl        String?  @map("logo_url") @db.VarChar(500)
-  pageMargins    Json     @default("{\"top\": 25, \"left\": 20, \"right\": 20, \"bottom\": 25}") @map("page_margins")
-  isEnabled      Boolean  @default(true) @map("is_enabled")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id             String    @id @default(uuid())
+  tenantId       String    @unique @map("tenant_id")
+  headerHtml     String?   @map("header_html")
+  footerHtml     String?   @map("footer_html")
+  headerImageUrl String?   @map("header_image_url") @db.VarChar(500)
+  footerImageUrl String?   @map("footer_image_url") @db.VarChar(500)
+  logoUrl        String?   @map("logo_url") @db.VarChar(500)
+  pageMargins    Json      @default("{\"top\": 25, \"left\": 20, \"right\": 20, \"bottom\": 25}") @map("page_margins")
+  isEnabled      Boolean   @default(true) @map("is_enabled")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
   tenant         Workspace @relation(fields: [tenantId], references: [id])
 
   @@map("tenant_letterheads")
@@ -952,16 +954,16 @@ model TemplatePartial {
 }
 
 model AiConversation {
-  id          String   @id @default(uuid())
-  tenantId    String   @map("tenant_id")
-  userId      String   @map("user_id")
-  contextType String   @db.VarChar(20)
-  contextId   String?  @map("context_id")
-  messages    Json     @default("[]")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id          String    @id @default(uuid())
+  tenantId    String    @map("tenant_id")
+  userId      String    @map("user_id")
+  contextType String    @db.VarChar(20)
+  contextId   String?   @map("context_id")
+  messages    Json      @default("[]")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   tenant      Workspace @relation(fields: [tenantId], references: [id])
-  user        User     @relation("ConversationOwner", fields: [userId], references: [id])
+  user        User      @relation("ConversationOwner", fields: [userId], references: [id])
 
   @@index([tenantId, userId])
   @@index([contextType, contextId])
@@ -2719,6 +2721,7 @@ enum WorkspaceStatus {
   SUSPENDED
   PENDING_SETUP
   DEACTIVATED
+
   @@map("TenantStatus")
 }
 

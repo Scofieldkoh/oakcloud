@@ -401,6 +401,7 @@ export const ContactScalarFieldEnum = {
   fullName: 'fullName',
   canonicalName: 'canonicalName',
   alias: 'alias',
+  canonicalAlias: 'canonicalAlias',
   identificationType: 'identificationType',
   identificationNumber: 'identificationNumber',
   nationality: 'nationality',

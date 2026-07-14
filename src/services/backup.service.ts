@@ -454,13 +454,17 @@ export class BackupService {
     userId: string | undefined,
     options: BackupOptions
   ): Promise<void> {
-    const snapshotCutoff = new Date().toISOString();
     try {
       // Update status to IN_PROGRESS
       await this.updateBackupProgress(backupId, 'IN_PROGRESS', 0, 'Starting backup...');
 
       // 1. Export database data and compress (30% of progress)
       await this.updateBackupProgress(backupId, 'IN_PROGRESS', 5, 'Exporting database...');
+      const [databaseClock] = await prisma.$queryRaw<Array<{ cutoff: Date }>>(
+        Prisma.sql`SELECT clock_timestamp() AS cutoff`,
+      );
+      if (!databaseClock?.cutoff) throw new Error('Unable to capture database snapshot cutoff');
+      const snapshotCutoff = databaseClock.cutoff.toISOString();
       const { data, stats } = await this.exportTenantData(tenantId, options);
       const dataJson = JSON.stringify(data); // No pretty-print to save space
       const dataBuffer = Buffer.from(dataJson, 'utf-8');

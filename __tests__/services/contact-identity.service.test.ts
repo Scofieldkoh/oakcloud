@@ -27,7 +27,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     $transaction: vi.fn((callback: (client: typeof tx) => unknown) => callback(tx)),
     $queryRaw: previewRaw,
-    contact: { findMany: vi.fn(), create: vi.fn() },
+    contact: { findFirst: vi.fn(), findMany: vi.fn(), create: vi.fn() },
   },
 }));
 
@@ -97,6 +97,7 @@ describe('contact identity service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     previewRaw.mockResolvedValue([]);
+    vi.mocked(prisma.contact.findFirst).mockResolvedValue(null);
     tx.contact.findMany.mockResolvedValue([]);
     tx.$queryRaw.mockResolvedValue([]);
     tx.contact.findFirst.mockResolvedValue(null);
@@ -165,26 +166,44 @@ describe('contact identity service', () => {
     expect(tx.$queryRaw.mock.calls[0][0].sql).toMatch(/regexp_replace[\s\S]*LIMIT 100/);
   });
 
-  it('finds aliases in both incoming-alias and existing-alias directions', async () => {
-    tx.contact.findMany.mockResolvedValueOnce([existingContact({ firstName: 'Legal', fullName: 'Legal', canonicalName: 'legal' })]);
-    await resolveOrCreateContact(candidate({ firstName: 'Other', alias: 'Legal' }), { action: 'AUTO' }, params);
-    expect(tx.contact.findMany.mock.calls[0][0].where.OR).toEqual(expect.arrayContaining([{ canonicalName: 'legal' }]));
+  it('finds Unicode-folded aliases in both incoming-alias and existing-alias directions', async () => {
+    tx.contact.findMany.mockResolvedValueOnce([existingContact({ firstName: 'A Tan', fullName: 'A Tan', canonicalName: 'atan' })]);
+    await resolveOrCreateContact(candidate({ firstName: 'Other', alias: 'Ａ．Ｔａｎ' }), { action: 'AUTO' }, params);
+    expect(tx.contact.findMany.mock.calls[0][0].where.OR).toEqual(expect.arrayContaining([{ canonicalName: 'atan' }]));
 
-    tx.contact.findMany.mockResolvedValueOnce([existingContact({ alias: 'Display Alias' })]);
-    await resolveOrCreateContact(candidate({ firstName: 'Display Alias' }), { action: 'AUTO' }, params);
+    tx.contact.findMany.mockResolvedValueOnce([existingContact({ alias: 'Ａ．Ｔａｎ', canonicalAlias: 'atan' })]);
+    await resolveOrCreateContact(candidate({ firstName: 'A Tan' }), { action: 'AUTO' }, params);
     expect(tx.contact.findMany.mock.calls[1][0].where.OR).toEqual(expect.arrayContaining([
-      { alias: { equals: 'Display Alias', mode: 'insensitive' } },
+      { canonicalAlias: 'atan' },
     ]));
   });
 
-  it('reuses an exact Chinese legacy row whose canonical name is still null', async () => {
+  it('fails identity traffic actionably when a Unicode-variant Chinese legacy row is unbackfilled', async () => {
+    tx.contact.findFirst.mockResolvedValueOnce({ id: 'legacy-contact' });
     tx.contact.findMany.mockResolvedValue([existingContact({ canonicalName: null })]);
-    const result = await resolveOrCreateContact(candidate(), { action: 'AUTO' }, params);
-    expect(tx.contact.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({
-      where: expect.objectContaining({ OR: expect.arrayContaining([{ canonicalName: null, fullName: expect.any(String) }]) }),
+    await expect(resolveOrCreateContact(candidate({ firstName: '　王 小明　' }), { action: 'AUTO' }, params))
+      .rejects.toThrow(/canonical identity backfill.*before identity traffic/i);
+    expect(tx.contact.findMany).not.toHaveBeenCalled();
+  });
+
+  it('caps exact matches independently before loading more than 100 older corporate-prefix candidates', async () => {
+    const exact = existingContact({ id: 'exact-new', contactType: 'CORPORATE', corporateName: 'Acme', fullName: 'Acme', canonicalName: 'acme', createdAt: new Date('2026-01-01') });
+    const prefixes = Array.from({ length: 100 }, (_, index) => existingContact({
+      id: `prefix-${index}`, contactType: 'CORPORATE', corporateName: `Acme Holdings ${index}`, fullName: `Acme Holdings ${index}`, canonicalName: `acmeholdings${index}`,
+    }));
+    tx.contact.findMany.mockResolvedValueOnce([exact]).mockResolvedValueOnce(prefixes);
+
+    const result = await resolveOrCreateContact(candidate({ contactType: 'CORPORATE', firstName: null, corporateName: 'Acme' }), { action: 'AUTO' }, params);
+
+    expect(result.contact.id).toBe('exact-new');
+    expect(tx.contact.findMany.mock.calls[0][0]).toEqual(expect.objectContaining({ take: 100 }));
+    expect(tx.contact.findMany.mock.calls[0][0].where.OR).not.toEqual(expect.arrayContaining([
+      { canonicalName: { startsWith: 'acme' } },
+    ]));
+    expect(tx.contact.findMany.mock.calls[1][0]).toEqual(expect.objectContaining({
+      where: expect.objectContaining({ canonicalName: { startsWith: 'acme' } }),
       take: 100,
     }));
-    expect(result.outcome).toBe('REUSED_NAME');
   });
 
   it('reuses and enriches an exact Chinese name-only contact', async () => {
@@ -687,7 +706,7 @@ describe('contact identity service', () => {
     const stale = existingContact({ id: 'selected', nationality: null });
     const current = existingContact({ id: 'selected', nationality: 'Current value' });
     tx.contact.findMany.mockResolvedValue([stale]);
-    tx.contact.findFirst.mockResolvedValue(current);
+    tx.contact.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(current);
 
     const result = await resolveOrCreateContact(
       candidate({ nationality: 'Incoming value' }),
@@ -712,7 +731,7 @@ describe('contact identity service', () => {
       identificationNumber: 'S1234567A',
     });
     tx.contact.findMany.mockResolvedValue([existingContact({ id: 'selected' })]);
-    tx.contact.findFirst.mockResolvedValue(existingContact({
+    tx.contact.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(existingContact({
       id: 'selected',
       identificationType: 'NRIC',
       identificationNumber: 'S7654321A',

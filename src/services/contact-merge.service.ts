@@ -2,6 +2,7 @@ import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import {
   buildContactIdentityFingerprint,
+  canonicalizeContactAlias,
   canonicalizeContactName,
   normalizeContactDetailValue,
   normalizeContactIdentifier,
@@ -199,6 +200,7 @@ function selectedMasterData(master: MergeContact, sources: MergeContact[], decis
     data.fullName = fullName;
     data.canonicalName = canonicalizeContactName(fullName);
   }
+  if ('alias' in data) data.canonicalAlias = canonicalizeContactAlias(data.alias as string | null);
   return data;
 }
 

@@ -364,6 +364,7 @@ Unified contact management for individuals and corporates. Each contact belongs 
 - Email and phone are stored in the `contact_details` table, not directly on contacts
 - Use `contact_details` with `companyId = null` for default email/phone
 - Canonical names are derived by the shared application canonicalizer. They are not locale-specific transliterations.
+- Canonical aliases use the same pinned application normalizer. Identity traffic is deployment-gated until active `canonicalName` and `canonicalAlias` backfill is complete; SQL does not approximate Unicode folding.
 - Identifier normalization is used for lookup only. Masked, placeholder, or low-confidence IDs/UENs are not deterministic keys.
 
 **Indexes:**
@@ -374,6 +375,7 @@ Unified contact management for individuals and corporates. Each contact belongs 
 - `contacts_corporate_uen_idx` on corporate_uen
 - `contacts_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
 - `contacts_tenantId_contactType_deletedAt_canonicalName_idx` for tenant/type exact-name lookup
+- `contacts_tenantId_contactType_deletedAt_canonicalAlias_idx` for Unicode-safe exact alias lookup
 - `contacts_canonicalName_active_trgm_idx` partial GIN trigram index for active fuzzy candidates
 - Partial expression indexes for active normalized identification numbers and corporate UENs
 

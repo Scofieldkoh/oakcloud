@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url';
-import { canonicalizeContactName } from '@/lib/contact-identity-normalization';
+import { canonicalizeContactAlias, canonicalizeContactName } from '@/lib/contact-identity-normalization';
 import { prisma } from '@/lib/prisma';
 
 const DEFAULT_BATCH_SIZE = 500;
@@ -75,24 +75,25 @@ export async function backfillContactCanonicalNames(
       },
       orderBy: { id: 'asc' },
       take: batchSize,
-      select: { id: true, fullName: true, canonicalName: true },
+      select: { id: true, fullName: true, canonicalName: true, alias: true, canonicalAlias: true },
     });
     if (contacts.length === 0) break;
 
     result.processed += contacts.length;
     const updates = contacts.flatMap((contact) => {
       const canonicalName = canonicalizeContactName(contact.fullName);
-      return contact.canonicalName === canonicalName
+      const canonicalAlias = canonicalizeContactAlias(contact.alias);
+      return contact.canonicalName === canonicalName && contact.canonicalAlias === canonicalAlias
         ? []
-        : [{ id: contact.id, canonicalName }];
+        : [{ id: contact.id, canonicalName, canonicalAlias }];
     });
 
     try {
       await prisma.$transaction(async (transaction) => {
-        await Promise.all(updates.map(({ id, canonicalName }) =>
+        await Promise.all(updates.map(({ id, canonicalName, canonicalAlias }) =>
           transaction.contact.update({
             where: { id },
-            data: { canonicalName },
+            data: { canonicalName, canonicalAlias },
           }),
         ));
       });
@@ -113,7 +114,7 @@ async function main(): Promise<void> {
   const result = await backfillContactCanonicalNames(
     parseBackfillArgs(process.argv.slice(2), process.env),
   );
-  console.log(JSON.stringify(result));
+  console.info(JSON.stringify(result));
   if (result.failed > 0) process.exitCode = 1;
 }
 

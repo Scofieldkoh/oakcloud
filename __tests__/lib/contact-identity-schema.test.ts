@@ -9,6 +9,8 @@ describe('contact identity Prisma schema', () => {
   );
   const normalizedIdentifierMigrationPath =
     'prisma/migrations/20260714130000_contact_duplicate_normalized_identifier_indexes/migration.sql';
+  const canonicalAliasMigrationPath =
+    'prisma/migrations/20260714140000_contact_canonical_alias/migration.sql';
 
   it('stores canonical names, counterparty identity, decisions, and merge ledgers', () => {
     expect(schema).toContain('canonicalName');
@@ -16,6 +18,15 @@ describe('contact identity Prisma schema', () => {
     expect(schema).toContain('model ContactDuplicateDecision');
     expect(schema).toContain('model ContactMergeOperation');
     expect(schema).toMatch(/enum AuditAction[\s\S]*\bMERGE\b/);
+  });
+
+  it('persists and indexes application-generated canonical aliases for exact identity lookup', () => {
+    expect(schema).toContain('canonicalAlias');
+    expect(existsSync(canonicalAliasMigrationPath)).toBe(true);
+    if (!existsSync(canonicalAliasMigrationPath)) return;
+    const aliasMigration = readFileSync(canonicalAliasMigrationPath, 'utf8');
+    expect(aliasMigration).toMatch(/ADD COLUMN "canonicalAlias" TEXT/);
+    expect(aliasMigration).toMatch(/tenantId[\s\S]*contactType[\s\S]*canonicalAlias/);
   });
 
   it('uses the mapped database names and adds the merge audit action', () => {

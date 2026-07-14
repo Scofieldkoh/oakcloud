@@ -4,7 +4,7 @@ import type { CreateContactInput, UpdateContactInput, ContactSearchInput } from 
 import { Prisma } from '@/generated/prisma';
 import type { Contact, ContactType, PrismaClient } from '@/generated/prisma';
 import type { ContactIdentityCandidate } from '@/types/contact-identity';
-import { canonicalizeContactName } from '@/lib/contact-identity-normalization';
+import { canonicalizeContactAlias, canonicalizeContactName } from '@/lib/contact-identity-normalization';
 
 /**
  * Type for Prisma transaction client (interactive transaction)
@@ -60,6 +60,7 @@ export async function createContact(
       fullName,
       canonicalName: canonicalizeContactName(fullName),
       alias: data.alias,
+      canonicalAlias: canonicalizeContactAlias(data.alias),
       identificationType: data.identificationType,
       identificationNumber,
       nationality: data.nationality,
@@ -105,7 +106,10 @@ export async function updateContact(
   if (data.contactType !== undefined) updateData.contactType = data.contactType;
   if (data.firstName !== undefined) updateData.firstName = data.firstName;
   if (data.lastName !== undefined) updateData.lastName = data.lastName;
-  if (data.alias !== undefined) updateData.alias = data.alias;
+  if (data.alias !== undefined) {
+    updateData.alias = data.alias;
+    updateData.canonicalAlias = canonicalizeContactAlias(data.alias);
+  }
   if (data.identificationType !== undefined) updateData.identificationType = data.identificationType;
   if (data.identificationNumber !== undefined)
     updateData.identificationNumber = normalizeOptionalString(data.identificationNumber);

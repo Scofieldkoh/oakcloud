@@ -3,6 +3,7 @@ import { createAuditLog } from '@/lib/audit';
 import { scoreContactIdentityMatch } from '@/lib/contact-identity-matching';
 import {
   buildContactIdentityFingerprint,
+  canonicalizeContactAlias,
   canonicalizeContactName,
   canonicalizeCorporateComparisonName,
   isDeterministicIdentifier,
@@ -119,6 +120,20 @@ async function findCandidates(
   tenantId: string,
   db: PrismaTransactionClient | typeof prisma,
 ): Promise<ContactWithIdentityRelations[]> {
+  const activeScope = { tenantId, contactType: candidate.contactType, deletedAt: null, isActive: true } as const;
+  const unbackfilled = await db.contact.findFirst({
+    where: {
+      ...activeScope,
+      OR: [
+        { canonicalName: null },
+        { alias: { not: null }, canonicalAlias: null },
+      ],
+    },
+    select: { id: true },
+  });
+  if (unbackfilled) {
+    throw new Error('Canonical identity backfill must complete and be verified before identity traffic can resume');
+  }
   const canonicalName = canonicalizeContactName(identityName(candidate));
   const identificationNumber = hasUsableIdentificationNumber(candidate)
     ? candidate.identificationNumber?.trim()
@@ -128,19 +143,14 @@ async function findCandidates(
     ? canonicalizeCorporateComparisonName(candidate.corporateName)
     : null;
   const exactPredicates: Prisma.ContactWhereInput[] = [
-    ...(canonicalName ? [{ canonicalName }, { alias: { equals: identityName(candidate), mode: 'insensitive' as const } }] : []),
-    ...(canonicalName ? [{ canonicalName: null, fullName: fullName(candidate) }] : []),
+    ...(canonicalName ? [{ canonicalName }, { canonicalAlias: canonicalName }] : []),
     ...(canonicalizeContactName(candidate.alias) ? [{ canonicalName: canonicalizeContactName(candidate.alias) }] : []),
-    ...(corporateComparison ? [{ canonicalName: { startsWith: corporateComparison } }] : []),
     ...(identificationNumber ? [{ identificationType: candidate.identificationType, identificationNumber }] : []),
     ...(corporateUen ? [{ corporateUen }] : []),
   ];
   const exact = await db.contact.findMany({
     where: {
-      tenantId,
-      contactType: candidate.contactType,
-      deletedAt: null,
-      isActive: true,
+      ...activeScope,
       OR: exactPredicates,
     },
     include: {
@@ -172,7 +182,15 @@ async function findCandidates(
     take: 100,
   }) as ContactWithIdentityRelations[];
   const normalizedIdentifiers = await findNormalizedIdentifierCandidates(candidate, tenantId, db);
-  return [...new Map([...exact, ...normalizedIdentifiers].map((contact) => [contact.id, contact])).values()];
+  const suffixCandidates = corporateComparison
+    ? await db.contact.findMany({
+      where: { ...activeScope, canonicalName: { startsWith: corporateComparison } },
+      include: identityRelationsInclude,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 100,
+    }) as ContactWithIdentityRelations[]
+    : [];
+  return [...new Map([...exact, ...normalizedIdentifiers, ...suffixCandidates].map((contact) => [contact.id, contact])).values()];
 }
 
 async function findNormalizedIdentifierCandidates(
@@ -459,6 +477,10 @@ function buildEnrichment(
       conflicts.push(conflict(field as ContactIdentityConflict['field'], incoming, current));
     }
   }
+  if ('alias' in data) {
+    data.canonicalAlias = canonicalizeContactAlias(data.alias as string | null | undefined);
+    fields.push('canonicalAlias');
+  }
 
   if (hasUsableIdentificationNumber(candidate)) {
     const incomingType = candidate.identificationType!;
@@ -543,6 +565,7 @@ async function createNewContact(
       fullName: fullName(candidate),
       canonicalName: canonicalizeContactName(identityName(candidate)),
       alias: candidate.alias,
+      canonicalAlias: canonicalizeContactAlias(candidate.alias),
       identificationType: hasUsableIdentificationNumber(candidate) ? candidate.identificationType : null,
       identificationNumber: hasUsableIdentificationNumber(candidate) ? candidate.identificationNumber?.trim() || null : null,
       nationality: candidate.nationality,

@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   workspaceUpdate: vi.fn(),
   workspaceFind: vi.fn(),
   mergeFind: vi.fn(),
+  databaseClock: vi.fn(),
   audit: vi.fn(),
 }));
 
@@ -16,6 +17,7 @@ vi.mock('@/lib/prisma', () => ({
     workspaceBackup: { update: mocks.workspaceUpdate },
     workspace: { findUnique: mocks.workspaceFind },
     contactMergeOperation: { findFirst: mocks.mergeFind },
+    $queryRaw: mocks.databaseClock,
   },
 }));
 vi.mock('@/lib/audit', () => ({ createAuditLog: mocks.audit }));
@@ -45,12 +47,13 @@ function manifest(overrides: Partial<BackupManifest> = {}): BackupManifest {
 describe('contact merge backup restore safety', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-07-14T10:00:00.000Z'));
+    vi.setSystemTime(new Date('2026-07-14T10:10:00.000Z'));
     vi.clearAllMocks();
     mocks.workspaceUpdate.mockResolvedValue({});
     mocks.workspaceFind.mockResolvedValue(null);
     mocks.mergeFind.mockResolvedValue(null);
     mocks.upload.mockResolvedValue({});
+    mocks.databaseClock.mockResolvedValue([{ cutoff: new Date('2026-07-14T10:00:00.000Z') }]);
   });
 
   afterEach(() => vi.useRealTimers());
@@ -66,7 +69,7 @@ describe('contact merge backup restore safety', () => {
     };
     internals.updateBackupProgress = vi.fn().mockResolvedValue(undefined);
     internals.exportTenantData = vi.fn().mockImplementation(async () => {
-      vi.setSystemTime(new Date('2026-07-14T10:05:00.000Z'));
+      vi.setSystemTime(new Date('2026-07-14T10:15:00.000Z'));
       return { data: {}, stats: {} };
     });
     internals.copyTenantFiles = vi.fn().mockResolvedValue([]);
@@ -79,8 +82,9 @@ describe('contact merge backup restore safety', () => {
     expect(written).toMatchObject({
       version: '1.2',
       snapshotCutoff: '2026-07-14T10:00:00.000Z',
-      createdAt: '2026-07-14T10:05:00.000Z',
+      createdAt: '2026-07-14T10:15:00.000Z',
     });
+    expect(mocks.databaseClock.mock.invocationCallOrder[0]).toBeLessThan(internals.exportTenantData.mock.invocationCallOrder[0]);
   });
 
   it('rejects a merge interleaved after cutoff but before the later manifest timestamp', async () => {

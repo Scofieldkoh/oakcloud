@@ -26,6 +26,10 @@ export function canonicalizeContactName(value: string | null | undefined): strin
   return caseFold((value ?? '').normalize('NFKC')).replace(/[^\p{L}\p{M}\p{N}]/gu, '');
 }
 
+export function canonicalizeContactAlias(value: string | null | undefined): string | null {
+  return value == null ? null : canonicalizeContactName(value);
+}
+
 export function canonicalizeCorporateComparisonName(
   value: string | null | undefined,
 ): string {
