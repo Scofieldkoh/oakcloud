@@ -15,7 +15,7 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 vi.mock('@/lib/storage', () => ({
-  storage: { exists: vi.fn(), move: vi.fn() }, generateApprovedDocumentFilename: vi.fn(() => 'approved.pdf'),
+  storage: { exists: vi.fn(), copy: vi.fn(), delete: vi.fn(), move: vi.fn() }, generateApprovedDocumentFilename: vi.fn(() => 'approved.pdf'),
   getFileExtension: vi.fn(() => 'pdf'), buildApprovedStorageKey: vi.fn(() => 'approved.pdf'),
 }));
 vi.mock('@/lib/logger', () => ({ createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }) }));
@@ -37,6 +37,7 @@ import {
 } from '@/services/document-revision.service';
 import { mapCounterpartyIdentityDraft } from '@/services/document-extraction.service';
 import { prisma } from '@/lib/prisma';
+import { storage } from '@/lib/storage';
 import { Decimal } from '@prisma/client/runtime/client';
 
 describe('Document Vault counterparty identity', () => {
@@ -184,6 +185,70 @@ describe('Document Vault counterparty identity', () => {
     expect(prisma.processingDocument.update).not.toHaveBeenCalled();
     expect(mocks.createAuditLog).not.toHaveBeenCalled();
   });
+
+  it('keeps the recorded source when destination metadata persistence fails', async () => {
+    const revision = approvalRevision('ACCOUNTS_PAYABLE', 'vendor');
+    vi.mocked(prisma.documentRevision.findUnique).mockResolvedValue(revision as never);
+    vi.mocked(prisma.processingDocument.findUnique).mockResolvedValue(processingContext('vault/original.pdf') as never);
+    mocks.getOrCreateVendorContact.mockResolvedValue(resolutionResult('vendor'));
+    const tx = approvalTx(revision);
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: unknown) => (
+      callback as (client: typeof tx) => Promise<unknown>
+    )(tx) as never);
+    vi.mocked(storage.exists).mockResolvedValue(true);
+    vi.mocked(prisma.document.update).mockRejectedValue(new Error('metadata failed'));
+
+    await approveRevision(revision.id, { userId: 'user-1' });
+
+    expect(storage.copy).toHaveBeenCalledWith('vault/original.pdf', 'approved.pdf');
+    expect(storage.delete).toHaveBeenCalledWith('approved.pdf');
+    expect(storage.delete).not.toHaveBeenCalledWith('vault/original.pdf');
+  });
+
+  it('records destination metadata before deleting the source', async () => {
+    const revision = approvalRevision('ACCOUNTS_PAYABLE', 'vendor');
+    vi.mocked(prisma.documentRevision.findUnique).mockResolvedValue(revision as never);
+    vi.mocked(prisma.processingDocument.findUnique).mockResolvedValue(processingContext('vault/original.pdf') as never);
+    mocks.getOrCreateVendorContact.mockResolvedValue(resolutionResult('vendor'));
+    const tx = approvalTx(revision);
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: unknown) => (
+      callback as (client: typeof tx) => Promise<unknown>
+    )(tx) as never);
+    vi.mocked(storage.exists).mockResolvedValue(true);
+    vi.mocked(prisma.document.update).mockResolvedValue({} as never);
+
+    await approveRevision(revision.id, { userId: 'user-1' });
+
+    expect(prisma.document.update).toHaveBeenCalledWith({
+      where: { id: 'document-1' },
+      data: { fileName: 'approved.pdf', storageKey: 'approved.pdf' },
+    });
+    expect(vi.mocked(prisma.document.update).mock.invocationCallOrder[0])
+      .toBeLessThan(vi.mocked(storage.delete).mock.invocationCallOrder[0]);
+    expect(storage.delete).toHaveBeenCalledWith('vault/original.pdf');
+  });
+
+  it('retains the new recorded key when deleting the old source fails', async () => {
+    const revision = approvalRevision('ACCOUNTS_PAYABLE', 'vendor');
+    vi.mocked(prisma.documentRevision.findUnique).mockResolvedValue(revision as never);
+    vi.mocked(prisma.processingDocument.findUnique).mockResolvedValue(processingContext('vault/original.pdf') as never);
+    mocks.getOrCreateVendorContact.mockResolvedValue(resolutionResult('vendor'));
+    const tx = approvalTx(revision);
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: unknown) => (
+      callback as (client: typeof tx) => Promise<unknown>
+    )(tx) as never);
+    vi.mocked(storage.exists).mockResolvedValue(true);
+    vi.mocked(prisma.document.update).mockResolvedValue({} as never);
+    vi.mocked(storage.delete).mockRejectedValueOnce(new Error('delete failed'));
+
+    await approveRevision(revision.id, { userId: 'user-1' });
+
+    expect(prisma.document.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: { fileName: 'approved.pdf', storageKey: 'approved.pdf' },
+    }));
+    expect(storage.delete).toHaveBeenCalledTimes(1);
+    expect(storage.delete).toHaveBeenCalledWith('vault/original.pdf');
+  });
 });
 
 function approvalRevision(category: 'ACCOUNTS_PAYABLE' | 'ACCOUNTS_RECEIVABLE', side: 'vendor' | 'customer') {
@@ -201,8 +266,8 @@ function approvalRevision(category: 'ACCOUNTS_PAYABLE' | 'ACCOUNTS_RECEIVABLE', 
   };
 }
 
-function processingContext() {
-  return { document: { id: 'document-1', tenantId: 'tenant-1', companyId: 'company-1', fileName: 'invoice.pdf', storageKey: null } };
+function processingContext(storageKey: string | null = null) {
+  return { document: { id: 'document-1', tenantId: 'tenant-1', companyId: 'company-1', fileName: 'invoice.pdf', storageKey } };
 }
 
 function resolutionResult(side: 'vendor' | 'customer') {

@@ -962,18 +962,37 @@ export async function approveRevision(
         const fileExists = await storage.exists(document.storageKey);
 
         if (fileExists) {
-          // Move file to new location (copy + delete)
-          await storage.move(document.storageKey, newStorageKey);
-          log.info(`Renamed document file from "${document.storageKey}" to "${newStorageKey}"`);
+          // Copy first so the recorded source remains valid until metadata is durable.
+          await storage.copy(document.storageKey, newStorageKey);
+          try {
+            await prisma.document.update({
+              where: { id: document.id },
+              data: {
+                fileName: newFilename,
+                storageKey: newStorageKey,
+              },
+            });
+          } catch (metadataError) {
+            try {
+              await storage.delete(newStorageKey);
+            } catch (cleanupError) {
+              log.error(
+                `Failed to remove copied document "${newStorageKey}" after metadata update failure; `
+                + `both copies remain and the database still points to "${document.storageKey}": ${cleanupError}`,
+              );
+            }
+            throw metadataError;
+          }
 
-          // Update Document record with new filename and storage key
-          await prisma.document.update({
-            where: { id: document.id },
-            data: {
-              fileName: newFilename,
-              storageKey: newStorageKey,
-            },
-          });
+          try {
+            await storage.delete(document.storageKey);
+          } catch (deleteError) {
+            log.warn(
+              `Document metadata now points to "${newStorageKey}", but old source `
+              + `"${document.storageKey}" could not be deleted and was retained: ${deleteError}`,
+            );
+          }
+          log.info(`Recorded approved document at "${newStorageKey}" (previous key: "${document.storageKey}")`);
         } else {
           // File doesn't exist (e.g., extraction-only document without physical file)
           log.info(`Skipping file rename - source file does not exist: ${document.storageKey}`);
