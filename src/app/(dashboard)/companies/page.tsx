@@ -20,6 +20,7 @@ import { FilterChip } from '@/components/ui/filter-chip';
 import { useToast } from '@/components/ui/toast';
 import { useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { useWorkspaceListReset } from '@/hooks/use-workspace-list-reset';
 import { getEntityTypeLabel, getCompanyStatusLabel } from '@/lib/constants';
 import type { EntityType, CompanyStatus } from '@/generated/prisma';
 
@@ -146,11 +147,12 @@ export default function CompaniesPage() {
     return queryString ? `/companies?${queryString}` : '/companies';
   }, [params]);
 
-  // Reset page and selection when tenant changes
-  useEffect(() => {
+  const resetForWorkspaceChange = useCallback(() => {
     setParams((prev) => ({ ...prev, page: 1 }));
     clearSelection();
-  }, [activeTenantId, clearSelection]);
+  }, [clearSelection]);
+
+  useWorkspaceListReset(activeTenantId, resetForWorkspaceChange);
 
   // Sync URL when params change
   useEffect(() => {

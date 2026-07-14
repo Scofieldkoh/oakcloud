@@ -13,6 +13,7 @@ import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useSelection } from '@/hooks/use-selection';
 import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { useWorkspaceListReset } from '@/hooks/use-workspace-list-reset';
 import { ContactTable, type ContactInlineFilters } from '@/components/contacts/contact-table';
 import { ContactFilters, type FilterValues } from '@/components/contacts/contact-filters';
 import { Pagination } from '@/components/ui/pagination';
@@ -173,11 +174,12 @@ export default function ContactsPage() {
     return queryString ? `/contacts?${queryString}` : '/contacts';
   }, [params]);
 
-  // Reset page and selection when tenant changes
-  useEffect(() => {
+  const resetForWorkspaceChange = useCallback(() => {
     setParams((prev) => ({ ...prev, page: 1 }));
     clearSelection();
-  }, [activeTenantId, clearSelection]);
+  }, [clearSelection]);
+
+  useWorkspaceListReset(activeTenantId, resetForWorkspaceChange);
 
   // Sync URL when params change
   useEffect(() => {
