@@ -15,6 +15,7 @@ import { scoreContactIdentityMatch } from '@/lib/contact-identity-matching';
 import { resolveOrCreateContact } from '@/services/contact-identity.service';
 import type { CounterpartyIdentityDraft } from './document-revision.service';
 import type { ContactIdentityCandidate, ContactIdentityRecord } from '@/types/contact-identity';
+import type { PrismaTransactionClient } from '@/services/contact.service';
 
 const log = createLogger('customer-resolution');
 
@@ -35,6 +36,7 @@ export interface ResolveCustomerInput {
   createdById?: string;
   counterpartyIdentity?: CounterpartyIdentityDraft;
   sourceRecordId?: string;
+  tx?: PrismaTransactionClient;
 }
 
 const DEFAULTS = {
@@ -108,16 +110,18 @@ async function upsertCustomerAlias(params: {
   normalizedContactId: string;
   confidence: number;
   createdById?: string;
+  tx?: PrismaTransactionClient;
 }): Promise<void> {
-  const { tenantId, companyId, rawName, normalizedContactId, confidence, createdById } = params;
+  const { tenantId, companyId, rawName, normalizedContactId, confidence, createdById, tx } = params;
+  const db = tx ?? prisma;
 
-  const existing = await prisma.customerAlias.findFirst({
+  const existing = await db.customerAlias.findFirst({
     where: { tenantId, companyId, rawName, deletedAt: null },
     select: { id: true },
   });
 
   if (existing) {
-    await prisma.customerAlias.update({
+    await db.customerAlias.update({
       where: { id: existing.id },
       data: {
         normalizedContactId,
@@ -128,7 +132,7 @@ async function upsertCustomerAlias(params: {
     return;
   }
 
-  await prisma.customerAlias.create({
+  await db.customerAlias.create({
     data: {
       tenantId,
       companyId,
@@ -147,6 +151,7 @@ export async function learnCustomerAlias(input: {
   customerId: string;
   confidence?: number;
   createdById?: string;
+  tx?: PrismaTransactionClient;
 }): Promise<void> {
   const raw = input.rawName?.trim();
   if (!raw) return;
@@ -158,6 +163,7 @@ export async function learnCustomerAlias(input: {
     normalizedContactId: input.customerId,
     confidence: Math.max(0, Math.min(1, input.confidence ?? 1.0)),
     createdById: input.createdById,
+    tx: input.tx,
   });
 }
 
@@ -170,8 +176,9 @@ export async function resolveCustomer(input: ResolveCustomerInput): Promise<Cust
   if (!raw) return { confidence: 0, strategy: 'NONE' };
 
   const rawDisplay = normalizeForDisplay(raw);
+  const db = input.tx ?? prisma;
 
-  const aliases = await prisma.customerAlias.findMany({
+  const aliases = await db.customerAlias.findMany({
     where: {
       tenantId: input.tenantId,
       deletedAt: null,
@@ -207,7 +214,7 @@ export async function resolveCustomer(input: ResolveCustomerInput): Promise<Cust
   }
 
   if (bestAlias && bestAlias.score >= DEFAULTS.autoAcceptThreshold) {
-    const contact = await prisma.contact.findUnique({
+    const contact = await db.contact.findUnique({
       where: { id: bestAlias.normalizedContactId },
       select: { id: true, corporateName: true, fullName: true },
     });
@@ -223,7 +230,7 @@ export async function resolveCustomer(input: ResolveCustomerInput): Promise<Cust
     }
   }
 
-  const contacts = await prisma.contact.findMany({
+  const contacts = await db.contact.findMany({
     where: {
       tenantId: input.tenantId,
       deletedAt: null,
@@ -268,7 +275,7 @@ export async function getOrCreateCustomerContact(
   const rawDisplay = normalizeForDisplay(raw);
 
   const identity = identityCandidate(input, rawDisplay);
-  const params = { tenantId: input.tenantId, userId: input.createdById ?? 'system' };
+  const params = { tenantId: input.tenantId, userId: input.createdById ?? 'system', tx: input.tx };
   let resolution;
   try {
     resolution = await resolveOrCreateContact(
@@ -294,8 +301,10 @@ export async function getOrCreateCustomerContact(
       customerId: created.id,
       confidence: resolved.confidence || 1.0,
       createdById: input.createdById,
+      tx: input.tx,
     });
   } catch (e) {
+    if (input.tx) throw e;
     log.warn(`Failed to create customer alias for "${rawDisplay}"`, e);
   }
 

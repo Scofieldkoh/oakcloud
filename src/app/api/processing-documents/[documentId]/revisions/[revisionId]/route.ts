@@ -12,7 +12,8 @@ import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { getProcessingDocument } from '@/services/document-processing.service';
 import {
-  normalizeCounterpartyIdentityDraft,
+  CounterpartyIdentityValidationError,
+  parseReviewerCounterpartyIdentity,
   validateRevision,
   type CounterpartyIdentityDraft,
 } from '@/services/document-revision.service';
@@ -314,7 +315,7 @@ export async function PATCH(
     if (headerUpdates) {
       if (headerUpdates.vendorName !== undefined) headerData.vendorName = headerUpdates.vendorName;
       if (headerUpdates.counterpartyIdentity !== undefined) {
-        headerData.counterpartyIdentity = normalizeCounterpartyIdentityDraft(headerUpdates.counterpartyIdentity);
+        headerData.counterpartyIdentity = parseReviewerCounterpartyIdentity(headerUpdates.counterpartyIdentity);
       }
       if (headerUpdates.documentNumber !== undefined) headerData.documentNumber = headerUpdates.documentNumber;
       if (headerUpdates.documentDate !== undefined) headerData.documentDate = headerUpdates.documentDate ? new Date(headerUpdates.documentDate) : null;
@@ -457,6 +458,20 @@ export async function PATCH(
 
 function handleError(error: unknown): NextResponse {
   console.error('Revision API error:', error);
+
+  if (error instanceof CounterpartyIdentityValidationError) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Counterparty identity contains invalid fields',
+          issues: error.issues,
+        },
+      },
+      { status: 400 },
+    );
+  }
 
   if (error instanceof Error) {
     if (error.message === 'Unauthorized') {

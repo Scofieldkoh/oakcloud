@@ -31,6 +31,8 @@ import { getOrCreateVendorContact, learnVendorAlias } from './vendor-resolution.
 import { getOrCreateCustomerContact, learnCustomerAlias } from './customer-resolution.service';
 import { jaccardSimilarity, tokenizeEntityName } from '@/lib/entity-name';
 import type { ContactIdentityCandidate } from '@/types/contact-identity';
+import { z } from 'zod';
+import { createAuditLog } from '@/lib/audit';
 
 type Decimal = Prisma.Decimal;
 
@@ -182,6 +184,84 @@ export interface CounterpartyIdentityDraft {
 }
 
 const IDENTIFICATION_TYPES = new Set(['NRIC', 'FIN', 'PASSPORT', 'UEN', 'OTHER']);
+
+export interface CounterpartyIdentityValidationIssue {
+  field: 'identificationType' | 'identificationNumber' | 'fullAddress' | 'email' | 'phone';
+  message: string;
+}
+
+export class CounterpartyIdentityValidationError extends Error {
+  constructor(public readonly issues: CounterpartyIdentityValidationIssue[]) {
+    super('Invalid counterparty identity');
+    this.name = 'CounterpartyIdentityValidationError';
+  }
+}
+
+const optionalReviewerString = (max: number) => z.preprocess(
+  (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
+  z.string().trim().max(max).optional(),
+);
+
+const reviewerCounterpartyIdentitySchema = z.object({
+  identificationType: z.preprocess(
+    (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
+    z.enum(['NRIC', 'FIN', 'PASSPORT', 'UEN', 'OTHER']).optional(),
+  ),
+  identificationNumber: optionalReviewerString(40),
+  fullAddress: optionalReviewerString(500),
+  email: z.preprocess(
+    (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
+    z.string().trim().email('Enter a valid email address').max(254).optional(),
+  ),
+  phone: z.preprocess(
+    (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
+    z.string().trim().regex(/^\+?[0-9][0-9\s()-]{6,20}$/, 'Enter a valid phone number').optional(),
+  ),
+  confidence: z.unknown().optional(),
+}).superRefine((identity, context) => {
+  if (identity.identificationType && !identity.identificationNumber) {
+    context.addIssue({ code: 'custom', path: ['identificationNumber'], message: 'Identification number is required for the selected type' });
+    return;
+  }
+  if (!identity.identificationType && identity.identificationNumber) {
+    context.addIssue({ code: 'custom', path: ['identificationType'], message: 'Identification type is required when a number is provided' });
+    return;
+  }
+  if (!identity.identificationType || !identity.identificationNumber) return;
+  const number = identity.identificationNumber.toUpperCase().replace(/[\s-]/g, '');
+  const valid = identity.identificationType === 'NRIC'
+    ? /^[ST]\d{7}[A-Z]$/.test(number)
+    : identity.identificationType === 'FIN'
+      ? /^[FGM]\d{7}[A-Z]$/.test(number)
+      : identity.identificationType === 'PASSPORT'
+        ? /^[A-Z0-9]{5,20}$/.test(number)
+        : identity.identificationType === 'UEN'
+          ? /^[A-Z0-9]{8,20}$/.test(number)
+          : /^[A-Z0-9][A-Z0-9 .()/+-]{2,39}$/i.test(identity.identificationNumber);
+  if (!valid) {
+    context.addIssue({ code: 'custom', path: ['identificationNumber'], message: `Enter a valid ${identity.identificationType} number` });
+  }
+});
+
+export function parseReviewerCounterpartyIdentity(value: unknown): CounterpartyIdentityDraft {
+  const parsed = reviewerCounterpartyIdentitySchema.safeParse(value);
+  if (!parsed.success) {
+    throw new CounterpartyIdentityValidationError(parsed.error.issues.map((issue) => ({
+      field: (issue.path[0] ?? 'identificationNumber') as CounterpartyIdentityValidationIssue['field'],
+      message: issue.message,
+    })));
+  }
+  const { confidence: _ignoredConfidence, ...identity } = parsed.data;
+  return {
+    ...identity,
+    confidence: {
+      ...(identity.identificationNumber ? { identificationNumber: 1 } : {}),
+      ...(identity.fullAddress ? { fullAddress: 1 } : {}),
+      ...(identity.email ? { email: 1 } : {}),
+      ...(identity.phone ? { phone: 1 } : {}),
+    },
+  };
+}
 
 export function normalizeCounterpartyIdentityDraft(value: unknown): CounterpartyIdentityDraft {
   const input = value && typeof value === 'object' && !Array.isArray(value)
@@ -635,11 +715,12 @@ export async function approveRevision(
   const customerAliasMode = input.aliasLearning?.customer ?? 'AUTO';
   const counterpartyIdentity = normalizeCounterpartyIdentityDraft(revision.counterpartyIdentity);
 
-  // Stabilize vendor identity/name on approval (learn aliases over time)
-  let approvedVendorName: string | null | undefined = revision.vendorName;
-  let approvedVendorId: string | null | undefined = revision.vendorId;
-  let approvedCustomerName: string | null | undefined = (revision as unknown as { customerName?: string | null }).customerName;
-  let approvedCustomerId: string | null | undefined = (revision as unknown as { customerId?: string | null }).customerId;
+  const approval = await prisma.$transaction(async (tx) => {
+    // Stabilize counterparty identity and all approval DB writes atomically.
+    let approvedVendorName: string | null | undefined = revision.vendorName;
+    let approvedVendorId: string | null | undefined = revision.vendorId;
+    let approvedCustomerName: string | null | undefined = (revision as unknown as { customerName?: string | null }).customerName;
+    let approvedCustomerId: string | null | undefined = (revision as unknown as { customerId?: string | null }).customerId;
 
   if (revision.vendorName && tenantId && companyId && !isReceivable) {
     try {
@@ -650,6 +731,7 @@ export async function approveRevision(
         createdById: userId,
         counterpartyIdentity,
         sourceRecordId: revision.id,
+        tx,
       });
 
       if (vendor.vendorId && vendor.vendorName) {
@@ -658,7 +740,7 @@ export async function approveRevision(
       }
 
       if (approvedVendorId && revision.extractionId) {
-        const extraction = await prisma.documentExtraction.findUnique({
+        const extraction = await tx.documentExtraction.findUnique({
           where: { id: revision.extractionId },
           select: { rawJson: true },
         });
@@ -692,12 +774,14 @@ export async function approveRevision(
               vendorId: approvedVendorId,
               confidence: vendorAliasMode === 'FORCE' ? 1.0 : confidence,
               createdById: userId,
+              tx,
             });
           }
         }
       }
     } catch (e) {
       log.warn(`Vendor canonicalization failed for revision ${revisionId}`, e);
+      throw e;
     }
   }
 
@@ -713,6 +797,7 @@ export async function approveRevision(
         createdById: userId,
         counterpartyIdentity,
         sourceRecordId: revision.id,
+        tx,
       });
 
       if (customer.customerId && customer.customerName) {
@@ -725,7 +810,7 @@ export async function approveRevision(
       }
 
       if (approvedCustomerId && revision.extractionId) {
-        const extraction = await prisma.documentExtraction.findUnique({
+        const extraction = await tx.documentExtraction.findUnique({
           where: { id: revision.extractionId },
           select: { rawJson: true },
         });
@@ -757,12 +842,14 @@ export async function approveRevision(
               customerId: approvedCustomerId,
               confidence: customerAliasMode === 'FORCE' ? 1.0 : confidence,
               createdById: userId,
+              tx,
             });
           }
         }
       }
     } catch (e) {
       log.warn(`Customer canonicalization failed for revision ${revisionId}`, e);
+      throw e;
     }
   }
 
@@ -800,7 +887,51 @@ export async function approveRevision(
     homeEquivalent,
   };
 
-  // Rename document file in storage based on revision data (BEFORE transaction)
+    await tx.documentRevision.updateMany({
+      where: { processingDocumentId: revision.processingDocumentId, status: 'APPROVED' },
+      data: { status: 'SUPERSEDED', supersededAt: new Date() },
+    });
+    await tx.documentRevision.updateMany({
+      where: {
+        processingDocumentId: revision.processingDocumentId,
+        status: 'DRAFT',
+        id: { not: revisionId },
+      },
+      data: { status: 'SUPERSEDED', supersededAt: new Date() },
+    });
+    await tx.documentRevision.update({ where: { id: revisionId }, data: approvalData });
+    await tx.processingDocument.update({
+      where: { id: revision.processingDocumentId },
+      data: { currentRevisionId: revisionId, lockVersion: { increment: 1 } },
+    });
+    await createAuditLog({
+      tenantId: tenantId!,
+      userId,
+      companyId: companyId!,
+      action: 'UPDATE',
+      entityType: 'DocumentRevision',
+      entityId: revisionId,
+      summary: `Approved revision #${revision.revisionNumber}`,
+      changeSource: 'MANUAL',
+      metadata: {
+        revisionNumber: revision.revisionNumber,
+        totalAmount: revision.totalAmount.toString(),
+        currency: revision.currency,
+        homeEquivalent: homeEquivalent?.toString(),
+        counterpartyIdentityCaptured: Boolean(revision.counterpartyIdentity),
+      },
+    }, tx);
+    const approvedRevision = await tx.documentRevision.findUnique({
+      where: { id: revisionId },
+      include: { items: { orderBy: { lineNo: 'asc' } } },
+    });
+    if (!approvedRevision) throw new Error(`Approved revision ${revisionId} not found`);
+    return { approvedRevision, approvedVendorName, approvedCustomerName };
+  });
+
+  const { approvedRevision, approvedVendorName, approvedCustomerName } = approval;
+
+  // Storage movement remains best-effort after the atomic database approval.
   if (processingDoc?.document?.storageKey) {
     const document = processingDoc.document;
 
@@ -863,50 +994,9 @@ export async function approveRevision(
     }
   }
 
-  // Execute approval atomically - supersede old revisions, approve current, update document
-  await prisma.$transaction([
-    // Supersede any previously approved revision
-    prisma.documentRevision.updateMany({
-      where: {
-        processingDocumentId: revision.processingDocumentId,
-        status: 'APPROVED',
-      },
-      data: {
-        status: 'SUPERSEDED',
-        supersededAt: new Date(),
-      },
-    }),
-    // Also supersede any other DRAFT revisions (not the one being approved)
-    prisma.documentRevision.updateMany({
-      where: {
-        processingDocumentId: revision.processingDocumentId,
-        status: 'DRAFT',
-        id: { not: revisionId },
-      },
-      data: {
-        status: 'SUPERSEDED',
-        supersededAt: new Date(),
-      },
-    }),
-    // Approve this revision
-    prisma.documentRevision.update({
-      where: { id: revisionId },
-      data: approvalData,
-    }),
-    // Update processing document to point to this revision
-    prisma.processingDocument.update({
-      where: { id: revision.processingDocumentId },
-      data: {
-        currentRevisionId: revisionId,
-        lockVersion: { increment: 1 },
-      },
-    }),
-  ]);
-
-  const approvedRevision = await getRevision(revisionId);
   log.info(`Revision ${revisionId} approved`);
 
-  return approvedRevision!;
+  return approvedRevision;
 }
 
 // ============================================================================

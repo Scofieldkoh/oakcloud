@@ -15,6 +15,7 @@ import { scoreContactIdentityMatch } from '@/lib/contact-identity-matching';
 import { resolveOrCreateContact } from '@/services/contact-identity.service';
 import type { CounterpartyIdentityDraft } from './document-revision.service';
 import type { ContactIdentityCandidate, ContactIdentityRecord } from '@/types/contact-identity';
+import type { PrismaTransactionClient } from '@/services/contact.service';
 
 const log = createLogger('vendor-resolution');
 
@@ -35,6 +36,7 @@ export interface ResolveVendorInput {
   createdById?: string;
   counterpartyIdentity?: CounterpartyIdentityDraft;
   sourceRecordId?: string;
+  tx?: PrismaTransactionClient;
 }
 
 const DEFAULTS = {
@@ -119,16 +121,18 @@ async function upsertVendorAlias(params: {
   normalizedContactId: string;
   confidence: number;
   createdById?: string;
+  tx?: PrismaTransactionClient;
 }): Promise<void> {
-  const { tenantId, companyId, rawName, normalizedContactId, confidence, createdById } = params;
+  const { tenantId, companyId, rawName, normalizedContactId, confidence, createdById, tx } = params;
+  const db = tx ?? prisma;
 
-  const existing = await prisma.vendorAlias.findFirst({
+  const existing = await db.vendorAlias.findFirst({
     where: { tenantId, companyId, rawName, deletedAt: null },
     select: { id: true },
   });
 
   if (existing) {
-    await prisma.vendorAlias.update({
+    await db.vendorAlias.update({
       where: { id: existing.id },
       data: {
         normalizedContactId,
@@ -139,7 +143,7 @@ async function upsertVendorAlias(params: {
     return;
   }
 
-  await prisma.vendorAlias.create({
+  await db.vendorAlias.create({
     data: {
       tenantId,
       companyId,
@@ -158,6 +162,7 @@ export async function learnVendorAlias(input: {
   vendorId: string;
   confidence?: number;
   createdById?: string;
+  tx?: PrismaTransactionClient;
 }): Promise<void> {
   const raw = input.rawName?.trim();
   if (!raw) return;
@@ -169,6 +174,7 @@ export async function learnVendorAlias(input: {
     normalizedContactId: input.vendorId,
     confidence: Math.max(0, Math.min(1, input.confidence ?? 1.0)),
     createdById: input.createdById,
+    tx: input.tx,
   });
 }
 
@@ -181,8 +187,9 @@ export async function resolveVendor(input: ResolveVendorInput): Promise<VendorRe
   if (!raw) return { confidence: 0, strategy: 'NONE' };
 
   const rawDisplay = normalizeForDisplay(raw);
+  const db = input.tx ?? prisma;
 
-  const aliases = await prisma.vendorAlias.findMany({
+  const aliases = await db.vendorAlias.findMany({
     where: {
       tenantId: input.tenantId,
       deletedAt: null,
@@ -219,7 +226,7 @@ export async function resolveVendor(input: ResolveVendorInput): Promise<VendorRe
   }
 
   if (bestAlias && bestAlias.score >= DEFAULTS.autoAcceptThreshold) {
-    const contact = await prisma.contact.findUnique({
+    const contact = await db.contact.findUnique({
       where: { id: bestAlias.normalizedContactId },
       select: { id: true, corporateName: true, fullName: true },
     });
@@ -236,7 +243,7 @@ export async function resolveVendor(input: ResolveVendorInput): Promise<VendorRe
   }
 
   // 2) Direct contact matching (fallback)
-  const contacts = await prisma.contact.findMany({
+  const contacts = await db.contact.findMany({
     where: {
       tenantId: input.tenantId,
       deletedAt: null,
@@ -283,7 +290,7 @@ export async function getOrCreateVendorContact(input: ResolveVendorInput): Promi
   const rawDisplay = normalizeForDisplay(raw);
 
   const identity = identityCandidate(input, rawDisplay);
-  const params = { tenantId: input.tenantId, userId: input.createdById ?? 'system' };
+  const params = { tenantId: input.tenantId, userId: input.createdById ?? 'system', tx: input.tx };
   let resolution;
   try {
     resolution = await resolveOrCreateContact(
@@ -309,8 +316,10 @@ export async function getOrCreateVendorContact(input: ResolveVendorInput): Promi
       vendorId: created.id,
       confidence: resolved.confidence || 1.0,
       createdById: input.createdById,
+      tx: input.tx,
     });
   } catch (e) {
+    if (input.tx) throw e;
     log.warn(`Failed to create vendor alias for "${rawDisplay}"`, e);
   }
 

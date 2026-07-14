@@ -133,6 +133,26 @@ describe('Customer Resolution Service', () => {
     );
   });
 
+  it('uses the supplied approval transaction for resolver and alias writes', async () => {
+    const tx = {
+      customerAlias: {
+        findMany: vi.fn().mockResolvedValue([]), findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(), create: vi.fn().mockResolvedValue({ id: 'ca-tx' }),
+      },
+      contact: { findMany: vi.fn().mockResolvedValue([]), findUnique: vi.fn() },
+    };
+
+    await getOrCreateCustomerContact({
+      tenantId: 't1', companyId: 'co1', rawCustomerName: 'Transactional Customer', createdById: 'u1', tx: tx as never,
+    });
+
+    expect(resolveOrCreateContact).toHaveBeenCalledWith(
+      expect.any(Object), { action: 'AUTO' }, expect.objectContaining({ tx })
+    );
+    expect(tx.customerAlias.create).toHaveBeenCalled();
+    expect(prisma.customerAlias.create).not.toHaveBeenCalled();
+  });
+
   it('upserts customer alias (update path)', async () => {
     vi.mocked(prisma.customerAlias.findFirst).mockResolvedValue({ id: 'ca1' } as never);
     vi.mocked(prisma.customerAlias.update).mockResolvedValue({ id: 'ca1' } as never);

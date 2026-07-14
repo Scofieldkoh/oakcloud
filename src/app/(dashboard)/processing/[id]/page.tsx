@@ -2698,8 +2698,9 @@ function ExtractedHeaderFields({
           <p className="text-xs font-medium text-text-secondary">Counterparty identity</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs text-text-muted mb-1">Identification type</label>
+              <label htmlFor="counterparty-identification-type" className="block text-xs text-text-muted mb-1">Identification type</label>
               <select
+                id="counterparty-identification-type"
                 value={editFormData.identificationType}
                 onChange={(event) => setEditFormData({ ...editFormData, identificationType: event.target.value })}
                 className="min-h-[44px] w-full rounded border border-border-primary bg-background-secondary px-2.5 py-1.5 text-sm focus:border-oak-light focus:outline-none sm:min-h-0"
@@ -2713,8 +2714,9 @@ function ExtractedHeaderFields({
               </select>
             </div>
             <div>
-              <label className="block text-xs text-text-muted mb-1">Identification / UEN</label>
+              <label htmlFor="counterparty-identification-number" className="block text-xs text-text-muted mb-1">Identification / UEN</label>
               <input
+                id="counterparty-identification-number"
                 type="text"
                 value={editFormData.identificationNumber}
                 onChange={(event) => setEditFormData({ ...editFormData, identificationNumber: event.target.value })}
@@ -2724,8 +2726,9 @@ function ExtractedHeaderFields({
             </div>
           </div>
           <div>
-            <label className="block text-xs text-text-muted mb-1">Address</label>
+            <label htmlFor="counterparty-address" className="block text-xs text-text-muted mb-1">Address</label>
             <input
+              id="counterparty-address"
               type="text"
               value={editFormData.counterpartyAddress}
               onChange={(event) => setEditFormData({ ...editFormData, counterpartyAddress: event.target.value })}
@@ -2735,8 +2738,9 @@ function ExtractedHeaderFields({
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs text-text-muted mb-1">Email</label>
+              <label htmlFor="counterparty-email" className="block text-xs text-text-muted mb-1">Email</label>
               <input
+                id="counterparty-email"
                 type="email"
                 value={editFormData.counterpartyEmail}
                 onChange={(event) => setEditFormData({ ...editFormData, counterpartyEmail: event.target.value })}
@@ -2745,8 +2749,9 @@ function ExtractedHeaderFields({
               />
             </div>
             <div>
-              <label className="block text-xs text-text-muted mb-1">Phone</label>
+              <label htmlFor="counterparty-phone" className="block text-xs text-text-muted mb-1">Phone</label>
               <input
+                id="counterparty-phone"
                 type="tel"
                 value={editFormData.counterpartyPhone}
                 onChange={(event) => setEditFormData({ ...editFormData, counterpartyPhone: event.target.value })}
@@ -2823,6 +2828,7 @@ function ExtractedHeaderFields({
           label="Identification type"
           value={revision.counterpartyIdentity?.identificationType ?? null}
           fieldKey="counterpartyIdentificationType"
+          confidence={getFieldConfidence('counterpartyIdentificationType')}
           focusedField={focusedField}
           onFocus={handleFieldFocus}
           onBlur={handleFieldBlur}

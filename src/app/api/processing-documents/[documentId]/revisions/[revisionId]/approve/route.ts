@@ -12,7 +12,6 @@ import { prisma } from '@/lib/prisma';
 import { getProcessingDocument } from '@/services/document-processing.service';
 import { approveRevision, getRevision } from '@/services/document-revision.service';
 import { canApproveDocument } from '@/services/duplicate-detection.service';
-import { createAuditLog } from '@/lib/audit';
 import { createLogger } from '@/lib/logger';
 import type { ExchangeRateSource } from '@/generated/prisma';
 
@@ -168,25 +167,6 @@ export async function POST(
 
     // Get updated document
     const updatedDoc = await getProcessingDocument(documentId);
-
-    // Create audit log
-    await createAuditLog({
-      tenantId: document.tenantId,
-      userId: session.id,
-      companyId: document.companyId,
-      action: 'UPDATE',
-      entityType: 'DocumentRevision',
-      entityId: revisionId,
-      summary: `Approved revision #${approvedRevision.revisionNumber}`,
-      changeSource: 'MANUAL',
-      metadata: {
-        revisionNumber: approvedRevision.revisionNumber,
-        totalAmount: approvedRevision.totalAmount.toString(),
-        currency: approvedRevision.currency,
-        homeEquivalent: approvedRevision.homeEquivalent?.toString(),
-        counterpartyIdentityCaptured: Boolean(approvedRevision.counterpartyIdentity),
-      },
-    });
 
     const response = {
       success: true,

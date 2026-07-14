@@ -177,6 +177,26 @@ describe('Vendor Resolution Service', () => {
     );
   });
 
+  it('uses the supplied approval transaction for resolver and alias writes', async () => {
+    const tx = {
+      vendorAlias: {
+        findMany: vi.fn().mockResolvedValue([]), findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(), create: vi.fn().mockResolvedValue({ id: 'va-tx' }),
+      },
+      contact: { findMany: vi.fn().mockResolvedValue([]), findUnique: vi.fn() },
+    };
+
+    await getOrCreateVendorContact({
+      tenantId: 't1', companyId: 'co1', rawVendorName: 'Transactional Vendor', createdById: 'u1', tx: tx as never,
+    });
+
+    expect(resolveOrCreateContact).toHaveBeenCalledWith(
+      expect.any(Object), { action: 'AUTO' }, expect.objectContaining({ tx })
+    );
+    expect(tx.vendorAlias.create).toHaveBeenCalled();
+    expect(prisma.vendorAlias.create).not.toHaveBeenCalled();
+  });
+
   it('upserts vendor alias (update path)', async () => {
     vi.mocked(prisma.vendorAlias.findFirst).mockResolvedValue({ id: 'va1' } as never);
     vi.mocked(prisma.vendorAlias.update).mockResolvedValue({ id: 'va1' } as never);
