@@ -3,7 +3,6 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createContactWithDetailsSchema, contactSearchSchema } from '@/lib/validations/contact';
 import { searchContactsWithCounts } from '@/services/contact.service';
-import { createContactDetail } from '@/services/contact-detail.service';
 import { previewContactIdentity, resolveOrCreateContact } from '@/services/contact-identity.service';
 import { prisma } from '@/lib/prisma';
 
@@ -78,7 +77,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
 
-    const candidate = { ...createData, source: 'MANUAL' as const };
+    const candidate = {
+      ...createData,
+      source: 'MANUAL' as const,
+      contactDetails: contactDetails.map((detail, index) => ({
+        ...detail,
+        displayOrder: detail.displayOrder ?? index,
+      })),
+    };
     const match = await previewContactIdentity(candidate, tenantId);
     if (resolution && !match) {
       return NextResponse.json(
@@ -102,44 +108,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const contact = await prisma.$transaction(async (tx) => {
-      const resolved = await resolveOrCreateContact(
+    const resolved = await prisma.$transaction((tx) => resolveOrCreateContact(
         candidate,
         resolution ?? { action: 'AUTO' },
         {
-        tenantId,
-        userId: session.id,
-        tx,
+          tenantId,
+          userId: session.id,
+          tx,
         },
-      );
-      const resolvedContact = resolved.contact;
-
-      if (contactDetails.length > 0) {
-        for (let i = 0; i < contactDetails.length; i++) {
-          const detail = contactDetails[i];
-          await createContactDetail(
-            {
-              contactId: resolvedContact.id,
-              companyId: detail.companyId,
-              detailType: detail.detailType,
-              value: detail.value,
-              label: detail.label,
-              purposes: detail.purposes,
-              description: detail.description,
-              displayOrder: detail.displayOrder ?? i,
-              isPrimary: detail.isPrimary,
-            },
-            {
-              tenantId,
-              userId: session.id,
-              tx,
-            }
-          );
-        }
-      }
-
-      return resolvedContact;
-    });
+      ));
+    const contact = resolved.contact;
 
     return NextResponse.json(contact, { status: 201 });
   } catch (error) {

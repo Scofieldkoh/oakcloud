@@ -75,7 +75,19 @@ const contactSelect = {
   contactDetails: { where: { deletedAt: null }, select: { detailType: true, value: true, companyId: true } },
 } as const;
 
-function completedResult(ledger: { id: string; masterContactId: string; movedRecordCounts: unknown }): MergeContactsResult {
+type CompletedLedger = { id: string; masterContactId: string; sourceContactIds?: string[]; movedRecordCounts: unknown };
+
+function assertLedgerMembership(ledger: CompletedLedger, input: MergeContactsInput): void {
+  if (!ledger.sourceContactIds) return;
+  const requested = [...input.sourceContactIds].sort();
+  const recorded = [...ledger.sourceContactIds].sort();
+  if (ledger.masterContactId !== input.masterContactId || requested.length !== recorded.length || requested.some((id, index) => id !== recorded[index])) {
+    throw new ContactMergeConflictError('Idempotency key was already used for different merge membership');
+  }
+}
+
+function completedResult(ledger: CompletedLedger, input: MergeContactsInput): MergeContactsResult {
+  assertLedgerMembership(ledger, input);
   return {
     ledgerId: ledger.id,
     survivingContactId: ledger.masterContactId,
@@ -128,6 +140,18 @@ function validateContacts(contacts: MergeContact[], input: MergeContactsInput, t
     }
   }
 
+  for (const field of MERGE_FIELDS) {
+    if (!Object.hasOwn(input.fieldDecisions, field)) continue;
+    const selected = input.fieldDecisions[field];
+    if (selected === null) continue;
+    const comparable = (value: unknown) => field === 'dateOfBirth'
+      ? new Date(value as string | Date).toISOString().slice(0, 10)
+      : String(value);
+    if (!contacts.some(contact => contact[field] != null && comparable(contact[field]) === comparable(selected))) {
+      throw new ContactMergeConflictError(`Invalid field decision for ${field}: value is not present in the locked duplicate group`);
+    }
+  }
+
   const effectiveIdentificationNumbers = new Set(contacts.flatMap(contact => {
     const value = normalizeContactIdentifier(contact.identificationNumber, contact.identificationType);
     return value ? [value] : [];
@@ -163,17 +187,7 @@ function selectedMasterData(master: MergeContact, sources: MergeContact[], decis
 }
 
 function recalculateRecommendation(contacts: MergeContact[], input: MergeContactsInput) {
-  const candidates = contacts.map(contact => {
-    const candidate: ContactIdentityCandidate = { ...identityRecord(contact) };
-    for (const field of MERGE_FIELDS) {
-      if (!Object.hasOwn(input.fieldDecisions, field)) continue;
-      const value = input.fieldDecisions[field];
-      if (field === 'dateOfBirth') candidate.dateOfBirth = value;
-      else if (field === 'identificationType') candidate.identificationType = value as MergeContact['identificationType'];
-      else candidate[field] = value;
-    }
-    return candidate;
-  });
+  const candidates = contacts.map(contact => ({ ...identityRecord(contact) } satisfies ContactIdentityCandidate));
   const parents = contacts.map((_, index) => index);
   const find = (index: number): number => parents[index] === index ? index : (parents[index] = find(parents[index]));
   const reasonsByContact = new Map<string, Set<ContactMatchReason>>();
@@ -181,15 +195,20 @@ function recalculateRecommendation(contacts: MergeContact[], input: MergeContact
     for (let right = left + 1; right < contacts.length; right += 1) {
       const rightRecord: ContactIdentityRecord = {
         ...candidates[right], id: contacts[right].id, tenantId: contacts[right].tenantId,
-        canonicalName: canonicalizeContactName(contacts[right].fullName), createdAt: contacts[right].createdAt,
+        canonicalName: contacts[right].canonicalName ?? canonicalizeContactName(contacts[right].fullName), createdAt: contacts[right].createdAt,
         updatedAt: contacts[right].updatedAt, relationshipCount: 0, populatedFieldCount: 0,
       };
       const match = scoreContactIdentityMatch(candidates[left], rightRecord);
-      if (match.score < 0.93) continue;
+      const exactNameConflict = match.blockedByIdentifierConflict &&
+        canonicalizeContactName(contacts[left].fullName) === canonicalizeContactName(contacts[right].fullName);
+      if (match.score < 0.93 && !exactNameConflict) continue;
       parents[find(right)] = find(left);
+      const discoveryReasons = exactNameConflict
+        ? (['EXACT_CANONICAL_NAME'] as ContactMatchReason[])
+        : match.reasons;
       for (const index of [left, right]) {
         const contactReasons = reasonsByContact.get(contacts[index].id) ?? new Set<ContactMatchReason>();
-        match.reasons.forEach(reason => contactReasons.add(reason));
+        discoveryReasons.forEach(reason => contactReasons.add(reason));
         reasonsByContact.set(contacts[index].id, contactReasons);
       }
     }
@@ -336,14 +355,14 @@ export async function mergeContacts(
   const existing = await prisma.contactMergeOperation.findUnique({
     where: { tenantId_idempotencyKey: { tenantId: params.tenantId, idempotencyKey: input.idempotencyKey } },
   });
-  if (existing) return completedResult(existing);
+  if (existing) return completedResult(existing, input);
 
   try {
     return await prisma.$transaction(async tx => {
     const alreadyStarted = await tx.contactMergeOperation.findUnique({
       where: { tenantId_idempotencyKey: { tenantId: params.tenantId, idempotencyKey: input.idempotencyKey } },
     });
-    if (alreadyStarted) return completedResult(alreadyStarted);
+    if (alreadyStarted) return completedResult(alreadyStarted, input);
 
     const sortedIds = [input.masterContactId, ...input.sourceContactIds].sort();
     const locked = await tx.$queryRaw<Array<{ id: string; updatedAt: Date }>>(
@@ -353,7 +372,7 @@ export async function mergeContacts(
       const completed = await tx.contactMergeOperation.findUnique({
         where: { tenantId_idempotencyKey: { tenantId: params.tenantId, idempotencyKey: input.idempotencyKey } },
       });
-      if (completed) return completedResult(completed);
+      if (completed) return completedResult(completed, input);
       throw new ContactMergeConflictError('One or more contacts are unavailable');
     }
 
@@ -446,7 +465,7 @@ export async function mergeContacts(
       const completed = await prisma.contactMergeOperation.findUnique({
         where: { tenantId_idempotencyKey: { tenantId: params.tenantId, idempotencyKey: input.idempotencyKey } },
       });
-      if (completed) return completedResult(completed);
+      if (completed) return completedResult(completed, input);
       if (serializationFailure) throw new ContactMergeConflictError('Duplicate recommendation is stale');
     }
     throw error;

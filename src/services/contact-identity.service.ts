@@ -119,8 +119,28 @@ async function findCandidates(
   tenantId: string,
   db: PrismaTransactionClient | typeof prisma,
 ): Promise<ContactWithIdentityRelations[]> {
+  const canonicalName = canonicalizeContactName(identityName(candidate));
+  const identificationNumber = hasUsableIdentificationNumber(candidate)
+    ? candidate.identificationNumber?.trim()
+    : null;
+  const corporateUen = hasUsableCorporateUen(candidate) ? candidate.corporateUen?.trim() : null;
+  const corporateComparison = candidate.contactType === 'CORPORATE'
+    ? canonicalizeCorporateComparisonName(candidate.corporateName)
+    : null;
+  const exactPredicates: Prisma.ContactWhereInput[] = [
+    ...(canonicalName ? [{ canonicalName }, { alias: { equals: identityName(candidate), mode: 'insensitive' as const } }] : []),
+    ...(corporateComparison ? [{ canonicalName: { startsWith: corporateComparison } }] : []),
+    ...(identificationNumber ? [{ identificationType: candidate.identificationType, identificationNumber }] : []),
+    ...(corporateUen ? [{ corporateUen }] : []),
+  ];
   return db.contact.findMany({
-    where: { tenantId, contactType: candidate.contactType, deletedAt: null, isActive: true },
+    where: {
+      tenantId,
+      contactType: candidate.contactType,
+      deletedAt: null,
+      isActive: true,
+      OR: exactPredicates,
+    },
     include: {
       contactDetails: {
         where: { deletedAt: null },
@@ -147,6 +167,34 @@ async function findCandidates(
       },
     },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    take: 100,
+  }) as Promise<ContactWithIdentityRelations[]>;
+}
+
+async function findFuzzyRecommendationCandidates(
+  candidate: ContactIdentityCandidate,
+  tenantId: string,
+  db: PrismaTransactionClient | typeof prisma,
+): Promise<ContactWithIdentityRelations[]> {
+  const canonicalName = canonicalizeContactName(identityName(candidate));
+  if ([...canonicalName].length < 5 || !('$queryRaw' in db) || typeof db.$queryRaw !== 'function') return [];
+  const rows = await db.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+    SELECT "id" FROM "contacts"
+    WHERE "tenantId" = ${tenantId}
+      AND "contactType" = ${candidate.contactType}::"ContactType"
+      AND "deletedAt" IS NULL AND "isActive" = true
+      AND "canonicalName" IS NOT NULL
+      AND similarity("canonicalName", ${canonicalName}) >= 0.93
+    ORDER BY similarity("canonicalName", ${canonicalName}) DESC, "createdAt" ASC, "id" ASC
+    LIMIT 20
+  `);
+  const ids = rows.map(({ id }) => id);
+  if (ids.length === 0) return [];
+  return db.contact.findMany({
+    where: { id: { in: ids }, tenantId, contactType: candidate.contactType, deletedAt: null, isActive: true },
+    include: identityRelationsInclude,
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    take: 20,
   }) as Promise<ContactWithIdentityRelations[]>;
 }
 
@@ -246,7 +294,12 @@ export async function previewContactIdentity(
   tx?: PrismaTransactionClient,
 ): Promise<ContactMatchResult | null> {
   if (!tenantId) throw new Error('Tenant context required for contact identity preview');
-  const contacts = await findCandidates(candidate, tenantId, tx ?? prisma);
+  const db = tx ?? prisma;
+  const [exact, fuzzy] = await Promise.all([
+    findCandidates(candidate, tenantId, db),
+    findFuzzyRecommendationCandidates(candidate, tenantId, db),
+  ]);
+  const contacts = [...new Map([...exact, ...fuzzy].map((contact) => [contact.id, contact])).values()];
   return rankMatches(candidate, contacts)
     .map(({ match }) => match)
     .find((match) => match.score > 0 || match.conflicts.length > 0) ?? null;
@@ -602,7 +655,7 @@ async function resolveInTransaction(
         [target.contact.id, buildContactIdentityFingerprint(target.record)],
         [created.id, buildContactIdentityFingerprint({ ...candidate })],
       ]);
-      await tx.contactDuplicateDecision.create({
+      const duplicateDecision = await tx.contactDuplicateDecision.create({
         data: {
           tenantId: params.tenantId,
           leftContactId: ordered[0],
@@ -614,6 +667,25 @@ async function resolveInTransaction(
           decidedById: params.userId,
         },
       });
+      await createAuditLog({
+        tenantId: params.tenantId,
+        userId: params.userId,
+        action: 'CREATE',
+        entityType: 'Contact',
+        entityId: created.id,
+        entityName: created.fullName,
+        summary: `Created separate contact "${created.fullName}" after identity review`,
+        changeSource: sourceChangeSource(candidate.source),
+        metadata: {
+          source: candidate.source,
+          sourceRecordId: candidate.sourceRecordId,
+          outcome: 'CREATED_SEPARATE',
+          matchReason: target.match.reasons,
+          duplicateDecisionId: duplicateDecision?.id,
+          fingerprints: Object.fromEntries(fingerprints),
+          overrideReason: decision.reason.trim(),
+        },
+      }, tx as Prisma.TransactionClient);
     }
     return {
       contact: created,
@@ -649,6 +721,23 @@ async function resolveInTransaction(
     : reasons.includes('APPROVED_ALIAS')
       ? 'REUSED_ALIAS'
       : 'REUSED_NAME';
+  await createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    action: 'UPDATE',
+    entityType: 'Contact',
+    entityId: updated.id,
+    entityName: updated.fullName,
+    summary: `Reused contact "${updated.fullName}" through identity resolution`,
+    changeSource: sourceChangeSource(candidate.source),
+    metadata: {
+      source: candidate.source,
+      sourceRecordId: candidate.sourceRecordId,
+      outcome,
+      matchReason: reasons,
+      identityFingerprint: buildContactIdentityFingerprint(selected.record),
+    },
+  }, tx as Prisma.TransactionClient);
   return {
     contact: updated as Contact,
     outcome,

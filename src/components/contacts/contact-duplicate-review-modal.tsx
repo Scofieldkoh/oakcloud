@@ -34,6 +34,9 @@ const reasonLabels: Record<ContactMatchReason, string> = {
 const fieldLabels: Record<ContactIdentityConflict['field'], string> = {
   identificationNumber: 'identification number',
   corporateUen: 'corporate UEN',
+  identificationType: 'identification type',
+  alias: 'alias',
+  nationality: 'nationality',
   dateOfBirth: 'date of birth',
   fullAddress: 'full address',
   firstName: 'first name',
@@ -126,6 +129,14 @@ function contactFieldValue(contact: ContactDuplicatePreview, field: ContactIdent
   return value == null ? null : String(value);
 }
 
+function masterRetainedDecisions(group: ContactDuplicateGroup, masterId: string): ContactMergeFieldDecisions {
+  const master = group.contacts.find((contact) => contact.id === masterId) ?? group.contacts[0];
+  const fields = [...new Set(group.conflicts.map(({ field }) => field))];
+  return Object.fromEntries(fields
+    .filter((field) => field !== 'identificationNumber' && field !== 'corporateUen')
+    .map((field) => [field, contactFieldValue(master, field)])) as ContactMergeFieldDecisions;
+}
+
 function ReviewGroup({
   group,
   onRefresh,
@@ -139,7 +150,7 @@ function ReviewGroup({
   const merge = useMergeContacts();
   const reject = useRejectContactDuplicate();
   const [masterId, setMasterId] = useState(group.recommendedMasterId);
-  const [fieldDecisions, setFieldDecisions] = useState<ContactMergeFieldDecisions>({});
+  const [fieldDecisions, setFieldDecisions] = useState<ContactMergeFieldDecisions>(() => masterRetainedDecisions(group, group.recommendedMasterId));
   const [mergeConfirmationOpen, setMergeConfirmationOpen] = useState(false);
   const [rejectConfirmationOpen, setRejectConfirmationOpen] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -162,7 +173,7 @@ function ReviewGroup({
 
   const selectMaster = (id: string) => {
     setMasterId(id);
-    setFieldDecisions({});
+    setFieldDecisions(masterRetainedDecisions(group, id));
     resetMergeAttempt();
   };
 
@@ -287,7 +298,7 @@ function ReviewGroup({
               <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-status-warning" />
               <div>
                 <h3 id="conflicts-heading" className="text-base font-semibold text-text-primary">Resolve conflicting fields</h3>
-                <p className="text-sm text-text-secondary">An identifier conflict blocks this merge until every conflicting value is selected.</p>
+                <p className="text-sm text-text-secondary">An identifier conflict blocks this merge until selected. Other differing fields retain the master value by default.</p>
               </div>
             </div>
             <div className="space-y-3">

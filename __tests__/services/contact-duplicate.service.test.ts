@@ -243,7 +243,7 @@ describe('contact duplicate service', () => {
       reasons: ['EXACT_CANONICAL_NAME'],
       confidence: 0,
       blockedByIdentifierConflict: true,
-      conflicts: [expect.objectContaining({ field: 'identificationNumber' })],
+      conflicts: expect.arrayContaining([expect.objectContaining({ field: 'identificationNumber' })]),
     });
   });
 
@@ -268,7 +268,7 @@ describe('contact duplicate service', () => {
       contactIds: ['c1', 'c2', 'c3'],
       confidence: 0,
       blockedByIdentifierConflict: true,
-      conflicts: [expect.objectContaining({ field: 'identificationNumber' })],
+      conflicts: expect.arrayContaining([expect.objectContaining({ field: 'identificationNumber' })]),
     });
   });
 

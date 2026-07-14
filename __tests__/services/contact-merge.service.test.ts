@@ -122,6 +122,27 @@ describe('contact merge service', () => {
     expect(mocks.lock).not.toHaveBeenCalled();
   });
 
+  it('rejects an idempotency key reused with changed membership', async () => {
+    mocks.ledgerFind.mockResolvedValue({ id: 'old-ledger', masterContactId: 'master', sourceContactIds: ['source-1'], movedRecordCounts: {} });
+    await expect(mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(/idempotency/i);
+  });
+
+  it('rejects changed membership when the ledger appears inside the transaction', async () => {
+    mocks.ledgerFind
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'old-ledger', masterContactId: 'master', sourceContactIds: ['source-1'], movedRecordCounts: {} });
+    await expect(mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(/idempotency/i);
+    expect(mocks.lock).not.toHaveBeenCalled();
+  });
+
+  it('rejects changed membership during post-conflict ledger recovery', async () => {
+    mocks.ledgerFind
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'winner', masterContactId: 'master', sourceContactIds: ['source-1'], movedRecordCounts: {} });
+    mocks.transaction.mockRejectedValueOnce(Object.assign(new Error('serialization conflict'), { code: 'P2034' }));
+    await expect(mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(/idempotency/i);
+  });
+
   it('rejects stale, cross-tenant/unavailable, and unresolved strong-ID conflicts before mutation', async () => {
     mocks.lock.mockResolvedValueOnce(contacts.slice(0, 2));
     await expect(mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(ContactMergeConflictError);
@@ -141,6 +162,19 @@ describe('contact merge service', () => {
     await expect(mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(/stale/i);
     expect(mocks.companyContactFind).not.toHaveBeenCalled();
     expect(mocks.contactDelete).not.toHaveBeenCalled();
+  });
+
+  it('does not let field decisions manufacture recommendation connectivity', async () => {
+    mocks.contactFind.mockResolvedValueOnce(contacts.map((contact, index) => index === 2 ? {
+      ...contact, firstName: 'Mallory', fullName: 'Mallory', canonicalName: 'mallory',
+    } : contact));
+    await expect(mergeContacts({ ...input(), fieldDecisions: { firstName: 'Alice' } }, { tenantId: 'tenant-1', userId: 'user-1' }))
+      .rejects.toThrow(/stale/i);
+  });
+
+  it('rejects injected field values that are absent from the locked group', async () => {
+    await expect(mergeContacts({ ...input(), fieldDecisions: { nationality: 'INJECTED' } }, { tenantId: 'tenant-1', userId: 'user-1' }))
+      .rejects.toThrow(/field decision/i);
   });
 
   it('rolls back by rejecting the transaction when a reference assertion fails', async () => {

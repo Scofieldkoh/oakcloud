@@ -103,10 +103,10 @@ describe('contact creation identity decisions', () => {
       { action: 'REUSE', contactId },
       expect.objectContaining({ tenantId: 'tenant-1', userId: 'user-1', tx: { tx: true } }),
     );
-    expect(mocks.createContactDetail).toHaveBeenCalledWith(
-      expect.objectContaining({ contactId, value: 'wang@example.com' }),
-      expect.objectContaining({ tenantId: 'tenant-1', tx: { tx: true } }),
-    );
+    expect(mocks.resolveOrCreateContact.mock.calls[0][0].contactDetails).toEqual([
+      expect.objectContaining({ value: 'wang@example.com', displayOrder: 0 }),
+    ]);
+    expect(mocks.createContactDetail).not.toHaveBeenCalled();
   });
 
   it('creates separately with the reviewed match and audit reason', async () => {

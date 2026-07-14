@@ -268,6 +268,23 @@ function uniqueConflicts(conflicts: ContactIdentityConflict[]): ContactIdentityC
   return [...new Map(conflicts.map((conflict) => [JSON.stringify(conflict), conflict])).values()];
 }
 
+const MERGE_IDENTITY_FIELDS = [
+  'firstName', 'lastName', 'alias', 'identificationType', 'identificationNumber',
+  'nationality', 'dateOfBirth', 'corporateName', 'corporateUen', 'fullAddress',
+] as const;
+
+function differingIdentityFields(records: ContactIdentityRecord[]): ContactIdentityConflict[] {
+  return MERGE_IDENTITY_FIELDS.flatMap((field) => {
+    const values = [...new Set(records.map((record) => {
+      const value = record[field];
+      return value == null ? '' : String(value);
+    }).filter(Boolean))];
+    return values.length > 1
+      ? [{ field, incomingValue: values[0], existingValue: values[1] } satisfies ContactIdentityConflict]
+      : [];
+  });
+}
+
 function rankGroupMaster(
   records: ContactIdentityRecord[],
   conflicts: ContactIdentityConflict[],
@@ -353,8 +370,10 @@ function buildGroups(
     const conflicts = uniqueConflicts([
       ...groupPairs.flatMap((pair) => pair.conflicts),
       ...allMemberConflicts,
+      ...differingIdentityFields(records),
     ]);
-    const blockedByIdentifierConflict = conflicts.length > 0;
+    const blockedByIdentifierConflict = conflicts.some(({ field }) =>
+      field === 'identificationNumber' || field === 'corporateUen');
     return {
       contactIds,
       contacts: contactIds.map((id) => preview(contactById.get(id)!)),

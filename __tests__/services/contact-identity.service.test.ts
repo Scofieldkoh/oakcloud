@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const previewRaw = vi.hoisted(() => vi.fn());
+
 const tx = {
   $executeRaw: vi.fn(),
   contact: {
@@ -23,6 +25,7 @@ const tx = {
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     $transaction: vi.fn((callback: (client: typeof tx) => unknown) => callback(tx)),
+    $queryRaw: previewRaw,
     contact: { findMany: vi.fn(), create: vi.fn() },
   },
 }));
@@ -92,6 +95,7 @@ function existingContact(overrides: Record<string, unknown> = {}) {
 describe('contact identity service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    previewRaw.mockResolvedValue([]);
     tx.contact.findMany.mockResolvedValue([]);
     tx.contact.findFirst.mockResolvedValue(null);
     tx.contactDetail.findMany.mockResolvedValue([]);
@@ -119,10 +123,34 @@ describe('contact identity service', () => {
 
     expect(prisma.contact.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { tenantId: 'tenant-1', contactType: 'INDIVIDUAL', deletedAt: null, isActive: true },
+        where: expect.objectContaining({ tenantId: 'tenant-1', contactType: 'INDIVIDUAL', deletedAt: null, isActive: true }),
+        take: 100,
       }),
     );
     expect(match).toMatchObject({ contactId: 'contact-1', automatic: true });
+  });
+
+  it('uses separately capped pg_trgm candidates only for fuzzy preview scoring', async () => {
+    previewRaw.mockResolvedValueOnce([{ id: 'fuzzy-1' }]);
+    vi.mocked(prisma.contact.findMany)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([existingContact({
+        id: 'fuzzy-1',
+        firstName: 'Alexander Hamilto',
+        fullName: 'Alexander Hamilto',
+        canonicalName: 'alexanderhamilto',
+      })] as never);
+
+    const match = await previewContactIdentity(candidate({ firstName: 'Alexander Hamilton' }), 'tenant-1');
+
+    const query = previewRaw.mock.calls[0][0] as { sql: string; values: unknown[] };
+    expect(query.sql).toMatch(/similarity\([\s\S]*LIMIT 20/);
+    expect(query.values).toContain('tenant-1');
+    expect(prisma.contact.findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      where: expect.objectContaining({ id: { in: ['fuzzy-1'] }, tenantId: 'tenant-1' }),
+      take: 20,
+    }));
+    expect(match).toMatchObject({ contactId: 'fuzzy-1', automatic: false });
   });
 
   it('reuses and enriches an exact Chinese name-only contact', async () => {
@@ -189,6 +217,7 @@ describe('contact identity service', () => {
 
   it('requires a reason and records an explicit separate decision after creation', async () => {
     tx.contact.findMany.mockResolvedValue([existingContact()]);
+    tx.contactDuplicateDecision.create.mockResolvedValue({ id: 'decision-1' });
 
     await expect(
       resolveOrCreateContact(candidate(), { action: 'CREATE_SEPARATE', reason: '  ' }, params),
@@ -213,6 +242,17 @@ describe('contact identity service', () => {
     });
     expect(tx.contactDuplicateDecision.create.mock.invocationCallOrder[0]).toBeGreaterThan(
       tx.contact.create.mock.invocationCallOrder.at(-1)!,
+    );
+    expect(createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityId: 'created-contact',
+        metadata: expect.objectContaining({
+          outcome: 'CREATED_SEPARATE',
+          duplicateDecisionId: 'decision-1',
+          overrideReason: 'Different person confirmed by reviewer',
+        }),
+      }),
+      tx,
     );
   });
 
@@ -427,6 +467,20 @@ describe('contact identity service', () => {
 
     expect(createAuditLog).toHaveBeenCalledWith(
       expect.objectContaining({ entityType: 'Contact', entityId: 'created-contact' }),
+      tx,
+    );
+  });
+
+  it('audits pure reuse through the same transaction even without enrichment', async () => {
+    tx.contact.findMany.mockResolvedValue([existingContact()]);
+    const result = await resolveOrCreateContact(candidate(), { action: 'AUTO' }, params);
+
+    expect(result.outcome).toBe('REUSED_NAME');
+    expect(createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityId: 'contact-1',
+        metadata: expect.objectContaining({ source: 'MANUAL', outcome: 'REUSED_NAME', matchReason: ['EXACT_CANONICAL_NAME'] }),
+      }),
       tx,
     );
   });

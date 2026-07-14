@@ -75,7 +75,11 @@ const MANUALLY_HANDLED_MODEL_DELEGATES = new Set([
   'auditLog',
 ]);
 
-const EXCLUDED_DYNAMIC_DELEGATES = new Set(['permission', 'WorkspaceBackup', 'backupSchedule']);
+// Immutable security/audit ledgers are intentionally outside tenant backup mutation.
+// Restores must never delete, export, or recreate merge history.
+const EXCLUDED_DYNAMIC_DELEGATES = new Set([
+  'permission', 'WorkspaceBackup', 'backupSchedule', 'contactMergeOperation',
+]);
 
 // ============================================================================
 // Types
@@ -134,6 +138,17 @@ export interface ListBackupsParams {
   status?: BackupStatus;
   page?: number;
   limit?: number;
+}
+
+export function assertContactMergeRestoreSafety(
+  backupCreatedAt: string,
+  laterMerge: { id: string; approvedAt: Date } | null,
+): void {
+  if (!laterMerge) return;
+  throw new Error(
+    `Unsafe restore rejected: backup ${backupCreatedAt} predates contact merge ${laterMerge.id}. ` +
+    'Choose a backup created after the latest contact merge to avoid resurrecting hard-deleted source contacts.'
+  );
 }
 
 // ============================================================================
@@ -934,6 +949,20 @@ class BackupService {
 
     // Validate backup integrity first
     const manifest = await this.validateBackupIntegrity(backupId);
+
+    // A backup taken before a completed merge may still contain the now hard-deleted
+    // sources. Restoring it would resurrect identities while the immutable ledger says
+    // they were merged. Post-merge backups are safe because their snapshot already
+    // reflects every merge completed before the backup timestamp.
+    const mergeAfterBackup = await prisma.contactMergeOperation.findFirst({
+      where: {
+        tenantId: backup.tenantId,
+        approvedAt: { gt: new Date(manifest.createdAt) },
+      },
+      select: { id: true, approvedAt: true },
+      orderBy: { approvedAt: 'asc' },
+    });
+    assertContactMergeRestoreSafety(manifest.createdAt, mergeAfterBackup);
 
     if (options.dryRun) {
       return {

@@ -379,7 +379,7 @@ Unified contact management for individuals and corporates. Each contact belongs 
 
 #### Contact identity and merge controls
 
-`contact_duplicate_decisions` stores the ordered contact pair, both reviewed SHA-256 identity fingerprints, `REJECTED` decision, reason, actor, and timestamps. Its tenant/pair unique key makes rejection upsertable. A rejection suppresses a suggestion only while both current fingerprints match.
+`contact_duplicate_decisions` stores the ordered contact pair, both reviewed SHA-256 identity fingerprints, a `REJECTED` or `CREATE_SEPARATE` decision, reason, actor, and timestamps. Its tenant/pair unique key makes the decision upsertable. A rejection or explicit separate-contact override suppresses a suggestion only while both current fingerprints match.
 
 `contact_merge_operations` is an append-only merge ledger keyed by tenant and idempotency key. It records the master/source snapshots, fingerprints, field decisions, moved-record counts, matching reasons, approver, and approval time. A database trigger rejects ledger updates or deletes. The normal audit log also records `MERGE`.
 

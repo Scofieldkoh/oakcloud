@@ -23,6 +23,9 @@ export interface ContactIdentityConflict {
   field:
     | 'identificationNumber'
     | 'corporateUen'
+    | 'identificationType'
+    | 'alias'
+    | 'nationality'
     | 'dateOfBirth'
     | 'fullAddress'
     | 'firstName'
