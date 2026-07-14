@@ -346,6 +346,8 @@ Unified contact management for individuals and corporates. Each contact belongs 
 | first_name | VARCHAR(100) | Yes | First name (individuals) |
 | last_name | VARCHAR(100) | Yes | Last name (individuals) |
 | full_name | VARCHAR(200) | No | Computed full name |
+| canonical_name | TEXT | Yes | Unicode NFKC/case-folded, punctuation-free match key |
+| alias | VARCHAR(100) | Yes | Optional alternate display/match name |
 | identification_type | ENUM | Yes | NRIC, FIN, PASSPORT, UEN, OTHER |
 | identification_number | VARCHAR(50) | Yes | ID number |
 | nationality | VARCHAR(100) | Yes | Nationality |
@@ -361,6 +363,8 @@ Unified contact management for individuals and corporates. Each contact belongs 
 **Notes:**
 - Email and phone are stored in the `contact_details` table, not directly on contacts
 - Use `contact_details` with `companyId = null` for default email/phone
+- Canonical names are derived by the shared application canonicalizer. They are not locale-specific transliterations.
+- Identifier normalization is used for lookup only. Masked, placeholder, or low-confidence IDs/UENs are not deterministic keys.
 
 **Indexes:**
 - `contacts_tenant_id_id_type_number_key` UNIQUE on (tenant_id, identification_type, identification_number)
@@ -369,6 +373,17 @@ Unified contact management for individuals and corporates. Each contact belongs 
 - `contacts_identification_number_idx` on identification_number
 - `contacts_corporate_uen_idx` on corporate_uen
 - `contacts_tenant_id_deleted_at_idx` on (tenant_id, deleted_at)
+- `contacts_tenantId_contactType_deletedAt_canonicalName_idx` for tenant/type exact-name lookup
+- `contacts_canonicalName_active_trgm_idx` partial GIN trigram index for active fuzzy candidates
+- Partial expression indexes for active normalized identification numbers and corporate UENs
+
+#### Contact identity and merge controls
+
+`contact_duplicate_decisions` stores the ordered contact pair, both reviewed SHA-256 identity fingerprints, `REJECTED` decision, reason, actor, and timestamps. Its tenant/pair unique key makes rejection upsertable. A rejection suppresses a suggestion only while both current fingerprints match.
+
+`contact_merge_operations` is an append-only merge ledger keyed by tenant and idempotency key. It records the master/source snapshots, fingerprints, field decisions, moved-record counts, matching reasons, approver, and approval time. A database trigger rejects ledger updates or deletes. The normal audit log also records `MERGE`.
+
+Merge runs in one transaction: lock and revalidate the contacts, update selected master fields, move/deduplicate all supported references, assert that no references remain on sources, write ledger and audit rows, and only then hard-delete the approved source contacts. Hard deletion is intentionally limited to this reviewed merge path; ordinary contact deletion remains soft deletion.
 
 ---
 
@@ -1933,6 +1948,11 @@ Immutable snapshots of structured accounting data.
 | validationStatus | ValidationStatus | PENDING, VALID, WARNINGS, INVALID |
 | createdById | UUID | User who created |
 | approvedById | UUID? | User who approved |
+| counterpartyIdentity | JSON? | Captured reviewed vendor/customer identity decision |
+
+**Document Vault approval timing:** Draft/reprocessed revisions retain the reviewed counterparty identity without creating or enriching a contact. Approval resolves or creates the vendor/customer inside the approval transaction, links the approved revision, and enriches only empty trusted fields. This prevents abandoned drafts from mutating the contact book and lets concurrent approvals converge through transactional identity resolution.
+
+**BizFile capture:** The reviewed BizFile confirmation passes officer/shareholder names, identification type/number, nationality, birth date, address, and confidence into the same preview/resolve path. Masked and low-confidence identifiers are retained as review context but are not deterministic match keys. Explicit `CREATE_SEPARATE` decisions preserve legitimate same-name people.
 
 ### DocumentRevisionLineItem
 
@@ -2387,3 +2407,18 @@ npm run db:seed       # Seed with sample data (creates default tenant)
 ```
 
 The seed script is idempotent and can be run multiple times safely.
+
+### Contact identity rollout and operational verification
+
+Apply migrations in timestamp order: `20260714090000_contact_identity_and_merge` first (extension, nullable canonical/counterparty fields, decision and ledger tables, indexes and trigger), then `20260714130000_contact_duplicate_normalized_identifier_indexes` (normalized active-identifier indexes). Generate the Prisma client before running application code.
+
+Backfill active contacts in stable ID batches after migrations:
+
+```bash
+npm run db:backfill-contact-canonical-names -- --batch-size=500
+npm run db:backfill-contact-canonical-names -- --batch-size=500 --resume-after=<lastId>
+```
+
+The JSON result reports `processed`, `updated`, `skipped`, `failed`, and `lastId`. A failed batch is rolled back, leaves `lastId` at the prior committed batch, and exits nonzero so the operator can correct the cause and resume. A second complete run should report zero updates.
+
+For a dry operational verification, use only an explicitly confirmed disposable/local PostgreSQL database: validate and migrate, run the backfill twice, approve two concurrent Chinese-name document revisions and confirm they resolve to one contact, then merge a disposable duplicate group. Verify source contacts are absent, the append-only ledger and audit rows exist, and all former source references point to the master. Exercise a forced transaction failure to confirm rollback and retry behavior, then remove the disposable tenant/data. Never run smoke fixtures against a shared or production URL.

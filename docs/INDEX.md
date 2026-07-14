@@ -26,8 +26,8 @@
 
 | Reference | Description |
 |-----------|-------------|
-| [Database Schema](./reference/DATABASE_SCHEMA.md) | Tables, relationships, indexes, enums |
-| [API Reference](./reference/API_REFERENCE.md) | Authenticated and public API routes |
+| [Database Schema](./reference/DATABASE_SCHEMA.md) | Tables, relationships, indexes, enums, and [contact identity operations](./reference/DATABASE_SCHEMA.md#contact-identity-and-merge-controls) |
+| [API Reference](./reference/API_REFERENCE.md) | Authenticated and public API routes, including [contact matching and merge](./reference/API_REFERENCE.md#contact-identity-and-duplicate-controls) |
 | [Environment Variables](./reference/ENVIRONMENT_VARIABLES.md) | Runtime and deployment configuration |
 
 ## Feature Specifications
