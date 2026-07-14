@@ -773,6 +773,7 @@ export default function CompaniesPage() {
       {data && (
         <CompanyTable
           companies={data.companies}
+          returnTo={targetUrl}
           onDelete={handleDeleteClick}
           isFetching={isFetching}
           canEdit={canEditCompany}

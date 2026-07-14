@@ -12,6 +12,7 @@ import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/res
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
+import { buildDetailHref } from '@/lib/list-navigation';
 import type { Company, CompanyStatus, EntityType } from '@/generated/prisma';
 
 interface CompanyWithRelations extends Company {
@@ -141,6 +142,7 @@ const DEFAULT_COLUMN_WIDTHS: Partial<Record<ColumnId, number>> = {
 
 interface CompanyTableProps {
   companies: CompanyWithRelations[];
+  returnTo: string;
   onDelete?: (id: string) => void;
   /** Whether data is being refetched (for opacity transition) */
   isFetching?: boolean;
@@ -264,13 +266,14 @@ const statusConfig: Record<CompanyStatus, { color: string; label: string }> = {
 
 interface CompanyActionsDropdownProps {
   companyId: string;
+  detailHref: string;
   companyName?: string;
   onDelete?: (id: string) => void;
   canEdit?: boolean;
   canDelete?: boolean;
 }
 
-const CompanyActionsDropdown = memo(function CompanyActionsDropdown({ companyId, companyName, onDelete, canEdit, canDelete }: CompanyActionsDropdownProps) {
+const CompanyActionsDropdown = memo(function CompanyActionsDropdown({ companyId, detailHref, companyName, onDelete, canEdit, canDelete }: CompanyActionsDropdownProps) {
   // If user can only view, don't show the dropdown at all - just provide the view link
   const hasAnyAction = canEdit || canDelete;
 
@@ -286,7 +289,7 @@ const CompanyActionsDropdown = memo(function CompanyActionsDropdown({ companyId,
         </button>
       </DropdownTrigger>
       <DropdownMenu>
-        <Link href={`/companies/${companyId}`}>
+        <Link href={detailHref}>
           <DropdownItem icon={<ExternalLink className="w-4 h-4" />}>
             View Details
           </DropdownItem>
@@ -327,6 +330,7 @@ function toLocalDateString(date: Date): string {
 
 export function CompanyTable({
   companies,
+  returnTo,
   onDelete,
   isFetching,
   canEdit = true,
@@ -778,6 +782,7 @@ export function CompanyTable({
         ) : (
           companies.map((company) => {
             const isSelected = selectedIds.has(company.id);
+            const detailHref = buildDetailHref(`/companies/${company.id}`, returnTo);
             return (
               <MobileCard
                 key={company.id}
@@ -786,7 +791,7 @@ export function CompanyTable({
                 onToggle={() => onToggleOne?.(company.id)}
                 title={
                   <PrefetchLink
-                    href={`/companies/${company.id}`}
+                    href={detailHref}
                     prefetchType="company"
                     prefetchId={company.id}
                     className="font-medium text-text-primary hover:text-oak-light transition-colors block truncate"
@@ -817,6 +822,7 @@ export function CompanyTable({
                 actions={
                   <CompanyActionsDropdown
                     companyId={company.id}
+                    detailHref={detailHref}
                     companyName={company.name}
                     onDelete={onDelete}
                     canEdit={checkCanEdit(company.id)}
@@ -931,6 +937,7 @@ export function CompanyTable({
                 companies.map((company, index) => {
                   const isSelected = selectedIds.has(company.id);
                   const isAlternate = index % 2 === 1;
+                  const detailHref = buildDetailHref(`/companies/${company.id}`, returnTo);
                   return (
                     <tr
                       key={company.id}
@@ -962,7 +969,7 @@ export function CompanyTable({
                       {/* Open in new tab */}
                       <td className="px-2 py-3">
                         <Link
-                          href={`/companies/${company.id}`}
+                          href={detailHref}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-background-tertiary text-text-secondary hover:text-text-primary transition-colors"
@@ -988,7 +995,7 @@ export function CompanyTable({
                       </td>
                       <td className="px-4 py-3 max-w-0">
                         <PrefetchLink
-                          href={`/companies/${company.id}`}
+                          href={detailHref}
                           prefetchType="company"
                           prefetchId={company.id}
                           className="font-medium text-text-primary hover:text-oak-light transition-colors block truncate"
@@ -1048,6 +1055,7 @@ export function CompanyTable({
                       <td className="px-2 py-3">
                         <CompanyActionsDropdown
                           companyId={company.id}
+                          detailHref={detailHref}
                           companyName={company.name}
                           onDelete={onDelete}
                           canEdit={checkCanEdit(company.id)}

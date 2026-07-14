@@ -9,6 +9,7 @@ import { PrefetchLink } from '@/components/ui/prefetch-link';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { CountFilter, type CountFilterValue } from '@/components/ui/count-filter';
+import { buildDetailHref } from '@/lib/list-navigation';
 import type { Contact, ContactType, IdentificationType } from '@/generated/prisma';
 
 interface ContactWithCount extends Contact {
@@ -36,6 +37,7 @@ export interface ContactInlineFilters {
 
 interface ContactTableProps {
   contacts: ContactWithCount[];
+  returnTo: string;
   onDelete?: (id: string) => void;
   isLoading?: boolean;
   isFetching?: boolean;
@@ -136,6 +138,7 @@ const CONTACT_TYPE_OPTIONS = [
 
 interface ContactActionsDropdownProps {
   contactId: string;
+  detailHref: string;
   contactName?: string;
   onDelete?: (id: string) => void;
   canEdit?: boolean;
@@ -144,6 +147,7 @@ interface ContactActionsDropdownProps {
 
 const ContactActionsDropdown = memo(function ContactActionsDropdown({
   contactId,
+  detailHref,
   contactName,
   onDelete,
   canEdit,
@@ -163,7 +167,7 @@ const ContactActionsDropdown = memo(function ContactActionsDropdown({
         </button>
       </DropdownTrigger>
       <DropdownMenu>
-        <Link href={`/contacts/${contactId}`}>
+        <Link href={detailHref}>
           <DropdownItem icon={<ExternalLink className="w-4 h-4" />}>View Details</DropdownItem>
         </Link>
         {canEdit && (
@@ -190,6 +194,7 @@ const ContactActionsDropdown = memo(function ContactActionsDropdown({
 
 export function ContactTable({
   contacts,
+  returnTo,
   onDelete,
   isLoading,
   isFetching,
@@ -589,6 +594,7 @@ export function ContactTable({
         ) : (
           contacts.map((contact) => {
           const isSelected = selectedIds.has(contact.id);
+          const detailHref = buildDetailHref(`/contacts/${contact.id}`, returnTo);
           return (
             <MobileCard
               key={contact.id}
@@ -597,7 +603,7 @@ export function ContactTable({
               onToggle={() => onToggleOne?.(contact.id)}
               title={
                 <PrefetchLink
-                  href={`/contacts/${contact.id}`}
+                  href={detailHref}
                   prefetchType="contact"
                   prefetchId={contact.id}
                   className="font-medium text-text-primary hover:text-oak-light transition-colors block truncate"
@@ -615,6 +621,7 @@ export function ContactTable({
               actions={
                 <ContactActionsDropdown
                   contactId={contact.id}
+                  detailHref={detailHref}
                   contactName={contact.fullName}
                   onDelete={onDelete}
                   canEdit={checkCanEdit(contact.id)}
@@ -735,6 +742,7 @@ export function ContactTable({
                 contacts.map((contact, index) => {
                   const isSelected = selectedIds.has(contact.id);
                   const isAlternate = index % 2 === 1;
+                  const detailHref = buildDetailHref(`/contacts/${contact.id}`, returnTo);
                   return (
                     <tr
                       key={contact.id}
@@ -766,7 +774,7 @@ export function ContactTable({
                       {/* Open in new tab */}
                       <td className="px-2 py-3">
                         <Link
-                          href={`/contacts/${contact.id}`}
+                          href={detailHref}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-background-tertiary text-text-secondary hover:text-text-primary transition-colors"
@@ -779,7 +787,7 @@ export function ContactTable({
                     {/* Name */}
                     <td className="px-4 py-3 max-w-0">
                       <PrefetchLink
-                        href={`/contacts/${contact.id}`}
+                        href={detailHref}
                         prefetchType="contact"
                         prefetchId={contact.id}
                         className="font-medium text-text-primary hover:text-oak-light transition-colors block truncate"
@@ -846,6 +854,7 @@ export function ContactTable({
                     <td className="px-2 py-3">
                       <ContactActionsDropdown
                         contactId={contact.id}
+                        detailHref={detailHref}
                         contactName={contact.fullName}
                         onDelete={onDelete}
                         canEdit={checkCanEdit(contact.id)}

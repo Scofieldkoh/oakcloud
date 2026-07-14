@@ -592,6 +592,7 @@ export default function ContactsPage() {
       <div>
         <ContactTable
           contacts={data?.contacts || []}
+          returnTo={targetUrl}
           onDelete={handleDeleteClick}
           isLoading={isLoading}
           isFetching={isFetching}
