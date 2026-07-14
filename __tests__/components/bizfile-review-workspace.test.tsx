@@ -102,6 +102,31 @@ describe("BizFileReviewWorkspace", () => {
     })));
   });
 
+  it("chunks more than 100 combined officer and shareholder candidates before save", async () => {
+    const onConfirm = vi.fn();
+    const manyRecords: ExtractedBizFileData = {
+      ...fixture,
+      officers: Array.from({ length: 51 }, (_, index) => ({ name: `Officer ${index}`, role: "DIRECTOR" })),
+      shareholders: Array.from({ length: 50 }, (_, index) => ({
+        name: `Owner ${index}`, type: "INDIVIDUAL" as const, shareClass: "ORDINARY", numberOfShares: 1,
+      })),
+    };
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      const candidates = (JSON.parse(String(init.body)) as { candidates: Array<{ sourceRecordId: string }> }).candidates;
+      return new Response(JSON.stringify({
+        matches: Object.fromEntries(candidates.map((candidate) => [candidate.sourceRecordId, null])),
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<BizFileReviewWorkspace initialData={manyRecords} sourcePanel={<div>PDF source</div>}
+      onCancel={vi.fn()} onReset={vi.fn()} onConfirm={onConfirm} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirm & Save" }));
+    await waitFor(() => expect(onConfirm).toHaveBeenCalledOnce());
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.map(([, init]) => JSON.parse(String(init.body)).candidates.length)).toEqual([100, 1]);
+  });
+
   it("uses compact desktop tabs with wrapped pointer and keyboard navigation", () => {
     useLargeViewport();
     setup();

@@ -14,6 +14,7 @@ import {
 import type { ExtractedBizFileData } from "@/services/bizfile";
 import { mapIdentificationType } from "@/services/bizfile";
 import type { ContactIdentityCandidate, ContactMatchPreview } from "@/types/contact-identity";
+import { fetchBizFileContactMatchPreviews } from "@/services/bizfile/contact-match-preview.client";
 import { BizFileReviewSections } from "./bizfile-review-sections";
 
 export interface BizFileReviewWorkspaceProps {
@@ -270,22 +271,18 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
   ): Promise<MatchPreviews> => {
     const candidates = buildBizFileContactIdentityCandidates(value, sections);
     if (candidates.length === 0) return {};
-    const response = await fetch("/api/contacts/match-preview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ candidates }),
-    });
-    if (!response.ok) throw new Error("Unable to preview contact matches");
-    const result = await response.json() as { matches: MatchPreviews };
-    setMatchPreviews((current) => ({ ...current, ...result.matches }));
-    return result.matches;
+    const matches = await fetchBizFileContactMatchPreviews(candidates);
+    setMatchPreviews((current) => ({ ...current, ...matches }));
+    return matches;
   }, []);
 
   const activeIdentitySnapshot = useMemo(() => activeSection === "officers" || activeSection === "shareholders"
     ? JSON.stringify(buildBizFileContactIdentityCandidates(draft, [activeSection])) : "", [activeSection, draft]);
   useEffect(() => {
     if (activeSection !== "officers" && activeSection !== "shareholders") return;
-    void requestMatchPreviews(draft, [activeSection]).catch(() => undefined);
+    void requestMatchPreviews(draft, [activeSection]).catch(() => {
+      setSaveSummary("Contact match preview failed. Saving is blocked until it can be checked.");
+    });
     // Decisions do not affect identity preview; the snapshot retriggers only for identity edits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIdentitySnapshot, activeSection, requestMatchPreviews]);

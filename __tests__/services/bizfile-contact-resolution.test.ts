@@ -95,8 +95,8 @@ describe('BizFile contact identity resolution', () => {
   it('uses the same resolver and transaction for added records in an existing company', async () => {
     mocks.generateBizFileDiff.mockResolvedValue({
       hasDifferences: true, differences: [],
-      officerDiffs: [{ type: 'added', extractedData: officer }],
-      shareholderDiffs: [{ type: 'added', extractedData: shareholder }],
+      officerDiffs: [{ type: 'added', sourceRecordId: 'officers.0', extractedData: officer }],
+      shareholderDiffs: [{ type: 'added', sourceRecordId: 'shareholders.0', extractedData: shareholder }],
     });
     const { processBizFileExtractionSelective } = await import('@/services/bizfile/processor');
     await processBizFileExtractionSelective('doc-1', extractedData, 'user-1', 'tenant-1', 'company-1');
@@ -111,6 +111,28 @@ describe('BizFile contact identity resolution', () => {
       shareholder.contactResolution,
       expect.objectContaining({ tenantId: 'tenant-1', tx }),
     );
+  });
+
+  it('uses diff-provided source paths for duplicate existing-company rows', async () => {
+    const duplicate = { ...officer, contactResolution: { action: 'REUSE' as const, contactId: 'contact-second' } };
+    mocks.generateBizFileDiff.mockResolvedValue({
+      hasDifferences: true, differences: [], shareholderDiffs: [],
+      officerDiffs: [
+        { type: 'added', sourceRecordId: 'officers.0', extractedData: officer },
+        { type: 'added', sourceRecordId: 'officers.1', extractedData: duplicate },
+      ],
+    });
+    mocks.resolveOrCreateContact
+      .mockResolvedValueOnce({ contact: { id: 'contact-existing' } })
+      .mockResolvedValueOnce({ contact: { id: 'contact-second' } });
+    const { processBizFileExtractionSelective } = await import('@/services/bizfile/processor');
+    await processBizFileExtractionSelective('doc-1', {
+      ...extractedData, officers: [officer, duplicate], shareholders: [],
+    }, 'user-1', 'tenant-1', 'company-1');
+
+    expect(mocks.resolveOrCreateContact.mock.calls.map(([candidate]) => candidate.sourceRecordId))
+      .toEqual(['officers.0', 'officers.1']);
+    expect(tx.companyOfficer.create).toHaveBeenCalledTimes(2);
   });
 
   it('requires a per-record decision when a current review match exists', async () => {

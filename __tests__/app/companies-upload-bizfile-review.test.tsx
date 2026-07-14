@@ -204,7 +204,7 @@ describe('companies upload BizFile review integration', () => {
       extractedData: officerData,
       diff: {
         hasDifferences: true, differences: [], existingCompany: { name: 'Existing Pte. Ltd.', uen: '202400001A' },
-        officerDiffs: [{ type: 'added', name: '王小明', role: 'DIRECTOR', extractedData: officerData.officers[0] }],
+        officerDiffs: [{ type: 'added', sourceRecordId: 'officers.0', name: '王小明', role: 'DIRECTOR', extractedData: officerData.officers[0] }],
       },
       companyUpdatedAt: '2026-07-12T00:00:00.000Z',
     }));
@@ -228,5 +228,60 @@ describe('companies upload BizFile review integration', () => {
         action: 'REUSE', contactId: '00000000-0000-4000-8000-000000000001',
       } }] },
     });
+  });
+
+  it('renders and applies independent decisions for duplicate update-mode rows', async () => {
+    const officers = [
+      { name: '王小明', role: 'DIRECTOR' },
+      { name: '王小明', role: 'DIRECTOR' },
+    ];
+    const duplicateData = { ...extractedData, officers };
+    const match = (index: number) => ({
+      contactId: `00000000-0000-4000-8000-00000000000${index + 1}`,
+      score: 1, automatic: true, blockedByIdentifierConflict: false,
+      reasons: ['EXACT_CANONICAL_NAME'], conflicts: [],
+      contact: {
+        id: `00000000-0000-4000-8000-00000000000${index + 1}`,
+        fullName: `王小明 ${index + 1}`, identificationType: null,
+        identificationNumber: null, corporateUen: null, companies: [],
+      },
+    });
+    const previewBody = { matches: { 'officers.0': match(0), 'officers.1': match(1) } };
+    mocks.searchParams = new URLSearchParams('companyId=company-1');
+    mocks.upload.mockResolvedValueOnce(jsonResponse({ documentId: 'doc-1' }));
+    mocks.fetch.mockImplementation(() => Promise.resolve(jsonResponse(previewBody)));
+    mocks.fetch.mockResolvedValueOnce(jsonResponse({
+      extractedData: duplicateData,
+      diff: {
+        hasDifferences: true, differences: [], existingCompany: { name: 'Existing Pte. Ltd.', uen: '202400001A' },
+        officerDiffs: officers.map((officer, index) => ({
+          type: 'added', sourceRecordId: `officers.${index}`,
+          name: officer.name, role: officer.role, extractedData: officer,
+        })),
+      },
+      companyUpdatedAt: '2026-07-12T00:00:00.000Z',
+    }));
+
+    const view = render(<UploadBizFilePage />);
+    fireEvent.change(view.container.querySelector('input[type="file"]')!, {
+      target: { files: [new File(['pdf'], 'bizfile.pdf', { type: 'application/pdf' })] },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Upload & Extract' }));
+    const headings = await screen.findAllByText('Existing contact match');
+    expect(headings).toHaveLength(2);
+    const panels = headings.map((heading) => heading.parentElement!);
+    expect(within(panels[0]).getByRole('link', { name: '王小明 1' })).toHaveAttribute('href', '/contacts/00000000-0000-4000-8000-000000000001');
+    expect(within(panels[1]).getByRole('link', { name: '王小明 2' })).toHaveAttribute('href', '/contacts/00000000-0000-4000-8000-000000000002');
+    fireEvent.click(within(panels[0]).getByRole('button', { name: 'Use existing' }));
+    fireEvent.click(within(panels[1]).getByRole('button', { name: 'Use existing' }));
+
+    mocks.fetch.mockResolvedValueOnce(jsonResponse(previewBody));
+    mocks.fetch.mockResolvedValueOnce(jsonResponse({ updatedFields: [] }));
+    fireEvent.click(screen.getByRole('button', { name: /Apply 2 Changes/i }));
+    await waitFor(() => expect(mocks.fetch.mock.calls.some(([url]) => String(url).endsWith('/apply-update'))).toBe(true));
+    const applyCall = mocks.fetch.mock.calls.find(([url]) => String(url).endsWith('/apply-update'))!;
+    const body = JSON.parse(String(applyCall[1]?.body));
+    expect(body.extractedData.officers.map((officer: { contactResolution: { contactId: string } }) => officer.contactResolution.contactId))
+      .toEqual(['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002']);
   });
 });

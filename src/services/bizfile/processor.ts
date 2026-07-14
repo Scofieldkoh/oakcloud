@@ -48,11 +48,11 @@ function splitIndividualName(name: string): { firstName: string; lastName?: stri
 
 function officerIdentityCandidate(
   officer: NonNullable<ExtractedBizFileData['officers']>[number],
-  index: number,
+  sourceRecordId: string,
 ): ContactIdentityCandidate {
   return {
     source: 'BIZFILE',
-    sourceRecordId: `officers.${index}`,
+    sourceRecordId,
     contactType: 'INDIVIDUAL',
     ...splitIndividualName(officer.name),
     identificationType: mapIdentificationType(officer.identificationType) || undefined,
@@ -64,12 +64,12 @@ function officerIdentityCandidate(
 
 function shareholderIdentityCandidate(
   shareholder: NonNullable<ExtractedBizFileData['shareholders']>[number],
-  index: number,
+  sourceRecordId: string,
 ): ContactIdentityCandidate {
   if (shareholder.type === 'CORPORATE') {
     return {
       source: 'BIZFILE',
-      sourceRecordId: `shareholders.${index}`,
+      sourceRecordId,
       contactType: 'CORPORATE',
       corporateName: shareholder.name,
       corporateUen: shareholder.identificationNumber,
@@ -78,7 +78,7 @@ function shareholderIdentityCandidate(
   }
   return {
     source: 'BIZFILE',
-    sourceRecordId: `shareholders.${index}`,
+    sourceRecordId,
     contactType: 'INDIVIDUAL',
     ...splitIndividualName(shareholder.name),
     identificationType: mapIdentificationType(shareholder.identificationType) || undefined,
@@ -339,9 +339,9 @@ export async function processBizFileExtractionSelective(
       if (officerDiff.type === 'added' && officerDiff.extractedData) {
         // Add new officer
         const extracted = officerDiff.extractedData;
-        const index = normalizedData.officers?.indexOf(extracted) ?? -1;
+        if (!officerDiff.sourceRecordId) throw new Error('Officer diff source path is required');
         const { contact } = await resolveBizFileContact(
-          officerIdentityCandidate(extracted, Math.max(index, 0)),
+          officerIdentityCandidate(extracted, officerDiff.sourceRecordId),
           extracted.contactResolution,
           { tenantId, userId, tx: tx as PrismaTransactionClient },
         );
@@ -410,9 +410,9 @@ export async function processBizFileExtractionSelective(
         const extracted = shareholderDiff.extractedData;
         const contactType = extracted.type === 'CORPORATE' ? 'CORPORATE' : 'INDIVIDUAL';
 
-        const index = normalizedData.shareholders?.indexOf(extracted) ?? -1;
+        if (!shareholderDiff.sourceRecordId) throw new Error('Shareholder diff source path is required');
         const { contact } = await resolveBizFileContact(
-          shareholderIdentityCandidate(extracted, Math.max(index, 0)),
+          shareholderIdentityCandidate(extracted, shareholderDiff.sourceRecordId),
           extracted.contactResolution,
           { tenantId, userId, tx: tx as PrismaTransactionClient },
         );
@@ -931,7 +931,7 @@ export async function processBizFileExtraction(
         const isCurrent = !officer.cessationDate;
 
         const { contact } = await resolveBizFileContact(
-          officerIdentityCandidate(officer, officerIndex),
+          officerIdentityCandidate(officer, `officers.${officerIndex}`),
           officer.contactResolution,
           { tenantId, userId, tx: tx as PrismaTransactionClient },
         );
@@ -967,7 +967,7 @@ export async function processBizFileExtraction(
         const contactType = mapContactType(shareholder.type);
 
         const { contact } = await resolveBizFileContact(
-          shareholderIdentityCandidate(shareholder, shareholderIndex),
+          shareholderIdentityCandidate(shareholder, `shareholders.${shareholderIndex}`),
           shareholder.contactResolution,
           { tenantId, userId, tx: tx as PrismaTransactionClient },
         );

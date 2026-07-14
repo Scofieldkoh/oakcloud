@@ -310,7 +310,7 @@ export async function generateBizFileDiff(
   const extractedOfficers = extractedData.officers || [];
   const matchedExistingOfficerIds = new Set<string>();
 
-  for (const extractedOfficer of extractedOfficers) {
+  for (const [sourceIndex, extractedOfficer] of extractedOfficers.entries()) {
     // Skip officers with cessation dates (they are already ceased)
     if (extractedOfficer.cessationDate) continue;
 
@@ -337,6 +337,7 @@ export async function generateBizFileDiff(
       if (changes.length > 0) {
         officerDiffs.push({
           type: 'updated',
+          sourceRecordId: `officers.${sourceIndex}`,
           officerId: matchResult.officer.id,
           name: extractedOfficer.name,
           role: extractedRole,
@@ -349,6 +350,7 @@ export async function generateBizFileDiff(
       // New officer (or new role for existing person)
       officerDiffs.push({
         type: 'added',
+        sourceRecordId: `officers.${sourceIndex}`,
         name: extractedOfficer.name,
         role: mapOfficerRole(extractedOfficer.role),
         extractedData: extractedOfficer,
@@ -376,7 +378,7 @@ export async function generateBizFileDiff(
   const extractedShareholders = extractedData.shareholders || [];
   const matchedExistingShareholderIds = new Set<string>();
 
-  for (const extractedShareholder of extractedShareholders) {
+  for (const [sourceIndex, extractedShareholder] of extractedShareholders.entries()) {
     const matchResult = matchShareholder(extractedShareholder, existingShareholders);
 
     if (matchResult.shareholder) {
@@ -415,6 +417,7 @@ export async function generateBizFileDiff(
       if (changes.length > 0) {
         shareholderDiffs.push({
           type: 'updated',
+          sourceRecordId: `shareholders.${sourceIndex}`,
           shareholderId: matchResult.shareholder.id,
           name: extractedShareholder.name,
           shareholderType: extractedShareholder.type === 'CORPORATE' ? 'CORPORATE' : 'INDIVIDUAL',
@@ -428,6 +431,7 @@ export async function generateBizFileDiff(
       // New shareholder
       shareholderDiffs.push({
         type: 'added',
+        sourceRecordId: `shareholders.${sourceIndex}`,
         name: extractedShareholder.name,
         shareholderType: extractedShareholder.type === 'CORPORATE' ? 'CORPORATE' : 'INDIVIDUAL',
         extractedData: extractedShareholder,

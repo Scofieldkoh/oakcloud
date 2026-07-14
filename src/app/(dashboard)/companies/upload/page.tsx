@@ -35,6 +35,7 @@ import { ContactMatchPanel } from '@/components/companies/bizfile-review/bizfile
 import type { BizFileReviewIssue } from '@/lib/validations/bizfile-review';
 import type { ExtractedBizFileData } from '@/services/bizfile';
 import type { ContactMatchPreview, ContactResolutionDecision } from '@/types/contact-identity';
+import { fetchBizFileContactMatchPreviews } from '@/services/bizfile/contact-match-preview.client';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'diff-preview' | 'saving' | 'complete';
 
@@ -49,6 +50,7 @@ interface DiffEntry {
 interface OfficerDiffEntry {
   type: 'added' | 'updated' | 'potentially_ceased';
   officerId?: string;
+  sourceRecordId?: string;
   name: string;
   role: string;
   changes?: Array<{ field: string; label: string; oldValue: string | null; newValue: string | null }>;
@@ -63,6 +65,7 @@ interface OfficerDiffEntry {
 interface ShareholderDiffEntry {
   type: 'added' | 'removed' | 'updated';
   shareholderId?: string;
+  sourceRecordId?: string;
   name: string;
   shareholderType: 'INDIVIDUAL' | 'CORPORATE';
   changes?: Array<{ field: string; label: string; oldValue: string | number | null; newValue: string | number | null }>;
@@ -406,15 +409,9 @@ export default function UploadBizFilePage() {
   const requestContactMatchPreviews = useCallback(async (data: ExtractedBizFileData) => {
     const candidates = buildBizFileContactIdentityCandidates(data, ['officers', 'shareholders']);
     if (candidates.length === 0) return {};
-    const response = await fetch('/api/contacts/match-preview', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ candidates }),
-    });
-    if (!response.ok) throw new Error(await safeJsonError(response, 'Failed to preview contact matches'));
-    const result = await response.json() as { matches: Record<string, ContactMatchPreview | null> };
-    setContactMatchPreviews(result.matches);
-    return result.matches;
+    const matches = await fetchBizFileContactMatchPreviews(candidates);
+    setContactMatchPreviews(matches);
+    return matches;
   }, []);
 
   const updateIdentitySnapshot = useMemo(() => extractedData
@@ -446,12 +443,11 @@ export default function UploadBizFilePage() {
     });
   }, []);
 
-  const officerSourceIndex = useCallback((diff: OfficerDiffEntry) =>
-    extractedData?.officers?.findIndex((officer) => officer.name === diff.extractedData?.name
-      && officer.role === diff.extractedData?.role) ?? -1, [extractedData]);
-  const shareholderSourceIndex = useCallback((diff: ShareholderDiffEntry) =>
-    extractedData?.shareholders?.findIndex((shareholder) => shareholder.name === diff.extractedData?.name
-      && shareholder.type === diff.extractedData?.type) ?? -1, [extractedData]);
+  const sourceIndex = (sourceRecordId?: string) => {
+    if (!sourceRecordId) return -1;
+    const index = Number(sourceRecordId.split('.')[1]);
+    return Number.isInteger(index) && index >= 0 ? index : -1;
+  };
 
   const handleApplyUpdate = async () => {
     if (!documentId || !companyId || !extractedData) return;
@@ -1040,14 +1036,14 @@ export default function UploadBizFilePage() {
                       </div>
                     )}
 
-                    {officer.type === 'added' && officerSourceIndex(officer) >= 0
-                      && contactMatchPreviews[`officers.${officerSourceIndex(officer)}`] && (
+                    {officer.type === 'added' && sourceIndex(officer.sourceRecordId) >= 0
+                      && officer.sourceRecordId && contactMatchPreviews[officer.sourceRecordId] && (
                       <div className="mt-3 ml-0 sm:ml-11">
                         <ContactMatchPanel
-                          path={`officers.${officerSourceIndex(officer)}`}
-                          match={contactMatchPreviews[`officers.${officerSourceIndex(officer)}`]!}
-                          resolution={extractedData.officers?.[officerSourceIndex(officer)]?.contactResolution}
-                          onChange={(decision) => setContactResolution('officers', officerSourceIndex(officer), decision)}
+                          path={officer.sourceRecordId}
+                          match={contactMatchPreviews[officer.sourceRecordId]!}
+                          resolution={extractedData.officers?.[sourceIndex(officer.sourceRecordId)]?.contactResolution}
+                          onChange={(decision) => setContactResolution('officers', sourceIndex(officer.sourceRecordId), decision)}
                         />
                       </div>
                     )}
@@ -1221,14 +1217,14 @@ export default function UploadBizFilePage() {
                         )}
                       </div>
                     )}
-                    {shareholder.type === 'added' && shareholderSourceIndex(shareholder) >= 0
-                      && contactMatchPreviews[`shareholders.${shareholderSourceIndex(shareholder)}`] && (
+                    {shareholder.type === 'added' && sourceIndex(shareholder.sourceRecordId) >= 0
+                      && shareholder.sourceRecordId && contactMatchPreviews[shareholder.sourceRecordId] && (
                       <div className="mt-3 ml-0 sm:ml-11">
                         <ContactMatchPanel
-                          path={`shareholders.${shareholderSourceIndex(shareholder)}`}
-                          match={contactMatchPreviews[`shareholders.${shareholderSourceIndex(shareholder)}`]!}
-                          resolution={extractedData.shareholders?.[shareholderSourceIndex(shareholder)]?.contactResolution}
-                          onChange={(decision) => setContactResolution('shareholders', shareholderSourceIndex(shareholder), decision)}
+                          path={shareholder.sourceRecordId}
+                          match={contactMatchPreviews[shareholder.sourceRecordId]!}
+                          resolution={extractedData.shareholders?.[sourceIndex(shareholder.sourceRecordId)]?.contactResolution}
+                          onChange={(decision) => setContactResolution('shareholders', sourceIndex(shareholder.sourceRecordId), decision)}
                         />
                       </div>
                     )}

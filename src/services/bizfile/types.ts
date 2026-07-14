@@ -240,6 +240,7 @@ export interface ExtractedShareholderData {
 export interface OfficerDiffEntry {
   type: 'added' | 'updated' | 'potentially_ceased';
   officerId?: string;
+  sourceRecordId?: string;
   name: string;
   role: OfficerRole;
   changes?: Array<{ field: string; label: string; oldValue: string | null; newValue: string | null }>;
@@ -253,6 +254,7 @@ export interface OfficerDiffEntry {
 export interface ShareholderDiffEntry {
   type: 'added' | 'removed' | 'updated';
   shareholderId?: string;
+  sourceRecordId?: string;
   name: string;
   shareholderType: 'INDIVIDUAL' | 'CORPORATE';
   changes?: Array<{ field: string; label: string; oldValue: string | number | null; newValue: string | number | null }>;
