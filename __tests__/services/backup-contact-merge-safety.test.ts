@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { gzipSync } from 'node:zlib';
 
 const mocks = vi.hoisted(() => ({
   upload: vi.fn(),
+  download: vi.fn(),
+  deletePrefix: vi.fn(),
+  copy: vi.fn(),
   workspaceUpdate: vi.fn(),
   workspaceFind: vi.fn(),
   mergeFind: vi.fn(),
@@ -14,10 +18,16 @@ const mocks = vi.hoisted(() => ({
 const backupTx = {
   $executeRaw: mocks.barrier,
   $queryRaw: mocks.databaseClock,
+  contactMergeOperation: { findFirst: mocks.mergeFind },
 };
 
 vi.mock('@/lib/storage', () => ({
-  storage: { upload: mocks.upload },
+  storage: {
+    upload: mocks.upload,
+    download: mocks.download,
+    deletePrefix: mocks.deletePrefix,
+    copy: mocks.copy,
+  },
 }));
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -63,10 +73,14 @@ describe('contact merge backup restore safety', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-07-14T10:10:00.000Z'));
     vi.clearAllMocks();
+    mocks.mergeFind.mockReset();
     mocks.workspaceUpdate.mockResolvedValue({});
     mocks.workspaceFind.mockResolvedValue(null);
     mocks.mergeFind.mockResolvedValue(null);
     mocks.upload.mockResolvedValue({});
+    mocks.download.mockResolvedValue(gzipSync(Buffer.from('{}')));
+    mocks.deletePrefix.mockResolvedValue(0);
+    mocks.copy.mockResolvedValue(undefined);
     mocks.barrier.mockResolvedValue(0);
     mocks.transaction.mockImplementation(async (callback: (client: typeof backupTx) => unknown) => callback(backupTx));
     mocks.databaseClock.mockResolvedValue([{ cutoff: new Date('2026-07-14T10:00:00.000Z') }]);
@@ -120,6 +134,7 @@ describe('contact merge backup restore safety', () => {
     expect(mocks.mergeFind).toHaveBeenCalledWith(expect.objectContaining({
       where: { tenantId: 'tenant-1', approvedAt: { gte: new Date('2026-07-14T10:00:00.000Z') } },
     }));
+    expect(mocks.barrier).not.toHaveBeenCalled();
   });
 
   it('holds the export barrier until the snapshot finishes and makes a pre-cutoff-started merge restore-unsafe', async () => {
@@ -137,6 +152,7 @@ describe('contact merge backup restore safety', () => {
           return 0;
         }),
         $queryRaw: mocks.databaseClock,
+        contactMergeOperation: { findFirst: mocks.mergeFind },
       };
       transactionClients.push(client);
       try {
@@ -196,6 +212,106 @@ describe('contact merge backup restore safety', () => {
     mocks.mergeFind.mockResolvedValue({ id: 'merge-after-export', approvedAt: mergeApprovedAt });
     await expect(service.restoreWorkspaceBackup('backup-1', 'user-1', { dryRun: true }))
       .rejects.toThrow(/predates contact merge merge-after-export/i);
+  });
+
+  it('rechecks merge safety after acquiring the restore barrier and rejects a merge that won the race', async () => {
+    const service = new BackupService();
+    const internals = service as unknown as {
+      deleteWorkspaceData: ReturnType<typeof vi.fn>;
+      restoreDatabaseData: ReturnType<typeof vi.fn>;
+      restoreFiles: ReturnType<typeof vi.fn>;
+    };
+    internals.deleteWorkspaceData = vi.fn().mockResolvedValue(undefined);
+    internals.restoreDatabaseData = vi.fn().mockResolvedValue(undefined);
+    internals.restoreFiles = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(service, 'getBackupDetails').mockResolvedValue({ status: 'COMPLETED', tenantId: 'tenant-1' } as never);
+    vi.spyOn(service, 'validateBackupIntegrity').mockResolvedValue(manifest());
+    mocks.mergeFind
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'merge-before-restore-lock', approvedAt: new Date('2026-07-14T10:01:00.000Z') });
+
+    await expect(service.restoreWorkspaceBackup('backup-1', 'user-1'))
+      .rejects.toThrow(/predates contact merge merge-before-restore-lock/i);
+
+    expect(mocks.mergeFind).toHaveBeenCalledTimes(2);
+    expect(mocks.barrier).toHaveBeenCalledTimes(1);
+    expect(mocks.barrier.mock.invocationCallOrder[0]).toBeLessThan(mocks.mergeFind.mock.invocationCallOrder[1]);
+    expect(internals.restoreDatabaseData).not.toHaveBeenCalled();
+    expect(mocks.transaction).toHaveBeenCalledWith(expect.any(Function), expect.objectContaining({ timeout: 300_000 }));
+  });
+
+  it('blocks a merge behind destructive delete and import using one restore transaction client', async () => {
+    let barrierHeld = false;
+    const barrierWaiters: Array<() => void> = [];
+    const transactionClients: typeof backupTx[] = [];
+    mocks.transaction.mockImplementation(async (callback: (client: typeof backupTx) => unknown) => {
+      const client = {
+        $executeRaw: vi.fn(async () => {
+          if (barrierHeld) await new Promise<void>((resolve) => barrierWaiters.push(resolve));
+          barrierHeld = true;
+          return 0;
+        }),
+        $queryRaw: mocks.databaseClock,
+        contactMergeOperation: { findFirst: mocks.mergeFind },
+      };
+      transactionClients.push(client);
+      try {
+        return await callback(client);
+      } finally {
+        barrierHeld = false;
+        barrierWaiters.shift()?.();
+      }
+    });
+    mocks.workspaceFind.mockResolvedValue({ id: 'tenant-1', name: 'Tenant', deletedAt: null });
+    mocks.mergeFind.mockResolvedValue(null);
+
+    const importStarted = deferred();
+    const finishImport = deferred();
+    const service = new BackupService();
+    const internals = service as unknown as {
+      deleteWorkspaceData: ReturnType<typeof vi.fn>;
+      restoreDatabaseData: ReturnType<typeof vi.fn>;
+      restoreFiles: ReturnType<typeof vi.fn>;
+    };
+    internals.deleteWorkspaceData = vi.fn().mockResolvedValue(undefined);
+    internals.restoreDatabaseData = vi.fn(async () => {
+      importStarted.resolve();
+      await finishImport.promise;
+    });
+    internals.restoreFiles = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(service, 'getBackupDetails').mockResolvedValue({ status: 'COMPLETED', tenantId: 'tenant-1' } as never);
+    vi.spyOn(service, 'validateBackupIntegrity').mockResolvedValue(manifest());
+
+    const restorePromise = service.restoreWorkspaceBackup(
+      'backup-1',
+      'user-1',
+      { overwriteExisting: true },
+    );
+    await importStarted.promise;
+
+    let mergePassedBarrier = false;
+    const mergePromise = mocks.transaction(async (client: typeof backupTx) => {
+      await client.$executeRaw({
+        sql: 'SELECT pg_advisory_xact_lock(...)',
+        values: ['contact-merge-backup:tenant-1'],
+      });
+      mergePassedBarrier = true;
+    });
+    await Promise.resolve();
+    const mergeWasBlockedDuringRestore = !mergePassedBarrier;
+
+    finishImport.resolve();
+    await restorePromise;
+    await mergePromise;
+
+    expect(mergeWasBlockedDuringRestore).toBe(true);
+    expect(mergePassedBarrier).toBe(true);
+    expect(transactionClients[0].$executeRaw.mock.calls[0][0].values)
+      .toEqual(transactionClients[1].$executeRaw.mock.calls[0][0].values);
+    expect(transactionClients[0].$executeRaw.mock.calls[0][0].values)
+      .toEqual(['contact-merge-backup:tenant-1']);
+    expect(internals.deleteWorkspaceData).toHaveBeenCalledWith('tenant-1', transactionClients[0]);
+    expect(internals.restoreDatabaseData).toHaveBeenCalledWith({}, 'tenant-1', transactionClients[0]);
   });
 
   it('fails legacy manifests safely whenever an immutable merge ledger exists', async () => {

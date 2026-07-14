@@ -163,6 +163,24 @@ export function assertContactMergeRestoreSafety(
   );
 }
 
+async function assertRestoreMergeSafety(
+  db: Pick<Prisma.TransactionClient, 'contactMergeOperation'>,
+  tenantId: string,
+  snapshotCutoff: string | undefined,
+): Promise<void> {
+  const mergeAfterBackup = await db.contactMergeOperation.findFirst({
+    where: {
+      tenantId,
+      ...(snapshotCutoff
+        ? { approvedAt: { gte: new Date(snapshotCutoff) } }
+        : {}),
+    },
+    select: { id: true, approvedAt: true },
+    orderBy: { approvedAt: 'asc' },
+  });
+  assertContactMergeRestoreSafety(snapshotCutoff, mergeAfterBackup);
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -976,17 +994,7 @@ export class BackupService {
     // sources. Restoring it would resurrect identities while the immutable ledger says
     // they were merged. Post-merge backups are safe because their snapshot already
     // reflects every merge completed before the backup timestamp.
-    const mergeAfterBackup = await prisma.contactMergeOperation.findFirst({
-      where: {
-        tenantId: backup.tenantId,
-        ...(manifest.snapshotCutoff
-          ? { approvedAt: { gte: new Date(manifest.snapshotCutoff) } }
-          : {}),
-      },
-      select: { id: true, approvedAt: true },
-      orderBy: { approvedAt: 'asc' },
-    });
-    assertContactMergeRestoreSafety(manifest.snapshotCutoff, mergeAfterBackup);
+    await assertRestoreMergeSafety(prisma, backup.tenantId, manifest.snapshotCutoff);
 
     if (options.dryRun) {
       return {
@@ -1018,13 +1026,18 @@ export class BackupService {
       const dataBuffer = gunzipSync(compressedBuffer);
       const data = JSON.parse(dataBuffer.toString('utf-8')) as Record<string, unknown>;
 
-      // 2. If overwriting, delete existing tenant data first
-      if (existingTenant && !existingTenant.deletedAt && options.overwriteExisting) {
-        await this.deleteWorkspaceData(backup.tenantId);
-      }
+      await prisma.$transaction(async (tx) => {
+        await acquireContactMergeBackupBarrier(tx, backup.tenantId);
+        await assertRestoreMergeSafety(tx, backup.tenantId, manifest.snapshotCutoff);
 
-      // 3. Restore database data (in transaction)
-      await this.restoreDatabaseData(data, backup.tenantId);
+        // 2. If overwriting, delete existing tenant data first
+        if (existingTenant && !existingTenant.deletedAt && options.overwriteExisting) {
+          await this.deleteWorkspaceData(backup.tenantId, tx);
+        }
+
+        // 3. Restore database data using the same barrier-owning transaction
+        await this.restoreDatabaseData(data, backup.tenantId, tx);
+      }, { timeout: CONTACT_MERGE_BACKUP_BARRIER_TIMEOUT_MS });
 
       // 4. Restore files
       await this.restoreFiles(backupId, backup.tenantId, manifest.files);
@@ -1129,7 +1142,10 @@ export class BackupService {
    * Delete all data for a tenant (used before restore)
    * Deletes both database records and S3 files
    */
-  private async deleteWorkspaceData(tenantId: string): Promise<void> {
+  private async deleteWorkspaceData(
+    tenantId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
     log.info(`Deleting existing data for tenant ${tenantId} before restore`);
 
     // 1. Delete all tenant files from storage first
@@ -1143,7 +1159,6 @@ export class BackupService {
     }
 
     // 2. Delete database records in reverse order of dependencies
-    await prisma.$transaction(async (tx) => {
       // Delete processing module data
       await tx.matchGroupItem.deleteMany({ where: { matchGroup: { tenantId } } });
       await tx.matchGroup.deleteMany({ where: { tenantId } });
@@ -1251,18 +1266,20 @@ export class BackupService {
       // Delete users
       await tx.user.deleteMany({ where: { tenantId } });
 
-      // Note: Don't delete the tenant itself - just its data
-    });
+    // Note: Don't delete the tenant itself - just its data
   }
 
   /**
    * Restore database data from backup
    */
-  private async restoreDatabaseData(data: Record<string, unknown>, tenantId: string): Promise<void> {
+  private async restoreDatabaseData(
+    data: Record<string, unknown>,
+    tenantId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
     log.info('Restoring database data from backup');
 
-    await prisma.$transaction(async (tx) => {
-      // Restore in order of dependencies
+    // Restore in order of dependencies
 
       // 1. Tenant (upsert to handle existing tenant)
       if (data.tenant) {
@@ -1745,13 +1762,12 @@ export class BackupService {
       }
 
       // 42. Audit Logs (optional - only if included in backup)
-      if (Array.isArray(data.auditLogs) && data.auditLogs.length > 0) {
-        await tx.auditLog.createMany({
-          data: data.auditLogs as Prisma.AuditLogCreateManyInput[],
-          skipDuplicates: true,
-        });
-      }
-    });
+    if (Array.isArray(data.auditLogs) && data.auditLogs.length > 0) {
+      await tx.auditLog.createMany({
+        data: data.auditLogs as Prisma.AuditLogCreateManyInput[],
+        skipDuplicates: true,
+      });
+    }
   }
 
   /**
