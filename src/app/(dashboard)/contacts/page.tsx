@@ -3,9 +3,9 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Users, AlertCircle, Building2, User, Trash2, X, RefreshCw } from 'lucide-react';
+import { Plus, Users, AlertCircle, Building2, User, Trash2, X, RefreshCw, UserRoundSearch } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
-import { useContacts, useDeleteContact, useBulkDeleteContacts } from '@/hooks/use-contacts';
+import { useContacts, useDeleteContact, useBulkDeleteContacts, useContactDuplicateGroups } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { useToast } from '@/components/ui/toast';
 import type { ContactType, IdentificationType } from '@/generated/prisma';
+import { ContactDuplicateReviewModal } from '@/components/contacts/contact-duplicate-review-modal';
 
 // Types for search params
 type SortByField = 'fullName' | 'contactType' | 'nationality' | 'companyRelationsCount' | 'createdAt' | 'updatedAt';
@@ -54,8 +55,14 @@ export default function ContactsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { success, error: showError } = useToast();
-  const { can } = usePermissions();
+  const { can, isWorkspaceAdmin } = usePermissions();
   const { data: session } = useSession();
+  const [duplicateReviewOpen, setDuplicateReviewOpen] = useState(false);
+  const hasWorkspaceWideContactAccess = Boolean(
+    isWorkspaceAdmin || session?.isSuperAdmin || session?.companyIds.length === 0,
+  );
+  const canReviewDuplicates = can.updateContact && hasWorkspaceWideContactAccess;
+  const duplicateSummary = useContactDuplicateGroups(1, 1, canReviewDuplicates);
 
   // Get active tenant ID (from store for SUPER_ADMIN, from session for others)
   const activeTenantId = useActiveWorkspaceId(
@@ -429,6 +436,18 @@ export default function ContactsPage() {
             <span className="hidden xl:inline">Refresh (Ctrl+R)</span>
             <span className="xl:hidden">Refresh</span>
           </button>
+          {canReviewDuplicates && (
+            <button
+              type="button"
+              onClick={() => setDuplicateReviewOpen(true)}
+              className="btn-secondary btn-sm flex min-h-11 items-center gap-2 whitespace-nowrap sm:min-h-0"
+              aria-label={`Review duplicates, ${duplicateSummary.data?.total ?? 0} pending`}
+            >
+              <UserRoundSearch className="h-4 w-4" />
+              <span>Review duplicates</span>
+              <span className="badge badge-warning">{duplicateSummary.data?.total ?? 0} pending</span>
+            </button>
+          )}
           {can.createContact && (
             <Link href="/contacts/new" className="btn-primary btn-sm flex items-center gap-2 whitespace-nowrap" title="Add contact (F1)">
               <Plus className="w-4 h-4" />
@@ -620,6 +639,11 @@ export default function ContactsPage() {
           }}
         />
       )}
+
+      <ContactDuplicateReviewModal
+        open={duplicateReviewOpen}
+        onClose={() => setDuplicateReviewOpen(false)}
+      />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

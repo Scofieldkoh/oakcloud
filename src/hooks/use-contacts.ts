@@ -4,6 +4,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Contact, ContactType } from '@/generated/prisma';
 import type { CreateContactWithDetailsInput, UpdateContactInput } from '@/lib/validations/contact';
 import type { ContactMatchResult } from '@/types/contact-identity';
+import type {
+  ContactDuplicateGroupsResult,
+  MergeContactsInput,
+  MergeContactsResult,
+  RejectContactDuplicateInput,
+} from '@/types/contact';
 
 type CreateContactPayload = CreateContactWithDetailsInput & {
   tenantId?: string;
@@ -561,6 +567,74 @@ export function useContactLinkInfo(id: string | null) {
     queryFn: () => fetchContactLinkInfo(id!),
     enabled: !!id,
     staleTime: 30000, // Cache for 30 seconds
+  });
+}
+
+async function fetchContactDuplicateGroups(page: number, limit: number): Promise<ContactDuplicateGroupsResult> {
+  const response = await fetch(`/api/contacts/duplicates?page=${page}&limit=${limit}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to load duplicate recommendations');
+  }
+  return response.json();
+}
+
+async function rejectContactDuplicate(input: RejectContactDuplicateInput): Promise<{ rejected: true }> {
+  const response = await fetch('/api/contacts/duplicates/reject', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to reject duplicate recommendation');
+  }
+  return response.json();
+}
+
+async function mergeContacts(input: MergeContactsInput): Promise<MergeContactsResult> {
+  const response = await fetch('/api/contacts/merge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to merge contacts');
+  }
+  return response.json();
+}
+
+export function useContactDuplicateGroups(page = 1, limit = 20, enabled = true) {
+  return useQuery({
+    queryKey: ['contact-duplicates', page, limit],
+    queryFn: () => fetchContactDuplicateGroups(page, limit),
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
+function invalidateDuplicateReviewQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['contacts'] }),
+    queryClient.invalidateQueries({ queryKey: ['contact-stats'] }),
+    queryClient.invalidateQueries({ queryKey: ['contact-duplicates'] }),
+  ]);
+}
+
+export function useRejectContactDuplicate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: rejectContactDuplicate,
+    onSuccess: () => invalidateDuplicateReviewQueries(queryClient),
+  });
+}
+
+export function useMergeContacts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: mergeContacts,
+    onSuccess: () => invalidateDuplicateReviewQueries(queryClient),
   });
 }
 

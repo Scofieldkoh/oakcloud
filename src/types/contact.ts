@@ -3,7 +3,8 @@
  * Centralizes type definitions to avoid duplication and ensure consistency.
  */
 
-import type { Contact, ContactDetailType } from '@/generated/prisma';
+import type { Contact, ContactDetailType, ContactType, IdentificationType } from '@/generated/prisma';
+import type { ContactIdentityConflict, ContactMatchReason } from '@/types/contact-identity';
 
 // ============================================================================
 // CONTACT RELATIONSHIPS
@@ -169,4 +170,94 @@ export interface ContactLinkInfo {
   shareholdingCount: number;
   chargeHolderCount: number;
   totalLinks: number;
+}
+
+// ============================================================================
+// DUPLICATE REVIEW AND MERGE
+// ============================================================================
+
+export interface ContactDuplicatePreview {
+  id: string;
+  contactType: ContactType;
+  fullName: string;
+  firstName: string | null;
+  lastName: string | null;
+  corporateName: string | null;
+  alias: string | null;
+  identificationType: IdentificationType | null;
+  identificationNumber: string | null;
+  corporateUen: string | null;
+  nationality: string | null;
+  dateOfBirth: string | null;
+  fullAddress: string | null;
+  contactDetails: Array<{ detailType: ContactDetailType; value: string; companyId: string | null }>;
+  companies: Array<{ id: string; name: string; uen: string }>;
+  referenceCounts: {
+    companyRelations: number;
+    officerPositions: number;
+    shareholdings: number;
+    chargeHoldings: number;
+    contactDetails: number;
+    noteTabs: number;
+    workflowCommunicationLogEntries: number;
+    workflowMilestones: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContactDuplicateGroup {
+  contactIds: string[];
+  contacts: ContactDuplicatePreview[];
+  reasons: ContactMatchReason[];
+  confidence: number;
+  conflicts: ContactIdentityConflict[];
+  blockedByIdentifierConflict: boolean;
+  fingerprints: Record<string, string>;
+  recommendedMasterId: string;
+}
+
+export interface ContactDuplicateGroupsResult {
+  groups: ContactDuplicateGroup[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface RejectContactDuplicateInput {
+  leftContactId: string;
+  rightContactId: string;
+  leftFingerprint: string;
+  rightFingerprint: string;
+  reason: string;
+}
+
+export interface ContactMergeFieldDecisions {
+  firstName?: string | null;
+  lastName?: string | null;
+  alias?: string | null;
+  identificationType?: IdentificationType | null;
+  identificationNumber?: string | null;
+  nationality?: string | null;
+  dateOfBirth?: string | null;
+  corporateName?: string | null;
+  corporateUen?: string | null;
+  fullAddress?: string | null;
+}
+
+export interface MergeContactsInput {
+  idempotencyKey: string;
+  masterContactId: string;
+  sourceContactIds: string[];
+  expectedUpdatedAt: Record<string, string>;
+  expectedFingerprints: Record<string, string>;
+  fieldDecisions: ContactMergeFieldDecisions;
+}
+
+export interface MergeContactsResult {
+  ledgerId: string;
+  survivingContactId: string;
+  movedCounts: Record<string, number>;
+  alreadyCompleted: boolean;
 }
