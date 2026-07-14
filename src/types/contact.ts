@@ -201,6 +201,8 @@ export interface ContactDuplicatePreview {
     noteTabs: number;
     workflowCommunicationLogEntries: number;
     workflowMilestones: number;
+    documentRevisions: number;
+    aliases: number;
   };
   createdAt: string;
   updatedAt: string;

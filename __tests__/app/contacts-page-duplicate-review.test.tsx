@@ -6,13 +6,14 @@ const mocks = vi.hoisted(() => ({
   isWorkspaceAdmin: false,
   session: { tenantId: 'tenant-1', isSuperAdmin: false, companyIds: [] as string[] },
   duplicateTotal: 3,
+  duplicateError: null as Error | null,
 }));
 
 vi.mock('@/hooks/use-contacts', () => ({
   useContacts: () => ({ data: { contacts: [{ id: 'contact-1', contactType: 'INDIVIDUAL', _count: { companyRelations: 0 } }], total: 1, page: 1, limit: 20, totalPages: 1 }, isLoading: false, isFetching: false, error: null, refetch: vi.fn() }),
   useDeleteContact: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useBulkDeleteContacts: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useContactDuplicateGroups: () => ({ data: { groups: [], total: mocks.duplicateTotal, page: 1, limit: 1, totalPages: 3 } }),
+  useContactDuplicateGroups: () => ({ data: { groups: [], total: mocks.duplicateTotal, page: 1, limit: 1, totalPages: 3 }, error: mocks.duplicateError }),
 }));
 vi.mock('@/hooks/use-permissions', () => ({ usePermissions: () => ({ can: mocks.permissions, isWorkspaceAdmin: mocks.isWorkspaceAdmin }) }));
 vi.mock('@/hooks/use-auth', () => ({ useSession: () => ({ data: mocks.session }) }));
@@ -36,15 +37,16 @@ describe('Contacts page duplicate review entry', () => {
     mocks.isWorkspaceAdmin = false;
     mocks.session.companyIds = [];
     mocks.duplicateTotal = 3;
+    mocks.duplicateError = null;
   });
 
-  it('shows the pending count to workspace-wide editors and preserves contact selection when opened', () => {
+  it('shows the pending count to workspace-wide editors and preserves contact selection when opened', async () => {
     render(<ContactsPage />);
     fireEvent.click(screen.getByRole('button', { name: /selection 0/i }));
     fireEvent.click(screen.getByRole('button', { name: /review duplicates/i }));
 
     expect(screen.getByRole('button', { name: /review duplicates.*3 pending/i })).toBeVisible();
-    expect(screen.getByRole('dialog')).toHaveTextContent('Duplicate review modal');
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Duplicate review modal');
     expect(screen.getByRole('button', { name: /selection 1/i })).toBeVisible();
   });
 
@@ -57,5 +59,14 @@ describe('Contacts page duplicate review entry', () => {
     mocks.permissions.updateContact = false;
     rerender(<ContactsPage />);
     expect(screen.queryByRole('button', { name: /review duplicates/i })).not.toBeInTheDocument();
+  });
+
+  it('shows an unavailable count instead of zero when the summary query fails', () => {
+    mocks.duplicateError = new Error('Unavailable');
+    render(<ContactsPage />);
+
+    expect(screen.getByRole('button', { name: /review duplicates, count unavailable/i })).toBeVisible();
+    expect(screen.queryByText('0 pending')).not.toBeInTheDocument();
+    expect(screen.getByText('Count unavailable')).toBeVisible();
   });
 });

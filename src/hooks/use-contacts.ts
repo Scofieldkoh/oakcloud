@@ -579,11 +579,14 @@ async function fetchContactDuplicateGroups(page: number, limit: number): Promise
   return response.json();
 }
 
-async function rejectContactDuplicate(input: RejectContactDuplicateInput): Promise<{ rejected: true }> {
+type RejectContactDuplicateMutationInput = RejectContactDuplicateInput & { deferInvalidation?: boolean };
+
+async function rejectContactDuplicate(input: RejectContactDuplicateMutationInput): Promise<{ rejected: true }> {
+  const { deferInvalidation: _deferInvalidation, ...payload } = input;
   const response = await fetch('/api/contacts/duplicates/reject', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    body: JSON.stringify(payload),
   });
   if (!response.ok) {
     const error = await response.json();
@@ -624,10 +627,16 @@ function invalidateDuplicateReviewQueries(queryClient: ReturnType<typeof useQuer
 
 export function useRejectContactDuplicate() {
   const queryClient = useQueryClient();
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: rejectContactDuplicate,
-    onSuccess: () => invalidateDuplicateReviewQueries(queryClient),
+    onSuccess: (_result, input) => input.deferInvalidation
+      ? undefined
+      : invalidateDuplicateReviewQueries(queryClient),
   });
+  return {
+    ...mutation,
+    invalidateQueries: () => invalidateDuplicateReviewQueries(queryClient),
+  };
 }
 
 export function useMergeContacts() {

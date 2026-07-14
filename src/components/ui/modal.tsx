@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,8 @@ export interface ModalProps {
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
   className?: string;
+  ariaLabelledBy?: string;
+  ariaDescribedBy?: string;
 }
 
 // Mobile-first sizing: smaller screens use more width, larger screens use fixed max-width
@@ -31,6 +33,16 @@ const sizeClasses = {
   full: 'max-w-[calc(100vw-2rem)] sm:max-w-[90vw]', // Always responsive
 };
 
+const openModalStack: string[] = [];
+const focusableSelector = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
 export function Modal({
   isOpen,
   onClose,
@@ -42,10 +54,14 @@ export function Modal({
   closeOnOverlayClick = true,
   closeOnEscape = true,
   className,
+  ariaLabelledBy,
+  ariaDescribedBy,
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [wasOpen, setWasOpen] = useState(false);
+  const modalId = useId();
+  const titleId = `${modalId}-title`;
+  const descriptionId = `${modalId}-description`;
 
   // Handle escape key - use stable callback
   const onCloseRef = useRef(onClose);
@@ -54,12 +70,35 @@ export function Modal({
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape' && closeOnEscape) {
+        if (openModalStack.at(-1) !== modalId) return;
         e.stopPropagation(); // Prevent other handlers from also responding to Escape
+        e.stopImmediatePropagation();
         onCloseRef.current();
       }
     },
-    [closeOnEscape]
+    [closeOnEscape, modalId]
   );
+
+  const handleTab = useCallback((e: KeyboardEvent) => {
+    if (e.key !== 'Tab' || openModalStack.at(-1) !== modalId) return;
+    const content = contentRef.current;
+    if (!content) return;
+    const focusable = [...content.querySelectorAll<HTMLElement>(focusableSelector)];
+    if (focusable.length === 0) {
+      e.preventDefault();
+      content.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable.at(-1)!;
+    if (e.shiftKey && (document.activeElement === first || !content.contains(document.activeElement))) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && (document.activeElement === last || !content.contains(document.activeElement))) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, [modalId]);
 
   // Handle overlay click
   const handleOverlayClick = useCallback(
@@ -74,23 +113,24 @@ export function Modal({
   // Add/remove event listeners and body scroll lock
   useEffect(() => {
     if (isOpen) {
+      const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const priorOverflow = document.body.style.overflow;
+      openModalStack.push(modalId);
       document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleTab);
       document.body.style.overflow = 'hidden';
+      contentRef.current?.focus();
 
-      // Focus modal content only on initial open, not on re-renders
-      if (!wasOpen) {
-        contentRef.current?.focus();
-        setWasOpen(true);
-      }
-    } else {
-      setWasOpen(false);
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        document.removeEventListener('keydown', handleTab);
+        const stackIndex = openModalStack.lastIndexOf(modalId);
+        if (stackIndex >= 0) openModalStack.splice(stackIndex, 1);
+        document.body.style.overflow = openModalStack.length > 0 ? 'hidden' : priorOverflow;
+        if (previouslyFocused?.isConnected) previouslyFocused.focus();
+      };
     }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = '';
-    };
-  }, [isOpen, handleEscape, wasOpen]);
+  }, [handleEscape, handleTab, isOpen, modalId]);
 
   if (!isOpen) return null;
 
@@ -101,8 +141,8 @@ export function Modal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? 'modal-title' : undefined}
-      aria-describedby={description ? 'modal-description' : undefined}
+      aria-labelledby={ariaLabelledBy ?? (title ? titleId : undefined)}
+      aria-describedby={ariaDescribedBy ?? (description ? descriptionId : undefined)}
     >
       <div
         ref={contentRef}
@@ -119,12 +159,12 @@ export function Modal({
           <div className="flex items-start justify-between p-4 border-b border-border-primary">
             <div>
               {title && (
-                <h2 id="modal-title" className="text-lg font-semibold text-text-primary">
+                <h2 id={titleId} className="text-lg font-semibold text-text-primary">
                   {title}
                 </h2>
               )}
               {description && (
-                <p id="modal-description" className="text-sm text-text-secondary mt-1">
+                <p id={descriptionId} className="text-sm text-text-secondary mt-1">
                   {description}
                 </p>
               )}

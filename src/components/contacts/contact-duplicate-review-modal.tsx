@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert } from 'lucide-react';
 import {
   useContactDuplicateGroups,
@@ -48,6 +48,19 @@ function createIdempotencyKey() {
 
 function referenceTotal(contact: ContactDuplicatePreview) {
   return Object.values(contact.referenceCounts).reduce((sum, count) => sum + count, 0);
+}
+
+function referenceSummary(contact: ContactDuplicatePreview) {
+  const counts = contact.referenceCounts;
+  return [
+    `Officers ${counts.officerPositions}`,
+    `Shareholders ${counts.shareholdings}`,
+    `Charges ${counts.chargeHoldings}`,
+    `Notes ${counts.noteTabs}`,
+    `Documents ${counts.documentRevisions}`,
+    `Aliases ${counts.aliases}`,
+    `Workflow ${counts.workflowCommunicationLogEntries + counts.workflowMilestones}`,
+  ].join(' · ');
 }
 
 function detailsSummary(contact: ContactDuplicatePreview) {
@@ -100,6 +113,7 @@ function ContactCard({
             <CardDetailItem label="Address" value={contact.fullAddress || 'None'} fullWidth />
             <CardDetailItem label="Contact details" value={detailsSummary(contact)} fullWidth />
             <CardDetailItem label="Companies" value={companySummary(contact)} fullWidth />
+            <CardDetailItem label="Reference context" value={referenceSummary(contact)} fullWidth />
           </CardDetailsGrid>
         }
       />
@@ -115,9 +129,11 @@ function contactFieldValue(contact: ContactDuplicatePreview, field: ContactIdent
 function ReviewGroup({
   group,
   onRefresh,
+  onGroupRemoved,
 }: {
   group: ContactDuplicateGroup;
-  onRefresh: () => void;
+  onRefresh: () => Promise<void>;
+  onGroupRemoved: () => void;
 }) {
   const toast = useToast();
   const merge = useMergeContacts();
@@ -131,7 +147,8 @@ function ReviewGroup({
 
   const master = group.contacts.find((contact) => contact.id === masterId) ?? group.contacts[0];
   const sourceContacts = group.contacts.filter((contact) => contact.id !== master.id);
-  const unresolvedConflicts = group.conflicts.filter((conflict) => fieldDecisions[conflict.field] === undefined);
+  const conflictFields = [...new Set(group.conflicts.map(({ field }) => field))];
+  const unresolvedConflicts = conflictFields.filter((field) => fieldDecisions[field] === undefined);
 
   const expectedUpdatedAt = useMemo(
     () => Object.fromEntries(group.contacts.map((contact) => [contact.id, contact.updatedAt])),
@@ -150,7 +167,14 @@ function ReviewGroup({
   };
 
   const selectConflictValue = (field: ContactIdentityConflict['field'], value: string | null) => {
-    setFieldDecisions((current) => ({ ...current, [field]: value }));
+    setFieldDecisions((current) => {
+      const next = { ...current, [field]: value };
+      if (field === 'identificationNumber') {
+        const selectedContact = group.contacts.find((contact) => contact.identificationNumber === value);
+        next.identificationType = value === null ? null : selectedContact?.identificationType ?? master.identificationType;
+      }
+      return next;
+    });
     resetMergeAttempt();
   };
 
@@ -171,7 +195,7 @@ function ReviewGroup({
       setMergeConfirmationOpen(false);
       setReviewError(null);
       toast.success('Contacts merged successfully');
-      onRefresh();
+      onGroupRemoved();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to merge contacts';
       setReviewError(/stale|changed|no longer current/i.test(message)
@@ -182,26 +206,42 @@ function ReviewGroup({
   };
 
   const handleReject = async (reason?: string) => {
-    const other = sourceContacts[0];
-    if (!reason || !other) return;
-    try {
-      await reject.mutateAsync({
-        leftContactId: master.id,
-        rightContactId: other.id,
-        leftFingerprint: group.fingerprints[master.id],
-        rightFingerprint: group.fingerprints[other.id],
-        reason,
-      });
+    if (!reason) return;
+    const sortedIds = [...group.contactIds].sort();
+    const pairs = sortedIds.flatMap((leftContactId, leftIndex) =>
+      sortedIds.slice(leftIndex + 1).map((rightContactId) => [leftContactId, rightContactId] as const),
+    );
+    const failures: string[] = [];
+    let rejectedCount = 0;
+    for (const [leftContactId, rightContactId] of pairs) {
+      try {
+        await reject.mutateAsync({
+          leftContactId,
+          rightContactId,
+          leftFingerprint: group.fingerprints[leftContactId],
+          rightFingerprint: group.fingerprints[rightContactId],
+          reason,
+          deferInvalidation: true,
+        });
+        rejectedCount += 1;
+      } catch (error) {
+        failures.push(error instanceof Error ? error.message : `Failed to reject ${leftContactId} and ${rightContactId}`);
+      }
+    }
+    if (failures.length === 0) {
       setRejectConfirmationOpen(false);
       setReviewError(null);
       toast.success('Duplicate recommendation rejected');
-      onRefresh();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to reject recommendation';
-      setReviewError(/stale|changed|no longer current/i.test(message)
-        ? 'This recommendation changed. Refresh the recommendations and review again.'
+      onGroupRemoved();
+      void reject.invalidateQueries();
+    } else {
+      const firstFailure = failures[0];
+      const message = `Rejected ${rejectedCount} of ${pairs.length} pairs. ${firstFailure}. Retry to complete the remaining pair rejections.`;
+      setReviewError(/stale|changed|no longer current/i.test(firstFailure)
+        ? `Rejected ${rejectedCount} of ${pairs.length} pairs. This recommendation changed. Refresh the recommendations and review again.`
         : message);
       toast.error(message);
+      throw new Error(message);
     }
   };
 
@@ -251,22 +291,29 @@ function ReviewGroup({
               </div>
             </div>
             <div className="space-y-3">
-              {group.conflicts.map((conflict, index) => {
-                const masterValue = contactFieldValue(master, conflict.field);
-                const alternateValue = sourceContacts.map((contact) => contactFieldValue(contact, conflict.field)).find((value) => value !== masterValue && value != null)
-                  ?? conflict.incomingValue;
-                const selected = fieldDecisions[conflict.field];
+              {conflictFields.map((field) => {
+                const masterValue = contactFieldValue(master, field);
+                const values = [...new Set(group.contacts.map((contact) => contactFieldValue(contact, field)).filter((value): value is string => value != null && value !== ''))];
+                const selected = fieldDecisions[field];
                 return (
-                  <fieldset key={`${conflict.field}-${index}`} className="rounded-lg border border-border-primary bg-background-secondary p-3">
-                    <legend className="px-1 text-sm font-medium capitalize text-text-primary">{fieldLabels[conflict.field]}</legend>
+                  <fieldset key={field} className="rounded-lg border border-border-primary bg-background-secondary p-3">
+                    <legend className="px-1 text-sm font-medium capitalize text-text-primary">{fieldLabels[field]}</legend>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {values.map((value) => (
+                        <label key={value} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 text-sm hover:bg-background-tertiary focus-within:ring-2 focus-within:ring-oak-primary/30">
+                          <input
+                            type="radio"
+                            name={`conflict-${field}`}
+                            checked={selected !== undefined && selected === value}
+                            onChange={() => selectConflictValue(field, value)}
+                            aria-label={value === masterValue ? `Use master ${fieldLabels[field]}` : `Use ${fieldLabels[field]} ${value}`}
+                          />
+                          <span>{value === masterValue ? <strong>Master: </strong> : null}{value}</span>
+                        </label>
+                      ))}
                       <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 text-sm hover:bg-background-tertiary focus-within:ring-2 focus-within:ring-oak-primary/30">
-                        <input type="radio" name={`conflict-${conflict.field}-${index}`} checked={selected !== undefined && selected === masterValue} onChange={() => selectConflictValue(conflict.field, masterValue)} aria-label={`Use master ${fieldLabels[conflict.field]}`} />
-                        <span><strong>Master:</strong> {masterValue || 'Clear value'}</span>
-                      </label>
-                      <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 text-sm hover:bg-background-tertiary focus-within:ring-2 focus-within:ring-oak-primary/30">
-                        <input type="radio" name={`conflict-${conflict.field}-${index}`} checked={selected !== undefined && selected === alternateValue} onChange={() => selectConflictValue(conflict.field, alternateValue)} aria-label={`Use duplicate ${fieldLabels[conflict.field]}`} />
-                        <span><strong>Duplicate:</strong> {alternateValue || 'Clear value'}</span>
+                        <input type="radio" name={`conflict-${field}`} checked={selected === null} onChange={() => selectConflictValue(field, null)} aria-label={`Clear ${fieldLabels[field]}`} />
+                        <span>Clear value</span>
                       </label>
                     </div>
                   </fieldset>
@@ -282,8 +329,8 @@ function ReviewGroup({
       </div>
 
       <ModalFooter className="-mx-4 -mb-4 mt-4 px-4">
-        <Button variant="secondary" onClick={() => setRejectConfirmationOpen(true)}>Reject recommendation</Button>
-        <Button disabled={unresolvedConflicts.length > 0} isLoading={merge.isPending} onClick={() => setMergeConfirmationOpen(true)}>Merge contacts</Button>
+        <Button className="min-h-11 sm:min-h-8" variant="secondary" onClick={() => setRejectConfirmationOpen(true)}>Reject recommendation</Button>
+        <Button className="min-h-11 sm:min-h-8" disabled={unresolvedConflicts.length > 0} isLoading={merge.isPending} onClick={() => setMergeConfirmationOpen(true)}>Merge contacts</Button>
       </ModalFooter>
 
       <ConfirmDialog
@@ -301,8 +348,8 @@ function ReviewGroup({
         onClose={() => setRejectConfirmationOpen(false)}
         onConfirm={handleReject}
         title="Reject duplicate recommendation"
-        description="The contacts will remain separate and this recommendation will be dismissed."
-        confirmLabel="Reject"
+        description="Every unique pair in this group will be rejected separately. Successful pair rejections remain saved if another pair fails."
+        confirmLabel="Reject all pairs"
         variant="danger"
         requireReason
         reasonLabel="Rejection reason"
@@ -317,10 +364,23 @@ function ReviewGroup({
 export function ContactDuplicateReviewModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [page, setPage] = useState(1);
   const query = useContactDuplicateGroups(page, 1, open);
-  const group = query.data?.groups[0];
+  const group = query.error ? undefined : query.data?.groups[0];
 
-  const refresh = () => {
-    void query.refetch();
+  useEffect(() => {
+    const totalPages = query.data?.totalPages;
+    if (totalPages === undefined) return;
+    setPage((current) => Math.min(current, Math.max(1, totalPages)));
+  }, [query.data?.totalPages]);
+
+  const refresh = async () => {
+    const result = await query.refetch();
+    const totalPages = result.data?.totalPages;
+    if (totalPages !== undefined) setPage((current) => Math.min(current, Math.max(1, totalPages)));
+  };
+
+  const handleGroupRemoved = () => {
+    const remainingPages = Math.max(0, (query.data?.totalPages ?? 1) - 1);
+    setPage((current) => Math.min(current, Math.max(1, remainingPages)));
   };
 
   return (
@@ -329,7 +389,8 @@ export function ContactDuplicateReviewModal({ open, onClose }: { open: boolean; 
         {query.isLoading ? <p className="py-8 text-center text-sm text-text-secondary">Loading duplicate recommendations...</p> : null}
         {query.error ? (
           <div role="alert" className="rounded-lg border border-status-error bg-status-error/5 p-3 text-sm text-status-error">
-            {query.error instanceof Error ? query.error.message : 'Failed to load duplicate recommendations'}
+            <p>{query.error instanceof Error ? query.error.message : 'Failed to load duplicate recommendations'}</p>
+            <Button className="mt-2 min-h-11 sm:min-h-7" size="xs" variant="secondary" leftIcon={<RefreshCw />} onClick={() => void refresh()}>Retry loading recommendations</Button>
           </div>
         ) : null}
         {!query.isLoading && !query.error && !group ? (
@@ -344,14 +405,15 @@ export function ContactDuplicateReviewModal({ open, onClose }: { open: boolean; 
             key={`${group.contactIds.join(':')}:${Object.values(group.fingerprints).join(':')}`}
             group={group}
             onRefresh={refresh}
+            onGroupRemoved={handleGroupRemoved}
           />
         ) : null}
 
-        {(query.data?.totalPages ?? 0) > 1 ? (
+        {!query.error && (query.data?.totalPages ?? 0) > 1 ? (
           <div className="mt-4 flex items-center justify-between border-t border-border-primary pt-4 text-sm text-text-secondary">
-            <Button variant="secondary" size="xs" disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous group</Button>
+            <Button className="min-h-11 sm:min-h-7" variant="secondary" size="xs" disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous group</Button>
             <span>Page {page} of {query.data?.totalPages}</span>
-            <Button variant="secondary" size="xs" disabled={page === query.data?.totalPages} onClick={() => setPage((value) => value + 1)}>Next group</Button>
+            <Button className="min-h-11 sm:min-h-7" variant="secondary" size="xs" disabled={page === query.data?.totalPages} onClick={() => setPage((value) => value + 1)}>Next group</Button>
           </div>
         ) : null}
       </ModalBody>

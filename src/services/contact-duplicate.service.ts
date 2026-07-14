@@ -57,6 +57,8 @@ type DiscoveryContact = {
     workflow_communication_log_entries: number;
     workflow_milestones: number;
   };
+  documentReferenceCount?: number;
+  aliasReferenceCount?: number;
 };
 
 type CandidatePair = {
@@ -92,6 +94,8 @@ export interface ContactDuplicatePreview {
     noteTabs: number;
     workflowCommunicationLogEntries: number;
     workflowMilestones: number;
+    documentRevisions: number;
+    aliases: number;
   };
   createdAt: string;
   updatedAt: string;
@@ -195,6 +199,8 @@ function preview(contact: DiscoveryContact): ContactDuplicatePreview {
       noteTabs: contact._count.noteTabs,
       workflowCommunicationLogEntries: contact._count.workflow_communication_log_entries,
       workflowMilestones: contact._count.workflow_milestones,
+      documentRevisions: contact.documentReferenceCount ?? 0,
+      aliases: contact.aliasReferenceCount ?? 0,
     },
     createdAt: contact.createdAt.toISOString(),
     updatedAt: contact.updatedAt.toISOString(),
@@ -527,12 +533,51 @@ export async function listContactDuplicateGroups({
     return { groups: [], total: 0, page, limit, totalPages: 0 };
   }
 
-  const contacts = await prisma.contact.findMany({
+  const selectedContacts = await prisma.contact.findMany({
     where: { ...activeScope, OR: candidateFilters },
     select: contactSelection,
     orderBy: { id: 'asc' },
     take: MAX_DISCOVERY_CONTACTS,
   }) as DiscoveryContact[];
+  const selectedContactIds = selectedContacts.map(({ id }) => id);
+  const [documentReferences, vendorAliases, customerAliases] = await Promise.all([
+    prisma.documentRevision.findMany({
+      where: {
+        processingDocument: { tenantId },
+        OR: [
+          { vendorId: { in: selectedContactIds } },
+          { customerId: { in: selectedContactIds } },
+        ],
+      },
+      select: { id: true, vendorId: true, customerId: true },
+    }),
+    prisma.vendorAlias.findMany({
+      where: { tenantId, deletedAt: null, normalizedContactId: { in: selectedContactIds } },
+      select: { id: true, normalizedContactId: true },
+    }),
+    prisma.customerAlias.findMany({
+      where: { tenantId, deletedAt: null, normalizedContactId: { in: selectedContactIds } },
+      select: { id: true, normalizedContactId: true },
+    }),
+  ]);
+  const documentIdsByContact = new Map<string, Set<string>>();
+  for (const revision of documentReferences) {
+    for (const contactId of [revision.vendorId, revision.customerId]) {
+      if (!contactId) continue;
+      const ids = documentIdsByContact.get(contactId) ?? new Set<string>();
+      ids.add(revision.id);
+      documentIdsByContact.set(contactId, ids);
+    }
+  }
+  const aliasCounts = new Map<string, number>();
+  for (const alias of [...vendorAliases, ...customerAliases]) {
+    aliasCounts.set(alias.normalizedContactId, (aliasCounts.get(alias.normalizedContactId) ?? 0) + 1);
+  }
+  const contacts = selectedContacts.map((contact) => ({
+    ...contact,
+    documentReferenceCount: documentIdsByContact.get(contact.id)?.size ?? 0,
+    aliasReferenceCount: aliasCounts.get(contact.id) ?? 0,
+  }));
   const records = new Map(contacts.map((contact) => [contact.id, toIdentityRecord(contact)]));
   const pairs = new Map<string, CandidatePair>();
 

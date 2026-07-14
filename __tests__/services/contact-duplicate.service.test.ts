@@ -11,6 +11,9 @@ const mocks = vi.hoisted(() => ({
   txFindMany: vi.fn(),
   txDecisionUpsert: vi.fn(),
   createAuditLog: vi.fn(),
+  documentFindMany: vi.fn(),
+  vendorAliasFindMany: vi.fn(),
+  customerAliasFindMany: vi.fn(),
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -22,6 +25,9 @@ vi.mock('@/lib/prisma', () => ({
     },
     $queryRaw: mocks.queryRaw,
     $transaction: mocks.transaction,
+    documentRevision: { findMany: mocks.documentFindMany },
+    vendorAlias: { findMany: mocks.vendorAliasFindMany },
+    customerAlias: { findMany: mocks.customerAliasFindMany },
   },
 }));
 
@@ -99,6 +105,9 @@ describe('contact duplicate service', () => {
     mocks.txFindMany.mockResolvedValue([]);
     mocks.txDecisionUpsert.mockResolvedValue({ id: 'decision-1' });
     mocks.createAuditLog.mockResolvedValue({ id: 'audit-1' });
+    mocks.documentFindMany.mockResolvedValue([]);
+    mocks.vendorAliasFindMany.mockResolvedValue([]);
+    mocks.customerAliasFindMany.mockResolvedValue([]);
     mocks.transaction.mockImplementation(async (callback: (tx: unknown) => unknown) => callback({
       $queryRaw: mocks.txQueryRaw,
       contact: { findMany: mocks.txFindMany },
@@ -132,6 +141,34 @@ describe('contact duplicate service', () => {
     expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ tenantId: 'tenant-1', deletedAt: null, isActive: true }),
       take: expect.any(Number),
+    }));
+  });
+
+  it('includes tenant-scoped document and alias reference counts in previews', async () => {
+    exactGroups(['alpha']);
+    mocks.findMany.mockResolvedValue([
+      duplicateContact('c1', 'alpha', { canonicalName: 'alpha' }),
+      duplicateContact('c2', 'alpha', { canonicalName: 'alpha' }),
+    ]);
+    mocks.documentFindMany.mockResolvedValue([
+      { id: 'revision-1', vendorId: 'c1', customerId: null },
+      { id: 'revision-2', vendorId: null, customerId: 'c1' },
+    ]);
+    mocks.vendorAliasFindMany.mockResolvedValue([{ id: 'vendor-alias-1', normalizedContactId: 'c1' }]);
+    mocks.customerAliasFindMany.mockResolvedValue([{ id: 'customer-alias-1', normalizedContactId: 'c1' }]);
+
+    const result = await listContactDuplicateGroups({ tenantId: 'tenant-1', page: 1, limit: 20 });
+    const preview = result.groups[0].contacts.find(({ id }) => id === 'c1');
+
+    expect(preview?.referenceCounts).toMatchObject({ documentRevisions: 2, aliases: 2 });
+    expect(mocks.documentFindMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        processingDocument: { tenantId: 'tenant-1' },
+        OR: [{ vendorId: { in: ['c1', 'c2'] } }, { customerId: { in: ['c1', 'c2'] } }],
+      }),
+    }));
+    expect(mocks.vendorAliasFindMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { tenantId: 'tenant-1', deletedAt: null, normalizedContactId: { in: ['c1', 'c2'] } },
     }));
   });
 
