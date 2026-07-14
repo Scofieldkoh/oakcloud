@@ -1,6 +1,11 @@
 import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import {
+  acquireContactMergeBackupBarrier,
+  CONTACT_MERGE_BACKUP_BARRIER_TIMEOUT_MS,
+  readDatabaseClock,
+} from '@/lib/contact-merge-backup-barrier';
+import {
   buildContactIdentityFingerprint,
   canonicalizeContactAlias,
   canonicalizeContactName,
@@ -377,6 +382,8 @@ export async function mergeContacts(
 
   try {
     return await prisma.$transaction(async tx => {
+    await acquireContactMergeBackupBarrier(tx, params.tenantId);
+    const approvedAt = await readDatabaseClock(tx);
     const alreadyStarted = await tx.contactMergeOperation.findUnique({
       where: { tenantId_idempotencyKey: { tenantId: params.tenantId, idempotencyKey: input.idempotencyKey } },
     });
@@ -467,6 +474,7 @@ export async function mergeContacts(
       movedRecordCounts: movedCounts as Prisma.InputJsonValue,
       matchingReasons: matchingReasons as Prisma.InputJsonValue,
       approvedById: params.userId,
+      approvedAt,
     } });
     await tx.auditLog.create({ data: {
       tenantId: params.tenantId, userId: params.userId, action: 'MERGE',
@@ -476,7 +484,10 @@ export async function mergeContacts(
     } });
     await tx.contact.deleteMany({ where: { id: { in: sourceIds }, tenantId: params.tenantId } });
     return { ledgerId: ledger.id, survivingContactId: master.id, movedCounts, alreadyCompleted: false };
-    }, { isolationLevel: 'Serializable' });
+    }, {
+      isolationLevel: 'Serializable',
+      timeout: CONTACT_MERGE_BACKUP_BARRIER_TIMEOUT_MS,
+    });
   } catch (error) {
     const serializationFailure = typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2034';
     if (serializationFailure || error instanceof ContactMergeConflictError) {

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  transaction: vi.fn(), ledgerFind: vi.fn(), lock: vi.fn(), contactFind: vi.fn(),
+  transaction: vi.fn(), ledgerFind: vi.fn(), barrier: vi.fn(), lock: vi.fn(), databaseClock: vi.fn(), contactFind: vi.fn(),
   contactUpdate: vi.fn(), contactUpdateMany: vi.fn(), contactDelete: vi.fn(), ledgerCreate: vi.fn(), auditCreate: vi.fn(),
   companyContactFind: vi.fn(), companyContactUpdate: vi.fn(), companyContactDelete: vi.fn(),
   detailFind: vi.fn(), detailUpdate: vi.fn(), detailDelete: vi.fn(),
@@ -20,7 +20,10 @@ function delegate(name: string) {
 }
 
 const tx = {
-  $queryRaw: mocks.lock,
+  $executeRaw: mocks.barrier,
+  $queryRaw: vi.fn((query: { sql: string }) => query.sql.includes('clock_timestamp')
+    ? mocks.databaseClock(query)
+    : mocks.lock(query)),
   contact: { findMany: mocks.contactFind, update: mocks.contactUpdate, updateMany: mocks.contactUpdateMany, deleteMany: mocks.contactDelete },
   contactMergeOperation: { findUnique: mocks.ledgerFind, create: mocks.ledgerCreate },
   auditLog: { create: mocks.auditCreate },
@@ -59,6 +62,8 @@ describe('contact merge service', () => {
     tx.documentRevision.count.mockResolvedValue(0);
     mocks.transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => callback(tx));
     mocks.ledgerFind.mockResolvedValue(null);
+    mocks.barrier.mockResolvedValue(0);
+    mocks.databaseClock.mockResolvedValue([{ cutoff: new Date('2026-07-14T01:01:00.000Z') }]);
     mocks.lock.mockResolvedValue(contacts.map(({ id, updatedAt }) => ({ id, updatedAt })));
     mocks.contactFind.mockResolvedValue(contacts);
     mocks.contactUpdate.mockResolvedValue(contacts[0]);
@@ -91,6 +96,15 @@ describe('contact merge service', () => {
     const result = await mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' });
 
     expect(result).toMatchObject({ ledgerId: 'ledger-1', survivingContactId: 'master', alreadyCompleted: false });
+    const barrier = mocks.barrier.mock.calls[0][0] as { sql: string; values: unknown[] };
+    expect(barrier.sql).toMatch(/pg_advisory_xact_lock/);
+    expect(barrier.values).toEqual(['contact-merge-backup:tenant-1']);
+    expect(mocks.barrier.mock.invocationCallOrder[0]).toBeLessThan(mocks.ledgerFind.mock.invocationCallOrder[1]);
+    expect(mocks.barrier.mock.invocationCallOrder[0]).toBeLessThan(mocks.lock.mock.invocationCallOrder[0]);
+    expect(mocks.transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: 'Serializable',
+      timeout: 300_000,
+    });
     const lock = mocks.lock.mock.calls[0][0] as { sql: string; values: unknown[] };
     expect(lock.sql).toMatch(/ORDER BY "id" FOR UPDATE/);
     expect(lock.values.indexOf('master')).toBeLessThan(lock.values.indexOf('source-1'));
@@ -109,7 +123,7 @@ describe('contact merge service', () => {
     expect(mocks.vendorAliasDelete).toHaveBeenCalledWith({ where: { id: { in: ['va-master'] } } });
     for (const count of mocks.counts.values()) expect(count).toHaveBeenCalled();
     expect(tx.documentRevision.count).toHaveBeenCalledTimes(2);
-    expect(mocks.ledgerCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ tenantId: 'tenant-1', masterContactId: 'master', sourceContactIds: ['source-1', 'source-2'] }) }));
+    expect(mocks.ledgerCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ tenantId: 'tenant-1', masterContactId: 'master', sourceContactIds: ['source-1', 'source-2'], approvedAt: new Date('2026-07-14T01:01:00.000Z') }) }));
     expect(mocks.auditCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: 'MERGE', entityId: 'ledger-1' }) }));
     expect(mocks.contactDelete).toHaveBeenCalledWith({ where: { id: { in: ['source-1', 'source-2'] }, tenantId: 'tenant-1' } });
     expect(mocks.ledgerCreate.mock.invocationCallOrder[0]).toBeLessThan(mocks.contactDelete.mock.invocationCallOrder[0]);

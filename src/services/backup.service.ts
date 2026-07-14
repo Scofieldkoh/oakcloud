@@ -15,6 +15,11 @@ import { createLogger } from '@/lib/logger';
 import { getNextCronOccurrence } from '@/lib/cron-utils';
 import { Prisma } from '@/generated/prisma';
 import type { BackupStatus } from '@/generated/prisma';
+import {
+  acquireContactMergeBackupBarrier,
+  CONTACT_MERGE_BACKUP_BARRIER_TIMEOUT_MS,
+  readDatabaseClock,
+} from '@/lib/contact-merge-backup-barrier';
 
 const log = createLogger('backup-service');
 
@@ -245,12 +250,15 @@ export class BackupService {
     return this.dynamicTenantScopedModelDelegatesPromise;
   }
 
-  private async exportDynamicTenantModelData(tenantId: string): Promise<Record<string, unknown>> {
+  private async exportDynamicTenantModelData(
+    tenantId: string,
+    db: Prisma.TransactionClient,
+  ): Promise<Record<string, unknown>> {
     const delegates = await this.getDynamicTenantScopedModelDelegates();
     const data: Record<string, unknown> = {};
 
     for (const delegateName of delegates) {
-      const delegate = (prisma as unknown as Record<string, { findMany?: (args: unknown) => Promise<unknown[]> }>)[
+      const delegate = (db as unknown as Record<string, { findMany?: (args: unknown) => Promise<unknown[]> }>)[
         delegateName
       ];
 
@@ -460,12 +468,12 @@ export class BackupService {
 
       // 1. Export database data and compress (30% of progress)
       await this.updateBackupProgress(backupId, 'IN_PROGRESS', 5, 'Exporting database...');
-      const [databaseClock] = await prisma.$queryRaw<Array<{ cutoff: Date }>>(
-        Prisma.sql`SELECT clock_timestamp() AS cutoff`,
-      );
-      if (!databaseClock?.cutoff) throw new Error('Unable to capture database snapshot cutoff');
-      const snapshotCutoff = databaseClock.cutoff.toISOString();
-      const { data, stats } = await this.exportTenantData(tenantId, options);
+      const { snapshotCutoff, data, stats } = await prisma.$transaction(async (tx) => {
+        await acquireContactMergeBackupBarrier(tx, tenantId);
+        const cutoff = await readDatabaseClock(tx);
+        const exported = await this.exportTenantData(tenantId, options, tx);
+        return { snapshotCutoff: cutoff.toISOString(), ...exported };
+      }, { timeout: CONTACT_MERGE_BACKUP_BARRIER_TIMEOUT_MS });
       const dataJson = JSON.stringify(data); // No pretty-print to save space
       const dataBuffer = Buffer.from(dataJson, 'utf-8');
       const dataChecksum = hashBlake3(dataBuffer);
@@ -571,7 +579,8 @@ export class BackupService {
    */
   private async exportTenantData(
     tenantId: string,
-    options: BackupOptions
+    options: BackupOptions,
+    db: Prisma.TransactionClient,
   ): Promise<{ data: Record<string, unknown>; stats: Record<string, number> }> {
     log.debug(`Exporting data for tenant ${tenantId}`);
 
@@ -626,25 +635,25 @@ export class BackupService {
       chartOfAccounts,
       chartOfAccountsMappings,
     ] = await Promise.all([
-      prisma.workspace.findUnique({ where: { id: tenantId } }),
-      prisma.user.findMany({ where: { tenantId } }),
-      prisma.role.findMany({ where: { tenantId } }),
-      prisma.rolePermission.findMany({ where: { role: { tenantId } } }),
-      prisma.userRoleAssignment.findMany({ where: { user: { tenantId } } }),
-      prisma.userPreference.findMany({ where: { user: { tenantId } } }),
-      prisma.userCompanyAssignment.findMany({ where: { user: { tenantId } } }),
-      prisma.company.findMany({ where: { tenantId } }),
-      prisma.companyAddress.findMany({ where: { company: { tenantId } } }),
-      prisma.companyFormerName.findMany({ where: { company: { tenantId } } }),
-      prisma.companyOfficer.findMany({ where: { company: { tenantId } } }),
-      prisma.companyShareholder.findMany({ where: { company: { tenantId } } }),
-      prisma.companyCharge.findMany({ where: { company: { tenantId } } }),
-      prisma.shareCapital.findMany({ where: { company: { tenantId } } }),
-      prisma.companyContact.findMany({ where: { company: { tenantId } } }),
-      prisma.contact.findMany({ where: { tenantId } }),
-      prisma.document.findMany({ where: { tenantId } }),
-      prisma.processingDocument.findMany({ where: { tenantId } }),
-      prisma.documentLink.findMany({
+      db.workspace.findUnique({ where: { id: tenantId } }),
+      db.user.findMany({ where: { tenantId } }),
+      db.role.findMany({ where: { tenantId } }),
+      db.rolePermission.findMany({ where: { role: { tenantId } } }),
+      db.userRoleAssignment.findMany({ where: { user: { tenantId } } }),
+      db.userPreference.findMany({ where: { user: { tenantId } } }),
+      db.userCompanyAssignment.findMany({ where: { user: { tenantId } } }),
+      db.company.findMany({ where: { tenantId } }),
+      db.companyAddress.findMany({ where: { company: { tenantId } } }),
+      db.companyFormerName.findMany({ where: { company: { tenantId } } }),
+      db.companyOfficer.findMany({ where: { company: { tenantId } } }),
+      db.companyShareholder.findMany({ where: { company: { tenantId } } }),
+      db.companyCharge.findMany({ where: { company: { tenantId } } }),
+      db.shareCapital.findMany({ where: { company: { tenantId } } }),
+      db.companyContact.findMany({ where: { company: { tenantId } } }),
+      db.contact.findMany({ where: { tenantId } }),
+      db.document.findMany({ where: { tenantId } }),
+      db.processingDocument.findMany({ where: { tenantId } }),
+      db.documentLink.findMany({
         where: {
           OR: [
             { sourceDocument: { document: { tenantId } } },
@@ -652,61 +661,61 @@ export class BackupService {
           ],
         },
       }),
-      prisma.documentTag.findMany({ where: { tenantId } }),
-      prisma.processingDocumentTag.findMany({
+      db.documentTag.findMany({ where: { tenantId } }),
+      db.processingDocumentTag.findMany({
         where: { processingDocument: { document: { tenantId } } },
       }),
-      prisma.documentPage.findMany({ where: { processingDocument: { document: { tenantId } } } }),
-      prisma.documentRevision.findMany({ where: { processingDocument: { document: { tenantId } } } }),
-      prisma.documentRevisionLineItem.findMany({
+      db.documentPage.findMany({ where: { processingDocument: { document: { tenantId } } } }),
+      db.documentRevision.findMany({ where: { processingDocument: { document: { tenantId } } } }),
+      db.documentRevisionLineItem.findMany({
         where: { revision: { processingDocument: { document: { tenantId } } } },
       }),
-      prisma.documentExtraction.findMany({ where: { processingDocument: { document: { tenantId } } } }),
-      prisma.duplicateDecision.findMany({
+      db.documentExtraction.findMany({ where: { processingDocument: { document: { tenantId } } } }),
+      db.duplicateDecision.findMany({
         where: { processingDocument: { document: { tenantId } } },
       }),
-      prisma.processingAttempt.findMany({
+      db.processingAttempt.findMany({
         where: { processingDocument: { document: { tenantId } } },
       }),
-      prisma.processingCheckpoint.findMany({
+      db.processingCheckpoint.findMany({
         where: { processingDocument: { document: { tenantId } } },
       }),
-      prisma.documentTemplate.findMany({ where: { tenantId } }),
-      prisma.generatedDocument.findMany({ where: { tenantId } }),
-      prisma.documentSection.findMany({ where: { document: { tenantId } } }),
-      prisma.documentComment.findMany({ where: { document: { tenantId } } }),
-      prisma.documentDraft.findMany({ where: { document: { tenantId } } }),
-      prisma.templatePartial.findMany({ where: { tenantId } }),
-      prisma.workspaceLetterhead.findUnique({ where: { tenantId } }),
-      prisma.connector.findMany({ where: { workspaceId: tenantId } }),
-      prisma.workspaceConnectorAccess.findMany({ where: { workspaceId: tenantId } }),
-      prisma.connectorUsageLog.findMany({ where: { workspaceId: tenantId } }),
-      prisma.noteTab.findMany({
+      db.documentTemplate.findMany({ where: { tenantId } }),
+      db.generatedDocument.findMany({ where: { tenantId } }),
+      db.documentSection.findMany({ where: { document: { tenantId } } }),
+      db.documentComment.findMany({ where: { document: { tenantId } } }),
+      db.documentDraft.findMany({ where: { document: { tenantId } } }),
+      db.templatePartial.findMany({ where: { tenantId } }),
+      db.workspaceLetterhead.findUnique({ where: { tenantId } }),
+      db.connector.findMany({ where: { workspaceId: tenantId } }),
+      db.workspaceConnectorAccess.findMany({ where: { workspaceId: tenantId } }),
+      db.connectorUsageLog.findMany({ where: { workspaceId: tenantId } }),
+      db.noteTab.findMany({
         where: { OR: [{ company: { tenantId } }, { contact: { tenantId } }] },
       }),
-      prisma.fieldMapping.findMany({ where: { integration: { tenantId } } }),
-      prisma.bankAccount.findMany({ where: { tenantId } }),
-      prisma.bankTransaction.findMany({ where: { tenantId } }),
-      prisma.matchGroup.findMany({ where: { tenantId } }),
-      prisma.matchGroupItem.findMany({ where: { matchGroup: { tenantId } } }),
-      prisma.reconciliationPeriod.findMany({ where: { tenantId } }),
-      prisma.aiConversation.findMany({ where: { tenantId } }),
-      prisma.chartOfAccount.findMany({
+      db.fieldMapping.findMany({ where: { integration: { tenantId } } }),
+      db.bankAccount.findMany({ where: { tenantId } }),
+      db.bankTransaction.findMany({ where: { tenantId } }),
+      db.matchGroup.findMany({ where: { tenantId } }),
+      db.matchGroupItem.findMany({ where: { matchGroup: { tenantId } } }),
+      db.reconciliationPeriod.findMany({ where: { tenantId } }),
+      db.aiConversation.findMany({ where: { tenantId } }),
+      db.chartOfAccount.findMany({
         where: {
           OR: [{ tenantId }, { company: { tenantId } }],
         },
       }),
-      prisma.chartOfAccountsMapping.findMany({
+      db.chartOfAccountsMapping.findMany({
         where: { company: { tenantId } },
       }),
     ]);
 
-    const dynamicData = await this.exportDynamicTenantModelData(tenantId);
+    const dynamicData = await this.exportDynamicTenantModelData(tenantId, db);
 
     // Optionally include audit logs
     let auditLogs: unknown[] = [];
     if (options.includeAuditLogs !== false) {
-      auditLogs = await prisma.auditLog.findMany({ where: { tenantId } });
+      auditLogs = await db.auditLog.findMany({ where: { tenantId } });
     }
 
     const data: Record<string, unknown> = {
