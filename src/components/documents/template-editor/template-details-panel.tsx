@@ -106,7 +106,11 @@ export function TemplateDetailsPanel({ mode, templateForm, partialForm, onTempla
     onTemplateChange({ layout: { ...templateForm.layout, marginsMm: { ...templateForm.layout.marginsMm, [side]: value } } });
   };
 
-  if (mode === 'partial' && partialForm && onPartialChange) {
+  if (mode === 'partial') {
+    if (!partialForm || !onPartialChange) {
+      return <div role="alert" className="m-4 rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs text-text-secondary">Partial details are unavailable.</div>;
+    }
+
     return <div className="space-y-4 p-4"><WorkspaceContext isSuperAdmin={isSuperAdmin} activeTenantId={activeTenantId} tenantName={tenantName} /><label className="block text-xs font-medium text-text-secondary">Name<input aria-label="Name" value={partialForm.displayName} onChange={(event) => onPartialChange({ displayName: event.target.value })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 text-xs text-text-primary" /></label><label className="block text-xs font-medium text-text-secondary">Identifier<input aria-label="Identifier" value={partialForm.name} onChange={(event) => onPartialChange({ name: event.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '') })} className="mt-1 h-8 w-full rounded-md border border-border-primary bg-background-primary px-2 font-mono text-xs text-text-primary" /></label><label className="block text-xs font-medium text-text-secondary">Description<textarea aria-label="Description" value={partialForm.description} onChange={(event) => onPartialChange({ description: event.target.value })} rows={3} className="mt-1 w-full rounded-md border border-border-primary bg-background-primary px-2 py-2 text-xs text-text-primary" /></label><p className="rounded-md bg-status-info/10 p-3 text-xs text-text-secondary">Partials are reusable content blocks. Insert them into templates with <code>{'{{> identifier }}'}</code>.</p></div>;
   }
 

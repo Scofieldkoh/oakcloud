@@ -1,8 +1,12 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TemplateEditorPanel } from '@/components/documents/template-editor/template-editor-panel';
 import { DEFAULT_A4_DOCUMENT_LAYOUT } from '@/components/documents/a4-pagination/layout';
+import {
+  DOCUMENT_FONT_OPTIONS,
+  DOCUMENT_FONT_SIZE_OPTIONS,
+} from '@/components/documents/document-typography';
 
 const templateForm = {
   name: 'Board resolution',
@@ -56,19 +60,56 @@ describe('TemplateEditorPanel', () => {
     const onTemplateChange = vi.fn();
     render(<TemplateEditorPanel {...defaultProps} onTemplateChange={onTemplateChange} />);
 
-    fireEvent.change(screen.getByLabelText('Global font'), {
+    const globalFont = screen.getByLabelText('Global font');
+    const fontSize = screen.getByLabelText('Font size');
+    expect(within(globalFont).getAllByRole('option')).toHaveLength(DOCUMENT_FONT_OPTIONS.length);
+    expect(within(fontSize).getAllByRole('option')).toHaveLength(DOCUMENT_FONT_SIZE_OPTIONS.length);
+    for (const option of DOCUMENT_FONT_OPTIONS) {
+      expect(within(globalFont).getByRole('option', { name: option.label })).toHaveValue(option.value);
+    }
+    for (const size of DOCUMENT_FONT_SIZE_OPTIONS) {
+      expect(within(fontSize).getByRole('option', { name: size.replace('pt', '') })).toHaveValue(size);
+    }
+
+    fireEvent.change(globalFont, {
       target: { value: 'Georgia, serif' },
     });
     expect(onTemplateChange).toHaveBeenLastCalledWith({
       layout: { ...DEFAULT_A4_DOCUMENT_LAYOUT, fontFamily: 'Georgia, serif' },
     });
 
-    fireEvent.change(screen.getByLabelText('Font size'), {
+    fireEvent.change(fontSize, {
       target: { value: '14pt' },
     });
     expect(onTemplateChange).toHaveBeenLastCalledWith({
       layout: { ...DEFAULT_A4_DOCUMENT_LAYOUT, fontSize: '14pt' },
     });
+  });
+
+  it('never renders template typography controls in partial mode', () => {
+    const partialForm = {
+      name: 'director-details',
+      displayName: 'Director details',
+      description: '',
+      content: '<p>Director</p>',
+    };
+    const { rerender } = render(
+      <TemplateEditorPanel
+        {...defaultProps}
+        mode="partial"
+        partialForm={partialForm}
+        onPartialChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText('Global font')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Font size')).not.toBeInTheDocument();
+
+    rerender(<TemplateEditorPanel {...defaultProps} mode="partial" />);
+
+    expect(screen.queryByLabelText('Global font')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Font size')).not.toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Partial details are unavailable.');
   });
 
   it('shows an inline error for an out-of-range margin without overwriting the draft', () => {

@@ -1,50 +1,35 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { TemplateEditorPanel } from '@/components/documents/template-editor/template-editor-panel';
-import { DEFAULT_A4_DOCUMENT_LAYOUT } from '@/components/documents/a4-pagination/layout';
+import {
+  DEFAULT_A4_DOCUMENT_LAYOUT,
+  type A4DocumentLayout,
+} from '@/components/documents/a4-pagination/layout';
+import { commitTemplateFormChange } from '@/components/documents/template-editor/template-editor-state';
 
 describe('template editor page panel integration', () => {
-  it('marks a layout change as unsaved in the extracted panel', () => {
-    function TestHarness() {
-      const [templateForm, setTemplateForm] = useState({
-        name: 'Board resolution',
-        description: '',
-        category: 'RESOLUTION',
-        content: '<p>Body</p>',
-        isActive: true,
-        layout: DEFAULT_A4_DOCUMENT_LAYOUT,
-      });
-      const [isDirty, setIsDirty] = useState(false);
+  it('applies a panel layout change to production form state and marks it dirty', () => {
+    type Form = {
+      name: string;
+      layout: A4DocumentLayout;
+    };
+    let formData: Form = {
+      name: 'Board resolution',
+      layout: DEFAULT_A4_DOCUMENT_LAYOUT,
+    };
+    let isDirty = false;
 
-      return (
-        <TemplateEditorPanel
-          mode="template"
-          templateForm={templateForm}
-          onTemplateChange={(changes) => {
-            setTemplateForm((current) => ({ ...current, ...changes }));
-            setIsDirty(true);
-          }}
-          fieldsContent={<div>Fields</div>}
-          testPreviewContent={<div>Test data</div>}
-          validationIssues={[]}
-          onFocusIssue={vi.fn()}
-          isDirty={isDirty}
-        />
-      );
-    }
-
-    render(
-      <TestHarness />,
+    commitTemplateFormChange<Form>(
+      (update) => { formData = update(formData); },
+      (nextIsDirty) => { isDirty = nextIsDirty; },
+      {
+        layout: {
+          ...DEFAULT_A4_DOCUMENT_LAYOUT,
+          fontFamily: 'Georgia, serif',
+        },
+      },
     );
 
-    expect(screen.queryByText('Unsaved changes')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Global font'), {
-      target: { value: 'Georgia, serif' },
-    });
-    expect(screen.getByText('Unsaved changes')).toBeVisible();
-    fireEvent.click(screen.getByRole('tab', { name: 'Test & Preview' }));
-    expect(screen.getByText('Test data')).toBeVisible();
+    expect(formData.layout.fontFamily).toBe('Georgia, serif');
+    expect(isDirty).toBe(true);
   });
 });

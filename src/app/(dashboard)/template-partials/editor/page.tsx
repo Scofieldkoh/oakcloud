@@ -12,6 +12,7 @@ import { AISidebar, useAISidebar, type DocumentCategory } from '@/components/doc
 import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
 import { PlaceholderPanel } from '@/components/documents/template-editor/placeholder-panel';
 import { TemplateEditorPanel } from '@/components/documents/template-editor/template-editor-panel';
+import { commitTemplateFormChange } from '@/components/documents/template-editor/template-editor-state';
 import { insertTemplateSnippet } from '@/components/documents/template-editor/template-insertion';
 import type { TemplateEditorPartialForm, TemplateEditorTemplateForm } from '@/components/documents/template-editor/template-details-panel';
 import { validateTemplateSyntax } from '@/components/documents/template-editor/template-validation';
@@ -1307,8 +1308,7 @@ function TemplateEditorContent() {
 
   // Handle form change (template)
   const handleFormChange = useCallback((changes: Partial<TemplateFormData>) => {
-    setFormData((prev) => ({ ...prev, ...changes }));
-    setIsDirty(true);
+    commitTemplateFormChange(setFormData, setIsDirty, changes);
   }, []);
 
   // Handle form change (partial)
