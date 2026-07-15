@@ -137,8 +137,9 @@ describe('A4PageEditor real layout pagination', () => {
   it('reflows after typography changes without losing document text', async () => {
     const editorRef = createRef<A4PageEditorRef>();
     const paragraphs = Array.from(
-      { length: 90 },
-      (_, index) => `<p>Typography line ${index + 1}: pagination content.</p>`,
+      { length: 48 },
+      (_, index) =>
+        `<p>Typography line ${index + 1}: deterministic pagination content with enough words to wrap differently when the normalized document font family and size change.</p>`,
     );
     const expectedText = paragraphs
       .map((paragraph) =>
@@ -163,10 +164,14 @@ describe('A4PageEditor real layout pagination', () => {
       await vi.waitFor(() => {
         expect(host.querySelectorAll('[data-testid^="a4-page-content-"]').length).toBeGreaterThan(1);
       });
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
     });
-    const initialPageCount = host.querySelectorAll(
-      '[data-testid^="a4-page-content-"]',
-    ).length;
+    const initialPageDistribution = Array.from(
+      host.querySelectorAll<HTMLElement>('[data-testid^="a4-page-content-"]'),
+      (pageContent) => pageContent.textContent,
+    );
 
     await act(async () => {
       root.render(
@@ -183,12 +188,27 @@ describe('A4PageEditor real layout pagination', () => {
     });
     await act(async () => {
       await vi.waitFor(() => {
+        const firstPage = host.querySelector<HTMLElement>(
+          '[data-testid="a4-page-content-1"]',
+        );
+        expect(firstPage?.style.fontFamily).toBe('Georgia, serif');
+        expect(firstPage?.style.fontSize).toBe('14pt');
+      });
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    });
+    await act(async () => {
+      await vi.waitFor(() => {
         const pages = host.querySelectorAll<HTMLElement>(
           '[data-testid^="a4-page-content-"]',
         );
-        expect(pages.length).toBeGreaterThan(initialPageCount);
-        expect(pages[0].style.fontFamily).toBe('Georgia, serif');
-        expect(pages[0].style.fontSize).toBe('14pt');
+        expect(
+          Array.from(
+            pages,
+            (pageContent) => pageContent.textContent,
+          ).join('|'),
+        ).not.toBe(initialPageDistribution.join('|'));
       });
     });
 
