@@ -52,6 +52,25 @@ describe('TemplateEditorPanel', () => {
     }));
   });
 
+  it('updates global font and font size through the template layout', () => {
+    const onTemplateChange = vi.fn();
+    render(<TemplateEditorPanel {...defaultProps} onTemplateChange={onTemplateChange} />);
+
+    fireEvent.change(screen.getByLabelText('Global font'), {
+      target: { value: 'Georgia, serif' },
+    });
+    expect(onTemplateChange).toHaveBeenLastCalledWith({
+      layout: { ...DEFAULT_A4_DOCUMENT_LAYOUT, fontFamily: 'Georgia, serif' },
+    });
+
+    fireEvent.change(screen.getByLabelText('Font size'), {
+      target: { value: '14pt' },
+    });
+    expect(onTemplateChange).toHaveBeenLastCalledWith({
+      layout: { ...DEFAULT_A4_DOCUMENT_LAYOUT, fontSize: '14pt' },
+    });
+  });
+
   it('shows an inline error for an out-of-range margin without overwriting the draft', () => {
     const onTemplateChange = vi.fn();
     render(<TemplateEditorPanel {...defaultProps} onTemplateChange={onTemplateChange} />);

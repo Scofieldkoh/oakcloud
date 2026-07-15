@@ -32,6 +32,8 @@ const layoutContentJson = {
   unrelated: { retained: true },
   layout: {
     version: 1,
+    fontFamily: 'Georgia, serif',
+    fontSize: '14pt',
     lineHeight: 1.8,
     paragraphSpacing: '8px',
     marginsMm: { top: 10, right: 15, bottom: 20, left: 25 },
