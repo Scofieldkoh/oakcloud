@@ -33,6 +33,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { A4DocumentLayout } from './a4-pagination/layout';
+import {
+  DOCUMENT_FONT_OPTIONS,
+  DOCUMENT_FONT_SIZE_OPTIONS,
+} from './document-typography';
 
 export interface EditorFormatState {
   bold: boolean;
@@ -64,17 +68,6 @@ export interface A4EditorToolbarProps {
   onLegacyCommand?(command: string, value?: string): void;
 }
 
-const FONT_OPTIONS = [
-  { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
-  { value: "'Times New Roman', Times, serif", label: 'Times New Roman' },
-  { value: "'Courier New', Courier, monospace", label: 'Courier New' },
-  { value: 'Georgia, serif', label: 'Georgia' },
-  { value: 'Verdana, Geneva, sans-serif', label: 'Verdana' },
-  { value: "'Trebuchet MS', sans-serif", label: 'Trebuchet MS' },
-  { value: "'Lucida Console', Monaco, monospace", label: 'Lucida Console' },
-];
-
-const FONT_SIZE_OPTIONS = ['8pt', '9pt', '10pt', '11pt', '12pt', '14pt', '16pt', '18pt', '20pt', '24pt', '28pt', '36pt'];
 const compactControlClass =
   'inline-flex h-8 w-8 items-center justify-center rounded text-text-secondary transition-colors duration-150 hover:bg-background-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:cursor-not-allowed disabled:opacity-50';
 const compactSelectClass =
@@ -313,12 +306,12 @@ export function A4EditorToolbar({
           <div role="group" aria-label="Advanced formatting" className="mt-3 grid grid-cols-2 gap-2 border-t border-border-primary pt-3">
             <label className="text-xs font-medium text-text-secondary">Font family
               <select aria-label="Font family" title="Font Family" disabled={disabled || !onLegacyCommand} defaultValue="Arial, Helvetica, sans-serif" onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('fontName', event.target.value)} className={cn(compactSelectClass, 'mt-1')}>
-                {FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
+                {DOCUMENT_FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
               </select>
             </label>
             <label className="text-xs font-medium text-text-secondary">Font size
               <select aria-label="Font size" title="Font Size" disabled={disabled || !onLegacyCommand} defaultValue="11pt" onPointerDown={onSaveSelection} onChange={(event) => onLegacyCommand?.('customFontSize', event.target.value)} className={cn(compactSelectClass, 'mt-1')}>
-                {FONT_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size.replace('pt', '')}</option>)}
+                {DOCUMENT_FONT_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size.replace('pt', '')}</option>)}
               </select>
             </label>
             <label className="text-xs font-medium text-text-secondary">Paragraph style

@@ -5,6 +5,10 @@ import {
   type A4EditorToolbarProps,
 } from '@/components/documents/a4-editor-toolbar';
 import { DEFAULT_A4_DOCUMENT_LAYOUT } from '@/components/documents/a4-pagination/layout';
+import {
+  DOCUMENT_FONT_OPTIONS,
+  DOCUMENT_FONT_SIZE_OPTIONS,
+} from '@/components/documents/document-typography';
 
 function renderToolbar(overrides: Partial<A4EditorToolbarProps> = {}) {
   const props: A4EditorToolbarProps = {
@@ -99,6 +103,23 @@ describe('A4EditorToolbar', () => {
 
     expect(onLegacyCommand).toHaveBeenCalledWith('fontName', 'Georgia, serif');
     expect(onLegacyCommand).toHaveBeenCalledWith('customFontSize', '14pt');
+  });
+
+  it('keeps every shared typography option available through the Formats popover', () => {
+    renderToolbar({ onLegacyCommand: vi.fn() });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Formats' }));
+    const fontFamilySelect = screen.getByLabelText('Font family');
+    const fontSizeSelect = screen.getByLabelText('Font size');
+
+    for (const font of DOCUMENT_FONT_OPTIONS) {
+      expect(within(fontFamilySelect).getByRole('option', { name: font.label }))
+        .toHaveValue(font.value);
+    }
+    for (const size of DOCUMENT_FONT_SIZE_OPTIONS) {
+      expect(within(fontSizeSelect).getByRole('option', { name: size.replace('pt', '') }))
+        .toHaveValue(size);
+    }
   });
 
   it('saves the selection before formatting commands and dispatches page callbacks', () => {

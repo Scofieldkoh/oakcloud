@@ -16,10 +16,38 @@ describe('A4 document layout', () => {
       marginsMm: { top: 12, right: 18, bottom: -2, left: 200 },
     })).toEqual({
       version: 1,
+      fontFamily: 'Arial, Helvetica, sans-serif',
+      fontSize: '11pt',
       lineHeight: 1.8,
       paragraphSpacing: '8px',
       marginsMm: { top: 12, right: 18, bottom: 5, left: 60 },
     });
+  });
+
+  it('normalizes allowlisted typography and falls back independently', () => {
+    expect(normalizeA4DocumentLayout({
+      version: 1,
+      fontFamily: 'Georgia, serif',
+      fontSize: '14pt',
+      lineHeight: 1.8,
+      paragraphSpacing: '8px',
+      marginsMm: { top: 12, right: 18, bottom: 20, left: 20 },
+    })).toMatchObject({ fontFamily: 'Georgia, serif', fontSize: '14pt' });
+    expect(normalizeA4DocumentLayout({
+      version: 1,
+      fontFamily: 'url(javascript:bad)',
+      fontSize: '999px',
+    })).toMatchObject({
+      fontFamily: 'Arial, Helvetica, sans-serif',
+      fontSize: '11pt',
+    });
+  });
+
+  it('treats typography as part of layout equality', () => {
+    expect(a4LayoutsEqual(
+      DEFAULT_A4_DOCUMENT_LAYOUT,
+      { ...DEFAULT_A4_DOCUMENT_LAYOUT, fontSize: '12pt' },
+    )).toBe(false);
   });
 
   it('falls back for absent or malformed legacy metadata', () => {
@@ -50,6 +78,8 @@ describe('A4 document layout', () => {
       DEFAULT_A4_DOCUMENT_LAYOUT,
       {
         version: 1,
+        fontFamily: 'Arial, Helvetica, sans-serif',
+        fontSize: '11pt',
         lineHeight: 1.5,
         paragraphSpacing: '0.5em',
         marginsMm: { top: 20, right: 20, bottom: 20, left: 20 },

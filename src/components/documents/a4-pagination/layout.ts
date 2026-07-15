@@ -1,3 +1,10 @@
+import {
+  DEFAULT_DOCUMENT_FONT_FAMILY,
+  DEFAULT_DOCUMENT_FONT_SIZE,
+  DOCUMENT_FONT_OPTIONS,
+  DOCUMENT_FONT_SIZE_OPTIONS,
+} from '../document-typography';
+
 export interface A4MarginsMm {
   top: number;
   right: number;
@@ -7,6 +14,8 @@ export interface A4MarginsMm {
 
 export interface A4DocumentLayout {
   version: 1;
+  fontFamily: string;
+  fontSize: string;
   lineHeight: number;
   paragraphSpacing: string;
   marginsMm: A4MarginsMm;
@@ -14,10 +23,17 @@ export interface A4DocumentLayout {
 
 export const DEFAULT_A4_DOCUMENT_LAYOUT: A4DocumentLayout = {
   version: 1,
+  fontFamily: DEFAULT_DOCUMENT_FONT_FAMILY,
+  fontSize: DEFAULT_DOCUMENT_FONT_SIZE,
   lineHeight: 1.5,
   paragraphSpacing: '0.5em',
   marginsMm: { top: 20, right: 20, bottom: 20, left: 20 },
 };
+
+const allowedFontFamilies = new Set<string>(
+  DOCUMENT_FONT_OPTIONS.map((option) => option.value),
+);
+const allowedFontSizes = new Set<string>(DOCUMENT_FONT_SIZE_OPTIONS);
 
 const clampMargin = (value: unknown) =>
   Math.min(60, Math.max(5, typeof value === 'number' ? value : 20));
@@ -33,6 +49,14 @@ export function normalizeA4DocumentLayout(value: unknown): A4DocumentLayout {
   const margins = candidate.marginsMm ?? DEFAULT_A4_DOCUMENT_LAYOUT.marginsMm;
   return {
     version: 1,
+    fontFamily: typeof candidate.fontFamily === 'string'
+      && allowedFontFamilies.has(candidate.fontFamily)
+      ? candidate.fontFamily
+      : DEFAULT_DOCUMENT_FONT_FAMILY,
+    fontSize: typeof candidate.fontSize === 'string'
+      && allowedFontSizes.has(candidate.fontSize)
+      ? candidate.fontSize
+      : DEFAULT_DOCUMENT_FONT_SIZE,
     lineHeight: Math.min(3, Math.max(1, Number(candidate.lineHeight) || 1.5)),
     paragraphSpacing: typeof candidate.paragraphSpacing === 'string'
       ? candidate.paragraphSpacing
@@ -72,6 +96,8 @@ export function a4LayoutsEqual(
   right: A4DocumentLayout,
 ): boolean {
   return left.version === right.version
+    && left.fontFamily === right.fontFamily
+    && left.fontSize === right.fontSize
     && left.lineHeight === right.lineHeight
     && left.paragraphSpacing === right.paragraphSpacing
     && left.marginsMm.top === right.marginsMm.top
