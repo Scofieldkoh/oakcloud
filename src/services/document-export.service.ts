@@ -256,6 +256,11 @@ export function buildA4PrintCss(layout: A4DocumentLayout): string {
       /@page \{\s*size: 210mm 297mm;\s*margin: 20mm;\s*\}/,
       `@page { margin: ${top}mm ${right}mm ${bottom}mm ${left}mm; }`,
     )
+    .replace(
+      'font-family: Arial, Helvetica, sans-serif;',
+      `font-family: ${normalized.fontFamily};`,
+    )
+    .replace('font-size: 11pt;', `font-size: ${normalized.fontSize};`)
     .replace('line-height: 1.5;', `line-height: ${normalized.lineHeight};`)
     .replace('p {\n    margin: 0 0 0.5em 0;\n  }', `p {\n    margin: 0 0 ${normalized.paragraphSpacing} 0;\n  }`);
 }

@@ -272,7 +272,11 @@ describe('A4PageEditor', () => {
         ref={editorRef}
         value={'<p style="line-height: 1.15;">Hello</p>'}
         onChange={onChange}
-        layout={{ version: 1, lineHeight: 2, paragraphSpacing: '0.5em', marginsMm: { top: 20, right: 20, bottom: 20, left: 20 } }}
+        layout={{
+          ...DEFAULT_A4_DOCUMENT_LAYOUT,
+          lineHeight: 2,
+          paragraphSpacing: '0.5em',
+        }}
       />,
     );
 
@@ -292,7 +296,14 @@ describe('A4PageEditor', () => {
 
   it('keeps document line spacing unchanged when selecting paragraphs with inline spacing', () => {
     render(
-      <A4PageEditor value={'<p style="line-height: 2;">Double</p><p style="line-height: 1.15;">Tight</p>'} layout={{ version: 1, lineHeight: 3, paragraphSpacing: '0.5em', marginsMm: { top: 20, right: 20, bottom: 20, left: 20 } }} />,
+      <A4PageEditor
+        value={'<p style="line-height: 2;">Double</p><p style="line-height: 1.15;">Tight</p>'}
+        layout={{
+          ...DEFAULT_A4_DOCUMENT_LAYOUT,
+          lineHeight: 3,
+          paragraphSpacing: '0.5em',
+        }}
+      />,
     );
 
     const editor = screen.getByTestId('a4-page-content-1');
@@ -313,7 +324,15 @@ describe('A4PageEditor', () => {
   });
 
   it('updates editable page margins', () => {
-    render(<A4PageEditor value="<p>Hello</p>" layout={{ version: 1, lineHeight: 1.5, paragraphSpacing: '0.5em', marginsMm: { top: 25, right: 25, bottom: 25, left: 25 } }} />);
+    render(
+      <A4PageEditor
+        value="<p>Hello</p>"
+        layout={{
+          ...DEFAULT_A4_DOCUMENT_LAYOUT,
+          marginsMm: { top: 25, right: 25, bottom: 25, left: 25 },
+        }}
+      />,
+    );
 
     const editor = screen.getByTestId('a4-page-content-1');
     expect(editor).toHaveStyle({
@@ -329,7 +348,7 @@ describe('A4PageEditor', () => {
       <A4PageEditor
         value="<p>Hello</p>"
         layout={{
-          version: 1,
+          ...DEFAULT_A4_DOCUMENT_LAYOUT,
           lineHeight: 2,
           paragraphSpacing: '8px',
           marginsMm: { top: 10, right: 15, bottom: 25, left: 30 },
@@ -642,7 +661,12 @@ describe('A4PageEditor', () => {
   });
 
   it('applies paragraph styles and spacing to editor pages', () => {
-    render(<A4PageEditor value="<p>Heading text</p>" layout={{ version: 1, lineHeight: 1.5, paragraphSpacing: '1em', marginsMm: { top: 20, right: 20, bottom: 20, left: 20 } }} />);
+    render(
+      <A4PageEditor
+        value="<p>Heading text</p>"
+        layout={{ ...DEFAULT_A4_DOCUMENT_LAYOUT, paragraphSpacing: '1em' }}
+      />,
+    );
 
     const editor = screen.getByTestId('a4-page-content-1');
     const textNode = editor.querySelector('p')?.firstChild;
