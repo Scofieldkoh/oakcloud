@@ -5,12 +5,144 @@ import {
   A4PageEditor,
   type A4PageEditorRef,
 } from '@/components/documents/a4-page-editor';
+import { DEFAULT_A4_DOCUMENT_LAYOUT } from '@/components/documents/a4-pagination/layout';
 
 const pageBreak = '<!-- PAGE_BREAK -->';
 const hardPageBreak =
   '<div class="page-break" data-break-type="hard"></div>';
 
 describe('A4PageEditor', () => {
+  it('applies global typography while preserving explicit partial formatting', () => {
+    render(
+      <A4PageEditor
+        value={'<h1>Inherited heading</h1><p>Inherited partial text</p><p style="font-family: Verdana, Geneva, sans-serif; font-size: 9pt;">Explicit partial text</p>'}
+        layout={{
+          ...DEFAULT_A4_DOCUMENT_LAYOUT,
+          fontFamily: 'Georgia, serif',
+          fontSize: '14pt',
+        }}
+      />,
+    );
+
+    const page = screen.getByTestId('a4-page-content-1');
+    expect(page).toHaveStyle({ fontFamily: 'Georgia, serif', fontSize: '14pt' });
+    expect(getComputedStyle(page.querySelector('h1')!).fontFamily).toBe(
+      'inherit',
+    );
+    expect(page.querySelectorAll('p')[0]).not.toHaveAttribute('style');
+    expect(page.querySelectorAll('p')[1]).toHaveStyle({
+      fontFamily: 'Verdana, Geneva, sans-serif',
+      fontSize: '9pt',
+    });
+  });
+
+  it('styles placeholder text globally while page numbers retain their own size', () => {
+    render(
+      <A4PageEditor
+        value=""
+        placeholder="Start writing"
+        layout={{
+          ...DEFAULT_A4_DOCUMENT_LAYOUT,
+          fontFamily: 'Georgia, serif',
+          fontSize: '14pt',
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Start writing')).toHaveStyle({
+      fontFamily: 'Georgia, serif',
+      fontSize: '14pt',
+    });
+    expect(screen.getByTestId('a4-page-number-1')).toHaveStyle({
+      fontSize: '10pt',
+    });
+  });
+
+  it('prints normalized typography without overriding inline partial styles', () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <A4PageEditor
+          value={'<p style="font-family: Verdana, Geneva, sans-serif; font-size: 9pt;">Explicit print text</p>'}
+          layout={{
+            ...DEFAULT_A4_DOCUMENT_LAYOUT,
+            fontFamily: 'Georgia, serif',
+            fontSize: '14pt',
+          }}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Print' }));
+      const printFrame = document.querySelector('iframe')!;
+      const printDocument = printFrame.contentDocument!;
+      expect(printDocument.querySelector('style')?.textContent).toContain(
+        'font-family: Georgia, serif;',
+      );
+      expect(printDocument.querySelector('style')?.textContent).toContain(
+        'font-size: 14pt;',
+      );
+      expect(printDocument.querySelector('style')?.textContent).toContain(
+        'h1, h2, h3 {\n      font-family: inherit;',
+      );
+      expect(printDocument.querySelector('.content p')).toHaveStyle({
+        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontSize: '9pt',
+      });
+      printFrame.remove();
+    } finally {
+      vi.clearAllTimers();
+      vi.useRealTimers();
+    }
+  });
+
+  it('measures pagination with the normalized document typography', async () => {
+    const originalScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    const measuredTypography: Array<{ fontFamily: string; fontSize: string }> = [];
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        if (this.style.position === 'fixed') {
+          measuredTypography.push({
+            fontFamily: this.style.fontFamily,
+            fontSize: this.style.fontSize,
+          });
+        }
+        return 0;
+      },
+    });
+
+    try {
+      render(
+        <A4PageEditor
+          value="<p>Measured text</p>"
+          layout={{
+            ...DEFAULT_A4_DOCUMENT_LAYOUT,
+            fontFamily: 'Georgia, serif',
+            fontSize: '14pt',
+          }}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(measuredTypography).toContainEqual({
+          fontFamily: 'Georgia, serif',
+          fontSize: '14pt',
+        });
+      });
+    } finally {
+      if (originalScrollHeight) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          'scrollHeight',
+          originalScrollHeight,
+        );
+      }
+    }
+  });
+
   it('renders one editable document root for every physical page', async () => {
     render(
       <A4PageEditor

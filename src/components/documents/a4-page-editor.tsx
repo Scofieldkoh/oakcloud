@@ -618,7 +618,6 @@ const A4 = {
 
 // Shared font styles
 const FONT_FAMILY = "'Times New Roman', Times, serif";
-const FONT_SIZE = '12pt';
 const MM_TO_PX = 96 / 25.4;
 
 interface PageLayout {
@@ -650,6 +649,8 @@ function createPageLayout(marginsMm: A4MarginsMm): PageLayout {
 
 function createPageMeasurer(
   pageLayout: PageLayout,
+  fontFamily: string,
+  fontSize: string,
   lineHeight: string,
   paragraphSpacing: string,
 ): HtmlMeasurer & { dispose: () => void } {
@@ -666,8 +667,8 @@ function createPageMeasurer(
     height: 'auto',
     minHeight: '0',
     overflow: 'visible',
-    fontFamily: 'Arial, Helvetica, sans-serif',
-    fontSize: '11pt',
+    fontFamily,
+    fontSize,
     lineHeight,
     overflowWrap: 'break-word',
     wordBreak: 'break-word',
@@ -697,6 +698,8 @@ interface PageProps {
   isActive: boolean;
   isPreviewMode: boolean;
   pageLayout: PageLayout;
+  fontFamily: string;
+  fontSize: string;
   lineHeight: string;
 }
 
@@ -706,6 +709,8 @@ function Page({
   isActive,
   isPreviewMode,
   pageLayout,
+  fontFamily,
+  fontSize,
   lineHeight,
 }: PageProps) {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -758,8 +763,8 @@ function Page({
             left: pageLayout.leftPx,
             width: pageLayout.contentWidthPx,
             height: pageLayout.contentHeightPx,
-            fontFamily: 'Arial, Helvetica, sans-serif',
-            fontSize: '11pt',
+            fontFamily,
+            fontSize,
             lineHeight,
             color: '#000',
             overflow: 'hidden',
@@ -783,6 +788,8 @@ function PageChrome({
   onDelete,
   placeholder,
   pageLayout,
+  fontFamily,
+  fontSize,
   lineHeight,
   showPageNumbers,
 }: {
@@ -794,6 +801,8 @@ function PageChrome({
   onDelete(id: string): void;
   placeholder?: string;
   pageLayout: PageLayout;
+  fontFamily: string;
+  fontSize: string;
   lineHeight: string;
   showPageNumbers: boolean;
 }) {
@@ -809,7 +818,7 @@ function PageChrome({
         </button>
       ) : null}
       {isEmpty && placeholder && !isPreviewMode ? (
-        <div className="absolute text-gray-400" style={{ top: pageLayout.topPx, left: pageLayout.leftPx, fontFamily: FONT_FAMILY, fontSize: FONT_SIZE, lineHeight }}>
+        <div className="absolute text-gray-400" style={{ top: pageLayout.topPx, left: pageLayout.leftPx, fontFamily, fontSize, lineHeight }}>
           {placeholder}
         </div>
       ) : null}
@@ -1036,6 +1045,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     );
     const lineHeight = String(effectiveLayout.lineHeight);
     const paragraphSpacing = effectiveLayout.paragraphSpacing;
+    const fontFamily = effectiveLayout.fontFamily;
+    const fontSize = effectiveLayout.fontSize;
     const updateLayout = useCallback(
       (next: A4DocumentLayout) => {
         const normalized = normalizeA4DocumentLayout(next);
@@ -1086,6 +1097,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           );
           const measurer = createPageMeasurer(
             pageLayout,
+            fontFamily,
+            fontSize,
             lineHeight,
             paragraphSpacing,
           );
@@ -1116,7 +1129,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           }
         });
       },
-      [lineHeight, pageLayout, paragraphSpacing, serializePages],
+      [fontFamily, fontSize, lineHeight, pageLayout, paragraphSpacing, serializePages],
     );
 
     useEffect(() => {
@@ -1224,6 +1237,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         );
         const measurer = createPageMeasurer(
           pageLayout,
+          fontFamily,
+          fontSize,
           lineHeight,
           paragraphSpacing,
         );
@@ -1250,7 +1265,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       // previewPages is intentionally excluded: it supplies stable ids but must not
       // retrigger pagination after each derived preview layout.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lineHeight, pageLayout, paragraphSpacing, parsePages, previewContent]);
+    }, [fontFamily, fontSize, lineHeight, pageLayout, paragraphSpacing, parsePages, previewContent]);
 
     // Helper to check if a page should be removed (contains only [Remove Page])
     const shouldRemovePage = useCallback((content: string) => {
@@ -2359,8 +2374,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       padding: 0;
     }
     html, body {
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 11pt;
+      font-family: ${fontFamily};
+      font-size: ${fontSize};
       line-height: ${lineHeight};
       color: #000;
     }
@@ -2396,7 +2411,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       line-height: inherit;
     }
     h1, h2, h3 {
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: inherit;
       font-weight: 700;
       line-height: inherit;
       margin: 0 0 ${paragraphSpacing} 0;
@@ -2468,6 +2483,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       }, 200);
     }, [
       isPreviewMode,
+      fontFamily,
+      fontSize,
       lineHeight,
       paragraphSpacing,
       pageLayout.marginsMm,
@@ -2516,7 +2533,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           .a4-page-content h1,
           .a4-page-content h2,
           .a4-page-content h3 {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: inherit;
             font-weight: 700;
             line-height: inherit;
             margin: 0 0 ${paragraphSpacing} 0;
@@ -2736,6 +2753,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                 isActive={page.id === activePageId}
                 isPreviewMode={effectivePreviewMode}
                 pageLayout={pageLayout}
+                fontFamily={fontFamily}
+                fontSize={fontSize}
                 lineHeight={lineHeight}
               />
             ))}
@@ -2752,6 +2771,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
                 canDelete={displayPages.length > 1 && !readOnly}
                 placeholder={index === 0 ? placeholder : undefined}
                 pageLayout={pageLayout}
+                fontFamily={fontFamily}
+                fontSize={fontSize}
                 lineHeight={lineHeight}
                 showPageNumbers={showPageNumbers}
               />

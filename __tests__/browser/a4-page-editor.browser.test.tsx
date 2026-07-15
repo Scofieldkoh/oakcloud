@@ -15,6 +15,7 @@ import {
   A4PageEditor,
   type A4PageEditorRef,
 } from '@/components/documents/a4-page-editor';
+import { DEFAULT_A4_DOCUMENT_LAYOUT } from '@/components/documents/a4-pagination/layout';
 
 let mouseX = 0;
 let mouseY = 0;
@@ -131,6 +132,70 @@ describe('A4PageEditor real layout pagination', () => {
       });
     });
     expect(editorRef.current?.getContent()).toBe('<p>Short document</p>');
+  });
+
+  it('reflows after typography changes without losing document text', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    const paragraphs = Array.from(
+      { length: 90 },
+      (_, index) => `<p>Typography line ${index + 1}: pagination content.</p>`,
+    );
+    const expectedText = paragraphs
+      .map((paragraph) =>
+        new DOMParser().parseFromString(paragraph, 'text/html').body.textContent,
+      )
+      .join('');
+
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value={paragraphs.join('')}
+          layout={{
+            ...DEFAULT_A4_DOCUMENT_LAYOUT,
+            fontFamily: 'Arial, Helvetica, sans-serif',
+            fontSize: '11pt',
+          }}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(host.querySelectorAll('[data-testid^="a4-page-content-"]').length).toBeGreaterThan(1);
+      });
+    });
+    const initialPageCount = host.querySelectorAll(
+      '[data-testid^="a4-page-content-"]',
+    ).length;
+
+    await act(async () => {
+      root.render(
+        <A4PageEditor
+          ref={editorRef}
+          value={paragraphs.join('')}
+          layout={{
+            ...DEFAULT_A4_DOCUMENT_LAYOUT,
+            fontFamily: 'Georgia, serif',
+            fontSize: '14pt',
+          }}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.waitFor(() => {
+        const pages = host.querySelectorAll<HTMLElement>(
+          '[data-testid^="a4-page-content-"]',
+        );
+        expect(pages.length).toBeGreaterThan(initialPageCount);
+        expect(pages[0].style.fontFamily).toBe('Georgia, serif');
+        expect(pages[0].style.fontSize).toBe('14pt');
+      });
+    });
+
+    const canonical = editorRef.current?.getContent() ?? '';
+    expect(
+      new DOMParser().parseFromString(canonical, 'text/html').body.textContent,
+    ).toBe(expectedText);
   });
 
   it('preserves the logical caret and keeps table rows intact', async () => {
