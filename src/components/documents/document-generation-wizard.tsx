@@ -575,6 +575,7 @@ interface PartySelectorProps {
   onChange: (value: string) => void;
   isLoading: boolean;
   error?: string | null;
+  onRetry?: () => void;
   required?: boolean;
 }
 
@@ -586,6 +587,7 @@ function PartySelector({
   onChange,
   isLoading,
   error,
+  onRetry,
   required = false,
 }: PartySelectorProps) {
   const [query, setQuery] = useState('');
@@ -612,7 +614,16 @@ function PartySelector({
           Loading {label.toLowerCase()} options...
         </div>
       ) : error ? (
-        <p className="text-sm text-status-error" role="alert">{error}</p>
+        <div className="flex flex-wrap items-center gap-3" role="alert">
+          <p className="text-sm text-status-error">{error}</p>
+          {onRetry ? (
+            <Button variant="secondary" size="sm" onClick={onRetry}>
+              <RefreshCw className="w-4 h-4" />
+              <span className="sr-only">Retry party options</span>
+              <span aria-hidden="true">Retry</span>
+            </Button>
+          ) : null}
+        </div>
       ) : options.length === 0 ? (
         <p className="py-3 text-sm text-text-muted">No {label.toLowerCase()} options are available for this company.</p>
       ) : (
@@ -1034,6 +1045,7 @@ export function DocumentGenerationWizard({
   const [isLoadingParties, setIsLoadingParties] = useState(false);
   const [partyLoadError, setPartyLoadError] = useState<string | null>(null);
   const [isPartyEligibilityResolved, setIsPartyEligibilityResolved] = useState(true);
+  const [partyReloadVersion, setPartyReloadVersion] = useState(0);
   const hasLoadedDraftRef = useRef(false);
   const pendingDraftPartyIdsRef = useRef<{
     director: string;
@@ -1063,6 +1075,16 @@ export function DocumentGenerationWizard({
     fieldErrors: [],
   });
 
+  const partyRequirements = useMemo(() => {
+    if (!state.selectedTemplate) return { director: false, shareholder: false, contact: false };
+    return getRequiredPartySelections(state.selectedTemplate.content || '', partials);
+  }, [partials, state.selectedTemplate]);
+  const requiresSingularPartySelection = (
+    partyRequirements.director
+    || partyRequirements.shareholder
+    || partyRequirements.contact
+  );
+
   // Update title when template is selected
   useEffect(() => {
     if (state.selectedTemplate && !state.title) {
@@ -1090,9 +1112,12 @@ export function DocumentGenerationWizard({
       const selectedContacts = contacts.filter((contact) => selectedContactIds.has(contact.id));
       const restoredStep = Math.max(0, Math.min(Number(draft.currentStep) || 0, WIZARD_STEPS.length - 1));
       const requirements = getRequiredPartySelections(selectedTemplate.content || '', partials);
+      const requiresSingularSelections = requirements.director || requirements.shareholder || requirements.contact;
+      const savedCompanyIsUnavailable = Boolean(draft.companyId && !selectedCompany);
+      const failedSavedCompanyEligibility = savedCompanyIsUnavailable && requiresSingularSelections;
       const requiresEligibility = Boolean(
         selectedCompany
-        && (requirements.director || requirements.shareholder || requirements.contact),
+        && requiresSingularSelections,
       );
       pendingDraftPartyIdsRef.current = requiresEligibility ? {
         director: typeof draft.selectedDirectorId === 'string' ? draft.selectedDirectorId : '',
@@ -1113,10 +1138,18 @@ export function DocumentGenerationWizard({
         title: typeof draft.title === 'string' ? draft.title : '',
         customData: draft.customData && typeof draft.customData === 'object' ? draft.customData : {},
         useLetterhead: typeof draft.useLetterhead === 'boolean' ? draft.useLetterhead : true,
-        previewContent: typeof draft.previewContent === 'string' ? draft.previewContent : null,
-        editedContent: typeof draft.editedContent === 'string' ? draft.editedContent : null,
+        previewContent: !failedSavedCompanyEligibility && typeof draft.previewContent === 'string' ? draft.previewContent : null,
+        editedContent: !failedSavedCompanyEligibility && typeof draft.editedContent === 'string' ? draft.editedContent : null,
+        ...(failedSavedCompanyEligibility ? {
+          missingPlaceholders: [],
+          missingPartials: [],
+          blockingErrors: [],
+          validationResult: null,
+        } : {}),
       }));
-      setCurrentStep(requiresEligibility ? Math.min(restoredStep, 2) : restoredStep);
+      setCurrentStep(failedSavedCompanyEligibility
+        ? Math.min(restoredStep, 1)
+        : requiresEligibility ? Math.min(restoredStep, 2) : restoredStep);
       setIsPartyEligibilityResolved(!requiresEligibility);
       setDraftRestored(true);
     } catch (err) {
@@ -1126,7 +1159,7 @@ export function DocumentGenerationWizard({
 
   useEffect(() => {
     const companyId = state.selectedCompany?.id;
-    if (!companyId) {
+    if (!companyId || !requiresSingularPartySelection) {
       setPartyOptions(EMPTY_PARTY_OPTIONS);
       setPartyLoadError(null);
       setIsLoadingParties(false);
@@ -1186,7 +1219,7 @@ export function DocumentGenerationWizard({
         if (controller.signal.aborted) return;
         console.error('Failed to load document party options:', fetchError);
         setPartyOptions(EMPTY_PARTY_OPTIONS);
-        setPartyLoadError(fetchError instanceof Error ? fetchError.message : 'Failed to load company party options.');
+        setPartyLoadError('Failed to load company party options.');
         const pending = pendingDraftPartyIdsRef.current;
         if (pending) {
           pendingDraftPartyIdsRef.current = null;
@@ -1210,7 +1243,7 @@ export function DocumentGenerationWizard({
       });
 
     return () => controller.abort();
-  }, [state.selectedCompany?.id]);
+  }, [partyReloadVersion, requiresSingularPartySelection, state.selectedCompany?.id]);
 
   useEffect(() => {
     if (!hasLoadedDraftRef.current) return;
@@ -1251,15 +1284,19 @@ export function DocumentGenerationWizard({
     setDraftRestored(false);
   }, []);
 
+  const retryPartyOptions = useCallback(() => {
+    if (!state.selectedCompany || !requiresSingularPartySelection) return;
+    setPartyOptions(EMPTY_PARTY_OPTIONS);
+    setPartyLoadError(null);
+    setIsLoadingParties(true);
+    setIsPartyEligibilityResolved(false);
+    setPartyReloadVersion((version) => version + 1);
+  }, [requiresSingularPartySelection, state.selectedCompany]);
+
   // Count filled custom fields for summary
   const filledCustomFieldCount = useMemo(() => {
     return Object.values(state.customData).filter((v) => v && v.trim() !== '').length;
   }, [state.customData]);
-
-  const partyRequirements = useMemo(() => {
-    if (!state.selectedTemplate) return { director: false, shareholder: false, contact: false };
-    return getRequiredPartySelections(state.selectedTemplate.content || '', partials);
-  }, [partials, state.selectedTemplate]);
 
   const requiresLegacyContacts = useMemo(() => {
     if (!state.selectedTemplate) return false;
@@ -1508,11 +1545,15 @@ export function DocumentGenerationWizard({
             companies={companies}
             selected={state.selectedCompany}
             onSelect={(company) => {
+              if (company?.id === state.selectedCompany?.id) {
+                if (partyLoadError && requiresSingularPartySelection) retryPartyOptions();
+                return;
+              }
               pendingDraftPartyIdsRef.current = null;
               setPartyOptions(EMPTY_PARTY_OPTIONS);
               setPartyLoadError(null);
-              setIsLoadingParties(Boolean(company));
-              setIsPartyEligibilityResolved(!company);
+              setIsLoadingParties(Boolean(company && requiresSingularPartySelection));
+              setIsPartyEligibilityResolved(!company || !requiresSingularPartySelection);
               setState((prev) => ({
                 ...prev,
                 selectedCompany: company,
@@ -1551,6 +1592,7 @@ export function DocumentGenerationWizard({
                 onChange={(selectedDirectorId) => setState((previous) => ({ ...previous, selectedDirectorId, fieldErrors: [] }))}
                 isLoading={isLoadingParties}
                 error={partyLoadError}
+                onRetry={retryPartyOptions}
                 required
               />
             ) : null}
@@ -1564,6 +1606,7 @@ export function DocumentGenerationWizard({
                 onChange={(selectedShareholderId) => setState((previous) => ({ ...previous, selectedShareholderId, fieldErrors: [] }))}
                 isLoading={isLoadingParties}
                 error={partyLoadError}
+                onRetry={retryPartyOptions}
                 required
               />
             ) : null}
@@ -1577,6 +1620,7 @@ export function DocumentGenerationWizard({
                 onChange={(selectedContactId) => setState((previous) => ({ ...previous, selectedContactId, fieldErrors: [] }))}
                 isLoading={isLoadingParties}
                 error={partyLoadError}
+                onRetry={retryPartyOptions}
                 required
               />
             ) : null}

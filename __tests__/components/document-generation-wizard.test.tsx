@@ -296,4 +296,87 @@ describe('DocumentGenerationWizard', () => {
     expect(screen.queryByRole('option', { name: /Alice/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Jane Tan/ })).toHaveAttribute('aria-pressed', 'true');
   });
+
+  it('invalidates an Edit-step draft whose saved company is no longer eligible', async () => {
+    const selectedTemplate = { ...template, content: '{{selectedDirector.name}}', placeholders: [] };
+    saveEditStepDraft('officer-1');
+    const savedDraft = JSON.parse(window.localStorage.getItem('oakcloud:document-generation-wizard-draft') || '{}');
+    window.localStorage.setItem('oakcloud:document-generation-wizard-draft', JSON.stringify({
+      ...savedDraft,
+      companyId: 'deleted-company',
+    }));
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} onGenerate={vi.fn()} />);
+
+    expect(await screen.findByText('No company selected')).toBeVisible();
+    expect(screen.queryByLabelText('Document content')).not.toBeInTheDocument();
+    expect(screen.queryByText('Generate Document')).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      const persisted = JSON.parse(window.localStorage.getItem('oakcloud:document-generation-wizard-draft') || '{}');
+      expect(persisted.companyId).toBeNull();
+      expect(persisted.selectedDirectorId).toBeNull();
+      expect(persisted.previewContent).toBeNull();
+      expect(persisted.editedContent).toBeNull();
+      expect(persisted.currentStep).toBeLessThanOrEqual(2);
+    });
+  });
+
+  it('does not fetch or gate legacy-only contacts when a company is selected', () => {
+    const fetchMock = vi.fn(() => Promise.reject(new Error('party endpoint unavailable')));
+    vi.stubGlobal('fetch', fetchMock);
+    const selectedTemplate = { ...template, content: '{{contact.name}}{{#each contacts}}{{email}}{{/each}}', placeholders: [] };
+    render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} contacts={contacts} onGenerate={vi.fn()} />);
+    fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText(company.name));
+    fireEvent.click(screen.getByText('Next'));
+
+    expect(screen.getByText('Jane Tan')).toBeVisible();
+    expect(fetchMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('Jane Tan'));
+    fireEvent.click(screen.getByText('Next'));
+    expect(screen.getByPlaceholderText('Enter document title...')).toBeVisible();
+  });
+
+  it('shows a retry action when singular party options fail to load', async () => {
+    const fetchMock = vi.fn(() => Promise.reject(new Error('party endpoint unavailable')));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const selectedTemplate = { ...template, content: '{{selectedDirector.name}}', placeholders: [] };
+    render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} onGenerate={vi.fn()} />);
+    fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText(company.name));
+    fireEvent.click(screen.getByText('Next'));
+
+    expect(await screen.findByText('Failed to load company party options.')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry party options' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('Failed to load company party options.')).toBeVisible();
+    fireEvent.click(screen.getByText('Next'));
+    expect(screen.getByText('Select a director for this template.')).toBeVisible();
+  });
+
+  it('treats re-selecting the current company as a no-op with current party data', async () => {
+    mockPartyFetch();
+    const selectedTemplate = { ...template, content: '{{selectedDirector.name}}{{contact.name}}', placeholders: [] };
+    render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} contacts={contacts} onGenerate={vi.fn()} />);
+    fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText(company.name));
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.change(await screen.findByLabelText('Director'), { target: { value: 'officer-1' } });
+    fireEvent.click(screen.getByText('Jane Tan'));
+    fireEvent.click(screen.getByText('Back'));
+
+    fireEvent.click(screen.getAllByText(company.name).at(-1)!);
+    fireEvent.click(screen.getByText('Next'));
+
+    expect(screen.queryByText('Loading director options...')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Director')).toHaveValue('officer-1');
+    expect(screen.getByRole('button', { name: /Jane Tan/ })).toHaveAttribute('aria-pressed', 'true');
+  });
 });

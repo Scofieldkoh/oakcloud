@@ -74,3 +74,28 @@ None known. The full suite emits an expected diagnostic stack trace from the exi
   - PASS.
 - Focused ESLint and `git diff --check`
   - PASS.
+
+## Re-review Fixes
+
+### Remaining findings addressed
+
+- **Unavailable saved company:** A singular-party draft whose saved company is absent from the current company options is now treated as failed eligibility. The wizard restores at Company, clears the company and all singular IDs, invalidates resolved preview/editor and validation diagnostics, and never exposes Generate.
+- **Legacy-only isolation:** Company selection and draft restoration for `contact`, `contact.*`, and `contacts`-loop templates no longer start, await, or depend on `/document-parties`. Legacy contacts can proceed even when that endpoint would fail. Singular fetch failures finish loading in a visible error state with a working Retry action while People remains invalid.
+- **Same-company re-selection:** Selecting the already-current company is a no-op while options are current or loading, preserving singular and legacy selections. If the current load is in an error state, the same action triggers the explicit retry path instead of entering permanent loading.
+
+### Re-review regression coverage
+
+- Deleted/cross-workspace saved company draft restores safely at Company and persists cleared IDs/content.
+- Legacy-only company/contact flow makes zero party requests and advances through People.
+- Singular party failure renders a retry action, retries the request, and remains invalid on repeated failure.
+- Same-company selection preserves the loaded director and legacy contact without returning to loading.
+
+### Re-review verification
+
+- Initial four-test run: expected RED; all four new regressions failed against the reviewed implementation.
+- `npx.cmd vitest run __tests__/components/document-generation-wizard.test.tsx __tests__/lib/template-analysis.test.ts --reporter=dot`
+  - PASS: 2 files, 20 tests.
+- `npx.cmd tsc --noEmit`
+  - PASS.
+- Focused ESLint and `git diff --check`
+  - PASS.
