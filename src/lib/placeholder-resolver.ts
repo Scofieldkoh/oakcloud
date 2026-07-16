@@ -10,6 +10,13 @@ import { format as formatDate, parseISO } from 'date-fns';
 import { Prisma } from '@/generated/prisma';
 import { Decimal as PrismaDecimal } from '@prisma/client/runtime/client';
 import {
+  buildPartyContactFields,
+  formatLetterAddress,
+  type ContactDetailInput,
+  type PartyAddress,
+} from '@/lib/document-party';
+import type { DocumentPartySelections } from '@/services/document-party.service';
+import {
   PARTIAL_REFERENCE_REGEX,
   extractPartialReferences,
   hasPartialReferences,
@@ -22,7 +29,7 @@ type Decimal = Prisma.Decimal;
 // Types
 // ============================================================================
 
-export interface PlaceholderContext {
+export interface PlaceholderContext extends DocumentPartySelections {
   company?: CompanyData | null;
   contact?: ContactData | null;
   custom?: Record<string, unknown>;
@@ -56,6 +63,7 @@ export interface CompanyData {
     unit?: string | null;
     building?: string | null;
     postalCode?: string | null;
+    letter?: PartyAddress['letter'];
   } | null;
   capital?: Decimal | number | null;
   addresses?: CompanyAddressData[];
@@ -73,33 +81,47 @@ export interface CompanyAddressData {
   unit?: string | null;
   buildingName?: string | null;
   postalCode?: string | null;
+  country?: string | null;
 }
 
 export interface OfficerData {
+  id?: string;
+  contactId?: string | null;
   name: string;
   role: string;
   nationality?: string | null;
   address?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  letterAddress?: string | null;
   appointmentDate?: Date | null;
   cessationDate?: Date | null;
   isCurrent: boolean;
   contact?: {
     id: string;
-    contactDetails?: Array<{ detailType: string; value: string }>;
+    fullAddress?: string | null;
+    contactDetails?: ContactDetailInput[];
   } | null;
 }
 
 export interface ShareholderData {
+  id?: string;
+  contactId?: string | null;
   name: string;
   shareholderType?: string | null;
   nationality?: string | null;
   numberOfShares: number;
   percentageHeld?: Decimal | number | null;
   shareClass?: string | null;
+  address?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  letterAddress?: string | null;
   isCurrent: boolean;
   contact?: {
     id: string;
-    contactDetails?: Array<{ detailType: string; value: string }>;
+    fullAddress?: string | null;
+    contactDetails?: ContactDetailInput[];
   } | null;
 }
 
@@ -119,6 +141,7 @@ export interface ContactData {
 export interface SystemData {
   currentDate: Date;
   tenantName?: string;
+  preparerName?: string;
   generatedBy?: string;
 }
 
@@ -222,11 +245,14 @@ export function resolvePlaceholders(
   const missing: string[] = [];
   let missingPartials: string[] = [];
 
-  // Add system data if not provided
+  const preparerName = context.system?.preparerName ?? context.system?.generatedBy;
   const fullContext: PlaceholderContext = {
     ...context,
-    system: context.system || {
-      currentDate: new Date(),
+    system: {
+      currentDate: context.system?.currentDate ?? new Date(),
+      ...context.system,
+      preparerName,
+      generatedBy: context.system?.generatedBy ?? preparerName,
     },
   };
 
@@ -340,7 +366,7 @@ function processEachBlocks(
         const thisRegex = /\{\{this\.([a-zA-Z_][a-zA-Z0-9_]*)\}\}/g;
         itemContent = itemContent.replace(thisRegex, (_: string, prop: string) => {
           const value = item[prop];
-          return formatValue(value, options) ?? '';
+          return formatResolvedValue(prop, value, options);
         });
 
         // Replace {{property}} directly (shorthand)
@@ -352,7 +378,7 @@ function processEachBlocks(
           }
           const value = item[prop];
           if (value === undefined) return fullMatch; // Keep for outer resolution
-          return formatValue(value, options) ?? '';
+          return formatResolvedValue(prop, value, options);
         });
 
         return itemContent;
@@ -551,7 +577,7 @@ function processSimplePlaceholders(
       return '';
     }
 
-    return formatValue(value, options) ?? '';
+    return formatResolvedValue(path, value, options);
   });
 }
 
@@ -637,6 +663,20 @@ function formatValue(value: unknown, options: ResolveOptions): string | null {
   return String(value);
 }
 
+function formatResolvedValue(path: string, value: unknown, options: ResolveOptions): string {
+  const formatted = formatValue(value, options) ?? '';
+  if (path === 'letterAddress' || path.endsWith('.address.letter')) {
+    return formatted
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/\r?\n/g, '<br>');
+  }
+  return formatted;
+}
+
 /**
  * Formats a number with locale-aware thousand separators.
  */
@@ -712,9 +752,37 @@ export function getRegisteredAddress(addresses: CompanyAddressData[]): string | 
  * Prepares company data for placeholder resolution with convenience helpers.
  */
 export function prepareCompanyContext(company: CompanyData): PlaceholderContext {
-  const directors = getCurrentDirectors(company.officers || []);
+  const enrichOfficer = (officer: OfficerData): OfficerData => {
+    const fields = buildPartyContactFields({
+      companyId: company.id,
+      roleAddress: officer.address,
+      contactAddress: officer.contact?.fullAddress,
+      contactDetails: officer.contact?.contactDetails,
+    });
+    return {
+      ...officer,
+      email: fields.email,
+      phone: fields.phone,
+      letterAddress: fields.address.letter,
+    };
+  };
+  const enrichShareholder = (shareholder: ShareholderData): ShareholderData => {
+    const fields = buildPartyContactFields({
+      companyId: company.id,
+      roleAddress: shareholder.address,
+      contactAddress: shareholder.contact?.fullAddress,
+      contactDetails: shareholder.contact?.contactDetails,
+    });
+    return {
+      ...shareholder,
+      email: fields.email,
+      phone: fields.phone,
+      letterAddress: fields.address.letter,
+    };
+  };
+  const directors = getCurrentDirectors(company.officers || []).map(enrichOfficer);
   const secretaries = getCurrentSecretaries(company.officers || []);
-  const shareholders = getCurrentShareholders(company.shareholders || []);
+  const shareholders = getCurrentShareholders(company.shareholders || []).map(enrichShareholder);
   const registeredAddress = getRegisteredAddress(company.addresses || []);
   const registeredAddressRecord = (company.addresses || []).find(
     (a) => a.addressType === 'REGISTERED_OFFICE' && a.isCurrent
@@ -733,6 +801,16 @@ export function prepareCompanyContext(company: CompanyData): PlaceholderContext 
             unit: registeredAddressRecord.unit ?? null,
             building: registeredAddressRecord.buildingName ?? null,
             postalCode: registeredAddressRecord.postalCode ?? null,
+            letter: formatLetterAddress({
+              fullAddress: registeredAddressRecord.fullAddress,
+              block: registeredAddressRecord.block,
+              street: registeredAddressRecord.streetName,
+              level: registeredAddressRecord.level,
+              unit: registeredAddressRecord.unit,
+              building: registeredAddressRecord.buildingName,
+              postalCode: registeredAddressRecord.postalCode,
+              country: registeredAddressRecord.country,
+            }).letter,
           }
         : null,
       capital: company.paidUpCapitalAmount ?? company.issuedCapitalAmount ?? null,

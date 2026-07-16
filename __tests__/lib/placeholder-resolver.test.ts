@@ -3,6 +3,69 @@ import { prepareCompanyContext, resolvePlaceholders } from '@/lib/placeholder-re
 import { buildEachBlock, type TemplateCollection, type TemplateLoopLayout } from '@/components/documents/template-editor/template-builders';
 
 describe('placeholder resolver', () => {
+  it('resolves independent selected parties and preparer aliases', () => {
+    const result = resolvePlaceholders(
+      [
+        '{{selectedDirector.name}}|{{selectedDirector.email}}|{{selectedDirector.address.letter}}',
+        '{{selectedDirector.role}}|{{selectedShareholder.name}}|{{selectedShareholder.shareClass}}|{{selectedContact.phone}}',
+        '{{system.preparerName}}|{{system.generatedBy}}',
+      ].join('|'),
+      {
+        selectedDirector: { id: 'd1', contactId: 'c1', name: 'Alice', detail: 'DIRECTOR', role: 'DIRECTOR', email: 'alice@example.com', phone: null, address: { full: 'One Road', letter: 'One Road' } },
+        selectedShareholder: { id: 's1', contactId: 'c2', name: 'Ben', detail: 'ORDINARY', shareClass: 'ORDINARY', email: null, phone: null, address: { full: null, letter: null } },
+        selectedContact: { id: 'c3', contactId: 'c3', name: 'Cara', detail: 'Representative', email: null, phone: '+65 6123 4567', address: { full: null, letter: null } },
+        system: { currentDate: new Date('2026-07-16'), preparerName: 'Test User', generatedBy: 'Test User' },
+      }
+    );
+    expect(result.resolved).toContain('Alice|alice@example.com|One Road');
+    expect(result.resolved).toContain('DIRECTOR|Ben|ORDINARY|+65 6123 4567|Test User|Test User');
+    expect(result.missing).toEqual([]);
+  });
+
+  it('adds contact fields to current director and shareholder loops', () => {
+    const context = prepareCompanyContext({
+      id: 'company-1',
+      name: 'Sample',
+      uen: '202600001A',
+      officers: [{
+        name: 'Alice', role: 'DIRECTOR', address: 'One Road', isCurrent: true,
+        contact: { id: 'c1', fullAddress: null, contactDetails: [{ detailType: 'EMAIL', value: 'alice@example.com', companyId: null }] },
+      }],
+      shareholders: [{
+        name: 'Ben', numberOfShares: 1, address: 'Two Road', isCurrent: true,
+        contact: { id: 'c2', fullAddress: null, contactDetails: [{ detailType: 'PHONE', value: '+65 6000 0000', companyId: null }] },
+      }],
+    });
+    const result = resolvePlaceholders(
+      '{{#each directors}}{{email}}|{{letterAddress}}{{/each}}/{{#each shareholders}}{{phone}}|{{letterAddress}}{{/each}}',
+      context
+    );
+    expect(result.resolved).toBe('alice@example.com|One Road/+65 6000 0000|Two Road');
+  });
+
+  it('renders letter-address newlines as safe HTML breaks', () => {
+    const result = resolvePlaceholders(
+      '{{company.address.letter}}',
+      {
+        company: {
+          id: 'company-1',
+          name: 'Sample',
+          uen: '202600001A',
+          address: {
+            block: '21',
+            street: 'Bukit Batok Crescent',
+            level: '25',
+            unit: '72',
+            building: 'WCEGA <Tower>',
+            postalCode: '658065',
+            letter: 'WCEGA <Tower>\n21 Bukit Batok Crescent, #25-72\nSingapore  658065',
+          },
+        },
+      }
+    );
+    expect(result.resolved).toBe('WCEGA &lt;Tower&gt;<br>21 Bukit Batok Crescent, #25-72<br>Singapore  658065');
+  });
+
   it.each([
     ['directors', 'paragraphs'], ['directors', 'bullets'], ['directors', 'table'],
     ['shareholders', 'paragraphs'], ['shareholders', 'bullets'], ['shareholders', 'table'],
