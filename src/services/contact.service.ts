@@ -1139,6 +1139,32 @@ export async function searchContactsWithCounts(
     AND: andConditions,
   };
 
+  const needsCountFilter = params.companiesMin !== undefined || params.companiesMax !== undefined;
+  let filteredContactIds: string[] | undefined;
+  let filteredCompanyCounts: Map<string, number> | undefined;
+
+  if (needsCountFilter) {
+    const candidateContacts = await prisma.contact.findMany({
+      where,
+      select: { id: true },
+    });
+    filteredCompanyCounts = await getUniqueCompanyCountsForContacts(
+      candidateContacts.map((contact) => contact.id),
+      companyIds,
+    );
+
+    filteredContactIds = candidateContacts
+      .filter((contact) => {
+        const companyCount = filteredCompanyCounts?.get(contact.id) || 0;
+        if (params.companiesMin !== undefined && companyCount < params.companiesMin) return false;
+        if (params.companiesMax !== undefined && companyCount > params.companiesMax) return false;
+        return true;
+      })
+      .map((contact) => contact.id);
+
+    andConditions.push({ id: { in: filteredContactIds } });
+  }
+
   // Sorting - handle _count fields specially
   let orderBy: Prisma.ContactOrderByWithRelationInput | Prisma.ContactOrderByWithRelationInput[];
 
@@ -1154,49 +1180,49 @@ export async function searchContactsWithCounts(
 
   const skip = (params.page - 1) * params.limit;
 
-  // Fetch current page of contacts plus display details.
-  let [contacts, total] = await Promise.all([
-    prisma.contact.findMany({
-      where,
-      orderBy,
-      skip,
-      take: params.limit,
-      include: {
-        _count: {
-          select: {
-            companyRelations: { where: { company: { deletedAt: null } } },
-          },
-        },
-        // Fetch email/phone details to display (prefer default, then company-specific)
-        contactDetails: {
-          where: {
-            detailType: { in: ['EMAIL', 'PHONE'] },
-            deletedAt: null,
-          },
-          select: {
-            detailType: true,
-            value: true,
-            isPrimary: true,
-            companyId: true,
-            displayOrder: true,
-            createdAt: true,
-          },
-          orderBy: [
-            { companyId: 'asc' }, // Default (null) first, then company-specific
-            { isPrimary: 'desc' },
-            { displayOrder: 'asc' },
-            { createdAt: 'asc' },
-          ],
+  const contactsPromise = prisma.contact.findMany({
+    where,
+    orderBy,
+    skip,
+    take: params.limit,
+    include: {
+      _count: {
+        select: {
+          companyRelations: { where: { company: { deletedAt: null } } },
         },
       },
-    }),
-    prisma.contact.count({ where }),
+      // Fetch email/phone details to display (prefer default, then company-specific)
+      contactDetails: {
+        where: {
+          detailType: { in: ['EMAIL', 'PHONE'] },
+          deletedAt: null,
+        },
+        select: {
+          detailType: true,
+          value: true,
+          isPrimary: true,
+          companyId: true,
+          displayOrder: true,
+          createdAt: true,
+        },
+        orderBy: [
+          { companyId: 'asc' }, // Default (null) first, then company-specific
+          { isPrimary: 'desc' },
+          { displayOrder: 'asc' },
+          { createdAt: 'asc' },
+        ],
+      },
+    },
+  });
+  const [contacts, total] = await Promise.all([
+    contactsPromise,
+    filteredContactIds ? Promise.resolve(filteredContactIds.length) : prisma.contact.count({ where }),
   ]);
 
   // Calculate exact unique company count across relations per contact.
-  const uniqueCompanyCounts = await getUniqueCompanyCountsForContacts(
+  const uniqueCompanyCounts = filteredCompanyCounts ?? await getUniqueCompanyCountsForContacts(
     contacts.map((contact) => contact.id),
-    companyIds
+    companyIds,
   );
 
   const contactsWithCompanyCount = contacts.map((contact) => {
@@ -1208,23 +1234,8 @@ export async function searchContactsWithCounts(
     };
   });
 
-  // Post-query filtering for companies count range (Prisma doesn't support direct _count filtering)
-  const needsCountFilter = params.companiesMin !== undefined || params.companiesMax !== undefined;
-  if (needsCountFilter) {
-    contacts = contactsWithCompanyCount.filter((contact) => {
-      const companyCount = contact._count?.companyRelations || 0;
-      if (params.companiesMin !== undefined && companyCount < params.companiesMin) return false;
-      if (params.companiesMax !== undefined && companyCount > params.companiesMax) return false;
-      return true;
-    });
-    // Adjust total for filtered results (approximate)
-    total = contacts.length < params.limit ? skip + contacts.length : total;
-  } else {
-    contacts = contactsWithCompanyCount;
-  }
-
   // Map contacts to include defaultEmail and defaultPhone
-  const contactsWithDetails = contacts.map((contact) => {
+  const contactsWithDetails = contactsWithCompanyCount.map((contact) => {
     const details = contact.contactDetails;
     const getDetailValue = (type: 'EMAIL' | 'PHONE') => {
       const defaultDetail = details.find((d) => !d.companyId && d.detailType === type);

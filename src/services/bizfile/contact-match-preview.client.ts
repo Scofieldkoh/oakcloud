@@ -6,6 +6,7 @@ type ContactPreviewFetcher = (input: string, init: RequestInit) => Promise<Respo
 export async function fetchBizFileContactMatchPreviews(
   candidates: ContactIdentityCandidate[],
   fetcher: ContactPreviewFetcher = fetch,
+  tenantId?: string,
 ): Promise<Record<string, ContactMatchPreview | null>> {
   const batches: ContactIdentityCandidate[][] = [];
   for (let index = 0; index < candidates.length; index += MAX_PREVIEW_BATCH_SIZE) {
@@ -16,7 +17,7 @@ export async function fetchBizFileContactMatchPreviews(
     const response = await fetcher('/api/contacts/match-preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ candidates: batch }),
+      body: JSON.stringify({ candidates: batch, ...(tenantId ? { tenantId } : {}) }),
     });
     if (!response.ok) throw new Error('Unable to preview contact matches');
     const result = await response.json() as { matches?: Record<string, ContactMatchPreview | null> };

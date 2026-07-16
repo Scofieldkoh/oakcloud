@@ -27,4 +27,16 @@ describe('document navigation source', () => {
     expect(processing).toContain('>Document Vault</h1>');
     expect(processing).not.toContain('>Document Processing</h1>');
   });
+
+  it('routes company document navigation through the filtered Document Vault', () => {
+    const companyProfile = readSource(
+      'src/components/companies/company-detail/company-profile-tab.tsx',
+    );
+    const helpbot = readSource('src/services/ai-helpbot.service.ts');
+
+    expect(companyProfile).toContain('href={`/processing?companyId=${companyId}`}');
+    expect(helpbot).toContain('target: { path: `/processing?companyId=${companyId}` }');
+    expect(companyProfile).not.toContain('href={`/companies/${companyId}/documents`}');
+    expect(helpbot).not.toContain('target: { path: `/companies/${companyId}/documents` }');
+  });
 });

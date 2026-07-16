@@ -17,6 +17,14 @@ function responseFor(body: string) {
 }
 
 describe('BizFile contact preview client', () => {
+  it('sends the selected tenant with every preview batch', async () => {
+    const fetcher = vi.fn((_url: string, init: RequestInit) => Promise.resolve(responseFor(String(init.body))));
+    await fetchBizFileContactMatchPreviews(candidates(101), fetcher, 'tenant-selected');
+
+    expect(fetcher.mock.calls.map((call) => JSON.parse(String(call[1].body)).tenantId))
+      .toEqual(['tenant-selected', 'tenant-selected']);
+  });
+
   it('sends exactly 100 combined candidates in one request', async () => {
     const fetcher = vi.fn((_url: string, init: RequestInit) => Promise.resolve(responseFor(String(init.body))));
     const matches = await fetchBizFileContactMatchPreviews(candidates(100), fetcher);

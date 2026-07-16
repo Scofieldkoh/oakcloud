@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { hasPermission } from '@/lib/rbac';
+import { requirePermission } from '@/lib/rbac';
+import { createErrorResponse, requireWorkspaceContext } from '@/lib/api-helpers';
+import { createContactDetailSchema } from '@/lib/validations/contact-detail';
 import {
   getContactDetails,
   getContactDetailsGrouped,
   createContactDetail,
 } from '@/services/contact-detail.service';
 import { prisma } from '@/lib/prisma';
+import { ZodError } from 'zod';
+
+type RouteParams = { params: Promise<{ id: string }> };
 
 /**
  * GET /api/contacts/[id]/contact-details
@@ -18,27 +23,17 @@ import { prisma } from '@/lib/prisma';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: RouteParams
 ) {
   try {
     const session = await requireAuth();
     const { id } = await params;
+    await requirePermission(session, 'contact', 'read');
 
-    // Get tenantId from query params (for super admin) or session
     const searchParams = request.nextUrl.searchParams;
-    const tenantId = session.isSuperAdmin
-      ? searchParams.get('tenantId') || session.tenantId
-      : session.tenantId;
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
-
-    // Check permission
-    const canView = await hasPermission(session.id, 'contact', 'read', id);
-    if (!canView) {
-      return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
-    }
+    const tenantResult = await requireWorkspaceContext(session, searchParams.get('tenantId'));
+    if (tenantResult.error) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Check if grouped format is requested
     const grouped = searchParams.get('grouped') === 'true';
@@ -51,11 +46,7 @@ export async function GET(
     const details = await getContactDetails(id, tenantId);
     return NextResponse.json(details);
   } catch (error) {
-    console.error('Error fetching contact details:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch contact details' },
-      { status: 500 }
-    );
+    return createErrorResponse(error, 'Failed to fetch contact details');
   }
 }
 
@@ -65,27 +56,19 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: RouteParams
 ) {
   try {
     const session = await requireAuth();
     const { id } = await params;
+    await requirePermission(session, 'contact', 'update');
+
     const body = await request.json();
+    const { tenantId: requestedTenantId, selectedCompanyId, isCompanySpecific, ...detailData } = body;
 
-    // Get tenantId from body (for super admin) or session
-    const tenantId = session.isSuperAdmin
-      ? body.tenantId || session.tenantId
-      : session.tenantId;
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
-
-    // Check permission
-    const canUpdate = await hasPermission(session.id, 'contact', 'update', id);
-    if (!canUpdate) {
-      return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
-    }
+    const tenantResult = await requireWorkspaceContext(session, requestedTenantId);
+    if (tenantResult.error) return tenantResult.error;
+    const tenantId = tenantResult.tenantId;
 
     // Validate contact exists and belongs to the current workspace.
     const contact = await prisma.contact.findFirst({
@@ -95,29 +78,9 @@ export async function POST(
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
     }
 
-    const {
-      detailType,
-      value,
-      label,
-      purposes,
-      description,
-      displayOrder,
-      isPrimary,
-      // For company-specific details from standalone modal
-      selectedCompanyId,
-      isCompanySpecific,
-    } = body;
-
-    if (!detailType || !value) {
-      return NextResponse.json(
-        { error: 'Detail type and value are required' },
-        { status: 400 }
-      );
-    }
-
     // Determine if this should be a company-specific detail
     // selectedCompanyId comes from standalone modal when user selects a company
-    const companyId = selectedCompanyId || (isCompanySpecific ? body.companyId : undefined);
+    const companyId = selectedCompanyId || (isCompanySpecific ? detailData.companyId : undefined);
 
     // Validate company if companyId is provided
     if (companyId) {
@@ -129,27 +92,18 @@ export async function POST(
       }
     }
 
-    const detail = await createContactDetail(
-      {
-        contactId: id,
-        companyId,
-        detailType,
-        value,
-        label,
-        purposes,
-        description,
-        displayOrder,
-        isPrimary,
-      },
-      { tenantId, userId: session.id }
-    );
+    const data = createContactDetailSchema.parse({
+      ...detailData,
+      contactId: id,
+      companyId,
+    });
+    const detail = await createContactDetail(data, { tenantId, userId: session.id });
 
-    return NextResponse.json(detail);
+    return NextResponse.json(detail, { status: 201 });
   } catch (error) {
-    console.error('Error creating contact detail:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create contact detail' },
-      { status: 500 }
-    );
+    if (error instanceof ZodError) {
+      return NextResponse.json({ error: error.errors[0]?.message ?? 'Validation failed' }, { status: 400 });
+    }
+    return createErrorResponse(error, 'Failed to create contact detail');
   }
 }

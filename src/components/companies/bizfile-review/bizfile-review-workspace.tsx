@@ -21,6 +21,7 @@ export interface BizFileReviewWorkspaceProps {
   sourcePanel: React.ReactNode;
   isSaving?: boolean;
   serverIssues?: BizFileReviewIssue[];
+  tenantId?: string;
   onConfirm: (data: ExtractedBizFileData) => void | Promise<void>;
   onCancel: () => void;
   onReset: () => void;
@@ -193,7 +194,7 @@ function useDirtyHistoryGuard(isDirty: boolean) {
 }
 
 export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = false,
-  serverIssues = EMPTY_SERVER_ISSUES, onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
+  serverIssues = EMPTY_SERVER_ISSUES, tenantId, onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
   const workspaceRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<Partial<Record<BizFileReviewSectionId, HTMLButtonElement | null>>>({});
   const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -270,10 +271,10 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
   ): Promise<MatchPreviews> => {
     const candidates = buildBizFileContactIdentityCandidates(value, sections);
     if (candidates.length === 0) return {};
-    const matches = await fetchBizFileContactMatchPreviews(candidates);
+    const matches = await fetchBizFileContactMatchPreviews(candidates, fetch, tenantId);
     setMatchPreviews((current) => ({ ...current, ...matches }));
     return matches;
-  }, []);
+  }, [tenantId]);
 
   const activeIdentitySnapshot = useMemo(() => activeSection === "officers" || activeSection === "shareholders"
     ? JSON.stringify(buildBizFileContactIdentityCandidates(draft, [activeSection])) : "", [activeSection, draft]);

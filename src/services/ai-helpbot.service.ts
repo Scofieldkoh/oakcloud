@@ -562,7 +562,7 @@ function inferNavigationIntent(
   if (normalized.includes('document')) {
     return {
       type: 'navigate',
-      target: { path: `/companies/${companyId}/documents` },
+      target: { path: `/processing?companyId=${companyId}` },
       reason: 'Open company documents',
       requiresConfirmation: false,
     };

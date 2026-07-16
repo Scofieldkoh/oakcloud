@@ -152,4 +152,45 @@ describe('BizFile contact identity resolution', () => {
     expect(mocks.resolveOrCreateContact).not.toHaveBeenCalled();
     expect(tx.companyOfficer.create).not.toHaveBeenCalled();
   });
+
+  it('reuses a contact created earlier in the same BizFile transaction without requiring an impossible review', async () => {
+    const samePersonShareholder = {
+      name: officer.name,
+      type: 'INDIVIDUAL' as const,
+      identificationType: officer.identificationType,
+      identificationNumber: officer.identificationNumber,
+      nationality: officer.nationality,
+      address: officer.address,
+      shareClass: 'ORDINARY',
+      numberOfShares: 100,
+    };
+    mocks.previewContactIdentity
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        contactId: 'contact-created-in-import', score: 1, automatic: true,
+        blockedByIdentifierConflict: false, reasons: ['IDENTIFIER'], conflicts: [],
+      });
+    mocks.resolveOrCreateContact
+      .mockReset()
+      .mockResolvedValueOnce({ contact: { id: 'contact-created-in-import' }, outcome: 'CREATED' })
+      .mockResolvedValueOnce({ contact: { id: 'contact-created-in-import' }, outcome: 'REUSED_IDENTIFIER' });
+    const undecidedDuplicate = {
+      ...extractedData,
+      officers: [{ ...officer, contactResolution: undefined }],
+      shareholders: [samePersonShareholder],
+    };
+    const { processBizFileExtraction } = await import('@/services/bizfile/processor');
+
+    await expect(processBizFileExtraction('doc-1', undecidedDuplicate, 'user-1', 'tenant-1'))
+      .resolves.toEqual(expect.objectContaining({ companyId: 'company-1' }));
+    expect(mocks.resolveOrCreateContact).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ sourceRecordId: 'shareholders.0' }),
+      { action: 'AUTO' },
+      expect.objectContaining({ tenantId: 'tenant-1', tx }),
+    );
+    expect(tx.companyShareholder.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ contactId: 'contact-created-in-import' }),
+    }));
+  });
 });

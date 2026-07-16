@@ -960,7 +960,7 @@ export function CompanyProfileTab({ company, companyId, can }: CompanyProfileTab
                 </button>
               )}
               <Link
-                href={`/companies/${companyId}/documents`}
+                href={`/processing?companyId=${companyId}`}
                 className="btn-secondary btn-sm w-full justify-center"
               >
                 View All Documents

@@ -409,10 +409,10 @@ export default function UploadBizFilePage() {
   const requestContactMatchPreviews = useCallback(async (data: ExtractedBizFileData) => {
     const candidates = buildBizFileContactIdentityCandidates(data, ['officers', 'shareholders']);
     if (candidates.length === 0) return {};
-    const matches = await fetchBizFileContactMatchPreviews(candidates);
+    const matches = await fetchBizFileContactMatchPreviews(candidates, fetch, activeTenantId || undefined);
     setContactMatchPreviews(matches);
     return matches;
-  }, []);
+  }, [activeTenantId]);
 
   const updateIdentitySnapshot = useMemo(() => extractedData
     ? JSON.stringify(buildBizFileContactIdentityCandidates(extractedData, ['officers', 'shareholders']))
@@ -855,6 +855,7 @@ export default function UploadBizFilePage() {
             sourcePanel={previewPanel}
             isSaving={isConfirming}
             serverIssues={serverIssues}
+            tenantId={activeTenantId || undefined}
             onConfirm={handleConfirm}
             onReset={handleReset}
             onCancel={handleCancel}

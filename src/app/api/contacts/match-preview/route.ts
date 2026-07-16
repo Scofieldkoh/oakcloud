@@ -40,7 +40,10 @@ const candidateSchema = z.object({
   }).optional(),
 });
 
-const batchSchema = z.object({ candidates: z.array(candidateSchema).max(100) })
+const batchSchema = z.object({
+  candidates: z.array(candidateSchema).max(100),
+  tenantId: z.string().uuid().optional(),
+})
   .superRefine(({ candidates }, context) => {
     const paths = new Set<string>();
     candidates.forEach((candidate, index) => {
@@ -59,12 +62,13 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth();
     await requirePermission(session, 'contact', 'read');
-    if (!session.tenantId) {
+    const { candidates, tenantId: requestedTenantId } = batchSchema.parse(await request.json());
+    const tenantId = session.isSuperAdmin && requestedTenantId
+      ? requestedTenantId
+      : session.tenantId;
+    if (!tenantId) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
-    const tenantId = session.tenantId;
-
-    const { candidates } = batchSchema.parse(await request.json());
     const previews = await Promise.all(candidates.map(async (candidate) => ({
       path: candidate.sourceRecordId,
       match: await previewContactIdentity(candidate, tenantId),

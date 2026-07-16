@@ -86,4 +86,17 @@ describe('POST /api/contacts/match-preview', () => {
     await expect(response.json()).resolves.toEqual({ error: 'Tenant context required' });
     expect(mocks.previewContactIdentity).not.toHaveBeenCalled();
   });
+
+  it('uses a super admin selected tenant for BizFile previews', async () => {
+    mocks.requireAuth.mockResolvedValue({ id: 'super-1', tenantId: null, isSuperAdmin: true });
+    const response = await post({ candidates: [candidate], tenantId: '00000000-0000-4000-8000-000000000002' });
+
+    expect(response.status).toBe(200);
+    expect(mocks.previewContactIdentity).toHaveBeenCalledWith(
+      candidate, '00000000-0000-4000-8000-000000000002',
+    );
+    expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ tenantId: '00000000-0000-4000-8000-000000000002' }),
+    }));
+  });
 });

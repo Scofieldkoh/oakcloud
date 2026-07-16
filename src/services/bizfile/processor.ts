@@ -98,14 +98,17 @@ async function resolveBizFileContact(
   candidate: ContactIdentityCandidate,
   decision: NonNullable<ExtractedBizFileData['officers']>[number]['contactResolution'] | undefined,
   params: { tenantId: string; userId: string; tx: PrismaTransactionClient },
+  autoCreatedContactIds?: Set<string>,
 ) {
   if (!decision) {
     const match = await previewContactIdentity(candidate, params.tenantId, params.tx);
-    if (match) {
+    if (match && !autoCreatedContactIds?.has(match.contactId)) {
       throw new Error(`Review the contact match for ${candidate.sourceRecordId} before continuing`);
     }
   }
-  return resolveOrCreateContact(candidate, reviewedDecision(decision), params);
+  const result = await resolveOrCreateContact(candidate, reviewedDecision(decision), params);
+  if (!decision && result.outcome === 'CREATED') autoCreatedContactIds?.add(result.contact.id);
+  return result;
 }
 
 // ============================================================================
@@ -297,6 +300,7 @@ export async function processBizFileExtractionSelective(
 
   // Perform the update in a transaction
   await prisma.$transaction(async (tx) => {
+    const autoCreatedContactIds = new Set<string>();
     // Update company with only changed fields
     if (Object.keys(updateData).length > 0) {
       await tx.company.update({
@@ -344,6 +348,7 @@ export async function processBizFileExtractionSelective(
           officerIdentityCandidate(extracted, officerDiff.sourceRecordId),
           extracted.contactResolution,
           { tenantId, userId, tx: tx as PrismaTransactionClient },
+          autoCreatedContactIds,
         );
 
         // Create officer record
@@ -415,6 +420,7 @@ export async function processBizFileExtractionSelective(
           shareholderIdentityCandidate(extracted, shareholderDiff.sourceRecordId),
           extracted.contactResolution,
           { tenantId, userId, tx: tx as PrismaTransactionClient },
+          autoCreatedContactIds,
         );
 
         await tx.companyShareholder.create({
@@ -654,6 +660,7 @@ export async function processBizFileExtraction(
 
   // Create or update company in a transaction
   const result = await prisma.$transaction(async (tx) => {
+    const autoCreatedContactIds = new Set<string>();
     // Upsert company
     company = await tx.company.upsert({
       where: { tenantId_uen: { tenantId, uen: entityDetails.uen } },
@@ -934,6 +941,7 @@ export async function processBizFileExtraction(
           officerIdentityCandidate(officer, `officers.${officerIndex}`),
           officer.contactResolution,
           { tenantId, userId, tx: tx as PrismaTransactionClient },
+          autoCreatedContactIds,
         );
 
         // Create officer record
@@ -970,6 +978,7 @@ export async function processBizFileExtraction(
           shareholderIdentityCandidate(shareholder, `shareholders.${shareholderIndex}`),
           shareholder.contactResolution,
           { tenantId, userId, tx: tx as PrismaTransactionClient },
+          autoCreatedContactIds,
         );
 
         await tx.companyShareholder.create({

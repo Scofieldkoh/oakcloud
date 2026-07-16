@@ -127,6 +127,23 @@ describe("BizFileReviewWorkspace", () => {
     expect(fetchMock.mock.calls.map(([, init]) => JSON.parse(String(init.body)).candidates.length)).toEqual([100, 1]);
   });
 
+  it("previews matches in the selected BizFile tenant", async () => {
+    const fetchMock = vi.fn(async (_url: string, _init: RequestInit) => new Response(JSON.stringify({
+      matches: { "shareholders.0": null },
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<BizFileReviewWorkspace
+      initialData={{ ...fixture, shareholders: [{ name: "Owner", type: "INDIVIDUAL", shareClass: "ORDINARY", numberOfShares: 1 }] }}
+      tenantId="tenant-selected" sourcePanel={<div>PDF source</div>}
+      onCancel={vi.fn()} onReset={vi.fn()} onConfirm={vi.fn()} />);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Review section" }), { target: { value: "shareholders" } });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).toEqual(expect.objectContaining({
+      tenantId: "tenant-selected",
+    }));
+  });
+
   it("uses compact desktop tabs with wrapped pointer and keyboard navigation", () => {
     useLargeViewport();
     setup();
