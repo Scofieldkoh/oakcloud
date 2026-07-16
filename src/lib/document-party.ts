@@ -70,10 +70,19 @@ function formatSingaporeFreeText(value: string): string | null {
   if (streetIndex < 0) return null;
 
   const street = addressParts[streetIndex];
-  const unit = addressParts.find((part, index) => index !== streetIndex && /^#/.test(part));
-  const building = addressParts.find(
-    (part, index) => index !== streetIndex && part !== unit,
+  const unitIndex = addressParts.findIndex(
+    (part, index) => index !== streetIndex && /^#/.test(part),
   );
+  const buildingIndex = addressParts.findIndex(
+    (_, index) => index !== streetIndex && index !== unitIndex,
+  );
+  const consumedIndexes = new Set(
+    [streetIndex, unitIndex, buildingIndex].filter((index) => index >= 0),
+  );
+  if (consumedIndexes.size !== addressParts.length) return null;
+
+  const unit = unitIndex >= 0 ? addressParts[unitIndex] : null;
+  const building = buildingIndex >= 0 ? addressParts[buildingIndex] : null;
   const streetLine = unit ? `${street}, ${unit}` : street;
 
   return [building, streetLine, `Singapore  ${countryMatch[1]}`]

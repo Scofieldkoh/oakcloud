@@ -63,6 +63,16 @@ describe('formatLetterAddress', () => {
     });
   });
 
+  it('preserves a Singapore address when structured parsing leaves a segment unconsumed', () => {
+    const fullAddress =
+      '21 Bukit Batok Crescent, #25-72, WCEGA Tower, Attn: Accounts, Singapore 658065';
+
+    expect(formatLetterAddress({ fullAddress })).toEqual({
+      full: fullAddress,
+      letter: fullAddress,
+    });
+  });
+
   it('returns null fields for blank address input', () => {
     expect(formatLetterAddress({ fullAddress: ' \n ', street: '  ' })).toEqual({
       full: null,
