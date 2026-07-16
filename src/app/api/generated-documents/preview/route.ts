@@ -10,6 +10,9 @@ const previewSchema = z.object({
   templateId: z.string().uuid(),
   companyId: z.string().uuid().optional(),
   contactIds: z.array(z.string().uuid()).optional(),
+  selectedDirectorId: z.string().uuid().optional(),
+  selectedShareholderId: z.string().uuid().optional(),
+  selectedContactId: z.string().uuid().optional(),
   customData: z.record(z.unknown()).optional(),
 });
 
@@ -33,6 +36,9 @@ export async function POST(request: NextRequest) {
       tenantId,
       companyId: data.companyId,
       contactIds: data.contactIds,
+      selectedDirectorId: data.selectedDirectorId,
+      selectedShareholderId: data.selectedShareholderId,
+      selectedContactId: data.selectedContactId,
       customData: data.customData,
       generatedBy: `${session.firstName} ${session.lastName}`.trim(),
       mode: 'preview',

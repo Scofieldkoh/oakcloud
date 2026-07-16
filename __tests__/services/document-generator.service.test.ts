@@ -15,6 +15,9 @@ vi.mock('@/lib/prisma', () => ({
     contact: {
       findMany: vi.fn(),
     },
+    user: {
+      findFirst: vi.fn(),
+    },
   },
 }));
 
@@ -37,6 +40,11 @@ vi.mock('@/services/company.service', () => ({
   getCompanyById: vi.fn(),
 }));
 
+vi.mock('@/services/document-party.service', () => ({
+  getDocumentPartyOptions: vi.fn(),
+  resolveDocumentPartySelections: vi.fn(),
+}));
+
 vi.mock('@/lib/encryption', () => ({
   hashPassword: vi.fn(),
   verifyPassword: vi.fn(),
@@ -51,6 +59,13 @@ import {
 } from '@/services/document-generator.service';
 import { extractPartialReferences, resolvePlaceholders } from '@/lib/placeholder-resolver';
 import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
+import { createAuditLog } from '@/lib/audit';
+import { prepareCompanyContext } from '@/lib/placeholder-resolver';
+import { getCompanyById } from '@/services/company.service';
+import {
+  getDocumentPartyOptions,
+  resolveDocumentPartySelections,
+} from '@/services/document-party.service';
 
 describe('Document generator service', () => {
   beforeEach(() => {
@@ -69,6 +84,13 @@ describe('Document generator service', () => {
       missingPartials: [],
     });
     vi.mocked(prisma.contact.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
+    vi.mocked(getDocumentPartyOptions).mockResolvedValue({
+      directors: [],
+      shareholders: [],
+      contacts: [],
+    });
+    vi.mocked(resolveDocumentPartySelections).mockResolvedValue({});
   });
 
   it('requires a workspace id for generated document search', async () => {
@@ -353,5 +375,127 @@ describe('Document generator service', () => {
       version: 1,
     });
     expect(result.content).toContain('Preview Draft');
+  });
+
+  it('merges server-validated selected parties into the rendered context while preserving legacy contacts', async () => {
+    const selectedContact = {
+      id: 'contact-1',
+      contactId: 'contact-1',
+      name: 'Selected Contact',
+      detail: 'Secretary',
+      contactType: 'INDIVIDUAL',
+      email: 'selected@example.com',
+      phone: '+65 6000 0000',
+      address: { letter: '10 Main Street', full: '10 Main Street' },
+    };
+    const selections = {
+      selectedDirector: { ...selectedContact, id: 'officer-1', name: 'Director One' },
+      selectedShareholder: { ...selectedContact, id: 'shareholder-1', name: 'Shareholder One' },
+      selectedContact,
+    };
+    vi.mocked(resolveDocumentPartySelections).mockResolvedValue(selections);
+
+    const result = await renderTemplateForGeneration({
+      tenantId: 'workspace-1',
+      companyId: 'company-1',
+      templateContent: '<p>{{selectedContact.name}}</p>',
+      contextOverride: {
+        company: { id: 'company-1', name: 'Example Pte. Ltd.', uen: '202600001A' },
+        contacts: [{ id: 'legacy-1', fullName: 'Legacy Contact', contactType: 'INDIVIDUAL' }],
+      },
+      selectedDirectorId: 'officer-1',
+      selectedShareholderId: 'shareholder-1',
+      selectedContactId: 'contact-1',
+    });
+
+    expect(resolveDocumentPartySelections).toHaveBeenCalledWith({
+      companyId: 'company-1',
+      tenantId: 'workspace-1',
+      selectedDirectorId: 'officer-1',
+      selectedShareholderId: 'shareholder-1',
+      selectedContactId: 'contact-1',
+    });
+    expect(result.context).toEqual(expect.objectContaining(selections));
+    expect(result.context.contact).toEqual(expect.objectContaining({
+      id: 'contact-1',
+      fullName: 'Selected Contact',
+    }));
+    expect(result.context.contacts).toEqual([
+      expect.objectContaining({ id: 'contact-1', fullName: 'Selected Contact' }),
+      expect.objectContaining({ id: 'legacy-1', fullName: 'Legacy Contact' }),
+    ]);
+    expect(result.context.custom?.contacts).toEqual(result.context.contacts);
+  });
+
+  it('uses the authenticated creator name and persists selected party metadata', async () => {
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: 'template-1',
+      tenantId: 'workspace-1',
+      name: 'Resolution',
+      category: 'RESOLUTION',
+      content: '<p>{{system.preparerName}}</p>',
+      contentJson: null,
+      version: 1,
+      isActive: true,
+    } as never);
+    vi.mocked(prisma.user.findFirst).mockResolvedValue({
+      firstName: 'Alice',
+      lastName: 'Tan',
+    } as never);
+    vi.mocked(getCompanyById).mockResolvedValue({ id: 'company-1', name: 'Example' } as never);
+    vi.mocked(prepareCompanyContext).mockReturnValue({
+      company: { id: 'company-1', name: 'Example', uen: '202600001A' },
+      custom: {},
+      system: { currentDate: new Date('2026-07-16') },
+    });
+    vi.mocked(resolveDocumentPartySelections).mockResolvedValue({});
+    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({
+      id: 'doc-1',
+      title: 'Generated resolution',
+    } as never);
+
+    await createDocumentFromTemplate(
+      {
+        templateId: 'template-1',
+        companyId: 'company-1',
+        title: 'Generated resolution',
+        selectedDirectorId: 'officer-1',
+        selectedShareholderId: 'shareholder-1',
+        selectedContactId: 'contact-1',
+      },
+      { tenantId: 'workspace-1', userId: 'user-1' },
+    );
+
+    expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      where: { id: 'user-1', tenantId: 'workspace-1' },
+      select: { firstName: true, lastName: true },
+    });
+    expect(resolvePlaceholders).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        system: expect.objectContaining({
+          preparerName: 'Alice Tan',
+          generatedBy: 'Alice Tan',
+        }),
+      }),
+      expect.any(Object),
+    );
+    const selectedParties = {
+      directorId: 'officer-1',
+      shareholderId: 'shareholder-1',
+      contactId: 'contact-1',
+    };
+    expect(prisma.generatedDocument.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          metadata: expect.objectContaining({ selectedParties }),
+        }),
+      }),
+    );
+    expect(createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({ selectedParties }),
+      }),
+    );
   });
 });

@@ -17,7 +17,10 @@ import {
 } from '@/lib/placeholder-resolver';
 import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
 import { getCompanyById } from '@/services/company.service';
-import { getDocumentPartyOptions } from '@/services/document-party.service';
+import {
+  getDocumentPartyOptions,
+  resolveDocumentPartySelections,
+} from '@/services/document-party.service';
 import { addSectionAnchors, extractSections } from '@/services/document-validation.service';
 import { analyzeTemplateContent, type TemplateDiagnostics } from '@/lib/template-analysis';
 import type {
@@ -89,6 +92,9 @@ export interface RenderTemplateForGenerationParams {
   tenantId: string;
   companyId?: string | null;
   contactIds?: string[];
+  selectedDirectorId?: string;
+  selectedShareholderId?: string;
+  selectedContactId?: string;
   customData?: Record<string, unknown>;
   contextOverride?: PlaceholderContext;
   generatedBy?: string;
@@ -258,6 +264,9 @@ export async function renderTemplateForGeneration(
     tenantId,
     companyId,
     contactIds = [],
+    selectedDirectorId,
+    selectedShareholderId,
+    selectedContactId,
     customData = {},
     contextOverride,
     generatedBy,
@@ -300,7 +309,7 @@ export async function renderTemplateForGeneration(
         },
         system: {
           ...(contextOverride.system ?? {}),
-          ...(generatedBy ? { generatedBy } : {}),
+          ...(generatedBy ? { preparerName: generatedBy, generatedBy } : {}),
           currentDate: contextOverride.system?.currentDate ?? new Date(),
         },
       }
@@ -308,7 +317,7 @@ export async function renderTemplateForGeneration(
         custom: customData,
         system: {
           currentDate: new Date(),
-          ...(generatedBy ? { generatedBy } : {}),
+          ...(generatedBy ? { preparerName: generatedBy, generatedBy } : {}),
         },
       };
 
@@ -363,6 +372,47 @@ export async function renderTemplateForGeneration(
       custom: {
         ...companyContext.custom,
         ...context.custom,
+      },
+    };
+  }
+
+  if (selectedDirectorId || selectedShareholderId || selectedContactId) {
+    if (!companyId) {
+      throw new Error('Company selection is required for selected parties');
+    }
+    const selections = await resolveDocumentPartySelections({
+      companyId,
+      tenantId,
+      selectedDirectorId,
+      selectedShareholderId,
+      selectedContactId,
+    });
+    const legacySelectedContact = selections.selectedContact
+      ? {
+          id: selections.selectedContact.id,
+          fullName: selections.selectedContact.name,
+          contactType: selections.selectedContact.contactType ?? 'INDIVIDUAL',
+          email: selections.selectedContact.email,
+          phone: selections.selectedContact.phone,
+          fullAddress: selections.selectedContact.address.full,
+        }
+      : undefined;
+    const contacts = legacySelectedContact
+      ? [
+          legacySelectedContact,
+          ...(context.contacts ?? []).filter(
+            (contact) => contact.id !== legacySelectedContact.id,
+          ),
+        ]
+      : context.contacts;
+    context = {
+      ...context,
+      ...selections,
+      contact: legacySelectedContact ?? context.contact,
+      contacts,
+      custom: {
+        ...context.custom,
+        contacts,
       },
     };
   }
@@ -454,6 +504,13 @@ export async function createDocumentFromTemplate(
   const { tenantId, userId } = params;
   const contactIds = data.contactIds ?? [];
   const useLetterhead = data.useLetterhead ?? true;
+  const creator = await prisma.user.findFirst({
+    where: { id: userId, tenantId },
+    select: { firstName: true, lastName: true },
+  });
+  const generatedBy = creator
+    ? [creator.firstName, creator.lastName].filter(Boolean).join(' ').trim()
+    : undefined;
 
   // Get template
   const template = await prisma.documentTemplate.findFirst({
@@ -473,9 +530,19 @@ export async function createDocumentFromTemplate(
     tenantId,
     companyId: data.companyId,
     contactIds,
+    selectedDirectorId: data.selectedDirectorId,
+    selectedShareholderId: data.selectedShareholderId,
+    selectedContactId: data.selectedContactId,
     customData: data.customData,
+    generatedBy,
     mode: 'generate',
   });
+
+  const selectedParties = {
+    ...(data.selectedDirectorId ? { directorId: data.selectedDirectorId } : {}),
+    ...(data.selectedShareholderId ? { shareholderId: data.selectedShareholderId } : {}),
+    ...(data.selectedContactId ? { contactId: data.selectedContactId } : {}),
+  };
 
   // Create document
   const document = await prisma.generatedDocument.create({
@@ -497,6 +564,7 @@ export async function createDocumentFromTemplate(
         syntaxErrors: rendered.diagnostics.syntaxErrors,
         unknownPlaceholders: rendered.diagnostics.unknownPlaceholders,
         dependencySnapshot: rendered.dependencySnapshot,
+        selectedParties,
       },
       createdById: userId,
     },
@@ -518,6 +586,7 @@ export async function createDocumentFromTemplate(
       missingPlaceholders: rendered.missingPlaceholders,
       missingPartials: rendered.missingPartials,
       dependencySnapshot: rendered.dependencySnapshot,
+      selectedParties,
     },
   });
 

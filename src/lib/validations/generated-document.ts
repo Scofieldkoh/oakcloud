@@ -14,6 +14,9 @@ export const createDocumentFromTemplateSchema = z.object({
   templateId: z.string().uuid(),
   companyId: z.string().uuid().optional().nullable(),
   contactIds: z.array(z.string().uuid()).optional().default([]),
+  selectedDirectorId: z.string().uuid().optional(),
+  selectedShareholderId: z.string().uuid().optional(),
+  selectedContactId: z.string().uuid().optional(),
   title: z.string().min(1, 'Title is required').max(300),
   customData: z.record(z.unknown()).optional(), // Custom placeholder values
   useLetterhead: z.boolean().default(true),
