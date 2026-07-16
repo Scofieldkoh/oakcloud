@@ -761,9 +761,9 @@ export function prepareCompanyContext(company: CompanyData): PlaceholderContext 
     });
     return {
       ...officer,
-      email: fields.email,
-      phone: fields.phone,
-      letterAddress: fields.address.letter,
+      email: fields.email ?? officer.email ?? null,
+      phone: fields.phone ?? officer.phone ?? null,
+      letterAddress: fields.address.letter ?? officer.letterAddress ?? null,
     };
   };
   const enrichShareholder = (shareholder: ShareholderData): ShareholderData => {
@@ -775,9 +775,9 @@ export function prepareCompanyContext(company: CompanyData): PlaceholderContext 
     });
     return {
       ...shareholder,
-      email: fields.email,
-      phone: fields.phone,
-      letterAddress: fields.address.letter,
+      email: fields.email ?? shareholder.email ?? null,
+      phone: fields.phone ?? shareholder.phone ?? null,
+      letterAddress: fields.address.letter ?? shareholder.letterAddress ?? null,
     };
   };
   const directors = getCurrentDirectors(company.officers || []).map(enrichOfficer);

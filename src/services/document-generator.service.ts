@@ -17,6 +17,7 @@ import {
 } from '@/lib/placeholder-resolver';
 import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
 import { getCompanyById } from '@/services/company.service';
+import { getDocumentPartyOptions } from '@/services/document-party.service';
 import { addSectionAnchors, extractSections } from '@/services/document-validation.service';
 import { analyzeTemplateContent, type TemplateDiagnostics } from '@/lib/template-analysis';
 import type {
@@ -316,8 +317,40 @@ export async function renderTemplateForGeneration(
     if (!company) {
       throw new NotFoundError('Company not found');
     }
+    const partyOptions = await getDocumentPartyOptions(companyId, tenantId);
+    const directorFieldsById = new Map(
+      partyOptions.directors.map((party) => [party.id, party]),
+    );
+    const shareholderFieldsById = new Map(
+      partyOptions.shareholders.map((party) => [party.id, party]),
+    );
+    const companyWithPartyFields = {
+      ...company,
+      officers: (company.officers ?? []).map((officer) => {
+        const party = directorFieldsById.get(officer.id);
+        return party
+          ? {
+              ...officer,
+              email: party.email,
+              phone: party.phone,
+              letterAddress: party.address.letter,
+            }
+          : officer;
+      }),
+      shareholders: (company.shareholders ?? []).map((shareholder) => {
+        const party = shareholderFieldsById.get(shareholder.id);
+        return party
+          ? {
+              ...shareholder,
+              email: party.email,
+              phone: party.phone,
+              letterAddress: party.address.letter,
+            }
+          : shareholder;
+      }),
+    };
     const companyContext = prepareCompanyContext(
-      company as unknown as Parameters<typeof prepareCompanyContext>[0]
+      companyWithPartyFields as unknown as Parameters<typeof prepareCompanyContext>[0]
     );
     context = {
       ...context,
