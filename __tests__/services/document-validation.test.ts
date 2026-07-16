@@ -166,6 +166,40 @@ describe('Document Validation Service', () => {
       );
       expect(result.resolvedData.missingPlaceholders).toEqual([]);
     });
+
+    it('accepts company.address.letter when a current registered address exists', async () => {
+      vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+        id: 'template-1',
+        name: 'Letter',
+        content: '{{company.address.letter}}',
+        placeholders: [],
+      } as never);
+      vi.mocked(prisma.company.findFirst).mockResolvedValue({
+        ...company,
+        addresses: [{
+          addressType: 'REGISTERED_OFFICE',
+          fullAddress: '10 Anson Road, #10-01, Singapore 079903',
+          isCurrent: true,
+          block: '10',
+          streetName: 'Anson Road',
+          level: '10',
+          unit: '01',
+          buildingName: null,
+          postalCode: '079903',
+          country: 'Singapore',
+        }],
+      } as never);
+
+      const result = await validateForGeneration('tenant-1', {
+        templateId: 'template-1',
+        companyId: 'company-1',
+      });
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toEqual([]);
+      expect(result.resolvedData.availablePlaceholders).toContain('company.address.letter');
+      expect(result.resolvedData.missingPlaceholders).toEqual([]);
+    });
   });
 
   describe('extractSections', () => {

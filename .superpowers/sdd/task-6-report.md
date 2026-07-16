@@ -66,3 +66,39 @@ The full-suite stderr includes the existing expected logging from `document-revi
 ## Concerns
 
 None.
+
+## Fix Review
+
+Two important compatibility findings were fixed after the original Task 6 review.
+
+### Legacy contact compatibility
+
+- Root cause: `getRequiredPartySelections` treated legacy `contact`, `contact.*`, and `contacts` keys as singular contact requirements.
+- Fix: only `selectedContact` and `selectedContact.*` now require `selectedContactId`.
+- Regression coverage: `contact.fullName` and `{{#each contacts}}` do not require a singular selection, while `selectedContact.email` still does.
+
+### Company letter-address validation
+
+- Root cause: availability inspected the registered address collection, but field validation attempted to read an unbuilt `company.address.letter` property.
+- Fix: validation and availability now share one registered-current-address lookup and the same `formatLetterAddress` result. Structured address fields are fetched for real validation requests. Existing `company.registeredAddress` handling is preserved.
+- Regression coverage: a current registered structured address satisfies `company.address.letter`, leaves no missing placeholder, and keeps generation validation valid.
+
+### RED evidence
+
+Command:
+
+`npx.cmd vitest run __tests__/lib/template-analysis.test.ts __tests__/services/document-validation.test.ts __tests__/api/generated-documents-validation-route.test.ts`
+
+Result: exit 1; 2 test files failed, 1 passed; 2 tests failed, 19 passed. The failures showed legacy contact roots returning `contact: true` and a registered address failing `company.address.letter` validation.
+
+### GREEN evidence
+
+- `npx.cmd vitest run __tests__/lib/template-analysis.test.ts` — exit 0; 1 file passed, 4 tests passed.
+- `npx.cmd vitest run __tests__/services/document-validation.test.ts` — exit 0; 1 file passed, 16 tests passed.
+- Combined Task 4/6 command above — exit 0; 3 files passed, 21 tests passed.
+- `npx.cmd tsc --noEmit` — exit 0.
+- `git diff --check` — exit 0.
+
+### Fix review concerns
+
+None.

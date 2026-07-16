@@ -7,6 +7,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { extractPlaceholders, type CompanyData, type OfficerData, type ShareholderData, type CompanyAddressData } from '@/lib/placeholder-resolver';
+import { formatLetterAddress } from '@/lib/document-party';
 import { getRequiredPartySelections } from '@/lib/template-analysis';
 import {
   resolveDocumentPartySelections,
@@ -174,6 +175,13 @@ async function fetchCompanyData(companyId: string, tenantId: string): Promise<Co
           addressType: true,
           fullAddress: true,
           isCurrent: true,
+          block: true,
+          streetName: true,
+          level: true,
+          unit: true,
+          buildingName: true,
+          postalCode: true,
+          country: true,
         },
       },
       officers: {
@@ -289,10 +297,10 @@ function validateCompanyData(
     // Special handling for computed fields
     if (field === 'registeredAddress') {
       // registeredAddress is computed from the addresses array
-      const regAddress = company.addresses?.find(
-        (a: CompanyAddressData) => a.addressType === 'REGISTERED_OFFICE' && a.isCurrent
-      );
+      const regAddress = getRegisteredCurrentAddress(company);
       value = regAddress?.fullAddress;
+    } else if (field === 'address.letter') {
+      value = getCompanyLetterAddress(company);
     } else {
       value = getNestedValue(company, field);
     }
@@ -644,11 +652,11 @@ function calculateAvailablePlaceholders(
     if (company.gstRegistrationNumber) available.push('company.gstRegistrationNumber');
 
     // Address
-    const regAddress = company.addresses?.find(
-      a => a.addressType === 'REGISTERED_OFFICE' && a.isCurrent
-    );
+    const regAddress = getRegisteredCurrentAddress(company);
     if (regAddress) {
       available.push('company.registeredAddress');
+    }
+    if (getCompanyLetterAddress(company)) {
       available.push('company.address.letter');
     }
 
@@ -729,6 +737,30 @@ function toSelectionMembershipError(error: unknown): ValidationError {
       : 'Unable to validate selected parties for this company',
     category: 'company',
   };
+}
+
+function getRegisteredCurrentAddress(
+  company: CompanyData
+): CompanyAddressData | undefined {
+  return company.addresses?.find(
+    (address) => address.addressType === 'REGISTERED_OFFICE' && address.isCurrent
+  );
+}
+
+function getCompanyLetterAddress(company: CompanyData): string | null {
+  const address = getRegisteredCurrentAddress(company);
+  if (!address) return null;
+
+  return formatLetterAddress({
+    fullAddress: address.fullAddress,
+    block: address.block,
+    street: address.streetName,
+    level: address.level,
+    unit: address.unit,
+    building: address.buildingName,
+    postalCode: address.postalCode,
+    country: address.country,
+  }).letter;
 }
 
 // ============================================================================

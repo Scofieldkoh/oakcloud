@@ -32,6 +32,18 @@ describe('template-analysis', () => {
     )).toEqual(['directors']);
   });
 
+  it('preserves legacy contact placeholders without requiring a singular contact selection', () => {
+    expect(getRequiredPartySelections(
+      '{{contact.fullName}}{{#each contacts}}{{this.email}}{{/each}}',
+    )).toEqual({
+      director: false,
+      shareholder: false,
+      contact: false,
+    });
+
+    expect(getRequiredPartySelections('{{selectedContact.email}}').contact).toBe(true);
+  });
+
   describe('isCustomPlaceholder', () => {
     it('returns false for a non-custom placeholder without a key', () => {
       expect(isCustomPlaceholder({ category: 'system', source: 'system' })).toBe(false);

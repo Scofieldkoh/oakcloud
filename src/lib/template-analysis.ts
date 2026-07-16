@@ -361,10 +361,7 @@ export function getRequiredPartySelections(
     ),
     contact: keys.some(
       (key) => key === 'selectedContact'
-        || key.startsWith('selectedContact.')
-        || key === 'contact'
-        || key.startsWith('contact.')
-        || key === 'contacts',
+        || key.startsWith('selectedContact.'),
     ),
   };
 }
