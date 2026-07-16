@@ -155,6 +155,9 @@ export default function GenerateDocumentPage() {
         templateId: data.templateId,
         companyId: data.companyId,
         contactIds: data.contactIds || [],
+        selectedDirectorId: data.selectedDirectorId,
+        selectedShareholderId: data.selectedShareholderId,
+        selectedContactId: data.selectedContactId,
         title: data.title,
         customData: data.customData,
         useLetterhead: data.useLetterhead,
@@ -201,13 +204,19 @@ export default function GenerateDocumentPage() {
       templateId: string,
       companyId: string | undefined,
       customData: Record<string, string>,
-      contactIds: string[] = []
+      contactIds: string[] = [],
+      selectedDirectorId?: string,
+      selectedShareholderId?: string,
+      selectedContactId?: string,
     ) => {
       try {
         const requestBody: Record<string, unknown> = {
           templateId,
           companyId,
           contactIds,
+          selectedDirectorId,
+          selectedShareholderId,
+          selectedContactId,
           customData,
         };
 

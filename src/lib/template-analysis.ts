@@ -366,6 +366,18 @@ export function getRequiredPartySelections(
   };
 }
 
+export function getRequiredLegacyContactSelection(
+  content: string,
+  partials: TemplatePartialLike[] = [],
+): boolean {
+  const byName = new Map(partials.map((partial) => [partial.name, partial]));
+  const names = collectDependencyNames(content, byName);
+  const combined = [content, ...names.map((name) => byName.get(name)?.content ?? '')].join('\n');
+  const keys = extractTemplatePlaceholderKeys(combined);
+
+  return keys.some((key) => key === 'contact' || key.startsWith('contact.') || key === 'contacts');
+}
+
 function collectDependencyNames(
   content: string,
   partialByName: Map<string, TemplatePartialLike>,

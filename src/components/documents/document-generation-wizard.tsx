@@ -14,6 +14,11 @@ import {
   Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { DocumentParty } from '@/lib/document-party';
+import {
+  getRequiredLegacyContactSelection,
+  getRequiredPartySelections,
+} from '@/lib/template-analysis';
 import { Button } from '@/components/ui/button';
 import { Stepper, type Step } from '@/components/ui/stepper';
 import { Pagination } from '@/components/ui/pagination';
@@ -71,7 +76,10 @@ export interface GenerationWizardProps {
     templateId: string,
     companyId: string | undefined,
     customData: Record<string, string>,
-    contactIds?: string[]
+    contactIds?: string[],
+    selectedDirectorId?: string,
+    selectedShareholderId?: string,
+    selectedContactId?: string,
   ) => Promise<ValidationResult>;
   isLoading?: boolean;
   className?: string;
@@ -81,6 +89,9 @@ export interface GenerateDocumentData {
   templateId: string;
   companyId?: string;
   contactIds?: string[];
+  selectedDirectorId?: string;
+  selectedShareholderId?: string;
+  selectedContactId?: string;
   title: string;
   customData: Record<string, string>;
   useLetterhead: boolean;
@@ -99,6 +110,9 @@ interface WizardState {
   selectedTemplate: DocumentTemplate | null;
   selectedCompany: Company | null;
   selectedContacts: DocumentContact[];
+  selectedDirectorId: string;
+  selectedShareholderId: string;
+  selectedContactId: string;
   title: string;
   customData: Record<string, string>;
   useLetterhead: boolean;
@@ -119,7 +133,7 @@ interface WizardState {
 const WIZARD_STEPS: Step[] = [
   { id: 'template', label: 'Template' },
   { id: 'company', label: 'Company' },
-  { id: 'contacts', label: 'Contacts' },
+  { id: 'people', label: 'People' },
   { id: 'customize', label: 'Custom Fields' },
   { id: 'edit', label: 'Edit & Preview' },
 ];
@@ -130,6 +144,9 @@ interface WizardDraftState {
   templateId: string | null;
   companyId: string | null;
   contactIds: string[];
+  selectedDirectorId: string | null;
+  selectedShareholderId: string | null;
+  selectedContactId: string | null;
   title: string;
   customData: Record<string, string>;
   useLetterhead: boolean;
@@ -138,6 +155,18 @@ interface WizardDraftState {
   currentStep: number;
   savedAt: string;
 }
+
+interface DocumentPartyOptions {
+  directors: DocumentParty[];
+  shareholders: DocumentParty[];
+  contacts: DocumentParty[];
+}
+
+const EMPTY_PARTY_OPTIONS: DocumentPartyOptions = {
+  directors: [],
+  shareholders: [],
+  contacts: [],
+};
 
 // ============================================================================
 // Summary Card Component
@@ -489,6 +518,7 @@ function ContactSelector({
               onClick={() => toggleContact(contact)}
               role="button"
               tabIndex={0}
+              aria-pressed={isSelected}
             >
               <div
                 className={cn(
@@ -531,6 +561,90 @@ function ContactSelector({
             setPage(1);
           }}
         />
+      )}
+    </div>
+  );
+}
+
+interface PartySelectorProps {
+  id: string;
+  label: string;
+  options: DocumentParty[];
+  value: string;
+  onChange: (value: string) => void;
+  isLoading: boolean;
+  error?: string | null;
+  required?: boolean;
+}
+
+function PartySelector({
+  id,
+  label,
+  options,
+  value,
+  onChange,
+  isLoading,
+  error,
+  required = false,
+}: PartySelectorProps) {
+  const [query, setQuery] = useState('');
+  const filteredOptions = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return options;
+    return options.filter((option) =>
+      option.id === value
+      || [option.name, option.detail, option.email, option.phone]
+        .filter(Boolean)
+        .some((field) => field!.toLowerCase().includes(normalizedQuery)),
+    );
+  }, [options, query, value]);
+
+  return (
+    <div className="space-y-2">
+      <label htmlFor={id} className="text-xs font-medium text-text-secondary block">
+        {label}
+        {required ? <span className="text-status-error ml-1" aria-hidden="true">*</span> : null}
+      </label>
+      {isLoading ? (
+        <div className="flex items-center gap-2 min-h-11 text-sm text-text-muted" role="status">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Loading {label.toLowerCase()} options...
+        </div>
+      ) : error ? (
+        <p className="text-sm text-status-error" role="alert">{error}</p>
+      ) : options.length === 0 ? (
+        <p className="py-3 text-sm text-text-muted">No {label.toLowerCase()} options are available for this company.</p>
+      ) : (
+        <>
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label={`Search ${label.toLowerCase()} options`}
+              placeholder={`Search ${label.toLowerCase()}...`}
+              className="w-full min-h-11 pl-9 pr-4 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-oak-primary/30 focus:ring-offset-1 focus:border-oak-primary"
+            />
+          </div>
+          <select
+            id={id}
+            aria-label={label}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            required={required}
+            className="w-full min-h-11 px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 focus:ring-offset-1 focus:border-oak-primary"
+          >
+            <option value="">Select {label.toLowerCase()}</option>
+            {filteredOptions.map((option) => {
+              const secondary = option.detail || option.email || option.phone;
+              return <option key={option.id} value={option.id}>{option.name}{secondary ? ` — ${secondary}` : ''}</option>;
+            })}
+          </select>
+          {filteredOptions.length === 0 ? (
+            <p className="text-sm text-text-muted">No {label.toLowerCase()} options match your search.</p>
+          ) : null}
+        </>
       )}
     </div>
   );
@@ -915,12 +1029,23 @@ export function DocumentGenerationWizard({
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [partyOptions, setPartyOptions] = useState<DocumentPartyOptions>(EMPTY_PARTY_OPTIONS);
+  const [isLoadingParties, setIsLoadingParties] = useState(false);
+  const [partyLoadError, setPartyLoadError] = useState<string | null>(null);
   const hasLoadedDraftRef = useRef(false);
+  const pendingDraftPartyIdsRef = useRef<{
+    director: string;
+    shareholder: string;
+    contact: string;
+  } | null>(null);
 
   const [state, setState] = useState<WizardState>({
     selectedTemplate: null,
     selectedCompany: null,
     selectedContacts: [],
+    selectedDirectorId: '',
+    selectedShareholderId: '',
+    selectedContactId: '',
     title: '',
     customData: {},
     useLetterhead: true,
@@ -959,6 +1084,11 @@ export function DocumentGenerationWizard({
       const selectedCompany = companies.find((company) => company.id === draft.companyId) || null;
       const selectedContactIds = new Set(draft.contactIds || []);
       const selectedContacts = contacts.filter((contact) => selectedContactIds.has(contact.id));
+      pendingDraftPartyIdsRef.current = {
+        director: typeof draft.selectedDirectorId === 'string' ? draft.selectedDirectorId : '',
+        shareholder: typeof draft.selectedShareholderId === 'string' ? draft.selectedShareholderId : '',
+        contact: typeof draft.selectedContactId === 'string' ? draft.selectedContactId : '',
+      };
       const restoredStep = Math.max(0, Math.min(Number(draft.currentStep) || 0, WIZARD_STEPS.length - 1));
 
       setState((prev) => ({
@@ -966,6 +1096,9 @@ export function DocumentGenerationWizard({
         selectedTemplate,
         selectedCompany,
         selectedContacts,
+        selectedDirectorId: '',
+        selectedShareholderId: '',
+        selectedContactId: '',
         title: typeof draft.title === 'string' ? draft.title : '',
         customData: draft.customData && typeof draft.customData === 'object' ? draft.customData : {},
         useLetterhead: typeof draft.useLetterhead === 'boolean' ? draft.useLetterhead : true,
@@ -980,6 +1113,51 @@ export function DocumentGenerationWizard({
   }, [companies, contacts, templates]);
 
   useEffect(() => {
+    const companyId = state.selectedCompany?.id;
+    if (!companyId) {
+      setPartyOptions(EMPTY_PARTY_OPTIONS);
+      setPartyLoadError(null);
+      setIsLoadingParties(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setIsLoadingParties(true);
+    setPartyLoadError(null);
+
+    void fetch(`/api/companies/${companyId}/document-parties`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Failed to load company party options.');
+        return response.json() as Promise<DocumentPartyOptions>;
+      })
+      .then((options) => {
+        if (controller.signal.aborted) return;
+        setPartyOptions(options);
+        const pending = pendingDraftPartyIdsRef.current;
+        if (pending) {
+          setState((previous) => ({
+            ...previous,
+            selectedDirectorId: options.directors.some((option) => option.id === pending.director) ? pending.director : '',
+            selectedShareholderId: options.shareholders.some((option) => option.id === pending.shareholder) ? pending.shareholder : '',
+            selectedContactId: options.contacts.some((option) => option.id === pending.contact) ? pending.contact : '',
+          }));
+          pendingDraftPartyIdsRef.current = null;
+        }
+      })
+      .catch((fetchError: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load document party options:', fetchError);
+        setPartyOptions(EMPTY_PARTY_OPTIONS);
+        setPartyLoadError(fetchError instanceof Error ? fetchError.message : 'Failed to load company party options.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoadingParties(false);
+      });
+
+    return () => controller.abort();
+  }, [state.selectedCompany?.id]);
+
+  useEffect(() => {
     if (!hasLoadedDraftRef.current) return;
 
     try {
@@ -992,6 +1170,9 @@ export function DocumentGenerationWizard({
         templateId: state.selectedTemplate?.id || null,
         companyId: state.selectedCompany?.id || null,
         contactIds: state.selectedContacts.map((contact) => contact.id),
+        selectedDirectorId: state.selectedDirectorId || pendingDraftPartyIdsRef.current?.director || null,
+        selectedShareholderId: state.selectedShareholderId || pendingDraftPartyIdsRef.current?.shareholder || null,
+        selectedContactId: state.selectedContactId || pendingDraftPartyIdsRef.current?.contact || null,
         title: state.title,
         customData: state.customData,
         useLetterhead: state.useLetterhead,
@@ -1020,6 +1201,24 @@ export function DocumentGenerationWizard({
     return Object.values(state.customData).filter((v) => v && v.trim() !== '').length;
   }, [state.customData]);
 
+  const partyRequirements = useMemo(() => {
+    if (!state.selectedTemplate) return { director: false, shareholder: false, contact: false };
+    return getRequiredPartySelections(state.selectedTemplate.content || '', partials);
+  }, [partials, state.selectedTemplate]);
+
+  const requiresLegacyContacts = useMemo(() => {
+    if (!state.selectedTemplate) return false;
+    return getRequiredLegacyContactSelection(state.selectedTemplate.content || '', partials);
+  }, [partials, state.selectedTemplate]);
+
+  const getRequiredPartyErrors = useCallback((): string[] => {
+    const errors: string[] = [];
+    if (partyRequirements.director && !state.selectedDirectorId) errors.push('Select a director for this template.');
+    if (partyRequirements.shareholder && !state.selectedShareholderId) errors.push('Select a shareholder for this template.');
+    if (partyRequirements.contact && !state.selectedContactId) errors.push('Select a company contact for this template.');
+    return errors;
+  }, [partyRequirements, state.selectedContactId, state.selectedDirectorId, state.selectedShareholderId]);
+
   // Check if current step is valid
   const isStepValid = useCallback(
     (step: number): boolean => {
@@ -1028,8 +1227,8 @@ export function DocumentGenerationWizard({
           return state.selectedTemplate !== null;
         case 1: // Company
           return true; // Company is optional
-        case 2: // Contacts
-          return true;
+        case 2: // People
+          return getRequiredPartyErrors().length === 0;
         case 3: // Customize
           return state.title.trim().length > 0;
         case 4: // Edit & Preview
@@ -1038,7 +1237,7 @@ export function DocumentGenerationWizard({
           return false;
       }
     },
-    [state.selectedTemplate, state.title]
+    [getRequiredPartyErrors, state.selectedTemplate, state.title]
   );
 
   const getRequiredCustomFieldErrors = useCallback((): string[] => {
@@ -1061,6 +1260,20 @@ export function DocumentGenerationWizard({
 
   // Handle step navigation
   const goToNextStep = async () => {
+    if (currentStep === 2) {
+      const partyErrors = getRequiredPartyErrors();
+      if (partyErrors.length > 0) {
+        setState((previous) => ({ ...previous, fieldErrors: partyErrors }));
+        const firstMissingId = partyRequirements.director && !state.selectedDirectorId
+          ? 'party-director'
+          : partyRequirements.shareholder && !state.selectedShareholderId
+            ? 'party-shareholder'
+            : 'party-contact';
+        window.requestAnimationFrame(() => document.getElementById(firstMissingId)?.focus());
+        return;
+      }
+      setState((previous) => ({ ...previous, fieldErrors: [] }));
+    }
     if (!isStepValid(currentStep)) return;
     const currentStepId = WIZARD_STEPS[currentStep]?.id;
 
@@ -1082,7 +1295,10 @@ export function DocumentGenerationWizard({
             state.selectedTemplate.id,
             state.selectedCompany?.id,
             state.customData,
-            state.selectedContacts.map((contact) => contact.id)
+            state.selectedContacts.map((contact) => contact.id),
+            state.selectedDirectorId || undefined,
+            state.selectedShareholderId || undefined,
+            state.selectedContactId || undefined,
           );
           setState((prev) => ({ ...prev, validationResult: result }));
         } catch (err) {
@@ -1121,6 +1337,9 @@ export function DocumentGenerationWizard({
         templateId: state.selectedTemplate.id,
         companyId: state.selectedCompany?.id,
         contactIds: state.selectedContacts.map((contact) => contact.id),
+        selectedDirectorId: state.selectedDirectorId || undefined,
+        selectedShareholderId: state.selectedShareholderId || undefined,
+        selectedContactId: state.selectedContactId || undefined,
         customData: state.customData,
       };
 
@@ -1163,6 +1382,9 @@ export function DocumentGenerationWizard({
         templateId: state.selectedTemplate.id,
         companyId: state.selectedCompany?.id,
         contactIds: state.selectedContacts.map((contact) => contact.id),
+        selectedDirectorId: state.selectedDirectorId || undefined,
+        selectedShareholderId: state.selectedShareholderId || undefined,
+        selectedContactId: state.selectedContactId || undefined,
         title: state.title,
         customData: state.customData,
         useLetterhead: state.useLetterhead,
@@ -1186,6 +1408,9 @@ export function DocumentGenerationWizard({
       selectedTemplate: null,
       selectedCompany: null,
       selectedContacts: [],
+      selectedDirectorId: '',
+      selectedShareholderId: '',
+      selectedContactId: '',
       title: '',
       customData: {},
       useLetterhead: true,
@@ -1211,9 +1436,11 @@ export function DocumentGenerationWizard({
           <TemplateSelector
             templates={templates}
             selectedTemplate={state.selectedTemplate}
-            onSelect={(template) =>
-              setState((prev) => ({ ...prev, selectedTemplate: template }))
-            }
+            onSelect={(template) => setState((prev) => ({
+              ...prev,
+              selectedTemplate: template,
+              fieldErrors: [],
+            }))}
             onPreview={onPreviewTemplate}
             onSearch={onSearchTemplates}
             isLoading={isLoading}
@@ -1225,23 +1452,92 @@ export function DocumentGenerationWizard({
           <CompanySelector
             companies={companies}
             selected={state.selectedCompany}
-            onSelect={(company) =>
-              setState((prev) => ({ ...prev, selectedCompany: company }))
-            }
+            onSelect={(company) => {
+              pendingDraftPartyIdsRef.current = null;
+              setState((prev) => ({
+                ...prev,
+                selectedCompany: company,
+                selectedDirectorId: '',
+                selectedShareholderId: '',
+                selectedContactId: '',
+                previewContent: null,
+                editedContent: null,
+                fieldErrors: [],
+              }));
+            }}
             onSearch={onSearchCompanies}
           />
         );
 
       case 2:
         return (
-          <ContactSelector
-            contacts={contacts}
-            selected={state.selectedContacts}
-            onChange={(selectedContacts) =>
-              setState((prev) => ({ ...prev, selectedContacts }))
-            }
-            onSearch={onSearchContacts}
-          />
+          <div className="space-y-6">
+            {state.fieldErrors.length > 0 ? (
+              <div className="p-4 bg-status-error/10 border border-status-error/30 rounded-lg" role="alert">
+                <div className="flex items-start gap-3 text-status-error">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <ul className="text-sm space-y-1">
+                    {state.fieldErrors.map((message) => <li key={message}>{message}</li>)}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
+            {partyRequirements.director ? (
+              <PartySelector
+                key={`${state.selectedCompany?.id || 'none'}-director`}
+                id="party-director"
+                label="Director"
+                options={partyOptions.directors}
+                value={state.selectedDirectorId}
+                onChange={(selectedDirectorId) => setState((previous) => ({ ...previous, selectedDirectorId, fieldErrors: [] }))}
+                isLoading={isLoadingParties}
+                error={partyLoadError}
+                required
+              />
+            ) : null}
+            {partyRequirements.shareholder ? (
+              <PartySelector
+                key={`${state.selectedCompany?.id || 'none'}-shareholder`}
+                id="party-shareholder"
+                label="Shareholder"
+                options={partyOptions.shareholders}
+                value={state.selectedShareholderId}
+                onChange={(selectedShareholderId) => setState((previous) => ({ ...previous, selectedShareholderId, fieldErrors: [] }))}
+                isLoading={isLoadingParties}
+                error={partyLoadError}
+                required
+              />
+            ) : null}
+            {partyRequirements.contact ? (
+              <PartySelector
+                key={`${state.selectedCompany?.id || 'none'}-contact`}
+                id="party-contact"
+                label="Company Contact"
+                options={partyOptions.contacts}
+                value={state.selectedContactId}
+                onChange={(selectedContactId) => setState((previous) => ({ ...previous, selectedContactId, fieldErrors: [] }))}
+                isLoading={isLoadingParties}
+                error={partyLoadError}
+                required
+              />
+            ) : null}
+            {requiresLegacyContacts ? (
+              <div className="space-y-2">
+                {(partyRequirements.director || partyRequirements.shareholder || partyRequirements.contact) ? (
+                  <h3 className="text-sm font-medium text-text-primary">Additional contacts</h3>
+                ) : null}
+                <ContactSelector
+                  contacts={contacts}
+                  selected={state.selectedContacts}
+                  onChange={(selectedContacts) => setState((prev) => ({ ...prev, selectedContacts }))}
+                  onSearch={onSearchContacts}
+                />
+              </div>
+            ) : null}
+            {!partyRequirements.director && !partyRequirements.shareholder && !partyRequirements.contact && !requiresLegacyContacts ? (
+              <p className="py-8 text-center text-sm text-text-muted">This template does not require any people selections.</p>
+            ) : null}
+          </div>
         );
 
       case 3:
@@ -1367,7 +1663,7 @@ export function DocumentGenerationWizard({
             <Button
               variant="primary"
               onClick={goToNextStep}
-              disabled={!isStepValid(currentStep) || isGenerating || isValidating}
+              disabled={(currentStep !== 2 && !isStepValid(currentStep)) || isGenerating || isValidating}
             >
               {isGenerating || isValidating ? (
                 <>

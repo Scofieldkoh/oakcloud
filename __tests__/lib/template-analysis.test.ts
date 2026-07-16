@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   analyzeTemplateContent,
   extractTemplatePlaceholderKeys,
+  getRequiredLegacyContactSelection,
   getRequiredPartySelections,
   isCustomPlaceholder,
 } from '@/lib/template-analysis';
@@ -42,6 +43,19 @@ describe('template-analysis', () => {
     });
 
     expect(getRequiredPartySelections('{{selectedContact.email}}').contact).toBe(true);
+  });
+
+  it('detects legacy contact roots without treating selectedContact as legacy', () => {
+    expect(getRequiredLegacyContactSelection('{{contact.name}}')).toBe(true);
+    expect(getRequiredLegacyContactSelection('{{#each contacts}}{{name}}{{/each}}')).toBe(true);
+    expect(getRequiredLegacyContactSelection('{{selectedContact.name}}')).toBe(false);
+  });
+
+  it('detects legacy contact roots through nested partials', () => {
+    expect(getRequiredLegacyContactSelection('{{> outer}}', [
+      { name: 'outer', content: '{{> inner}}' },
+      { name: 'inner', content: '{{contact.email}}' },
+    ])).toBe(true);
   });
 
   describe('isCustomPlaceholder', () => {
