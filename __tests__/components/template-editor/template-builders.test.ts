@@ -6,6 +6,20 @@ import {
 } from '@/components/documents/template-editor/template-builders';
 
 describe('guided template builders', () => {
+  it('builds one balanced directors loop with guided contact fields', () => {
+    const result = buildEachBlock({
+      collection: 'directors',
+      fields: ['email', 'phone', 'letterAddress'],
+      layout: 'paragraphs',
+    });
+
+    expect(result).toContain('{{this.email}}');
+    expect(result).toContain('{{this.phone}}');
+    expect(result).toContain('{{this.letterAddress}}');
+    expect(result.match(/{{#each directors}}/g)).toHaveLength(1);
+    expect(result.match(/{{\/each}}/g)).toHaveLength(1);
+  });
+
   it('builds a balanced directors table loop', () => {
     const result = buildEachBlock({
       collection: 'directors',

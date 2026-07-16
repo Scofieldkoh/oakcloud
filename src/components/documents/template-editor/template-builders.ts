@@ -32,6 +32,9 @@ const LOOP_FIELDS = {
     { value: 'nationality', label: 'Nationality' },
     { value: 'role', label: 'Role' },
     { value: 'address', label: 'Address' },
+    { value: 'email', label: 'Email' },
+    { value: 'phone', label: 'Phone' },
+    { value: 'letterAddress', label: 'Letter address' },
   ],
   shareholders: [
     { value: 'name', label: 'Name' },
@@ -40,6 +43,9 @@ const LOOP_FIELDS = {
     { value: 'shareClass', label: 'Share class' },
     { value: 'numberOfShares', label: 'Number of shares' },
     { value: 'percentageHeld', label: 'Percentage held' },
+    { value: 'email', label: 'Email' },
+    { value: 'phone', label: 'Phone' },
+    { value: 'letterAddress', label: 'Letter address' },
   ],
 } as const satisfies Record<TemplateCollection, readonly TemplateFieldOption[]>;
 

@@ -36,6 +36,23 @@ function fillLabelAndKey(label: string, key: string) {
 }
 
 describe('PlaceholderPanel', () => {
+  it('offers selected party, letter address, and preparer placeholders', () => {
+    const onInsert = vi.fn();
+    render(<PlaceholderPanel {...defaultProps} onInsert={onInsert} />);
+
+    expect(screen.getByText('Selected Director')).toBeVisible();
+    expect(screen.getByText('Selected Shareholder')).toBeVisible();
+    expect(screen.getByText('Selected Contact')).toBeVisible();
+    expect(screen.getByText('Company Letter Address')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /^System,/ }));
+    expect(screen.getByText('Preparer Name')).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: /^Selected Director,/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Insert Director Email' }));
+
+    expect(onInsert).toHaveBeenCalledWith('{{selectedDirector.email}}');
+  });
+
   it('offers collection fields only through their guided loop builders', () => {
     render(<PlaceholderPanel {...defaultProps} />);
     expect(screen.getByRole('button', { name: 'Build directors loop' })).toBeVisible();

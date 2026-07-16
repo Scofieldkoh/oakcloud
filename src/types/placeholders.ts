@@ -9,6 +9,8 @@
  * - Placeholder resolver (placeholder-resolver.ts)
  */
 
+import type { DocumentParty } from '@/lib/document-party';
+
 // ============================================================================
 // Placeholder Value Types
 // ============================================================================
@@ -127,6 +129,7 @@ export interface AddressData {
   unit: string;
   building: string;
   postalCode: string;
+  letter?: string;
 }
 
 /**
@@ -176,6 +179,7 @@ export type CustomData = Record<string, string | number | Date | undefined>;
 export interface SystemData {
   currentDate: Date;
   generatedBy: string;
+  preparerName?: string;
   tenantName?: string;
 }
 
@@ -186,6 +190,9 @@ export interface MockDataValues {
   company: MockCompanyData;
   directors: MockDirectorData[];
   shareholders: MockShareholderData[];
+  selectedDirector?: DocumentParty;
+  selectedShareholder?: DocumentParty;
+  selectedContact?: DocumentParty;
   custom: CustomData;
   system: SystemData;
 }

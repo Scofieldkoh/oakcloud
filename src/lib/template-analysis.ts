@@ -55,6 +55,9 @@ const KNOWN_PLACEHOLDER_ROOTS = new Set([
   'contact',
   'contacts',
   'directors',
+  'selectedContact',
+  'selectedDirector',
+  'selectedShareholder',
   'secretaries',
   'shareholders',
   'system',
@@ -74,6 +77,7 @@ const LOOP_ONLY_PLACEHOLDERS = new Set([
   'this.cessationDate',
   'this.email',
   'this.phone',
+  'this.letterAddress',
   'name',
   'identificationNumber',
   'nationality',
@@ -327,6 +331,41 @@ export function analyzeTemplateContent(params: {
         version: partial?.version ?? null,
       };
     }),
+  };
+}
+
+export interface RequiredPartySelections {
+  director: boolean;
+  shareholder: boolean;
+  contact: boolean;
+}
+
+export function getRequiredPartySelections(
+  content: string,
+  partials: TemplatePartialLike[] = [],
+): RequiredPartySelections {
+  const byName = new Map(partials.map((partial) => [partial.name, partial]));
+  const names = collectDependencyNames(content, byName);
+  const combined = [
+    content,
+    ...names.map((name) => byName.get(name)?.content ?? ''),
+  ].join('\n');
+  const keys = extractTemplatePlaceholderKeys(combined);
+
+  return {
+    director: keys.some(
+      (key) => key === 'selectedDirector' || key.startsWith('selectedDirector.'),
+    ),
+    shareholder: keys.some(
+      (key) => key === 'selectedShareholder' || key.startsWith('selectedShareholder.'),
+    ),
+    contact: keys.some(
+      (key) => key === 'selectedContact'
+        || key.startsWith('selectedContact.')
+        || key === 'contact'
+        || key.startsWith('contact.')
+        || key === 'contacts',
+    ),
   };
 }
 
