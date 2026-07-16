@@ -7,6 +7,11 @@
 
 import { prisma } from '@/lib/prisma';
 import { extractPlaceholders, type CompanyData, type OfficerData, type ShareholderData, type CompanyAddressData } from '@/lib/placeholder-resolver';
+import { getRequiredPartySelections } from '@/lib/template-analysis';
+import {
+  resolveDocumentPartySelections,
+  type DocumentPartySelections,
+} from '@/services/document-party.service';
 import { resolvePartials } from '@/services/template-partial.service';
 import type { PlaceholderDefinition, PlaceholderRequirement, PlaceholderSource } from '@/types/placeholders';
 
@@ -35,6 +40,9 @@ export interface ValidationResult {
     company?: CompanyData | null;
     directors?: OfficerData[];
     shareholders?: ShareholderData[];
+    selectedDirector?: DocumentPartySelections['selectedDirector'];
+    selectedShareholder?: DocumentPartySelections['selectedShareholder'];
+    selectedContact?: DocumentPartySelections['selectedContact'];
     requiredPlaceholders: string[];
     availablePlaceholders: string[];
     missingPlaceholders: string[];
@@ -45,6 +53,9 @@ export interface ValidateForGenerationInput {
   templateId: string;
   companyId?: string;
   contactIds?: string[];
+  selectedDirectorId?: string;
+  selectedShareholderId?: string;
+  selectedContactId?: string;
   customData?: Record<string, unknown>;
 }
 
@@ -60,6 +71,15 @@ export interface ValidateForGenerationInput {
 function getPlaceholderCategory(key: string): PlaceholderSource {
   const lowerKey = key.toLowerCase();
 
+  if (lowerKey === 'selecteddirector' || lowerKey.startsWith('selecteddirector.')) {
+    return 'officer';
+  }
+  if (lowerKey === 'selectedshareholder' || lowerKey.startsWith('selectedshareholder.')) {
+    return 'shareholder';
+  }
+  if (lowerKey === 'selectedcontact' || lowerKey.startsWith('selectedcontact.')) {
+    return 'contact';
+  }
   if (lowerKey.startsWith('company.') || lowerKey === 'company') {
     return 'company';
   }
@@ -493,8 +513,57 @@ export async function validateForGeneration(
     (template.placeholders as unknown) as PlaceholderDefinition[] | undefined
   );
 
+  const partyRequirements = getRequiredPartySelections(contentToValidate);
+  const selectionErrors: ValidationError[] = [];
+  if (partyRequirements.director && !input.selectedDirectorId) {
+    selectionErrors.push({
+      field: 'selectedDirector',
+      message: 'Select a director for this template.',
+      category: 'directors',
+    });
+  }
+  if (partyRequirements.shareholder && !input.selectedShareholderId) {
+    selectionErrors.push({
+      field: 'selectedShareholder',
+      message: 'Select a shareholder for this template.',
+      category: 'shareholders',
+    });
+  }
+  if (partyRequirements.contact && !input.selectedContactId) {
+    selectionErrors.push({
+      field: 'selectedContact',
+      message: 'Select a company contact for this template.',
+      category: 'contacts',
+    });
+  }
+
   // Fetch company data if needed
   const company = companyId ? await fetchCompanyData(companyId, tenantId) : null;
+
+  let selections: DocumentPartySelections = {};
+  const membershipErrors: ValidationError[] = [];
+  const hasPartySelection = Boolean(
+    input.selectedDirectorId || input.selectedShareholderId || input.selectedContactId
+  );
+  if (hasPartySelection && !companyId) {
+    membershipErrors.push({
+      field: 'company',
+      message: 'Company selection is required for selected parties',
+      category: 'company',
+    });
+  } else if (hasPartySelection && companyId) {
+    try {
+      selections = await resolveDocumentPartySelections({
+        companyId,
+        tenantId,
+        selectedDirectorId: input.selectedDirectorId,
+        selectedShareholderId: input.selectedShareholderId,
+        selectedContactId: input.selectedContactId,
+      });
+    } catch (error) {
+      membershipErrors.push(toSelectionMembershipError(error));
+    }
+  }
 
   // Run all validations
   const companyValidation = validateCompanyData(company, requirements, companyId);
@@ -504,6 +573,8 @@ export async function validateForGeneration(
 
   // Combine results
   const allErrors = [
+    ...selectionErrors,
+    ...membershipErrors,
     ...companyValidation.errors,
     ...officerValidation.errors,
     ...shareholderValidation.errors,
@@ -519,7 +590,7 @@ export async function validateForGeneration(
 
   // Calculate placeholder availability
   const requiredPlaceholders = requirements.filter(r => r.required).map(r => r.key);
-  const availablePlaceholders = calculateAvailablePlaceholders(company, customData);
+  const availablePlaceholders = calculateAvailablePlaceholders(company, selections, customData);
   const missingPlaceholders = requiredPlaceholders.filter(
     p => !availablePlaceholders.includes(p)
   );
@@ -532,6 +603,7 @@ export async function validateForGeneration(
       company,
       directors: company?.officers?.filter(o => o.isCurrent && o.role === 'DIRECTOR'),
       shareholders: company?.shareholders?.filter(s => s.isCurrent),
+      ...selections,
       requiredPlaceholders,
       availablePlaceholders,
       missingPlaceholders,
@@ -544,12 +616,18 @@ export async function validateForGeneration(
  */
 function calculateAvailablePlaceholders(
   company: CompanyData | null,
+  selections: DocumentPartySelections,
   customData?: Record<string, unknown>
 ): string[] {
   const available: string[] = [];
 
   // System placeholders are always available
-  available.push('system.currentDate', 'system.tenantName', 'system.generatedBy');
+  available.push(
+    'system.currentDate',
+    'system.tenantName',
+    'system.preparerName',
+    'system.generatedBy'
+  );
 
   if (company) {
     // Company fields
@@ -569,7 +647,10 @@ function calculateAvailablePlaceholders(
     const regAddress = company.addresses?.find(
       a => a.addressType === 'REGISTERED_OFFICE' && a.isCurrent
     );
-    if (regAddress) available.push('company.registeredAddress');
+    if (regAddress) {
+      available.push('company.registeredAddress');
+      available.push('company.address.letter');
+    }
 
     // Officers
     const directors = company.officers?.filter(o => o.isCurrent && o.role === 'DIRECTOR') || [];
@@ -596,6 +677,10 @@ function calculateAvailablePlaceholders(
     }
   }
 
+  addAvailableLeaves(available, 'selectedDirector', selections.selectedDirector);
+  addAvailableLeaves(available, 'selectedShareholder', selections.selectedShareholder);
+  addAvailableLeaves(available, 'selectedContact', selections.selectedContact);
+
   // Custom data
   if (customData) {
     for (const key of Object.keys(customData)) {
@@ -606,6 +691,44 @@ function calculateAvailablePlaceholders(
   }
 
   return available;
+}
+
+function addAvailableLeaves(
+  available: string[],
+  prefix: string,
+  value: unknown
+): void {
+  if (value === null || value === undefined || value === '') return;
+  if (typeof value !== 'object' || value instanceof Date) {
+    available.push(prefix);
+    return;
+  }
+
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    addAvailableLeaves(available, `${prefix}.${key}`, nested);
+  }
+}
+
+function toSelectionMembershipError(error: unknown): ValidationError {
+  const message = error instanceof Error ? error.message : '';
+
+  if (message === 'Selected director is not a current director of this company') {
+    return { field: 'selectedDirector', message, category: 'directors' };
+  }
+  if (message === 'Selected shareholder is not a current shareholder of this company') {
+    return { field: 'selectedShareholder', message, category: 'shareholders' };
+  }
+  if (message === 'Selected contact is not linked to this company') {
+    return { field: 'selectedContact', message, category: 'contacts' };
+  }
+
+  return {
+    field: 'company',
+    message: message === 'Company not found'
+      ? 'Selected company not found or access denied'
+      : 'Unable to validate selected parties for this company',
+    category: 'company',
+  };
 }
 
 // ============================================================================

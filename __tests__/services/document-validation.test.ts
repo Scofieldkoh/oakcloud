@@ -5,10 +5,169 @@
  * Tests placeholder detection, category assignment, and extraction.
  */
 
-import { describe, it, expect } from 'vitest';
-import { extractSections } from '@/services/document-validation.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { prisma } from '@/lib/prisma';
+import { resolveDocumentPartySelections } from '@/services/document-party.service';
+import { resolvePartials } from '@/services/template-partial.service';
+import {
+  extractSections,
+  validateForGeneration,
+} from '@/services/document-validation.service';
+
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    documentTemplate: { findFirst: vi.fn() },
+    company: { findFirst: vi.fn() },
+  },
+}));
+
+vi.mock('@/services/template-partial.service', () => ({
+  resolvePartials: vi.fn((content: string) => Promise.resolve(content)),
+}));
+
+vi.mock('@/services/document-party.service', () => ({
+  resolveDocumentPartySelections: vi.fn(),
+}));
+
+const company = {
+  id: 'company-1',
+  name: 'Oakcloud Pte. Ltd.',
+  uen: '202600001A',
+  addresses: [],
+  officers: [],
+  shareholders: [],
+};
+
+const selectedDirector = {
+  id: 'officer-1',
+  contactId: 'contact-director',
+  name: 'Alice Tan',
+  detail: 'DIRECTOR',
+  email: 'alice@example.com',
+  phone: null,
+  address: { full: '1 Main Street', letter: '1 Main Street' },
+};
 
 describe('Document Validation Service', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(prisma.company.findFirst).mockResolvedValue(company as never);
+    vi.mocked(resolveDocumentPartySelections).mockResolvedValue({});
+  });
+
+  describe('validateForGeneration', () => {
+    it('requires only singular selections referenced by the resolved template', async () => {
+      vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+        id: 'template-1',
+        name: 'Letter',
+        content: '{{> party-fields}}',
+        placeholders: [],
+      } as never);
+      vi.mocked(resolvePartials).mockResolvedValueOnce(
+        '{{selectedDirector.name}}{{selectedContact.email}}'
+      );
+
+      const result = await validateForGeneration('tenant-1', {
+        templateId: 'template-1',
+        companyId: 'company-1',
+      });
+
+      expect(result.errors.map((error) => error.message)).toEqual([
+        'Select a director for this template.',
+        'Select a company contact for this template.',
+      ]);
+      expect(resolveDocumentPartySelections).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      {
+        error: 'Selected director is not a current director of this company',
+        field: 'selectedDirector',
+        category: 'directors',
+      },
+      {
+        error: 'Selected shareholder is not a current shareholder of this company',
+        field: 'selectedShareholder',
+        category: 'shareholders',
+      },
+      {
+        error: 'Selected contact is not linked to this company',
+        field: 'selectedContact',
+        category: 'contacts',
+      },
+    ])('converts the secure resolver error for $field into a validation error', async ({
+      error,
+      field,
+      category,
+    }) => {
+      vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+        id: 'template-1',
+        name: 'Letter',
+        content: '{{company.name}}',
+        placeholders: [],
+      } as never);
+      vi.mocked(resolveDocumentPartySelections).mockRejectedValue(new Error(error));
+
+      const result = await validateForGeneration('tenant-1', {
+        templateId: 'template-1',
+        companyId: 'company-1',
+        selectedDirectorId: 'officer-1',
+        selectedShareholderId: 'shareholder-1',
+        selectedContactId: 'contact-1',
+      });
+
+      expect(resolveDocumentPartySelections).toHaveBeenCalledTimes(1);
+      expect(result.errors).toContainEqual({ field, message: error, category });
+    });
+
+    it('requires a company before validating a supplied party selection', async () => {
+      vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+        id: 'template-1',
+        name: 'Letter',
+        content: '{{selectedDirector.name}}',
+        placeholders: [],
+      } as never);
+
+      const result = await validateForGeneration('tenant-1', {
+        templateId: 'template-1',
+        selectedDirectorId: 'officer-1',
+      });
+
+      expect(result.errors).toContainEqual({
+        field: 'company',
+        message: 'Company selection is required for selected parties',
+        category: 'company',
+      });
+      expect(resolveDocumentPartySelections).not.toHaveBeenCalled();
+    });
+
+    it('reports non-empty selected party leaves as available placeholders', async () => {
+      vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+        id: 'template-1',
+        name: 'Letter',
+        content: '{{selectedDirector.name}}{{selectedDirector.address.letter}}',
+        placeholders: [],
+      } as never);
+      vi.mocked(resolveDocumentPartySelections).mockResolvedValue({ selectedDirector });
+
+      const result = await validateForGeneration('tenant-1', {
+        templateId: 'template-1',
+        companyId: 'company-1',
+        selectedDirectorId: 'officer-1',
+      });
+
+      expect(result.resolvedData.selectedDirector).toEqual(selectedDirector);
+      expect(result.resolvedData.availablePlaceholders).toEqual(
+        expect.arrayContaining([
+          'system.preparerName',
+          'selectedDirector.name',
+          'selectedDirector.address.letter',
+        ])
+      );
+      expect(result.resolvedData.missingPlaceholders).toEqual([]);
+    });
+  });
+
   describe('extractSections', () => {
     it('should extract h1 sections from HTML content', () => {
       const html = `

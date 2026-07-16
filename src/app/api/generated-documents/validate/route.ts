@@ -10,6 +10,9 @@ const validateSchema = z.object({
   templateId: z.string().uuid(),
   companyId: z.string().uuid().optional(),
   contactIds: z.array(z.string().uuid()).optional(),
+  selectedDirectorId: z.string().uuid().optional(),
+  selectedShareholderId: z.string().uuid().optional(),
+  selectedContactId: z.string().uuid().optional(),
   customData: z.record(z.unknown()).optional(),
 });
 
@@ -34,6 +37,9 @@ export async function POST(request: NextRequest) {
       templateId: data.templateId,
       companyId: data.companyId,
       contactIds: data.contactIds,
+      selectedDirectorId: data.selectedDirectorId,
+      selectedShareholderId: data.selectedShareholderId,
+      selectedContactId: data.selectedContactId,
       customData: data.customData,
     });
 
@@ -53,6 +59,9 @@ export async function POST(request: NextRequest) {
         companyName: result.resolvedData.company?.name,
         directorCount: result.resolvedData.directors?.length || 0,
         shareholderCount: result.resolvedData.shareholders?.length || 0,
+        hasSelectedDirector: !!result.resolvedData.selectedDirector,
+        hasSelectedShareholder: !!result.resolvedData.selectedShareholder,
+        hasSelectedContact: !!result.resolvedData.selectedContact,
         missingPlaceholders: result.resolvedData.missingPlaceholders,
       },
     });
