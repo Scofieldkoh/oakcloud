@@ -49,3 +49,28 @@ Complete. The generation wizard now independently derives and renders singular D
 ## Concerns
 
 None known. The full suite emits an expected diagnostic stack trace from the existing negative-path revision-route test, but all 975 tests pass.
+
+## Fix Review
+
+### Findings addressed
+
+- **P1 — async draft eligibility:** Restored drafts that require singular parties are now held at the People step until the saved company-party IDs are checked against freshly loaded options. A fully eligible draft resumes its saved step only after that check. A missing or ineligible required ID clears all singular selections plus preview, edited, validation, missing-placeholder, missing-partial, and blocking-error state; the draft remains on People. Generation also has a direct eligibility guard.
+- **P2 — company transition race:** Selecting a company now synchronously empties party options, enters loading state, marks eligibility unresolved, clears singular IDs and stale rendered content, and leaves legacy `selectedContacts` intact. Every successful party response reconciles the current singular IDs against its returned options, while the existing abort check prevents obsolete responses from updating state.
+
+### Added regression coverage
+
+- A valid Edit-step draft is visibly gated on People and exposes no Generate action until its saved director becomes eligible, then safely resumes Edit.
+- A stale Edit-step draft remains on People, exposes no Generate action, and persists null preview/edited content with step 2.
+- A two-company race proves old party options disappear during the transition, an old ID cannot pass People, the new response leaves selection empty, and the legacy contact remains selected.
+
+### Fix verification
+
+- Initial review-test run: expected RED, with the valid and stale Edit-draft tests failing because the wizard restored Edit immediately.
+- `npx.cmd vitest run __tests__/components/document-generation-wizard.test.tsx -t "gates a valid|keeps a stale|company race" --reporter=dot`
+  - PASS: 3 review regressions.
+- `npx.cmd vitest run __tests__/components/document-generation-wizard.test.tsx __tests__/lib/template-analysis.test.ts --reporter=dot`
+  - PASS: 2 files, 16 tests.
+- `npx.cmd tsc --noEmit`
+  - PASS.
+- Focused ESLint and `git diff --check`
+  - PASS.

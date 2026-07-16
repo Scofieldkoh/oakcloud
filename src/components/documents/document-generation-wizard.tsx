@@ -18,6 +18,7 @@ import type { DocumentParty } from '@/lib/document-party';
 import {
   getRequiredLegacyContactSelection,
   getRequiredPartySelections,
+  type RequiredPartySelections,
 } from '@/lib/template-analysis';
 import { Button } from '@/components/ui/button';
 import { Stepper, type Step } from '@/components/ui/stepper';
@@ -1032,11 +1033,14 @@ export function DocumentGenerationWizard({
   const [partyOptions, setPartyOptions] = useState<DocumentPartyOptions>(EMPTY_PARTY_OPTIONS);
   const [isLoadingParties, setIsLoadingParties] = useState(false);
   const [partyLoadError, setPartyLoadError] = useState<string | null>(null);
+  const [isPartyEligibilityResolved, setIsPartyEligibilityResolved] = useState(true);
   const hasLoadedDraftRef = useRef(false);
   const pendingDraftPartyIdsRef = useRef<{
     director: string;
     shareholder: string;
     contact: string;
+    requirements: RequiredPartySelections;
+    restoredStep: number;
   } | null>(null);
 
   const [state, setState] = useState<WizardState>({
@@ -1084,12 +1088,19 @@ export function DocumentGenerationWizard({
       const selectedCompany = companies.find((company) => company.id === draft.companyId) || null;
       const selectedContactIds = new Set(draft.contactIds || []);
       const selectedContacts = contacts.filter((contact) => selectedContactIds.has(contact.id));
-      pendingDraftPartyIdsRef.current = {
+      const restoredStep = Math.max(0, Math.min(Number(draft.currentStep) || 0, WIZARD_STEPS.length - 1));
+      const requirements = getRequiredPartySelections(selectedTemplate.content || '', partials);
+      const requiresEligibility = Boolean(
+        selectedCompany
+        && (requirements.director || requirements.shareholder || requirements.contact),
+      );
+      pendingDraftPartyIdsRef.current = requiresEligibility ? {
         director: typeof draft.selectedDirectorId === 'string' ? draft.selectedDirectorId : '',
         shareholder: typeof draft.selectedShareholderId === 'string' ? draft.selectedShareholderId : '',
         contact: typeof draft.selectedContactId === 'string' ? draft.selectedContactId : '',
-      };
-      const restoredStep = Math.max(0, Math.min(Number(draft.currentStep) || 0, WIZARD_STEPS.length - 1));
+        requirements,
+        restoredStep,
+      } : null;
 
       setState((prev) => ({
         ...prev,
@@ -1105,12 +1116,13 @@ export function DocumentGenerationWizard({
         previewContent: typeof draft.previewContent === 'string' ? draft.previewContent : null,
         editedContent: typeof draft.editedContent === 'string' ? draft.editedContent : null,
       }));
-      setCurrentStep(restoredStep);
+      setCurrentStep(requiresEligibility ? Math.min(restoredStep, 2) : restoredStep);
+      setIsPartyEligibilityResolved(!requiresEligibility);
       setDraftRestored(true);
     } catch (err) {
       console.error('Failed to restore document generation draft:', err);
     }
-  }, [companies, contacts, templates]);
+  }, [companies, contacts, partials, templates]);
 
   useEffect(() => {
     const companyId = state.selectedCompany?.id;
@@ -1118,6 +1130,7 @@ export function DocumentGenerationWizard({
       setPartyOptions(EMPTY_PARTY_OPTIONS);
       setPartyLoadError(null);
       setIsLoadingParties(false);
+      setIsPartyEligibilityResolved(true);
       return;
     }
 
@@ -1135,20 +1148,62 @@ export function DocumentGenerationWizard({
         setPartyOptions(options);
         const pending = pendingDraftPartyIdsRef.current;
         if (pending) {
+          const selectedDirectorId = options.directors.some((option) => option.id === pending.director) ? pending.director : '';
+          const selectedShareholderId = options.shareholders.some((option) => option.id === pending.shareholder) ? pending.shareholder : '';
+          const selectedContactId = options.contacts.some((option) => option.id === pending.contact) ? pending.contact : '';
+          const hasInvalidRequiredSelection = (
+            (pending.requirements.director && !selectedDirectorId)
+            || (pending.requirements.shareholder && !selectedShareholderId)
+            || (pending.requirements.contact && !selectedContactId)
+          );
           setState((previous) => ({
             ...previous,
-            selectedDirectorId: options.directors.some((option) => option.id === pending.director) ? pending.director : '',
-            selectedShareholderId: options.shareholders.some((option) => option.id === pending.shareholder) ? pending.shareholder : '',
-            selectedContactId: options.contacts.some((option) => option.id === pending.contact) ? pending.contact : '',
+            selectedDirectorId,
+            selectedShareholderId,
+            selectedContactId,
+            ...(hasInvalidRequiredSelection ? {
+              previewContent: null,
+              editedContent: null,
+              missingPlaceholders: [],
+              missingPartials: [],
+              blockingErrors: [],
+              validationResult: null,
+            } : {}),
           }));
+          setCurrentStep(hasInvalidRequiredSelection ? 2 : pending.restoredStep);
           pendingDraftPartyIdsRef.current = null;
+        } else {
+          setState((previous) => ({
+            ...previous,
+            selectedDirectorId: options.directors.some((option) => option.id === previous.selectedDirectorId) ? previous.selectedDirectorId : '',
+            selectedShareholderId: options.shareholders.some((option) => option.id === previous.selectedShareholderId) ? previous.selectedShareholderId : '',
+            selectedContactId: options.contacts.some((option) => option.id === previous.selectedContactId) ? previous.selectedContactId : '',
+          }));
         }
+        setIsPartyEligibilityResolved(true);
       })
       .catch((fetchError: unknown) => {
         if (controller.signal.aborted) return;
         console.error('Failed to load document party options:', fetchError);
         setPartyOptions(EMPTY_PARTY_OPTIONS);
         setPartyLoadError(fetchError instanceof Error ? fetchError.message : 'Failed to load company party options.');
+        const pending = pendingDraftPartyIdsRef.current;
+        if (pending) {
+          pendingDraftPartyIdsRef.current = null;
+          setCurrentStep(2);
+          setState((previous) => ({
+            ...previous,
+            selectedDirectorId: '',
+            selectedShareholderId: '',
+            selectedContactId: '',
+            previewContent: null,
+            editedContent: null,
+            missingPlaceholders: [],
+            missingPartials: [],
+            blockingErrors: [],
+            validationResult: null,
+          }));
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setIsLoadingParties(false);
@@ -1228,7 +1283,7 @@ export function DocumentGenerationWizard({
         case 1: // Company
           return true; // Company is optional
         case 2: // People
-          return getRequiredPartyErrors().length === 0;
+          return isPartyEligibilityResolved && getRequiredPartyErrors().length === 0;
         case 3: // Customize
           return state.title.trim().length > 0;
         case 4: // Edit & Preview
@@ -1237,7 +1292,7 @@ export function DocumentGenerationWizard({
           return false;
       }
     },
-    [getRequiredPartyErrors, state.selectedTemplate, state.title]
+    [getRequiredPartyErrors, isPartyEligibilityResolved, state.selectedTemplate, state.title]
   );
 
   const getRequiredCustomFieldErrors = useCallback((): string[] => {
@@ -1372,7 +1427,7 @@ export function DocumentGenerationWizard({
 
   // Handle document generation
   const handleGenerate = async () => {
-    if (!state.selectedTemplate) return;
+    if (!state.selectedTemplate || !isPartyEligibilityResolved || getRequiredPartyErrors().length > 0) return;
 
     setIsGenerating(true);
     setError(null);
@@ -1454,6 +1509,10 @@ export function DocumentGenerationWizard({
             selected={state.selectedCompany}
             onSelect={(company) => {
               pendingDraftPartyIdsRef.current = null;
+              setPartyOptions(EMPTY_PARTY_OPTIONS);
+              setPartyLoadError(null);
+              setIsLoadingParties(Boolean(company));
+              setIsPartyEligibilityResolved(!company);
               setState((prev) => ({
                 ...prev,
                 selectedCompany: company,
