@@ -427,6 +427,70 @@ describe('Document generator service', () => {
     expect(result.context.custom?.contacts).toEqual(result.context.contacts);
   });
 
+  it('composes a selected contact with legacy contact ids without duplicates', async () => {
+    vi.mocked(resolveDocumentPartySelections).mockResolvedValue({
+      selectedContact: {
+        id: 'contact-1',
+        contactId: 'contact-1',
+        name: 'Selected Contact',
+        detail: 'Secretary',
+        contactType: 'INDIVIDUAL',
+        email: 'selected@example.com',
+        phone: '+65 6000 0000',
+        address: { letter: '10 Main Street', full: '10 Main Street' },
+      },
+    });
+    vi.mocked(prisma.contact.findMany).mockResolvedValue([
+      {
+        id: 'contact-1',
+        firstName: 'Selected',
+        lastName: 'Contact',
+        fullName: 'Selected Contact',
+        contactType: 'INDIVIDUAL',
+        fullAddress: '10 Main Street',
+        nationality: null,
+        identificationNumber: null,
+        contactDetails: [],
+      },
+      {
+        id: 'contact-2',
+        firstName: 'Legacy',
+        lastName: 'Contact',
+        fullName: 'Legacy Contact',
+        contactType: 'INDIVIDUAL',
+        fullAddress: '20 Side Street',
+        nationality: null,
+        identificationNumber: null,
+        contactDetails: [],
+      },
+    ] as never);
+
+    const result = await renderTemplateForGeneration({
+      tenantId: 'workspace-1',
+      companyId: 'company-1',
+      templateContent: '<p>{{contact.fullName}}</p>',
+      contextOverride: {
+        company: { id: 'company-1', name: 'Example Pte. Ltd.', uen: '202600001A' },
+      },
+      contactIds: ['contact-1', 'contact-2'],
+      selectedContactId: 'contact-1',
+    });
+
+    expect(prisma.contact.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        id: { in: ['contact-1', 'contact-2'] },
+        tenantId: 'workspace-1',
+        deletedAt: null,
+      },
+    }));
+    expect(result.context.contacts?.map((contact) => contact.id)).toEqual([
+      'contact-1',
+      'contact-2',
+    ]);
+    expect(result.context.contact).toBe(result.context.contacts?.[0]);
+    expect(result.context.custom?.contacts).toBe(result.context.contacts);
+  });
+
   it('uses the authenticated creator name and persists selected party metadata', async () => {
     vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
       id: 'template-1',

@@ -376,6 +376,7 @@ export async function renderTemplateForGeneration(
     };
   }
 
+  let selectedContactForLegacyContext: ContactData | undefined;
   if (selectedDirectorId || selectedShareholderId || selectedContactId) {
     if (!companyId) {
       throw new Error('Company selection is required for selected parties');
@@ -387,7 +388,7 @@ export async function renderTemplateForGeneration(
       selectedShareholderId,
       selectedContactId,
     });
-    const legacySelectedContact = selections.selectedContact
+    selectedContactForLegacyContext = selections.selectedContact
       ? {
           id: selections.selectedContact.id,
           fullName: selections.selectedContact.name,
@@ -397,37 +398,31 @@ export async function renderTemplateForGeneration(
           fullAddress: selections.selectedContact.address.full,
         }
       : undefined;
-    const contacts = legacySelectedContact
-      ? [
-          legacySelectedContact,
-          ...(context.contacts ?? []).filter(
-            (contact) => contact.id !== legacySelectedContact.id,
-          ),
-        ]
-      : context.contacts;
     context = {
       ...context,
       ...selections,
-      contact: legacySelectedContact ?? context.contact,
+    };
+  }
+
+  const legacyContactContext = await buildContactsContext(contactIds, tenantId);
+  const seenContactIds = new Set<string>();
+  const contacts = [
+    ...(selectedContactForLegacyContext ? [selectedContactForLegacyContext] : []),
+    ...(context.contacts ?? []),
+    ...legacyContactContext.contacts,
+  ].filter((contact) => {
+    if (seenContactIds.has(contact.id)) return false;
+    seenContactIds.add(contact.id);
+    return true;
+  });
+  if (contacts.length > 0) {
+    context = {
+      ...context,
+      contact: contacts[0],
       contacts,
       custom: {
         ...context.custom,
         contacts,
-      },
-    };
-  }
-
-  const contactContext = context.contacts?.length
-    ? { firstContact: context.contact, contacts: context.contacts }
-    : await buildContactsContext(contactIds, tenantId);
-  if (contactContext.contacts.length > 0) {
-    context = {
-      ...context,
-      contact: contactContext.firstContact,
-      contacts: contactContext.contacts,
-      custom: {
-        ...context.custom,
-        contacts: contactContext.contacts,
       },
     };
   }
@@ -473,7 +468,7 @@ export async function renderTemplateForGeneration(
     missingPartials,
     contextSummary: {
       hasCompany: Boolean(companyId || context.company),
-      hasContacts: contactContext.contacts.length > 0,
+      hasContacts: contacts.length > 0,
       hasCustomData: Object.keys(customData).length > 0,
     },
     blockingErrors: buildBlockingErrors(missing, missingPartials, diagnostics),
