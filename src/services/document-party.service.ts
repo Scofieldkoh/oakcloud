@@ -10,23 +10,25 @@ export interface DocumentPartySelections {
   selectedContact?: DocumentParty;
 }
 
-const contactSelect = {
-  id: true,
-  fullName: true,
-  contactType: true,
-  fullAddress: true,
-  contactDetails: {
-    where: { deletedAt: null },
-    select: {
-      detailType: true,
-      value: true,
-      companyId: true,
-      isPrimary: true,
-      displayOrder: true,
-      createdAt: true,
+function contactSelect(tenantId: string) {
+  return {
+    id: true,
+    fullName: true,
+    contactType: true,
+    fullAddress: true,
+    contactDetails: {
+      where: { tenantId, deletedAt: null },
+      select: {
+        detailType: true,
+        value: true,
+        companyId: true,
+        isPrimary: true,
+        displayOrder: true,
+        createdAt: true,
+      },
     },
-  },
-} as const;
+  } as const;
+}
 
 export async function getDocumentPartyOptions(
   companyId: string,
@@ -47,7 +49,6 @@ export async function getDocumentPartyOptions(
           identificationNumber: true,
           address: true,
           appointmentDate: true,
-          contact: { select: contactSelect },
         },
       },
       shareholders: {
@@ -63,20 +64,43 @@ export async function getDocumentPartyOptions(
           numberOfShares: true,
           percentageHeld: true,
           address: true,
-          contact: { select: contactSelect },
         },
       },
       contacts: {
         where: { deletedAt: null },
         select: {
+          contactId: true,
           relationship: true,
-          contact: { select: contactSelect },
         },
       },
     },
   });
 
   if (!company) throw new Error('Company not found');
+
+  const linkedContactIds = Array.from(
+    new Set(
+      [
+        ...company.officers.map((officer) => officer.contactId),
+        ...company.shareholders.map((shareholder) => shareholder.contactId),
+        ...company.contacts.map((relation) => relation.contactId),
+      ].filter((contactId): contactId is string => Boolean(contactId)),
+    ),
+  );
+  const eligibleContacts = linkedContactIds.length
+    ? await prisma.contact.findMany({
+        where: {
+          id: { in: linkedContactIds },
+          tenantId,
+          deletedAt: null,
+          isActive: true,
+        },
+        select: contactSelect(tenantId),
+      })
+    : [];
+  const eligibleContactMap = new Map(
+    eligibleContacts.map((contact) => [contact.id, contact]),
+  );
 
   const toParty = (record: {
     id: string;
@@ -133,7 +157,9 @@ export async function getDocumentPartyOptions(
       name: officer.name,
       detail: officer.role,
       roleAddress: officer.address,
-      contact: officer.contact,
+      contact: officer.contactId
+        ? eligibleContactMap.get(officer.contactId)
+        : undefined,
       roleFields: {
         role: officer.role,
         nationality: officer.nationality,
@@ -149,7 +175,9 @@ export async function getDocumentPartyOptions(
       name: shareholder.name,
       detail: shareholder.shareClass,
       roleAddress: shareholder.address,
-      contact: shareholder.contact,
+      contact: shareholder.contactId
+        ? eligibleContactMap.get(shareholder.contactId)
+        : undefined,
       roleFields: {
         shareholderType: shareholder.shareholderType,
         nationality: shareholder.nationality,
@@ -163,7 +191,9 @@ export async function getDocumentPartyOptions(
 
   const contactMap = new Map<string, DocumentParty>();
   for (const relation of company.contacts) {
-    const contact = relation.contact;
+    const contact = eligibleContactMap.get(relation.contactId);
+    if (!contact) continue;
+
     contactMap.set(
       contact.id,
       toParty({
@@ -176,7 +206,11 @@ export async function getDocumentPartyOptions(
     );
   }
   for (const party of [...directors, ...shareholders]) {
-    if (party.contactId && !contactMap.has(party.contactId)) {
+    if (
+      party.contactId &&
+      eligibleContactMap.has(party.contactId) &&
+      !contactMap.has(party.contactId)
+    ) {
       contactMap.set(party.contactId, { ...party, id: party.contactId });
     }
   }
