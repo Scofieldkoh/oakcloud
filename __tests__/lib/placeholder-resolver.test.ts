@@ -66,6 +66,64 @@ describe('placeholder resolver', () => {
     expect(result.resolved).toBe('WCEGA &lt;Tower&gt;<br>21 Bukit Batok Crescent, #25-72<br>Singapore  658065');
   });
 
+  it('derives company letter address from structured preview fields', () => {
+    const result = resolvePlaceholders(
+      '{{company.address.letter}}',
+      {
+        company: {
+          id: 'company-1',
+          name: 'Sample Company Pte Ltd',
+          uen: '202600001A',
+          registeredAddress: '123 Sample Street, #01-01, Sample Building, Singapore 123456',
+          address: {
+            block: '123',
+            street: 'Sample Street',
+            level: '01',
+            unit: '01',
+            building: 'Sample Building',
+            postalCode: '123456',
+          },
+        },
+      },
+    );
+
+    expect(result.resolved).toBe(
+      'Sample Building<br>123 Sample Street, #01-01<br>Singapore  123456',
+    );
+    expect(result.missing).toEqual([]);
+  });
+
+  it('derives company letter address from the document-template preview address collection', () => {
+    const result = resolvePlaceholders(
+      '{{company.address.letter}}',
+      {
+        company: {
+          id: 'company-1',
+          name: 'Sample Company Pte Ltd',
+          uen: '202600001A',
+          registeredAddress: '123 Sample Street, #01-01, Sample Building, Singapore 123456',
+          addresses: [{
+            addressType: 'REGISTERED_OFFICE',
+            fullAddress: '123 Sample Street, #01-01, Sample Building, Singapore 123456',
+            isCurrent: true,
+            block: '123',
+            streetName: 'Sample Street',
+            level: '01',
+            unit: '01',
+            buildingName: 'Sample Building',
+            postalCode: '123456',
+            country: 'Singapore',
+          }],
+        },
+      },
+    );
+
+    expect(result.resolved).toBe(
+      'Sample Building<br>123 Sample Street, #01-01<br>Singapore  123456',
+    );
+    expect(result.missing).toEqual([]);
+  });
+
   it.each([
     ['directors', 'paragraphs'], ['directors', 'bullets'], ['directors', 'table'],
     ['shareholders', 'paragraphs'], ['shareholders', 'bullets'], ['shareholders', 'table'],

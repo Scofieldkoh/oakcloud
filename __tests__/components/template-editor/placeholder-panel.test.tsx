@@ -53,6 +53,16 @@ describe('PlaceholderPanel', () => {
     expect(onInsert).toHaveBeenCalledWith('{{selectedDirector.email}}');
   });
 
+  it('wraps multiline placeholder examples', () => {
+    render(<PlaceholderPanel {...defaultProps} />);
+
+    const example = screen
+      .getAllByText(/Example: Sample Building/)
+      .find((element) => element.textContent?.includes('123 Sample Street'))!;
+    expect(example).toHaveClass('whitespace-pre-line', 'break-words');
+    expect(example).not.toHaveClass('truncate');
+  });
+
   it('offers collection fields only through their guided loop builders', () => {
     render(<PlaceholderPanel {...defaultProps} />);
     expect(screen.getByRole('button', { name: 'Build directors loop' })).toBeVisible();

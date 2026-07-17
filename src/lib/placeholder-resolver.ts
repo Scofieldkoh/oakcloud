@@ -49,6 +49,7 @@ export interface CompanyData {
   entityType?: string | null;
   status?: string | null;
   incorporationDate?: Date | null;
+  registeredAddress?: string | null;
   homeCurrency?: string | null;
   paidUpCapitalAmount?: Decimal | number | null;
   issuedCapitalAmount?: Decimal | number | null;
@@ -163,6 +164,46 @@ const DEFAULT_OPTIONS: ResolveOptions = {
   numberLocale: 'en-SG',
 };
 
+function withCompanyLetterAddress(
+  company: CompanyData | null | undefined,
+): CompanyData | null | undefined {
+  if (!company || company.address?.letter != null) return company;
+
+  const registeredAddressRecord = company.addresses?.find(
+    (address) => address.addressType === 'REGISTERED_OFFICE' && address.isCurrent,
+  ) ?? company.addresses?.find((address) => address.isCurrent);
+  const address = company.address ?? (registeredAddressRecord
+    ? {
+        block: registeredAddressRecord.block,
+        street: registeredAddressRecord.streetName,
+        level: registeredAddressRecord.level,
+        unit: registeredAddressRecord.unit,
+        building: registeredAddressRecord.buildingName,
+        postalCode: registeredAddressRecord.postalCode,
+      }
+    : null);
+
+  const letter = formatLetterAddress({
+    fullAddress: company.registeredAddress ?? registeredAddressRecord?.fullAddress,
+    block: address?.block,
+    street: address?.street,
+    level: address?.level,
+    unit: address?.unit,
+    building: address?.building,
+    postalCode: address?.postalCode,
+    country: registeredAddressRecord?.country,
+  }).letter;
+  if (!letter) return company;
+
+  return {
+    ...company,
+    address: {
+      ...address,
+      letter,
+    },
+  };
+}
+
 // ============================================================================
 // Partial Processing
 // ============================================================================
@@ -248,6 +289,7 @@ export function resolvePlaceholders(
   const preparerName = context.system?.preparerName ?? context.system?.generatedBy;
   const fullContext: PlaceholderContext = {
     ...context,
+    company: withCompanyLetterAddress(context.company),
     system: {
       currentDate: context.system?.currentDate ?? new Date(),
       ...context.system,

@@ -85,6 +85,20 @@ export function hydrateFlowHtml(input: string): string {
     .join(HARD_PAGE_BREAK_HTML);
 }
 
+export function normalizeEditedFlowIds(root: HTMLElement): void {
+  const seen = new Set<string>();
+
+  root.querySelectorAll<HTMLElement>('[data-flow-id]').forEach((element) => {
+    const flowId = element.dataset.flowId;
+    if (!flowId) return;
+
+    if (seen.has(flowId)) {
+      element.dataset.flowId = nextFlowId();
+    }
+    seen.add(element.dataset.flowId!);
+  });
+}
+
 export function stripFlowMetadata(input: string): string {
   const normalized = normalizeCanonicalHtml(input);
   const container = document.createElement('div');

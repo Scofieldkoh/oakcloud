@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   HARD_PAGE_BREAK_HTML,
   hydrateFlowHtml,
+  normalizeEditedFlowIds,
   normalizeCanonicalHtml,
   reassemblePageFragments,
   splitHardSections,
@@ -41,6 +42,21 @@ describe('A4 pagination canonical model', () => {
 
     expect(hydrated).toMatch(/data-flow-id="[^"]+"/);
     expect(stripFlowMetadata(hydrated)).toBe('<p>First</p><p>Second</p>');
+  });
+
+  it('assigns distinct flow ids to blocks split by native editing', () => {
+    const root = document.createElement('div');
+    root.innerHTML = [
+      '<p data-flow-id="paragraph-1">First</p>',
+      '<p data-flow-id="paragraph-1">Second</p>',
+    ].join('');
+
+    normalizeEditedFlowIds(root);
+
+    const paragraphs = root.querySelectorAll<HTMLElement>('[data-flow-id]');
+    expect(paragraphs[0].dataset.flowId).toBe('paragraph-1');
+    expect(paragraphs[1].dataset.flowId).toBeTruthy();
+    expect(paragraphs[1].dataset.flowId).not.toBe('paragraph-1');
   });
 
   it('reassembles split paragraph fragments without duplicating the block', () => {

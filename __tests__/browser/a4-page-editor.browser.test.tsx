@@ -1,6 +1,6 @@
 import { act, createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { cdp, page as vitestPage } from 'vitest/browser';
+import { cdp, page as vitestPage, userEvent } from 'vitest/browser';
 import {
   afterAll,
   afterEach,
@@ -84,6 +84,44 @@ function viewportPoint(rect: DOMRect, edge: 'start' | 'end') {
   }
 
   return { x, y };
+}
+
+async function pressEnter() {
+  await userEvent.keyboard('{Enter}');
+}
+
+function selectedParagraphText(): string | null {
+  const anchorNode = window.getSelection()?.anchorNode;
+  const anchorElement =
+    anchorNode?.nodeType === Node.ELEMENT_NODE
+      ? (anchorNode as Element)
+      : anchorNode?.parentElement;
+  return anchorElement?.closest('p')?.textContent ?? null;
+}
+
+function logicalCaretOffset(root: HTMLElement): number | null {
+  const selection = window.getSelection();
+  const anchorNode = selection?.anchorNode;
+  if (!selection || !anchorNode) return null;
+  const anchorElement =
+    anchorNode.nodeType === Node.ELEMENT_NODE
+      ? (anchorNode as Element)
+      : anchorNode.parentElement;
+  const anchorPage = anchorElement?.closest<HTMLElement>(
+    '[data-testid^="a4-page-content-"]',
+  );
+  if (!anchorPage) return null;
+
+  const range = document.createRange();
+  range.setStart(anchorPage, 0);
+  range.setEnd(anchorNode, selection.anchorOffset);
+  const pages = Array.from(
+    root.querySelectorAll<HTMLElement>('[data-testid^="a4-page-content-"]'),
+  );
+  return pages
+    .slice(0, pages.indexOf(anchorPage))
+    .reduce((length, pageContent) => length + (pageContent.textContent?.length ?? 0), 0)
+    + range.toString().length;
 }
 
 describe('A4PageEditor real layout pagination', () => {
@@ -259,6 +297,102 @@ describe('A4PageEditor real layout pagination', () => {
       });
     });
     expect(host.querySelectorAll('tbody tr')).toHaveLength(80);
+  });
+
+  it('keeps an Enter-created paragraph and restores the caret there', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value="<p>AlphaBeta</p>" />);
+    });
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(host.querySelector('p')?.textContent).toBe('AlphaBeta');
+      });
+    });
+
+    const pageContent = host.querySelector<HTMLElement>(
+      '[data-testid="a4-page-content-1"]',
+    )!;
+    const surface = host.querySelector<HTMLElement>('[data-testid="a4-document-surface"]')!;
+    const text = pageContent.querySelector('p')!.firstChild!;
+    surface.focus();
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(text, 5);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    await act(async () => pressEnter());
+
+    await act(async () => {
+      await vi.waitFor(() => {
+        const canonical = new DOMParser().parseFromString(
+          editorRef.current?.getContent() ?? '',
+          'text/html',
+        );
+        expect(Array.from(canonical.body.querySelectorAll('p'), (p) => p.textContent)).toEqual([
+          'Alpha',
+          'Beta',
+        ]);
+        expect(selectedParagraphText()).toBe('Beta');
+        expect(window.getSelection()?.anchorOffset).toBe(0);
+      });
+    });
+  });
+
+  it('keeps an Enter-created line near the page bottom without jumping scroll', async () => {
+    host.style.height = '500px';
+    const editorRef = createRef<A4PageEditorRef>();
+    const paragraphs = Array.from(
+      { length: 90 },
+      (_, index) =>
+        `<p>Line ${index + 1}: bottom pagination marker with deterministic content.</p>`,
+    ).join('');
+    await act(async () => {
+      root.render(<A4PageEditor ref={editorRef} value={paragraphs} />);
+    });
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(host.querySelectorAll('[data-testid^="a4-page-content-"]').length).toBeGreaterThan(1);
+      });
+    });
+
+    const firstPage = host.querySelector<HTMLElement>('[data-testid="a4-page-content-1"]')!;
+    const target = Array.from(firstPage.querySelectorAll('p')).at(-1)!;
+    const targetText = target.firstChild!;
+    const splitOffset = Math.floor((targetText.textContent?.length ?? 0) / 2);
+    const expectedBefore = targetText.textContent!.slice(0, splitOffset);
+    const expectedAfter = targetText.textContent!.slice(splitOffset);
+    const surface = host.querySelector<HTMLElement>('[data-testid="a4-document-surface"]')!;
+    surface.focus();
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(targetText, splitOffset);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    const expectedCaretOffset = logicalCaretOffset(host);
+
+    const scrollContainer = surface.parentElement!.parentElement!;
+    scrollContainer.scrollTop = 240;
+    const previousScrollTop = scrollContainer.scrollTop;
+
+    await act(async () => pressEnter());
+
+    await act(async () => {
+      await vi.waitFor(() => {
+        const canonical = new DOMParser().parseFromString(
+          editorRef.current?.getContent() ?? '',
+          'text/html',
+        );
+        const texts = Array.from(canonical.body.querySelectorAll('p'), (p) => p.textContent);
+        expect(texts).toContain(expectedBefore);
+        expect(texts).toContain(expectedAfter);
+        expect(scrollContainer.scrollTop).toBe(previousScrollTop);
+        expect(logicalCaretOffset(host)).toBe(expectedCaretOffset);
+      });
+    });
   });
 
   it('keeps a native mouse selection spanning two physical pages', async () => {

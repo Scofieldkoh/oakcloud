@@ -30,6 +30,7 @@ import {
   deleteFlowSelection,
   replaceFlowSelection,
   hydrateFlowHtml,
+  normalizeEditedFlowIds,
   reassemblePageFragments,
   splitHardSections,
   stripFlowMetadata,
@@ -1355,7 +1356,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         const previousSnapshot = historyRef.current.past.pop();
         if (!previousSnapshot) return prev;
 
-        historyRef.current.future.push(serializePages(prev));
+        historyRef.current.future.push(serializePages(pagesRef.current));
 
         const nextPages = parsePages(previousSnapshot, prev);
         pagesRef.current = nextPages;
@@ -1394,11 +1395,15 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       const metadataByPageId = new Map(
         currentPages.map((page) => [page.id, page]),
       );
-      const renderedPages = Array.from(
+      const renderedPageElements = Array.from(
         surface.querySelectorAll<HTMLElement>(
           '[data-testid^="a4-page-content-"][data-page-id]',
         ),
-      ).flatMap((element) => {
+      );
+      renderedPageElements.forEach(normalizeEditedFlowIds);
+      pendingFlowSelectionRef.current = captureFlowSelection(surface);
+
+      const renderedPages = renderedPageElements.flatMap((element) => {
         const page = metadataByPageId.get(element.dataset.pageId!);
         if (!page) return [];
 
@@ -1422,11 +1427,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         return;
       }
 
-      pendingFlowSelectionRef.current = captureFlowSelection(surface);
       preserveScrollPosition();
       pushHistorySnapshot(currentPages);
       pagesRef.current = nextPages;
-      setPages(nextPages);
       scheduleReflow(nextPages, true);
     }, [effectivePreviewMode, preserveScrollPosition, pushHistorySnapshot, scheduleReflow]);
 
