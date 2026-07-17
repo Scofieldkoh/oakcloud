@@ -1318,7 +1318,7 @@ export function DocumentGenerationWizard({
         case 0: // Template
           return state.selectedTemplate !== null;
         case 1: // Company
-          return true; // Company is optional
+          return !requiresSingularPartySelection || state.selectedCompany !== null;
         case 2: // People
           return isPartyEligibilityResolved && getRequiredPartyErrors().length === 0;
         case 3: // Customize
@@ -1329,7 +1329,7 @@ export function DocumentGenerationWizard({
           return false;
       }
     },
-    [getRequiredPartyErrors, isPartyEligibilityResolved, state.selectedTemplate, state.title]
+    [getRequiredPartyErrors, isPartyEligibilityResolved, requiresSingularPartySelection, state.selectedCompany, state.selectedTemplate, state.title]
   );
 
   const getRequiredCustomFieldErrors = useCallback((): string[] => {
@@ -1352,6 +1352,13 @@ export function DocumentGenerationWizard({
 
   // Handle step navigation
   const goToNextStep = async () => {
+    if (currentStep === 1 && requiresSingularPartySelection && !state.selectedCompany) {
+      setState((previous) => ({
+        ...previous,
+        fieldErrors: ['Select a company for this template.'],
+      }));
+      return;
+    }
     if (currentStep === 2) {
       const partyErrors = getRequiredPartyErrors();
       if (partyErrors.length > 0) {
@@ -1541,32 +1548,42 @@ export function DocumentGenerationWizard({
 
       case 1:
         return (
-          <CompanySelector
-            companies={companies}
-            selected={state.selectedCompany}
-            onSelect={(company) => {
-              if (company?.id === state.selectedCompany?.id) {
-                if (partyLoadError && requiresSingularPartySelection) retryPartyOptions();
-                return;
-              }
-              pendingDraftPartyIdsRef.current = null;
-              setPartyOptions(EMPTY_PARTY_OPTIONS);
-              setPartyLoadError(null);
-              setIsLoadingParties(Boolean(company && requiresSingularPartySelection));
-              setIsPartyEligibilityResolved(!company || !requiresSingularPartySelection);
-              setState((prev) => ({
-                ...prev,
-                selectedCompany: company,
-                selectedDirectorId: '',
-                selectedShareholderId: '',
-                selectedContactId: '',
-                previewContent: null,
-                editedContent: null,
-                fieldErrors: [],
-              }));
-            }}
-            onSearch={onSearchCompanies}
-          />
+          <div className="space-y-4">
+            {state.fieldErrors.includes('Select a company for this template.') ? (
+              <div className="p-3 bg-status-error/10 border border-status-error/30 rounded-lg" role="alert">
+                <div className="flex items-start gap-2 text-status-error">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm">Select a company for this template.</p>
+                </div>
+              </div>
+            ) : null}
+            <CompanySelector
+              companies={companies}
+              selected={state.selectedCompany}
+              onSelect={(company) => {
+                if (company?.id === state.selectedCompany?.id) {
+                  if (partyLoadError && requiresSingularPartySelection) retryPartyOptions();
+                  return;
+                }
+                pendingDraftPartyIdsRef.current = null;
+                setPartyOptions(EMPTY_PARTY_OPTIONS);
+                setPartyLoadError(null);
+                setIsLoadingParties(Boolean(company && requiresSingularPartySelection));
+                setIsPartyEligibilityResolved(!company || !requiresSingularPartySelection);
+                setState((prev) => ({
+                  ...prev,
+                  selectedCompany: company,
+                  selectedDirectorId: '',
+                  selectedShareholderId: '',
+                  selectedContactId: '',
+                  previewContent: null,
+                  editedContent: null,
+                  fieldErrors: [],
+                }));
+              }}
+              onSearch={onSearchCompanies}
+            />
+          </div>
         );
 
       case 2:
@@ -1766,7 +1783,11 @@ export function DocumentGenerationWizard({
             <Button
               variant="primary"
               onClick={goToNextStep}
-              disabled={(currentStep !== 2 && !isStepValid(currentStep)) || isGenerating || isValidating}
+              disabled={(
+                currentStep !== 1
+                && currentStep !== 2
+                && !isStepValid(currentStep)
+              ) || isGenerating || isValidating}
             >
               {isGenerating || isValidating ? (
                 <>

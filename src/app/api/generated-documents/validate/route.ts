@@ -41,7 +41,10 @@ export async function POST(request: NextRequest) {
       selectedShareholderId: data.selectedShareholderId,
       selectedContactId: data.selectedContactId,
       customData: data.customData,
-    });
+    }, [session.firstName, session.lastName]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(' '));
 
     return NextResponse.json({
       isValid: result.isValid,

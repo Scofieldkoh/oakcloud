@@ -31,6 +31,8 @@ describe('generated documents validation route', () => {
     vi.clearAllMocks();
     vi.mocked(requireAuth).mockResolvedValue({
       id: 'user-1',
+      firstName: 'Test',
+      lastName: 'User',
       tenantId: workspaceId,
       isSuperAdmin: false,
     } as never);
@@ -71,11 +73,31 @@ describe('generated documents validation route', () => {
       selectedShareholderId: shareholderId,
       selectedContactId: contactId,
       customData: undefined,
-    });
+    }, 'Test User');
     expect(body.resolvedData).toMatchObject({
       hasSelectedDirector: true,
       hasSelectedShareholder: true,
       hasSelectedContact: true,
     });
+  });
+
+  it('passes a blank trusted preparer name without accepting client identity', async () => {
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: 'user-1',
+      firstName: ' ',
+      lastName: '',
+      tenantId: workspaceId,
+      isSuperAdmin: false,
+    } as never);
+
+    await validateDocument(request({
+      templateId,
+      customData: { preparerName: 'Client Supplied', generatedBy: 'Client Supplied' },
+      preparerName: 'Body Supplied',
+    }));
+
+    expect(validateForGeneration).toHaveBeenCalledWith(workspaceId, expect.objectContaining({
+      customData: { preparerName: 'Client Supplied', generatedBy: 'Client Supplied' },
+    }), '');
   });
 });

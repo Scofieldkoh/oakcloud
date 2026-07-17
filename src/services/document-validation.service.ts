@@ -474,7 +474,8 @@ function validateCustomData(
  */
 export async function validateForGeneration(
   tenantId: string,
-  input: ValidateForGenerationInput
+  input: ValidateForGenerationInput,
+  preparerName?: string,
 ): Promise<ValidationResult> {
   const { templateId, companyId, customData } = input;
 
@@ -598,7 +599,12 @@ export async function validateForGeneration(
 
   // Calculate placeholder availability
   const requiredPlaceholders = requirements.filter(r => r.required).map(r => r.key);
-  const availablePlaceholders = calculateAvailablePlaceholders(company, selections, customData);
+  const availablePlaceholders = calculateAvailablePlaceholders(
+    company,
+    selections,
+    customData,
+    preparerName,
+  );
   const missingPlaceholders = requiredPlaceholders.filter(
     p => !availablePlaceholders.includes(p)
   );
@@ -625,17 +631,19 @@ export async function validateForGeneration(
 function calculateAvailablePlaceholders(
   company: CompanyData | null,
   selections: DocumentPartySelections,
-  customData?: Record<string, unknown>
+  customData?: Record<string, unknown>,
+  preparerName?: string,
 ): string[] {
   const available: string[] = [];
 
-  // System placeholders are always available
+  // Session-independent system placeholders are always available.
   available.push(
     'system.currentDate',
-    'system.tenantName',
-    'system.preparerName',
-    'system.generatedBy'
+    'system.tenantName'
   );
+  if (preparerName?.trim()) {
+    available.push('system.preparerName', 'system.generatedBy');
+  }
 
   if (company) {
     // Company fields

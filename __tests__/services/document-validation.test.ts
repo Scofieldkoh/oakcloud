@@ -154,7 +154,7 @@ describe('Document Validation Service', () => {
         templateId: 'template-1',
         companyId: 'company-1',
         selectedDirectorId: 'officer-1',
-      });
+      }, 'Taylor User');
 
       expect(result.resolvedData.selectedDirector).toEqual(selectedDirector);
       expect(result.resolvedData.availablePlaceholders).toEqual(
@@ -165,6 +165,30 @@ describe('Document Validation Service', () => {
         ])
       );
       expect(result.resolvedData.missingPlaceholders).toEqual([]);
+    });
+
+    it.each([
+      ['Taylor User', true],
+      ['   ', false],
+    ])('reports preparer placeholders according to trusted name %j', async (preparerName, available) => {
+      vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+        id: 'template-1',
+        name: 'Prepared letter',
+        content: '{{system.preparerName}}{{system.generatedBy}}',
+        placeholders: [],
+      } as never);
+
+      const result = await validateForGeneration('tenant-1', {
+        templateId: 'template-1',
+        customData: {
+          preparerName: 'Client Supplied',
+          generatedBy: 'Client Supplied',
+        },
+      }, preparerName);
+
+      for (const key of ['system.preparerName', 'system.generatedBy']) {
+        expect(result.resolvedData.availablePlaceholders.includes(key)).toBe(available);
+      }
     });
 
     it('accepts company.address.letter when a current registered address exists', async () => {

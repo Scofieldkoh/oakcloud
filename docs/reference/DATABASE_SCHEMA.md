@@ -1442,6 +1442,7 @@ the selected record IDs are also stored under `metadata.selectedParties`:
   "placeholder_data": {
     "company": {
       "address": {
+        "full": "Oakcloud Tower, 1 Example Street, #02-03, Singapore 123456",
         "letter": "Oakcloud Tower\n1 Example Street, #02-03\nSingapore  123456"
       }
     },
@@ -1491,13 +1492,11 @@ the selected record IDs are also stored under `metadata.selectedParties`:
 ```
 
 `selectedDirector`, `selectedShareholder`, and `selectedContact` are singular
-computed contexts. A `selectedContactId` also seeds the backward-compatible
-contact context: the selected contact is first in `contact` and `contacts`,
-followed by `contextOverride.contacts` and contacts loaded from the legacy
-`contactIds` multi-contact input. Entries are deduplicated by ID with the first
-occurrence retained, and the final array is also stored as `custom.contacts`.
-The singular selected-contact and legacy multi-contact contracts therefore
-compose rather than operating independently.
+computed contexts. `selectedContactId` populates only `selectedContact`. The
+backward-compatible `contact`, `contacts`, and `custom.contacts` contexts come
+only from the legacy `contactIds` multi-contact input or an explicit server-side
+context override. The singular selected-contact and legacy multi-contact
+contracts remain independent even when both IDs are supplied in one request.
 
 For generated documents, `system.generatedBy` is persisted as the
 backward-compatible alias of `system.preparerName`. Placeholder resolution uses
@@ -1508,8 +1507,12 @@ if `generatedBy` is absent it uses `preparerName`.
 `system.preparerName`, `system.generatedBy`, and the `selectedParties` metadata
 snapshot are computed values; they require no database migration or new
 columns. For recognized single-line Singapore addresses, `formatLetterAddress`
-normalizes the address and returns the same multi-line value for both
-`address.full` and `address.letter`, as shown above.
+preserves the normalized source as `address.full` and derives the multi-line
+`address.letter`. For structured company addresses, meaningful structured
+columns always determine `address.letter`, even when `full_address` is present
+but stale; the normalized stored `full_address` remains `address.full`. When no
+source full address exists, `address.full` is constructed as a plain one-line
+value from the structured columns, as shown above.
 
 **Indexes:**
 - `generated_documents_tenant_id_idx` on tenant_id

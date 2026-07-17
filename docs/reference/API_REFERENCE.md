@@ -1427,14 +1427,13 @@ selected party must be eligible for the supplied company. Templates that use
 `selectedDirector.*`, `selectedShareholder.*`, or `selectedContact.*` require
 the corresponding singular selection.
 
-`selectedContactId` resolves the singular `selectedContact.*` namespace and
-also seeds the backward-compatible contact context. The selected contact is
-placed first in `contact` and `contacts`; contacts supplied by a context
-override and then contacts loaded from the legacy `contactIds` array are
-appended and deduplicated by ID (first occurrence wins). The final collection
-is also available as `custom.contacts`. Thus, `contactIds` remains the legacy
-multi-contact input, while `selectedContact.*` is the explicit singular
-selection; the two contracts compose rather than being isolated.
+`selectedContactId` resolves only the singular `selectedContact.*` namespace.
+The backward-compatible `contact`, `contacts`, and `custom.contacts` contexts
+are built independently from the legacy `contactIds` array (or an explicit
+server-side context override). Supplying both inputs does not prepend, merge,
+or deduplicate the selected contact into the legacy collection. Thus,
+`contactIds` remains the legacy multi-contact input while `selectedContactId`
+is an independent explicit singular selection.
 
 ---
 
@@ -1446,7 +1445,9 @@ Get generated document statistics.
 ### POST /api/generated-documents/validate
 Validate data before generation. Accepts the optional `selectedDirectorId`,
 `selectedShareholderId`, and `selectedContactId` request fields documented in
-the create example above.
+the create example above. Availability of `system.preparerName` and its
+`system.generatedBy` alias is determined only from the authenticated session's
+non-empty user name; custom request data cannot supply preparer identity.
 
 ---
 

@@ -377,7 +377,69 @@ describe('Document generator service', () => {
     expect(result.content).toContain('Preview Draft');
   });
 
-  it('merges server-validated selected parties into the rendered context while preserving legacy contacts', async () => {
+  it.each([
+    ['selectedDirector.name', 'selectedDirectorId', 'Select a director for this template.'],
+    ['selectedShareholder.name', 'selectedShareholderId', 'Select a shareholder for this template.'],
+    ['selectedContact.name', 'selectedContactId', 'Select a company contact for this template.'],
+  ])('rejects preview when %s is referenced without %s', async (placeholder, _idField, message) => {
+    await expect(renderTemplateForGeneration({
+      tenantId: 'workspace-1',
+      companyId: 'company-1',
+      templateContent: `<p>{{${placeholder}}}</p>`,
+      contextOverride: {
+        company: { id: 'company-1', name: 'Example Pte. Ltd.', uen: '202600001A' },
+      },
+      mode: 'preview',
+    })).rejects.toThrow(message);
+  });
+
+  it('rejects preview when a nested partial introduces an omitted singular selection', async () => {
+    vi.mocked(extractPartialReferences).mockReturnValue(['party-block']);
+    vi.mocked(getPartialsUsedInTemplate).mockResolvedValue([
+      { name: 'party-block', content: '<p>{{selectedDirector.name}}</p>' },
+    ] as never);
+
+    await expect(renderTemplateForGeneration({
+      tenantId: 'workspace-1',
+      templateContent: '<div>{{> party-block}}</div>',
+      mode: 'preview',
+    })).rejects.toThrow('Select a director for this template.');
+  });
+
+  it.each([
+    ['selectedDirector.name', 'Select a director for this template.'],
+    ['selectedShareholder.name', 'Select a shareholder for this template.'],
+    ['selectedContact.name', 'Select a company contact for this template.'],
+  ])('does not persist final generation when %s lacks its required selection', async (placeholder, message) => {
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: 'template-1',
+      tenantId: 'workspace-1',
+      name: 'Party letter',
+      category: 'OTHER',
+      content: `<p>{{${placeholder}}}</p>`,
+      contentJson: null,
+      version: 1,
+      isActive: true,
+    } as never);
+    vi.mocked(getCompanyById).mockResolvedValue({ id: 'company-1', name: 'Example' } as never);
+    vi.mocked(prepareCompanyContext).mockReturnValue({
+      company: { id: 'company-1', name: 'Example', uen: '202600001A' },
+      custom: {},
+      system: { currentDate: new Date('2026-07-17') },
+    });
+    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({
+      id: 'unexpected-document',
+      title: 'Party letter',
+    } as never);
+
+    await expect(createDocumentFromTemplate(
+      { templateId: 'template-1', companyId: 'company-1', title: 'Party letter' },
+      { tenantId: 'workspace-1', userId: 'user-1' },
+    )).rejects.toThrow(message);
+    expect(prisma.generatedDocument.create).not.toHaveBeenCalled();
+  });
+
+  it('keeps server-validated selected parties independent from legacy override contacts', async () => {
     const selectedContact = {
       id: 'contact-1',
       contactId: 'contact-1',
@@ -417,17 +479,16 @@ describe('Document generator service', () => {
     });
     expect(result.context).toEqual(expect.objectContaining(selections));
     expect(result.context.contact).toEqual(expect.objectContaining({
-      id: 'contact-1',
-      fullName: 'Selected Contact',
+      id: 'legacy-1',
+      fullName: 'Legacy Contact',
     }));
     expect(result.context.contacts).toEqual([
-      expect.objectContaining({ id: 'contact-1', fullName: 'Selected Contact' }),
       expect.objectContaining({ id: 'legacy-1', fullName: 'Legacy Contact' }),
     ]);
     expect(result.context.custom?.contacts).toEqual(result.context.contacts);
   });
 
-  it('composes a selected contact with legacy contact ids without duplicates', async () => {
+  it('keeps selectedContactId independent when legacy contactIds are also supplied', async () => {
     vi.mocked(resolveDocumentPartySelections).mockResolvedValue({
       selectedContact: {
         id: 'contact-1',
@@ -487,6 +548,7 @@ describe('Document generator service', () => {
       'contact-1',
       'contact-2',
     ]);
+    expect(result.context.selectedContact?.id).toBe('contact-1');
     expect(result.context.contact).toBe(result.context.contacts?.[0]);
     expect(result.context.custom?.contacts).toBe(result.context.contacts);
   });

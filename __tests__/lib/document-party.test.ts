@@ -19,7 +19,25 @@ describe('formatLetterAddress', () => {
         country: 'Singapore',
       }),
     ).toEqual({
-      full: 'WCEGA Tower\n21 Bukit Batok Crescent, #25-72\nSingapore  658065',
+      full: 'WCEGA Tower, 21 Bukit Batok Crescent, #25-72, Singapore 658065',
+      letter: 'WCEGA Tower\n21 Bukit Batok Crescent, #25-72\nSingapore  658065',
+    });
+  });
+
+  it('uses structured fields for the letter while preserving a conflicting source full address', () => {
+    expect(
+      formatLetterAddress({
+        fullAddress: '99 Stale Road, Singapore 999999',
+        building: 'WCEGA Tower',
+        block: '21',
+        street: 'Bukit Batok Crescent',
+        level: '25',
+        unit: '72',
+        postalCode: '658065',
+        country: 'Singapore',
+      }),
+    ).toEqual({
+      full: '99 Stale Road, Singapore 999999',
       letter: 'WCEGA Tower\n21 Bukit Batok Crescent, #25-72\nSingapore  658065',
     });
   });

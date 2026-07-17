@@ -197,6 +197,36 @@ describe('DocumentGenerationWizard', () => {
     expect(screen.getByText('Select a director for this template.')).toBeVisible();
   });
 
+  it('requires a company before leaving Company for a singular party template', () => {
+    render(<DocumentGenerationWizard
+      templates={[{ ...template, content: '{{selectedDirector.name}}', placeholders: [] }]}
+      companies={[]}
+      onGenerate={vi.fn()}
+    />);
+    fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Next'));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Select a company for this template.');
+    expect(screen.getByText('No company selected')).toBeVisible();
+    expect(screen.queryByLabelText('Director')).not.toBeInTheDocument();
+  });
+
+  it('allows no company selection for a legacy-only contact template', () => {
+    render(<DocumentGenerationWizard
+      templates={[{ ...template, content: '{{contact.name}}{{#each contacts}}{{name}}{{/each}}', placeholders: [] }]}
+      companies={[]}
+      contacts={contacts}
+      onGenerate={vi.fn()}
+    />);
+    fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
+    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByText('Next'));
+
+    expect(screen.getByText('Jane Tan')).toBeVisible();
+    expect(screen.queryByText('Select a company for this template.')).not.toBeInTheDocument();
+  });
+
   it('restores a saved singular selection only after it matches loaded company options', async () => {
     mockPartyFetch();
     const selectedTemplate = { ...template, content: '{{selectedDirector.name}}', placeholders: [] };

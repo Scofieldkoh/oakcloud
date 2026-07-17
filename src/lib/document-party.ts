@@ -111,20 +111,57 @@ function formatStructuredAddress(input: AddressInput): string | null {
   return formatted || null;
 }
 
+function formatStructuredFullAddress(input: AddressInput): string | null {
+  const block = clean(input.block);
+  const street = clean(input.street);
+  const building = clean(input.building);
+  const level = clean(input.level)?.replace(/^#/, '');
+  const unit = clean(input.unit)?.replace(/^#/, '');
+  const postalCode = clean(input.postalCode);
+  const country = clean(input.country) ?? (postalCode ? 'Singapore' : null);
+  const streetAddress = [block, street].filter(Boolean).join(' ');
+  const unitAddress = [level, unit].filter(Boolean).join('-');
+  const streetPart = [streetAddress || null, unitAddress ? `#${unitAddress}` : null]
+    .filter(Boolean)
+    .join(', ');
+  const postalPart = [country, postalCode].filter(Boolean).join(' ');
+  const formatted = [building, streetPart || null, postalPart || null]
+    .filter(Boolean)
+    .join(', ');
+
+  return formatted || null;
+}
+
+function hasStructuredAddress(input: AddressInput): boolean {
+  return [
+    input.block,
+    input.street,
+    input.level,
+    input.unit,
+    input.building,
+    input.postalCode,
+    input.country,
+  ].some((value) => Boolean(clean(value)));
+}
+
 export function formatLetterAddress(input: AddressInput): PartyAddress {
   const freeText = clean(input.fullAddress);
-  let formatted: string | null;
+  const normalizedSource = freeText ? cleanLines(freeText) : null;
 
-  if (freeText) {
-    const cleaned = cleanLines(freeText);
-    formatted = cleaned.includes('\n')
-      ? cleaned
-      : (formatSingaporeFreeText(cleaned) ?? cleaned);
-  } else {
-    formatted = formatStructuredAddress(input);
+  if (hasStructuredAddress(input)) {
+    return {
+      full: normalizedSource ?? formatStructuredFullAddress(input),
+      letter: formatStructuredAddress(input),
+    };
   }
 
-  return { full: formatted, letter: formatted };
+  const letter = normalizedSource
+    ? (normalizedSource.includes('\n')
+        ? normalizedSource
+        : (formatSingaporeFreeText(normalizedSource) ?? normalizedSource))
+    : null;
+
+  return { full: normalizedSource, letter };
 }
 
 function createdAtTime(value: Date | string | undefined): number {

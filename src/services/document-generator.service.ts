@@ -22,7 +22,11 @@ import {
   resolveDocumentPartySelections,
 } from '@/services/document-party.service';
 import { addSectionAnchors, extractSections } from '@/services/document-validation.service';
-import { analyzeTemplateContent, type TemplateDiagnostics } from '@/lib/template-analysis';
+import {
+  analyzeTemplateContent,
+  getRequiredPartySelections,
+  type TemplateDiagnostics,
+} from '@/lib/template-analysis';
 import type {
   CreateDocumentFromTemplateInput,
   CreateBlankDocumentInput,
@@ -376,7 +380,6 @@ export async function renderTemplateForGeneration(
     };
   }
 
-  let selectedContactForLegacyContext: ContactData | undefined;
   if (selectedDirectorId || selectedShareholderId || selectedContactId) {
     if (!companyId) {
       throw new Error('Company selection is required for selected parties');
@@ -388,16 +391,6 @@ export async function renderTemplateForGeneration(
       selectedShareholderId,
       selectedContactId,
     });
-    selectedContactForLegacyContext = selections.selectedContact
-      ? {
-          id: selections.selectedContact.id,
-          fullName: selections.selectedContact.name,
-          contactType: selections.selectedContact.contactType ?? 'INDIVIDUAL',
-          email: selections.selectedContact.email,
-          phone: selections.selectedContact.phone,
-          fullAddress: selections.selectedContact.address.full,
-        }
-      : undefined;
     context = {
       ...context,
       ...selections,
@@ -407,7 +400,6 @@ export async function renderTemplateForGeneration(
   const legacyContactContext = await buildContactsContext(contactIds, tenantId);
   const seenContactIds = new Set<string>();
   const contacts = [
-    ...(selectedContactForLegacyContext ? [selectedContactForLegacyContext] : []),
     ...(context.contacts ?? []),
     ...legacyContactContext.contacts,
   ].filter((contact) => {
@@ -440,6 +432,18 @@ export async function renderTemplateForGeneration(
     placeholders: template?.placeholders,
     partials,
   });
+  if (mode !== 'test') {
+    const partyRequirements = getRequiredPartySelections(renderContent, partials);
+    if (partyRequirements.director && !selectedDirectorId) {
+      throw new Error('Select a director for this template.');
+    }
+    if (partyRequirements.shareholder && !selectedShareholderId) {
+      throw new Error('Select a shareholder for this template.');
+    }
+    if (partyRequirements.contact && !selectedContactId) {
+      throw new Error('Select a company contact for this template.');
+    }
+  }
 
   const {
     resolved,
