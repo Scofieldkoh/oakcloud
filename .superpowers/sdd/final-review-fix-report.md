@@ -141,3 +141,27 @@ build result.
   remain selection-optional.
 - Confirmed API and database reference documentation matches runtime behavior.
 - Final `git diff --check` exits 0.
+
+## Final re-review documentation follow-up
+
+Corrected `docs/reference/DATABASE_SCHEMA.md` so its persisted
+`placeholder_data.company.address` example matches `prepareCompanyContext`:
+the object contains `block`, `street`, `level`, `unit`, `building`,
+`postalCode`, and computed `letter`, without a runtime
+`company.address.full` field. The explanation now distinguishes that company
+shape from selected-party addresses, which do expose `full` and `letter`.
+
+Focused resolver snapshot verification:
+
+```text
+npx vitest run __tests__/lib/placeholder-resolver.test.ts
+Exit code: 0
+Test Files: 1 passed (1)
+Tests: 13 passed (13)
+Duration: 2.44s
+```
+
+```text
+git diff --check
+Exit code: 0
+```

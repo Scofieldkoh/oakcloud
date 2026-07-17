@@ -1442,7 +1442,12 @@ the selected record IDs are also stored under `metadata.selectedParties`:
   "placeholder_data": {
     "company": {
       "address": {
-        "full": "Oakcloud Tower, 1 Example Street, #02-03, Singapore 123456",
+        "block": "1",
+        "street": "Example Street",
+        "level": "02",
+        "unit": "03",
+        "building": "Oakcloud Tower",
+        "postalCode": "123456",
         "letter": "Oakcloud Tower\n1 Example Street, #02-03\nSingapore  123456"
       }
     },
@@ -1507,12 +1512,13 @@ if `generatedBy` is absent it uses `preparerName`.
 `system.preparerName`, `system.generatedBy`, and the `selectedParties` metadata
 snapshot are computed values; they require no database migration or new
 columns. For recognized single-line Singapore addresses, `formatLetterAddress`
-preserves the normalized source as `address.full` and derives the multi-line
-`address.letter`. For structured company addresses, meaningful structured
-columns always determine `address.letter`, even when `full_address` is present
-but stale; the normalized stored `full_address` remains `address.full`. When no
-source full address exists, `address.full` is constructed as a plain one-line
-value from the structured columns, as shown above.
+preserves a selected party's normalized source as `address.full` and derives
+its multi-line `address.letter`. The company context instead stores the
+structured `block`, `street`, `level`, `unit`, `building`, and `postalCode`
+components plus the computed `letter`; it does not add `company.address.full`.
+Meaningful structured company columns always determine
+`company.address.letter`, even when the source `full_address` is present but
+stale.
 
 **Indexes:**
 - `generated_documents_tenant_id_idx` on tenant_id
