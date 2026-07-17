@@ -1427,9 +1427,14 @@ selected party must be eligible for the supplied company. Templates that use
 `selectedDirector.*`, `selectedShareholder.*`, or `selectedContact.*` require
 the corresponding singular selection.
 
-The legacy `contact.*` and `contacts` placeholders retain multi-contact
-behavior through the optional `contactIds` array. `selectedContactId` does not
-turn those legacy interfaces into singular-selection placeholders.
+`selectedContactId` resolves the singular `selectedContact.*` namespace and
+also seeds the backward-compatible contact context. The selected contact is
+placed first in `contact` and `contacts`; contacts supplied by a context
+override and then contacts loaded from the legacy `contactIds` array are
+appended and deduplicated by ID (first occurrence wins). The final collection
+is also available as `custom.contacts`. Thus, `contactIds` remains the legacy
+multi-contact input, while `selectedContact.*` is the explicit singular
+selection; the two contracts compose rather than being isolated.
 
 ---
 

@@ -1451,7 +1451,7 @@ the selected record IDs are also stored under `metadata.selectedParties`:
       "email": "alex@example.com",
       "phone": "+65 6123 4567",
       "address": {
-        "full": "10 Director Road, Singapore 123456",
+        "full": "10 Director Road\nSingapore  123456",
         "letter": "10 Director Road\nSingapore  123456"
       }
     },
@@ -1461,7 +1461,7 @@ the selected record IDs are also stored under `metadata.selectedParties`:
       "email": "sam@example.com",
       "phone": "+65 6234 5678",
       "address": {
-        "full": "20 Shareholder Avenue, Singapore 234567",
+        "full": "20 Shareholder Avenue\nSingapore  234567",
         "letter": "20 Shareholder Avenue\nSingapore  234567"
       }
     },
@@ -1471,12 +1471,13 @@ the selected record IDs are also stored under `metadata.selectedParties`:
       "email": "casey@example.com",
       "phone": "+65 6345 6789",
       "address": {
-        "full": "30 Contact Lane, Singapore 345678",
+        "full": "30 Contact Lane\nSingapore  345678",
         "letter": "30 Contact Lane\nSingapore  345678"
       }
     },
     "system": {
-      "preparerName": "Taylor User"
+      "preparerName": "Taylor User",
+      "generatedBy": "Taylor User"
     }
   },
   "metadata": {
@@ -1490,11 +1491,25 @@ the selected record IDs are also stored under `metadata.selectedParties`:
 ```
 
 `selectedDirector`, `selectedShareholder`, and `selectedContact` are singular
-computed contexts. The legacy `contact` and `contacts` contexts continue to
-represent the multi-contact generation input. `company.address.letter`, the
-selected-party address `letter` values, `system.preparerName`, and the
-`selectedParties` metadata snapshot are computed values; they require no
-database migration or new columns.
+computed contexts. A `selectedContactId` also seeds the backward-compatible
+contact context: the selected contact is first in `contact` and `contacts`,
+followed by `contextOverride.contacts` and contacts loaded from the legacy
+`contactIds` multi-contact input. Entries are deduplicated by ID with the first
+occurrence retained, and the final array is also stored as `custom.contacts`.
+The singular selected-contact and legacy multi-contact contracts therefore
+compose rather than operating independently.
+
+For generated documents, `system.generatedBy` is persisted as the
+backward-compatible alias of `system.preparerName`. Placeholder resolution uses
+bidirectional fallback: if `preparerName` is absent it uses `generatedBy`, and
+if `generatedBy` is absent it uses `preparerName`.
+
+`company.address.letter`, the selected-party address values,
+`system.preparerName`, `system.generatedBy`, and the `selectedParties` metadata
+snapshot are computed values; they require no database migration or new
+columns. For recognized single-line Singapore addresses, `formatLetterAddress`
+normalizes the address and returns the same multi-line value for both
+`address.full` and `address.letter`, as shown above.
 
 **Indexes:**
 - `generated_documents_tenant_id_idx` on tenant_id
