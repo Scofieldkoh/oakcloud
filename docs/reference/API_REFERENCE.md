@@ -414,6 +414,23 @@ List documents uploaded for a company.
 
 ---
 
+### GET /api/companies/[id]/document-parties
+List the current directors, current shareholders, and active linked contacts that
+can be selected while generating a document for the company.
+
+**Auth:** Authenticated with `document:read`
+
+**Response:** `200 OK`
+```json
+{
+  "directors": [{ "id": "uuid", "name": "string", "email": "string | null", "phone": "string | null", "address": { "full": "string | null", "letter": "string | null" } }],
+  "shareholders": [{ "id": "uuid", "name": "string", "email": "string | null", "phone": "string | null", "address": { "full": "string | null", "letter": "string | null" } }],
+  "contacts": [{ "id": "uuid", "name": "string", "email": "string | null", "phone": "string | null", "address": { "full": "string | null", "letter": "string | null" } }]
+}
+```
+
+---
+
 ### GET /api/companies/[id]/officers/[officerId]
 Get/update an officer.
 
@@ -1394,12 +1411,25 @@ Generate a new document from template.
 **Request Body:**
 ```json
 {
-  "templateId": "string",
-  "companyId": "string (optional)",
-  "title": "string",
-  "customData": {...}
+  "templateId": "33333333-3333-4333-8333-333333333333",
+  "companyId": "55555555-5555-4555-8555-555555555555",
+  "selectedDirectorId": "66666666-6666-4666-8666-666666666666",
+  "selectedShareholderId": "77777777-7777-4777-8777-777777777777",
+  "selectedContactId": "88888888-8888-4888-8888-888888888888",
+  "title": "Company Letter",
+  "customData": {}
 }
 ```
+
+`selectedDirectorId`, `selectedShareholderId`, and `selectedContactId` are
+optional UUIDs accepted by the create, preview, and validate endpoints. A
+selected party must be eligible for the supplied company. Templates that use
+`selectedDirector.*`, `selectedShareholder.*`, or `selectedContact.*` require
+the corresponding singular selection.
+
+The legacy `contact.*` and `contacts` placeholders retain multi-contact
+behavior through the optional `contactIds` array. `selectedContactId` does not
+turn those legacy interfaces into singular-selection placeholders.
 
 ---
 
@@ -1409,12 +1439,16 @@ Get generated document statistics.
 ---
 
 ### POST /api/generated-documents/validate
-Validate data before generation.
+Validate data before generation. Accepts the optional `selectedDirectorId`,
+`selectedShareholderId`, and `selectedContactId` request fields documented in
+the create example above.
 
 ---
 
 ### POST /api/generated-documents/preview
-Preview document without saving.
+Preview document without saving. Accepts the optional `selectedDirectorId`,
+`selectedShareholderId`, and `selectedContactId` request fields documented in
+the create example above.
 
 ---
 

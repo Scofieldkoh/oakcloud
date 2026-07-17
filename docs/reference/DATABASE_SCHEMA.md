@@ -1431,6 +1431,71 @@ Documents created from templates or blank.
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
 
+**Computed placeholder context and selected-party snapshot:**
+
+The generator computes the following values at render time and stores the
+resolved context in `placeholder_data`. When a generated document is created,
+the selected record IDs are also stored under `metadata.selectedParties`:
+
+```json
+{
+  "placeholder_data": {
+    "company": {
+      "address": {
+        "letter": "Oakcloud Tower\n1 Example Street, #02-03\nSingapore  123456"
+      }
+    },
+    "selectedDirector": {
+      "id": "66666666-6666-4666-8666-666666666666",
+      "name": "Alex Director",
+      "email": "alex@example.com",
+      "phone": "+65 6123 4567",
+      "address": {
+        "full": "10 Director Road, Singapore 123456",
+        "letter": "10 Director Road\nSingapore  123456"
+      }
+    },
+    "selectedShareholder": {
+      "id": "77777777-7777-4777-8777-777777777777",
+      "name": "Sam Shareholder",
+      "email": "sam@example.com",
+      "phone": "+65 6234 5678",
+      "address": {
+        "full": "20 Shareholder Avenue, Singapore 234567",
+        "letter": "20 Shareholder Avenue\nSingapore  234567"
+      }
+    },
+    "selectedContact": {
+      "id": "88888888-8888-4888-8888-888888888888",
+      "name": "Casey Contact",
+      "email": "casey@example.com",
+      "phone": "+65 6345 6789",
+      "address": {
+        "full": "30 Contact Lane, Singapore 345678",
+        "letter": "30 Contact Lane\nSingapore  345678"
+      }
+    },
+    "system": {
+      "preparerName": "Taylor User"
+    }
+  },
+  "metadata": {
+    "selectedParties": {
+      "directorId": "66666666-6666-4666-8666-666666666666",
+      "shareholderId": "77777777-7777-4777-8777-777777777777",
+      "contactId": "88888888-8888-4888-8888-888888888888"
+    }
+  }
+}
+```
+
+`selectedDirector`, `selectedShareholder`, and `selectedContact` are singular
+computed contexts. The legacy `contact` and `contacts` contexts continue to
+represent the multi-contact generation input. `company.address.letter`, the
+selected-party address `letter` values, `system.preparerName`, and the
+`selectedParties` metadata snapshot are computed values; they require no
+database migration or new columns.
+
 **Indexes:**
 - `generated_documents_tenant_id_idx` on tenant_id
 - `generated_documents_template_id_idx` on template_id
