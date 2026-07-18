@@ -47,7 +47,7 @@ Key principles:
 
 | ID | Priority | Status | Description | Notes |
 |----|----------|--------|-------------|-------|
-| GEN-001 | P2 | Implemented | Save draft to pause functionality | Generation wizard now restores interrupted template, company, contact, custom field, letterhead, and preview state from a local draft before document creation |
+| GEN-001 | P2 | Implemented | Save draft to pause functionality | Explicit Save Draft persists multiple server-backed generation sessions; users can resume or discard a selected draft, while Generate Document always starts clean |
 | GEN-002 | P2 | Open | Remove page number from templates/partials | User request |
 | GEN-003 | P2 | Open | Letterhead rendering issues | Various formatting problems |
 | GEN-004 | P2 | Open | Share button issues | Format, comment, and notification problems |

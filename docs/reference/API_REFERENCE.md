@@ -1416,10 +1416,15 @@ Generate a new document from template.
   "selectedDirectorId": "66666666-6666-4666-8666-666666666666",
   "selectedShareholderId": "77777777-7777-4777-8777-777777777777",
   "selectedContactId": "88888888-8888-4888-8888-888888888888",
+  "draftId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
   "title": "Company Letter",
   "customData": {}
 }
 ```
+
+`draftId` is optional. When it identifies an authorized active generation
+session, successful generation converts that same `DRAFT` record instead of
+creating a duplicate. A render failure leaves the saved session unchanged.
 
 `selectedDirectorId`, `selectedShareholderId`, and `selectedContactId` are
 optional UUIDs accepted by the create, preview, and validate endpoints. A
@@ -1434,6 +1439,24 @@ server-side context override). Supplying both inputs does not prepend, merge,
 or deduplicate the selected contact into the legacy collection. Thus,
 `contactIds` remains the legacy multi-contact input while `selectedContactId`
 is an independent explicit singular selection.
+
+---
+
+### POST /api/generated-documents/generation-sessions
+Create an incomplete generation session as a server-backed `DRAFT` document.
+The request body is the versioned wizard session state. The response contains
+the draft `id`, `savedAt`, and normalized `state`.
+
+---
+
+### GET /api/generated-documents/generation-sessions/[id]
+Resume one active generation session. The record must belong to the current
+workspace, remain in `DRAFT` status, and contain compatible session metadata.
+
+---
+
+### PUT /api/generated-documents/generation-sessions/[id]
+Save the complete versioned wizard state back to the same active session.
 
 ---
 
@@ -1469,7 +1492,8 @@ Update a generated document (draft only).
 ---
 
 ### DELETE /api/generated-documents/[id]
-Delete a generated document.
+Soft-delete a generated document. The same operation, with a discard reason,
+is used to discard an incomplete generation session.
 
 ---
 

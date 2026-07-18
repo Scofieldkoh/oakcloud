@@ -146,6 +146,15 @@ Multi-tenancy support for data isolation.
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
 | deleted_at | TIMESTAMP | Yes | Soft delete timestamp |
+
+Incomplete document-generation sessions reuse this table rather than creating
+a separate draft table. An active session has `status = DRAFT` and a versioned
+`metadata.generationSession` payload containing the wizard step, selected
+record IDs, title, custom values, letterhead choice, and preview/editor state.
+The list uses this marker to offer **Resume** and **Discard**. Successful
+generation replaces the session metadata with normal generated-document
+metadata on the same record; discard sets `deleted_at` through the existing
+soft-delete workflow.
 | activated_at | TIMESTAMP | Yes | When tenant was activated |
 | suspended_at | TIMESTAMP | Yes | When tenant was suspended |
 | suspend_reason | TEXT | Yes | Reason for suspension |
