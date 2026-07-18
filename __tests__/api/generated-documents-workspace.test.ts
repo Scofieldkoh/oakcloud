@@ -104,11 +104,13 @@ describe('Generated documents workspace scoping', () => {
   });
 
   it('forwards contact ids and edited preview content when creating from a template', async () => {
+    const draftId = '55555555-5555-4555-8555-555555555555';
     const response = await createGeneratedDocument(
       request('http://localhost/api/generated-documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          draftId,
           templateId,
           title: 'Generated document',
           customData: { resolutionNumber: '2026-001' },
@@ -126,6 +128,7 @@ describe('Generated documents workspace scoping', () => {
     expect(response.status).toBe(201);
     expect(createDocumentFromTemplate).toHaveBeenCalledWith(
       expect.objectContaining({
+        draftId,
         templateId,
         contactIds: ['44444444-4444-4444-8444-444444444444'],
         selectedDirectorId: '66666666-6666-4666-8666-666666666666',

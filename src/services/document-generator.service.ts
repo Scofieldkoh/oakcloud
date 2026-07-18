@@ -44,6 +44,7 @@ import type {
 } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 import { NotFoundError } from '@/lib/errors';
+import { readActiveGenerationSession } from '@/lib/document-generation-session';
 
 // ============================================================================
 // Types
@@ -511,6 +512,22 @@ export async function createDocumentFromTemplate(
     ? [creator.firstName, creator.lastName].filter(Boolean).join(' ').trim()
     : undefined;
 
+  const generationDraft = data.draftId
+    ? await prisma.generatedDocument.findFirst({
+      where: { id: data.draftId, tenantId, deletedAt: null },
+    })
+    : null;
+  if (
+    data.draftId
+    && (
+      !generationDraft
+      || generationDraft.status !== 'DRAFT'
+      || !readActiveGenerationSession(generationDraft.metadata)
+    )
+  ) {
+    throw new NotFoundError('Document draft not found');
+  }
+
   // Get template
   const template = await prisma.documentTemplate.findFirst({
     where: { id: data.templateId, tenantId, deletedAt: null },
@@ -543,31 +560,48 @@ export async function createDocumentFromTemplate(
     ...(data.selectedContactId ? { contactId: data.selectedContactId } : {}),
   };
 
-  // Create document
-  const document = await prisma.generatedDocument.create({
-    data: {
-      tenantId,
-      templateId: template.id,
-      templateVersion: template.version,
-      companyId: data.companyId,
-      title: data.title,
-      content: data.editedContent ?? rendered.content,
-      contentJson: data.editedContentJson ?? template.contentJson ?? undefined,
-      status: 'DRAFT',
-      useLetterhead,
-      placeholderData: rendered.context as Prisma.InputJsonValue,
-      metadata: {
-        missingPlaceholders: rendered.missingPlaceholders,
-        missingPartials: rendered.missingPartials,
-        circularPartials: rendered.diagnostics.circularPartials,
-        syntaxErrors: rendered.diagnostics.syntaxErrors,
-        unknownPlaceholders: rendered.diagnostics.unknownPlaceholders,
-        dependencySnapshot: rendered.dependencySnapshot,
-        selectedParties,
+  const generatedMetadata = {
+    missingPlaceholders: rendered.missingPlaceholders,
+    missingPartials: rendered.missingPartials,
+    circularPartials: rendered.diagnostics.circularPartials,
+    syntaxErrors: rendered.diagnostics.syntaxErrors,
+    unknownPlaceholders: rendered.diagnostics.unknownPlaceholders,
+    dependencySnapshot: rendered.dependencySnapshot,
+    selectedParties,
+  };
+
+  const document = data.draftId
+    ? await prisma.generatedDocument.update({
+      where: { id: data.draftId },
+      data: {
+        templateId: template.id,
+        templateVersion: template.version,
+        companyId: data.companyId ?? null,
+        title: data.title,
+        content: data.editedContent ?? rendered.content,
+        contentJson: data.editedContentJson ?? template.contentJson ?? Prisma.JsonNull,
+        status: 'DRAFT',
+        useLetterhead,
+        placeholderData: rendered.context as Prisma.InputJsonValue,
+        metadata: generatedMetadata,
       },
-      createdById: userId,
-    },
-  });
+    })
+    : await prisma.generatedDocument.create({
+      data: {
+        tenantId,
+        templateId: template.id,
+        templateVersion: template.version,
+        companyId: data.companyId,
+        title: data.title,
+        content: data.editedContent ?? rendered.content,
+        contentJson: data.editedContentJson ?? template.contentJson ?? undefined,
+        status: 'DRAFT',
+        useLetterhead,
+        placeholderData: rendered.context as Prisma.InputJsonValue,
+        metadata: generatedMetadata,
+        createdById: userId,
+      },
+    });
 
   await createAuditLog({
     tenantId,
