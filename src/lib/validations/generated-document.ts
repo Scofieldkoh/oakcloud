@@ -6,11 +6,38 @@ import { z } from 'zod';
 
 export const generatedDocumentStatusEnum = z.enum(['DRAFT', 'FINALIZED', 'ARCHIVED']);
 
+export const GENERATION_SESSION_VERSION = 1 as const;
+
+const nullableUuid = z.string().uuid().nullable();
+
+export const generationSessionStateSchema = z.object({
+  version: z.literal(GENERATION_SESSION_VERSION),
+  currentStep: z.number().int().min(0).max(4),
+  templateId: nullableUuid,
+  companyId: nullableUuid,
+  contactIds: z.array(z.string().uuid()),
+  selectedDirectorId: nullableUuid,
+  selectedShareholderId: nullableUuid,
+  selectedContactId: nullableUuid,
+  title: z.string().max(300),
+  customData: z.record(z.string()),
+  useLetterhead: z.boolean(),
+  previewContent: z.string().nullable(),
+  editedContent: z.string().nullable(),
+  editedContentJson: z.unknown().nullable(),
+});
+
+export const saveGenerationSessionSchema = generationSessionStateSchema;
+
+export type GenerationSessionState = z.infer<typeof generationSessionStateSchema>;
+export type SaveGenerationSessionInput = z.infer<typeof saveGenerationSessionSchema>;
+
 // ============================================================================
 // Create Document from Template
 // ============================================================================
 
 export const createDocumentFromTemplateSchema = z.object({
+  draftId: z.string().uuid().optional(),
   templateId: z.string().uuid(),
   companyId: z.string().uuid().optional().nullable(),
   contactIds: z.array(z.string().uuid()).optional().default([]),
