@@ -60,6 +60,7 @@ describe('TemplateEditorPanel', () => {
     const onTemplateChange = vi.fn();
     render(<TemplateEditorPanel {...defaultProps} onTemplateChange={onTemplateChange} />);
 
+    expect(screen.getByText('Global setting')).toBeVisible();
     const globalFont = screen.getByLabelText('Global font');
     const fontSize = screen.getByLabelText('Font size');
     expect(within(globalFont).getAllByRole('option')).toHaveLength(DOCUMENT_FONT_OPTIONS.length);
