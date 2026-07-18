@@ -6,6 +6,7 @@ import {
   type DocumentContact,
 } from '@/components/documents/document-generation-wizard';
 import type { DocumentTemplate } from '@/components/documents/template-selector';
+import type { GenerationSessionEnvelope } from '@/lib/document-generation-session';
 
 vi.mock('@/components/documents/a4-page-editor', () => ({
   A4PageEditor: React.forwardRef(function MockA4PageEditor(
@@ -58,6 +59,32 @@ const partyOptions = {
   contacts: [{ id: 'contact-1', contactId: 'contact-1', name: 'Cara', detail: 'Representative', email: null, phone: null, address: { full: null, letter: null } }],
 };
 
+function generationSession(
+  overrides: Partial<GenerationSessionEnvelope['state']> = {},
+): GenerationSessionEnvelope {
+  return {
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    savedAt: '2026-07-18T01:00:00.000Z',
+    state: {
+      version: 1,
+      currentStep: 0,
+      templateId: template.id,
+      companyId: null,
+      contactIds: [],
+      selectedDirectorId: null,
+      selectedShareholderId: null,
+      selectedContactId: null,
+      title: 'Restored resolution',
+      customData: {},
+      useLetterhead: true,
+      previewContent: null,
+      editedContent: null,
+      editedContentJson: null,
+      ...overrides,
+    },
+  };
+}
+
 function mockPartyFetch() {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     if (String(input).includes('/document-parties')) {
@@ -73,24 +100,6 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-function saveEditStepDraft(selectedDirectorId: string) {
-  window.localStorage.setItem('oakcloud:document-generation-wizard-draft', JSON.stringify({
-    templateId: template.id,
-    companyId: company.id,
-    contactIds: [],
-    selectedDirectorId,
-    selectedShareholderId: null,
-    selectedContactId: null,
-    title: 'Restored resolution',
-    customData: {},
-    useLetterhead: true,
-    previewContent: '<p>Saved preview</p>',
-    editedContent: '<p>Saved edit</p>',
-    currentStep: 4,
-    savedAt: new Date().toISOString(),
-  }));
-}
-
 describe('DocumentGenerationWizard', () => {
   beforeEach(() => window.localStorage.clear());
 
@@ -98,6 +107,69 @@ describe('DocumentGenerationWizard', () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     window.localStorage.clear();
+  });
+
+  it('starts clean and clears the obsolete browser draft', () => {
+    window.localStorage.setItem(
+      'oakcloud:document-generation-wizard-draft',
+      JSON.stringify({ templateId: template.id, title: 'Old local draft' }),
+    );
+
+    render(
+      <DocumentGenerationWizard
+        templates={[template]}
+        companies={[]}
+        onGenerate={vi.fn()}
+        onSaveDraft={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText('Old local draft')).not.toBeInTheDocument();
+    expect(window.localStorage.getItem('oakcloud:document-generation-wizard-draft')).toBeNull();
+  });
+
+  it('saves at the initial step and reuses the returned draft id', async () => {
+    const onSaveDraft = vi.fn(async (_draftId, state) => ({
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      savedAt: '2026-07-18T02:00:00.000Z',
+      state,
+    }));
+    render(
+      <DocumentGenerationWizard
+        templates={[template]}
+        companies={[]}
+        onGenerate={vi.fn()}
+        onSaveDraft={onSaveDraft}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Draft' }));
+    await waitFor(() => expect(onSaveDraft).toHaveBeenCalledWith(null, expect.objectContaining({
+      currentStep: 0,
+      templateId: null,
+    })));
+
+    fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
+    fireEvent.click(screen.getByRole('button', { name: 'Save Draft' }));
+    await waitFor(() => expect(onSaveDraft).toHaveBeenLastCalledWith(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      expect.objectContaining({ templateId: template.id }),
+    ));
+  });
+
+  it('resumes only the explicitly supplied server session', async () => {
+    render(
+      <DocumentGenerationWizard
+        templates={[template]}
+        companies={[]}
+        initialSession={generationSession({ currentStep: 3 })}
+        onGenerate={vi.fn()}
+        onSaveDraft={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByDisplayValue('Restored resolution')).toBeVisible();
+    expect(screen.getByText('Saved draft resumed')).toBeVisible();
   });
 
   it('lets staff select contacts and blocks preview when required custom fields are empty', () => {
@@ -230,35 +302,37 @@ describe('DocumentGenerationWizard', () => {
   it('restores a saved singular selection only after it matches loaded company options', async () => {
     mockPartyFetch();
     const selectedTemplate = { ...template, content: '{{selectedDirector.name}}', placeholders: [] };
-    window.localStorage.setItem('oakcloud:document-generation-wizard-draft', JSON.stringify({
-      templateId: selectedTemplate.id,
-      companyId: company.id,
-      contactIds: [],
-      selectedDirectorId: 'officer-1',
-      selectedShareholderId: null,
-      selectedContactId: null,
-      title: 'Restored resolution',
-      customData: {},
-      useLetterhead: true,
-      previewContent: null,
-      editedContent: null,
-      currentStep: 2,
-      savedAt: new Date().toISOString(),
-    }));
-
-    render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} onGenerate={vi.fn()} />);
+    render(<DocumentGenerationWizard
+      templates={[selectedTemplate]}
+      companies={[company]}
+      initialSession={generationSession({
+        currentStep: 2,
+        companyId: company.id,
+        selectedDirectorId: 'officer-1',
+      })}
+      onGenerate={vi.fn()}
+    />);
 
     await waitFor(() => expect(screen.getByLabelText('Director')).toHaveValue('officer-1'));
-    expect(screen.getByText('Recovered your last unsaved document draft.')).toBeVisible();
+    expect(screen.getByText('Saved draft resumed')).toBeVisible();
   });
 
   it('gates a valid Edit-step draft on People until saved party eligibility resolves', async () => {
     const response = deferred<Response>();
     vi.stubGlobal('fetch', vi.fn(() => response.promise));
     const selectedTemplate = { ...template, content: '{{selectedDirector.name}}', placeholders: [] };
-    saveEditStepDraft('officer-1');
-
-    render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} onGenerate={vi.fn()} />);
+    render(<DocumentGenerationWizard
+      templates={[selectedTemplate]}
+      companies={[company]}
+      initialSession={generationSession({
+        currentStep: 4,
+        companyId: company.id,
+        selectedDirectorId: 'officer-1',
+        previewContent: '<p>Saved preview</p>',
+        editedContent: '<p>Saved edit</p>',
+      })}
+      onGenerate={vi.fn()}
+    />);
 
     expect(await screen.findByText('Loading director options...')).toBeVisible();
     expect(screen.queryByText('Generate Document')).not.toBeInTheDocument();
@@ -274,9 +348,18 @@ describe('DocumentGenerationWizard', () => {
     const response = deferred<Response>();
     vi.stubGlobal('fetch', vi.fn(() => response.promise));
     const selectedTemplate = { ...template, content: '{{selectedDirector.name}}', placeholders: [] };
-    saveEditStepDraft('stale-officer');
-
-    render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} onGenerate={vi.fn()} />);
+    render(<DocumentGenerationWizard
+      templates={[selectedTemplate]}
+      companies={[company]}
+      initialSession={generationSession({
+        currentStep: 4,
+        companyId: company.id,
+        selectedDirectorId: 'stale-officer',
+        previewContent: '<p>Saved preview</p>',
+        editedContent: '<p>Saved edit</p>',
+      })}
+      onGenerate={vi.fn()}
+    />);
     expect(await screen.findByText('Loading director options...')).toBeVisible();
 
     await act(async () => response.resolve({ ok: true, json: async () => partyOptions } as Response));
@@ -284,12 +367,7 @@ describe('DocumentGenerationWizard', () => {
     await waitFor(() => expect(screen.getByLabelText('Director')).toHaveValue(''));
     expect(screen.queryByLabelText('Document content')).not.toBeInTheDocument();
     expect(screen.queryByText('Generate Document')).not.toBeInTheDocument();
-    await waitFor(() => {
-      const saved = JSON.parse(window.localStorage.getItem('oakcloud:document-generation-wizard-draft') || '{}');
-      expect(saved.previewContent).toBeNull();
-      expect(saved.editedContent).toBeNull();
-      expect(saved.currentStep).toBe(2);
-    });
+    expect(screen.getByText('A saved party selection is no longer available. Select it again to continue.')).toBeVisible();
   });
 
   it('clears old party options synchronously and rejects old IDs across a company race', async () => {
@@ -329,29 +407,27 @@ describe('DocumentGenerationWizard', () => {
 
   it('invalidates an Edit-step draft whose saved company is no longer eligible', async () => {
     const selectedTemplate = { ...template, content: '{{selectedDirector.name}}', placeholders: [] };
-    saveEditStepDraft('officer-1');
-    const savedDraft = JSON.parse(window.localStorage.getItem('oakcloud:document-generation-wizard-draft') || '{}');
-    window.localStorage.setItem('oakcloud:document-generation-wizard-draft', JSON.stringify({
-      ...savedDraft,
-      companyId: 'deleted-company',
-    }));
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} onGenerate={vi.fn()} />);
+    render(<DocumentGenerationWizard
+      templates={[selectedTemplate]}
+      companies={[company]}
+      initialSession={generationSession({
+        currentStep: 4,
+        companyId: 'deleted-company',
+        selectedDirectorId: 'officer-1',
+        previewContent: '<p>Saved preview</p>',
+        editedContent: '<p>Saved edit</p>',
+      })}
+      onGenerate={vi.fn()}
+    />);
 
     expect(await screen.findByText('No company selected')).toBeVisible();
     expect(screen.queryByLabelText('Document content')).not.toBeInTheDocument();
     expect(screen.queryByText('Generate Document')).not.toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
-    await waitFor(() => {
-      const persisted = JSON.parse(window.localStorage.getItem('oakcloud:document-generation-wizard-draft') || '{}');
-      expect(persisted.companyId).toBeNull();
-      expect(persisted.selectedDirectorId).toBeNull();
-      expect(persisted.previewContent).toBeNull();
-      expect(persisted.editedContent).toBeNull();
-      expect(persisted.currentStep).toBeLessThanOrEqual(2);
-    });
+    expect(screen.getByText('The saved company is no longer available.')).toBeVisible();
   });
 
   it('does not fetch or gate legacy-only contacts when a company is selected', () => {

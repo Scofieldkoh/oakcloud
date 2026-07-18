@@ -8,7 +8,24 @@ type PendingNavigation =
   | { type: 'route'; destination: string }
   | { type: 'back' };
 
-export function useUnsavedNavigationGuard(isDirty: boolean) {
+export interface UnsavedNavigationGuardOptions {
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+}
+
+const DEFAULT_DIALOG_COPY = {
+  title: 'Unsaved changes',
+  description: 'You have unsaved changes. Leave this page without saving them?',
+  confirmLabel: 'Leave without saving',
+  cancelLabel: 'Stay',
+} as const;
+
+export function useUnsavedNavigationGuard(
+  isDirty: boolean,
+  options: UnsavedNavigationGuardOptions = {},
+) {
   const router = useRouter();
   const armedRef = useRef(isDirty);
   const suppressNextPopStateRef = useRef(false);
@@ -129,13 +146,13 @@ export function useUnsavedNavigationGuard(isDirty: boolean) {
       isOpen={pendingNavigation !== null}
       onClose={cancelNavigation}
       onConfirm={confirmNavigation}
-      title="Unsaved changes"
-      description="You have changes that have not been saved as a draft. Leave without saving them?"
-      confirmLabel="Leave without saving"
-      cancelLabel="Stay"
+      title={options.title ?? DEFAULT_DIALOG_COPY.title}
+      description={options.description ?? DEFAULT_DIALOG_COPY.description}
+      confirmLabel={options.confirmLabel ?? DEFAULT_DIALOG_COPY.confirmLabel}
+      cancelLabel={options.cancelLabel ?? DEFAULT_DIALOG_COPY.cancelLabel}
       variant="warning"
     />
-  ), [cancelNavigation, confirmNavigation, pendingNavigation]);
+  ), [cancelNavigation, confirmNavigation, options, pendingNavigation]);
 
   return { disarm, rearm, dialog };
 }

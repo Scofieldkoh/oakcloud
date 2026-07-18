@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import {
   type TemplatePartial,
 } from '@/components/documents/document-generation-wizard';
 import type { DocumentTemplate } from '@/components/documents/template-selector';
+import type { GenerationSessionEnvelope } from '@/lib/document-generation-session';
+import type { GenerationSessionState } from '@/lib/validations/generated-document';
 
 // ============================================================================
 // Types
@@ -34,13 +36,16 @@ interface Company {
 
 export default function GenerateDocumentPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { success } = useToast();
+  const requestedDraftId = searchParams.get('draft');
 
   // State
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [contacts, setContacts] = useState<DocumentContact[]>([]);
   const [partials, setPartials] = useState<TemplatePartial[]>([]);
+  const [initialSession, setInitialSession] = useState<GenerationSessionEnvelope | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -111,11 +116,19 @@ export default function GenerateDocumentPage() {
         const contactsParams = new URLSearchParams({ limit: '50' });
         const partialsParams = new URLSearchParams({ all: 'true' });
 
-        const [templatesRes, companiesRes, contactsRes, partialsRes] = await Promise.all([
+        if (requestedDraftId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedDraftId)) {
+          throw new Error('The saved draft link is invalid.');
+        }
+
+        const sessionRequest = requestedDraftId
+          ? fetch(`/api/generated-documents/generation-sessions/${encodeURIComponent(requestedDraftId)}`)
+          : Promise.resolve(null);
+        const [templatesRes, companiesRes, contactsRes, partialsRes, sessionRes] = await Promise.all([
           fetch(`/api/document-templates?${templatesParams}`),
           fetch(`/api/companies/options?${companiesParams}`),
           fetch(`/api/contacts/options?${contactsParams}`),
           fetch(`/api/template-partials?${partialsParams}`),
+          sessionRequest,
         ]);
 
         if (!templatesRes.ok) {
@@ -127,16 +140,21 @@ export default function GenerateDocumentPage() {
         if (!contactsRes.ok) {
           throw new Error('Failed to fetch contacts');
         }
+        if (sessionRes && !sessionRes.ok) {
+          throw new Error('The saved draft is unavailable or you no longer have access to it.');
+        }
 
         const templatesData = await templatesRes.json();
         const companiesData = await companiesRes.json();
         const contactsData = await contactsRes.json();
         const partialsData = partialsRes.ok ? await partialsRes.json() : { partials: [] };
+        const sessionData = sessionRes ? await sessionRes.json() : null;
 
         setTemplates(templatesData.templates || []);
         setCompanies((companiesData.options || []).map(mapCompanyOption));
         setContacts((contactsData.options || []).map(mapContactOption));
         setPartials(partialsData.partials || []);
+        setInitialSession(sessionData);
       } catch (err) {
         console.error('Fetch error:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -146,12 +164,34 @@ export default function GenerateDocumentPage() {
     };
 
     fetchData();
+  }, [requestedDraftId]);
+
+  const handleSaveDraft = useCallback(async (
+    draftId: string | null,
+    state: GenerationSessionState,
+  ): Promise<GenerationSessionEnvelope> => {
+    const response = await fetch(
+      draftId
+        ? `/api/generated-documents/generation-sessions/${encodeURIComponent(draftId)}`
+        : '/api/generated-documents/generation-sessions',
+      {
+        method: draftId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state),
+      },
+    );
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to save draft');
+    }
+    return response.json();
   }, []);
 
   // Handle document generation
   const handleGenerate = useCallback(
     async (data: GenerateDocumentData): Promise<GeneratedDocumentResult> => {
       const requestBody: Record<string, unknown> = {
+        draftId: data.draftId,
         templateId: data.templateId,
         companyId: data.companyId,
         contactIds: data.contactIds || [],
@@ -178,9 +218,6 @@ export default function GenerateDocumentPage() {
       const result = await response.json();
       success('Document generated successfully');
 
-      // Redirect to view page
-      router.push(`/generated-documents/${result.id}`);
-
       return {
         id: result.id,
         title: result.title,
@@ -189,7 +226,7 @@ export default function GenerateDocumentPage() {
         missingPlaceholders: result.metadata?.missingPlaceholders,
       };
     },
-    [success, router]
+    [success]
   );
 
   // Handle template preview
@@ -283,6 +320,11 @@ export default function GenerateDocumentPage() {
               >
                 Retry
               </Button>
+              {requestedDraftId && (
+                <Link href="/generated-documents/generate">
+                  <Button variant="primary" size="sm">Start a new document</Button>
+                </Link>
+              )}
             </div>
           </div>
         )}
@@ -310,7 +352,10 @@ export default function GenerateDocumentPage() {
             companies={companies}
             contacts={contacts}
             partials={partials}
+            initialSession={initialSession}
+            onSaveDraft={handleSaveDraft}
             onGenerate={handleGenerate}
+            onGenerationComplete={(result) => router.push(`/generated-documents/${result.id}`)}
             onPreviewTemplate={handlePreviewTemplate}
             onSearchTemplates={searchTemplates}
             onSearchCompanies={searchCompanies}

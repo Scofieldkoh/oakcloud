@@ -9,8 +9,13 @@ vi.mock('next/navigation', () => ({
 
 import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
 
-function Harness({ dirty = true }: { dirty?: boolean }) {
-  const guard = useUnsavedNavigationGuard(dirty);
+function Harness({ dirty = true, customCopy = false }: { dirty?: boolean; customCopy?: boolean }) {
+  const guard = useUnsavedNavigationGuard(dirty, customCopy ? {
+    title: 'Leave signing session?',
+    description: 'Your signature has not been submitted.',
+    confirmLabel: 'Leave signing',
+    cancelLabel: 'Continue signing',
+  } : undefined);
 
   return (
     <>
@@ -81,5 +86,16 @@ describe('useUnsavedNavigationGuard', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Leave without saving' }));
     });
     expect(back).toHaveBeenCalledTimes(1);
+  });
+
+  it('supports page-specific copy for other editing experiences', () => {
+    render(<Harness customCopy />);
+
+    fireEvent.click(screen.getByRole('link', { name: 'Documents' }));
+
+    expect(screen.getByText('Leave signing session?')).toBeVisible();
+    expect(screen.getByText('Your signature has not been submitted.')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Leave signing' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Continue signing' })).toBeVisible();
   });
 });

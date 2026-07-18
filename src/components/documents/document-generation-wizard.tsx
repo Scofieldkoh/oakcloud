@@ -30,6 +30,12 @@ import {
   extractA4DocumentLayout,
   type A4DocumentLayout,
 } from './a4-pagination/layout';
+import type { GenerationSessionEnvelope } from '@/lib/document-generation-session';
+import {
+  GENERATION_SESSION_VERSION,
+  type GenerationSessionState,
+} from '@/lib/validations/generated-document';
+import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
 
 // ============================================================================
 // Types
@@ -69,6 +75,12 @@ export interface GenerationWizardProps {
   contacts?: DocumentContact[];
   partials?: TemplatePartial[];
   onGenerate: (data: GenerateDocumentData) => Promise<GeneratedDocumentResult>;
+  initialSession?: GenerationSessionEnvelope | null;
+  onSaveDraft?: (
+    draftId: string | null,
+    state: GenerationSessionState,
+  ) => Promise<GenerationSessionEnvelope>;
+  onGenerationComplete?: (result: GeneratedDocumentResult) => void;
   onPreviewTemplate?: (template: DocumentTemplate) => void;
   onSearchTemplates?: (query: string) => void | Promise<void>;
   onSearchCompanies?: (query: string) => void | Promise<void>;
@@ -87,6 +99,7 @@ export interface GenerationWizardProps {
 }
 
 export interface GenerateDocumentData {
+  draftId?: string;
   templateId: string;
   companyId?: string;
   contactIds?: string[];
@@ -141,21 +154,22 @@ const WIZARD_STEPS: Step[] = [
 
 const WIZARD_DRAFT_STORAGE_KEY = 'oakcloud:document-generation-wizard-draft';
 
-interface WizardDraftState {
-  templateId: string | null;
-  companyId: string | null;
-  contactIds: string[];
-  selectedDirectorId: string | null;
-  selectedShareholderId: string | null;
-  selectedContactId: string | null;
-  title: string;
-  customData: Record<string, string>;
-  useLetterhead: boolean;
-  previewContent: string | null;
-  editedContent: string | null;
-  currentStep: number;
-  savedAt: string;
-}
+const EMPTY_GENERATION_SESSION_STATE: GenerationSessionState = {
+  version: GENERATION_SESSION_VERSION,
+  currentStep: 0,
+  templateId: null,
+  companyId: null,
+  contactIds: [],
+  selectedDirectorId: null,
+  selectedShareholderId: null,
+  selectedContactId: null,
+  title: '',
+  customData: {},
+  useLetterhead: true,
+  previewContent: null,
+  editedContent: null,
+  editedContentJson: null,
+};
 
 interface DocumentPartyOptions {
   directors: DocumentParty[];
@@ -1028,6 +1042,9 @@ export function DocumentGenerationWizard({
   contacts = [],
   partials = [],
   onGenerate,
+  initialSession = null,
+  onSaveDraft,
+  onGenerationComplete,
   onPreviewTemplate,
   onSearchTemplates,
   onSearchCompanies,
@@ -1039,14 +1056,22 @@ export function DocumentGenerationWizard({
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [draftRestored, setDraftRestored] = useState(false);
+  const [showResumeNotice, setShowResumeNotice] = useState(Boolean(initialSession));
+  const [resumeWarning, setResumeWarning] = useState<string | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(initialSession?.id ?? null);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(initialSession?.savedAt ?? null);
+  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(
+    initialSession?.state ?? EMPTY_GENERATION_SESSION_STATE,
+  ));
+  const [sessionHydrated, setSessionHydrated] = useState(!initialSession);
   const [partyOptions, setPartyOptions] = useState<DocumentPartyOptions>(EMPTY_PARTY_OPTIONS);
   const [isLoadingParties, setIsLoadingParties] = useState(false);
   const [partyLoadError, setPartyLoadError] = useState<string | null>(null);
   const [isPartyEligibilityResolved, setIsPartyEligibilityResolved] = useState(true);
   const [partyReloadVersion, setPartyReloadVersion] = useState(0);
-  const hasLoadedDraftRef = useRef(false);
+  const hasHydratedSessionRef = useRef(false);
   const pendingDraftPartyIdsRef = useRef<{
     director: string;
     shareholder: string;
@@ -1096,66 +1121,73 @@ export function DocumentGenerationWizard({
   }, [state.selectedTemplate, state.title]);
 
   useEffect(() => {
-    if (hasLoadedDraftRef.current || templates.length === 0) return;
-    hasLoadedDraftRef.current = true;
+    window.localStorage.removeItem(WIZARD_DRAFT_STORAGE_KEY);
+  }, []);
 
-    try {
-      const rawDraft = window.localStorage.getItem(WIZARD_DRAFT_STORAGE_KEY);
-      if (!rawDraft) return;
+  useEffect(() => {
+    if (hasHydratedSessionRef.current || !initialSession || templates.length === 0) return;
+    hasHydratedSessionRef.current = true;
 
-      const draft = JSON.parse(rawDraft) as Partial<WizardDraftState>;
-      const selectedTemplate = templates.find((template) => template.id === draft.templateId) || null;
-      if (!selectedTemplate) return;
-
-      const selectedCompany = companies.find((company) => company.id === draft.companyId) || null;
-      const selectedContactIds = new Set(draft.contactIds || []);
-      const selectedContacts = contacts.filter((contact) => selectedContactIds.has(contact.id));
-      const restoredStep = Math.max(0, Math.min(Number(draft.currentStep) || 0, WIZARD_STEPS.length - 1));
-      const requirements = getRequiredPartySelections(selectedTemplate.content || '', partials);
-      const requiresSingularSelections = requirements.director || requirements.shareholder || requirements.contact;
-      const savedCompanyIsUnavailable = Boolean(draft.companyId && !selectedCompany);
-      const failedSavedCompanyEligibility = savedCompanyIsUnavailable && requiresSingularSelections;
-      const requiresEligibility = Boolean(
-        selectedCompany
-        && requiresSingularSelections,
-      );
-      pendingDraftPartyIdsRef.current = requiresEligibility ? {
-        director: typeof draft.selectedDirectorId === 'string' ? draft.selectedDirectorId : '',
-        shareholder: typeof draft.selectedShareholderId === 'string' ? draft.selectedShareholderId : '',
-        contact: typeof draft.selectedContactId === 'string' ? draft.selectedContactId : '',
-        requirements,
-        restoredStep,
-      } : null;
-
-      setState((prev) => ({
-        ...prev,
-        selectedTemplate,
-        selectedCompany,
-        selectedContacts,
-        selectedDirectorId: '',
-        selectedShareholderId: '',
-        selectedContactId: '',
-        title: typeof draft.title === 'string' ? draft.title : '',
-        customData: draft.customData && typeof draft.customData === 'object' ? draft.customData : {},
-        useLetterhead: typeof draft.useLetterhead === 'boolean' ? draft.useLetterhead : true,
-        previewContent: !failedSavedCompanyEligibility && typeof draft.previewContent === 'string' ? draft.previewContent : null,
-        editedContent: !failedSavedCompanyEligibility && typeof draft.editedContent === 'string' ? draft.editedContent : null,
-        ...(failedSavedCompanyEligibility ? {
-          missingPlaceholders: [],
-          missingPartials: [],
-          blockingErrors: [],
-          validationResult: null,
-        } : {}),
-      }));
-      setCurrentStep(failedSavedCompanyEligibility
-        ? Math.min(restoredStep, 1)
-        : requiresEligibility ? Math.min(restoredStep, 2) : restoredStep);
-      setIsPartyEligibilityResolved(!requiresEligibility);
-      setDraftRestored(true);
-    } catch (err) {
-      console.error('Failed to restore document generation draft:', err);
+    const draft = initialSession.state;
+    const selectedTemplate = templates.find((template) => template.id === draft.templateId) || null;
+    if (!selectedTemplate) {
+      setResumeWarning('The saved template is no longer available. Select a template to continue.');
+      setState((previous) => ({ ...previous, title: draft.title }));
+      setCurrentStep(0);
+      setSessionHydrated(true);
+      return;
     }
-  }, [companies, contacts, partials, templates]);
+
+    const selectedCompany = companies.find((company) => company.id === draft.companyId) || null;
+    const selectedContactIds = new Set(draft.contactIds);
+    const selectedContacts = contacts.filter((contact) => selectedContactIds.has(contact.id));
+    const restoredStep = Math.max(0, Math.min(draft.currentStep, WIZARD_STEPS.length - 1));
+    const requirements = getRequiredPartySelections(selectedTemplate.content || '', partials);
+    const requiresSingularSelections = requirements.director || requirements.shareholder || requirements.contact;
+    const savedCompanyIsUnavailable = Boolean(draft.companyId && !selectedCompany);
+    const failedSavedCompanyEligibility = savedCompanyIsUnavailable && requiresSingularSelections;
+    const requiresEligibility = Boolean(selectedCompany && requiresSingularSelections);
+    const warnings: string[] = [];
+    if (savedCompanyIsUnavailable) warnings.push('The saved company is no longer available.');
+    if (selectedContacts.length !== selectedContactIds.size) {
+      warnings.push('One or more saved contacts are no longer available.');
+    }
+
+    pendingDraftPartyIdsRef.current = requiresEligibility ? {
+      director: draft.selectedDirectorId || '',
+      shareholder: draft.selectedShareholderId || '',
+      contact: draft.selectedContactId || '',
+      requirements,
+      restoredStep,
+    } : null;
+
+    setState((previous) => ({
+      ...previous,
+      selectedTemplate,
+      selectedCompany,
+      selectedContacts,
+      selectedDirectorId: requiresEligibility ? '' : draft.selectedDirectorId || '',
+      selectedShareholderId: requiresEligibility ? '' : draft.selectedShareholderId || '',
+      selectedContactId: requiresEligibility ? '' : draft.selectedContactId || '',
+      title: draft.title,
+      customData: draft.customData,
+      useLetterhead: draft.useLetterhead,
+      previewContent: failedSavedCompanyEligibility ? null : draft.previewContent,
+      editedContent: failedSavedCompanyEligibility ? null : draft.editedContent,
+      ...(failedSavedCompanyEligibility ? {
+        missingPlaceholders: [],
+        missingPartials: [],
+        blockingErrors: [],
+        validationResult: null,
+      } : {}),
+    }));
+    setCurrentStep(failedSavedCompanyEligibility
+      ? Math.min(restoredStep, 1)
+      : requiresEligibility ? Math.min(restoredStep, 2) : restoredStep);
+    setIsPartyEligibilityResolved(!requiresEligibility);
+    setResumeWarning(warnings.length > 0 ? warnings.join(' ') : null);
+    setSessionHydrated(true);
+  }, [companies, contacts, initialSession, partials, templates]);
 
   useEffect(() => {
     const companyId = state.selectedCompany?.id;
@@ -1189,6 +1221,9 @@ export function DocumentGenerationWizard({
             || (pending.requirements.shareholder && !selectedShareholderId)
             || (pending.requirements.contact && !selectedContactId)
           );
+          if (hasInvalidRequiredSelection) {
+            setResumeWarning('A saved party selection is no longer available. Select it again to continue.');
+          }
           setState((previous) => ({
             ...previous,
             selectedDirectorId,
@@ -1245,45 +1280,6 @@ export function DocumentGenerationWizard({
     return () => controller.abort();
   }, [partyReloadVersion, requiresSingularPartySelection, state.selectedCompany?.id]);
 
-  useEffect(() => {
-    if (!hasLoadedDraftRef.current) return;
-
-    try {
-      if (!state.selectedTemplate && !state.title && Object.keys(state.customData).length === 0) {
-        window.localStorage.removeItem(WIZARD_DRAFT_STORAGE_KEY);
-        return;
-      }
-
-      const draft: WizardDraftState = {
-        templateId: state.selectedTemplate?.id || null,
-        companyId: state.selectedCompany?.id || null,
-        contactIds: state.selectedContacts.map((contact) => contact.id),
-        selectedDirectorId: state.selectedDirectorId || pendingDraftPartyIdsRef.current?.director || null,
-        selectedShareholderId: state.selectedShareholderId || pendingDraftPartyIdsRef.current?.shareholder || null,
-        selectedContactId: state.selectedContactId || pendingDraftPartyIdsRef.current?.contact || null,
-        title: state.title,
-        customData: state.customData,
-        useLetterhead: state.useLetterhead,
-        previewContent: state.previewContent,
-        editedContent: state.editedContent,
-        currentStep,
-        savedAt: new Date().toISOString(),
-      };
-      window.localStorage.setItem(WIZARD_DRAFT_STORAGE_KEY, JSON.stringify(draft));
-    } catch (err) {
-      console.error('Failed to save document generation draft:', err);
-    }
-  }, [currentStep, state]);
-
-  const clearWizardDraft = useCallback(() => {
-    try {
-      window.localStorage.removeItem(WIZARD_DRAFT_STORAGE_KEY);
-    } catch (err) {
-      console.error('Failed to clear document generation draft:', err);
-    }
-    setDraftRestored(false);
-  }, []);
-
   const retryPartyOptions = useCallback(() => {
     if (!state.selectedCompany || !requiresSingularPartySelection) return;
     setPartyOptions(EMPTY_PARTY_OPTIONS);
@@ -1292,6 +1288,46 @@ export function DocumentGenerationWizard({
     setIsPartyEligibilityResolved(false);
     setPartyReloadVersion((version) => version + 1);
   }, [requiresSingularPartySelection, state.selectedCompany]);
+
+  const currentSessionState = useMemo<GenerationSessionState>(() => ({
+    version: GENERATION_SESSION_VERSION,
+    currentStep,
+    templateId: state.selectedTemplate?.id ?? null,
+    companyId: state.selectedCompany?.id ?? null,
+    contactIds: state.selectedContacts.map((contact) => contact.id),
+    selectedDirectorId: state.selectedDirectorId || pendingDraftPartyIdsRef.current?.director || null,
+    selectedShareholderId: state.selectedShareholderId || pendingDraftPartyIdsRef.current?.shareholder || null,
+    selectedContactId: state.selectedContactId || pendingDraftPartyIdsRef.current?.contact || null,
+    title: state.title,
+    customData: state.customData,
+    useLetterhead: state.useLetterhead,
+    previewContent: state.previewContent,
+    editedContent: state.editedContent,
+    editedContentJson: null,
+  }), [currentStep, state]);
+  const isDirty = sessionHydrated && JSON.stringify(currentSessionState) !== savedSnapshot;
+  const navigationGuard = useUnsavedNavigationGuard(
+    isDirty,
+    {
+      description: 'You have changes that have not been saved as a draft. Leave without saving them?',
+    },
+  );
+
+  const handleSaveDraft = useCallback(async () => {
+    if (!onSaveDraft || isSavingDraft || isGenerating) return;
+    setIsSavingDraft(true);
+    setError(null);
+    try {
+      const saved = await onSaveDraft(draftId, currentSessionState);
+      setDraftId(saved.id);
+      setLastSavedAt(saved.savedAt);
+      setSavedSnapshot(JSON.stringify(saved.state));
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Failed to save draft');
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [currentSessionState, draftId, isGenerating, isSavingDraft, onSaveDraft]);
 
   // Count filled custom fields for summary
   const filledCustomFieldCount = useMemo(() => {
@@ -1478,6 +1514,7 @@ export function DocumentGenerationWizard({
 
     try {
       const result = await onGenerate({
+        draftId: draftId || undefined,
         templateId: state.selectedTemplate.id,
         companyId: state.selectedCompany?.id,
         contactIds: state.selectedContacts.map((contact) => contact.id),
@@ -1490,9 +1527,10 @@ export function DocumentGenerationWizard({
         editedContent: state.editedContent || state.previewContent || undefined,
       });
 
-      // onGenerate will redirect to the view page
       setState((prev) => ({ ...prev, generatedDocument: result }));
-      clearWizardDraft();
+      setSavedSnapshot(JSON.stringify(currentSessionState));
+      navigationGuard.disarm();
+      onGenerationComplete?.(result);
     } catch (err) {
       console.error('Generation error:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate document');
@@ -1727,16 +1765,25 @@ export function DocumentGenerationWizard({
         />
       )}
 
-      {draftRestored && (
+      {showResumeNotice && (
         <div className="mt-4 p-3 bg-accent-primary/5 border border-accent-primary/20 rounded-lg">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-2 text-sm text-text-secondary">
               <AlertTriangle className="w-4 h-4 mt-0.5 text-accent-primary flex-shrink-0" />
-              <span>Recovered your last unsaved document draft.</span>
+              <span>Saved draft resumed</span>
             </div>
-            <Button variant="ghost" size="sm" onClick={clearWizardDraft}>
+            <Button variant="ghost" size="sm" onClick={() => setShowResumeNotice(false)}>
               Dismiss
             </Button>
+          </div>
+        </div>
+      )}
+
+      {resumeWarning && (
+        <div className="mt-4 p-3 bg-status-warning/10 border border-status-warning/20 rounded-lg">
+          <div className="flex items-start gap-2 text-sm text-text-secondary">
+            <AlertTriangle className="w-4 h-4 mt-0.5 text-status-warning flex-shrink-0" />
+            <span>{resumeWarning}</span>
           </div>
         </div>
       )}
@@ -1780,6 +1827,23 @@ export function DocumentGenerationWizard({
           </Button>
 
           <div className="flex items-center gap-3">
+            {lastSavedAt && (
+              <span className="hidden sm:inline text-xs text-text-muted">
+                Saved {new Date(lastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            <Button
+              variant="secondary"
+              onClick={handleSaveDraft}
+              disabled={isSavingDraft || isGenerating || !onSaveDraft}
+            >
+              {isSavingDraft ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : 'Save Draft'}
+            </Button>
             <Button
               variant="primary"
               onClick={goToNextStep}
@@ -1809,6 +1873,7 @@ export function DocumentGenerationWizard({
           </div>
         </div>
       )}
+      {navigationGuard.dialog}
     </div>
   );
 }
