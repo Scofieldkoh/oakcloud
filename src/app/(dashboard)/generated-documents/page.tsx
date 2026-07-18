@@ -46,6 +46,7 @@ export default function GeneratedDocumentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
+  const [draftToDiscard, setDraftToDiscard] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
@@ -125,6 +126,30 @@ export default function GeneratedDocumentsPage() {
     } finally {
       setDeleteDialogOpen(false);
       setDocumentToDelete(null);
+    }
+  };
+
+  const handleDiscardDraft = async () => {
+    if (!draftToDiscard) return;
+
+    try {
+      const params = new URLSearchParams({ reason: 'Discarded document generation draft' });
+      const response = await fetch(`/api/generated-documents/${draftToDiscard}?${params}`, {
+        method: 'DELETE',
+      });
+      const errorData = response.ok ? null : await response.json().catch(() => ({}));
+      if (!response.ok && errorData?.error !== 'Document is already deleted') {
+        throw new Error(errorData?.error || 'Failed to discard draft');
+      }
+
+      setDocuments((previous) => previous.filter((document) => document.id !== draftToDiscard));
+      setTotal((previous) => Math.max(0, previous - 1));
+      success('Draft discarded');
+    } catch (err) {
+      console.error('Discard draft error:', err);
+      toastError(err instanceof Error ? err.message : 'Failed to discard draft');
+    } finally {
+      setDraftToDiscard(null);
     }
   };
 
@@ -239,6 +264,7 @@ export default function GeneratedDocumentsPage() {
             setDeleteDialogOpen(true);
           }}
           onExport={handleExport}
+          onDiscardDraft={setDraftToDiscard}
           isLoading={isLoading}
           canEdit={canUpdate}
           canDelete={canDelete}
@@ -282,6 +308,16 @@ export default function GeneratedDocumentsPage() {
         reasonLabel="Reason for deletion"
         reasonPlaceholder="Please provide a reason for deleting this document..."
         reasonMinLength={10}
+      />
+
+      <ConfirmDialog
+        isOpen={draftToDiscard !== null}
+        onClose={() => setDraftToDiscard(null)}
+        onConfirm={handleDiscardDraft}
+        title="Discard Draft"
+        description="Discard this saved draft? This action cannot be undone."
+        confirmLabel="Discard Draft"
+        variant="danger"
       />
     </div>
   );

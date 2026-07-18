@@ -14,9 +14,11 @@ import {
   Archive,
   Building2,
   User,
+  RotateCcw,
 } from 'lucide-react';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
+import { isActiveGenerationSessionMetadata } from '@/lib/document-generation-session';
 
 // ============================================================================
 // Types
@@ -30,6 +32,7 @@ export interface GeneratedDocument {
   useLetterhead: boolean;
   createdAt: string;
   updatedAt: string;
+  metadata?: unknown;
   finalizedAt?: string;
   template?: {
     id: string;
@@ -55,6 +58,7 @@ interface DocumentTableProps {
   documents: GeneratedDocument[];
   onDelete?: (id: string) => void;
   onExport?: (id: string) => void;
+  onDiscardDraft?: (id: string) => void;
   isLoading?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
@@ -81,8 +85,10 @@ interface DocumentActionsProps {
   documentId: string;
   documentTitle: string;
   status: string;
+  isGenerationSession: boolean;
   onDelete?: (id: string) => void;
   onExport?: (id: string) => void;
+  onDiscardDraft?: (id: string) => void;
   canEdit?: boolean;
   canDelete?: boolean;
   canExport?: boolean;
@@ -93,13 +99,41 @@ function DocumentActions({
   documentId,
   documentTitle,
   status,
+  isGenerationSession,
   onDelete,
   onExport,
+  onDiscardDraft,
   canEdit,
   canDelete,
   canExport,
   canShare,
 }: DocumentActionsProps) {
+  if (isGenerationSession) {
+    return (
+      <div className="flex items-center gap-1">
+        {canEdit && (
+          <Link
+            href={`/generated-documents/generate?draft=${documentId}`}
+            className="p-1.5 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
+            aria-label={`Resume ${documentTitle}`}
+          >
+            <RotateCcw className="w-4 h-4" aria-hidden="true" />
+          </Link>
+        )}
+        {canDelete && (
+          <button
+            type="button"
+            onClick={() => onDiscardDraft?.(documentId)}
+            className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors"
+            aria-label={`Discard ${documentTitle}`}
+          >
+            <Trash2 className="w-4 h-4" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-1">
       {/* View */}
@@ -168,6 +202,7 @@ export function DocumentTable({
   documents,
   onDelete,
   onExport,
+  onDiscardDraft,
   isLoading,
   canEdit = true,
   canDelete = true,
@@ -232,6 +267,7 @@ export function DocumentTable({
         {documents.map((doc) => {
           const status = statusConfig[doc.status] || statusConfig.DRAFT;
           const StatusIcon = status.icon;
+          const isGenerationSession = isActiveGenerationSessionMetadata(doc.metadata);
 
           return (
             <MobileCard
@@ -272,14 +308,24 @@ export function DocumentTable({
               }
               actions={
                 <div className="flex items-center gap-1">
-                  <Link
-                    href={`/generated-documents/${doc.id}`}
-                    className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    aria-label={`View ${doc.title}`}
-                  >
-                    <Eye className="w-4 h-4" aria-hidden="true" />
-                  </Link>
-                  {canEdit && doc.status === 'DRAFT' && (
+                  {isGenerationSession && canEdit ? (
+                    <Link
+                      href={`/generated-documents/generate?draft=${doc.id}`}
+                      className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label={`Resume ${doc.title}`}
+                    >
+                      <RotateCcw className="w-4 h-4" aria-hidden="true" />
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`/generated-documents/${doc.id}`}
+                      className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label={`View ${doc.title}`}
+                    >
+                      <Eye className="w-4 h-4" aria-hidden="true" />
+                    </Link>
+                  )}
+                  {!isGenerationSession && canEdit && doc.status === 'DRAFT' && (
                     <Link
                       href={`/generated-documents/${doc.id}/edit`}
                       className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -288,7 +334,7 @@ export function DocumentTable({
                       <Pencil className="w-4 h-4" aria-hidden="true" />
                     </Link>
                   )}
-                  {canExport && (
+                  {!isGenerationSession && canExport && (
                     <button
                       type="button"
                       onClick={() => onExport?.(doc.id)}
@@ -298,7 +344,7 @@ export function DocumentTable({
                       <Download className="w-4 h-4" aria-hidden="true" />
                     </button>
                   )}
-                  {canShare && (
+                  {!isGenerationSession && canShare && (
                     <Link
                       href={`/generated-documents/${doc.id}/share`}
                       className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -310,9 +356,9 @@ export function DocumentTable({
                   {canDelete && (
                     <button
                       type="button"
-                      onClick={() => onDelete?.(doc.id)}
+                      onClick={() => isGenerationSession ? onDiscardDraft?.(doc.id) : onDelete?.(doc.id)}
                       className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-950 text-text-tertiary hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      aria-label={`Delete ${doc.title}`}
+                      aria-label={`${isGenerationSession ? 'Discard' : 'Delete'} ${doc.title}`}
                     >
                       <Trash2 className="w-4 h-4" aria-hidden="true" />
                     </button>
@@ -341,12 +387,15 @@ export function DocumentTable({
             {documents.map((doc) => {
               const status = statusConfig[doc.status] || statusConfig.DRAFT;
               const StatusIcon = status.icon;
+              const isGenerationSession = isActiveGenerationSessionMetadata(doc.metadata);
 
               return (
                 <tr key={doc.id}>
                   <td>
                     <PrefetchLink
-                      href={`/generated-documents/${doc.id}`}
+                      href={isGenerationSession && canEdit
+                        ? `/generated-documents/generate?draft=${doc.id}`
+                        : `/generated-documents/${doc.id}`}
                       className="font-medium text-text-primary hover:text-oak-light transition-colors"
                     >
                       {doc.title}
@@ -381,8 +430,10 @@ export function DocumentTable({
                       documentId={doc.id}
                       documentTitle={doc.title}
                       status={doc.status}
+                      isGenerationSession={isGenerationSession}
                       onDelete={onDelete}
                       onExport={onExport}
+                      onDiscardDraft={onDiscardDraft}
                       canEdit={canEdit}
                       canDelete={canDelete}
                       canExport={canExport}
