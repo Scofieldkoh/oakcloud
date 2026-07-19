@@ -1539,32 +1539,6 @@ export function DocumentGenerationWizard({
     setIsGenerating(false);
   };
 
-  // Handle reset
-  const _handleReset = () => {
-    setState({
-      selectedTemplate: null,
-      selectedCompany: null,
-      selectedContacts: [],
-      selectedDirectorId: '',
-      selectedShareholderId: '',
-      selectedContactId: '',
-      title: '',
-      customData: {},
-      useLetterhead: true,
-      validationResult: null,
-      generatedDocument: null,
-      previewContent: null,
-      editedContent: null,
-      missingPlaceholders: [],
-      missingPartials: [],
-      blockingErrors: [],
-      fieldErrors: [],
-    });
-    setCurrentStep(0);
-    setError(null);
-    clearWizardDraft();
-  };
-
   // Render step content
   const renderStepContent = () => {
     switch (currentStep) {

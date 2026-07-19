@@ -107,7 +107,7 @@ export async function createGenerationSession(
     tenantId: params.tenantId,
     userId: params.userId,
     companyId: input.companyId ?? undefined,
-    action: 'DOCUMENT_DRAFT_SAVED',
+    action: 'CREATE',
     entityType: 'GeneratedDocument',
     entityId: document.id,
     entityName: title,

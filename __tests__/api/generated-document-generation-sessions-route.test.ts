@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import type { GenerationSessionState } from '@/lib/validations/generated-document';
 
 const workspaceId = '11111111-1111-4111-8111-111111111111';
 const attackerWorkspaceId = '22222222-2222-4222-8222-222222222222';
@@ -11,7 +12,7 @@ const session = {
   isWorkspaceAdmin: true,
 };
 
-const validState = {
+const validState: GenerationSessionState = {
   version: 1,
   currentStep: 0,
   templateId: null,
