@@ -24,6 +24,15 @@ import { Button } from '@/components/ui/button';
 import { Stepper, type Step } from '@/components/ui/stepper';
 import { Pagination } from '@/components/ui/pagination';
 import { TemplateSelector, type DocumentTemplate } from './template-selector';
+import {
+  DOCUMENT_GENERATION_STAGES,
+  normalizeDocumentGenerationStage,
+} from './document-generation-stage';
+import { DocumentPartyChoiceList } from './document-party-choice-list';
+import {
+  DocumentContactChoiceList,
+  type DocumentContact,
+} from './document-contact-choice-list';
 import { type ValidationResult } from './validation-panel';
 import { A4PageEditor, type A4PageEditorRef } from './a4-page-editor';
 import {
@@ -50,15 +59,7 @@ export interface Company {
   incorporationDate?: string | null;
 }
 
-export interface Contact {
-  id: string;
-  fullName: string;
-  email?: string | null;
-  phone?: string | null;
-  designation?: string | null;
-}
-
-export type DocumentContact = Contact;
+export type { DocumentContact } from './document-contact-choice-list';
 
 export interface TemplatePartial {
   id: string;
@@ -144,13 +145,7 @@ interface WizardState {
 // Step Definitions
 // ============================================================================
 
-const WIZARD_STEPS: Step[] = [
-  { id: 'template', label: 'Template' },
-  { id: 'company', label: 'Company' },
-  { id: 'people', label: 'People' },
-  { id: 'customize', label: 'Custom Fields' },
-  { id: 'edit', label: 'Edit & Preview' },
-];
+const WIZARD_STEPS: Step[] = DOCUMENT_GENERATION_STAGES.map((stage) => ({ ...stage }));
 
 const WIZARD_DRAFT_STORAGE_KEY = 'oakcloud:document-generation-wizard-draft';
 
@@ -413,264 +408,6 @@ function CompanySelector({
           onPageChange={setPage}
           onLimitChange={handleLimitChange}
         />
-      )}
-    </div>
-  );
-}
-
-interface ContactSelectorProps {
-  contacts: DocumentContact[];
-  selected: DocumentContact[];
-  onChange: (contacts: DocumentContact[]) => void;
-  onSearch?: (query: string) => void | Promise<void>;
-  isLoading?: boolean;
-}
-
-function ContactSelector({
-  contacts,
-  selected,
-  onChange,
-  onSearch,
-  isLoading,
-}: ContactSelectorProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-
-  const selectedIds = useMemo(() => new Set(selected.map((contact) => contact.id)), [selected]);
-
-  const filteredContacts = useMemo(() => {
-    if (!searchQuery) return contacts;
-    const query = searchQuery.toLowerCase();
-    return contacts.filter(
-      (contact) =>
-        contact.fullName.toLowerCase().includes(query) ||
-        contact.email?.toLowerCase().includes(query) ||
-        contact.phone?.toLowerCase().includes(query)
-    );
-  }, [contacts, searchQuery]);
-
-  const paginatedContacts = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    return filteredContacts.slice(startIndex, startIndex + limit);
-  }, [filteredContacts, page, limit]);
-
-  const totalPages = Math.ceil(filteredContacts.length / limit);
-
-  const toggleContact = (contact: DocumentContact) => {
-    if (selectedIds.has(contact.id)) {
-      onChange(selected.filter((item) => item.id !== contact.id));
-    } else {
-      onChange([...selected, contact]);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => {
-            const nextQuery = e.target.value;
-            setSearchQuery(nextQuery);
-            setPage(1);
-            void onSearch?.(nextQuery);
-          }}
-          placeholder="Search contacts..."
-          className="w-full pl-9 pr-4 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
-        />
-      </div>
-
-      <div className="border border-border-primary rounded-lg overflow-hidden">
-        <div
-          className={cn(
-            'flex items-center gap-4 p-3 border-b border-border-secondary cursor-pointer transition-all',
-            'hover:bg-background-secondary',
-            selected.length === 0 && 'bg-accent-primary/5'
-          )}
-          onClick={() => onChange([])}
-          role="button"
-          tabIndex={0}
-        >
-          <div
-            className={cn(
-              'w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0',
-              selected.length === 0
-                ? 'border-oak-primary bg-oak-primary'
-                : 'border-gray-400 dark:border-gray-500'
-            )}
-          >
-            {selected.length === 0 && <div className="w-2.5 h-2.5 rounded-sm bg-white" />}
-          </div>
-          <div className="flex-1">
-            <p className="font-medium text-text-primary">No contacts selected</p>
-            <p className="text-sm text-text-muted">
-              Generate without contact-specific placeholders
-            </p>
-          </div>
-        </div>
-
-        {paginatedContacts.map((contact) => {
-          const isSelected = selectedIds.has(contact.id);
-          return (
-            <div
-              key={contact.id}
-              className={cn(
-                'flex items-center gap-4 p-3 border-b border-border-secondary last:border-b-0 cursor-pointer transition-all',
-                'hover:bg-background-secondary',
-                isSelected && 'bg-accent-primary/5'
-              )}
-              onClick={() => toggleContact(contact)}
-              role="button"
-              tabIndex={0}
-              aria-pressed={isSelected}
-            >
-              <div
-                className={cn(
-                  'w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0',
-                  isSelected
-                    ? 'border-oak-primary bg-oak-primary'
-                    : 'border-gray-400 dark:border-gray-500'
-                )}
-              >
-                {isSelected && <div className="w-2.5 h-2.5 rounded-sm bg-white" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-text-primary truncate">{contact.fullName}</p>
-                {(contact.email || contact.phone) && (
-                  <p className="text-sm text-text-muted truncate">
-                    {[contact.email, contact.phone].filter(Boolean).join(' · ')}
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {filteredContacts.length === 0 && searchQuery && (
-        <div className="py-8 text-center text-text-muted">
-          <p>No contacts match your search</p>
-        </div>
-      )}
-
-      {filteredContacts.length > 0 && (
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          total={filteredContacts.length}
-          limit={limit}
-          onPageChange={setPage}
-          onLimitChange={(newLimit) => {
-            setLimit(newLimit);
-            setPage(1);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-interface PartySelectorProps {
-  id: string;
-  label: string;
-  options: DocumentParty[];
-  value: string;
-  onChange: (value: string) => void;
-  isLoading: boolean;
-  error?: string | null;
-  onRetry?: () => void;
-  required?: boolean;
-}
-
-function PartySelector({
-  id,
-  label,
-  options,
-  value,
-  onChange,
-  isLoading,
-  error,
-  onRetry,
-  required = false,
-}: PartySelectorProps) {
-  const [query, setQuery] = useState('');
-  const filteredOptions = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return options;
-    return options.filter((option) =>
-      option.id === value
-      || [option.name, option.detail, option.email, option.phone]
-        .filter(Boolean)
-        .some((field) => field!.toLowerCase().includes(normalizedQuery)),
-    );
-  }, [options, query, value]);
-
-  return (
-    <div className="space-y-2">
-      <label htmlFor={id} className="text-xs font-medium text-text-secondary block">
-        {label}
-        {required ? <span className="text-status-error ml-1" aria-hidden="true">*</span> : null}
-      </label>
-      {isLoading ? (
-        <div className="flex items-center gap-2 min-h-11 text-sm text-text-muted" role="status">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Loading {label.toLowerCase()} options...
-        </div>
-      ) : error ? (
-        <div className="flex flex-wrap items-center gap-3" role="alert">
-          <p className="text-sm text-status-error">{error}</p>
-          {onRetry ? (
-            <Button variant="secondary" size="sm" onClick={onRetry}>
-              <RefreshCw className="w-4 h-4" />
-              <span className="sr-only">Retry party options</span>
-              <span aria-hidden="true">Retry</span>
-            </Button>
-          ) : null}
-        </div>
-      ) : options.length === 0 ? (
-        <p className="py-3 text-sm text-text-muted">No {label.toLowerCase()} options are available for this company.</p>
-      ) : (
-        <>
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              aria-label={`Search ${label.toLowerCase()} options`}
-              placeholder={`Search ${label.toLowerCase()}...`}
-              className="w-full min-h-11 pl-9 pr-4 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-oak-primary/30 focus:ring-offset-1 focus:border-oak-primary"
-            />
-          </div>
-          <select
-            id={id}
-            aria-label={label}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            required={required}
-            className="w-full min-h-11 px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 focus:ring-offset-1 focus:border-oak-primary"
-          >
-            <option value="">Select {label.toLowerCase()}</option>
-            {filteredOptions.map((option) => {
-              const secondary = option.detail || option.email || option.phone;
-              return <option key={option.id} value={option.id}>{option.name}{secondary ? ` — ${secondary}` : ''}</option>;
-            })}
-          </select>
-          {filteredOptions.length === 0 ? (
-            <p className="text-sm text-text-muted">No {label.toLowerCase()} options match your search.</p>
-          ) : null}
-        </>
       )}
     </div>
   );
@@ -1141,7 +878,7 @@ export function DocumentGenerationWizard({
     const selectedCompany = companies.find((company) => company.id === draft.companyId) || null;
     const selectedContactIds = new Set(draft.contactIds);
     const selectedContacts = contacts.filter((contact) => selectedContactIds.has(contact.id));
-    const restoredStep = Math.max(0, Math.min(draft.currentStep, WIZARD_STEPS.length - 1));
+    const restoredStep = normalizeDocumentGenerationStage(draft.currentStep);
     const requirements = getRequiredPartySelections(selectedTemplate.content || '', partials);
     const requiresSingularSelections = requirements.director || requirements.shareholder || requirements.contact;
     const savedCompanyIsUnavailable = Boolean(draft.companyId && !selectedCompany);
@@ -1182,8 +919,8 @@ export function DocumentGenerationWizard({
       } : {}),
     }));
     setCurrentStep(failedSavedCompanyEligibility
-      ? Math.min(restoredStep, 1)
-      : requiresEligibility ? Math.min(restoredStep, 2) : restoredStep);
+      ? 0
+      : requiresEligibility ? Math.min(restoredStep, 1) : restoredStep);
     setIsPartyEligibilityResolved(!requiresEligibility);
     setResumeWarning(warnings.length > 0 ? warnings.join(' ') : null);
     setSessionHydrated(true);
@@ -1238,7 +975,7 @@ export function DocumentGenerationWizard({
               validationResult: null,
             } : {}),
           }));
-          setCurrentStep(hasInvalidRequiredSelection ? 2 : pending.restoredStep);
+          setCurrentStep(hasInvalidRequiredSelection ? 1 : pending.restoredStep);
           pendingDraftPartyIdsRef.current = null;
         } else {
           setState((previous) => ({
@@ -1258,7 +995,7 @@ export function DocumentGenerationWizard({
         const pending = pendingDraftPartyIdsRef.current;
         if (pending) {
           pendingDraftPartyIdsRef.current = null;
-          setCurrentStep(2);
+          setCurrentStep(1);
           setState((previous) => ({
             ...previous,
             selectedDirectorId: '',
@@ -1347,19 +1084,18 @@ export function DocumentGenerationWizard({
     return errors;
   }, [partyRequirements, state.selectedContactId, state.selectedDirectorId, state.selectedShareholderId]);
 
-  // Check if current step is valid
+  // Check if the current stage is valid.
   const isStepValid = useCallback(
     (step: number): boolean => {
       switch (step) {
-        case 0: // Template
-          return state.selectedTemplate !== null;
-        case 1: // Company
-          return !requiresSingularPartySelection || state.selectedCompany !== null;
-        case 2: // People
-          return isPartyEligibilityResolved && getRequiredPartyErrors().length === 0;
-        case 3: // Customize
-          return state.title.trim().length > 0;
-        case 4: // Edit & Preview
+        case 0: // Setup
+          return state.selectedTemplate !== null
+            && (!requiresSingularPartySelection || state.selectedCompany !== null);
+        case 1: // Details
+          return isPartyEligibilityResolved
+            && getRequiredPartyErrors().length === 0
+            && state.title.trim().length > 0;
+        case 2: // Review & Generate
           return true;
         default:
           return false;
@@ -1388,14 +1124,14 @@ export function DocumentGenerationWizard({
 
   // Handle step navigation
   const goToNextStep = async () => {
-    if (currentStep === 1 && requiresSingularPartySelection && !state.selectedCompany) {
+    if (currentStep === 0 && requiresSingularPartySelection && !state.selectedCompany) {
       setState((previous) => ({
         ...previous,
         fieldErrors: ['Select a company for this template.'],
       }));
       return;
     }
-    if (currentStep === 2) {
+    if (currentStep === 1) {
       const partyErrors = getRequiredPartyErrors();
       if (partyErrors.length > 0) {
         setState((previous) => ({ ...previous, fieldErrors: partyErrors }));
@@ -1408,12 +1144,6 @@ export function DocumentGenerationWizard({
         return;
       }
       setState((previous) => ({ ...previous, fieldErrors: [] }));
-    }
-    if (!isStepValid(currentStep)) return;
-    const currentStepId = WIZARD_STEPS[currentStep]?.id;
-
-    // Generate preview and move to edit step
-    if (currentStepId === 'customize') {
       const fieldErrors = getRequiredCustomFieldErrors();
       if (fieldErrors.length > 0) {
         setState((prev) => ({ ...prev, fieldErrors }));
@@ -1446,8 +1176,9 @@ export function DocumentGenerationWizard({
       setIsValidating(false);
     }
 
-    // Generate document at edit step
-    if (currentStepId === 'edit') {
+    if (!isStepValid(currentStep)) return;
+
+    if (currentStep === 2) {
       await handleGenerate();
       return;
     }
@@ -1544,23 +1275,7 @@ export function DocumentGenerationWizard({
     switch (currentStep) {
       case 0:
         return (
-          <TemplateSelector
-            templates={templates}
-            selectedTemplate={state.selectedTemplate}
-            onSelect={(template) => setState((prev) => ({
-              ...prev,
-              selectedTemplate: template,
-              fieldErrors: [],
-            }))}
-            onPreview={onPreviewTemplate}
-            onSearch={onSearchTemplates}
-            isLoading={isLoading}
-          />
-        );
-
-      case 1:
-        return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {state.fieldErrors.includes('Select a company for this template.') ? (
               <div className="p-3 bg-status-error/10 border border-status-error/30 rounded-lg" role="alert">
                 <div className="flex items-start gap-2 text-status-error">
@@ -1569,36 +1284,67 @@ export function DocumentGenerationWizard({
                 </div>
               </div>
             ) : null}
-            <CompanySelector
-              companies={companies}
-              selected={state.selectedCompany}
-              onSelect={(company) => {
-                if (company?.id === state.selectedCompany?.id) {
-                  if (partyLoadError && requiresSingularPartySelection) retryPartyOptions();
-                  return;
-                }
-                pendingDraftPartyIdsRef.current = null;
-                setPartyOptions(EMPTY_PARTY_OPTIONS);
-                setPartyLoadError(null);
-                setIsLoadingParties(Boolean(company && requiresSingularPartySelection));
-                setIsPartyEligibilityResolved(!company || !requiresSingularPartySelection);
-                setState((prev) => ({
-                  ...prev,
-                  selectedCompany: company,
-                  selectedDirectorId: '',
-                  selectedShareholderId: '',
-                  selectedContactId: '',
-                  previewContent: null,
-                  editedContent: null,
-                  fieldErrors: [],
-                }));
-              }}
-              onSearch={onSearchCompanies}
-            />
+            <div className="grid gap-6 xl:grid-cols-2">
+              <section className="min-w-0 rounded-2xl border border-border-primary bg-background-primary p-4 sm:p-5">
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-text-primary">Choose a template</h2>
+                  <p className="mt-1 text-sm text-text-muted">Start with the document structure you need.</p>
+                </div>
+                <TemplateSelector
+                  templates={templates}
+                  selectedTemplate={state.selectedTemplate}
+                  onSelect={(template) => setState((prev) => ({
+                    ...prev,
+                    selectedTemplate: template,
+                    previewContent: null,
+                    editedContent: null,
+                    fieldErrors: [],
+                  }))}
+                  onPreview={onPreviewTemplate}
+                  onSearch={onSearchTemplates}
+                  isLoading={isLoading}
+                />
+              </section>
+
+              <section className="min-w-0 rounded-2xl border border-border-primary bg-background-primary p-4 sm:p-5">
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-text-primary">Choose a company</h2>
+                  <p className="mt-1 text-sm text-text-muted">
+                    Add company context when the template needs it.
+                  </p>
+                </div>
+                <CompanySelector
+                  companies={companies}
+                  selected={state.selectedCompany}
+                  onSelect={(company) => {
+                    if (company?.id === state.selectedCompany?.id) {
+                      if (partyLoadError && requiresSingularPartySelection) retryPartyOptions();
+                      return;
+                    }
+                    pendingDraftPartyIdsRef.current = null;
+                    setPartyOptions(EMPTY_PARTY_OPTIONS);
+                    setPartyLoadError(null);
+                    setIsLoadingParties(Boolean(company && requiresSingularPartySelection));
+                    setIsPartyEligibilityResolved(!company || !requiresSingularPartySelection);
+                    setState((prev) => ({
+                      ...prev,
+                      selectedCompany: company,
+                      selectedDirectorId: '',
+                      selectedShareholderId: '',
+                      selectedContactId: '',
+                      previewContent: null,
+                      editedContent: null,
+                      fieldErrors: [],
+                    }));
+                  }}
+                  onSearch={onSearchCompanies}
+                />
+              </section>
+            </div>
           </div>
         );
 
-      case 2:
+      case 1:
         return (
           <div className="space-y-6">
             {state.fieldErrors.length > 0 ? (
@@ -1612,7 +1358,7 @@ export function DocumentGenerationWizard({
               </div>
             ) : null}
             {partyRequirements.director ? (
-              <PartySelector
+              <DocumentPartyChoiceList
                 key={`${state.selectedCompany?.id || 'none'}-director`}
                 id="party-director"
                 label="Director"
@@ -1626,7 +1372,7 @@ export function DocumentGenerationWizard({
               />
             ) : null}
             {partyRequirements.shareholder ? (
-              <PartySelector
+              <DocumentPartyChoiceList
                 key={`${state.selectedCompany?.id || 'none'}-shareholder`}
                 id="party-shareholder"
                 label="Shareholder"
@@ -1640,7 +1386,7 @@ export function DocumentGenerationWizard({
               />
             ) : null}
             {partyRequirements.contact ? (
-              <PartySelector
+              <DocumentPartyChoiceList
                 key={`${state.selectedCompany?.id || 'none'}-contact`}
                 id="party-contact"
                 label="Company Contact"
@@ -1658,7 +1404,7 @@ export function DocumentGenerationWizard({
                 {(partyRequirements.director || partyRequirements.shareholder || partyRequirements.contact) ? (
                   <h3 className="text-sm font-medium text-text-primary">Additional contacts</h3>
                 ) : null}
-                <ContactSelector
+                <DocumentContactChoiceList
                   contacts={contacts}
                   selected={state.selectedContacts}
                   onChange={(selectedContacts) => setState((prev) => ({ ...prev, selectedContacts }))}
@@ -1669,56 +1415,75 @@ export function DocumentGenerationWizard({
             {!partyRequirements.director && !partyRequirements.shareholder && !partyRequirements.contact && !requiresLegacyContacts ? (
               <p className="py-8 text-center text-sm text-text-muted">This template does not require any people selections.</p>
             ) : null}
+            {state.selectedTemplate ? (
+              <section className="rounded-2xl border border-border-primary bg-background-primary p-4 sm:p-5">
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-text-primary">Document details</h2>
+                  <p className="mt-1 text-sm text-text-muted">
+                    Complete the title, template fields, and output options.
+                  </p>
+                </div>
+                <CustomDataForm
+                  template={state.selectedTemplate}
+                  title={state.title}
+                  customData={state.customData}
+                  useLetterhead={state.useLetterhead}
+                  partials={partials}
+                  onTitleChange={(title) => setState((prev) => ({ ...prev, title, fieldErrors: [] }))}
+                  onCustomDataChange={(data) =>
+                    setState((prev) => ({ ...prev, customData: data, fieldErrors: [] }))
+                  }
+                  onLetterheadChange={(value) =>
+                    setState((prev) => ({ ...prev, useLetterhead: value }))
+                  }
+                />
+              </section>
+            ) : null}
           </div>
         );
 
-      case 3:
-        return state.selectedTemplate ? (
-          <div className="space-y-4">
-            {state.fieldErrors.length > 0 && (
-              <div className="p-4 bg-status-error/10 border border-status-error/30 rounded-lg">
-                <div className="flex items-start gap-3 text-status-error">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <ul className="text-sm space-y-1">
-                    {state.fieldErrors.map((message) => (
-                      <li key={message}>{message}</li>
-                    ))}
-                  </ul>
+      case 2:
+        return (
+          <div className="grid min-w-0 gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(320px,384px)]">
+            <div className="min-w-0">
+              <EditStep
+                content={state.previewContent || ''}
+                layout={extractA4DocumentLayout(state.selectedTemplate?.contentJson)}
+                validationResult={state.validationResult}
+                missingPlaceholders={state.missingPlaceholders}
+                missingPartials={state.missingPartials}
+                blockingErrors={state.blockingErrors}
+                isLoading={isValidating}
+                onChange={(content) =>
+                  setState((prev) => ({ ...prev, previewContent: content, editedContent: content }))
+                }
+                onRefresh={generatePreview}
+              />
+            </div>
+            <aside className="space-y-4 2xl:sticky 2xl:top-4 2xl:self-start">
+              <SummaryCard
+                template={state.selectedTemplate}
+                company={state.selectedCompany}
+                contactCount={state.selectedContacts.length}
+                title={state.title}
+                customFieldCount={filledCustomFieldCount}
+              />
+              <div className="rounded-xl border border-border-primary bg-background-primary p-4">
+                <h3 className="text-sm font-semibold text-text-primary">Need to make a change?</h3>
+                <p className="mt-1 text-xs text-text-muted">
+                  Revisit an earlier stage without discarding your document draft.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button variant="secondary" size="sm" onClick={() => setCurrentStep(0)}>
+                    Change setup
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setCurrentStep(1)}>
+                    Change details
+                  </Button>
                 </div>
               </div>
-            )}
-            <CustomDataForm
-              template={state.selectedTemplate}
-              title={state.title}
-              customData={state.customData}
-              useLetterhead={state.useLetterhead}
-              partials={partials}
-              onTitleChange={(title) => setState((prev) => ({ ...prev, title }))}
-              onCustomDataChange={(data) =>
-                setState((prev) => ({ ...prev, customData: data, fieldErrors: [] }))
-              }
-              onLetterheadChange={(value) =>
-                setState((prev) => ({ ...prev, useLetterhead: value }))
-              }
-            />
+            </aside>
           </div>
-        ) : null;
-
-      case 4:
-        return (
-          <EditStep
-            content={state.previewContent || ''}
-            layout={extractA4DocumentLayout(state.selectedTemplate?.contentJson)}
-            validationResult={state.validationResult}
-            missingPlaceholders={state.missingPlaceholders}
-            missingPartials={state.missingPartials}
-            blockingErrors={state.blockingErrors}
-            isLoading={isValidating}
-            onChange={(content) =>
-              setState((prev) => ({ ...prev, previewContent: content }))
-            }
-            onRefresh={generatePreview}
-          />
         );
 
       default:
@@ -1728,19 +1493,8 @@ export function DocumentGenerationWizard({
 
   return (
     <div className={cn('flex flex-col', className)}>
-      {/* Summary Card (always visible except on complete step) */}
-      {currentStep < WIZARD_STEPS.length && (
-        <SummaryCard
-          template={state.selectedTemplate}
-          company={state.selectedCompany}
-          contactCount={state.selectedContacts.length}
-          title={state.title}
-          customFieldCount={filledCustomFieldCount}
-        />
-      )}
-
       {showResumeNotice && (
-        <div className="mt-4 p-3 bg-accent-primary/5 border border-accent-primary/20 rounded-lg">
+        <div className="p-3 bg-accent-primary/5 border border-accent-primary/20 rounded-lg">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-2 text-sm text-text-secondary">
               <AlertTriangle className="w-4 h-4 mt-0.5 text-accent-primary flex-shrink-0" />
@@ -1763,7 +1517,7 @@ export function DocumentGenerationWizard({
       )}
 
       {/* Stepper */}
-      <div className="mt-6 mb-4">
+      <div className="mb-5 rounded-xl border border-border-primary bg-background-secondary/70 px-3 py-3 sm:px-5">
         <Stepper
           steps={WIZARD_STEPS}
           currentStep={currentStep}
@@ -1790,7 +1544,7 @@ export function DocumentGenerationWizard({
 
       {/* Navigation buttons */}
       {currentStep < WIZARD_STEPS.length && (
-        <div className="flex items-center justify-between mt-8 pt-4 border-t border-border-secondary">
+        <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center justify-between border-t border-border-primary bg-background-primary/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
           <Button
             variant="ghost"
             onClick={goToPreviousStep}
@@ -1801,11 +1555,18 @@ export function DocumentGenerationWizard({
           </Button>
 
           <div className="flex items-center gap-3">
-            {lastSavedAt && (
-              <span className="hidden sm:inline text-xs text-text-muted">
-                Saved {new Date(lastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
+            <span className={cn(
+              'hidden text-xs sm:inline',
+              isDirty ? 'text-status-warning' : 'text-text-muted',
+            )}>
+              {isSavingDraft
+                ? 'Saving...'
+                : isDirty
+                  ? 'Unsaved changes'
+                  : lastSavedAt
+                    ? `Saved ${new Date(lastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Not saved yet'}
+            </span>
             <Button
               variant="secondary"
               onClick={handleSaveDraft}
@@ -1821,25 +1582,21 @@ export function DocumentGenerationWizard({
             <Button
               variant="primary"
               onClick={goToNextStep}
-              disabled={(
-                currentStep !== 1
-                && currentStep !== 2
-                && !isStepValid(currentStep)
-              ) || isGenerating || isValidating}
+              disabled={(currentStep === 0 && !state.selectedTemplate) || isGenerating || isValidating}
             >
               {isGenerating || isValidating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   {isValidating ? 'Processing...' : 'Generating...'}
                 </>
-              ) : WIZARD_STEPS[currentStep]?.id === 'edit' ? (
+              ) : currentStep === 2 ? (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
                   Generate Document
                 </>
               ) : (
                 <>
-                  Next
+                  {currentStep === 0 ? 'Continue to Details' : 'Continue to Review'}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </>
               )}

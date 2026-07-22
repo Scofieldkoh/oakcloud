@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, FilePlus2, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import {
@@ -281,21 +281,40 @@ export default function GenerateDocumentPage() {
   );
 
   return (
-    <div className="p-4 sm:p-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
-            Generate Document
-          </h1>
-          <p className="text-sm text-text-secondary mt-1">
-            Create a new document from a template
-          </p>
+    <div className="mx-auto w-full max-w-[1800px] p-4 sm:p-6">
+      <header className="mb-5 rounded-2xl border border-oak-primary/20 bg-gradient-to-br from-oak-primary/[0.06] to-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <Link
+              href="/generated-documents"
+              className="inline-flex min-h-11 items-center gap-1.5 text-sm text-text-secondary transition-colors hover:text-text-primary sm:min-h-0"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Back to Documents
+            </Link>
+            <div className="mt-2 flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-oak-primary/10 text-oak-primary">
+                <FilePlus2 className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">
+                  Create document
+                </h1>
+                <p className="mt-0.5 text-sm text-text-secondary">
+                  Choose the source data, complete the details, then review the final document.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="hidden text-right text-xs text-text-muted lg:block">
+            <p>Three focused stages</p>
+            <p className="mt-0.5">Drafts can be saved at any time</p>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Content */}
-      <div>
+      <main>
         {/* Loading state */}
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-16">
@@ -364,7 +383,7 @@ export default function GenerateDocumentPage() {
             isLoading={isLoading}
           />
         )}
-      </div>
+      </main>
     </div>
   );
 }

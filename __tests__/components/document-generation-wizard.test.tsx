@@ -184,17 +184,12 @@ describe('DocumentGenerationWizard', () => {
       />
     );
 
-    const clickNext = () => fireEvent.click(screen.getByText('Next'));
-
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    clickNext();
-    clickNext();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
 
     expect(screen.getByText('Jane Tan')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Jane Tan'));
-    clickNext();
-
-    clickNext();
+    fireEvent.click(screen.getByRole('checkbox', { name: /Jane Tan/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Review' }));
 
     expect(screen.getByText('Resolution Number is required')).toBeInTheDocument();
     expect(onGenerate).not.toHaveBeenCalled();
@@ -206,17 +201,15 @@ describe('DocumentGenerationWizard', () => {
     const selectedTemplate = { ...template, content: '{{selectedDirector.name}}{{selectedShareholder.email}}{{selectedContact.phone}}', placeholders: [] };
     render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} onGenerate={onGenerate} />);
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText(company.name));
-    fireEvent.click(screen.getByText('Next'));
-    fireEvent.change(await screen.findByLabelText('Director'), { target: { value: 'officer-1' } });
-    fireEvent.change(screen.getByLabelText('Shareholder'), { target: { value: 'shareholder-1' } });
-    fireEvent.change(screen.getByLabelText('Company Contact'), { target: { value: 'contact-1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
+    fireEvent.click(await screen.findByRole('radio', { name: /Alice/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /Ben/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /Cara/ }));
     expect(screen.queryByText('Jane Tan')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByText('Next'));
-    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Review' }));
     await screen.findByLabelText('Document content');
-    fireEvent.click(screen.getByText('Generate Document'));
+    fireEvent.click(screen.getByRole('button', { name: 'Generate Document' }));
     await waitFor(() => expect(onGenerate).toHaveBeenCalledWith(expect.objectContaining({
       selectedDirectorId: 'officer-1', selectedShareholderId: 'shareholder-1', selectedContactId: 'contact-1', contactIds: [],
     })));
@@ -226,18 +219,16 @@ describe('DocumentGenerationWizard', () => {
     mockPartyFetch();
     render(<DocumentGenerationWizard templates={[{ ...template, content: '{{selectedContact.name}}{{contact.name}}', placeholders: [] }]} companies={[company]} contacts={contacts} onGenerate={vi.fn()} />);
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText(company.name));
-    fireEvent.click(screen.getByText('Next'));
-    expect(await screen.findByLabelText('Company Contact')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
+    expect(await screen.findByRole('radio', { name: /Cara/ })).toBeInTheDocument();
     expect(screen.getByText('Jane Tan')).toBeInTheDocument();
   });
 
   it('detects a legacy contact requirement through partials', () => {
     render(<DocumentGenerationWizard templates={[{ ...template, content: '{{> signatory}}', placeholders: [] }]} companies={[]} contacts={contacts} partials={[{ id: 'partial-1', name: 'signatory', content: '{{contact.name}}' }]} onGenerate={vi.fn()} />);
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
-    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
     expect(screen.getByText('Jane Tan')).toBeInTheDocument();
   });
 
@@ -245,27 +236,25 @@ describe('DocumentGenerationWizard', () => {
     mockPartyFetch();
     render(<DocumentGenerationWizard templates={[{ ...template, content: '{{selectedDirector.name}}{{contact.name}}', placeholders: [] }]} companies={[company, { ...company, id: 'company-2', name: 'Second Company' }]} contacts={contacts} onGenerate={vi.fn()} />);
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText(company.name));
-    fireEvent.click(screen.getByText('Next'));
-    fireEvent.change(await screen.findByLabelText('Director'), { target: { value: 'officer-1' } });
-    fireEvent.click(screen.getByText('Jane Tan'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
+    fireEvent.click(await screen.findByRole('radio', { name: /Alice/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Jane Tan/ }));
     fireEvent.click(screen.getByText('Back'));
     fireEvent.click(screen.getByText('Second Company'));
-    fireEvent.click(screen.getByText('Next'));
-    expect(await screen.findByLabelText('Director')).toHaveValue('');
-    expect(screen.getByRole('button', { name: /Jane Tan/ })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
+    expect(await screen.findByRole('radio', { name: /Alice/ })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Jane Tan/ })).toBeChecked();
   });
 
   it('blocks preview with a direct message when a required party is missing', async () => {
     mockPartyFetch();
     render(<DocumentGenerationWizard templates={[{ ...template, content: '{{selectedDirector.name}}', placeholders: [] }]} companies={[company]} onGenerate={vi.fn()} />);
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText(company.name));
-    fireEvent.click(screen.getByText('Next'));
-    await screen.findByLabelText('Director');
-    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
+    await screen.findByRole('radio', { name: /Alice/ });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Review' }));
     expect(screen.getByText('Select a director for this template.')).toBeVisible();
   });
 
@@ -276,12 +265,11 @@ describe('DocumentGenerationWizard', () => {
       onGenerate={vi.fn()}
     />);
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
-    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
 
     expect(screen.getByRole('alert')).toHaveTextContent('Select a company for this template.');
     expect(screen.getByText('No company selected')).toBeVisible();
-    expect(screen.queryByLabelText('Director')).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /Director/ })).not.toBeInTheDocument();
   });
 
   it('allows no company selection for a legacy-only contact template', () => {
@@ -292,8 +280,7 @@ describe('DocumentGenerationWizard', () => {
       onGenerate={vi.fn()}
     />);
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
-    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
 
     expect(screen.getByText('Jane Tan')).toBeVisible();
     expect(screen.queryByText('Select a company for this template.')).not.toBeInTheDocument();
@@ -313,7 +300,7 @@ describe('DocumentGenerationWizard', () => {
       onGenerate={vi.fn()}
     />);
 
-    await waitFor(() => expect(screen.getByLabelText('Director')).toHaveValue('officer-1'));
+    await waitFor(() => expect(screen.getByRole('radio', { name: /Alice/ })).toBeChecked());
     expect(screen.getByText('Saved draft resumed')).toBeVisible();
   });
 
@@ -364,7 +351,7 @@ describe('DocumentGenerationWizard', () => {
 
     await act(async () => response.resolve({ ok: true, json: async () => partyOptions } as Response));
 
-    await waitFor(() => expect(screen.getByLabelText('Director')).toHaveValue(''));
+    await waitFor(() => expect(screen.getByRole('radio', { name: /Alice/ })).not.toBeChecked());
     expect(screen.queryByLabelText('Document content')).not.toBeInTheDocument();
     expect(screen.queryByText('Generate Document')).not.toBeInTheDocument();
     expect(screen.getByText('A saved party selection is no longer available. Select it again to continue.')).toBeVisible();
@@ -380,19 +367,18 @@ describe('DocumentGenerationWizard', () => {
     const selectedTemplate = { ...template, content: '{{selectedDirector.name}}{{contact.name}}', placeholders: [] };
     render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company, { ...company, id: 'company-2', name: 'Second Company' }]} contacts={contacts} onGenerate={vi.fn()} />);
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText(company.name));
-    fireEvent.click(screen.getByText('Next'));
-    fireEvent.change(await screen.findByLabelText('Director'), { target: { value: 'officer-1' } });
-    fireEvent.click(screen.getByText('Jane Tan'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
+    fireEvent.click(await screen.findByRole('radio', { name: /Alice/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Jane Tan/ }));
     fireEvent.click(screen.getByText('Back'));
 
     fireEvent.click(screen.getByText('Second Company'));
-    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
 
     expect(await screen.findByText('Loading director options...')).toBeVisible();
-    expect(screen.queryByRole('option', { name: /Alice/ })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByText('Next'));
+    expect(screen.queryByRole('radio', { name: /Alice/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Review' }));
     expect(screen.getByText('Select a director for this template.')).toBeVisible();
 
     await act(async () => secondResponse.resolve({
@@ -400,9 +386,9 @@ describe('DocumentGenerationWizard', () => {
       json: async () => ({ ...partyOptions, directors: [{ ...partyOptions.directors[0], id: 'officer-2', name: 'Dina' }] }),
     } as Response));
 
-    await waitFor(() => expect(screen.getByLabelText('Director')).toHaveValue(''));
-    expect(screen.queryByRole('option', { name: /Alice/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Jane Tan/ })).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(screen.getByRole('radio', { name: /Dina/ })).not.toBeChecked());
+    expect(screen.queryByRole('radio', { name: /Alice/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Jane Tan/ })).toBeChecked();
   });
 
   it('invalidates an Edit-step draft whose saved company is no longer eligible', async () => {
@@ -436,14 +422,12 @@ describe('DocumentGenerationWizard', () => {
     const selectedTemplate = { ...template, content: '{{contact.name}}{{#each contacts}}{{email}}{{/each}}', placeholders: [] };
     render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} contacts={contacts} onGenerate={vi.fn()} />);
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText(company.name));
-    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
 
     expect(screen.getByText('Jane Tan')).toBeVisible();
     expect(fetchMock).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText('Jane Tan'));
-    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Jane Tan/ }));
     expect(screen.getByPlaceholderText('Enter document title...')).toBeVisible();
   });
 
@@ -454,15 +438,14 @@ describe('DocumentGenerationWizard', () => {
     const selectedTemplate = { ...template, content: '{{selectedDirector.name}}', placeholders: [] };
     render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} onGenerate={vi.fn()} />);
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText(company.name));
-    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
 
     expect(await screen.findByText('Failed to load company party options.')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Retry party options' }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     expect(await screen.findByText('Failed to load company party options.')).toBeVisible();
-    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Review' }));
     expect(screen.getByText('Select a director for this template.')).toBeVisible();
   });
 
@@ -471,18 +454,71 @@ describe('DocumentGenerationWizard', () => {
     const selectedTemplate = { ...template, content: '{{selectedDirector.name}}{{contact.name}}', placeholders: [] };
     render(<DocumentGenerationWizard templates={[selectedTemplate]} companies={[company]} contacts={contacts} onGenerate={vi.fn()} />);
     fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText(company.name));
-    fireEvent.click(screen.getByText('Next'));
-    fireEvent.change(await screen.findByLabelText('Director'), { target: { value: 'officer-1' } });
-    fireEvent.click(screen.getByText('Jane Tan'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
+    fireEvent.click(await screen.findByRole('radio', { name: /Alice/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Jane Tan/ }));
     fireEvent.click(screen.getByText('Back'));
 
     fireEvent.click(screen.getAllByText(company.name).at(-1)!);
-    fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
 
     expect(screen.queryByText('Loading director options...')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Director')).toHaveValue('officer-1');
-    expect(screen.getByRole('button', { name: /Jane Tan/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('radio', { name: /Alice/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Jane Tan/ })).toBeChecked();
+  });
+
+  it('renders exactly the approved three stages', () => {
+    render(
+      <DocumentGenerationWizard templates={[template]} companies={[]} onGenerate={vi.fn()} />,
+    );
+
+    const progress = screen.getByRole('navigation', { name: 'Progress' });
+    expect(progress).toHaveTextContent('Setup');
+    expect(progress).toHaveTextContent('Details');
+    expect(progress).toHaveTextContent('Review & Generate');
+    expect(progress).not.toHaveTextContent('People');
+    expect(progress).not.toHaveTextContent('Custom Fields');
+  });
+
+  it('restores legacy edit-step drafts into Review & Generate', async () => {
+    render(
+      <DocumentGenerationWizard
+        templates={[template]}
+        companies={[]}
+        initialSession={generationSession({
+          currentStep: 4,
+          previewContent: '<p>Saved preview</p>',
+        })}
+        onGenerate={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByLabelText('Document content')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Generate Document' })).toBeVisible();
+  });
+
+  it('uses radio cards for singular parties and checkbox cards for contacts', async () => {
+    mockPartyFetch();
+    const selectedTemplate = {
+      ...template,
+      content: '{{selectedDirector.name}}{{contact.name}}',
+      placeholders: [],
+    };
+    render(
+      <DocumentGenerationWizard
+        templates={[selectedTemplate]}
+        companies={[company]}
+        contacts={contacts}
+        onGenerate={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getAllByText('Resolution').at(-1)!);
+    fireEvent.click(screen.getByText(company.name));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
+
+    expect(await screen.findByRole('radio', { name: /Alice/ })).toBeVisible();
+    expect(screen.getByRole('checkbox', { name: /Jane Tan/ })).toBeVisible();
   });
 });
