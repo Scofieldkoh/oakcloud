@@ -1784,6 +1784,7 @@ export const TaskPipelineVersionScalarFieldEnum = {
   tenantId: 'tenantId',
   pipelineId: 'pipelineId',
   version: 'version',
+  publishedAt: 'publishedAt',
   createdAt: 'createdAt'
 } as const
 
@@ -1817,6 +1818,7 @@ export const TaskScalarFieldEnum = {
   description: 'description',
   status: 'status',
   dueDate: 'dueDate',
+  snapshotLockedAt: 'snapshotLockedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',

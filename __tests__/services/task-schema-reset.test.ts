@@ -71,11 +71,13 @@ describe("modular task schema reset", () => {
     const outcome = schemaBlock("model", "TaskStageOutcome");
 
     expect(version).toMatch(/version\s+Int/);
+    expect(version).toMatch(/publishedAt\s+DateTime\?/);
     expect(version).toMatch(/@@unique\(\[pipelineId,\s*version\]\)/);
     expect(pipelineStage).toMatch(/position\s+Int/);
     expect(task).toMatch(/companyId\s+String\?/);
     expect(task).toMatch(/ownerId\s+String\?/);
     expect(task).toMatch(/dueDate\s+DateTime\?/);
+    expect(task).toMatch(/snapshotLockedAt\s+DateTime\?/);
     expect(taskStage).toMatch(/assigneeId\s+String\?/);
     expect(pipeline).toMatch(/deletedAt\s+DateTime\?/);
     expect(task).toMatch(/deletedAt\s+DateTime\?/);
@@ -121,25 +123,33 @@ describe("modular task schema reset", () => {
     expect(migration).toContain('CREATE INDEX "task_stage_checklist_items_tenant_id_task_stage_id_position_idx"');
   });
 
-  it("enforces immutable pipeline snapshots and task pipeline-version assignment in the migration", () => {
-    for (const [functionName, table] of [
-      ["prevent_task_pipeline_version_update", "task_pipeline_versions"],
-      ["prevent_task_pipeline_stage_update", "task_pipeline_stages"],
-      ["prevent_task_pipeline_version_change", "tasks"],
+  it("locks published pipeline snapshots against every structural mutation in the migration", () => {
+    const pipelineVersionGuard = migrationFunction("prevent_published_task_pipeline_version_change");
+    const pipelineStageGuard = migrationFunction("prevent_published_task_pipeline_stage_change");
+
+    expect(migration).toContain('"published_at" TIMESTAMP(3)');
+    expect(pipelineVersionGuard).toContain('OLD."published_at" IS NOT NULL');
+    expect(pipelineVersionGuard).toContain('NEW."published_at" IS DISTINCT FROM OLD."published_at"');
+    expect(pipelineStageGuard).toContain('"published_at" IS NOT NULL');
+
+    for (const [functionName, table, event] of [
+      ["prevent_published_task_pipeline_version_change", "task_pipeline_versions", "UPDATE OR DELETE"],
+      ["prevent_published_task_pipeline_stage_change", "task_pipeline_stages", "INSERT OR UPDATE OR DELETE"],
     ]) {
       expect(migrationFunction(functionName)).not.toBe("");
-      expect(migration).toMatch(new RegExp(`CREATE TRIGGER "${functionName}_trigger"[\\s\\S]*?BEFORE UPDATE ON "${table}"`));
+      expect(migration).toMatch(new RegExp(`CREATE TRIGGER "${functionName}_trigger"[\\s\\S]*?BEFORE ${event} ON "${table}"`));
     }
-
-    expect(migrationFunction("prevent_task_pipeline_version_change")).toContain(
-      'NEW."pipeline_version_id" IS DISTINCT FROM OLD."pipeline_version_id"',
-    );
   });
 
-  it("locks task-stage structural snapshots while keeping operational fields outside the guard", () => {
-    const taskStageGuard = migrationFunction("prevent_task_stage_structural_change");
-    const checklistGuard = migrationFunction("prevent_task_stage_checklist_item_structure_change");
+  it("locks task snapshots against new or deleted structure while keeping operational fields editable", () => {
+    const taskGuard = migrationFunction("prevent_locked_task_pipeline_version_change");
+    const taskStageGuard = migrationFunction("prevent_locked_task_stage_change");
+    const checklistGuard = migrationFunction("prevent_locked_task_stage_checklist_item_change");
 
+    expect(migration).toContain('"snapshot_locked_at" TIMESTAMP(3)');
+    expect(taskGuard).toContain('OLD."snapshot_locked_at" IS NOT NULL');
+    expect(taskGuard).toContain('NEW."snapshot_locked_at" IS DISTINCT FROM OLD."snapshot_locked_at"');
+    expect(taskGuard).toContain('NEW."pipeline_version_id" IS DISTINCT FROM OLD."pipeline_version_id"');
     expect(taskStageGuard).not.toBe("");
     for (const field of ["tenant_id", "task_id", "name", "description", "position", "action_type", "icon", "is_required", "action_config"]) {
       expect(taskStageGuard).toContain(`NEW."${field}" IS DISTINCT FROM OLD."${field}"`);
@@ -147,12 +157,12 @@ describe("modular task schema reset", () => {
     for (const operationalField of ["status", "assignee_id", "notes", "skip_reason", "started_at", "completed_at"]) {
       expect(taskStageGuard).not.toContain(`NEW."${operationalField}"`);
     }
-    expect(migration).toMatch(/CREATE TRIGGER "prevent_task_stage_structural_change_trigger"[\s\S]*?BEFORE UPDATE ON "task_stages"/);
+    expect(migration).toMatch(/CREATE TRIGGER "prevent_locked_task_stage_change_trigger"[\s\S]*?BEFORE INSERT OR UPDATE OR DELETE ON "task_stages"/);
 
     expect(checklistGuard).not.toBe("");
     for (const field of ["tenant_id", "task_stage_id", "label", "position"]) {
       expect(checklistGuard).toContain(`NEW."${field}" IS DISTINCT FROM OLD."${field}"`);
     }
-    expect(migration).toMatch(/CREATE TRIGGER "prevent_task_stage_checklist_item_structure_change_trigger"[\s\S]*?BEFORE UPDATE ON "task_stage_checklist_items"/);
+    expect(migration).toMatch(/CREATE TRIGGER "prevent_locked_task_stage_checklist_item_change_trigger"[\s\S]*?BEFORE INSERT OR UPDATE OR DELETE ON "task_stage_checklist_items"/);
   });
 });

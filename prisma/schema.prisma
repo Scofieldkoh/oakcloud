@@ -2139,6 +2139,7 @@ model TaskPipelineVersion {
   tenantId   String              @map("tenant_id")
   pipelineId String              @map("pipeline_id")
   version    Int
+  publishedAt DateTime?          @map("published_at")
   createdAt  DateTime            @default(now()) @map("created_at")
   tenant     Workspace           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   pipeline   TaskPipeline        @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
@@ -2180,6 +2181,7 @@ model Task {
   description       String?
   status            TaskStatus          @default(NOT_STARTED)
   dueDate           DateTime?           @map("due_date") @db.Date
+  snapshotLockedAt  DateTime?           @map("snapshot_locked_at")
   createdAt         DateTime            @default(now()) @map("created_at")
   updatedAt         DateTime            @updatedAt @map("updated_at")
   deletedAt         DateTime?           @map("deleted_at")

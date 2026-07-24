@@ -39,6 +39,7 @@ export type TaskPipelineVersionMinAggregateOutputType = {
   tenantId: string | null
   pipelineId: string | null
   version: number | null
+  publishedAt: Date | null
   createdAt: Date | null
 }
 
@@ -47,6 +48,7 @@ export type TaskPipelineVersionMaxAggregateOutputType = {
   tenantId: string | null
   pipelineId: string | null
   version: number | null
+  publishedAt: Date | null
   createdAt: Date | null
 }
 
@@ -55,6 +57,7 @@ export type TaskPipelineVersionCountAggregateOutputType = {
   tenantId: number
   pipelineId: number
   version: number
+  publishedAt: number
   createdAt: number
   _all: number
 }
@@ -73,6 +76,7 @@ export type TaskPipelineVersionMinAggregateInputType = {
   tenantId?: true
   pipelineId?: true
   version?: true
+  publishedAt?: true
   createdAt?: true
 }
 
@@ -81,6 +85,7 @@ export type TaskPipelineVersionMaxAggregateInputType = {
   tenantId?: true
   pipelineId?: true
   version?: true
+  publishedAt?: true
   createdAt?: true
 }
 
@@ -89,6 +94,7 @@ export type TaskPipelineVersionCountAggregateInputType = {
   tenantId?: true
   pipelineId?: true
   version?: true
+  publishedAt?: true
   createdAt?: true
   _all?: true
 }
@@ -184,6 +190,7 @@ export type TaskPipelineVersionGroupByOutputType = {
   tenantId: string
   pipelineId: string
   version: number
+  publishedAt: Date | null
   createdAt: Date
   _count: TaskPipelineVersionCountAggregateOutputType | null
   _avg: TaskPipelineVersionAvgAggregateOutputType | null
@@ -215,6 +222,7 @@ export type TaskPipelineVersionWhereInput = {
   tenantId?: Prisma.StringFilter<"TaskPipelineVersion"> | string
   pipelineId?: Prisma.StringFilter<"TaskPipelineVersion"> | string
   version?: Prisma.IntFilter<"TaskPipelineVersion"> | number
+  publishedAt?: Prisma.DateTimeNullableFilter<"TaskPipelineVersion"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"TaskPipelineVersion"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   pipeline?: Prisma.XOR<Prisma.TaskPipelineScalarRelationFilter, Prisma.TaskPipelineWhereInput>
@@ -227,6 +235,7 @@ export type TaskPipelineVersionOrderByWithRelationInput = {
   tenantId?: Prisma.SortOrder
   pipelineId?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  publishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
   pipeline?: Prisma.TaskPipelineOrderByWithRelationInput
@@ -243,6 +252,7 @@ export type TaskPipelineVersionWhereUniqueInput = Prisma.AtLeast<{
   tenantId?: Prisma.StringFilter<"TaskPipelineVersion"> | string
   pipelineId?: Prisma.StringFilter<"TaskPipelineVersion"> | string
   version?: Prisma.IntFilter<"TaskPipelineVersion"> | number
+  publishedAt?: Prisma.DateTimeNullableFilter<"TaskPipelineVersion"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"TaskPipelineVersion"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   pipeline?: Prisma.XOR<Prisma.TaskPipelineScalarRelationFilter, Prisma.TaskPipelineWhereInput>
@@ -255,6 +265,7 @@ export type TaskPipelineVersionOrderByWithAggregationInput = {
   tenantId?: Prisma.SortOrder
   pipelineId?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  publishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.TaskPipelineVersionCountOrderByAggregateInput
   _avg?: Prisma.TaskPipelineVersionAvgOrderByAggregateInput
@@ -271,12 +282,14 @@ export type TaskPipelineVersionScalarWhereWithAggregatesInput = {
   tenantId?: Prisma.StringWithAggregatesFilter<"TaskPipelineVersion"> | string
   pipelineId?: Prisma.StringWithAggregatesFilter<"TaskPipelineVersion"> | string
   version?: Prisma.IntWithAggregatesFilter<"TaskPipelineVersion"> | number
+  publishedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"TaskPipelineVersion"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"TaskPipelineVersion"> | Date | string
 }
 
 export type TaskPipelineVersionCreateInput = {
   id?: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutTaskPipelineVersionsInput
   pipeline: Prisma.TaskPipelineCreateNestedOneWithoutVersionsInput
@@ -289,6 +302,7 @@ export type TaskPipelineVersionUncheckedCreateInput = {
   tenantId: string
   pipelineId: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
   stages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutVersionInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutPipelineVersionInput
@@ -297,6 +311,7 @@ export type TaskPipelineVersionUncheckedCreateInput = {
 export type TaskPipelineVersionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutTaskPipelineVersionsNestedInput
   pipeline?: Prisma.TaskPipelineUpdateOneRequiredWithoutVersionsNestedInput
@@ -309,6 +324,7 @@ export type TaskPipelineVersionUncheckedUpdateInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   pipelineId?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   stages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutVersionNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutPipelineVersionNestedInput
@@ -319,12 +335,14 @@ export type TaskPipelineVersionCreateManyInput = {
   tenantId: string
   pipelineId: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
 }
 
 export type TaskPipelineVersionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -333,6 +351,7 @@ export type TaskPipelineVersionUncheckedUpdateManyInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   pipelineId?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -356,6 +375,7 @@ export type TaskPipelineVersionCountOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   pipelineId?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  publishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -368,6 +388,7 @@ export type TaskPipelineVersionMaxOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   pipelineId?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  publishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -376,6 +397,7 @@ export type TaskPipelineVersionMinOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   pipelineId?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  publishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -503,6 +525,7 @@ export type TaskPipelineVersionUpdateOneRequiredWithoutTasksNestedInput = {
 export type TaskPipelineVersionCreateWithoutTenantInput = {
   id?: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
   pipeline: Prisma.TaskPipelineCreateNestedOneWithoutVersionsInput
   stages?: Prisma.TaskPipelineStageCreateNestedManyWithoutVersionInput
@@ -513,6 +536,7 @@ export type TaskPipelineVersionUncheckedCreateWithoutTenantInput = {
   id?: string
   pipelineId: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
   stages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutVersionInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutPipelineVersionInput
@@ -552,12 +576,14 @@ export type TaskPipelineVersionScalarWhereInput = {
   tenantId?: Prisma.StringFilter<"TaskPipelineVersion"> | string
   pipelineId?: Prisma.StringFilter<"TaskPipelineVersion"> | string
   version?: Prisma.IntFilter<"TaskPipelineVersion"> | number
+  publishedAt?: Prisma.DateTimeNullableFilter<"TaskPipelineVersion"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"TaskPipelineVersion"> | Date | string
 }
 
 export type TaskPipelineVersionCreateWithoutPipelineInput = {
   id?: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutTaskPipelineVersionsInput
   stages?: Prisma.TaskPipelineStageCreateNestedManyWithoutVersionInput
@@ -568,6 +594,7 @@ export type TaskPipelineVersionUncheckedCreateWithoutPipelineInput = {
   id?: string
   tenantId: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
   stages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutVersionInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutPipelineVersionInput
@@ -602,6 +629,7 @@ export type TaskPipelineVersionUpdateManyWithWhereWithoutPipelineInput = {
 export type TaskPipelineVersionCreateWithoutStagesInput = {
   id?: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutTaskPipelineVersionsInput
   pipeline: Prisma.TaskPipelineCreateNestedOneWithoutVersionsInput
@@ -613,6 +641,7 @@ export type TaskPipelineVersionUncheckedCreateWithoutStagesInput = {
   tenantId: string
   pipelineId: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutPipelineVersionInput
 }
@@ -636,6 +665,7 @@ export type TaskPipelineVersionUpdateToOneWithWhereWithoutStagesInput = {
 export type TaskPipelineVersionUpdateWithoutStagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutTaskPipelineVersionsNestedInput
   pipeline?: Prisma.TaskPipelineUpdateOneRequiredWithoutVersionsNestedInput
@@ -647,6 +677,7 @@ export type TaskPipelineVersionUncheckedUpdateWithoutStagesInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   pipelineId?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutPipelineVersionNestedInput
 }
@@ -654,6 +685,7 @@ export type TaskPipelineVersionUncheckedUpdateWithoutStagesInput = {
 export type TaskPipelineVersionCreateWithoutTasksInput = {
   id?: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutTaskPipelineVersionsInput
   pipeline: Prisma.TaskPipelineCreateNestedOneWithoutVersionsInput
@@ -665,6 +697,7 @@ export type TaskPipelineVersionUncheckedCreateWithoutTasksInput = {
   tenantId: string
   pipelineId: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
   stages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutVersionInput
 }
@@ -688,6 +721,7 @@ export type TaskPipelineVersionUpdateToOneWithWhereWithoutTasksInput = {
 export type TaskPipelineVersionUpdateWithoutTasksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutTaskPipelineVersionsNestedInput
   pipeline?: Prisma.TaskPipelineUpdateOneRequiredWithoutVersionsNestedInput
@@ -699,6 +733,7 @@ export type TaskPipelineVersionUncheckedUpdateWithoutTasksInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   pipelineId?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   stages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutVersionNestedInput
 }
@@ -707,12 +742,14 @@ export type TaskPipelineVersionCreateManyTenantInput = {
   id?: string
   pipelineId: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
 }
 
 export type TaskPipelineVersionUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   pipeline?: Prisma.TaskPipelineUpdateOneRequiredWithoutVersionsNestedInput
   stages?: Prisma.TaskPipelineStageUpdateManyWithoutVersionNestedInput
@@ -723,6 +760,7 @@ export type TaskPipelineVersionUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   pipelineId?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   stages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutVersionNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutPipelineVersionNestedInput
@@ -732,6 +770,7 @@ export type TaskPipelineVersionUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   pipelineId?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -739,12 +778,14 @@ export type TaskPipelineVersionCreateManyPipelineInput = {
   id?: string
   tenantId: string
   version: number
+  publishedAt?: Date | string | null
   createdAt?: Date | string
 }
 
 export type TaskPipelineVersionUpdateWithoutPipelineInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutTaskPipelineVersionsNestedInput
   stages?: Prisma.TaskPipelineStageUpdateManyWithoutVersionNestedInput
@@ -755,6 +796,7 @@ export type TaskPipelineVersionUncheckedUpdateWithoutPipelineInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   stages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutVersionNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutPipelineVersionNestedInput
@@ -764,6 +806,7 @@ export type TaskPipelineVersionUncheckedUpdateManyWithoutPipelineInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.IntFieldUpdateOperationsInput | number
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -812,6 +855,7 @@ export type TaskPipelineVersionSelect<ExtArgs extends runtime.Types.Extensions.I
   tenantId?: boolean
   pipelineId?: boolean
   version?: boolean
+  publishedAt?: boolean
   createdAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   pipeline?: boolean | Prisma.TaskPipelineDefaultArgs<ExtArgs>
@@ -825,6 +869,7 @@ export type TaskPipelineVersionSelectCreateManyAndReturn<ExtArgs extends runtime
   tenantId?: boolean
   pipelineId?: boolean
   version?: boolean
+  publishedAt?: boolean
   createdAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   pipeline?: boolean | Prisma.TaskPipelineDefaultArgs<ExtArgs>
@@ -835,6 +880,7 @@ export type TaskPipelineVersionSelectUpdateManyAndReturn<ExtArgs extends runtime
   tenantId?: boolean
   pipelineId?: boolean
   version?: boolean
+  publishedAt?: boolean
   createdAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   pipeline?: boolean | Prisma.TaskPipelineDefaultArgs<ExtArgs>
@@ -845,10 +891,11 @@ export type TaskPipelineVersionSelectScalar = {
   tenantId?: boolean
   pipelineId?: boolean
   version?: boolean
+  publishedAt?: boolean
   createdAt?: boolean
 }
 
-export type TaskPipelineVersionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "pipelineId" | "version" | "createdAt", ExtArgs["result"]["taskPipelineVersion"]>
+export type TaskPipelineVersionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "pipelineId" | "version" | "publishedAt" | "createdAt", ExtArgs["result"]["taskPipelineVersion"]>
 export type TaskPipelineVersionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   pipeline?: boolean | Prisma.TaskPipelineDefaultArgs<ExtArgs>
@@ -878,6 +925,7 @@ export type $TaskPipelineVersionPayload<ExtArgs extends runtime.Types.Extensions
     tenantId: string
     pipelineId: string
     version: number
+    publishedAt: Date | null
     createdAt: Date
   }, ExtArgs["result"]["taskPipelineVersion"]>
   composites: {}
@@ -1310,6 +1358,7 @@ export interface TaskPipelineVersionFieldRefs {
   readonly tenantId: Prisma.FieldRef<"TaskPipelineVersion", 'String'>
   readonly pipelineId: Prisma.FieldRef<"TaskPipelineVersion", 'String'>
   readonly version: Prisma.FieldRef<"TaskPipelineVersion", 'Int'>
+  readonly publishedAt: Prisma.FieldRef<"TaskPipelineVersion", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"TaskPipelineVersion", 'DateTime'>
 }
     
