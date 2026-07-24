@@ -11,6 +11,7 @@ reconciliation, and the action registry are implemented.
 - `262f077` — `feat: add modular task domain services`
 - `43e1be7` — `docs: report task domain service implementation`
 - `ffdd0a7` — `fix(tasks): harden task lifecycle services`
+- `81e8262` — `fix(tasks): make stage reconciliation race safe`
 
 ## Files
 
@@ -54,6 +55,41 @@ reconciliation, and the action registry are implemented.
 - `npx.cmd tsc --noEmit --pretty false`
   - Exit 0.
 - Focused ESLint over the new service, validation, and test files
+  - Exit 0 with no warnings.
+- `git diff --check`
+  - Exit 0.
+
+## Final Reconciliation Hardening
+
+Commit `81e8262` makes detail self-healing race-safe:
+
+- Reconciliation first reads only the tenant-scoped stage `taskId`.
+- It locks the parent task row before loading the full stage and outcome.
+- It reloads the stage/outcome after the lock and rejects an unexpected parent
+  change.
+- MANUAL stages are excluded from authoritative outcome reconciliation and
+  return their current stage/task status without writes or audit noise.
+
+### Final Red Evidence
+
+`npx.cmd vitest run __tests__/services/task-stage-registry.test.ts -t "reloads the stage|leaves completed MANUAL"`
+
+- 2 tests failed.
+- The stale pre-lock generated-document link returned `IN_PROGRESS` instead of
+  the post-lock current link's `COMPLETED`.
+- A completed MANUAL stage was demoted to `NOT_STARTED` by outcome self-healing.
+
+### Final Green Evidence
+
+- The same two focused regressions passed.
+- Full stage/registry file: 16 tests passed.
+- Final focused verification:
+  `npx.cmd vitest run __tests__/services/task-status.test.ts __tests__/services/task-pipeline.service.test.ts __tests__/services/task-stage-registry.test.ts`
+  - 3 files passed; 27 tests passed.
+- `npx.cmd tsc --noEmit --pretty false`
+  - Exit 0.
+- Focused ESLint over task services, task validations, and the three service
+  test files
   - Exit 0 with no warnings.
 - `git diff --check`
   - Exit 0.
