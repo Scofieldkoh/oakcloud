@@ -57,7 +57,7 @@ CREATE TYPE "TaskStatus" AS ENUM (
 
 CREATE TYPE "TaskStageStatus" AS ENUM (
   'NOT_STARTED',
-  'BLOCKED',
+  'WAITING',
   'IN_PROGRESS',
   'COMPLETED',
   'SKIPPED',
@@ -290,3 +290,80 @@ ALTER TABLE "task_stage_outcomes"
 ALTER TABLE "task_stage_outcomes"
   ADD CONSTRAINT "task_stage_outcomes_esigning_envelope_id_fkey"
   FOREIGN KEY ("esigning_envelope_id") REFERENCES "esigning_envelopes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Pipeline versions and their stages are snapshots. They must never be edited
+-- after creation so existing tasks retain the definition they were assigned.
+CREATE OR REPLACE FUNCTION "prevent_task_pipeline_version_update"()
+RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'Task pipeline versions are immutable';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER "prevent_task_pipeline_version_update_trigger"
+BEFORE UPDATE ON "task_pipeline_versions"
+FOR EACH ROW EXECUTE FUNCTION "prevent_task_pipeline_version_update"();
+
+CREATE OR REPLACE FUNCTION "prevent_task_pipeline_stage_update"()
+RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'Task pipeline stages are immutable';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER "prevent_task_pipeline_stage_update_trigger"
+BEFORE UPDATE ON "task_pipeline_stages"
+FOR EACH ROW EXECUTE FUNCTION "prevent_task_pipeline_stage_update"();
+
+CREATE OR REPLACE FUNCTION "prevent_task_pipeline_version_change"()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW."pipeline_version_id" IS DISTINCT FROM OLD."pipeline_version_id" THEN
+    RAISE EXCEPTION 'A task cannot be moved to another pipeline version';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER "prevent_task_pipeline_version_change_trigger"
+BEFORE UPDATE ON "tasks"
+FOR EACH ROW EXECUTE FUNCTION "prevent_task_pipeline_version_change"();
+
+CREATE OR REPLACE FUNCTION "prevent_task_stage_structural_change"()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW."tenant_id" IS DISTINCT FROM OLD."tenant_id"
+    OR NEW."task_id" IS DISTINCT FROM OLD."task_id"
+    OR NEW."name" IS DISTINCT FROM OLD."name"
+    OR NEW."description" IS DISTINCT FROM OLD."description"
+    OR NEW."position" IS DISTINCT FROM OLD."position"
+    OR NEW."action_type" IS DISTINCT FROM OLD."action_type"
+    OR NEW."icon" IS DISTINCT FROM OLD."icon"
+    OR NEW."is_required" IS DISTINCT FROM OLD."is_required"
+    OR NEW."action_config" IS DISTINCT FROM OLD."action_config" THEN
+    RAISE EXCEPTION 'Task stage structure is immutable';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER "prevent_task_stage_structural_change_trigger"
+BEFORE UPDATE ON "task_stages"
+FOR EACH ROW EXECUTE FUNCTION "prevent_task_stage_structural_change"();
+
+CREATE OR REPLACE FUNCTION "prevent_task_stage_checklist_item_structure_change"()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW."tenant_id" IS DISTINCT FROM OLD."tenant_id"
+    OR NEW."task_stage_id" IS DISTINCT FROM OLD."task_stage_id"
+    OR NEW."label" IS DISTINCT FROM OLD."label"
+    OR NEW."position" IS DISTINCT FROM OLD."position" THEN
+    RAISE EXCEPTION 'Task-stage checklist item structure is immutable';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER "prevent_task_stage_checklist_item_structure_change_trigger"
+BEFORE UPDATE ON "task_stage_checklist_items"
+FOR EACH ROW EXECUTE FUNCTION "prevent_task_stage_checklist_item_structure_change"();

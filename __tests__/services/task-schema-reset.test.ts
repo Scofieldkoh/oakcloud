@@ -4,6 +4,11 @@ import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
 const schema = readFileSync(join(root, "prisma", "schema.prisma"), "utf8");
+const migration = readFileSync(
+  join(root, "prisma", "migrations", "20260724090000_modular_tasks_reset", "migration.sql"),
+  "utf8",
+);
+const generatedEnums = readFileSync(join(root, "src", "generated", "prisma", "enums.ts"), "utf8");
 const contactMergeService = readFileSync(
   join(root, "src", "services", "contact-merge.service.ts"),
   "utf8",
@@ -15,6 +20,15 @@ const contactDuplicateService = readFileSync(
 
 function schemaBlock(kind: "model" | "enum", name: string): string {
   const match = schema.match(new RegExp(`^${kind} ${name} \\{[\\s\\S]*?^\\}`, "m"));
+  return match?.[0] ?? "";
+}
+
+function migrationFunction(name: string): string {
+  const match = migration.match(
+    new RegExp(
+      `CREATE OR REPLACE FUNCTION "${name}"\\(\\)[\\s\\S]*?\\$\\$ LANGUAGE plpgsql;`,
+    ),
+  );
   return match?.[0] ?? "";
 }
 
@@ -74,5 +88,71 @@ describe("modular task schema reset", () => {
     expect(outcome).toMatch(
       /esigningEnvelope\s+EsigningEnvelope\?\s+@relation\(fields: \[esigningEnvelopeId\], references: \[id\], onDelete: SetNull\)/,
     );
+  });
+
+  it("uses WAITING, rather than BLOCKED, for task-stage status across schema artifacts", () => {
+    const taskStageStatus = schemaBlock("enum", "TaskStageStatus");
+
+    expect(taskStageStatus).toMatch(/\bWAITING\b/);
+    expect(taskStageStatus).not.toMatch(/\bBLOCKED\b/);
+    expect(migration).toMatch(/CREATE TYPE "TaskStageStatus"[\s\S]*?'WAITING'/);
+    expect(migration).not.toMatch(/CREATE TYPE "TaskStageStatus"[\s\S]*?'BLOCKED'/);
+    expect(generatedEnums).toMatch(/WAITING: 'WAITING'/);
+    expect(generatedEnums).not.toMatch(/BLOCKED: 'BLOCKED'/);
+  });
+
+  it("covers the full task schema reset in the migration, including ordered constraints and indexes", () => {
+    for (const table of [
+      "task_pipelines", "task_pipeline_versions", "task_pipeline_stages", "tasks",
+      "task_stages", "task_stage_checklist_items", "task_stage_outcomes",
+    ]) expect(migration).toContain(`CREATE TABLE "${table}"`);
+
+    for (const enumName of ["TaskStatus", "TaskStageStatus", "TaskStageActionType", "TaskStageOutcomeType"]) {
+      expect(migration).toContain(`CREATE TYPE "${enumName}"`);
+    }
+
+    expect(migration).toContain('DROP TABLE IF EXISTS "workflow_instances" CASCADE;');
+    expect(migration).toContain('DROP TYPE IF EXISTS "WorkflowInstanceStatus";');
+    expect(migration).toContain('CREATE UNIQUE INDEX "task_pipeline_versions_pipeline_id_version_key"');
+    expect(migration).toContain('CREATE UNIQUE INDEX "task_pipeline_stages_version_id_position_key"');
+    expect(migration).toContain('CREATE UNIQUE INDEX "task_stages_task_id_position_key"');
+    expect(migration).toContain('CREATE UNIQUE INDEX "task_stage_checklist_items_task_stage_id_position_key"');
+    expect(migration).toContain('CREATE INDEX "task_pipeline_stages_tenant_id_version_id_position_idx"');
+    expect(migration).toContain('CREATE INDEX "task_stage_checklist_items_tenant_id_task_stage_id_position_idx"');
+  });
+
+  it("enforces immutable pipeline snapshots and task pipeline-version assignment in the migration", () => {
+    for (const [functionName, table] of [
+      ["prevent_task_pipeline_version_update", "task_pipeline_versions"],
+      ["prevent_task_pipeline_stage_update", "task_pipeline_stages"],
+      ["prevent_task_pipeline_version_change", "tasks"],
+    ]) {
+      expect(migrationFunction(functionName)).not.toBe("");
+      expect(migration).toMatch(new RegExp(`CREATE TRIGGER "${functionName}_trigger"[\\s\\S]*?BEFORE UPDATE ON "${table}"`));
+    }
+
+    expect(migrationFunction("prevent_task_pipeline_version_change")).toContain(
+      'NEW."pipeline_version_id" IS DISTINCT FROM OLD."pipeline_version_id"',
+    );
+  });
+
+  it("locks task-stage structural snapshots while keeping operational fields outside the guard", () => {
+    const taskStageGuard = migrationFunction("prevent_task_stage_structural_change");
+    const checklistGuard = migrationFunction("prevent_task_stage_checklist_item_structure_change");
+
+    expect(taskStageGuard).not.toBe("");
+    for (const field of ["tenant_id", "task_id", "name", "description", "position", "action_type", "icon", "is_required", "action_config"]) {
+      expect(taskStageGuard).toContain(`NEW."${field}" IS DISTINCT FROM OLD."${field}"`);
+    }
+    for (const operationalField of ["status", "assignee_id", "notes", "skip_reason", "started_at", "completed_at"]) {
+      expect(taskStageGuard).not.toContain(`NEW."${operationalField}"`);
+    }
+    expect(migration).toMatch(/CREATE TRIGGER "prevent_task_stage_structural_change_trigger"[\s\S]*?BEFORE UPDATE ON "task_stages"/);
+
+    expect(checklistGuard).not.toBe("");
+    for (const field of ["tenant_id", "task_stage_id", "label", "position"]) {
+      expect(checklistGuard).toContain(`NEW."${field}" IS DISTINCT FROM OLD."${field}"`);
+    }
+    expect(migration).toMatch(/CREATE TRIGGER "prevent_task_stage_checklist_item_structure_change_trigger"[\s\S]*?BEFORE UPDATE ON "task_stage_checklist_items"/);
   });
 });

@@ -2280,7 +2280,7 @@ enum TaskStatus {
 
 enum TaskStageStatus {
   NOT_STARTED
-  BLOCKED
+  WAITING
   IN_PROGRESS
   COMPLETED
   SKIPPED

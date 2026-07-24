@@ -22,7 +22,7 @@ export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus]
 
 export const TaskStageStatus = {
   NOT_STARTED: 'NOT_STARTED',
-  BLOCKED: 'BLOCKED',
+  WAITING: 'WAITING',
   IN_PROGRESS: 'IN_PROGRESS',
   COMPLETED: 'COMPLETED',
   SKIPPED: 'SKIPPED',
