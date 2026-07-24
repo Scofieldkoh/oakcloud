@@ -45,6 +45,23 @@ async function requireStage(
   return stage;
 }
 
+async function requireStageTaskId(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  stageId: string,
+) {
+  const stage = await tx.taskStage.findFirst({
+    where: {
+      id: stageId,
+      tenantId,
+      task: { deletedAt: null },
+    },
+    select: { taskId: true },
+  });
+  if (!stage) throw new NotFoundError('Task stage not found');
+  return stage.taskId;
+}
+
 async function updateParentTaskStatus(
   tx: Prisma.TransactionClient,
   tenantId: string,
@@ -388,8 +405,19 @@ export async function reconcileTaskStageOutcome(
   userId?: string,
 ) {
   return prisma.$transaction(async (tx) => {
+    const taskId = await requireStageTaskId(tx, tenantId, stageId);
+    const lockedTask = await lockTaskForUpdate(tx, tenantId, taskId);
     const stage = await requireStage(tx, tenantId, stageId);
-    const lockedTask = await lockTaskForUpdate(tx, tenantId, stage.taskId);
+    if (stage.taskId !== taskId) {
+      throw new ValidationError('Task stage parent changed during reconciliation');
+    }
+    if (stage.actionType === TaskStageActionType.MANUAL) {
+      return {
+        status: stage.status,
+        summary: null,
+        taskStatus: lockedTask.status,
+      };
+    }
     if (!stage.outcome) {
       const adapter = getStageActionAdapter(stage.actionType);
       const status = adapter.deriveStatus(null);

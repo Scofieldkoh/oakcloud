@@ -162,7 +162,7 @@ describe('stage action registry', () => {
 
 describe('task snapshots and stage mutations', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     mocks.transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => callback(tx));
     mocks.rawQuery.mockResolvedValue([{
       id: 'task-1',
@@ -619,5 +619,112 @@ describe('task snapshots and stage mutations', () => {
     });
     expect(mocks.rawQuery.mock.invocationCallOrder[0])
       .toBeLessThan(mocks.stageUpdate.mock.invocationCallOrder[0]);
+  });
+
+  it('reloads the stage and outcome only after locking the parent task', async () => {
+    const staleStage = {
+      id: 'stage-1',
+      tenantId: 'tenant-a',
+      taskId: 'task-1',
+      name: 'Generate resolution',
+      actionType: 'DOCUMENT_GENERATION',
+      status: 'IN_PROGRESS',
+      startedAt: new Date(),
+      task: { id: 'task-1', status: 'IN_PROGRESS', companyId: null, deletedAt: null },
+      outcome: {
+        id: 'outcome-1',
+        type: 'GENERATED_DOCUMENT',
+        companyId: null,
+        generatedDocumentId: '11111111-1111-4111-8111-111111111111',
+        esigningEnvelopeId: null,
+      },
+    };
+    const currentStage = {
+      ...staleStage,
+      outcome: {
+        ...staleStage.outcome,
+        generatedDocumentId: '22222222-2222-4222-8222-222222222222',
+      },
+    };
+    mocks.stageFindFirst
+      .mockResolvedValueOnce(staleStage)
+      .mockResolvedValueOnce(currentStage);
+    mocks.rawQuery.mockResolvedValue([{
+      id: 'task-1',
+      tenantId: 'tenant-a',
+      title: 'Annual return',
+      companyId: null,
+      status: 'IN_PROGRESS',
+    }]);
+    mocks.documentFindFirst.mockImplementation(async ({ where }: {
+      where: { id: string };
+    }) => ({
+      id: where.id,
+      title: 'Resolution',
+      status: where.id === '22222222-2222-4222-8222-222222222222'
+        ? 'FINALIZED'
+        : 'DRAFT',
+    }));
+    mocks.stageUpdate.mockResolvedValue({ id: 'stage-1', status: 'COMPLETED' });
+    mocks.stageFindMany.mockResolvedValue([{ status: 'COMPLETED' }]);
+    mocks.taskUpdate.mockResolvedValue({ id: 'task-1', status: 'COMPLETED' });
+
+    const result = await reconcileTaskStageOutcome('tenant-a', 'stage-1', 'user-1');
+
+    expect(result.status).toBe('COMPLETED');
+    expect(mocks.documentFindFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        id: '22222222-2222-4222-8222-222222222222',
+      }),
+    }));
+    expect(mocks.stageFindFirst).toHaveBeenNthCalledWith(1, {
+      where: {
+        id: 'stage-1',
+        tenantId: 'tenant-a',
+        task: { deletedAt: null },
+      },
+      select: { taskId: true },
+    });
+    expect(mocks.stageFindFirst.mock.invocationCallOrder[0])
+      .toBeLessThan(mocks.rawQuery.mock.invocationCallOrder[0]);
+    expect(mocks.rawQuery.mock.invocationCallOrder[0])
+      .toBeLessThan(mocks.stageFindFirst.mock.invocationCallOrder[1]);
+  });
+
+  it('leaves completed MANUAL stages unchanged during outcome self-healing', async () => {
+    mocks.stageFindFirst.mockResolvedValue({
+      id: 'stage-1',
+      tenantId: 'tenant-a',
+      taskId: 'task-1',
+      name: 'Manual review',
+      actionType: 'MANUAL',
+      status: 'COMPLETED',
+      startedAt: new Date(),
+      completedAt: new Date(),
+      task: { id: 'task-1', status: 'COMPLETED', companyId: null, deletedAt: null },
+      outcome: null,
+      checklistItems: [],
+    });
+    mocks.rawQuery.mockResolvedValue([{
+      id: 'task-1',
+      tenantId: 'tenant-a',
+      title: 'Annual return',
+      companyId: null,
+      status: 'COMPLETED',
+    }]);
+    mocks.stageUpdate.mockResolvedValue({ id: 'stage-1', status: 'NOT_STARTED' });
+    mocks.stageFindMany.mockResolvedValue([{ status: 'NOT_STARTED' }]);
+    mocks.taskUpdate.mockResolvedValue({ id: 'task-1', status: 'NOT_STARTED' });
+
+    const result = await reconcileTaskStageOutcome('tenant-a', 'stage-1', 'user-1');
+
+    expect(result).toEqual({
+      status: 'COMPLETED',
+      summary: null,
+      taskStatus: 'COMPLETED',
+    });
+    expect(mocks.stageUpdate).not.toHaveBeenCalled();
+    expect(mocks.taskUpdate).not.toHaveBeenCalled();
+    expect(mocks.audit).not.toHaveBeenCalled();
   });
 });
