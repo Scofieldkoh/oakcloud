@@ -5,7 +5,7 @@ import {
   type TaskStatus as TaskStatusValue,
 } from '@/generated/prisma';
 import { createAuditLog } from '@/lib/audit';
-import { NotFoundError } from '@/lib/errors';
+import { NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import {
   archiveTaskSchema,
@@ -15,6 +15,7 @@ import {
   type UpdateTaskMetadataInput,
 } from '@/lib/validations/task';
 import { deriveTaskStatus } from './status';
+import { lockTaskForUpdate } from './locking';
 import type { ChecklistDefinition } from './types';
 
 const taskDetailInclude = {
@@ -272,9 +273,31 @@ async function setTaskStatus(
   userId?: string,
 ) {
   return prisma.$transaction(async (tx) => {
-    const existing = await requireTask(tx, tenantId, taskId);
+    const existing = await lockTaskForUpdate(tx, tenantId, taskId);
+    if (status === TaskStatus.PAUSED) {
+      if (
+        existing.status === TaskStatus.PAUSED
+        || existing.status === TaskStatus.COMPLETED
+        || existing.status === TaskStatus.CANCELLED
+      ) {
+        throw new ValidationError(`Cannot pause a ${existing.status} task`);
+      }
+    } else if (status === TaskStatus.CANCELLED) {
+      if (
+        existing.status === TaskStatus.COMPLETED
+        || existing.status === TaskStatus.CANCELLED
+      ) {
+        throw new ValidationError(`Cannot cancel a ${existing.status} task`);
+      }
+    } else if (existing.status !== TaskStatus.PAUSED) {
+      throw new ValidationError('Only PAUSED tasks can be resumed');
+    }
+
     const nextStatus = status === 'RESUME'
-      ? deriveTaskStatus(existing.stages)
+      ? deriveTaskStatus(await tx.taskStage.findMany({
+        where: { tenantId, taskId: existing.id },
+        select: { status: true },
+      }))
       : status;
     const updated = await tx.task.update({
       where: { id: existing.id },

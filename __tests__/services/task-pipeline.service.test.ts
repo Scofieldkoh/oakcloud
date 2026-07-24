@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   versionUpdate: vi.fn(),
   stageCreateMany: vi.fn(),
   transaction: vi.fn(),
+  rawQuery: vi.fn(),
 }));
 
 const tx = {
@@ -25,6 +26,7 @@ const tx = {
   taskPipelineStage: {
     createMany: mocks.stageCreateMany,
   },
+  $queryRaw: mocks.rawQuery,
 };
 
 vi.mock('@/lib/prisma', () => ({
@@ -51,7 +53,7 @@ import {
 
 describe('task pipeline service', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     mocks.transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => callback(tx));
   });
 
@@ -84,8 +86,24 @@ describe('task pipeline service', () => {
       version: 1,
       publishedAt: new Date(),
     });
+    const persisted = {
+      id: 'pipeline-1',
+      tenantId: 'tenant-a',
+      name: 'Onboarding',
+      versions: [{
+        id: 'version-1',
+        version: 1,
+        stages: [{
+          id: 'persisted-stage-1',
+          name: 'Verify company',
+          position: 0,
+          actionType: 'COMPANY_PROFILE',
+        }],
+      }],
+    };
+    mocks.pipelineFindFirst.mockResolvedValue(persisted);
 
-    await createTaskPipeline('tenant-a', {
+    const result = await createTaskPipeline('tenant-a', {
       name: 'Onboarding',
       stages: [{
         name: 'Verify company',
@@ -128,16 +146,31 @@ describe('task pipeline service', () => {
       entityType: 'TaskPipeline',
       entityId: 'pipeline-1',
     }), tx);
+    expect(result).toEqual(persisted);
   });
 
   it('creates a new immutable version when a pipeline is edited', async () => {
-    mocks.pipelineFindFirst.mockResolvedValue({
+    const existing = {
       id: 'pipeline-1',
       tenantId: 'tenant-a',
       name: 'Onboarding',
       description: null,
       versions: [{ id: 'version-2', version: 2 }],
-    });
+    };
+    const persisted = {
+      id: 'pipeline-1',
+      tenantId: 'tenant-a',
+      name: 'Updated onboarding',
+      versions: [{
+        id: 'version-3',
+        version: 3,
+        stages: [{ id: 'persisted-stage-3', name: 'Manual review', position: 0 }],
+      }],
+    };
+    mocks.pipelineFindFirst
+      .mockResolvedValueOnce(existing)
+      .mockResolvedValueOnce(persisted);
+    mocks.rawQuery.mockResolvedValue([{ id: 'pipeline-1' }]);
     mocks.pipelineUpdate.mockResolvedValue({ id: 'pipeline-1' });
     mocks.versionCreate.mockResolvedValue({
       id: 'version-3',
@@ -148,7 +181,7 @@ describe('task pipeline service', () => {
     mocks.stageCreateMany.mockResolvedValue({ count: 1 });
     mocks.versionUpdate.mockResolvedValue({ id: 'version-3', version: 3, publishedAt: new Date() });
 
-    await updateTaskPipeline('tenant-a', 'pipeline-1', {
+    const result = await updateTaskPipeline('tenant-a', 'pipeline-1', {
       name: 'Updated onboarding',
       stages: [{ name: 'Manual review', actionType: 'MANUAL' }],
     }, 'user-1');
@@ -159,10 +192,19 @@ describe('task pipeline service', () => {
     expect(mocks.versionCreate).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ pipelineId: 'pipeline-1', version: 3, publishedAt: null }),
     }));
+    const lockQuery = mocks.rawQuery.mock.calls[0]?.[0] as {
+      sql?: string;
+      values?: unknown[];
+    } | undefined;
+    expect(lockQuery?.sql).toContain('FOR UPDATE');
+    expect(lockQuery?.values).toEqual(['pipeline-1', 'tenant-a']);
+    expect(mocks.rawQuery.mock.invocationCallOrder[0])
+      .toBeLessThan(mocks.pipelineFindFirst.mock.invocationCallOrder[0]);
+    expect(result).toEqual(persisted);
   });
 
   it('preserves checklist definitions when a pipeline is duplicated', async () => {
-    mocks.pipelineFindFirst.mockResolvedValue({
+    const source = {
       id: 'pipeline-1',
       tenantId: 'tenant-a',
       name: 'Onboarding',
@@ -182,7 +224,25 @@ describe('task pipeline service', () => {
           },
         }],
       }],
-    });
+    };
+    const persistedCopy = {
+      id: 'pipeline-copy',
+      tenantId: 'tenant-a',
+      name: 'Onboarding (Copy)',
+      versions: [{
+        id: 'version-copy',
+        version: 1,
+        stages: [{
+          id: 'persisted-copy-stage',
+          name: 'Manual review',
+          position: 0,
+          actionType: 'MANUAL',
+        }],
+      }],
+    };
+    mocks.pipelineFindFirst
+      .mockResolvedValueOnce(source)
+      .mockResolvedValueOnce(persistedCopy);
     mocks.pipelineCreate.mockResolvedValue({
       id: 'pipeline-copy',
       tenantId: 'tenant-a',
@@ -202,7 +262,7 @@ describe('task pipeline service', () => {
       publishedAt: new Date(),
     });
 
-    await duplicateTaskPipeline('tenant-a', 'pipeline-1', {}, 'user-1');
+    const result = await duplicateTaskPipeline('tenant-a', 'pipeline-1', {}, 'user-1');
 
     expect(mocks.stageCreateMany).toHaveBeenCalledWith({
       data: [expect.objectContaining({
@@ -211,6 +271,21 @@ describe('task pipeline service', () => {
         }),
       })],
     });
+    expect(result).toEqual(persistedCopy);
+  });
+
+  it('validates stage action configuration through the registry before publishing', async () => {
+    await expect(createTaskPipeline('tenant-a', {
+      name: 'Broken template',
+      stages: [{
+        name: 'Generate document',
+        actionType: 'DOCUMENT_GENERATION',
+        actionConfig: { templateId: 'not-a-uuid' },
+      }],
+    }, 'user-1')).rejects.toThrow();
+
+    expect(mocks.pipelineCreate).not.toHaveBeenCalled();
+    expect(mocks.versionCreate).not.toHaveBeenCalled();
   });
 
   it('soft deletes a tenant pipeline with a mandatory reason and audit record', async () => {

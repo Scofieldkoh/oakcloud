@@ -24,8 +24,24 @@ const baseConfigSchema = z.object({
   checklistItems: checklistSchema,
 }).passthrough();
 
-function parseConfig(value: unknown): StageActionConfig {
-  return baseConfigSchema.parse(value ?? {});
+const companyConfigSchema = baseConfigSchema.extend({
+  allowCreate: z.boolean().optional(),
+});
+
+const documentConfigSchema = baseConfigSchema.extend({
+  templateId: z.string().uuid().optional(),
+});
+
+const esigningConfigSchema = baseConfigSchema.extend({
+  signingOrder: z.enum(['PARALLEL', 'SEQUENTIAL', 'MIXED']).optional(),
+  expiresInDays: z.number().int().positive().optional(),
+});
+
+function parseWith(
+  schema: typeof baseConfigSchema,
+  value: unknown,
+): StageActionConfig {
+  return schema.parse(value ?? {});
 }
 
 function launch(
@@ -48,7 +64,7 @@ function noBlockers(): StageActionBlocker[] {
 const manualAdapter: StageActionAdapter = {
   actionType: TaskStageActionType.MANUAL,
   defaultIcon: 'CircleCheckBig',
-  parseConfig,
+  parseConfig: (value) => parseWith(baseConfigSchema, value),
   blockers: noBlockers,
   launch: (context) => launch(null, context),
   outcomeSummary: () => null,
@@ -58,7 +74,7 @@ const manualAdapter: StageActionAdapter = {
 const companyAdapter: StageActionAdapter = {
   actionType: TaskStageActionType.COMPANY_PROFILE,
   defaultIcon: 'Building2',
-  parseConfig,
+  parseConfig: (value) => parseWith(companyConfigSchema, value),
   blockers: (context) => (
     context.stage.task?.companyId
       ? []
@@ -85,7 +101,7 @@ const companyAdapter: StageActionAdapter = {
 const documentAdapter: StageActionAdapter = {
   actionType: TaskStageActionType.DOCUMENT_GENERATION,
   defaultIcon: 'FileText',
-  parseConfig,
+  parseConfig: (value) => parseWith(documentConfigSchema, value),
   blockers: noBlockers,
   launch: (context) => launch('/document-generation', context),
   outcomeSummary: (outcome) => (
@@ -106,7 +122,7 @@ const documentAdapter: StageActionAdapter = {
 const esigningAdapter: StageActionAdapter = {
   actionType: TaskStageActionType.ESIGNING,
   defaultIcon: 'PenLine',
-  parseConfig,
+  parseConfig: (value) => parseWith(esigningConfigSchema, value),
   blockers: noBlockers,
   launch: (context) => launch('/esigning', context),
   outcomeSummary: (outcome) => (

@@ -1,5 +1,6 @@
 import {
   Prisma,
+  TaskStageActionType,
   TaskStageOutcomeType,
   TaskStageStatus,
   type TaskStageStatus as TaskStageStatusValue,
@@ -20,6 +21,7 @@ import {
   resolveStageActionOutcome,
 } from './action-registry';
 import { deriveTaskStatus } from './status';
+import { lockTaskForUpdate } from './locking';
 import type { ResolvedStageOutcome } from './types';
 
 async function requireStage(
@@ -95,6 +97,7 @@ export async function updateTaskStageMetadata(
   const parsed = taskStageMetadataSchema.parse(input);
   return prisma.$transaction(async (tx) => {
     const stage = await requireStage(tx, tenantId, stageId);
+    await lockTaskForUpdate(tx, tenantId, stage.taskId);
     if (parsed.assigneeId) {
       const assignee = await tx.user.findFirst({
         where: {
@@ -145,6 +148,7 @@ export async function updateTaskStageChecklistItem(
       },
     });
     if (!item) throw new NotFoundError('Task stage checklist item not found');
+    await lockTaskForUpdate(tx, tenantId, item.taskStage.taskId);
     const updated = await tx.taskStageChecklistItem.update({
       where: { id: item.id },
       data: {
@@ -170,9 +174,14 @@ async function setStageStatus(
   status: TaskStageStatusValue,
   userId?: string,
   reason?: string,
+  manualOnly = false,
 ) {
   return prisma.$transaction(async (tx) => {
     const stage = await requireStage(tx, tenantId, stageId);
+    const lockedTask = await lockTaskForUpdate(tx, tenantId, stage.taskId);
+    if (manualOnly && stage.actionType !== TaskStageActionType.MANUAL) {
+      throw new ValidationError('Only MANUAL task stages support manual completion or reopening');
+    }
     if (status === TaskStageStatus.SKIPPED && stage.isRequired) {
       throw new ValidationError('Required task stages cannot be skipped');
     }
@@ -194,7 +203,7 @@ async function setStageStatus(
       tx,
       tenantId,
       stage.taskId,
-      stage.task.status,
+      lockedTask.status,
     );
     await auditStageMutation(tx, {
       tenantId,
@@ -213,13 +222,27 @@ export const completeTaskStage = (
   tenantId: string,
   stageId: string,
   userId?: string,
-) => setStageStatus(tenantId, stageId, TaskStageStatus.COMPLETED, userId);
+) => setStageStatus(
+  tenantId,
+  stageId,
+  TaskStageStatus.COMPLETED,
+  userId,
+  undefined,
+  true,
+);
 
 export const reopenTaskStage = (
   tenantId: string,
   stageId: string,
   userId?: string,
-) => setStageStatus(tenantId, stageId, TaskStageStatus.NOT_STARTED, userId);
+) => setStageStatus(
+  tenantId,
+  stageId,
+  TaskStageStatus.NOT_STARTED,
+  userId,
+  undefined,
+  true,
+);
 
 export async function skipTaskStage(
   tenantId: string,
@@ -314,6 +337,7 @@ export async function linkTaskStageOutcome(
   const parsed = taskStageOutcomeSchema.parse(input);
   return prisma.$transaction(async (tx) => {
     const stage = await requireStage(tx, tenantId, stageId);
+    const lockedTask = await lockTaskForUpdate(tx, tenantId, stage.taskId);
     assertOutcomeMatchesAction(stage.actionType, parsed.type);
     const authoritative = await resolveAuthoritativeOutcome(tx, tenantId, parsed);
     const resolution = resolveStageActionOutcome(stage.actionType, authoritative);
@@ -344,7 +368,7 @@ export async function linkTaskStageOutcome(
       tx,
       tenantId,
       stage.taskId,
-      stage.task.status,
+      lockedTask.status,
     );
     await auditStageMutation(tx, {
       tenantId,
@@ -365,6 +389,7 @@ export async function reconcileTaskStageOutcome(
 ) {
   return prisma.$transaction(async (tx) => {
     const stage = await requireStage(tx, tenantId, stageId);
+    const lockedTask = await lockTaskForUpdate(tx, tenantId, stage.taskId);
     if (!stage.outcome) {
       const adapter = getStageActionAdapter(stage.actionType);
       const status = adapter.deriveStatus(null);
@@ -376,7 +401,7 @@ export async function reconcileTaskStageOutcome(
         tx,
         tenantId,
         stage.taskId,
-        stage.task.status,
+        lockedTask.status,
       );
       await auditStageMutation(tx, {
         tenantId,
@@ -409,7 +434,7 @@ export async function reconcileTaskStageOutcome(
       tx,
       tenantId,
       stage.taskId,
-      stage.task.status,
+      lockedTask.status,
     );
     await auditStageMutation(tx, {
       tenantId,

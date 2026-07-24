@@ -12,9 +12,12 @@ import {
   type ParsedUpdateTaskPipelineInput,
   type UpdateTaskPipelineInput,
 } from '@/lib/validations/task-pipeline';
+import { getStageActionAdapter } from './action-registry';
+import { lockTaskPipelineForUpdate } from './locking';
 
 const pipelineDetailInclude = {
   versions: {
+    where: { publishedAt: { not: null } },
     orderBy: { version: 'desc' as const },
     include: {
       stages: { orderBy: { position: 'asc' as const } },
@@ -66,10 +69,10 @@ function stageCreateManyData(
   stages: ParsedCreateTaskPipelineInput['stages'] | ParsedUpdateTaskPipelineInput['stages'],
 ): Prisma.TaskPipelineStageCreateManyInput[] {
   return stages.map((stage) => {
-    const actionConfig = {
+    const actionConfig = getStageActionAdapter(stage.actionType).parseConfig({
       ...(stage.actionConfig ?? {}),
       checklistItems: stage.checklistItems,
-    } as Prisma.InputJsonObject;
+    }) as Prisma.InputJsonObject;
 
     return {
       tenantId,
@@ -83,6 +86,32 @@ function stageCreateManyData(
       actionConfig,
     };
   });
+}
+
+function validateStageConfigs(
+  stages: ParsedCreateTaskPipelineInput['stages'] | ParsedUpdateTaskPipelineInput['stages'],
+) {
+  for (const stage of stages) {
+    getStageActionAdapter(stage.actionType).parseConfig({
+      ...(stage.actionConfig ?? {}),
+      checklistItems: stage.checklistItems,
+    });
+  }
+}
+
+async function getPersistedPipelineDetail(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  pipelineId: string,
+) {
+  const pipeline = await tx.taskPipeline.findFirst({
+    where: { id: pipelineId, tenantId, deletedAt: null },
+    include: pipelineDetailInclude,
+  });
+  if (!pipeline) {
+    throw new NotFoundError('Task pipeline not found after mutation');
+  }
+  return pipeline;
 }
 
 async function publishVersion(
@@ -119,6 +148,7 @@ export async function createTaskPipeline(
   userId?: string,
 ) {
   const parsed = createTaskPipelineSchema.parse(input);
+  validateStageConfigs(parsed.stages);
 
   return prisma.$transaction(async (tx) => {
     const pipeline = await tx.taskPipeline.create({
@@ -128,7 +158,7 @@ export async function createTaskPipeline(
         description: parsed.description ?? null,
       },
     });
-    const version = await publishVersion(tx, {
+    await publishVersion(tx, {
       tenantId,
       pipelineId: pipeline.id,
       version: 1,
@@ -146,7 +176,7 @@ export async function createTaskPipeline(
       metadata: { version: 1, stageCount: parsed.stages.length },
     }, tx);
 
-    return { ...pipeline, versions: [{ ...version, stages: parsed.stages }] };
+    return getPersistedPipelineDetail(tx, tenantId, pipeline.id);
   });
 }
 
@@ -181,18 +211,20 @@ export async function updateTaskPipeline(
   userId?: string,
 ) {
   const parsed = updateTaskPipelineSchema.parse(input);
+  validateStageConfigs(parsed.stages);
 
   return prisma.$transaction(async (tx) => {
+    await lockTaskPipelineForUpdate(tx, tenantId, pipelineId);
     const existing = await requirePipelineForUpdate(tx, tenantId, pipelineId);
     const nextVersion = (existing.versions[0]?.version ?? 0) + 1;
-    const pipeline = await tx.taskPipeline.update({
+    await tx.taskPipeline.update({
       where: { id: existing.id },
       data: {
         ...(parsed.name !== undefined ? { name: parsed.name } : {}),
         ...(parsed.description !== undefined ? { description: parsed.description } : {}),
       },
     });
-    const version = await publishVersion(tx, {
+    await publishVersion(tx, {
       tenantId,
       pipelineId: existing.id,
       version: nextVersion,
@@ -210,7 +242,7 @@ export async function updateTaskPipeline(
       metadata: { version: nextVersion, stageCount: parsed.stages.length },
     }, tx);
 
-    return { ...pipeline, versions: [{ ...version, stages: parsed.stages }] };
+    return getPersistedPipelineDetail(tx, tenantId, existing.id);
   });
 }
 
@@ -229,13 +261,6 @@ export async function duplicateTaskPipeline(
       throw new NotFoundError('Published task pipeline version not found');
     }
 
-    const pipeline = await tx.taskPipeline.create({
-      data: {
-        tenantId,
-        name: parsed.name ?? `${source.name} (Copy)`,
-        description: source.description,
-      },
-    });
     const duplicateStages = sourceVersion.stages.map((stage, position) => {
       const actionConfig = stage.actionConfig
         && typeof stage.actionConfig === 'object'
@@ -261,7 +286,15 @@ export async function duplicateTaskPipeline(
         checklistItems,
       };
     });
-    const version = await publishVersion(tx, {
+    validateStageConfigs(duplicateStages);
+    const pipeline = await tx.taskPipeline.create({
+      data: {
+        tenantId,
+        name: parsed.name ?? `${source.name} (Copy)`,
+        description: source.description,
+      },
+    });
+    await publishVersion(tx, {
       tenantId,
       pipelineId: pipeline.id,
       version: 1,
@@ -279,7 +312,7 @@ export async function duplicateTaskPipeline(
       metadata: { sourcePipelineId: source.id },
     }, tx);
 
-    return { ...pipeline, versions: [{ ...version }] };
+    return getPersistedPipelineDetail(tx, tenantId, pipeline.id);
   });
 }
 
