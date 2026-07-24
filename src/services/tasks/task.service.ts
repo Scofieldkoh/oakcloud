@@ -39,6 +39,30 @@ export interface ListTasksOptions {
   ownerId?: string;
 }
 
+export type TaskDueBucket = 'today' | 'thisWeek' | 'nextWeek' | 'overdue';
+export type TaskSortField =
+  | 'title'
+  | 'company'
+  | 'pipeline'
+  | 'owner'
+  | 'status'
+  | 'dueDate'
+  | 'createdAt'
+  | 'updatedAt';
+
+export interface SearchTasksOptions {
+  query?: string;
+  pipelineId?: string;
+  companyId?: string;
+  ownerId?: string;
+  status?: TaskStatusValue;
+  dueBucket?: TaskDueBucket;
+  page?: number;
+  limit?: number;
+  sortBy?: TaskSortField;
+  sortOrder?: Prisma.SortOrder;
+}
+
 export async function listTasks(tenantId: string, options: ListTasksOptions = {}) {
   return prisma.task.findMany({
     where: {
@@ -51,6 +75,110 @@ export async function listTasks(tenantId: string, options: ListTasksOptions = {}
     include: taskDetailInclude,
     orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
   });
+}
+
+function addDays(value: Date, days: number) {
+  const date = new Date(value);
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+function dueDateFilter(bucket: TaskDueBucket, now = new Date()): Prisma.DateTimeNullableFilter {
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = addDays(today, 1);
+
+  if (bucket === 'overdue') return { lt: today };
+  if (bucket === 'today') return { gte: today, lt: tomorrow };
+  if (bucket === 'thisWeek') return { gte: tomorrow, lt: addDays(today, 8) };
+  return { gte: addDays(today, 8), lt: addDays(today, 15) };
+}
+
+function taskOrderBy(
+  sortBy: TaskSortField,
+  sortOrder: Prisma.SortOrder,
+): Prisma.TaskOrderByWithRelationInput[] {
+  switch (sortBy) {
+    case 'company':
+      return [{ company: { name: sortOrder } }, { createdAt: 'desc' }];
+    case 'pipeline':
+      return [
+        { pipelineVersion: { pipeline: { name: sortOrder } } },
+        { createdAt: 'desc' },
+      ];
+    case 'owner':
+      return [
+        { owner: { firstName: sortOrder } },
+        { owner: { lastName: sortOrder } },
+        { createdAt: 'desc' },
+      ];
+    case 'dueDate':
+      return [
+        { dueDate: { sort: sortOrder, nulls: 'last' } },
+        { createdAt: 'desc' },
+      ];
+    default:
+      return [{ [sortBy]: sortOrder }, { createdAt: 'desc' }];
+  }
+}
+
+export async function searchTasks(
+  tenantId: string,
+  options: SearchTasksOptions = {},
+) {
+  const page = options.page ?? 1;
+  const limit = options.limit ?? 20;
+  const query = options.query?.trim();
+  const where: Prisma.TaskWhereInput = {
+    tenantId,
+    deletedAt: null,
+    ...(options.status ? { status: options.status } : {}),
+    ...(options.companyId ? { companyId: options.companyId } : {}),
+    ...(options.ownerId ? { ownerId: options.ownerId } : {}),
+    ...(options.pipelineId
+      ? { pipelineVersion: { pipelineId: options.pipelineId } }
+      : {}),
+    ...(options.dueBucket ? { dueDate: dueDateFilter(options.dueBucket) } : {}),
+    ...(query
+      ? {
+        OR: [
+          { title: { contains: query, mode: 'insensitive' } },
+          { description: { contains: query, mode: 'insensitive' } },
+          { company: { name: { contains: query, mode: 'insensitive' } } },
+          {
+            pipelineVersion: {
+              pipeline: { name: { contains: query, mode: 'insensitive' } },
+            },
+          },
+          { owner: { firstName: { contains: query, mode: 'insensitive' } } },
+          { owner: { lastName: { contains: query, mode: 'insensitive' } } },
+          { owner: { email: { contains: query, mode: 'insensitive' } } },
+        ],
+      }
+      : {}),
+  };
+
+  const [tasks, total] = await prisma.$transaction([
+    prisma.task.findMany({
+      where,
+      include: taskDetailInclude,
+      orderBy: taskOrderBy(
+        options.sortBy ?? 'dueDate',
+        options.sortOrder ?? 'asc',
+      ),
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.task.count({ where }),
+  ]);
+
+  return {
+    tasks,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 }
 
 export async function getTask(tenantId: string, taskId: string) {

@@ -24,6 +24,58 @@ import { deriveTaskStatus } from './status';
 import { lockTaskForUpdate } from './locking';
 import type { ResolvedStageOutcome } from './types';
 
+const stageDetailInclude = {
+  task: {
+    select: {
+      id: true,
+      status: true,
+      companyId: true,
+      deletedAt: true,
+    },
+  },
+  assignee: true,
+  outcome: true,
+  checklistItems: { orderBy: { position: 'asc' as const } },
+} satisfies Prisma.TaskStageInclude;
+
+export async function getTaskStageDetail(
+  tenantId: string,
+  taskId: string,
+  stageId: string,
+) {
+  const stage = await prisma.taskStage.findFirst({
+    where: {
+      id: stageId,
+      taskId,
+      tenantId,
+      task: { deletedAt: null },
+    },
+    include: stageDetailInclude,
+  });
+  if (!stage) throw new NotFoundError('Task stage not found');
+
+  const adapter = getStageActionAdapter(stage.actionType);
+  const adapterContext = { tenantId, stage };
+  let resolvedOutcome: ResolvedStageOutcome | null = null;
+
+  if (stage.outcome) {
+    const parsed = taskStageOutcomeSchema.parse({
+      type: stage.outcome.type,
+      companyId: stage.outcome.companyId,
+      generatedDocumentId: stage.outcome.generatedDocumentId,
+      esigningEnvelopeId: stage.outcome.esigningEnvelopeId,
+    });
+    resolvedOutcome = await resolveAuthoritativeOutcome(prisma, tenantId, parsed);
+  }
+
+  return {
+    ...stage,
+    blockers: adapter.blockers(adapterContext),
+    launch: adapter.launch(adapterContext),
+    outcomeSummary: adapter.outcomeSummary(resolvedOutcome),
+  };
+}
+
 async function requireStage(
   tx: Prisma.TransactionClient,
   tenantId: string,
