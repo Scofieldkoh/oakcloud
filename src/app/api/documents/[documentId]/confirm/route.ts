@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { processBizFileExtraction } from '@/services/bizfile';
@@ -7,6 +8,10 @@ import {
   issuesFromZodError,
   normalizeBizFileReviewDraft,
 } from '@/lib/validations/bizfile-review';
+import {
+  linkCompanyTaskOutcome,
+  parseTaskLaunchContext,
+} from '@/services/tasks/integration.service';
 
 /**
  * POST /api/documents/:documentId/confirm
@@ -83,6 +88,11 @@ export async function POST(
     const candidate = typeof body === 'object' && body !== null && 'extractedData' in body
       ? (body as { extractedData: unknown }).extractedData
       : undefined;
+    const taskContext = parseTaskLaunchContext(
+      typeof body === 'object' && body !== null && 'taskContext' in body
+        ? (body as { taskContext: unknown }).taskContext
+        : undefined,
+    );
     const parsed = bizFileReviewSchema.safeParse(candidate);
 
     if (!parsed.success) {
@@ -102,6 +112,14 @@ export async function POST(
       document.storageKey || undefined,
       document.mimeType
     );
+    if (taskContext) {
+      await linkCompanyTaskOutcome({
+        tenantId: document.tenantId,
+        context: taskContext,
+        authoritativeId: result.companyId,
+        userId: session.id,
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -109,6 +127,12 @@ export async function POST(
       created: result.created,
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid task context', details: error.errors },
+        { status: 400 },
+      );
+    }
     console.error('Document confirm error:', error);
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

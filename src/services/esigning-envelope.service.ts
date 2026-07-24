@@ -65,6 +65,7 @@ import {
   toIsoString,
   validateEnvelopeSendReadiness,
 } from '@/services/esigning-envelope.lib';
+import { reconcileEsigningEnvelopeTaskOutcomes } from '@/services/tasks/integration.service';
 
 const log = createLogger('esigning-envelope');
 
@@ -1736,6 +1737,7 @@ export async function sendEsigningEnvelope(
       },
     });
   });
+  await reconcileEsigningEnvelopeTaskOutcomes(tenantId, envelopeId, session.id);
 
   const senderName = formatUserName(
     envelope.createdBy.firstName,
@@ -2153,6 +2155,7 @@ export async function voidEsigningEnvelope(
       },
     });
   });
+  await reconcileEsigningEnvelopeTaskOutcomes(tenantId, envelopeId, session.id);
 
   await createAuditLog({
     tenantId,
@@ -2340,6 +2343,10 @@ export async function processExpiredEsigningEnvelopes(input?: {
     if (!expiredEnvelope) {
       continue;
     }
+    await reconcileEsigningEnvelopeTaskOutcomes(
+      envelope.tenantId,
+      envelope.id,
+    );
 
     expired += 1;
 

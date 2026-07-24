@@ -12,6 +12,10 @@ import {
   searchGeneratedDocuments,
 } from '@/services/document-generator.service';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
+import {
+  linkGeneratedDocumentTaskOutcome,
+  parseTaskLaunchContext,
+} from '@/services/tasks/integration.service';
 
 /**
  * GET /api/generated-documents
@@ -59,7 +63,13 @@ export async function POST(request: NextRequest) {
     await requirePermission(session, 'document', 'create');
 
     const body = await request.json();
-    const { tenantId: _ignoredTenantId, type, ...documentData } = body;
+    const {
+      tenantId: _ignoredTenantId,
+      type,
+      taskContext: rawTaskContext,
+      ...documentData
+    } = body;
+    const taskContext = parseTaskLaunchContext(rawTaskContext);
     const tenantId = requireSessionWorkspaceId(session);
 
     let document;
@@ -71,6 +81,14 @@ export async function POST(request: NextRequest) {
     } else {
       const data = createDocumentFromTemplateSchema.parse(documentData);
       document = await createDocumentFromTemplate(data, { tenantId, userId: session.id });
+    }
+    if (taskContext) {
+      await linkGeneratedDocumentTaskOutcome({
+        tenantId,
+        context: taskContext,
+        authoritativeId: document.id,
+        userId: session.id,
+      });
     }
 
     return NextResponse.json(document, { status: 201 });

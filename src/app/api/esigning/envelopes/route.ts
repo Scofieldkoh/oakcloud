@@ -12,6 +12,10 @@ import {
   createEsigningEnvelope,
   listEsigningEnvelopes,
 } from '@/services/esigning-envelope.service';
+import {
+  linkEsigningEnvelopeTaskOutcome,
+  parseTaskLaunchContext,
+} from '@/services/tasks/integration.service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,8 +45,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const tenantId = resolveWorkspaceId(session, body.tenantId);
     const payload = createEsigningEnvelopeSchema.parse(body);
+    const taskContext = parseTaskLaunchContext(body.taskContext);
 
     const result = await createEsigningEnvelope(session, tenantId, payload);
+    if (taskContext) {
+      await linkEsigningEnvelopeTaskOutcome({
+        tenantId,
+        context: taskContext,
+        authoritativeId: result.id,
+        userId: session.id,
+      });
+    }
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

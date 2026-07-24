@@ -95,6 +95,19 @@ describe('POST /api/documents/:documentId/confirm', () => {
     expect(mockProcess).not.toHaveBeenCalled();
   });
 
+  it('rejects an invalid optional task context without processing the BizFile', async () => {
+    const response = await post({
+      extractedData: validPayload,
+      taskContext: {
+        taskId: 'not-a-uuid',
+        taskStageId: '22222222-2222-4222-8222-222222222222',
+      },
+    });
+
+    expect(response.status).toBe(400);
+    expect(mockProcess).not.toHaveBeenCalled();
+  });
+
   it('canonicalizes aliases and omits cleared identification types before saving and processing', async () => {
     const extractedData = { ...validPayload, entityDetails: { ...validPayload.entityDetails, entityType: 'PRIVATE LIMITED', status: 'LIVE COMPANY' }, officers: [{ name: 'A', role: 'COMPANY SECRETARY', identificationType: '' }], shareholders: [{ name: 'B', type: 'INDIVIDUAL', shareClass: 'ORDINARY', numberOfShares: 1, identificationType: '' }] };
     expect((await post({ extractedData })).status).toBe(200);

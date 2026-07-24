@@ -45,6 +45,7 @@ import type {
 import type { TenantAwareParams } from '@/lib/types';
 import { NotFoundError } from '@/lib/errors';
 import { readActiveGenerationSession } from '@/lib/document-generation-session';
+import { reconcileGeneratedDocumentTaskOutcomes } from '@/services/tasks/integration.service';
 
 // ============================================================================
 // Types
@@ -794,6 +795,7 @@ export async function finalizeDocument(
     summary: `Finalized document "${document.title}"`,
     changeSource: 'MANUAL',
   });
+  await reconcileGeneratedDocumentTaskOutcomes(tenantId, document.id, userId);
 
   return document;
 }
@@ -841,6 +843,7 @@ export async function unfinalizeDocument(
     changeSource: 'MANUAL',
     reason,
   });
+  await reconcileGeneratedDocumentTaskOutcomes(tenantId, document.id, userId);
 
   return document;
 }

@@ -5,6 +5,10 @@ import { createCompanySchema, companySearchSchema } from '@/lib/validations/comp
 import { createCompany, searchCompanies, getCompanyByUen } from '@/services/company.service';
 import { migrateBizFileToProcessing } from '@/services/document-processing.service';
 import { createLogger, sanitizeError } from '@/lib/logger';
+import {
+  linkCompanyTaskOutcome,
+  parseTaskLaunchContext,
+} from '@/services/tasks/integration.service';
 
 const log = createLogger('api:companies');
 
@@ -132,6 +136,7 @@ export async function POST(request: NextRequest) {
     await requirePermission(session, 'company', 'create');
 
     const body = await request.json();
+    const taskContext = parseTaskLaunchContext(body.taskContext);
     const data = createCompanySchema.parse(body);
 
     const tenantId = session.tenantId;
@@ -150,6 +155,14 @@ export async function POST(request: NextRequest) {
     }
 
     const company = await createCompany(data, { tenantId, userId: session.id });
+    if (taskContext) {
+      await linkCompanyTaskOutcome({
+        tenantId,
+        context: taskContext,
+        authoritativeId: company.id,
+        userId: session.id,
+      });
+    }
 
     // If a bizfileDocumentId is provided, migrate it to the processing pipeline
     const bizfileDocumentId = body.bizfileDocumentId as string | undefined;

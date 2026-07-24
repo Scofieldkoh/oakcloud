@@ -24,6 +24,7 @@ import { activateNextQueuedEsigningRecipients } from '@/services/esigning-envelo
 import { recordEsigningEnvelopeEmailDeliveryResults } from '@/services/esigning-email-delivery.service';
 import { summarizeEsigningUserAgent } from '@/services/esigning-evidence';
 import { isRequiredEsigningFieldComplete, saveRecipientFieldValues } from '@/services/esigning-field.service';
+import { reconcileEsigningEnvelopeTaskOutcomes } from '@/services/tasks/integration.service';
 
 const log = createLogger('esigning-signing');
 
@@ -802,6 +803,10 @@ export async function completeEsigningSigningSession(input: {
       });
     }
   });
+  await reconcileEsigningEnvelopeTaskOutcomes(
+    context.envelope.tenantId,
+    context.envelope.id,
+  );
 
   try {
     await activateNextQueuedEsigningRecipients(context.envelope.id);
@@ -867,6 +872,10 @@ export async function declineEsigningSigningSession(input: {
       },
     });
   });
+  await reconcileEsigningEnvelopeTaskOutcomes(
+    context.envelope.tenantId,
+    context.envelope.id,
+  );
 
   await clearEsigningSessionCookie();
 
