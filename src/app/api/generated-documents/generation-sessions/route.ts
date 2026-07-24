@@ -5,8 +5,9 @@ import { requirePermission } from '@/lib/rbac';
 import { saveGenerationSessionSchema } from '@/lib/validations/generated-document';
 import { createGenerationSession } from '@/services/document-generation-session.service';
 import {
-  linkGeneratedDocumentTaskOutcome,
   parseTaskLaunchContext,
+  preflightTaskLaunchContext,
+  safelyLinkGeneratedDocumentTaskOutcome,
 } from '@/services/tasks/integration.service';
 
 export async function POST(request: NextRequest) {
@@ -22,13 +23,21 @@ export async function POST(request: NextRequest) {
     } = body;
     const taskContext = parseTaskLaunchContext(rawTaskContext);
     const input = saveGenerationSessionSchema.parse(payload);
+    const tenantId = requireSessionWorkspaceId(session);
+    if (taskContext) {
+      await preflightTaskLaunchContext(
+        tenantId,
+        taskContext,
+        'DOCUMENT_GENERATION',
+      );
+    }
     const result = await createGenerationSession(input, {
-      tenantId: requireSessionWorkspaceId(session),
+      tenantId,
       userId: session.id,
     });
     if (taskContext) {
-      await linkGeneratedDocumentTaskOutcome({
-        tenantId: requireSessionWorkspaceId(session),
+      await safelyLinkGeneratedDocumentTaskOutcome({
+        tenantId,
         context: taskContext,
         authoritativeId: result.id,
         userId: session.id,

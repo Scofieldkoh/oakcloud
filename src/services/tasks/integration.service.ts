@@ -3,6 +3,7 @@ import {
   TaskStageOutcomeType,
 } from '@/generated/prisma';
 import { NotFoundError } from '@/lib/errors';
+import { createLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import {
@@ -11,6 +12,8 @@ import {
   reconcileTaskStageOutcome,
 } from './stage.service';
 import type { TaskLaunchContext } from './types';
+
+const log = createLogger('tasks:integration');
 
 export const taskLaunchContextSchema = z.object({
   taskId: z.string().uuid(),
@@ -29,6 +32,22 @@ interface LinkTaskOutcomeInput {
   context: TaskLaunchContext;
   authoritativeId: string;
   userId?: string;
+}
+
+export async function preflightTaskLaunchContext(
+  tenantId: string,
+  context: TaskLaunchContext,
+  expectedAction: TaskStageActionType,
+) {
+  const stage = await getTaskStageDetail(
+    tenantId,
+    context.taskId,
+    context.taskStageId,
+  );
+  if (stage.actionType !== expectedAction) {
+    throw new Error(`Task stage action must be ${expectedAction}`);
+  }
+  return stage;
 }
 
 async function linkAuthoritativeOutcome(
@@ -78,6 +97,38 @@ export function linkEsigningEnvelopeTaskOutcome(input: LinkTaskOutcomeInput) {
   });
 }
 
+async function safelyRunTaskCallback(
+  label: string,
+  callback: () => Promise<unknown>,
+) {
+  try {
+    await callback();
+  } catch (error) {
+    log.warn(`Task integration callback failed after ${label}`, { error });
+  }
+}
+
+export function safelyLinkCompanyTaskOutcome(input: LinkTaskOutcomeInput) {
+  return safelyRunTaskCallback(
+    'company mutation',
+    () => linkCompanyTaskOutcome(input),
+  );
+}
+
+export function safelyLinkGeneratedDocumentTaskOutcome(input: LinkTaskOutcomeInput) {
+  return safelyRunTaskCallback(
+    'generated document mutation',
+    () => linkGeneratedDocumentTaskOutcome(input),
+  );
+}
+
+export function safelyLinkEsigningEnvelopeTaskOutcome(input: LinkTaskOutcomeInput) {
+  return safelyRunTaskCallback(
+    'e-signing envelope mutation',
+    () => linkEsigningEnvelopeTaskOutcome(input),
+  );
+}
+
 async function reconcileLinkedOutcomes(
   tenantId: string,
   where:
@@ -120,6 +171,69 @@ export function reconcileEsigningEnvelopeTaskOutcomes(
   );
 }
 
+export function safelyReconcileGeneratedDocumentTaskOutcomes(
+  tenantId: string,
+  generatedDocumentId: string,
+  userId?: string,
+) {
+  return safelyRunTaskCallback(
+    'generated document lifecycle change',
+    () => reconcileGeneratedDocumentTaskOutcomes(
+      tenantId,
+      generatedDocumentId,
+      userId,
+    ),
+  );
+}
+
+export function safelyReconcileEsigningEnvelopeTaskOutcomes(
+  tenantId: string,
+  esigningEnvelopeId: string,
+  userId?: string,
+) {
+  return safelyRunTaskCallback(
+    'e-signing envelope lifecycle change',
+    () => reconcileEsigningEnvelopeTaskOutcomes(
+      tenantId,
+      esigningEnvelopeId,
+      userId,
+    ),
+  );
+}
+
+export async function safelyCaptureEsigningTaskStageIds(
+  tenantId: string,
+  esigningEnvelopeId: string,
+) {
+  try {
+    const outcomes = await prisma.taskStageOutcome.findMany({
+      where: { tenantId, esigningEnvelopeId },
+      select: { taskStageId: true },
+    });
+    return outcomes.map(({ taskStageId }) => taskStageId);
+  } catch (error) {
+    log.warn('Failed to capture linked task stages before e-signing deletion', {
+      error,
+    });
+    return [];
+  }
+}
+
+export function safelyReconcileTaskStageIds(
+  tenantId: string,
+  taskStageIds: string[],
+  userId?: string,
+) {
+  return safelyRunTaskCallback(
+    'authoritative record deletion',
+    () => Promise.all(
+      taskStageIds.map((stageId) => (
+        reconcileTaskStageOutcome(tenantId, stageId, userId)
+      )),
+    ),
+  );
+}
+
 export async function findPreferredEsigningDocument(
   tenantId: string,
   context: TaskLaunchContext,
@@ -159,4 +273,37 @@ export async function findPreferredEsigningDocument(
   });
 
   return outcome?.generatedDocument ?? null;
+}
+
+export async function resolveEsigningGeneratedDocument(
+  tenantId: string,
+  context: TaskLaunchContext,
+  selectedGeneratedDocumentId?: string,
+) {
+  await preflightTaskLaunchContext(
+    tenantId,
+    context,
+    TaskStageActionType.ESIGNING,
+  );
+  if (!selectedGeneratedDocumentId) {
+    const preferred = await findPreferredEsigningDocument(tenantId, context);
+    if (!preferred) {
+      throw new NotFoundError('No eligible finalized document is available');
+    }
+    return preferred;
+  }
+
+  const selected = await prisma.generatedDocument.findFirst({
+    where: {
+      id: selectedGeneratedDocumentId,
+      tenantId,
+      status: 'FINALIZED',
+      deletedAt: null,
+    },
+    select: { id: true, title: true, companyId: true },
+  });
+  if (!selected) {
+    throw new NotFoundError('Selected generated document must be finalized and eligible');
+  }
+  return selected;
 }

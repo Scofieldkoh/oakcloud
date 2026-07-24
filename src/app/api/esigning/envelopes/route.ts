@@ -11,10 +11,12 @@ import {
 import {
   createEsigningEnvelope,
   listEsigningEnvelopes,
+  uploadGeneratedDocumentToEsigningEnvelope,
 } from '@/services/esigning-envelope.service';
 import {
-  linkEsigningEnvelopeTaskOutcome,
   parseTaskLaunchContext,
+  resolveEsigningGeneratedDocument,
+  safelyLinkEsigningEnvelopeTaskOutcome,
 } from '@/services/tasks/integration.service';
 
 export async function GET(request: NextRequest) {
@@ -46,10 +48,31 @@ export async function POST(request: NextRequest) {
     const tenantId = resolveWorkspaceId(session, body.tenantId);
     const payload = createEsigningEnvelopeSchema.parse(body);
     const taskContext = parseTaskLaunchContext(body.taskContext);
+    const selectedGeneratedDocumentId = z.string().uuid().optional().parse(
+      body.generatedDocumentId,
+    );
+    if (selectedGeneratedDocumentId && !taskContext) {
+      throw new Error('Task context is required to select a generated document');
+    }
+    const generatedDocument = taskContext
+      ? await resolveEsigningGeneratedDocument(
+        tenantId,
+        taskContext,
+        selectedGeneratedDocumentId,
+      )
+      : null;
 
-    const result = await createEsigningEnvelope(session, tenantId, payload);
+    let result = await createEsigningEnvelope(session, tenantId, payload);
+    if (generatedDocument) {
+      result = await uploadGeneratedDocumentToEsigningEnvelope(
+        session,
+        tenantId,
+        result.id,
+        generatedDocument.id,
+      );
+    }
     if (taskContext) {
-      await linkEsigningEnvelopeTaskOutcome({
+      await safelyLinkEsigningEnvelopeTaskOutcome({
         tenantId,
         context: taskContext,
         authoritativeId: result.id,

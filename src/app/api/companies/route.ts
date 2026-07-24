@@ -6,8 +6,9 @@ import { createCompany, searchCompanies, getCompanyByUen } from '@/services/comp
 import { migrateBizFileToProcessing } from '@/services/document-processing.service';
 import { createLogger, sanitizeError } from '@/lib/logger';
 import {
-  linkCompanyTaskOutcome,
   parseTaskLaunchContext,
+  preflightTaskLaunchContext,
+  safelyLinkCompanyTaskOutcome,
 } from '@/services/tasks/integration.service';
 
 const log = createLogger('api:companies');
@@ -144,6 +145,9 @@ export async function POST(request: NextRequest) {
     if (!tenantId) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
+    if (taskContext) {
+      await preflightTaskLaunchContext(tenantId, taskContext, 'COMPANY_PROFILE');
+    }
 
     // Check if UEN already exists within tenant
     const existing = await getCompanyByUen(data.uen, tenantId, {});
@@ -156,7 +160,7 @@ export async function POST(request: NextRequest) {
 
     const company = await createCompany(data, { tenantId, userId: session.id });
     if (taskContext) {
-      await linkCompanyTaskOutcome({
+      await safelyLinkCompanyTaskOutcome({
         tenantId,
         context: taskContext,
         authoritativeId: company.id,

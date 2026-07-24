@@ -38,6 +38,18 @@ const stageDetailInclude = {
   checklistItems: { orderBy: { position: 'asc' as const } },
 } satisfies Prisma.TaskStageInclude;
 
+function hasLinkedOutcomeEntity(outcome: {
+  companyId?: string | null;
+  generatedDocumentId?: string | null;
+  esigningEnvelopeId?: string | null;
+}) {
+  return Boolean(
+    outcome.companyId
+    || outcome.generatedDocumentId
+    || outcome.esigningEnvelopeId,
+  );
+}
+
 export async function getTaskStageDetail(
   tenantId: string,
   taskId: string,
@@ -57,19 +69,30 @@ export async function getTaskStageDetail(
   const adapter = getStageActionAdapter(stage.actionType);
   const adapterContext = { tenantId, stage };
   let resolvedOutcome: ResolvedStageOutcome | null = null;
+  let outcomeUnavailable = false;
 
   if (stage.outcome) {
-    const parsed = taskStageOutcomeSchema.parse({
-      type: stage.outcome.type,
-      companyId: stage.outcome.companyId,
-      generatedDocumentId: stage.outcome.generatedDocumentId,
-      esigningEnvelopeId: stage.outcome.esigningEnvelopeId,
-    });
-    resolvedOutcome = await resolveAuthoritativeOutcome(prisma, tenantId, parsed);
+    if (!hasLinkedOutcomeEntity(stage.outcome)) {
+      outcomeUnavailable = true;
+    } else {
+      const parsed = taskStageOutcomeSchema.parse({
+        type: stage.outcome.type,
+        companyId: stage.outcome.companyId,
+        generatedDocumentId: stage.outcome.generatedDocumentId,
+        esigningEnvelopeId: stage.outcome.esigningEnvelopeId,
+      });
+      try {
+        resolvedOutcome = await resolveAuthoritativeOutcome(prisma, tenantId, parsed);
+      } catch (error) {
+        if (!(error instanceof NotFoundError)) throw error;
+        outcomeUnavailable = true;
+      }
+    }
   }
 
   return {
     ...stage,
+    ...(outcomeUnavailable ? { status: TaskStageStatus.FAILED } : {}),
     blockers: adapter.blockers(adapterContext),
     launch: adapter.launch(adapterContext),
     outcomeSummary: adapter.outcomeSummary(resolvedOutcome),
@@ -424,6 +447,16 @@ export async function linkTaskStageOutcome(
         ...ids,
       },
     });
+    if (
+      parsed.type === TaskStageOutcomeType.COMPANY
+      && parsed.companyId
+      && stage.task.companyId !== parsed.companyId
+    ) {
+      await tx.task.update({
+        where: { id: stage.taskId },
+        data: { companyId: parsed.companyId },
+      });
+    }
     const now = new Date();
     await tx.taskStage.update({
       where: { id: stage.id },
@@ -493,15 +526,53 @@ export async function reconcileTaskStageOutcome(
       });
       return { status, summary: null, taskStatus };
     }
+    const stageOutcome = stage.outcome;
+
+    const failUnavailableOutcome = async () => {
+      const status = TaskStageStatus.FAILED;
+      await tx.taskStage.update({
+        where: { id: stage.id },
+        data: { status, completedAt: null },
+      });
+      const taskStatus = await updateParentTaskStatus(
+        tx,
+        tenantId,
+        stage.taskId,
+        lockedTask.status,
+      );
+      await auditStageMutation(tx, {
+        tenantId,
+        userId,
+        stageId: stage.id,
+        companyId: stage.task.companyId,
+        summary: 'Linked task stage outcome is no longer available',
+        metadata: { outcomeId: stageOutcome.id, status, taskStatus },
+      });
+      return {
+        status,
+        summary: 'Linked outcome is no longer available',
+        taskStatus,
+      };
+    };
+
+    if (!hasLinkedOutcomeEntity(stageOutcome)) {
+      return failUnavailableOutcome();
+    }
 
     const input = taskStageOutcomeSchema.parse({
-      type: stage.outcome.type,
-      companyId: stage.outcome.companyId,
-      generatedDocumentId: stage.outcome.generatedDocumentId,
-      esigningEnvelopeId: stage.outcome.esigningEnvelopeId,
+      type: stageOutcome.type,
+      companyId: stageOutcome.companyId,
+      generatedDocumentId: stageOutcome.generatedDocumentId,
+      esigningEnvelopeId: stageOutcome.esigningEnvelopeId,
     });
     assertOutcomeMatchesAction(stage.actionType, input.type);
-    const authoritative = await resolveAuthoritativeOutcome(tx, tenantId, input);
+    let authoritative: ResolvedStageOutcome;
+    try {
+      authoritative = await resolveAuthoritativeOutcome(tx, tenantId, input);
+    } catch (error) {
+      if (!(error instanceof NotFoundError)) throw error;
+      return failUnavailableOutcome();
+    }
     const resolution = resolveStageActionOutcome(stage.actionType, authoritative);
     await tx.taskStage.update({
       where: { id: stage.id },
@@ -522,7 +593,7 @@ export async function reconcileTaskStageOutcome(
       stageId: stage.id,
       companyId: stage.task.companyId,
       summary: resolution.summary ?? 'Reconciled task stage outcome',
-      metadata: { outcomeId: stage.outcome.id, status: resolution.status, taskStatus },
+      metadata: { outcomeId: stageOutcome.id, status: resolution.status, taskStatus },
     });
     return { ...resolution, taskStatus };
   });

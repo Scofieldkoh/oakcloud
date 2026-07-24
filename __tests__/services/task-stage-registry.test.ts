@@ -64,7 +64,11 @@ function expectTaskLock(taskId = 'task-1', tenantId = 'tenant-a') {
 }
 
 vi.mock('@/lib/prisma', () => ({
-  prisma: { $transaction: mocks.transaction },
+  prisma: {
+    $transaction: mocks.transaction,
+    taskStage: { findFirst: mocks.stageFindFirst },
+    generatedDocument: { findFirst: mocks.documentFindFirst },
+  },
 }));
 
 vi.mock('@/lib/audit', () => ({
@@ -85,6 +89,7 @@ import {
 } from '@/services/tasks/task.service';
 import {
   completeTaskStage,
+  getTaskStageDetail,
   linkTaskStageOutcome,
   reconcileTaskStageOutcome,
   reopenTaskStage,
@@ -306,6 +311,114 @@ describe('task snapshots and stage mutations', () => {
       where: { id: 'task-1' },
       data: { status: 'COMPLETED' },
     });
+  });
+
+  it('atomically syncs the parent task company when linking a company outcome', async () => {
+    mocks.stageFindFirst.mockResolvedValue({
+      id: 'stage-1',
+      tenantId: 'tenant-a',
+      taskId: 'task-1',
+      name: 'Company profile',
+      actionType: 'COMPANY_PROFILE',
+      status: 'NOT_STARTED',
+      startedAt: null,
+      task: { id: 'task-1', status: 'NOT_STARTED', companyId: null, deletedAt: null },
+    });
+    mocks.companyFindFirst.mockResolvedValue({ id: '33333333-3333-4333-8333-333333333333', name: 'Acme' });
+    mocks.outcomeUpsert.mockResolvedValue({ id: 'outcome-1' });
+    mocks.stageUpdate.mockResolvedValue({ id: 'stage-1', status: 'COMPLETED' });
+    mocks.stageFindMany.mockResolvedValue([{ status: 'COMPLETED' }]);
+    mocks.taskUpdate.mockResolvedValue({ id: 'task-1', status: 'COMPLETED' });
+
+    await linkTaskStageOutcome('tenant-a', 'stage-1', {
+      type: 'COMPANY',
+      companyId: '33333333-3333-4333-8333-333333333333',
+    }, 'user-1');
+
+    expect(mocks.taskUpdate).toHaveBeenCalledWith({
+      where: { id: 'task-1' },
+      data: { companyId: '33333333-3333-4333-8333-333333333333' },
+    });
+    expect(mocks.outcomeUpsert.mock.invocationCallOrder[0])
+      .toBeLessThan(mocks.taskUpdate.mock.invocationCallOrder[0]);
+  });
+
+  it('marks a SetNull outcome failed and keeps stage detail readable', async () => {
+    const invalidOutcomeStage = {
+      id: 'stage-1',
+      tenantId: 'tenant-a',
+      taskId: 'task-1',
+      name: 'Generate contract',
+      description: null,
+      position: 1,
+      icon: 'FileText',
+      isRequired: true,
+      actionType: 'DOCUMENT_GENERATION',
+      actionConfig: null,
+      status: 'COMPLETED',
+      startedAt: new Date(),
+      assignee: null,
+      checklistItems: [],
+      task: { id: 'task-1', status: 'COMPLETED', companyId: null, deletedAt: null },
+      outcome: {
+        id: 'outcome-1',
+        type: 'GENERATED_DOCUMENT',
+        companyId: null,
+        generatedDocumentId: null,
+        esigningEnvelopeId: null,
+      },
+    };
+    mocks.stageFindFirst.mockResolvedValue(invalidOutcomeStage);
+    mocks.stageUpdate.mockResolvedValue({ id: 'stage-1', status: 'FAILED' });
+    mocks.stageFindMany.mockResolvedValue([{ status: 'FAILED' }]);
+    mocks.taskUpdate.mockResolvedValue({ id: 'task-1', status: 'IN_PROGRESS' });
+
+    await expect(getTaskStageDetail('tenant-a', 'task-1', 'stage-1'))
+      .resolves.toMatchObject({
+        id: 'stage-1',
+        status: 'FAILED',
+        outcomeSummary: null,
+      });
+    await expect(reconcileTaskStageOutcome('tenant-a', 'stage-1'))
+      .resolves.toMatchObject({ status: 'FAILED' });
+    expect(mocks.documentFindFirst).not.toHaveBeenCalled();
+  });
+
+  it('marks a soft-deleted authoritative outcome failed during detail and reconciliation', async () => {
+    const missingDocumentStage = {
+      id: 'stage-1',
+      tenantId: 'tenant-a',
+      taskId: 'task-1',
+      name: 'Generate contract',
+      description: null,
+      position: 1,
+      icon: 'FileText',
+      isRequired: true,
+      actionType: 'DOCUMENT_GENERATION',
+      actionConfig: null,
+      status: 'COMPLETED',
+      startedAt: new Date(),
+      assignee: null,
+      checklistItems: [],
+      task: { id: 'task-1', status: 'COMPLETED', companyId: null, deletedAt: null },
+      outcome: {
+        id: 'outcome-1',
+        type: 'GENERATED_DOCUMENT',
+        companyId: null,
+        generatedDocumentId: '33333333-3333-4333-8333-333333333333',
+        esigningEnvelopeId: null,
+      },
+    };
+    mocks.stageFindFirst.mockResolvedValue(missingDocumentStage);
+    mocks.documentFindFirst.mockResolvedValue(null);
+    mocks.stageUpdate.mockResolvedValue({ id: 'stage-1', status: 'FAILED' });
+    mocks.stageFindMany.mockResolvedValue([{ status: 'FAILED' }]);
+    mocks.taskUpdate.mockResolvedValue({ id: 'task-1', status: 'IN_PROGRESS' });
+
+    await expect(getTaskStageDetail('tenant-a', 'task-1', 'stage-1'))
+      .resolves.toMatchObject({ status: 'FAILED', outcomeSummary: null });
+    await expect(reconcileTaskStageOutcome('tenant-a', 'stage-1'))
+      .resolves.toMatchObject({ status: 'FAILED' });
   });
 
   it('requires a reason to skip and audits manual completion', async () => {

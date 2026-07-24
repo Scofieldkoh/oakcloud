@@ -47,6 +47,7 @@ import {
 } from '@/services/esigning-email-delivery.service';
 import { detectEsigningFieldOverlapWarnings } from '@/services/esigning-field.service';
 import { generateEsigningEnvelopeArtifactsNow } from '@/services/esigning-pdf.service';
+import { exportToPDF } from '@/services/document-export.service';
 import {
   buildRecipientSigningOrder,
   canDeleteEnvelope,
@@ -65,7 +66,11 @@ import {
   toIsoString,
   validateEnvelopeSendReadiness,
 } from '@/services/esigning-envelope.lib';
-import { reconcileEsigningEnvelopeTaskOutcomes } from '@/services/tasks/integration.service';
+import {
+  safelyCaptureEsigningTaskStageIds,
+  safelyReconcileEsigningEnvelopeTaskOutcomes,
+  safelyReconcileTaskStageIds,
+} from '@/services/tasks/integration.service';
 
 const log = createLogger('esigning-envelope');
 
@@ -853,9 +858,18 @@ export async function deleteDraftEsigningEnvelope(
     throw new Error('Forbidden');
   }
 
+  const linkedTaskStageIds = await safelyCaptureEsigningTaskStageIds(
+    tenantId,
+    envelopeId,
+  );
   await prisma.esigningEnvelope.delete({
     where: { id: envelopeId },
   });
+  await safelyReconcileTaskStageIds(
+    tenantId,
+    linkedTaskStageIds,
+    session.id,
+  );
 
   try {
     await storage.deletePrefix(StorageKeys.esigningEnvelopePrefix(tenantId, envelopeId));
@@ -1367,6 +1381,44 @@ export async function uploadEsigningEnvelopeDocument(
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }
 
+export async function uploadGeneratedDocumentToEsigningEnvelope(
+  session: SessionUser,
+  tenantId: string,
+  envelopeId: string,
+  generatedDocumentId: string,
+): Promise<EsigningEnvelopeDetailDto> {
+  const document = await prisma.generatedDocument.findFirst({
+    where: {
+      id: generatedDocumentId,
+      tenantId,
+      status: 'FINALIZED',
+      deletedAt: null,
+    },
+    select: { id: true, title: true },
+  });
+  if (!document) {
+    throw new Error('Selected generated document must be finalized and eligible');
+  }
+
+  const pdf = await exportToPDF({
+    documentId: document.id,
+    tenantId,
+    userId: session.id,
+    includeLetterhead: true,
+  });
+  const file = new File(
+    [new Uint8Array(pdf.buffer)],
+    pdf.filename || `${document.title}.pdf`,
+    { type: 'application/pdf' },
+  );
+  return uploadEsigningEnvelopeDocument(
+    session,
+    tenantId,
+    envelopeId,
+    file,
+  );
+}
+
 export async function deleteEsigningEnvelopeDocument(
   session: SessionUser,
   tenantId: string,
@@ -1737,7 +1789,7 @@ export async function sendEsigningEnvelope(
       },
     });
   });
-  await reconcileEsigningEnvelopeTaskOutcomes(tenantId, envelopeId, session.id);
+  await safelyReconcileEsigningEnvelopeTaskOutcomes(tenantId, envelopeId, session.id);
 
   const senderName = formatUserName(
     envelope.createdBy.firstName,
@@ -2155,7 +2207,7 @@ export async function voidEsigningEnvelope(
       },
     });
   });
-  await reconcileEsigningEnvelopeTaskOutcomes(tenantId, envelopeId, session.id);
+  await safelyReconcileEsigningEnvelopeTaskOutcomes(tenantId, envelopeId, session.id);
 
   await createAuditLog({
     tenantId,
@@ -2343,7 +2395,7 @@ export async function processExpiredEsigningEnvelopes(input?: {
     if (!expiredEnvelope) {
       continue;
     }
-    await reconcileEsigningEnvelopeTaskOutcomes(
+    await safelyReconcileEsigningEnvelopeTaskOutcomes(
       envelope.tenantId,
       envelope.id,
     );

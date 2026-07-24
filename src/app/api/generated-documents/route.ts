@@ -13,8 +13,9 @@ import {
 } from '@/services/document-generator.service';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import {
-  linkGeneratedDocumentTaskOutcome,
   parseTaskLaunchContext,
+  preflightTaskLaunchContext,
+  safelyLinkGeneratedDocumentTaskOutcome,
 } from '@/services/tasks/integration.service';
 
 /**
@@ -71,6 +72,13 @@ export async function POST(request: NextRequest) {
     } = body;
     const taskContext = parseTaskLaunchContext(rawTaskContext);
     const tenantId = requireSessionWorkspaceId(session);
+    if (taskContext) {
+      await preflightTaskLaunchContext(
+        tenantId,
+        taskContext,
+        'DOCUMENT_GENERATION',
+      );
+    }
 
     let document;
 
@@ -83,7 +91,7 @@ export async function POST(request: NextRequest) {
       document = await createDocumentFromTemplate(data, { tenantId, userId: session.id });
     }
     if (taskContext) {
-      await linkGeneratedDocumentTaskOutcome({
+      await safelyLinkGeneratedDocumentTaskOutcome({
         tenantId,
         context: taskContext,
         authoritativeId: document.id,

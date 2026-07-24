@@ -9,8 +9,9 @@ import {
   normalizeBizFileReviewDraft,
 } from '@/lib/validations/bizfile-review';
 import {
-  linkCompanyTaskOutcome,
   parseTaskLaunchContext,
+  preflightTaskLaunchContext,
+  safelyLinkCompanyTaskOutcome,
 } from '@/services/tasks/integration.service';
 
 /**
@@ -51,6 +52,27 @@ export async function POST(
     if (document.extractionStatus !== 'EXTRACTED') {
       // Backwards compatibility: accept already-confirmed documents
       if (document.extractionStatus === 'COMPLETED' && document.companyId) {
+        const completedBody = await request.json().catch(() => undefined);
+        const taskContext = parseTaskLaunchContext(
+          typeof completedBody === 'object'
+            && completedBody !== null
+            && 'taskContext' in completedBody
+            ? (completedBody as { taskContext: unknown }).taskContext
+            : undefined,
+        );
+        if (taskContext) {
+          await preflightTaskLaunchContext(
+            document.tenantId,
+            taskContext,
+            'COMPANY_PROFILE',
+          );
+          await safelyLinkCompanyTaskOutcome({
+            tenantId: document.tenantId,
+            context: taskContext,
+            authoritativeId: document.companyId,
+            userId: session.id,
+          });
+        }
         return NextResponse.json({
           success: true,
           companyId: document.companyId,
@@ -102,6 +124,13 @@ export async function POST(
         { status: 400 }
       );
     }
+    if (taskContext) {
+      await preflightTaskLaunchContext(
+        document.tenantId,
+        taskContext,
+        'COMPANY_PROFILE',
+      );
+    }
 
     const correctedData = normalizeBizFileReviewDraft(parsed.data);
     const result = await processBizFileExtraction(
@@ -113,7 +142,7 @@ export async function POST(
       document.mimeType
     );
     if (taskContext) {
-      await linkCompanyTaskOutcome({
+      await safelyLinkCompanyTaskOutcome({
         tenantId: document.tenantId,
         context: taskContext,
         authoritativeId: result.companyId,

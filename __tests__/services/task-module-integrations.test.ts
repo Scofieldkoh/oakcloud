@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   outcomeFindMany: vi.fn(),
   stageFindFirst: vi.fn(),
   outcomeFindFirst: vi.fn(),
+  documentFindFirst: vi.fn(),
+  warn: vi.fn(),
 }));
 
 vi.mock('@/services/tasks/stage.service', () => ({
@@ -24,11 +26,20 @@ vi.mock('@/lib/prisma', () => ({
       findFirst: mocks.outcomeFindFirst,
       findMany: mocks.outcomeFindMany,
     },
+    generatedDocument: { findFirst: mocks.documentFindFirst },
   },
+}));
+
+vi.mock('@/lib/logger', () => ({
+  createLogger: () => ({ warn: mocks.warn }),
 }));
 
 import {
   findPreferredEsigningDocument,
+  preflightTaskLaunchContext,
+  resolveEsigningGeneratedDocument,
+  safelyLinkGeneratedDocumentTaskOutcome,
+  safelyReconcileEsigningEnvelopeTaskOutcomes,
   linkCompanyTaskOutcome,
   linkEsigningEnvelopeTaskOutcome,
   linkGeneratedDocumentTaskOutcome,
@@ -45,13 +56,55 @@ const context = {
 
 describe('task module integration service', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     mocks.getStageDetail.mockResolvedValue({
       id: context.taskStageId,
       taskId: context.taskId,
+      actionType: 'DOCUMENT_GENERATION',
     });
     mocks.linkOutcome.mockResolvedValue({ status: 'IN_PROGRESS' });
     mocks.reconcileOutcome.mockResolvedValue({ status: 'COMPLETED' });
+  });
+
+  it('preflights tenant, task, stage, and expected action before a business write', async () => {
+    mocks.getStageDetail.mockResolvedValueOnce({
+      id: context.taskStageId,
+      taskId: context.taskId,
+      actionType: 'COMPANY_PROFILE',
+    });
+    await expect(preflightTaskLaunchContext(
+      'tenant-a',
+      context,
+      'COMPANY_PROFILE',
+    )).resolves.toMatchObject({ actionType: 'COMPANY_PROFILE' });
+
+    mocks.getStageDetail.mockResolvedValueOnce({
+      id: context.taskStageId,
+      taskId: context.taskId,
+      actionType: 'MANUAL',
+    });
+    await expect(preflightTaskLaunchContext(
+      'tenant-a',
+      context,
+      'COMPANY_PROFILE',
+    )).rejects.toThrow('action');
+  });
+
+  it('isolates post-commit task callback failures and records a warning', async () => {
+    mocks.getStageDetail.mockRejectedValueOnce(new Error('task store unavailable'));
+    await expect(safelyLinkGeneratedDocumentTaskOutcome({
+      tenantId: 'tenant-a',
+      context,
+      authoritativeId: '33333333-3333-4333-8333-333333333333',
+      userId: 'user-1',
+    })).resolves.toBeUndefined();
+
+    mocks.outcomeFindMany.mockRejectedValueOnce(new Error('task store unavailable'));
+    await expect(safelyReconcileEsigningEnvelopeTaskOutcomes(
+      'tenant-a',
+      '44444444-4444-4444-8444-444444444444',
+    )).resolves.toBeUndefined();
+    expect(mocks.warn).toHaveBeenCalledTimes(2);
   });
 
   it('accepts an absent context and validates the exact launch context shape', () => {
@@ -188,6 +241,57 @@ describe('task module integration service', () => {
       },
     });
   });
+
+  it('uses the preceding finalized document by default and validates an alternate selection', async () => {
+    mocks.getStageDetail.mockResolvedValue({
+      id: context.taskStageId,
+      taskId: context.taskId,
+      actionType: 'ESIGNING',
+    });
+    mocks.stageFindFirst.mockResolvedValue({
+      id: context.taskStageId,
+      position: 2,
+    });
+    mocks.outcomeFindFirst.mockResolvedValue({
+      generatedDocument: {
+        id: '33333333-3333-4333-8333-333333333333',
+        title: 'Default contract',
+        companyId: null,
+      },
+    });
+
+    await expect(resolveEsigningGeneratedDocument(
+      'tenant-a',
+      context,
+    )).resolves.toMatchObject({ title: 'Default contract' });
+
+    mocks.documentFindFirst.mockResolvedValue({
+      id: '66666666-6666-4666-8666-666666666666',
+      title: 'Alternate final contract',
+      companyId: null,
+    });
+    await expect(resolveEsigningGeneratedDocument(
+      'tenant-a',
+      context,
+      '66666666-6666-4666-8666-666666666666',
+    )).resolves.toMatchObject({ title: 'Alternate final contract' });
+    expect(mocks.documentFindFirst).toHaveBeenCalledWith({
+      where: {
+        id: '66666666-6666-4666-8666-666666666666',
+        tenantId: 'tenant-a',
+        status: 'FINALIZED',
+        deletedAt: null,
+      },
+      select: { id: true, title: true, companyId: true },
+    });
+
+    mocks.documentFindFirst.mockResolvedValueOnce(null);
+    await expect(resolveEsigningGeneratedDocument(
+      'tenant-a',
+      context,
+      '77777777-7777-4777-8777-777777777777',
+    )).rejects.toThrow('finalized');
+  });
 });
 
 describe('authoritative module callback contracts', () => {
@@ -201,9 +305,9 @@ describe('authoritative module callback contracts', () => {
     const bizfileRoute = source('src/app/api/documents/[documentId]/confirm/route.ts');
 
     expect(companyRoute).toContain('parseTaskLaunchContext(body.taskContext)');
-    expect(companyRoute).toContain('linkCompanyTaskOutcome');
+    expect(companyRoute).toContain('safelyLinkCompanyTaskOutcome');
     expect(bizfileRoute).toContain('parseTaskLaunchContext');
-    expect(bizfileRoute).toContain('linkCompanyTaskOutcome');
+    expect(bizfileRoute).toContain('safelyLinkCompanyTaskOutcome');
   });
 
   it('links document drafts and reconciles finalization changes', () => {
@@ -213,9 +317,12 @@ describe('authoritative module callback contracts', () => {
     );
     const generator = source('src/services/document-generator.service.ts');
 
-    expect(documentRoute).toContain('linkGeneratedDocumentTaskOutcome');
-    expect(sessionRoute).toContain('linkGeneratedDocumentTaskOutcome');
-    expect(generator).toContain('reconcileGeneratedDocumentTaskOutcomes');
+    expect(documentRoute).toContain('safelyLinkGeneratedDocumentTaskOutcome');
+    expect(sessionRoute).toContain('safelyLinkGeneratedDocumentTaskOutcome');
+    expect(generator).toContain('safelyReconcileGeneratedDocumentTaskOutcomes');
+    expect(generator).toMatch(
+      /deleteGeneratedDocument[\s\S]+safelyReconcileGeneratedDocumentTaskOutcomes/,
+    );
   });
 
   it('links envelopes and reconciles every terminal signing lifecycle', () => {
@@ -223,8 +330,13 @@ describe('authoritative module callback contracts', () => {
     const envelopeService = source('src/services/esigning-envelope.service.ts');
     const signingService = source('src/services/esigning-signing.service.ts');
 
-    expect(envelopeRoute).toContain('linkEsigningEnvelopeTaskOutcome');
-    expect(envelopeService).toContain('reconcileEsigningEnvelopeTaskOutcomes');
-    expect(signingService).toContain('reconcileEsigningEnvelopeTaskOutcomes');
+    expect(envelopeRoute).toContain('safelyLinkEsigningEnvelopeTaskOutcome');
+    expect(envelopeRoute).toContain('resolveEsigningGeneratedDocument');
+    expect(envelopeRoute).toContain('uploadGeneratedDocumentToEsigningEnvelope');
+    expect(envelopeService).toContain('safelyReconcileEsigningEnvelopeTaskOutcomes');
+    expect(signingService).toContain('safelyReconcileEsigningEnvelopeTaskOutcomes');
+    expect(envelopeService).toMatch(
+      /deleteDraftEsigningEnvelope[\s\S]+safelyReconcileTaskStageIds/,
+    );
   });
 });
