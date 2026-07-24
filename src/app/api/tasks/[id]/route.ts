@@ -5,6 +5,7 @@ import {
   archiveTaskSchema,
   updateTaskMetadataSchema,
 } from '@/lib/validations/task';
+import { taskRouteParamsSchema } from '@/lib/validations/task-api';
 import {
   archiveTask,
   getTask,
@@ -18,7 +19,7 @@ interface RouteParams {
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
-    const { id } = await params;
+    const { id } = taskRouteParamsSchema.parse(await params);
 
     return NextResponse.json(await getTask(requireSessionWorkspaceId(session), id));
   } catch (error) {
@@ -30,7 +31,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const { id } = await params;
+    const { id } = taskRouteParamsSchema.parse(await params);
     const body = await request.json();
     const { tenantId: _ignoredTenantId, ...input } = body;
     const parsed = updateTaskMetadataSchema.parse(input);
@@ -47,12 +48,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const { id } = await params;
+    const { id } = taskRouteParamsSchema.parse(await params);
     const parsed = archiveTaskSchema.parse(await request.json());
 
-    return NextResponse.json(
-      await archiveTask(tenantId, id, parsed.reason, session.id),
-    );
+    await archiveTask(tenantId, id, parsed.reason, session.id);
+    return NextResponse.json({ id, archived: true });
   } catch (error) {
     return createErrorResponse(error);
   }

@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { NotFoundError } from '@/lib/errors';
-import { taskStageTransitionSchema } from '@/lib/validations/task-api';
+import {
+  taskStageRouteParamsSchema,
+  taskStageTransitionSchema,
+} from '@/lib/validations/task-api';
 import {
   completeTaskStage,
   getTaskStageDetail,
@@ -21,7 +24,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const { taskId, stageId } = await params;
+    const { taskId, stageId } = taskStageRouteParamsSchema.parse(await params);
     const transition = taskStageTransitionSchema.parse(await request.json());
 
     const stage = await getTaskStageDetail(tenantId, taskId, stageId);

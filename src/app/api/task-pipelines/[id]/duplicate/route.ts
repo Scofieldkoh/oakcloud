@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { duplicateTaskPipelineSchema } from '@/lib/validations/task-pipeline';
+import { taskPipelineRouteParamsSchema } from '@/lib/validations/task-api';
 import { duplicateTaskPipeline } from '@/services/tasks';
 
 interface RouteParams {
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const { id } = await params;
+    const { id } = taskPipelineRouteParamsSchema.parse(await params);
     const parsed = duplicateTaskPipelineSchema.parse(await request.json());
 
     return NextResponse.json(

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ArchivePayload,
+  ArchiveResult,
   TaskCreatePayload,
   TaskListItem,
   TaskListResponse,
@@ -13,6 +14,7 @@ import type {
 
 export type {
   ArchivePayload,
+  ArchiveResult,
   TaskCreatePayload,
   TaskListItem,
   TaskListResponse,
@@ -67,8 +69,9 @@ export const taskKeys = {
   list: (params: TaskListParams) => [...taskKeys.lists(), params] as const,
   details: () => [...taskKeys.all, 'detail'] as const,
   detail: (id: string) => [...taskKeys.details(), id] as const,
+  stages: (taskId: string) => [...taskKeys.detail(taskId), 'stage'] as const,
   stage: (taskId: string, stageId: string) => (
-    [...taskKeys.detail(taskId), 'stage', stageId] as const
+    [...taskKeys.stages(taskId), stageId] as const
   ),
 };
 
@@ -153,7 +156,10 @@ export function useUpdateTask() {
     ),
     onSuccess: (task) => {
       queryClient.setQueryData(taskKeys.detail(task.id), task);
-      return queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: taskKeys.lists() }),
+        queryClient.invalidateQueries({ queryKey: taskKeys.stages(task.id) }),
+      ]);
     },
   });
 }
@@ -162,7 +168,7 @@ export function useArchiveTask() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: { id: string } & ArchivePayload) => (
-      apiRequest<TaskListItem>(
+      apiRequest<ArchiveResult>(
         `/api/tasks/${id}`,
         jsonInit('DELETE', { reason }),
       )

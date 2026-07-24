@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { createTaskPipelineSchema } from '@/lib/validations/task-pipeline';
+import { taskPipelineListQuerySchema } from '@/lib/validations/task-api';
 import { createTaskPipeline, listTaskPipelines } from '@/services/tasks';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const includeArchived = new URL(request.url).searchParams.get('includeArchived') === 'true';
+    const { includeArchived } = taskPipelineListQuerySchema.parse({
+      includeArchived: new URL(request.url).searchParams.get('includeArchived') || undefined,
+    });
 
     return NextResponse.json(await listTaskPipelines(tenantId, { includeArchived }));
   } catch (error) {

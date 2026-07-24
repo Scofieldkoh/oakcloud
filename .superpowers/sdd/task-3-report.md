@@ -78,3 +78,50 @@ TanStack Query hooks are implemented.
 - The focused route tests mock domain services. Task 2's existing service
   suites remain the authoritative coverage for mutations; a live PostgreSQL
   list-filter integration test was outside this task's focused test scope.
+
+## Review Contract Hardening
+
+Review fixes are included in `fix(tasks): align task API contracts`.
+
+### Review Red Evidence
+
+- Expanded focused run:
+  `npx.cmd vitest run __tests__/api/tasks-api.test.ts __tests__/hooks/task-hooks.test.tsx __tests__/services/task-search.service.test.ts __tests__/services/task-public-types.test.ts`
+  - API tests failed for raw archive responses, permissive
+    `includeArchived`, exposed method aliases, raw stage PATCH response, and
+    missing path UUID validation.
+  - Hook tests failed because task metadata updates did not invalidate the
+    task's stage-detail prefix.
+- `npx.cmd tsc --noEmit --pretty false`
+  - Failed because `ArchiveResult`, `TaskLaunchContext`, and the task stage
+    prefix key were not yet exported.
+- Focused cross-stage checklist regression:
+  - Previously observed 200 instead of 404 and retained as a green contract
+    alongside the expanded validation cases.
+
+### Review Green Evidence
+
+- `npx.cmd vitest run __tests__/api/tasks-api.test.ts __tests__/hooks/task-hooks.test.tsx __tests__/services/task-search.service.test.ts __tests__/services/task-public-types.test.ts`
+  - 4 test files passed; 34 tests passed.
+- `npx.cmd tsc --noEmit --pretty false`
+  - Exit 0.
+- Focused ESLint over the reviewed API routes, hooks, validation, public
+  types, and four focused test files
+  - Exit 0 with no warnings.
+- `git diff --check`
+  - Exit 0.
+
+### Review Self-review
+
+- Stage PATCH now performs the mutation and then re-queries the canonical
+  `TaskStageDetail`; the hook caches that refreshed detail.
+- Archive endpoints and hooks share the truthful minimal
+  `{ id, archived: true }` DTO and only invalidate existing cache entries.
+- Task metadata updates invalidate all stage detail queries for the task so a
+  changed company refreshes action blockers and launch links.
+- `includeArchived`, every path UUID, and nested checklist IDs are validated
+  before service calls.
+- Unapproved pipeline `PUT` and task-status `PATCH` aliases were removed.
+- Launch context is the exact `TaskLaunchContext` public interface.
+- Direct `searchTasks` tests cover all due buckets, null-excluding bounded
+  date predicates, relation/text filters, relation sorting, and pagination.

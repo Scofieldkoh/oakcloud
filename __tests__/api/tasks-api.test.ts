@@ -77,6 +77,7 @@ import {
   GET as getPipeline,
   PATCH as updatePipeline,
 } from '@/app/api/task-pipelines/[id]/route';
+import * as pipelineDetailRoute from '@/app/api/task-pipelines/[id]/route';
 import { POST as duplicatePipeline } from '@/app/api/task-pipelines/[id]/duplicate/route';
 import { GET as listTasks, POST as createTaskRoute } from '@/app/api/tasks/route';
 import {
@@ -85,6 +86,7 @@ import {
   PATCH as updateTaskRoute,
 } from '@/app/api/tasks/[id]/route';
 import { POST as updateTaskStatus } from '@/app/api/tasks/[id]/status/route';
+import * as taskStatusRoute from '@/app/api/tasks/[id]/status/route';
 import {
   GET as getStage,
   PATCH as updateStage,
@@ -203,12 +205,14 @@ describe('task pipeline API routes', () => {
       session.id,
     );
 
-    expect((await archivePipeline(
+    const archiveResponse = await archivePipeline(
       request(`http://localhost/api/task-pipelines/${pipelineId}`, 'DELETE', {
         reason: 'Superseded',
       }),
       routeParams({ id: pipelineId }),
-    )).status).toBe(200);
+    );
+    expect(archiveResponse.status).toBe(200);
+    expect(await archiveResponse.json()).toEqual({ id: pipelineId, archived: true });
     expect(archiveTaskPipeline).toHaveBeenCalledWith(
       workspaceId,
       pipelineId,
@@ -227,6 +231,19 @@ describe('task pipeline API routes', () => {
 
     expect(response.status).toBe(400);
     expect(createTaskPipeline).not.toHaveBeenCalled();
+  });
+
+  it('strictly validates includeArchived', async () => {
+    const response = await listPipelines(
+      request('http://localhost/api/task-pipelines?includeArchived=yes'),
+    );
+
+    expect(response.status).toBe(400);
+    expect(listTaskPipelines).not.toHaveBeenCalled();
+  });
+
+  it('does not expose unapproved pipeline PUT compatibility', () => {
+    expect(pipelineDetailRoute).not.toHaveProperty('PUT');
   });
 });
 
@@ -315,10 +332,12 @@ describe('task API routes', () => {
       session.id,
     );
 
-    expect((await archiveTaskRoute(
+    const archiveResponse = await archiveTaskRoute(
       request(`http://localhost/api/tasks/${taskId}`, 'DELETE', { reason: 'Duplicate' }),
       routeParams({ id: taskId }),
-    )).status).toBe(200);
+    );
+    expect(archiveResponse.status).toBe(200);
+    expect(await archiveResponse.json()).toEqual({ id: taskId, archived: true });
     expect(archiveTask).toHaveBeenCalledWith(
       workspaceId,
       taskId,
@@ -351,6 +370,10 @@ describe('task API routes', () => {
     expect(response.status).toBe(400);
     expect(getTask).not.toHaveBeenCalled();
   });
+
+  it('does not expose unapproved task status PATCH compatibility', () => {
+    expect(taskStatusRoute).not.toHaveProperty('PATCH');
+  });
 });
 
 describe('task stage API routes', () => {
@@ -376,18 +399,43 @@ describe('task stage API routes', () => {
     )).status).toBe(200);
     expect(getTaskStageDetail).toHaveBeenCalledWith(workspaceId, taskId, stageId);
 
-    expect((await updateStage(
+    vi.mocked(getTaskStageDetail)
+      .mockResolvedValueOnce({
+        id: stageId,
+        taskId,
+        notes: null,
+        checklistItems: [{ id: checklistItemId }],
+      } as never)
+      .mockResolvedValueOnce({
+        id: stageId,
+        taskId,
+        notes: 'Waiting for director details',
+        blockers: [],
+        launch: { href: null, context: { taskId, taskStageId: stageId } },
+        outcomeSummary: null,
+        checklistItems: [{ id: checklistItemId }],
+      } as never);
+
+    const updateResponse = await updateStage(
       request(`http://localhost/api/tasks/${taskId}/stages/${stageId}`, 'PATCH', {
         notes: 'Waiting for director details',
       }),
       routeParams({ taskId, stageId }),
-    )).status).toBe(200);
+    );
+    expect(updateResponse.status).toBe(200);
+    expect(await updateResponse.json()).toEqual(expect.objectContaining({
+      id: stageId,
+      notes: 'Waiting for director details',
+      blockers: [],
+      outcomeSummary: null,
+    }));
     expect(updateTaskStageMetadata).toHaveBeenCalledWith(
       workspaceId,
       stageId,
       { notes: 'Waiting for director details' },
       session.id,
     );
+    expect(getTaskStageDetail).toHaveBeenCalledTimes(3);
   });
 
   it('dispatches complete, skip, checklist, and outcome transitions', async () => {
@@ -475,6 +523,99 @@ describe('task stage API routes', () => {
     );
 
     expect(response.status).toBe(404);
+    expect(updateTaskStageChecklistItem).not.toHaveBeenCalled();
+  });
+});
+
+describe('task route UUID validation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireAuth).mockResolvedValue(session as never);
+  });
+
+  it('rejects invalid pipeline route IDs before services', async () => {
+    const invalid = 'not-a-uuid';
+    const responses = await Promise.all([
+      getPipeline(
+        request(`http://localhost/api/task-pipelines/${invalid}`),
+        routeParams({ id: invalid }),
+      ),
+      updatePipeline(
+        request(`http://localhost/api/task-pipelines/${invalid}`, 'PATCH', pipelineBody),
+        routeParams({ id: invalid }),
+      ),
+      archivePipeline(
+        request(`http://localhost/api/task-pipelines/${invalid}`, 'DELETE', {
+          reason: 'Invalid',
+        }),
+        routeParams({ id: invalid }),
+      ),
+      duplicatePipeline(
+        request(`http://localhost/api/task-pipelines/${invalid}/duplicate`, 'POST', {}),
+        routeParams({ id: invalid }),
+      ),
+    ]);
+
+    expect(responses.map((response) => response.status)).toEqual([400, 400, 400, 400]);
+    expect(getTaskPipeline).not.toHaveBeenCalled();
+    expect(updateTaskPipeline).not.toHaveBeenCalled();
+    expect(archiveTaskPipeline).not.toHaveBeenCalled();
+    expect(duplicateTaskPipeline).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid task route IDs before services', async () => {
+    const invalid = 'not-a-uuid';
+    const responses = await Promise.all([
+      getTaskRoute(
+        request(`http://localhost/api/tasks/${invalid}`),
+        routeParams({ id: invalid }),
+      ),
+      updateTaskRoute(
+        request(`http://localhost/api/tasks/${invalid}`, 'PATCH', { title: 'No' }),
+        routeParams({ id: invalid }),
+      ),
+      archiveTaskRoute(
+        request(`http://localhost/api/tasks/${invalid}`, 'DELETE', { reason: 'Invalid' }),
+        routeParams({ id: invalid }),
+      ),
+      updateTaskStatus(
+        request(`http://localhost/api/tasks/${invalid}/status`, 'POST', { action: 'pause' }),
+        routeParams({ id: invalid }),
+      ),
+    ]);
+
+    expect(responses.map((response) => response.status)).toEqual([400, 400, 400, 400]);
+    expect(getTask).not.toHaveBeenCalled();
+    expect(updateTaskMetadata).not.toHaveBeenCalled();
+    expect(archiveTask).not.toHaveBeenCalled();
+    expect(pauseTask).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid nested task, stage, and checklist IDs before services', async () => {
+    const invalid = 'not-a-uuid';
+    const url = `http://localhost/api/tasks/${taskId}/stages/${stageId}`;
+    const responses = await Promise.all([
+      getStage(
+        request(url),
+        routeParams({ taskId: invalid, stageId }),
+      ),
+      updateStage(
+        request(url, 'PATCH', { notes: 'No' }),
+        routeParams({ taskId, stageId: invalid }),
+      ),
+      transitionStage(
+        request(`${url}/transition`, 'POST', {
+          action: 'checklist',
+          checklistItemId: invalid,
+          isCompleted: true,
+        }),
+        routeParams({ taskId, stageId }),
+      ),
+    ]);
+
+    expect(responses.map((response) => response.status)).toEqual([400, 400, 400]);
+    expect(getTaskStageDetail).not.toHaveBeenCalled();
+    expect(updateTaskStageMetadata).not.toHaveBeenCalled();
     expect(updateTaskStageChecklistItem).not.toHaveBeenCalled();
   });
 });

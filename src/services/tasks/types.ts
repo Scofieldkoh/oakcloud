@@ -33,12 +33,16 @@ export interface StageActionBlocker {
   message: string;
 }
 
-export type StageLaunchContext = Record<string, string>;
+export interface TaskLaunchContext {
+  taskId: string;
+  taskStageId: string;
+  returnTo?: string;
+}
 export type StageOutcomeSummary = string | null;
 
 export interface StageActionLaunch {
   href: string | null;
-  context: StageLaunchContext;
+  context: TaskLaunchContext;
 }
 
 export interface StageOutcomeReference {
@@ -129,6 +133,11 @@ export interface TaskPipelineDuplicatePayload {
 
 export interface ArchivePayload {
   reason: string;
+}
+
+export interface ArchiveResult {
+  id: string;
+  archived: true;
 }
 
 export interface TaskListItem {

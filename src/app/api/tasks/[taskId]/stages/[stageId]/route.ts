@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { taskStageMetadataSchema } from '@/lib/validations/task';
+import { taskStageRouteParamsSchema } from '@/lib/validations/task-api';
 import {
   getTaskStageDetail,
   updateTaskStageMetadata,
@@ -14,7 +15,7 @@ interface RouteParams {
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
-    const { taskId, stageId } = await params;
+    const { taskId, stageId } = taskStageRouteParamsSchema.parse(await params);
 
     return NextResponse.json(
       await getTaskStageDetail(
@@ -32,13 +33,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const { taskId, stageId } = await params;
+    const { taskId, stageId } = taskStageRouteParamsSchema.parse(await params);
     const parsed = taskStageMetadataSchema.parse(await request.json());
 
     await getTaskStageDetail(tenantId, taskId, stageId);
-    return NextResponse.json(
-      await updateTaskStageMetadata(tenantId, stageId, parsed, session.id),
-    );
+    await updateTaskStageMetadata(tenantId, stageId, parsed, session.id);
+    return NextResponse.json(await getTaskStageDetail(tenantId, taskId, stageId));
   } catch (error) {
     return createErrorResponse(error);
   }

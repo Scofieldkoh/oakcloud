@@ -5,6 +5,27 @@ import {
   taskStageSkipSchema,
 } from './task';
 
+const uuid = z.string().uuid();
+
+export const taskPipelineListQuerySchema = z.object({
+  includeArchived: z.enum(['true', 'false']).optional(),
+}).transform(({ includeArchived }) => ({
+  includeArchived: includeArchived === 'true',
+}));
+
+export const taskPipelineRouteParamsSchema = z.object({
+  id: uuid,
+});
+
+export const taskRouteParamsSchema = z.object({
+  id: uuid,
+});
+
+export const taskStageRouteParamsSchema = z.object({
+  taskId: uuid,
+  stageId: uuid,
+});
+
 export const taskListQuerySchema = z.object({
   query: z.string().trim().min(1).max(300).optional(),
   pipelineId: z.string().uuid().optional(),

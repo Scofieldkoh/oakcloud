@@ -5,6 +5,7 @@ import {
   archiveTaskPipelineSchema,
   updateTaskPipelineSchema,
 } from '@/lib/validations/task-pipeline';
+import { taskPipelineRouteParamsSchema } from '@/lib/validations/task-api';
 import {
   archiveTaskPipeline,
   getTaskPipeline,
@@ -18,7 +19,7 @@ interface RouteParams {
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
-    const { id } = await params;
+    const { id } = taskPipelineRouteParamsSchema.parse(await params);
 
     return NextResponse.json(
       await getTaskPipeline(requireSessionWorkspaceId(session), id),
@@ -32,7 +33,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const { id } = await params;
+    const { id } = taskPipelineRouteParamsSchema.parse(await params);
     const body = await request.json();
     const { tenantId: _ignoredTenantId, ...input } = body;
     const parsed = updateTaskPipelineSchema.parse(input);
@@ -45,18 +46,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export const PUT = PATCH;
-
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const { id } = await params;
+    const { id } = taskPipelineRouteParamsSchema.parse(await params);
     const parsed = archiveTaskPipelineSchema.parse(await request.json());
 
-    return NextResponse.json(
-      await archiveTaskPipeline(tenantId, id, parsed.reason, session.id),
-    );
+    await archiveTaskPipeline(tenantId, id, parsed.reason, session.id);
+    return NextResponse.json({ id, archived: true });
   } catch (error) {
     return createErrorResponse(error);
   }

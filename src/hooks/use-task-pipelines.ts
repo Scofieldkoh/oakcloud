@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ArchivePayload,
+  ArchiveResult,
   TaskPipelineCreatePayload,
   TaskPipelineDuplicatePayload,
   TaskPipelineUpdatePayload,
@@ -10,6 +11,7 @@ import type {
 
 export type {
   ArchivePayload,
+  ArchiveResult,
   TaskPipelineCreatePayload,
   TaskPipelineDuplicatePayload,
   TaskPipelineUpdatePayload,
@@ -152,7 +154,7 @@ export function useArchiveTaskPipeline() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: { id: string } & ArchivePayload) => (
-      apiRequest<TaskPipeline>(
+      apiRequest<ArchiveResult>(
         `/api/task-pipelines/${id}`,
         jsonInit('DELETE', { reason }),
       )

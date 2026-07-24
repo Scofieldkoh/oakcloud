@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
-import { taskStatusTransitionSchema } from '@/lib/validations/task-api';
+import {
+  taskRouteParamsSchema,
+  taskStatusTransitionSchema,
+} from '@/lib/validations/task-api';
 import { cancelTask, pauseTask, resumeTask } from '@/services/tasks';
 
 interface RouteParams {
@@ -12,7 +15,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const { id } = await params;
+    const { id } = taskRouteParamsSchema.parse(await params);
     const { action } = taskStatusTransitionSchema.parse(await request.json());
     const transition = {
       pause: pauseTask,
@@ -25,5 +28,3 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return createErrorResponse(error);
   }
 }
-
-export const PATCH = POST;
