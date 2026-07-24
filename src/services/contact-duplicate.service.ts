@@ -54,8 +54,6 @@ type DiscoveryContact = {
     chargeHoldings: number;
     contactDetails: number;
     noteTabs: number;
-    workflow_communication_log_entries: number;
-    workflow_milestones: number;
   };
   documentReferenceCount?: number;
   aliasReferenceCount?: number;
@@ -92,8 +90,6 @@ export interface ContactDuplicatePreview {
     chargeHoldings: number;
     contactDetails: number;
     noteTabs: number;
-    workflowCommunicationLogEntries: number;
-    workflowMilestones: number;
     documentRevisions: number;
     aliases: number;
   };
@@ -197,8 +193,6 @@ function preview(contact: DiscoveryContact): ContactDuplicatePreview {
       chargeHoldings: contact._count.chargeHoldings,
       contactDetails: contact._count.contactDetails,
       noteTabs: contact._count.noteTabs,
-      workflowCommunicationLogEntries: contact._count.workflow_communication_log_entries,
-      workflowMilestones: contact._count.workflow_milestones,
       documentRevisions: contact.documentReferenceCount ?? 0,
       aliases: contact.aliasReferenceCount ?? 0,
     },
@@ -423,8 +417,6 @@ const contactSelection = {
       chargeHoldings: true,
       contactDetails: true,
       noteTabs: true,
-      workflow_communication_log_entries: true,
-      workflow_milestones: true,
     },
   },
 } satisfies Prisma.ContactSelect;

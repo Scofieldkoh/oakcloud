@@ -619,12 +619,8 @@ export type CompanyWhereInput = {
   shareCapital?: Prisma.ShareCapitalListRelationFilter
   userAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
   roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
-  workflow_client_group_members?: Prisma.Workflow_client_group_membersListRelationFilter
-  workflow_engagements?: Prisma.Workflow_engagementsListRelationFilter
-  workflow_instances?: Prisma.Workflow_instancesListRelationFilter
-  workflow_project_instances?: Prisma.Workflow_project_instancesListRelationFilter
-  workflow_project_settings?: Prisma.XOR<Prisma.Workflow_project_settingsNullableScalarRelationFilter, Prisma.workflow_project_settingsWhereInput> | null
-  workflow_scheduled_instances_queue?: Prisma.Workflow_scheduled_instances_queueListRelationFilter
+  tasks?: Prisma.TaskListRelationFilter
+  taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
 }
 
 export type CompanyOrderByWithRelationInput = {
@@ -696,12 +692,8 @@ export type CompanyOrderByWithRelationInput = {
   shareCapital?: Prisma.ShareCapitalOrderByRelationAggregateInput
   userAssignments?: Prisma.UserCompanyAssignmentOrderByRelationAggregateInput
   roleAssignments?: Prisma.UserRoleAssignmentOrderByRelationAggregateInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersOrderByRelationAggregateInput
-  workflow_engagements?: Prisma.workflow_engagementsOrderByRelationAggregateInput
-  workflow_instances?: Prisma.workflow_instancesOrderByRelationAggregateInput
-  workflow_project_instances?: Prisma.workflow_project_instancesOrderByRelationAggregateInput
-  workflow_project_settings?: Prisma.workflow_project_settingsOrderByWithRelationInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueOrderByRelationAggregateInput
+  tasks?: Prisma.TaskOrderByRelationAggregateInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeOrderByRelationAggregateInput
 }
 
 export type CompanyWhereUniqueInput = Prisma.AtLeast<{
@@ -777,12 +769,8 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   shareCapital?: Prisma.ShareCapitalListRelationFilter
   userAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
   roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
-  workflow_client_group_members?: Prisma.Workflow_client_group_membersListRelationFilter
-  workflow_engagements?: Prisma.Workflow_engagementsListRelationFilter
-  workflow_instances?: Prisma.Workflow_instancesListRelationFilter
-  workflow_project_instances?: Prisma.Workflow_project_instancesListRelationFilter
-  workflow_project_settings?: Prisma.XOR<Prisma.Workflow_project_settingsNullableScalarRelationFilter, Prisma.workflow_project_settingsWhereInput> | null
-  workflow_scheduled_instances_queue?: Prisma.Workflow_scheduled_instances_queueListRelationFilter
+  tasks?: Prisma.TaskListRelationFilter
+  taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
 }, "id" | "tenantId_uen">
 
 export type CompanyOrderByWithAggregationInput = {
@@ -965,12 +953,8 @@ export type CompanyCreateInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateInput = {
@@ -1041,12 +1025,8 @@ export type CompanyUncheckedCreateInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUpdateInput = {
@@ -1117,12 +1097,8 @@ export type CompanyUpdateInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateInput = {
@@ -1193,12 +1169,8 @@ export type CompanyUncheckedUpdateInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyInput = {
@@ -1897,88 +1869,36 @@ export type CompanyUpdateOneRequiredWithoutAccountMappingsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutAccountMappingsInput, Prisma.CompanyUpdateWithoutAccountMappingsInput>, Prisma.CompanyUncheckedUpdateWithoutAccountMappingsInput>
 }
 
-export type CompanyCreateNestedOneWithoutWorkflow_client_group_membersInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_client_group_membersInput
+export type CompanyCreateNestedOneWithoutTasksInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutTasksInput, Prisma.CompanyUncheckedCreateWithoutTasksInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutTasksInput
   connect?: Prisma.CompanyWhereUniqueInput
 }
 
-export type CompanyUpdateOneRequiredWithoutWorkflow_client_group_membersNestedInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_client_group_membersInput
-  upsert?: Prisma.CompanyUpsertWithoutWorkflow_client_group_membersInput
+export type CompanyUpdateOneWithoutTasksNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutTasksInput, Prisma.CompanyUncheckedCreateWithoutTasksInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutTasksInput
+  upsert?: Prisma.CompanyUpsertWithoutTasksInput
+  disconnect?: Prisma.CompanyWhereInput | boolean
+  delete?: Prisma.CompanyWhereInput | boolean
   connect?: Prisma.CompanyWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_client_group_membersInput, Prisma.CompanyUpdateWithoutWorkflow_client_group_membersInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_client_group_membersInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutTasksInput, Prisma.CompanyUpdateWithoutTasksInput>, Prisma.CompanyUncheckedUpdateWithoutTasksInput>
 }
 
-export type CompanyCreateNestedOneWithoutWorkflow_engagementsInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_engagementsInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_engagementsInput
-  connect?: Prisma.CompanyWhereUniqueInput
-}
-
-export type CompanyUpdateOneRequiredWithoutWorkflow_engagementsNestedInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_engagementsInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_engagementsInput
-  upsert?: Prisma.CompanyUpsertWithoutWorkflow_engagementsInput
-  connect?: Prisma.CompanyWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_engagementsInput, Prisma.CompanyUpdateWithoutWorkflow_engagementsInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_engagementsInput>
-}
-
-export type CompanyCreateNestedOneWithoutWorkflow_instancesInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_instancesInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_instancesInput
+export type CompanyCreateNestedOneWithoutTaskStageOutcomesInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutTaskStageOutcomesInput, Prisma.CompanyUncheckedCreateWithoutTaskStageOutcomesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutTaskStageOutcomesInput
   connect?: Prisma.CompanyWhereUniqueInput
 }
 
-export type CompanyUpdateOneRequiredWithoutWorkflow_instancesNestedInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_instancesInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_instancesInput
-  upsert?: Prisma.CompanyUpsertWithoutWorkflow_instancesInput
+export type CompanyUpdateOneWithoutTaskStageOutcomesNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutTaskStageOutcomesInput, Prisma.CompanyUncheckedCreateWithoutTaskStageOutcomesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutTaskStageOutcomesInput
+  upsert?: Prisma.CompanyUpsertWithoutTaskStageOutcomesInput
+  disconnect?: Prisma.CompanyWhereInput | boolean
+  delete?: Prisma.CompanyWhereInput | boolean
   connect?: Prisma.CompanyWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_instancesInput, Prisma.CompanyUpdateWithoutWorkflow_instancesInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_instancesInput>
-}
-
-export type CompanyCreateNestedOneWithoutWorkflow_project_instancesInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_instancesInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_project_instancesInput
-  connect?: Prisma.CompanyWhereUniqueInput
-}
-
-export type CompanyUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_instancesInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_project_instancesInput
-  upsert?: Prisma.CompanyUpsertWithoutWorkflow_project_instancesInput
-  connect?: Prisma.CompanyWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_project_instancesInput, Prisma.CompanyUpdateWithoutWorkflow_project_instancesInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_instancesInput>
-}
-
-export type CompanyCreateNestedOneWithoutWorkflow_project_settingsInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_settingsInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_project_settingsInput
-  connect?: Prisma.CompanyWhereUniqueInput
-}
-
-export type CompanyUpdateOneRequiredWithoutWorkflow_project_settingsNestedInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_settingsInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_project_settingsInput
-  upsert?: Prisma.CompanyUpsertWithoutWorkflow_project_settingsInput
-  connect?: Prisma.CompanyWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_project_settingsInput, Prisma.CompanyUpdateWithoutWorkflow_project_settingsInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_settingsInput>
-}
-
-export type CompanyCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput
-  connect?: Prisma.CompanyWhereUniqueInput
-}
-
-export type CompanyUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput = {
-  create?: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
-  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput
-  upsert?: Prisma.CompanyUpsertWithoutWorkflow_scheduled_instances_queueInput
-  connect?: Prisma.CompanyWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUpdateWithoutWorkflow_scheduled_instances_queueInput>, Prisma.CompanyUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutTaskStageOutcomesInput, Prisma.CompanyUpdateWithoutTaskStageOutcomesInput>, Prisma.CompanyUncheckedUpdateWithoutTaskStageOutcomesInput>
 }
 
 export type CompanyCreateWithoutTenantInput = {
@@ -2048,12 +1968,8 @@ export type CompanyCreateWithoutTenantInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTenantInput = {
@@ -2123,12 +2039,8 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTenantInput = {
@@ -2279,12 +2191,8 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
@@ -2354,12 +2262,8 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutRoleAssignmentsInput = {
@@ -2445,12 +2349,8 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
@@ -2520,12 +2420,8 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutUserAssignmentsInput = {
@@ -2595,12 +2491,8 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
@@ -2670,12 +2562,8 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutUserAssignmentsInput = {
@@ -2761,12 +2649,8 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
@@ -2836,12 +2720,8 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutFormerNamesInput = {
@@ -2911,12 +2791,8 @@ export type CompanyCreateWithoutFormerNamesInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutFormerNamesInput = {
@@ -2986,12 +2862,8 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutFormerNamesInput = {
@@ -3077,12 +2949,8 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
@@ -3152,12 +3020,8 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAddressesInput = {
@@ -3227,12 +3091,8 @@ export type CompanyCreateWithoutAddressesInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAddressesInput = {
@@ -3302,12 +3162,8 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAddressesInput = {
@@ -3393,12 +3249,8 @@ export type CompanyUpdateWithoutAddressesInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAddressesInput = {
@@ -3468,12 +3320,8 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactsInput = {
@@ -3543,12 +3391,8 @@ export type CompanyCreateWithoutContactsInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactsInput = {
@@ -3618,12 +3462,8 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactsInput = {
@@ -3709,12 +3549,8 @@ export type CompanyUpdateWithoutContactsInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactsInput = {
@@ -3784,12 +3620,8 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactDetailsInput = {
@@ -3859,12 +3691,8 @@ export type CompanyCreateWithoutContactDetailsInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactDetailsInput = {
@@ -3934,12 +3762,8 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactDetailsInput = {
@@ -4025,12 +3849,8 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
@@ -4100,12 +3920,8 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutOfficersInput = {
@@ -4175,12 +3991,8 @@ export type CompanyCreateWithoutOfficersInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutOfficersInput = {
@@ -4250,12 +4062,8 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutOfficersInput = {
@@ -4341,12 +4149,8 @@ export type CompanyUpdateWithoutOfficersInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutOfficersInput = {
@@ -4416,12 +4220,8 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareCapitalInput = {
@@ -4491,12 +4291,8 @@ export type CompanyCreateWithoutShareCapitalInput = {
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareCapitalInput = {
@@ -4566,12 +4362,8 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareCapitalInput = {
@@ -4657,12 +4449,8 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
@@ -4732,12 +4520,8 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareholdersInput = {
@@ -4807,12 +4591,8 @@ export type CompanyCreateWithoutShareholdersInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareholdersInput = {
@@ -4882,12 +4662,8 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareholdersInput = {
@@ -4973,12 +4749,8 @@ export type CompanyUpdateWithoutShareholdersInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareholdersInput = {
@@ -5048,12 +4820,8 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChargesInput = {
@@ -5123,12 +4891,8 @@ export type CompanyCreateWithoutChargesInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChargesInput = {
@@ -5198,12 +4962,8 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChargesInput = {
@@ -5289,12 +5049,8 @@ export type CompanyUpdateWithoutChargesInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChargesInput = {
@@ -5364,12 +5120,8 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentsInput = {
@@ -5439,12 +5191,8 @@ export type CompanyCreateWithoutDocumentsInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentsInput = {
@@ -5514,12 +5262,8 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentsInput = {
@@ -5605,12 +5349,8 @@ export type CompanyUpdateWithoutDocumentsInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentsInput = {
@@ -5680,12 +5420,8 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAuditLogsInput = {
@@ -5755,12 +5491,8 @@ export type CompanyCreateWithoutAuditLogsInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAuditLogsInput = {
@@ -5830,12 +5562,8 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAuditLogsInput = {
@@ -5921,12 +5649,8 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
@@ -5996,12 +5720,8 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutNoteTabsInput = {
@@ -6071,12 +5791,8 @@ export type CompanyCreateWithoutNoteTabsInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutNoteTabsInput = {
@@ -6146,12 +5862,8 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutNoteTabsInput = {
@@ -6237,12 +5949,8 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
@@ -6312,12 +6020,8 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutGeneratedDocumentsInput = {
@@ -6387,12 +6091,8 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -6462,12 +6162,8 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -6553,12 +6249,8 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -6628,12 +6320,8 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutEsigningEnvelopesInput = {
@@ -6703,12 +6391,8 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
@@ -6778,12 +6462,8 @@ export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutEsigningEnvelopesInput = {
@@ -6869,12 +6549,8 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
@@ -6944,12 +6620,8 @@ export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentTagsInput = {
@@ -7019,12 +6691,8 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
@@ -7094,12 +6762,8 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentTagsInput = {
@@ -7185,12 +6849,8 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
@@ -7260,12 +6920,8 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChartOfAccountsInput = {
@@ -7335,12 +6991,8 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
@@ -7410,12 +7062,8 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChartOfAccountsInput = {
@@ -7501,12 +7149,8 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
@@ -7576,12 +7220,8 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAccountMappingsInput = {
@@ -7651,12 +7291,8 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
@@ -7726,12 +7362,8 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAccountMappingsInput = {
@@ -7817,12 +7449,8 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
@@ -7892,15 +7520,11 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
-export type CompanyCreateWithoutWorkflow_client_group_membersInput = {
+export type CompanyCreateWithoutTasksInput = {
   id?: string
   uen: string
   name: string
@@ -7968,14 +7592,10 @@ export type CompanyCreateWithoutWorkflow_client_group_membersInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
 }
 
-export type CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput = {
+export type CompanyUncheckedCreateWithoutTasksInput = {
   id?: string
   tenantId: string
   uen: string
@@ -8043,30 +7663,26 @@ export type CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
 }
 
-export type CompanyCreateOrConnectWithoutWorkflow_client_group_membersInput = {
+export type CompanyCreateOrConnectWithoutTasksInput = {
   where: Prisma.CompanyWhereUniqueInput
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutTasksInput, Prisma.CompanyUncheckedCreateWithoutTasksInput>
 }
 
-export type CompanyUpsertWithoutWorkflow_client_group_membersInput = {
-  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_client_group_membersInput>
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_client_group_membersInput>
+export type CompanyUpsertWithoutTasksInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutTasksInput, Prisma.CompanyUncheckedUpdateWithoutTasksInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutTasksInput, Prisma.CompanyUncheckedCreateWithoutTasksInput>
   where?: Prisma.CompanyWhereInput
 }
 
-export type CompanyUpdateToOneWithWhereWithoutWorkflow_client_group_membersInput = {
+export type CompanyUpdateToOneWithWhereWithoutTasksInput = {
   where?: Prisma.CompanyWhereInput
-  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_client_group_membersInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_client_group_membersInput>
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutTasksInput, Prisma.CompanyUncheckedUpdateWithoutTasksInput>
 }
 
-export type CompanyUpdateWithoutWorkflow_client_group_membersInput = {
+export type CompanyUpdateWithoutTasksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8134,14 +7750,10 @@ export type CompanyUpdateWithoutWorkflow_client_group_membersInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
-export type CompanyUncheckedUpdateWithoutWorkflow_client_group_membersInput = {
+export type CompanyUncheckedUpdateWithoutTasksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8209,14 +7821,10 @@ export type CompanyUncheckedUpdateWithoutWorkflow_client_group_membersInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
-export type CompanyCreateWithoutWorkflow_engagementsInput = {
+export type CompanyCreateWithoutTaskStageOutcomesInput = {
   id?: string
   uen: string
   name: string
@@ -8284,14 +7892,10 @@ export type CompanyCreateWithoutWorkflow_engagementsInput = {
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
 }
 
-export type CompanyUncheckedCreateWithoutWorkflow_engagementsInput = {
+export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
   id?: string
   tenantId: string
   uen: string
@@ -8359,30 +7963,26 @@ export type CompanyUncheckedCreateWithoutWorkflow_engagementsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
 }
 
-export type CompanyCreateOrConnectWithoutWorkflow_engagementsInput = {
+export type CompanyCreateOrConnectWithoutTaskStageOutcomesInput = {
   where: Prisma.CompanyWhereUniqueInput
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_engagementsInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutTaskStageOutcomesInput, Prisma.CompanyUncheckedCreateWithoutTaskStageOutcomesInput>
 }
 
-export type CompanyUpsertWithoutWorkflow_engagementsInput = {
-  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_engagementsInput>
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_engagementsInput>
+export type CompanyUpsertWithoutTaskStageOutcomesInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutTaskStageOutcomesInput, Prisma.CompanyUncheckedUpdateWithoutTaskStageOutcomesInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutTaskStageOutcomesInput, Prisma.CompanyUncheckedCreateWithoutTaskStageOutcomesInput>
   where?: Prisma.CompanyWhereInput
 }
 
-export type CompanyUpdateToOneWithWhereWithoutWorkflow_engagementsInput = {
+export type CompanyUpdateToOneWithWhereWithoutTaskStageOutcomesInput = {
   where?: Prisma.CompanyWhereInput
-  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_engagementsInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_engagementsInput>
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutTaskStageOutcomesInput, Prisma.CompanyUncheckedUpdateWithoutTaskStageOutcomesInput>
 }
 
-export type CompanyUpdateWithoutWorkflow_engagementsInput = {
+export type CompanyUpdateWithoutTaskStageOutcomesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8450,14 +8050,10 @@ export type CompanyUpdateWithoutWorkflow_engagementsInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
 }
 
-export type CompanyUncheckedUpdateWithoutWorkflow_engagementsInput = {
+export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   uen?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8525,1275 +8121,7 @@ export type CompanyUncheckedUpdateWithoutWorkflow_engagementsInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
-}
-
-export type CompanyCreateWithoutWorkflow_instancesInput = {
-  id?: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  currentOfficerCount?: number
-  currentShareholderCount?: number
-  activeChargeCount?: number
-  documentCount?: number
-  hasPoc?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
-}
-
-export type CompanyUncheckedCreateWithoutWorkflow_instancesInput = {
-  id?: string
-  tenantId: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  currentOfficerCount?: number
-  currentShareholderCount?: number
-  activeChargeCount?: number
-  documentCount?: number
-  hasPoc?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
-}
-
-export type CompanyCreateOrConnectWithoutWorkflow_instancesInput = {
-  where: Prisma.CompanyWhereUniqueInput
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_instancesInput>
-}
-
-export type CompanyUpsertWithoutWorkflow_instancesInput = {
-  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_instancesInput>
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_instancesInput>
-  where?: Prisma.CompanyWhereInput
-}
-
-export type CompanyUpdateToOneWithWhereWithoutWorkflow_instancesInput = {
-  where?: Prisma.CompanyWhereInput
-  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_instancesInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_instancesInput>
-}
-
-export type CompanyUpdateWithoutWorkflow_instancesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
-  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
-  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
-  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
-  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
-}
-
-export type CompanyUncheckedUpdateWithoutWorkflow_instancesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
-  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
-  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
-  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
-  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
-}
-
-export type CompanyCreateWithoutWorkflow_project_instancesInput = {
-  id?: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  currentOfficerCount?: number
-  currentShareholderCount?: number
-  activeChargeCount?: number
-  documentCount?: number
-  hasPoc?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
-}
-
-export type CompanyUncheckedCreateWithoutWorkflow_project_instancesInput = {
-  id?: string
-  tenantId: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  currentOfficerCount?: number
-  currentShareholderCount?: number
-  activeChargeCount?: number
-  documentCount?: number
-  hasPoc?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
-}
-
-export type CompanyCreateOrConnectWithoutWorkflow_project_instancesInput = {
-  where: Prisma.CompanyWhereUniqueInput
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_instancesInput>
-}
-
-export type CompanyUpsertWithoutWorkflow_project_instancesInput = {
-  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_instancesInput>
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_instancesInput>
-  where?: Prisma.CompanyWhereInput
-}
-
-export type CompanyUpdateToOneWithWhereWithoutWorkflow_project_instancesInput = {
-  where?: Prisma.CompanyWhereInput
-  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_project_instancesInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_instancesInput>
-}
-
-export type CompanyUpdateWithoutWorkflow_project_instancesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
-  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
-  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
-  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
-  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
-}
-
-export type CompanyUncheckedUpdateWithoutWorkflow_project_instancesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
-  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
-  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
-  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
-  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
-}
-
-export type CompanyCreateWithoutWorkflow_project_settingsInput = {
-  id?: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  currentOfficerCount?: number
-  currentShareholderCount?: number
-  activeChargeCount?: number
-  documentCount?: number
-  hasPoc?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutCompaniesInput
-}
-
-export type CompanyUncheckedCreateWithoutWorkflow_project_settingsInput = {
-  id?: string
-  tenantId: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  currentOfficerCount?: number
-  currentShareholderCount?: number
-  activeChargeCount?: number
-  documentCount?: number
-  hasPoc?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutCompaniesInput
-}
-
-export type CompanyCreateOrConnectWithoutWorkflow_project_settingsInput = {
-  where: Prisma.CompanyWhereUniqueInput
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_settingsInput>
-}
-
-export type CompanyUpsertWithoutWorkflow_project_settingsInput = {
-  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_settingsInput>
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_project_settingsInput>
-  where?: Prisma.CompanyWhereInput
-}
-
-export type CompanyUpdateToOneWithWhereWithoutWorkflow_project_settingsInput = {
-  where?: Prisma.CompanyWhereInput
-  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_project_settingsInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_project_settingsInput>
-}
-
-export type CompanyUpdateWithoutWorkflow_project_settingsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
-  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
-  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
-  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
-  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
-}
-
-export type CompanyUncheckedUpdateWithoutWorkflow_project_settingsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
-  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
-  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
-  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
-  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
-}
-
-export type CompanyCreateWithoutWorkflow_scheduled_instances_queueInput = {
-  id?: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  currentOfficerCount?: number
-  currentShareholderCount?: number
-  activeChargeCount?: number
-  documentCount?: number
-  hasPoc?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
-  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
-  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
-  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedOneWithoutCompaniesInput
-}
-
-export type CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput = {
-  id?: string
-  tenantId: string
-  uen: string
-  name: string
-  formerName?: string | null
-  dateOfNameChange?: Date | string | null
-  entityType?: $Enums.EntityType
-  status?: $Enums.CompanyStatus
-  statusDate?: Date | string | null
-  incorporationDate?: Date | string | null
-  registrationDate?: Date | string | null
-  dateOfAddress?: Date | string | null
-  primarySsicCode?: string | null
-  primarySsicDescription?: string | null
-  secondarySsicCode?: string | null
-  secondarySsicDescription?: string | null
-  financialYearEndDay?: number | null
-  financialYearEndMonth?: number | null
-  fyeAsAtLastAr?: Date | string | null
-  homeCurrency?: string | null
-  lastAgmDate?: Date | string | null
-  lastArFiledDate?: Date | string | null
-  nextAgmDueDate?: Date | string | null
-  nextArDueDate?: Date | string | null
-  accountsDueDate?: Date | string | null
-  paidUpCapitalCurrency?: string | null
-  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: string | null
-  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: boolean
-  currentOfficerCount?: number
-  currentShareholderCount?: number
-  activeChargeCount?: number
-  documentCount?: number
-  hasPoc?: boolean
-  isGstRegistered?: boolean
-  gstRegistrationNumber?: string | null
-  gstRegistrationDate?: Date | string | null
-  isRegisteredCharity?: boolean
-  charityRegistrationDate?: Date | string | null
-  charityUEN?: string | null
-  isIPC?: boolean
-  ipcEffectiveDate?: Date | string | null
-  ipcExpiryDate?: Date | string | null
-  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
-  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
-  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
-  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
-  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
-  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
-  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
-  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
-  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutCompaniesInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedOneWithoutCompaniesInput
-}
-
-export type CompanyCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput = {
-  where: Prisma.CompanyWhereUniqueInput
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
-}
-
-export type CompanyUpsertWithoutWorkflow_scheduled_instances_queueInput = {
-  update: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
-  create: Prisma.XOR<Prisma.CompanyCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
-  where?: Prisma.CompanyWhereInput
-}
-
-export type CompanyUpdateToOneWithWhereWithoutWorkflow_scheduled_instances_queueInput = {
-  where?: Prisma.CompanyWhereInput
-  data: Prisma.XOR<Prisma.CompanyUpdateWithoutWorkflow_scheduled_instances_queueInput, Prisma.CompanyUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
-}
-
-export type CompanyUpdateWithoutWorkflow_scheduled_instances_queueInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
-  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
-  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
-  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
-  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
-  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
-  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
-  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-}
-
-export type CompanyUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  uen?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
-  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
-  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
-  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
-  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
-  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
-  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
-  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
-  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
-  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
-  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
-  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
-  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
-  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
-  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
-  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
-  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyTenantInput = {
@@ -9914,12 +8242,8 @@ export type CompanyUpdateWithoutTenantInput = {
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTenantInput = {
@@ -9989,12 +8313,8 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
-  workflow_client_group_members?: Prisma.workflow_client_group_membersUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutCompaniesNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateOneWithoutCompaniesNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutCompaniesNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateManyWithoutTenantInput = {
@@ -10072,11 +8392,8 @@ export type CompanyCountOutputType = {
   shareCapital: number
   userAssignments: number
   roleAssignments: number
-  workflow_client_group_members: number
-  workflow_engagements: number
-  workflow_instances: number
-  workflow_project_instances: number
-  workflow_scheduled_instances_queue: number
+  tasks: number
+  taskStageOutcomes: number
 }
 
 export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -10098,11 +8415,8 @@ export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   shareCapital?: boolean | CompanyCountOutputTypeCountShareCapitalArgs
   userAssignments?: boolean | CompanyCountOutputTypeCountUserAssignmentsArgs
   roleAssignments?: boolean | CompanyCountOutputTypeCountRoleAssignmentsArgs
-  workflow_client_group_members?: boolean | CompanyCountOutputTypeCountWorkflow_client_group_membersArgs
-  workflow_engagements?: boolean | CompanyCountOutputTypeCountWorkflow_engagementsArgs
-  workflow_instances?: boolean | CompanyCountOutputTypeCountWorkflow_instancesArgs
-  workflow_project_instances?: boolean | CompanyCountOutputTypeCountWorkflow_project_instancesArgs
-  workflow_scheduled_instances_queue?: boolean | CompanyCountOutputTypeCountWorkflow_scheduled_instances_queueArgs
+  tasks?: boolean | CompanyCountOutputTypeCountTasksArgs
+  taskStageOutcomes?: boolean | CompanyCountOutputTypeCountTaskStageOutcomesArgs
 }
 
 /**
@@ -10244,36 +8558,15 @@ export type CompanyCountOutputTypeCountRoleAssignmentsArgs<ExtArgs extends runti
 /**
  * CompanyCountOutputType without action
  */
-export type CompanyCountOutputTypeCountWorkflow_client_group_membersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_client_group_membersWhereInput
+export type CompanyCountOutputTypeCountTasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskWhereInput
 }
 
 /**
  * CompanyCountOutputType without action
  */
-export type CompanyCountOutputTypeCountWorkflow_engagementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_engagementsWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountWorkflow_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_instancesWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountWorkflow_project_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_project_instancesWhereInput
-}
-
-/**
- * CompanyCountOutputType without action
- */
-export type CompanyCountOutputTypeCountWorkflow_scheduled_instances_queueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_scheduled_instances_queueWhereInput
+export type CompanyCountOutputTypeCountTaskStageOutcomesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskStageOutcomeWhereInput
 }
 
 
@@ -10346,12 +8639,8 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   shareCapital?: boolean | Prisma.Company$shareCapitalArgs<ExtArgs>
   userAssignments?: boolean | Prisma.Company$userAssignmentsArgs<ExtArgs>
   roleAssignments?: boolean | Prisma.Company$roleAssignmentsArgs<ExtArgs>
-  workflow_client_group_members?: boolean | Prisma.Company$workflow_client_group_membersArgs<ExtArgs>
-  workflow_engagements?: boolean | Prisma.Company$workflow_engagementsArgs<ExtArgs>
-  workflow_instances?: boolean | Prisma.Company$workflow_instancesArgs<ExtArgs>
-  workflow_project_instances?: boolean | Prisma.Company$workflow_project_instancesArgs<ExtArgs>
-  workflow_project_settings?: boolean | Prisma.Company$workflow_project_settingsArgs<ExtArgs>
-  workflow_scheduled_instances_queue?: boolean | Prisma.Company$workflow_scheduled_instances_queueArgs<ExtArgs>
+  tasks?: boolean | Prisma.Company$tasksArgs<ExtArgs>
+  taskStageOutcomes?: boolean | Prisma.Company$taskStageOutcomesArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
@@ -10534,12 +8823,8 @@ export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   shareCapital?: boolean | Prisma.Company$shareCapitalArgs<ExtArgs>
   userAssignments?: boolean | Prisma.Company$userAssignmentsArgs<ExtArgs>
   roleAssignments?: boolean | Prisma.Company$roleAssignmentsArgs<ExtArgs>
-  workflow_client_group_members?: boolean | Prisma.Company$workflow_client_group_membersArgs<ExtArgs>
-  workflow_engagements?: boolean | Prisma.Company$workflow_engagementsArgs<ExtArgs>
-  workflow_instances?: boolean | Prisma.Company$workflow_instancesArgs<ExtArgs>
-  workflow_project_instances?: boolean | Prisma.Company$workflow_project_instancesArgs<ExtArgs>
-  workflow_project_settings?: boolean | Prisma.Company$workflow_project_settingsArgs<ExtArgs>
-  workflow_scheduled_instances_queue?: boolean | Prisma.Company$workflow_scheduled_instances_queueArgs<ExtArgs>
+  tasks?: boolean | Prisma.Company$tasksArgs<ExtArgs>
+  taskStageOutcomes?: boolean | Prisma.Company$taskStageOutcomesArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CompanyIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -10571,12 +8856,8 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     shareCapital: Prisma.$ShareCapitalPayload<ExtArgs>[]
     userAssignments: Prisma.$UserCompanyAssignmentPayload<ExtArgs>[]
     roleAssignments: Prisma.$UserRoleAssignmentPayload<ExtArgs>[]
-    workflow_client_group_members: Prisma.$workflow_client_group_membersPayload<ExtArgs>[]
-    workflow_engagements: Prisma.$workflow_engagementsPayload<ExtArgs>[]
-    workflow_instances: Prisma.$workflow_instancesPayload<ExtArgs>[]
-    workflow_project_instances: Prisma.$workflow_project_instancesPayload<ExtArgs>[]
-    workflow_project_settings: Prisma.$workflow_project_settingsPayload<ExtArgs> | null
-    workflow_scheduled_instances_queue: Prisma.$workflow_scheduled_instances_queuePayload<ExtArgs>[]
+    tasks: Prisma.$TaskPayload<ExtArgs>[]
+    taskStageOutcomes: Prisma.$TaskStageOutcomePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -11041,12 +9322,8 @@ export interface Prisma__CompanyClient<T, Null = never, ExtArgs extends runtime.
   shareCapital<T extends Prisma.Company$shareCapitalArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$shareCapitalArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShareCapitalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   userAssignments<T extends Prisma.Company$userAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$userAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserCompanyAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   roleAssignments<T extends Prisma.Company$roleAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$roleAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserRoleAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_client_group_members<T extends Prisma.Company$workflow_client_group_membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_client_group_membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_client_group_membersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_engagements<T extends Prisma.Company$workflow_engagementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_engagementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_engagementsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_instances<T extends Prisma.Company$workflow_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_instancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_instancesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_project_instances<T extends Prisma.Company$workflow_project_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_project_instancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_project_instancesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_project_settings<T extends Prisma.Company$workflow_project_settingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_project_settingsArgs<ExtArgs>>): Prisma.Prisma__workflow_project_settingsClient<runtime.Types.Result.GetResult<Prisma.$workflow_project_settingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  workflow_scheduled_instances_queue<T extends Prisma.Company$workflow_scheduled_instances_queueArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$workflow_scheduled_instances_queueArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_scheduled_instances_queuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  tasks<T extends Prisma.Company$tasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$tasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  taskStageOutcomes<T extends Prisma.Company$taskStageOutcomesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$taskStageOutcomesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStageOutcomePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -11953,142 +10230,51 @@ export type Company$roleAssignmentsArgs<ExtArgs extends runtime.Types.Extensions
 }
 
 /**
- * Company.workflow_client_group_members
+ * Company.tasks
  */
-export type Company$workflow_client_group_membersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Company$tasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the workflow_client_group_members
+   * Select specific fields to fetch from the Task
    */
-  select?: Prisma.workflow_client_group_membersSelect<ExtArgs> | null
+  select?: Prisma.TaskSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the workflow_client_group_members
+   * Omit specific fields from the Task
    */
-  omit?: Prisma.workflow_client_group_membersOmit<ExtArgs> | null
+  omit?: Prisma.TaskOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.workflow_client_group_membersInclude<ExtArgs> | null
-  where?: Prisma.workflow_client_group_membersWhereInput
-  orderBy?: Prisma.workflow_client_group_membersOrderByWithRelationInput | Prisma.workflow_client_group_membersOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_client_group_membersWhereUniqueInput
+  include?: Prisma.TaskInclude<ExtArgs> | null
+  where?: Prisma.TaskWhereInput
+  orderBy?: Prisma.TaskOrderByWithRelationInput | Prisma.TaskOrderByWithRelationInput[]
+  cursor?: Prisma.TaskWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.Workflow_client_group_membersScalarFieldEnum | Prisma.Workflow_client_group_membersScalarFieldEnum[]
+  distinct?: Prisma.TaskScalarFieldEnum | Prisma.TaskScalarFieldEnum[]
 }
 
 /**
- * Company.workflow_engagements
+ * Company.taskStageOutcomes
  */
-export type Company$workflow_engagementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Company$taskStageOutcomesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the workflow_engagements
+   * Select specific fields to fetch from the TaskStageOutcome
    */
-  select?: Prisma.workflow_engagementsSelect<ExtArgs> | null
+  select?: Prisma.TaskStageOutcomeSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the workflow_engagements
+   * Omit specific fields from the TaskStageOutcome
    */
-  omit?: Prisma.workflow_engagementsOmit<ExtArgs> | null
+  omit?: Prisma.TaskStageOutcomeOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.workflow_engagementsInclude<ExtArgs> | null
-  where?: Prisma.workflow_engagementsWhereInput
-  orderBy?: Prisma.workflow_engagementsOrderByWithRelationInput | Prisma.workflow_engagementsOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_engagementsWhereUniqueInput
+  include?: Prisma.TaskStageOutcomeInclude<ExtArgs> | null
+  where?: Prisma.TaskStageOutcomeWhereInput
+  orderBy?: Prisma.TaskStageOutcomeOrderByWithRelationInput | Prisma.TaskStageOutcomeOrderByWithRelationInput[]
+  cursor?: Prisma.TaskStageOutcomeWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.Workflow_engagementsScalarFieldEnum | Prisma.Workflow_engagementsScalarFieldEnum[]
-}
-
-/**
- * Company.workflow_instances
- */
-export type Company$workflow_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the workflow_instances
-   */
-  select?: Prisma.workflow_instancesSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the workflow_instances
-   */
-  omit?: Prisma.workflow_instancesOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.workflow_instancesInclude<ExtArgs> | null
-  where?: Prisma.workflow_instancesWhereInput
-  orderBy?: Prisma.workflow_instancesOrderByWithRelationInput | Prisma.workflow_instancesOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_instancesWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.Workflow_instancesScalarFieldEnum | Prisma.Workflow_instancesScalarFieldEnum[]
-}
-
-/**
- * Company.workflow_project_instances
- */
-export type Company$workflow_project_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the workflow_project_instances
-   */
-  select?: Prisma.workflow_project_instancesSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the workflow_project_instances
-   */
-  omit?: Prisma.workflow_project_instancesOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.workflow_project_instancesInclude<ExtArgs> | null
-  where?: Prisma.workflow_project_instancesWhereInput
-  orderBy?: Prisma.workflow_project_instancesOrderByWithRelationInput | Prisma.workflow_project_instancesOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_project_instancesWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.Workflow_project_instancesScalarFieldEnum | Prisma.Workflow_project_instancesScalarFieldEnum[]
-}
-
-/**
- * Company.workflow_project_settings
- */
-export type Company$workflow_project_settingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the workflow_project_settings
-   */
-  select?: Prisma.workflow_project_settingsSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the workflow_project_settings
-   */
-  omit?: Prisma.workflow_project_settingsOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.workflow_project_settingsInclude<ExtArgs> | null
-  where?: Prisma.workflow_project_settingsWhereInput
-}
-
-/**
- * Company.workflow_scheduled_instances_queue
- */
-export type Company$workflow_scheduled_instances_queueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the workflow_scheduled_instances_queue
-   */
-  select?: Prisma.workflow_scheduled_instances_queueSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the workflow_scheduled_instances_queue
-   */
-  omit?: Prisma.workflow_scheduled_instances_queueOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.workflow_scheduled_instances_queueInclude<ExtArgs> | null
-  where?: Prisma.workflow_scheduled_instances_queueWhereInput
-  orderBy?: Prisma.workflow_scheduled_instances_queueOrderByWithRelationInput | Prisma.workflow_scheduled_instances_queueOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_scheduled_instances_queueWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.Workflow_scheduled_instances_queueScalarFieldEnum | Prisma.Workflow_scheduled_instances_queueScalarFieldEnum[]
+  distinct?: Prisma.TaskStageOutcomeScalarFieldEnum | Prisma.TaskStageOutcomeScalarFieldEnum[]
 }
 
 /**

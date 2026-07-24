@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   companyContactFind: vi.fn(), companyContactUpdate: vi.fn(), companyContactDelete: vi.fn(),
   detailFind: vi.fn(), detailUpdate: vi.fn(), detailDelete: vi.fn(),
   noteFind: vi.fn(), noteUpdate: vi.fn(), officerUpdate: vi.fn(), shareholderUpdate: vi.fn(),
-  chargeUpdate: vi.fn(), communicationUpdate: vi.fn(), milestoneUpdate: vi.fn(),
+  chargeUpdate: vi.fn(),
   revisionVendorUpdate: vi.fn(), revisionCustomerUpdate: vi.fn(),
   vendorAliasFind: vi.fn(), vendorAliasUpdate: vi.fn(), vendorAliasDelete: vi.fn(),
   customerAliasFind: vi.fn(), customerAliasUpdate: vi.fn(), customerAliasDelete: vi.fn(),
@@ -33,8 +33,6 @@ const tx = {
   companyOfficer: { ...delegate('companyOfficer'), updateMany: mocks.officerUpdate },
   companyShareholder: { ...delegate('companyShareholder'), updateMany: mocks.shareholderUpdate },
   companyCharge: { ...delegate('companyCharge'), updateMany: mocks.chargeUpdate },
-  workflow_communication_log_entries: { ...delegate('communication'), updateMany: mocks.communicationUpdate },
-  workflow_milestones: { ...delegate('milestone'), updateMany: mocks.milestoneUpdate },
   documentRevision: { count: vi.fn().mockResolvedValue(0), updateMany: vi.fn() },
   vendorAlias: { ...delegate('vendorAlias'), findMany: mocks.vendorAliasFind, update: mocks.vendorAliasUpdate, deleteMany: mocks.vendorAliasDelete },
   customerAlias: { ...delegate('customerAlias'), findMany: mocks.customerAliasFind, update: mocks.customerAliasUpdate, deleteMany: mocks.customerAliasDelete },
@@ -115,8 +113,6 @@ describe('contact merge service', () => {
     expect(mocks.officerUpdate).toHaveBeenCalledWith({ where: { contactId: { in: ['source-1', 'source-2'] } }, data: { contactId: 'master' } });
     expect(mocks.shareholderUpdate).toHaveBeenCalled();
     expect(mocks.chargeUpdate).toHaveBeenCalledWith({ where: { chargeHolderId: { in: ['source-1', 'source-2'] } }, data: { chargeHolderId: 'master' } });
-    expect(mocks.communicationUpdate).toHaveBeenCalled();
-    expect(mocks.milestoneUpdate).toHaveBeenCalled();
     expect(tx.documentRevision.updateMany).toHaveBeenNthCalledWith(1, { where: { vendorId: { in: ['source-1', 'source-2'] } }, data: { vendorId: 'master' } });
     expect(tx.documentRevision.updateMany).toHaveBeenNthCalledWith(2, { where: { customerId: { in: ['source-1', 'source-2'] } }, data: { customerId: 'master' } });
     expect(mocks.vendorAliasUpdate).toHaveBeenCalledWith({ where: { id: 'va-source' }, data: { normalizedContactId: 'master' } });
@@ -219,7 +215,7 @@ describe('contact merge service', () => {
   });
 
   it('rolls back by rejecting the transaction when a reference assertion fails', async () => {
-    mocks.counts.get('milestone')!.mockResolvedValueOnce(1);
+    mocks.counts.get('companyOfficer')!.mockResolvedValueOnce(1);
     await expect(mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' })).rejects.toThrow(/reference/i);
     expect(mocks.ledgerCreate).not.toHaveBeenCalled();
     expect(mocks.contactDelete).not.toHaveBeenCalled();

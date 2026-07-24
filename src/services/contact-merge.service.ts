@@ -361,8 +361,6 @@ async function assertNoReferences(tx: Prisma.TransactionClient, sourceIds: strin
     tx.companyOfficer.count({ where: { contactId: { in: sourceIds } } }),
     tx.companyShareholder.count({ where: { contactId: { in: sourceIds } } }),
     tx.companyCharge.count({ where: { chargeHolderId: { in: sourceIds } } }),
-    tx.workflow_communication_log_entries.count({ where: { contact_id: { in: sourceIds } } }),
-    tx.workflow_milestones.count({ where: { approval_contact_id: { in: sourceIds } } }),
     tx.documentRevision.count({ where: { vendorId: { in: sourceIds } } }),
     tx.documentRevision.count({ where: { customerId: { in: sourceIds } } }),
     tx.vendorAlias.count({ where: { tenantId, normalizedContactId: { in: sourceIds } } }),
@@ -448,15 +446,11 @@ export async function mergeContacts(
     const officers = await tx.companyOfficer.updateMany({ where: { contactId: { in: sourceIds } }, data: { contactId: master.id } });
     const shareholders = await tx.companyShareholder.updateMany({ where: { contactId: { in: sourceIds } }, data: { contactId: master.id } });
     const charges = await tx.companyCharge.updateMany({ where: { chargeHolderId: { in: sourceIds } }, data: { chargeHolderId: master.id } });
-    const communications = await tx.workflow_communication_log_entries.updateMany({ where: { contact_id: { in: sourceIds } }, data: { contact_id: master.id } });
-    const milestones = await tx.workflow_milestones.updateMany({ where: { approval_contact_id: { in: sourceIds } }, data: { approval_contact_id: master.id } });
     const vendorRevisions = await tx.documentRevision.updateMany({ where: { vendorId: { in: sourceIds } }, data: { vendorId: master.id } });
     const customerRevisions = await tx.documentRevision.updateMany({ where: { customerId: { in: sourceIds } }, data: { customerId: master.id } });
     movedCounts.companyOfficers = officers?.count ?? 0;
     movedCounts.companyShareholders = shareholders?.count ?? 0;
     movedCounts.companyCharges = charges?.count ?? 0;
-    movedCounts.workflowCommunications = communications?.count ?? 0;
-    movedCounts.workflowMilestones = milestones?.count ?? 0;
     movedCounts.documentRevisionVendors = vendorRevisions?.count ?? 0;
     movedCounts.documentRevisionCustomers = customerRevisions?.count ?? 0;
     movedCounts.vendorAliases = await consolidateAliases(tx.vendorAlias as unknown as AliasDelegate, sortedIds, master.id, params.tenantId);

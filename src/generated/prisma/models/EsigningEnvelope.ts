@@ -395,6 +395,7 @@ export type EsigningEnvelopeWhereInput = {
   events?: Prisma.EsigningEnvelopeEventListRelationFilter
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionListRelationFilter
   recipients?: Prisma.EsigningEnvelopeRecipientListRelationFilter
+  taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
 }
 
 export type EsigningEnvelopeOrderByWithRelationInput = {
@@ -431,6 +432,7 @@ export type EsigningEnvelopeOrderByWithRelationInput = {
   events?: Prisma.EsigningEnvelopeEventOrderByRelationAggregateInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionOrderByRelationAggregateInput
   recipients?: Prisma.EsigningEnvelopeRecipientOrderByRelationAggregateInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeOrderByRelationAggregateInput
 }
 
 export type EsigningEnvelopeWhereUniqueInput = Prisma.AtLeast<{
@@ -470,6 +472,7 @@ export type EsigningEnvelopeWhereUniqueInput = Prisma.AtLeast<{
   events?: Prisma.EsigningEnvelopeEventListRelationFilter
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionListRelationFilter
   recipients?: Prisma.EsigningEnvelopeRecipientListRelationFilter
+  taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
 }, "id" | "certificateId">
 
 export type EsigningEnvelopeOrderByWithAggregationInput = {
@@ -569,6 +572,7 @@ export type EsigningEnvelopeCreateInput = {
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateInput = {
@@ -602,6 +606,7 @@ export type EsigningEnvelopeUncheckedCreateInput = {
   events?: Prisma.EsigningEnvelopeEventUncheckedCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeUpdateInput = {
@@ -635,6 +640,7 @@ export type EsigningEnvelopeUpdateInput = {
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateInput = {
@@ -668,6 +674,7 @@ export type EsigningEnvelopeUncheckedUpdateInput = {
   events?: Prisma.EsigningEnvelopeEventUncheckedUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeCreateManyInput = {
@@ -866,6 +873,11 @@ export type EsigningEnvelopeScalarRelationFilter = {
   isNot?: Prisma.EsigningEnvelopeWhereInput
 }
 
+export type EsigningEnvelopeNullableScalarRelationFilter = {
+  is?: Prisma.EsigningEnvelopeWhereInput | null
+  isNot?: Prisma.EsigningEnvelopeWhereInput | null
+}
+
 export type EsigningEnvelopeCreateNestedManyWithoutTenantInput = {
   create?: Prisma.XOR<Prisma.EsigningEnvelopeCreateWithoutTenantInput, Prisma.EsigningEnvelopeUncheckedCreateWithoutTenantInput> | Prisma.EsigningEnvelopeCreateWithoutTenantInput[] | Prisma.EsigningEnvelopeUncheckedCreateWithoutTenantInput[]
   connectOrCreate?: Prisma.EsigningEnvelopeCreateOrConnectWithoutTenantInput | Prisma.EsigningEnvelopeCreateOrConnectWithoutTenantInput[]
@@ -1060,6 +1072,22 @@ export type EsigningEnvelopeUpdateOneRequiredWithoutEventsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EsigningEnvelopeUpdateToOneWithWhereWithoutEventsInput, Prisma.EsigningEnvelopeUpdateWithoutEventsInput>, Prisma.EsigningEnvelopeUncheckedUpdateWithoutEventsInput>
 }
 
+export type EsigningEnvelopeCreateNestedOneWithoutTaskStageOutcomesInput = {
+  create?: Prisma.XOR<Prisma.EsigningEnvelopeCreateWithoutTaskStageOutcomesInput, Prisma.EsigningEnvelopeUncheckedCreateWithoutTaskStageOutcomesInput>
+  connectOrCreate?: Prisma.EsigningEnvelopeCreateOrConnectWithoutTaskStageOutcomesInput
+  connect?: Prisma.EsigningEnvelopeWhereUniqueInput
+}
+
+export type EsigningEnvelopeUpdateOneWithoutTaskStageOutcomesNestedInput = {
+  create?: Prisma.XOR<Prisma.EsigningEnvelopeCreateWithoutTaskStageOutcomesInput, Prisma.EsigningEnvelopeUncheckedCreateWithoutTaskStageOutcomesInput>
+  connectOrCreate?: Prisma.EsigningEnvelopeCreateOrConnectWithoutTaskStageOutcomesInput
+  upsert?: Prisma.EsigningEnvelopeUpsertWithoutTaskStageOutcomesInput
+  disconnect?: Prisma.EsigningEnvelopeWhereInput | boolean
+  delete?: Prisma.EsigningEnvelopeWhereInput | boolean
+  connect?: Prisma.EsigningEnvelopeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EsigningEnvelopeUpdateToOneWithWhereWithoutTaskStageOutcomesInput, Prisma.EsigningEnvelopeUpdateWithoutTaskStageOutcomesInput>, Prisma.EsigningEnvelopeUncheckedUpdateWithoutTaskStageOutcomesInput>
+}
+
 export type EsigningEnvelopeCreateWithoutTenantInput = {
   id?: string
   title: string
@@ -1090,6 +1118,7 @@ export type EsigningEnvelopeCreateWithoutTenantInput = {
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutTenantInput = {
@@ -1122,6 +1151,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutTenantInput = {
   events?: Prisma.EsigningEnvelopeEventUncheckedCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutTenantInput = {
@@ -1212,6 +1242,7 @@ export type EsigningEnvelopeCreateWithoutCreatedByInput = {
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutCreatedByInput = {
@@ -1244,6 +1275,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutCreatedByInput = {
   events?: Prisma.EsigningEnvelopeEventUncheckedCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutCreatedByInput = {
@@ -1302,6 +1334,7 @@ export type EsigningEnvelopeCreateWithoutCompanyInput = {
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutCompanyInput = {
@@ -1334,6 +1367,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutCompanyInput = {
   events?: Prisma.EsigningEnvelopeEventUncheckedCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutCompanyInput = {
@@ -1392,6 +1426,7 @@ export type EsigningEnvelopeCreateWithoutDocumentsInput = {
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutDocumentsInput = {
@@ -1424,6 +1459,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutDocumentsInput = {
   events?: Prisma.EsigningEnvelopeEventUncheckedCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutDocumentsInput = {
@@ -1472,6 +1508,7 @@ export type EsigningEnvelopeUpdateWithoutDocumentsInput = {
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutDocumentsInput = {
@@ -1504,6 +1541,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutDocumentsInput = {
   events?: Prisma.EsigningEnvelopeEventUncheckedUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeCreateWithoutRecipientsInput = {
@@ -1536,6 +1574,7 @@ export type EsigningEnvelopeCreateWithoutRecipientsInput = {
   documents?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutEnvelopeInput
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutRecipientsInput = {
@@ -1568,6 +1607,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutRecipientsInput = {
   documents?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutEnvelopeInput
   events?: Prisma.EsigningEnvelopeEventUncheckedCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutRecipientsInput = {
@@ -1616,6 +1656,7 @@ export type EsigningEnvelopeUpdateWithoutRecipientsInput = {
   documents?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutEnvelopeNestedInput
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutRecipientsInput = {
@@ -1648,6 +1689,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutRecipientsInput = {
   documents?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutEnvelopeNestedInput
   events?: Prisma.EsigningEnvelopeEventUncheckedUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeCreateWithoutFieldDefinitionsInput = {
@@ -1680,6 +1722,7 @@ export type EsigningEnvelopeCreateWithoutFieldDefinitionsInput = {
   documents?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutEnvelopeInput
   events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutFieldDefinitionsInput = {
@@ -1712,6 +1755,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutFieldDefinitionsInput = {
   documents?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutEnvelopeInput
   events?: Prisma.EsigningEnvelopeEventUncheckedCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutFieldDefinitionsInput = {
@@ -1760,6 +1804,7 @@ export type EsigningEnvelopeUpdateWithoutFieldDefinitionsInput = {
   documents?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutEnvelopeNestedInput
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutFieldDefinitionsInput = {
@@ -1792,6 +1837,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutFieldDefinitionsInput = {
   documents?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutEnvelopeNestedInput
   events?: Prisma.EsigningEnvelopeEventUncheckedUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeCreateWithoutEventsInput = {
@@ -1824,6 +1870,7 @@ export type EsigningEnvelopeCreateWithoutEventsInput = {
   documents?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeUncheckedCreateWithoutEventsInput = {
@@ -1856,6 +1903,7 @@ export type EsigningEnvelopeUncheckedCreateWithoutEventsInput = {
   documents?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutEnvelopeInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedCreateNestedManyWithoutEnvelopeInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutEsigningEnvelopeInput
 }
 
 export type EsigningEnvelopeCreateOrConnectWithoutEventsInput = {
@@ -1904,6 +1952,7 @@ export type EsigningEnvelopeUpdateWithoutEventsInput = {
   documents?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutEventsInput = {
@@ -1934,6 +1983,155 @@ export type EsigningEnvelopeUncheckedUpdateWithoutEventsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   documents?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutEnvelopeNestedInput
+  fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedUpdateManyWithoutEnvelopeNestedInput
+  recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
+}
+
+export type EsigningEnvelopeCreateWithoutTaskStageOutcomesInput = {
+  id?: string
+  title: string
+  message?: string | null
+  status?: $Enums.EsigningEnvelopeStatus
+  signingOrder?: $Enums.EsigningSigningOrder
+  expiresAt?: Date | string | null
+  reminderFrequencyDays?: number | null
+  reminderStartDays?: number | null
+  expiryWarningDays?: number | null
+  certificateId: string
+  completedAt?: Date | string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
+  pdfGenerationStatus?: $Enums.EsigningPdfGenerationStatus | null
+  pdfGenerationAttempts?: number
+  pdfGenerationClaimedAt?: Date | string | null
+  pdfGenerationError?: string | null
+  consentVersion?: string
+  consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  company?: Prisma.CompanyCreateNestedOneWithoutEsigningEnvelopesInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedEsigningEnvelopesInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutEsigningEnvelopesInput
+  documents?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutEnvelopeInput
+  events?: Prisma.EsigningEnvelopeEventCreateNestedManyWithoutEnvelopeInput
+  fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionCreateNestedManyWithoutEnvelopeInput
+  recipients?: Prisma.EsigningEnvelopeRecipientCreateNestedManyWithoutEnvelopeInput
+}
+
+export type EsigningEnvelopeUncheckedCreateWithoutTaskStageOutcomesInput = {
+  id?: string
+  tenantId: string
+  createdById: string
+  title: string
+  message?: string | null
+  status?: $Enums.EsigningEnvelopeStatus
+  signingOrder?: $Enums.EsigningSigningOrder
+  expiresAt?: Date | string | null
+  reminderFrequencyDays?: number | null
+  reminderStartDays?: number | null
+  expiryWarningDays?: number | null
+  companyId?: string | null
+  certificateId: string
+  completedAt?: Date | string | null
+  voidedAt?: Date | string | null
+  voidReason?: string | null
+  pdfGenerationStatus?: $Enums.EsigningPdfGenerationStatus | null
+  pdfGenerationAttempts?: number
+  pdfGenerationClaimedAt?: Date | string | null
+  pdfGenerationError?: string | null
+  consentVersion?: string
+  consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  documents?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutEnvelopeInput
+  events?: Prisma.EsigningEnvelopeEventUncheckedCreateNestedManyWithoutEnvelopeInput
+  fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedCreateNestedManyWithoutEnvelopeInput
+  recipients?: Prisma.EsigningEnvelopeRecipientUncheckedCreateNestedManyWithoutEnvelopeInput
+}
+
+export type EsigningEnvelopeCreateOrConnectWithoutTaskStageOutcomesInput = {
+  where: Prisma.EsigningEnvelopeWhereUniqueInput
+  create: Prisma.XOR<Prisma.EsigningEnvelopeCreateWithoutTaskStageOutcomesInput, Prisma.EsigningEnvelopeUncheckedCreateWithoutTaskStageOutcomesInput>
+}
+
+export type EsigningEnvelopeUpsertWithoutTaskStageOutcomesInput = {
+  update: Prisma.XOR<Prisma.EsigningEnvelopeUpdateWithoutTaskStageOutcomesInput, Prisma.EsigningEnvelopeUncheckedUpdateWithoutTaskStageOutcomesInput>
+  create: Prisma.XOR<Prisma.EsigningEnvelopeCreateWithoutTaskStageOutcomesInput, Prisma.EsigningEnvelopeUncheckedCreateWithoutTaskStageOutcomesInput>
+  where?: Prisma.EsigningEnvelopeWhereInput
+}
+
+export type EsigningEnvelopeUpdateToOneWithWhereWithoutTaskStageOutcomesInput = {
+  where?: Prisma.EsigningEnvelopeWhereInput
+  data: Prisma.XOR<Prisma.EsigningEnvelopeUpdateWithoutTaskStageOutcomesInput, Prisma.EsigningEnvelopeUncheckedUpdateWithoutTaskStageOutcomesInput>
+}
+
+export type EsigningEnvelopeUpdateWithoutTaskStageOutcomesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
+  signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  reminderFrequencyDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  reminderStartDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  expiryWarningDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  certificateId?: Prisma.StringFieldUpdateOperationsInput | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pdfGenerationStatus?: Prisma.NullableEnumEsigningPdfGenerationStatusFieldUpdateOperationsInput | $Enums.EsigningPdfGenerationStatus | null
+  pdfGenerationAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  pdfGenerationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pdfGenerationError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
+  consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  company?: Prisma.CompanyUpdateOneWithoutEsigningEnvelopesNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedEsigningEnvelopesNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutEsigningEnvelopesNestedInput
+  documents?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutEnvelopeNestedInput
+  events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
+  fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
+  recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
+}
+
+export type EsigningEnvelopeUncheckedUpdateWithoutTaskStageOutcomesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumEsigningEnvelopeStatusFieldUpdateOperationsInput | $Enums.EsigningEnvelopeStatus
+  signingOrder?: Prisma.EnumEsigningSigningOrderFieldUpdateOperationsInput | $Enums.EsigningSigningOrder
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  reminderFrequencyDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  reminderStartDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  expiryWarningDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  certificateId?: Prisma.StringFieldUpdateOperationsInput | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  voidReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pdfGenerationStatus?: Prisma.NullableEnumEsigningPdfGenerationStatusFieldUpdateOperationsInput | $Enums.EsigningPdfGenerationStatus | null
+  pdfGenerationAttempts?: Prisma.IntFieldUpdateOperationsInput | number
+  pdfGenerationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pdfGenerationError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentVersion?: Prisma.StringFieldUpdateOperationsInput | string
+  consentDisclosureSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  documents?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutEnvelopeNestedInput
+  events?: Prisma.EsigningEnvelopeEventUncheckedUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
 }
@@ -1996,6 +2194,7 @@ export type EsigningEnvelopeUpdateWithoutTenantInput = {
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutTenantInput = {
@@ -2028,6 +2227,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutTenantInput = {
   events?: Prisma.EsigningEnvelopeEventUncheckedUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateManyWithoutTenantInput = {
@@ -2116,6 +2316,7 @@ export type EsigningEnvelopeUpdateWithoutCreatedByInput = {
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutCreatedByInput = {
@@ -2148,6 +2349,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutCreatedByInput = {
   events?: Prisma.EsigningEnvelopeEventUncheckedUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByInput = {
@@ -2236,6 +2438,7 @@ export type EsigningEnvelopeUpdateWithoutCompanyInput = {
   events?: Prisma.EsigningEnvelopeEventUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateWithoutCompanyInput = {
@@ -2268,6 +2471,7 @@ export type EsigningEnvelopeUncheckedUpdateWithoutCompanyInput = {
   events?: Prisma.EsigningEnvelopeEventUncheckedUpdateManyWithoutEnvelopeNestedInput
   fieldDefinitions?: Prisma.EsigningDocumentFieldDefinitionUncheckedUpdateManyWithoutEnvelopeNestedInput
   recipients?: Prisma.EsigningEnvelopeRecipientUncheckedUpdateManyWithoutEnvelopeNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutEsigningEnvelopeNestedInput
 }
 
 export type EsigningEnvelopeUncheckedUpdateManyWithoutCompanyInput = {
@@ -2308,6 +2512,7 @@ export type EsigningEnvelopeCountOutputType = {
   events: number
   fieldDefinitions: number
   recipients: number
+  taskStageOutcomes: number
 }
 
 export type EsigningEnvelopeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2315,6 +2520,7 @@ export type EsigningEnvelopeCountOutputTypeSelect<ExtArgs extends runtime.Types.
   events?: boolean | EsigningEnvelopeCountOutputTypeCountEventsArgs
   fieldDefinitions?: boolean | EsigningEnvelopeCountOutputTypeCountFieldDefinitionsArgs
   recipients?: boolean | EsigningEnvelopeCountOutputTypeCountRecipientsArgs
+  taskStageOutcomes?: boolean | EsigningEnvelopeCountOutputTypeCountTaskStageOutcomesArgs
 }
 
 /**
@@ -2355,6 +2561,13 @@ export type EsigningEnvelopeCountOutputTypeCountRecipientsArgs<ExtArgs extends r
   where?: Prisma.EsigningEnvelopeRecipientWhereInput
 }
 
+/**
+ * EsigningEnvelopeCountOutputType without action
+ */
+export type EsigningEnvelopeCountOutputTypeCountTaskStageOutcomesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskStageOutcomeWhereInput
+}
+
 
 export type EsigningEnvelopeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2390,6 +2603,7 @@ export type EsigningEnvelopeSelect<ExtArgs extends runtime.Types.Extensions.Inte
   events?: boolean | Prisma.EsigningEnvelope$eventsArgs<ExtArgs>
   fieldDefinitions?: boolean | Prisma.EsigningEnvelope$fieldDefinitionsArgs<ExtArgs>
   recipients?: boolean | Prisma.EsigningEnvelope$recipientsArgs<ExtArgs>
+  taskStageOutcomes?: boolean | Prisma.EsigningEnvelope$taskStageOutcomesArgs<ExtArgs>
   _count?: boolean | Prisma.EsigningEnvelopeCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["esigningEnvelope"]>
 
@@ -2495,6 +2709,7 @@ export type EsigningEnvelopeInclude<ExtArgs extends runtime.Types.Extensions.Int
   events?: boolean | Prisma.EsigningEnvelope$eventsArgs<ExtArgs>
   fieldDefinitions?: boolean | Prisma.EsigningEnvelope$fieldDefinitionsArgs<ExtArgs>
   recipients?: boolean | Prisma.EsigningEnvelope$recipientsArgs<ExtArgs>
+  taskStageOutcomes?: boolean | Prisma.EsigningEnvelope$taskStageOutcomesArgs<ExtArgs>
   _count?: boolean | Prisma.EsigningEnvelopeCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EsigningEnvelopeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2518,6 +2733,7 @@ export type $EsigningEnvelopePayload<ExtArgs extends runtime.Types.Extensions.In
     events: Prisma.$EsigningEnvelopeEventPayload<ExtArgs>[]
     fieldDefinitions: Prisma.$EsigningDocumentFieldDefinitionPayload<ExtArgs>[]
     recipients: Prisma.$EsigningEnvelopeRecipientPayload<ExtArgs>[]
+    taskStageOutcomes: Prisma.$TaskStageOutcomePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2947,6 +3163,7 @@ export interface Prisma__EsigningEnvelopeClient<T, Null = never, ExtArgs extends
   events<T extends Prisma.EsigningEnvelope$eventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$eventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningEnvelopeEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   fieldDefinitions<T extends Prisma.EsigningEnvelope$fieldDefinitionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$fieldDefinitionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningDocumentFieldDefinitionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   recipients<T extends Prisma.EsigningEnvelope$recipientsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$recipientsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningEnvelopeRecipientPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  taskStageOutcomes<T extends Prisma.EsigningEnvelope$taskStageOutcomesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EsigningEnvelope$taskStageOutcomesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStageOutcomePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3510,6 +3727,30 @@ export type EsigningEnvelope$recipientsArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.EsigningEnvelopeRecipientScalarFieldEnum | Prisma.EsigningEnvelopeRecipientScalarFieldEnum[]
+}
+
+/**
+ * EsigningEnvelope.taskStageOutcomes
+ */
+export type EsigningEnvelope$taskStageOutcomesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TaskStageOutcome
+   */
+  select?: Prisma.TaskStageOutcomeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TaskStageOutcome
+   */
+  omit?: Prisma.TaskStageOutcomeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TaskStageOutcomeInclude<ExtArgs> | null
+  where?: Prisma.TaskStageOutcomeWhereInput
+  orderBy?: Prisma.TaskStageOutcomeOrderByWithRelationInput | Prisma.TaskStageOutcomeOrderByWithRelationInput[]
+  cursor?: Prisma.TaskStageOutcomeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TaskStageOutcomeScalarFieldEnum | Prisma.TaskStageOutcomeScalarFieldEnum[]
 }
 
 /**

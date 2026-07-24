@@ -309,8 +309,6 @@ export type ContactWhereInput = {
   contactDetails?: Prisma.ContactDetailListRelationFilter
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   noteTabs?: Prisma.NoteTabListRelationFilter
-  workflow_communication_log_entries?: Prisma.Workflow_communication_log_entriesListRelationFilter
-  workflow_milestones?: Prisma.Workflow_milestonesListRelationFilter
 }
 
 export type ContactOrderByWithRelationInput = {
@@ -341,8 +339,6 @@ export type ContactOrderByWithRelationInput = {
   contactDetails?: Prisma.ContactDetailOrderByRelationAggregateInput
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
   noteTabs?: Prisma.NoteTabOrderByRelationAggregateInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesOrderByRelationAggregateInput
-  workflow_milestones?: Prisma.workflow_milestonesOrderByRelationAggregateInput
 }
 
 export type ContactWhereUniqueInput = Prisma.AtLeast<{
@@ -377,8 +373,6 @@ export type ContactWhereUniqueInput = Prisma.AtLeast<{
   contactDetails?: Prisma.ContactDetailListRelationFilter
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   noteTabs?: Prisma.NoteTabListRelationFilter
-  workflow_communication_log_entries?: Prisma.Workflow_communication_log_entriesListRelationFilter
-  workflow_milestones?: Prisma.Workflow_milestonesListRelationFilter
 }, "id" | "tenantId_identificationType_identificationNumber">
 
 export type ContactOrderByWithAggregationInput = {
@@ -460,8 +454,6 @@ export type ContactCreateInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesCreateNestedManyWithoutContactsInput
 }
 
 export type ContactUncheckedCreateInput = {
@@ -491,8 +483,6 @@ export type ContactUncheckedCreateInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutContactsInput
 }
 
 export type ContactUpdateInput = {
@@ -522,8 +512,6 @@ export type ContactUpdateInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactUncheckedUpdateInput = {
@@ -553,8 +541,6 @@ export type ContactUncheckedUpdateInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactCreateManyInput = {
@@ -864,38 +850,6 @@ export type ContactUpdateOneWithoutNoteTabsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ContactUpdateToOneWithWhereWithoutNoteTabsInput, Prisma.ContactUpdateWithoutNoteTabsInput>, Prisma.ContactUncheckedUpdateWithoutNoteTabsInput>
 }
 
-export type ContactCreateNestedOneWithoutWorkflow_communication_log_entriesInput = {
-  create?: Prisma.XOR<Prisma.ContactCreateWithoutWorkflow_communication_log_entriesInput, Prisma.ContactUncheckedCreateWithoutWorkflow_communication_log_entriesInput>
-  connectOrCreate?: Prisma.ContactCreateOrConnectWithoutWorkflow_communication_log_entriesInput
-  connect?: Prisma.ContactWhereUniqueInput
-}
-
-export type ContactUpdateOneWithoutWorkflow_communication_log_entriesNestedInput = {
-  create?: Prisma.XOR<Prisma.ContactCreateWithoutWorkflow_communication_log_entriesInput, Prisma.ContactUncheckedCreateWithoutWorkflow_communication_log_entriesInput>
-  connectOrCreate?: Prisma.ContactCreateOrConnectWithoutWorkflow_communication_log_entriesInput
-  upsert?: Prisma.ContactUpsertWithoutWorkflow_communication_log_entriesInput
-  disconnect?: Prisma.ContactWhereInput | boolean
-  delete?: Prisma.ContactWhereInput | boolean
-  connect?: Prisma.ContactWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ContactUpdateToOneWithWhereWithoutWorkflow_communication_log_entriesInput, Prisma.ContactUpdateWithoutWorkflow_communication_log_entriesInput>, Prisma.ContactUncheckedUpdateWithoutWorkflow_communication_log_entriesInput>
-}
-
-export type ContactCreateNestedOneWithoutWorkflow_milestonesInput = {
-  create?: Prisma.XOR<Prisma.ContactCreateWithoutWorkflow_milestonesInput, Prisma.ContactUncheckedCreateWithoutWorkflow_milestonesInput>
-  connectOrCreate?: Prisma.ContactCreateOrConnectWithoutWorkflow_milestonesInput
-  connect?: Prisma.ContactWhereUniqueInput
-}
-
-export type ContactUpdateOneWithoutWorkflow_milestonesNestedInput = {
-  create?: Prisma.XOR<Prisma.ContactCreateWithoutWorkflow_milestonesInput, Prisma.ContactUncheckedCreateWithoutWorkflow_milestonesInput>
-  connectOrCreate?: Prisma.ContactCreateOrConnectWithoutWorkflow_milestonesInput
-  upsert?: Prisma.ContactUpsertWithoutWorkflow_milestonesInput
-  disconnect?: Prisma.ContactWhereInput | boolean
-  delete?: Prisma.ContactWhereInput | boolean
-  connect?: Prisma.ContactWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.ContactUpdateToOneWithWhereWithoutWorkflow_milestonesInput, Prisma.ContactUpdateWithoutWorkflow_milestonesInput>, Prisma.ContactUncheckedUpdateWithoutWorkflow_milestonesInput>
-}
-
 export type ContactCreateWithoutTenantInput = {
   id?: string
   contactType?: $Enums.ContactType
@@ -922,8 +876,6 @@ export type ContactCreateWithoutTenantInput = {
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesCreateNestedManyWithoutContactsInput
 }
 
 export type ContactUncheckedCreateWithoutTenantInput = {
@@ -952,8 +904,6 @@ export type ContactUncheckedCreateWithoutTenantInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutContactsInput
 }
 
 export type ContactCreateOrConnectWithoutTenantInput = {
@@ -1034,8 +984,6 @@ export type ContactCreateWithoutCompanyRelationsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesCreateNestedManyWithoutContactsInput
 }
 
 export type ContactUncheckedCreateWithoutCompanyRelationsInput = {
@@ -1064,8 +1012,6 @@ export type ContactUncheckedCreateWithoutCompanyRelationsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutContactsInput
 }
 
 export type ContactCreateOrConnectWithoutCompanyRelationsInput = {
@@ -1110,8 +1056,6 @@ export type ContactUpdateWithoutCompanyRelationsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutCompanyRelationsInput = {
@@ -1140,8 +1084,6 @@ export type ContactUncheckedUpdateWithoutCompanyRelationsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactCreateWithoutContactDetailsInput = {
@@ -1170,8 +1112,6 @@ export type ContactCreateWithoutContactDetailsInput = {
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesCreateNestedManyWithoutContactsInput
 }
 
 export type ContactUncheckedCreateWithoutContactDetailsInput = {
@@ -1200,8 +1140,6 @@ export type ContactUncheckedCreateWithoutContactDetailsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutContactsInput
 }
 
 export type ContactCreateOrConnectWithoutContactDetailsInput = {
@@ -1246,8 +1184,6 @@ export type ContactUpdateWithoutContactDetailsInput = {
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutContactDetailsInput = {
@@ -1276,8 +1212,6 @@ export type ContactUncheckedUpdateWithoutContactDetailsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactCreateWithoutOfficerPositionsInput = {
@@ -1306,8 +1240,6 @@ export type ContactCreateWithoutOfficerPositionsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesCreateNestedManyWithoutContactsInput
 }
 
 export type ContactUncheckedCreateWithoutOfficerPositionsInput = {
@@ -1336,8 +1268,6 @@ export type ContactUncheckedCreateWithoutOfficerPositionsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutContactsInput
 }
 
 export type ContactCreateOrConnectWithoutOfficerPositionsInput = {
@@ -1382,8 +1312,6 @@ export type ContactUpdateWithoutOfficerPositionsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutOfficerPositionsInput = {
@@ -1412,8 +1340,6 @@ export type ContactUncheckedUpdateWithoutOfficerPositionsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactCreateWithoutShareholdingsInput = {
@@ -1442,8 +1368,6 @@ export type ContactCreateWithoutShareholdingsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesCreateNestedManyWithoutContactsInput
 }
 
 export type ContactUncheckedCreateWithoutShareholdingsInput = {
@@ -1472,8 +1396,6 @@ export type ContactUncheckedCreateWithoutShareholdingsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutContactsInput
 }
 
 export type ContactCreateOrConnectWithoutShareholdingsInput = {
@@ -1518,8 +1440,6 @@ export type ContactUpdateWithoutShareholdingsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutShareholdingsInput = {
@@ -1548,8 +1468,6 @@ export type ContactUncheckedUpdateWithoutShareholdingsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactCreateWithoutChargeHoldingsInput = {
@@ -1578,8 +1496,6 @@ export type ContactCreateWithoutChargeHoldingsInput = {
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
   noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesCreateNestedManyWithoutContactsInput
 }
 
 export type ContactUncheckedCreateWithoutChargeHoldingsInput = {
@@ -1608,8 +1524,6 @@ export type ContactUncheckedCreateWithoutChargeHoldingsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutContactsInput
 }
 
 export type ContactCreateOrConnectWithoutChargeHoldingsInput = {
@@ -1654,8 +1568,6 @@ export type ContactUpdateWithoutChargeHoldingsInput = {
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutChargeHoldingsInput = {
@@ -1684,8 +1596,6 @@ export type ContactUncheckedUpdateWithoutChargeHoldingsInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactCreateWithoutNoteTabsInput = {
@@ -1714,8 +1624,6 @@ export type ContactCreateWithoutNoteTabsInput = {
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesCreateNestedManyWithoutContactsInput
 }
 
 export type ContactUncheckedCreateWithoutNoteTabsInput = {
@@ -1744,8 +1652,6 @@ export type ContactUncheckedCreateWithoutNoteTabsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedCreateNestedManyWithoutContactsInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutContactsInput
 }
 
 export type ContactCreateOrConnectWithoutNoteTabsInput = {
@@ -1790,8 +1696,6 @@ export type ContactUpdateWithoutNoteTabsInput = {
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutNoteTabsInput = {
@@ -1820,280 +1724,6 @@ export type ContactUncheckedUpdateWithoutNoteTabsInput = {
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutContactsNestedInput
-}
-
-export type ContactCreateWithoutWorkflow_communication_log_entriesInput = {
-  id?: string
-  contactType?: $Enums.ContactType
-  firstName?: string | null
-  lastName?: string | null
-  fullName: string
-  canonicalName?: string | null
-  alias?: string | null
-  canonicalAlias?: string | null
-  identificationType?: $Enums.IdentificationType | null
-  identificationNumber?: string | null
-  nationality?: string | null
-  dateOfBirth?: Date | string | null
-  corporateName?: string | null
-  corporateUen?: string | null
-  fullAddress?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeCreateNestedManyWithoutChargeHolderInput
-  companyRelations?: Prisma.CompanyContactCreateNestedManyWithoutContactInput
-  officerPositions?: Prisma.CompanyOfficerCreateNestedManyWithoutContactInput
-  shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
-  tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  workflow_milestones?: Prisma.workflow_milestonesCreateNestedManyWithoutContactsInput
-}
-
-export type ContactUncheckedCreateWithoutWorkflow_communication_log_entriesInput = {
-  id?: string
-  tenantId: string
-  contactType?: $Enums.ContactType
-  firstName?: string | null
-  lastName?: string | null
-  fullName: string
-  canonicalName?: string | null
-  alias?: string | null
-  canonicalAlias?: string | null
-  identificationType?: $Enums.IdentificationType | null
-  identificationNumber?: string | null
-  nationality?: string | null
-  dateOfBirth?: Date | string | null
-  corporateName?: string | null
-  corporateUen?: string | null
-  fullAddress?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutChargeHolderInput
-  companyRelations?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutContactInput
-  officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
-  shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedCreateNestedManyWithoutContactsInput
-}
-
-export type ContactCreateOrConnectWithoutWorkflow_communication_log_entriesInput = {
-  where: Prisma.ContactWhereUniqueInput
-  create: Prisma.XOR<Prisma.ContactCreateWithoutWorkflow_communication_log_entriesInput, Prisma.ContactUncheckedCreateWithoutWorkflow_communication_log_entriesInput>
-}
-
-export type ContactUpsertWithoutWorkflow_communication_log_entriesInput = {
-  update: Prisma.XOR<Prisma.ContactUpdateWithoutWorkflow_communication_log_entriesInput, Prisma.ContactUncheckedUpdateWithoutWorkflow_communication_log_entriesInput>
-  create: Prisma.XOR<Prisma.ContactCreateWithoutWorkflow_communication_log_entriesInput, Prisma.ContactUncheckedCreateWithoutWorkflow_communication_log_entriesInput>
-  where?: Prisma.ContactWhereInput
-}
-
-export type ContactUpdateToOneWithWhereWithoutWorkflow_communication_log_entriesInput = {
-  where?: Prisma.ContactWhereInput
-  data: Prisma.XOR<Prisma.ContactUpdateWithoutWorkflow_communication_log_entriesInput, Prisma.ContactUncheckedUpdateWithoutWorkflow_communication_log_entriesInput>
-}
-
-export type ContactUpdateWithoutWorkflow_communication_log_entriesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  contactType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
-  firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullName?: Prisma.StringFieldUpdateOperationsInput | string
-  canonicalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  canonicalAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
-  identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeUpdateManyWithoutChargeHolderNestedInput
-  companyRelations?: Prisma.CompanyContactUpdateManyWithoutContactNestedInput
-  officerPositions?: Prisma.CompanyOfficerUpdateManyWithoutContactNestedInput
-  shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
-  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUpdateManyWithoutContactsNestedInput
-}
-
-export type ContactUncheckedUpdateWithoutWorkflow_communication_log_entriesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  contactType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
-  firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullName?: Prisma.StringFieldUpdateOperationsInput | string
-  canonicalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  canonicalAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
-  identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeUncheckedUpdateManyWithoutChargeHolderNestedInput
-  companyRelations?: Prisma.CompanyContactUncheckedUpdateManyWithoutContactNestedInput
-  officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
-  shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutContactsNestedInput
-}
-
-export type ContactCreateWithoutWorkflow_milestonesInput = {
-  id?: string
-  contactType?: $Enums.ContactType
-  firstName?: string | null
-  lastName?: string | null
-  fullName: string
-  canonicalName?: string | null
-  alias?: string | null
-  canonicalAlias?: string | null
-  identificationType?: $Enums.IdentificationType | null
-  identificationNumber?: string | null
-  nationality?: string | null
-  dateOfBirth?: Date | string | null
-  corporateName?: string | null
-  corporateUen?: string | null
-  fullAddress?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeCreateNestedManyWithoutChargeHolderInput
-  companyRelations?: Prisma.CompanyContactCreateNestedManyWithoutContactInput
-  officerPositions?: Prisma.CompanyOfficerCreateNestedManyWithoutContactInput
-  shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
-  tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
-  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesCreateNestedManyWithoutContactsInput
-}
-
-export type ContactUncheckedCreateWithoutWorkflow_milestonesInput = {
-  id?: string
-  tenantId: string
-  contactType?: $Enums.ContactType
-  firstName?: string | null
-  lastName?: string | null
-  fullName: string
-  canonicalName?: string | null
-  alias?: string | null
-  canonicalAlias?: string | null
-  identificationType?: $Enums.IdentificationType | null
-  identificationNumber?: string | null
-  nationality?: string | null
-  dateOfBirth?: Date | string | null
-  corporateName?: string | null
-  corporateUen?: string | null
-  fullAddress?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutChargeHolderInput
-  companyRelations?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutContactInput
-  officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
-  shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
-  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedCreateNestedManyWithoutContactsInput
-}
-
-export type ContactCreateOrConnectWithoutWorkflow_milestonesInput = {
-  where: Prisma.ContactWhereUniqueInput
-  create: Prisma.XOR<Prisma.ContactCreateWithoutWorkflow_milestonesInput, Prisma.ContactUncheckedCreateWithoutWorkflow_milestonesInput>
-}
-
-export type ContactUpsertWithoutWorkflow_milestonesInput = {
-  update: Prisma.XOR<Prisma.ContactUpdateWithoutWorkflow_milestonesInput, Prisma.ContactUncheckedUpdateWithoutWorkflow_milestonesInput>
-  create: Prisma.XOR<Prisma.ContactCreateWithoutWorkflow_milestonesInput, Prisma.ContactUncheckedCreateWithoutWorkflow_milestonesInput>
-  where?: Prisma.ContactWhereInput
-}
-
-export type ContactUpdateToOneWithWhereWithoutWorkflow_milestonesInput = {
-  where?: Prisma.ContactWhereInput
-  data: Prisma.XOR<Prisma.ContactUpdateWithoutWorkflow_milestonesInput, Prisma.ContactUncheckedUpdateWithoutWorkflow_milestonesInput>
-}
-
-export type ContactUpdateWithoutWorkflow_milestonesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  contactType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
-  firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullName?: Prisma.StringFieldUpdateOperationsInput | string
-  canonicalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  canonicalAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
-  identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeUpdateManyWithoutChargeHolderNestedInput
-  companyRelations?: Prisma.CompanyContactUpdateManyWithoutContactNestedInput
-  officerPositions?: Prisma.CompanyOfficerUpdateManyWithoutContactNestedInput
-  shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
-  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
-  noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUpdateManyWithoutContactsNestedInput
-}
-
-export type ContactUncheckedUpdateWithoutWorkflow_milestonesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  contactType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
-  firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullName?: Prisma.StringFieldUpdateOperationsInput | string
-  canonicalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  canonicalAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
-  identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  chargeHoldings?: Prisma.CompanyChargeUncheckedUpdateManyWithoutChargeHolderNestedInput
-  companyRelations?: Prisma.CompanyContactUncheckedUpdateManyWithoutContactNestedInput
-  officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
-  shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
-  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactCreateManyTenantInput = {
@@ -2144,8 +1774,6 @@ export type ContactUpdateWithoutTenantInput = {
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactUncheckedUpdateWithoutTenantInput = {
@@ -2174,8 +1802,6 @@ export type ContactUncheckedUpdateWithoutTenantInput = {
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
-  workflow_communication_log_entries?: Prisma.workflow_communication_log_entriesUncheckedUpdateManyWithoutContactsNestedInput
-  workflow_milestones?: Prisma.workflow_milestonesUncheckedUpdateManyWithoutContactsNestedInput
 }
 
 export type ContactUncheckedUpdateManyWithoutTenantInput = {
@@ -2212,8 +1838,6 @@ export type ContactCountOutputType = {
   shareholdings: number
   contactDetails: number
   noteTabs: number
-  workflow_communication_log_entries: number
-  workflow_milestones: number
 }
 
 export type ContactCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2223,8 +1847,6 @@ export type ContactCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   shareholdings?: boolean | ContactCountOutputTypeCountShareholdingsArgs
   contactDetails?: boolean | ContactCountOutputTypeCountContactDetailsArgs
   noteTabs?: boolean | ContactCountOutputTypeCountNoteTabsArgs
-  workflow_communication_log_entries?: boolean | ContactCountOutputTypeCountWorkflow_communication_log_entriesArgs
-  workflow_milestones?: boolean | ContactCountOutputTypeCountWorkflow_milestonesArgs
 }
 
 /**
@@ -2279,20 +1901,6 @@ export type ContactCountOutputTypeCountNoteTabsArgs<ExtArgs extends runtime.Type
   where?: Prisma.NoteTabWhereInput
 }
 
-/**
- * ContactCountOutputType without action
- */
-export type ContactCountOutputTypeCountWorkflow_communication_log_entriesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_communication_log_entriesWhereInput
-}
-
-/**
- * ContactCountOutputType without action
- */
-export type ContactCountOutputTypeCountWorkflow_milestonesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_milestonesWhereInput
-}
-
 
 export type ContactSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2322,8 +1930,6 @@ export type ContactSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   contactDetails?: boolean | Prisma.Contact$contactDetailsArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   noteTabs?: boolean | Prisma.Contact$noteTabsArgs<ExtArgs>
-  workflow_communication_log_entries?: boolean | Prisma.Contact$workflow_communication_log_entriesArgs<ExtArgs>
-  workflow_milestones?: boolean | Prisma.Contact$workflow_milestonesArgs<ExtArgs>
   _count?: boolean | Prisma.ContactCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["contact"]>
 
@@ -2407,8 +2013,6 @@ export type ContactInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   contactDetails?: boolean | Prisma.Contact$contactDetailsArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   noteTabs?: boolean | Prisma.Contact$noteTabsArgs<ExtArgs>
-  workflow_communication_log_entries?: boolean | Prisma.Contact$workflow_communication_log_entriesArgs<ExtArgs>
-  workflow_milestones?: boolean | Prisma.Contact$workflow_milestonesArgs<ExtArgs>
   _count?: boolean | Prisma.ContactCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ContactIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2428,8 +2032,6 @@ export type $ContactPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     contactDetails: Prisma.$ContactDetailPayload<ExtArgs>[]
     tenant: Prisma.$WorkspacePayload<ExtArgs>
     noteTabs: Prisma.$NoteTabPayload<ExtArgs>[]
-    workflow_communication_log_entries: Prisma.$workflow_communication_log_entriesPayload<ExtArgs>[]
-    workflow_milestones: Prisma.$workflow_milestonesPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2853,8 +2455,6 @@ export interface Prisma__ContactClient<T, Null = never, ExtArgs extends runtime.
   contactDetails<T extends Prisma.Contact$contactDetailsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$contactDetailsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactDetailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   noteTabs<T extends Prisma.Contact$noteTabsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$noteTabsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NoteTabPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_communication_log_entries<T extends Prisma.Contact$workflow_communication_log_entriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$workflow_communication_log_entriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_communication_log_entriesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_milestones<T extends Prisma.Contact$workflow_milestonesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$workflow_milestonesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_milestonesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3441,54 +3041,6 @@ export type Contact$noteTabsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.NoteTabScalarFieldEnum | Prisma.NoteTabScalarFieldEnum[]
-}
-
-/**
- * Contact.workflow_communication_log_entries
- */
-export type Contact$workflow_communication_log_entriesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the workflow_communication_log_entries
-   */
-  select?: Prisma.workflow_communication_log_entriesSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the workflow_communication_log_entries
-   */
-  omit?: Prisma.workflow_communication_log_entriesOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.workflow_communication_log_entriesInclude<ExtArgs> | null
-  where?: Prisma.workflow_communication_log_entriesWhereInput
-  orderBy?: Prisma.workflow_communication_log_entriesOrderByWithRelationInput | Prisma.workflow_communication_log_entriesOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_communication_log_entriesWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.Workflow_communication_log_entriesScalarFieldEnum | Prisma.Workflow_communication_log_entriesScalarFieldEnum[]
-}
-
-/**
- * Contact.workflow_milestones
- */
-export type Contact$workflow_milestonesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the workflow_milestones
-   */
-  select?: Prisma.workflow_milestonesSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the workflow_milestones
-   */
-  omit?: Prisma.workflow_milestonesOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.workflow_milestonesInclude<ExtArgs> | null
-  where?: Prisma.workflow_milestonesWhereInput
-  orderBy?: Prisma.workflow_milestonesOrderByWithRelationInput | Prisma.workflow_milestonesOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_milestonesWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.Workflow_milestonesScalarFieldEnum | Prisma.Workflow_milestonesScalarFieldEnum[]
 }
 
 /**

@@ -68,8 +68,6 @@ function duplicateContact(id: string, fullName: string, overrides: Record<string
       chargeHoldings: 0,
       contactDetails: 0,
       noteTabs: 0,
-      workflow_communication_log_entries: 0,
-      workflow_milestones: 0,
     },
     ...overrides,
   };

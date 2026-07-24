@@ -357,14 +357,13 @@ export type WorkspaceWhereInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessListRelationFilter
   letterhead?: Prisma.XOR<Prisma.WorkspaceLetterheadNullableScalarRelationFilter, Prisma.WorkspaceLetterheadWhereInput> | null
   users?: Prisma.UserListRelationFilter
-  workflow_client_groups?: Prisma.Workflow_client_groupsListRelationFilter
-  workflow_engagements?: Prisma.Workflow_engagementsListRelationFilter
-  workflow_instances?: Prisma.Workflow_instancesListRelationFilter
-  workflow_notification_log?: Prisma.Workflow_notification_logListRelationFilter
-  workflow_project_instances?: Prisma.Workflow_project_instancesListRelationFilter
-  workflow_project_settings?: Prisma.Workflow_project_settingsListRelationFilter
-  workflow_scheduled_instances_queue?: Prisma.Workflow_scheduled_instances_queueListRelationFilter
-  workflow_service_definitions?: Prisma.Workflow_service_definitionsListRelationFilter
+  taskPipelines?: Prisma.TaskPipelineListRelationFilter
+  taskPipelineVersions?: Prisma.TaskPipelineVersionListRelationFilter
+  taskPipelineStages?: Prisma.TaskPipelineStageListRelationFilter
+  tasks?: Prisma.TaskListRelationFilter
+  taskStages?: Prisma.TaskStageListRelationFilter
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemListRelationFilter
+  taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
 }
 
 export type WorkspaceOrderByWithRelationInput = {
@@ -412,14 +411,13 @@ export type WorkspaceOrderByWithRelationInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessOrderByRelationAggregateInput
   letterhead?: Prisma.WorkspaceLetterheadOrderByWithRelationInput
   users?: Prisma.UserOrderByRelationAggregateInput
-  workflow_client_groups?: Prisma.workflow_client_groupsOrderByRelationAggregateInput
-  workflow_engagements?: Prisma.workflow_engagementsOrderByRelationAggregateInput
-  workflow_instances?: Prisma.workflow_instancesOrderByRelationAggregateInput
-  workflow_notification_log?: Prisma.workflow_notification_logOrderByRelationAggregateInput
-  workflow_project_instances?: Prisma.workflow_project_instancesOrderByRelationAggregateInput
-  workflow_project_settings?: Prisma.workflow_project_settingsOrderByRelationAggregateInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueOrderByRelationAggregateInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsOrderByRelationAggregateInput
+  taskPipelines?: Prisma.TaskPipelineOrderByRelationAggregateInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionOrderByRelationAggregateInput
+  taskPipelineStages?: Prisma.TaskPipelineStageOrderByRelationAggregateInput
+  tasks?: Prisma.TaskOrderByRelationAggregateInput
+  taskStages?: Prisma.TaskStageOrderByRelationAggregateInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemOrderByRelationAggregateInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeOrderByRelationAggregateInput
 }
 
 export type WorkspaceWhereUniqueInput = Prisma.AtLeast<{
@@ -470,14 +468,13 @@ export type WorkspaceWhereUniqueInput = Prisma.AtLeast<{
   connectorAccess?: Prisma.WorkspaceConnectorAccessListRelationFilter
   letterhead?: Prisma.XOR<Prisma.WorkspaceLetterheadNullableScalarRelationFilter, Prisma.WorkspaceLetterheadWhereInput> | null
   users?: Prisma.UserListRelationFilter
-  workflow_client_groups?: Prisma.Workflow_client_groupsListRelationFilter
-  workflow_engagements?: Prisma.Workflow_engagementsListRelationFilter
-  workflow_instances?: Prisma.Workflow_instancesListRelationFilter
-  workflow_notification_log?: Prisma.Workflow_notification_logListRelationFilter
-  workflow_project_instances?: Prisma.Workflow_project_instancesListRelationFilter
-  workflow_project_settings?: Prisma.Workflow_project_settingsListRelationFilter
-  workflow_scheduled_instances_queue?: Prisma.Workflow_scheduled_instances_queueListRelationFilter
-  workflow_service_definitions?: Prisma.Workflow_service_definitionsListRelationFilter
+  taskPipelines?: Prisma.TaskPipelineListRelationFilter
+  taskPipelineVersions?: Prisma.TaskPipelineVersionListRelationFilter
+  taskPipelineStages?: Prisma.TaskPipelineStageListRelationFilter
+  tasks?: Prisma.TaskListRelationFilter
+  taskStages?: Prisma.TaskStageListRelationFilter
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemListRelationFilter
+  taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
 }, "id" | "slug">
 
 export type WorkspaceOrderByWithAggregationInput = {
@@ -577,14 +574,13 @@ export type WorkspaceCreateInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateInput = {
@@ -632,14 +628,13 @@ export type WorkspaceUncheckedCreateInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUpdateInput = {
@@ -687,14 +682,13 @@ export type WorkspaceUpdateInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateInput = {
@@ -742,14 +736,13 @@ export type WorkspaceUncheckedUpdateInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateManyInput = {
@@ -1296,116 +1289,102 @@ export type WorkspaceUpdateOneWithoutChartOfAccountsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutChartOfAccountsInput, Prisma.WorkspaceUpdateWithoutChartOfAccountsInput>, Prisma.WorkspaceUncheckedUpdateWithoutChartOfAccountsInput>
 }
 
-export type WorkspaceCreateNestedOneWithoutWorkflow_client_groupsInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_client_groupsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_client_groupsInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_client_groupsInput
+export type WorkspaceCreateNestedOneWithoutTaskPipelinesInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelinesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelinesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskPipelinesInput
   connect?: Prisma.WorkspaceWhereUniqueInput
 }
 
-export type WorkspaceUpdateOneRequiredWithoutWorkflow_client_groupsNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_client_groupsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_client_groupsInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_client_groupsInput
-  upsert?: Prisma.WorkspaceUpsertWithoutWorkflow_client_groupsInput
+export type WorkspaceUpdateOneRequiredWithoutTaskPipelinesNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelinesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelinesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskPipelinesInput
+  upsert?: Prisma.WorkspaceUpsertWithoutTaskPipelinesInput
   connect?: Prisma.WorkspaceWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutWorkflow_client_groupsInput, Prisma.WorkspaceUpdateWithoutWorkflow_client_groupsInput>, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_client_groupsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutTaskPipelinesInput, Prisma.WorkspaceUpdateWithoutTaskPipelinesInput>, Prisma.WorkspaceUncheckedUpdateWithoutTaskPipelinesInput>
 }
 
-export type WorkspaceCreateNestedOneWithoutWorkflow_engagementsInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_engagementsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_engagementsInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_engagementsInput
-  connect?: Prisma.WorkspaceWhereUniqueInput
-}
-
-export type WorkspaceUpdateOneRequiredWithoutWorkflow_engagementsNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_engagementsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_engagementsInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_engagementsInput
-  upsert?: Prisma.WorkspaceUpsertWithoutWorkflow_engagementsInput
-  connect?: Prisma.WorkspaceWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutWorkflow_engagementsInput, Prisma.WorkspaceUpdateWithoutWorkflow_engagementsInput>, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_engagementsInput>
-}
-
-export type WorkspaceCreateNestedOneWithoutWorkflow_instancesInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_instancesInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_instancesInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_instancesInput
+export type WorkspaceCreateNestedOneWithoutTaskPipelineVersionsInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelineVersionsInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelineVersionsInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskPipelineVersionsInput
   connect?: Prisma.WorkspaceWhereUniqueInput
 }
 
-export type WorkspaceUpdateOneRequiredWithoutWorkflow_instancesNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_instancesInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_instancesInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_instancesInput
-  upsert?: Prisma.WorkspaceUpsertWithoutWorkflow_instancesInput
+export type WorkspaceUpdateOneRequiredWithoutTaskPipelineVersionsNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelineVersionsInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelineVersionsInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskPipelineVersionsInput
+  upsert?: Prisma.WorkspaceUpsertWithoutTaskPipelineVersionsInput
   connect?: Prisma.WorkspaceWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutWorkflow_instancesInput, Prisma.WorkspaceUpdateWithoutWorkflow_instancesInput>, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_instancesInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutTaskPipelineVersionsInput, Prisma.WorkspaceUpdateWithoutTaskPipelineVersionsInput>, Prisma.WorkspaceUncheckedUpdateWithoutTaskPipelineVersionsInput>
 }
 
-export type WorkspaceCreateNestedOneWithoutWorkflow_notification_logInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_notification_logInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_notification_logInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_notification_logInput
-  connect?: Prisma.WorkspaceWhereUniqueInput
-}
-
-export type WorkspaceUpdateOneRequiredWithoutWorkflow_notification_logNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_notification_logInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_notification_logInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_notification_logInput
-  upsert?: Prisma.WorkspaceUpsertWithoutWorkflow_notification_logInput
-  connect?: Prisma.WorkspaceWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutWorkflow_notification_logInput, Prisma.WorkspaceUpdateWithoutWorkflow_notification_logInput>, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_notification_logInput>
-}
-
-export type WorkspaceCreateNestedOneWithoutWorkflow_project_instancesInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_project_instancesInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_project_instancesInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_project_instancesInput
+export type WorkspaceCreateNestedOneWithoutTaskPipelineStagesInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelineStagesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelineStagesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskPipelineStagesInput
   connect?: Prisma.WorkspaceWhereUniqueInput
 }
 
-export type WorkspaceUpdateOneRequiredWithoutWorkflow_project_instancesNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_project_instancesInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_project_instancesInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_project_instancesInput
-  upsert?: Prisma.WorkspaceUpsertWithoutWorkflow_project_instancesInput
+export type WorkspaceUpdateOneRequiredWithoutTaskPipelineStagesNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelineStagesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelineStagesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskPipelineStagesInput
+  upsert?: Prisma.WorkspaceUpsertWithoutTaskPipelineStagesInput
   connect?: Prisma.WorkspaceWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutWorkflow_project_instancesInput, Prisma.WorkspaceUpdateWithoutWorkflow_project_instancesInput>, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_project_instancesInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutTaskPipelineStagesInput, Prisma.WorkspaceUpdateWithoutTaskPipelineStagesInput>, Prisma.WorkspaceUncheckedUpdateWithoutTaskPipelineStagesInput>
 }
 
-export type WorkspaceCreateNestedOneWithoutWorkflow_project_settingsInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_project_settingsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_project_settingsInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_project_settingsInput
-  connect?: Prisma.WorkspaceWhereUniqueInput
-}
-
-export type WorkspaceUpdateOneRequiredWithoutWorkflow_project_settingsNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_project_settingsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_project_settingsInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_project_settingsInput
-  upsert?: Prisma.WorkspaceUpsertWithoutWorkflow_project_settingsInput
-  connect?: Prisma.WorkspaceWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutWorkflow_project_settingsInput, Prisma.WorkspaceUpdateWithoutWorkflow_project_settingsInput>, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_project_settingsInput>
-}
-
-export type WorkspaceCreateNestedOneWithoutWorkflow_scheduled_instances_queueInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput
+export type WorkspaceCreateNestedOneWithoutTasksInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTasksInput, Prisma.WorkspaceUncheckedCreateWithoutTasksInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTasksInput
   connect?: Prisma.WorkspaceWhereUniqueInput
 }
 
-export type WorkspaceUpdateOneRequiredWithoutWorkflow_scheduled_instances_queueNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput
-  upsert?: Prisma.WorkspaceUpsertWithoutWorkflow_scheduled_instances_queueInput
+export type WorkspaceUpdateOneRequiredWithoutTasksNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTasksInput, Prisma.WorkspaceUncheckedCreateWithoutTasksInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTasksInput
+  upsert?: Prisma.WorkspaceUpsertWithoutTasksInput
   connect?: Prisma.WorkspaceWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutWorkflow_scheduled_instances_queueInput, Prisma.WorkspaceUpdateWithoutWorkflow_scheduled_instances_queueInput>, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutTasksInput, Prisma.WorkspaceUpdateWithoutTasksInput>, Prisma.WorkspaceUncheckedUpdateWithoutTasksInput>
 }
 
-export type WorkspaceCreateNestedOneWithoutWorkflow_service_definitionsInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_service_definitionsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_service_definitionsInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_service_definitionsInput
+export type WorkspaceCreateNestedOneWithoutTaskStagesInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStagesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStagesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskStagesInput
   connect?: Prisma.WorkspaceWhereUniqueInput
 }
 
-export type WorkspaceUpdateOneRequiredWithoutWorkflow_service_definitionsNestedInput = {
-  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_service_definitionsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_service_definitionsInput>
-  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutWorkflow_service_definitionsInput
-  upsert?: Prisma.WorkspaceUpsertWithoutWorkflow_service_definitionsInput
+export type WorkspaceUpdateOneRequiredWithoutTaskStagesNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStagesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStagesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskStagesInput
+  upsert?: Prisma.WorkspaceUpsertWithoutTaskStagesInput
   connect?: Prisma.WorkspaceWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutWorkflow_service_definitionsInput, Prisma.WorkspaceUpdateWithoutWorkflow_service_definitionsInput>, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_service_definitionsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutTaskStagesInput, Prisma.WorkspaceUpdateWithoutTaskStagesInput>, Prisma.WorkspaceUncheckedUpdateWithoutTaskStagesInput>
+}
+
+export type WorkspaceCreateNestedOneWithoutTaskStageChecklistItemsInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStageChecklistItemsInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStageChecklistItemsInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskStageChecklistItemsInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+}
+
+export type WorkspaceUpdateOneRequiredWithoutTaskStageChecklistItemsNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStageChecklistItemsInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStageChecklistItemsInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskStageChecklistItemsInput
+  upsert?: Prisma.WorkspaceUpsertWithoutTaskStageChecklistItemsInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutTaskStageChecklistItemsInput, Prisma.WorkspaceUpdateWithoutTaskStageChecklistItemsInput>, Prisma.WorkspaceUncheckedUpdateWithoutTaskStageChecklistItemsInput>
+}
+
+export type WorkspaceCreateNestedOneWithoutTaskStageOutcomesInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStageOutcomesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStageOutcomesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskStageOutcomesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+}
+
+export type WorkspaceUpdateOneRequiredWithoutTaskStageOutcomesNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStageOutcomesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStageOutcomesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutTaskStageOutcomesInput
+  upsert?: Prisma.WorkspaceUpsertWithoutTaskStageOutcomesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutTaskStageOutcomesInput, Prisma.WorkspaceUpdateWithoutTaskStageOutcomesInput>, Prisma.WorkspaceUncheckedUpdateWithoutTaskStageOutcomesInput>
 }
 
 export type WorkspaceCreateWithoutRolesInput = {
@@ -1452,14 +1431,13 @@ export type WorkspaceCreateWithoutRolesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutRolesInput = {
@@ -1506,14 +1484,13 @@ export type WorkspaceUncheckedCreateWithoutRolesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutRolesInput = {
@@ -1576,14 +1553,13 @@ export type WorkspaceUpdateWithoutRolesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutRolesInput = {
@@ -1630,14 +1606,13 @@ export type WorkspaceUncheckedUpdateWithoutRolesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutUsersInput = {
@@ -1684,14 +1659,13 @@ export type WorkspaceCreateWithoutUsersInput = {
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutUsersInput = {
@@ -1738,14 +1712,13 @@ export type WorkspaceUncheckedCreateWithoutUsersInput = {
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutUsersInput = {
@@ -1808,14 +1781,13 @@ export type WorkspaceUpdateWithoutUsersInput = {
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutUsersInput = {
@@ -1862,14 +1834,13 @@ export type WorkspaceUncheckedUpdateWithoutUsersInput = {
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutCompaniesInput = {
@@ -1916,14 +1887,13 @@ export type WorkspaceCreateWithoutCompaniesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutCompaniesInput = {
@@ -1970,14 +1940,13 @@ export type WorkspaceUncheckedCreateWithoutCompaniesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutCompaniesInput = {
@@ -2040,14 +2009,13 @@ export type WorkspaceUpdateWithoutCompaniesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutCompaniesInput = {
@@ -2094,14 +2062,13 @@ export type WorkspaceUncheckedUpdateWithoutCompaniesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutContactsInput = {
@@ -2148,14 +2115,13 @@ export type WorkspaceCreateWithoutContactsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutContactsInput = {
@@ -2202,14 +2168,13 @@ export type WorkspaceUncheckedCreateWithoutContactsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutContactsInput = {
@@ -2272,14 +2237,13 @@ export type WorkspaceUpdateWithoutContactsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutContactsInput = {
@@ -2326,14 +2290,13 @@ export type WorkspaceUncheckedUpdateWithoutContactsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutContactDetailsInput = {
@@ -2380,14 +2343,13 @@ export type WorkspaceCreateWithoutContactDetailsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutContactDetailsInput = {
@@ -2434,14 +2396,13 @@ export type WorkspaceUncheckedCreateWithoutContactDetailsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutContactDetailsInput = {
@@ -2504,14 +2465,13 @@ export type WorkspaceUpdateWithoutContactDetailsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutContactDetailsInput = {
@@ -2558,14 +2518,13 @@ export type WorkspaceUncheckedUpdateWithoutContactDetailsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutDocumentsInput = {
@@ -2612,14 +2571,13 @@ export type WorkspaceCreateWithoutDocumentsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutDocumentsInput = {
@@ -2666,14 +2624,13 @@ export type WorkspaceUncheckedCreateWithoutDocumentsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutDocumentsInput = {
@@ -2736,14 +2693,13 @@ export type WorkspaceUpdateWithoutDocumentsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutDocumentsInput = {
@@ -2790,14 +2746,13 @@ export type WorkspaceUncheckedUpdateWithoutDocumentsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutAuditLogsInput = {
@@ -2844,14 +2799,13 @@ export type WorkspaceCreateWithoutAuditLogsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutAuditLogsInput = {
@@ -2898,14 +2852,13 @@ export type WorkspaceUncheckedCreateWithoutAuditLogsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutAuditLogsInput = {
@@ -2968,14 +2921,13 @@ export type WorkspaceUpdateWithoutAuditLogsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutAuditLogsInput = {
@@ -3022,14 +2974,13 @@ export type WorkspaceUncheckedUpdateWithoutAuditLogsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutConnectorsInput = {
@@ -3076,14 +3027,13 @@ export type WorkspaceCreateWithoutConnectorsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutConnectorsInput = {
@@ -3130,14 +3080,13 @@ export type WorkspaceUncheckedCreateWithoutConnectorsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutConnectorsInput = {
@@ -3200,14 +3149,13 @@ export type WorkspaceUpdateWithoutConnectorsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutConnectorsInput = {
@@ -3254,14 +3202,13 @@ export type WorkspaceUncheckedUpdateWithoutConnectorsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutConnectorAccessInput = {
@@ -3308,14 +3255,13 @@ export type WorkspaceCreateWithoutConnectorAccessInput = {
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutConnectorAccessInput = {
@@ -3362,14 +3308,13 @@ export type WorkspaceUncheckedCreateWithoutConnectorAccessInput = {
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutConnectorAccessInput = {
@@ -3432,14 +3377,13 @@ export type WorkspaceUpdateWithoutConnectorAccessInput = {
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutConnectorAccessInput = {
@@ -3486,14 +3430,13 @@ export type WorkspaceUncheckedUpdateWithoutConnectorAccessInput = {
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutConnectorUsageLogsInput = {
@@ -3540,14 +3483,13 @@ export type WorkspaceCreateWithoutConnectorUsageLogsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutConnectorUsageLogsInput = {
@@ -3594,14 +3536,13 @@ export type WorkspaceUncheckedCreateWithoutConnectorUsageLogsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutConnectorUsageLogsInput = {
@@ -3664,14 +3605,13 @@ export type WorkspaceUpdateWithoutConnectorUsageLogsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutConnectorUsageLogsInput = {
@@ -3718,14 +3658,13 @@ export type WorkspaceUncheckedUpdateWithoutConnectorUsageLogsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutDocumentTemplatesInput = {
@@ -3772,14 +3711,13 @@ export type WorkspaceCreateWithoutDocumentTemplatesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutDocumentTemplatesInput = {
@@ -3826,14 +3764,13 @@ export type WorkspaceUncheckedCreateWithoutDocumentTemplatesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutDocumentTemplatesInput = {
@@ -3896,14 +3833,13 @@ export type WorkspaceUpdateWithoutDocumentTemplatesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutDocumentTemplatesInput = {
@@ -3950,14 +3886,13 @@ export type WorkspaceUncheckedUpdateWithoutDocumentTemplatesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutGeneratedDocumentsInput = {
@@ -4004,14 +3939,13 @@ export type WorkspaceCreateWithoutGeneratedDocumentsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -4058,14 +3992,13 @@ export type WorkspaceUncheckedCreateWithoutGeneratedDocumentsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -4128,14 +4061,13 @@ export type WorkspaceUpdateWithoutGeneratedDocumentsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -4182,14 +4114,13 @@ export type WorkspaceUncheckedUpdateWithoutGeneratedDocumentsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutLetterheadInput = {
@@ -4236,14 +4167,13 @@ export type WorkspaceCreateWithoutLetterheadInput = {
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutLetterheadInput = {
@@ -4290,14 +4220,13 @@ export type WorkspaceUncheckedCreateWithoutLetterheadInput = {
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutLetterheadInput = {
@@ -4360,14 +4289,13 @@ export type WorkspaceUpdateWithoutLetterheadInput = {
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutLetterheadInput = {
@@ -4414,14 +4342,13 @@ export type WorkspaceUncheckedUpdateWithoutLetterheadInput = {
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutTemplatePartialsInput = {
@@ -4468,14 +4395,13 @@ export type WorkspaceCreateWithoutTemplatePartialsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutTemplatePartialsInput = {
@@ -4522,14 +4448,13 @@ export type WorkspaceUncheckedCreateWithoutTemplatePartialsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutTemplatePartialsInput = {
@@ -4592,14 +4517,13 @@ export type WorkspaceUpdateWithoutTemplatePartialsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutTemplatePartialsInput = {
@@ -4646,14 +4570,13 @@ export type WorkspaceUncheckedUpdateWithoutTemplatePartialsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutAiConversationsInput = {
@@ -4700,14 +4623,13 @@ export type WorkspaceCreateWithoutAiConversationsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutAiConversationsInput = {
@@ -4754,14 +4676,13 @@ export type WorkspaceUncheckedCreateWithoutAiConversationsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutAiConversationsInput = {
@@ -4824,14 +4745,13 @@ export type WorkspaceUpdateWithoutAiConversationsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutAiConversationsInput = {
@@ -4878,14 +4798,13 @@ export type WorkspaceUncheckedUpdateWithoutAiConversationsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutEsigningEnvelopesInput = {
@@ -4932,14 +4851,13 @@ export type WorkspaceCreateWithoutEsigningEnvelopesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutEsigningEnvelopesInput = {
@@ -4986,14 +4904,13 @@ export type WorkspaceUncheckedCreateWithoutEsigningEnvelopesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutEsigningEnvelopesInput = {
@@ -5056,14 +4973,13 @@ export type WorkspaceUpdateWithoutEsigningEnvelopesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutEsigningEnvelopesInput = {
@@ -5110,14 +5026,13 @@ export type WorkspaceUncheckedUpdateWithoutEsigningEnvelopesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutExchangeRatesInput = {
@@ -5164,14 +5079,13 @@ export type WorkspaceCreateWithoutExchangeRatesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutExchangeRatesInput = {
@@ -5218,14 +5132,13 @@ export type WorkspaceUncheckedCreateWithoutExchangeRatesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutExchangeRatesInput = {
@@ -5288,14 +5201,13 @@ export type WorkspaceUpdateWithoutExchangeRatesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutExchangeRatesInput = {
@@ -5342,14 +5254,13 @@ export type WorkspaceUncheckedUpdateWithoutExchangeRatesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormsInput = {
@@ -5396,14 +5307,13 @@ export type WorkspaceCreateWithoutFormsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormsInput = {
@@ -5450,14 +5360,13 @@ export type WorkspaceUncheckedCreateWithoutFormsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormsInput = {
@@ -5520,14 +5429,13 @@ export type WorkspaceUpdateWithoutFormsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormsInput = {
@@ -5574,14 +5482,13 @@ export type WorkspaceUncheckedUpdateWithoutFormsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormFieldsInput = {
@@ -5628,14 +5535,13 @@ export type WorkspaceCreateWithoutFormFieldsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormFieldsInput = {
@@ -5682,14 +5588,13 @@ export type WorkspaceUncheckedCreateWithoutFormFieldsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormFieldsInput = {
@@ -5752,14 +5657,13 @@ export type WorkspaceUpdateWithoutFormFieldsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormFieldsInput = {
@@ -5806,14 +5710,13 @@ export type WorkspaceUncheckedUpdateWithoutFormFieldsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormSubmissionsInput = {
@@ -5860,14 +5763,13 @@ export type WorkspaceCreateWithoutFormSubmissionsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormSubmissionsInput = {
@@ -5914,14 +5816,13 @@ export type WorkspaceUncheckedCreateWithoutFormSubmissionsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormSubmissionsInput = {
@@ -5984,14 +5885,13 @@ export type WorkspaceUpdateWithoutFormSubmissionsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormSubmissionsInput = {
@@ -6038,14 +5938,13 @@ export type WorkspaceUncheckedUpdateWithoutFormSubmissionsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormDraftsInput = {
@@ -6092,14 +5991,13 @@ export type WorkspaceCreateWithoutFormDraftsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormDraftsInput = {
@@ -6146,14 +6044,13 @@ export type WorkspaceUncheckedCreateWithoutFormDraftsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormDraftsInput = {
@@ -6216,14 +6113,13 @@ export type WorkspaceUpdateWithoutFormDraftsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormDraftsInput = {
@@ -6270,14 +6166,13 @@ export type WorkspaceUncheckedUpdateWithoutFormDraftsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutFormUploadsInput = {
@@ -6324,14 +6219,13 @@ export type WorkspaceCreateWithoutFormUploadsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutFormUploadsInput = {
@@ -6378,14 +6272,13 @@ export type WorkspaceUncheckedCreateWithoutFormUploadsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutFormUploadsInput = {
@@ -6448,14 +6341,13 @@ export type WorkspaceUpdateWithoutFormUploadsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutFormUploadsInput = {
@@ -6502,14 +6394,13 @@ export type WorkspaceUncheckedUpdateWithoutFormUploadsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutBackupsInput = {
@@ -6556,14 +6447,13 @@ export type WorkspaceCreateWithoutBackupsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutBackupsInput = {
@@ -6610,14 +6500,13 @@ export type WorkspaceUncheckedCreateWithoutBackupsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutBackupsInput = {
@@ -6680,14 +6569,13 @@ export type WorkspaceUpdateWithoutBackupsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutBackupsInput = {
@@ -6734,14 +6622,13 @@ export type WorkspaceUncheckedUpdateWithoutBackupsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutBackupScheduleInput = {
@@ -6788,14 +6675,13 @@ export type WorkspaceCreateWithoutBackupScheduleInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutBackupScheduleInput = {
@@ -6842,14 +6728,13 @@ export type WorkspaceUncheckedCreateWithoutBackupScheduleInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutBackupScheduleInput = {
@@ -6912,14 +6797,13 @@ export type WorkspaceUpdateWithoutBackupScheduleInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutBackupScheduleInput = {
@@ -6966,14 +6850,13 @@ export type WorkspaceUncheckedUpdateWithoutBackupScheduleInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceCreateWithoutChartOfAccountsInput = {
@@ -7020,14 +6903,13 @@ export type WorkspaceCreateWithoutChartOfAccountsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceUncheckedCreateWithoutChartOfAccountsInput = {
@@ -7074,14 +6956,13 @@ export type WorkspaceUncheckedCreateWithoutChartOfAccountsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type WorkspaceCreateOrConnectWithoutChartOfAccountsInput = {
@@ -7144,14 +7025,13 @@ export type WorkspaceUpdateWithoutChartOfAccountsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
 export type WorkspaceUncheckedUpdateWithoutChartOfAccountsInput = {
@@ -7198,17 +7078,16 @@ export type WorkspaceUncheckedUpdateWithoutChartOfAccountsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceCreateWithoutWorkflow_client_groupsInput = {
+export type WorkspaceCreateWithoutTaskPipelinesInput = {
   id?: string
   name: string
   slug: string
@@ -7253,16 +7132,15 @@ export type WorkspaceCreateWithoutWorkflow_client_groupsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceUncheckedCreateWithoutWorkflow_client_groupsInput = {
+export type WorkspaceUncheckedCreateWithoutTaskPipelinesInput = {
   id?: string
   name: string
   slug: string
@@ -7307,32 +7185,31 @@ export type WorkspaceUncheckedCreateWithoutWorkflow_client_groupsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceCreateOrConnectWithoutWorkflow_client_groupsInput = {
+export type WorkspaceCreateOrConnectWithoutTaskPipelinesInput = {
   where: Prisma.WorkspaceWhereUniqueInput
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_client_groupsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_client_groupsInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelinesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelinesInput>
 }
 
-export type WorkspaceUpsertWithoutWorkflow_client_groupsInput = {
-  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_client_groupsInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_client_groupsInput>
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_client_groupsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_client_groupsInput>
+export type WorkspaceUpsertWithoutTaskPipelinesInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskPipelinesInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskPipelinesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelinesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelinesInput>
   where?: Prisma.WorkspaceWhereInput
 }
 
-export type WorkspaceUpdateToOneWithWhereWithoutWorkflow_client_groupsInput = {
+export type WorkspaceUpdateToOneWithWhereWithoutTaskPipelinesInput = {
   where?: Prisma.WorkspaceWhereInput
-  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_client_groupsInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_client_groupsInput>
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskPipelinesInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskPipelinesInput>
 }
 
-export type WorkspaceUpdateWithoutWorkflow_client_groupsInput = {
+export type WorkspaceUpdateWithoutTaskPipelinesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -7377,16 +7254,15 @@ export type WorkspaceUpdateWithoutWorkflow_client_groupsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceUncheckedUpdateWithoutWorkflow_client_groupsInput = {
+export type WorkspaceUncheckedUpdateWithoutTaskPipelinesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -7431,16 +7307,15 @@ export type WorkspaceUncheckedUpdateWithoutWorkflow_client_groupsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceCreateWithoutWorkflow_engagementsInput = {
+export type WorkspaceCreateWithoutTaskPipelineVersionsInput = {
   id?: string
   name: string
   slug: string
@@ -7485,16 +7360,15 @@ export type WorkspaceCreateWithoutWorkflow_engagementsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceUncheckedCreateWithoutWorkflow_engagementsInput = {
+export type WorkspaceUncheckedCreateWithoutTaskPipelineVersionsInput = {
   id?: string
   name: string
   slug: string
@@ -7539,32 +7413,31 @@ export type WorkspaceUncheckedCreateWithoutWorkflow_engagementsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceCreateOrConnectWithoutWorkflow_engagementsInput = {
+export type WorkspaceCreateOrConnectWithoutTaskPipelineVersionsInput = {
   where: Prisma.WorkspaceWhereUniqueInput
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_engagementsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_engagementsInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelineVersionsInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelineVersionsInput>
 }
 
-export type WorkspaceUpsertWithoutWorkflow_engagementsInput = {
-  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_engagementsInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_engagementsInput>
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_engagementsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_engagementsInput>
+export type WorkspaceUpsertWithoutTaskPipelineVersionsInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskPipelineVersionsInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskPipelineVersionsInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelineVersionsInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelineVersionsInput>
   where?: Prisma.WorkspaceWhereInput
 }
 
-export type WorkspaceUpdateToOneWithWhereWithoutWorkflow_engagementsInput = {
+export type WorkspaceUpdateToOneWithWhereWithoutTaskPipelineVersionsInput = {
   where?: Prisma.WorkspaceWhereInput
-  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_engagementsInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_engagementsInput>
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskPipelineVersionsInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskPipelineVersionsInput>
 }
 
-export type WorkspaceUpdateWithoutWorkflow_engagementsInput = {
+export type WorkspaceUpdateWithoutTaskPipelineVersionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -7609,16 +7482,15 @@ export type WorkspaceUpdateWithoutWorkflow_engagementsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceUncheckedUpdateWithoutWorkflow_engagementsInput = {
+export type WorkspaceUncheckedUpdateWithoutTaskPipelineVersionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -7663,16 +7535,15 @@ export type WorkspaceUncheckedUpdateWithoutWorkflow_engagementsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceCreateWithoutWorkflow_instancesInput = {
+export type WorkspaceCreateWithoutTaskPipelineStagesInput = {
   id?: string
   name: string
   slug: string
@@ -7717,16 +7588,15 @@ export type WorkspaceCreateWithoutWorkflow_instancesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceUncheckedCreateWithoutWorkflow_instancesInput = {
+export type WorkspaceUncheckedCreateWithoutTaskPipelineStagesInput = {
   id?: string
   name: string
   slug: string
@@ -7771,32 +7641,31 @@ export type WorkspaceUncheckedCreateWithoutWorkflow_instancesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceCreateOrConnectWithoutWorkflow_instancesInput = {
+export type WorkspaceCreateOrConnectWithoutTaskPipelineStagesInput = {
   where: Prisma.WorkspaceWhereUniqueInput
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_instancesInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_instancesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelineStagesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelineStagesInput>
 }
 
-export type WorkspaceUpsertWithoutWorkflow_instancesInput = {
-  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_instancesInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_instancesInput>
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_instancesInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_instancesInput>
+export type WorkspaceUpsertWithoutTaskPipelineStagesInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskPipelineStagesInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskPipelineStagesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskPipelineStagesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskPipelineStagesInput>
   where?: Prisma.WorkspaceWhereInput
 }
 
-export type WorkspaceUpdateToOneWithWhereWithoutWorkflow_instancesInput = {
+export type WorkspaceUpdateToOneWithWhereWithoutTaskPipelineStagesInput = {
   where?: Prisma.WorkspaceWhereInput
-  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_instancesInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_instancesInput>
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskPipelineStagesInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskPipelineStagesInput>
 }
 
-export type WorkspaceUpdateWithoutWorkflow_instancesInput = {
+export type WorkspaceUpdateWithoutTaskPipelineStagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -7841,16 +7710,15 @@ export type WorkspaceUpdateWithoutWorkflow_instancesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceUncheckedUpdateWithoutWorkflow_instancesInput = {
+export type WorkspaceUncheckedUpdateWithoutTaskPipelineStagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -7895,16 +7763,15 @@ export type WorkspaceUncheckedUpdateWithoutWorkflow_instancesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceCreateWithoutWorkflow_notification_logInput = {
+export type WorkspaceCreateWithoutTasksInput = {
   id?: string
   name: string
   slug: string
@@ -7949,16 +7816,15 @@ export type WorkspaceCreateWithoutWorkflow_notification_logInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceUncheckedCreateWithoutWorkflow_notification_logInput = {
+export type WorkspaceUncheckedCreateWithoutTasksInput = {
   id?: string
   name: string
   slug: string
@@ -8003,32 +7869,31 @@ export type WorkspaceUncheckedCreateWithoutWorkflow_notification_logInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceCreateOrConnectWithoutWorkflow_notification_logInput = {
+export type WorkspaceCreateOrConnectWithoutTasksInput = {
   where: Prisma.WorkspaceWhereUniqueInput
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_notification_logInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_notification_logInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTasksInput, Prisma.WorkspaceUncheckedCreateWithoutTasksInput>
 }
 
-export type WorkspaceUpsertWithoutWorkflow_notification_logInput = {
-  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_notification_logInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_notification_logInput>
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_notification_logInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_notification_logInput>
+export type WorkspaceUpsertWithoutTasksInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTasksInput, Prisma.WorkspaceUncheckedUpdateWithoutTasksInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTasksInput, Prisma.WorkspaceUncheckedCreateWithoutTasksInput>
   where?: Prisma.WorkspaceWhereInput
 }
 
-export type WorkspaceUpdateToOneWithWhereWithoutWorkflow_notification_logInput = {
+export type WorkspaceUpdateToOneWithWhereWithoutTasksInput = {
   where?: Prisma.WorkspaceWhereInput
-  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_notification_logInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_notification_logInput>
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTasksInput, Prisma.WorkspaceUncheckedUpdateWithoutTasksInput>
 }
 
-export type WorkspaceUpdateWithoutWorkflow_notification_logInput = {
+export type WorkspaceUpdateWithoutTasksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8073,16 +7938,15 @@ export type WorkspaceUpdateWithoutWorkflow_notification_logInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceUncheckedUpdateWithoutWorkflow_notification_logInput = {
+export type WorkspaceUncheckedUpdateWithoutTasksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8127,16 +7991,15 @@ export type WorkspaceUncheckedUpdateWithoutWorkflow_notification_logInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceCreateWithoutWorkflow_project_instancesInput = {
+export type WorkspaceCreateWithoutTaskStagesInput = {
   id?: string
   name: string
   slug: string
@@ -8181,16 +8044,15 @@ export type WorkspaceCreateWithoutWorkflow_project_instancesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceUncheckedCreateWithoutWorkflow_project_instancesInput = {
+export type WorkspaceUncheckedCreateWithoutTaskStagesInput = {
   id?: string
   name: string
   slug: string
@@ -8235,32 +8097,31 @@ export type WorkspaceUncheckedCreateWithoutWorkflow_project_instancesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceCreateOrConnectWithoutWorkflow_project_instancesInput = {
+export type WorkspaceCreateOrConnectWithoutTaskStagesInput = {
   where: Prisma.WorkspaceWhereUniqueInput
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_project_instancesInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_project_instancesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStagesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStagesInput>
 }
 
-export type WorkspaceUpsertWithoutWorkflow_project_instancesInput = {
-  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_project_instancesInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_project_instancesInput>
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_project_instancesInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_project_instancesInput>
+export type WorkspaceUpsertWithoutTaskStagesInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskStagesInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskStagesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStagesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStagesInput>
   where?: Prisma.WorkspaceWhereInput
 }
 
-export type WorkspaceUpdateToOneWithWhereWithoutWorkflow_project_instancesInput = {
+export type WorkspaceUpdateToOneWithWhereWithoutTaskStagesInput = {
   where?: Prisma.WorkspaceWhereInput
-  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_project_instancesInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_project_instancesInput>
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskStagesInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskStagesInput>
 }
 
-export type WorkspaceUpdateWithoutWorkflow_project_instancesInput = {
+export type WorkspaceUpdateWithoutTaskStagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8305,16 +8166,15 @@ export type WorkspaceUpdateWithoutWorkflow_project_instancesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceUncheckedUpdateWithoutWorkflow_project_instancesInput = {
+export type WorkspaceUncheckedUpdateWithoutTaskStagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8359,16 +8219,15 @@ export type WorkspaceUncheckedUpdateWithoutWorkflow_project_instancesInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceCreateWithoutWorkflow_project_settingsInput = {
+export type WorkspaceCreateWithoutTaskStageChecklistItemsInput = {
   id?: string
   name: string
   slug: string
@@ -8413,16 +8272,15 @@ export type WorkspaceCreateWithoutWorkflow_project_settingsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceUncheckedCreateWithoutWorkflow_project_settingsInput = {
+export type WorkspaceUncheckedCreateWithoutTaskStageChecklistItemsInput = {
   id?: string
   name: string
   slug: string
@@ -8467,32 +8325,31 @@ export type WorkspaceUncheckedCreateWithoutWorkflow_project_settingsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceCreateOrConnectWithoutWorkflow_project_settingsInput = {
+export type WorkspaceCreateOrConnectWithoutTaskStageChecklistItemsInput = {
   where: Prisma.WorkspaceWhereUniqueInput
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_project_settingsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_project_settingsInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStageChecklistItemsInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStageChecklistItemsInput>
 }
 
-export type WorkspaceUpsertWithoutWorkflow_project_settingsInput = {
-  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_project_settingsInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_project_settingsInput>
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_project_settingsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_project_settingsInput>
+export type WorkspaceUpsertWithoutTaskStageChecklistItemsInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskStageChecklistItemsInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskStageChecklistItemsInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStageChecklistItemsInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStageChecklistItemsInput>
   where?: Prisma.WorkspaceWhereInput
 }
 
-export type WorkspaceUpdateToOneWithWhereWithoutWorkflow_project_settingsInput = {
+export type WorkspaceUpdateToOneWithWhereWithoutTaskStageChecklistItemsInput = {
   where?: Prisma.WorkspaceWhereInput
-  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_project_settingsInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_project_settingsInput>
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskStageChecklistItemsInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskStageChecklistItemsInput>
 }
 
-export type WorkspaceUpdateWithoutWorkflow_project_settingsInput = {
+export type WorkspaceUpdateWithoutTaskStageChecklistItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8537,16 +8394,15 @@ export type WorkspaceUpdateWithoutWorkflow_project_settingsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceUncheckedUpdateWithoutWorkflow_project_settingsInput = {
+export type WorkspaceUncheckedUpdateWithoutTaskStageChecklistItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8591,16 +8447,15 @@ export type WorkspaceUncheckedUpdateWithoutWorkflow_project_settingsInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceCreateWithoutWorkflow_scheduled_instances_queueInput = {
+export type WorkspaceCreateWithoutTaskStageOutcomesInput = {
   id?: string
   name: string
   slug: string
@@ -8645,16 +8500,15 @@ export type WorkspaceCreateWithoutWorkflow_scheduled_instances_queueInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput = {
+export type WorkspaceUncheckedCreateWithoutTaskStageOutcomesInput = {
   id?: string
   name: string
   slug: string
@@ -8699,32 +8553,31 @@ export type WorkspaceUncheckedCreateWithoutWorkflow_scheduled_instances_queueInp
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedCreateNestedManyWithoutTenantsInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
 }
 
-export type WorkspaceCreateOrConnectWithoutWorkflow_scheduled_instances_queueInput = {
+export type WorkspaceCreateOrConnectWithoutTaskStageOutcomesInput = {
   where: Prisma.WorkspaceWhereUniqueInput
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStageOutcomesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStageOutcomesInput>
 }
 
-export type WorkspaceUpsertWithoutWorkflow_scheduled_instances_queueInput = {
-  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_scheduled_instances_queueInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_scheduled_instances_queueInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_scheduled_instances_queueInput>
+export type WorkspaceUpsertWithoutTaskStageOutcomesInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskStageOutcomesInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskStageOutcomesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutTaskStageOutcomesInput, Prisma.WorkspaceUncheckedCreateWithoutTaskStageOutcomesInput>
   where?: Prisma.WorkspaceWhereInput
 }
 
-export type WorkspaceUpdateToOneWithWhereWithoutWorkflow_scheduled_instances_queueInput = {
+export type WorkspaceUpdateToOneWithWhereWithoutTaskStageOutcomesInput = {
   where?: Prisma.WorkspaceWhereInput
-  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_scheduled_instances_queueInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput>
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutTaskStageOutcomesInput, Prisma.WorkspaceUncheckedUpdateWithoutTaskStageOutcomesInput>
 }
 
-export type WorkspaceUpdateWithoutWorkflow_scheduled_instances_queueInput = {
+export type WorkspaceUpdateWithoutTaskStageOutcomesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8769,16 +8622,15 @@ export type WorkspaceUpdateWithoutWorkflow_scheduled_instances_queueInput = {
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
 }
 
-export type WorkspaceUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInput = {
+export type WorkspaceUncheckedUpdateWithoutTaskStageOutcomesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
@@ -8823,245 +8675,12 @@ export type WorkspaceUncheckedUpdateWithoutWorkflow_scheduled_instances_queueInp
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_service_definitions?: Prisma.workflow_service_definitionsUncheckedUpdateManyWithoutTenantsNestedInput
-}
-
-export type WorkspaceCreateWithoutWorkflow_service_definitionsInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.WorkspaceStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutWorkspaceInput
-  connectors?: Prisma.ConnectorCreateNestedManyWithoutWorkspaceInput
-  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
-  formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
-  formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
-  formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
-  formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
-  forms?: Prisma.FormCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
-  backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
-  letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
-  users?: Prisma.UserCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueCreateNestedManyWithoutTenantsInput
-}
-
-export type WorkspaceUncheckedCreateWithoutWorkflow_service_definitionsInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.WorkspaceStatus
-  contactEmail?: string | null
-  contactPhone?: string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: number
-  maxCompanies?: number
-  maxStorageMb?: number
-  logoUrl?: string | null
-  primaryColor?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  deletedReason?: string | null
-  activatedAt?: Date | string | null
-  suspendedAt?: Date | string | null
-  suspendReason?: string | null
-  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
-  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutWorkspaceInput
-  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutWorkspaceInput
-  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
-  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
-  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
-  formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
-  formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
-  formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
-  formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
-  forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
-  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
-  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
-  backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
-  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
-  letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
-  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedCreateNestedManyWithoutTenantsInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedCreateNestedManyWithoutTenantsInput
-}
-
-export type WorkspaceCreateOrConnectWithoutWorkflow_service_definitionsInput = {
-  where: Prisma.WorkspaceWhereUniqueInput
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_service_definitionsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_service_definitionsInput>
-}
-
-export type WorkspaceUpsertWithoutWorkflow_service_definitionsInput = {
-  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_service_definitionsInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_service_definitionsInput>
-  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutWorkflow_service_definitionsInput, Prisma.WorkspaceUncheckedCreateWithoutWorkflow_service_definitionsInput>
-  where?: Prisma.WorkspaceWhereInput
-}
-
-export type WorkspaceUpdateToOneWithWhereWithoutWorkflow_service_definitionsInput = {
-  where?: Prisma.WorkspaceWhereInput
-  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutWorkflow_service_definitionsInput, Prisma.WorkspaceUncheckedUpdateWithoutWorkflow_service_definitionsInput>
-}
-
-export type WorkspaceUpdateWithoutWorkflow_service_definitionsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutWorkspaceNestedInput
-  connectors?: Prisma.ConnectorUpdateManyWithoutWorkspaceNestedInput
-  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
-  formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
-  formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
-  formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
-  formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
-  forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
-  letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUpdateManyWithoutTenantsNestedInput
-}
-
-export type WorkspaceUncheckedUpdateWithoutWorkflow_service_definitionsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
-  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
-  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
-  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
-  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
-  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
-  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
-  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutWorkspaceNestedInput
-  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutWorkspaceNestedInput
-  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
-  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
-  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
-  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
-  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
-  formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
-  formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
-  formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
-  formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
-  forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
-  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
-  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
-  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
-  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
-  backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
-  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
-  letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  workflow_client_groups?: Prisma.workflow_client_groupsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_engagements?: Prisma.workflow_engagementsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_instances?: Prisma.workflow_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_notification_log?: Prisma.workflow_notification_logUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_instances?: Prisma.workflow_project_instancesUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_project_settings?: Prisma.workflow_project_settingsUncheckedUpdateManyWithoutTenantsNestedInput
-  workflow_scheduled_instances_queue?: Prisma.workflow_scheduled_instances_queueUncheckedUpdateManyWithoutTenantsNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 
@@ -9093,14 +8712,13 @@ export type WorkspaceCountOutputType = {
   backups: number
   connectorAccess: number
   users: number
-  workflow_client_groups: number
-  workflow_engagements: number
-  workflow_instances: number
-  workflow_notification_log: number
-  workflow_project_instances: number
-  workflow_project_settings: number
-  workflow_scheduled_instances_queue: number
-  workflow_service_definitions: number
+  taskPipelines: number
+  taskPipelineVersions: number
+  taskPipelineStages: number
+  tasks: number
+  taskStages: number
+  taskStageChecklistItems: number
+  taskStageOutcomes: number
 }
 
 export type WorkspaceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -9127,14 +8745,13 @@ export type WorkspaceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensi
   backups?: boolean | WorkspaceCountOutputTypeCountBackupsArgs
   connectorAccess?: boolean | WorkspaceCountOutputTypeCountConnectorAccessArgs
   users?: boolean | WorkspaceCountOutputTypeCountUsersArgs
-  workflow_client_groups?: boolean | WorkspaceCountOutputTypeCountWorkflow_client_groupsArgs
-  workflow_engagements?: boolean | WorkspaceCountOutputTypeCountWorkflow_engagementsArgs
-  workflow_instances?: boolean | WorkspaceCountOutputTypeCountWorkflow_instancesArgs
-  workflow_notification_log?: boolean | WorkspaceCountOutputTypeCountWorkflow_notification_logArgs
-  workflow_project_instances?: boolean | WorkspaceCountOutputTypeCountWorkflow_project_instancesArgs
-  workflow_project_settings?: boolean | WorkspaceCountOutputTypeCountWorkflow_project_settingsArgs
-  workflow_scheduled_instances_queue?: boolean | WorkspaceCountOutputTypeCountWorkflow_scheduled_instances_queueArgs
-  workflow_service_definitions?: boolean | WorkspaceCountOutputTypeCountWorkflow_service_definitionsArgs
+  taskPipelines?: boolean | WorkspaceCountOutputTypeCountTaskPipelinesArgs
+  taskPipelineVersions?: boolean | WorkspaceCountOutputTypeCountTaskPipelineVersionsArgs
+  taskPipelineStages?: boolean | WorkspaceCountOutputTypeCountTaskPipelineStagesArgs
+  tasks?: boolean | WorkspaceCountOutputTypeCountTasksArgs
+  taskStages?: boolean | WorkspaceCountOutputTypeCountTaskStagesArgs
+  taskStageChecklistItems?: boolean | WorkspaceCountOutputTypeCountTaskStageChecklistItemsArgs
+  taskStageOutcomes?: boolean | WorkspaceCountOutputTypeCountTaskStageOutcomesArgs
 }
 
 /**
@@ -9311,57 +8928,50 @@ export type WorkspaceCountOutputTypeCountUsersArgs<ExtArgs extends runtime.Types
 /**
  * WorkspaceCountOutputType without action
  */
-export type WorkspaceCountOutputTypeCountWorkflow_client_groupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_client_groupsWhereInput
+export type WorkspaceCountOutputTypeCountTaskPipelinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskPipelineWhereInput
 }
 
 /**
  * WorkspaceCountOutputType without action
  */
-export type WorkspaceCountOutputTypeCountWorkflow_engagementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_engagementsWhereInput
+export type WorkspaceCountOutputTypeCountTaskPipelineVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskPipelineVersionWhereInput
 }
 
 /**
  * WorkspaceCountOutputType without action
  */
-export type WorkspaceCountOutputTypeCountWorkflow_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_instancesWhereInput
+export type WorkspaceCountOutputTypeCountTaskPipelineStagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskPipelineStageWhereInput
 }
 
 /**
  * WorkspaceCountOutputType without action
  */
-export type WorkspaceCountOutputTypeCountWorkflow_notification_logArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_notification_logWhereInput
+export type WorkspaceCountOutputTypeCountTasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskWhereInput
 }
 
 /**
  * WorkspaceCountOutputType without action
  */
-export type WorkspaceCountOutputTypeCountWorkflow_project_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_project_instancesWhereInput
+export type WorkspaceCountOutputTypeCountTaskStagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskStageWhereInput
 }
 
 /**
  * WorkspaceCountOutputType without action
  */
-export type WorkspaceCountOutputTypeCountWorkflow_project_settingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_project_settingsWhereInput
+export type WorkspaceCountOutputTypeCountTaskStageChecklistItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskStageChecklistItemWhereInput
 }
 
 /**
  * WorkspaceCountOutputType without action
  */
-export type WorkspaceCountOutputTypeCountWorkflow_scheduled_instances_queueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_scheduled_instances_queueWhereInput
-}
-
-/**
- * WorkspaceCountOutputType without action
- */
-export type WorkspaceCountOutputTypeCountWorkflow_service_definitionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.workflow_service_definitionsWhereInput
+export type WorkspaceCountOutputTypeCountTaskStageOutcomesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskStageOutcomeWhereInput
 }
 
 
@@ -9410,14 +9020,13 @@ export type WorkspaceSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   connectorAccess?: boolean | Prisma.Workspace$connectorAccessArgs<ExtArgs>
   letterhead?: boolean | Prisma.Workspace$letterheadArgs<ExtArgs>
   users?: boolean | Prisma.Workspace$usersArgs<ExtArgs>
-  workflow_client_groups?: boolean | Prisma.Workspace$workflow_client_groupsArgs<ExtArgs>
-  workflow_engagements?: boolean | Prisma.Workspace$workflow_engagementsArgs<ExtArgs>
-  workflow_instances?: boolean | Prisma.Workspace$workflow_instancesArgs<ExtArgs>
-  workflow_notification_log?: boolean | Prisma.Workspace$workflow_notification_logArgs<ExtArgs>
-  workflow_project_instances?: boolean | Prisma.Workspace$workflow_project_instancesArgs<ExtArgs>
-  workflow_project_settings?: boolean | Prisma.Workspace$workflow_project_settingsArgs<ExtArgs>
-  workflow_scheduled_instances_queue?: boolean | Prisma.Workspace$workflow_scheduled_instances_queueArgs<ExtArgs>
-  workflow_service_definitions?: boolean | Prisma.Workspace$workflow_service_definitionsArgs<ExtArgs>
+  taskPipelines?: boolean | Prisma.Workspace$taskPipelinesArgs<ExtArgs>
+  taskPipelineVersions?: boolean | Prisma.Workspace$taskPipelineVersionsArgs<ExtArgs>
+  taskPipelineStages?: boolean | Prisma.Workspace$taskPipelineStagesArgs<ExtArgs>
+  tasks?: boolean | Prisma.Workspace$tasksArgs<ExtArgs>
+  taskStages?: boolean | Prisma.Workspace$taskStagesArgs<ExtArgs>
+  taskStageChecklistItems?: boolean | Prisma.Workspace$taskStageChecklistItemsArgs<ExtArgs>
+  taskStageOutcomes?: boolean | Prisma.Workspace$taskStageOutcomesArgs<ExtArgs>
   _count?: boolean | Prisma.WorkspaceCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["workspace"]>
 
@@ -9514,14 +9123,13 @@ export type WorkspaceInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   connectorAccess?: boolean | Prisma.Workspace$connectorAccessArgs<ExtArgs>
   letterhead?: boolean | Prisma.Workspace$letterheadArgs<ExtArgs>
   users?: boolean | Prisma.Workspace$usersArgs<ExtArgs>
-  workflow_client_groups?: boolean | Prisma.Workspace$workflow_client_groupsArgs<ExtArgs>
-  workflow_engagements?: boolean | Prisma.Workspace$workflow_engagementsArgs<ExtArgs>
-  workflow_instances?: boolean | Prisma.Workspace$workflow_instancesArgs<ExtArgs>
-  workflow_notification_log?: boolean | Prisma.Workspace$workflow_notification_logArgs<ExtArgs>
-  workflow_project_instances?: boolean | Prisma.Workspace$workflow_project_instancesArgs<ExtArgs>
-  workflow_project_settings?: boolean | Prisma.Workspace$workflow_project_settingsArgs<ExtArgs>
-  workflow_scheduled_instances_queue?: boolean | Prisma.Workspace$workflow_scheduled_instances_queueArgs<ExtArgs>
-  workflow_service_definitions?: boolean | Prisma.Workspace$workflow_service_definitionsArgs<ExtArgs>
+  taskPipelines?: boolean | Prisma.Workspace$taskPipelinesArgs<ExtArgs>
+  taskPipelineVersions?: boolean | Prisma.Workspace$taskPipelineVersionsArgs<ExtArgs>
+  taskPipelineStages?: boolean | Prisma.Workspace$taskPipelineStagesArgs<ExtArgs>
+  tasks?: boolean | Prisma.Workspace$tasksArgs<ExtArgs>
+  taskStages?: boolean | Prisma.Workspace$taskStagesArgs<ExtArgs>
+  taskStageChecklistItems?: boolean | Prisma.Workspace$taskStageChecklistItemsArgs<ExtArgs>
+  taskStageOutcomes?: boolean | Prisma.Workspace$taskStageOutcomesArgs<ExtArgs>
   _count?: boolean | Prisma.WorkspaceCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type WorkspaceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -9555,14 +9163,13 @@ export type $WorkspacePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     connectorAccess: Prisma.$WorkspaceConnectorAccessPayload<ExtArgs>[]
     letterhead: Prisma.$WorkspaceLetterheadPayload<ExtArgs> | null
     users: Prisma.$UserPayload<ExtArgs>[]
-    workflow_client_groups: Prisma.$workflow_client_groupsPayload<ExtArgs>[]
-    workflow_engagements: Prisma.$workflow_engagementsPayload<ExtArgs>[]
-    workflow_instances: Prisma.$workflow_instancesPayload<ExtArgs>[]
-    workflow_notification_log: Prisma.$workflow_notification_logPayload<ExtArgs>[]
-    workflow_project_instances: Prisma.$workflow_project_instancesPayload<ExtArgs>[]
-    workflow_project_settings: Prisma.$workflow_project_settingsPayload<ExtArgs>[]
-    workflow_scheduled_instances_queue: Prisma.$workflow_scheduled_instances_queuePayload<ExtArgs>[]
-    workflow_service_definitions: Prisma.$workflow_service_definitionsPayload<ExtArgs>[]
+    taskPipelines: Prisma.$TaskPipelinePayload<ExtArgs>[]
+    taskPipelineVersions: Prisma.$TaskPipelineVersionPayload<ExtArgs>[]
+    taskPipelineStages: Prisma.$TaskPipelineStagePayload<ExtArgs>[]
+    tasks: Prisma.$TaskPayload<ExtArgs>[]
+    taskStages: Prisma.$TaskStagePayload<ExtArgs>[]
+    taskStageChecklistItems: Prisma.$TaskStageChecklistItemPayload<ExtArgs>[]
+    taskStageOutcomes: Prisma.$TaskStageOutcomePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -10003,14 +9610,13 @@ export interface Prisma__WorkspaceClient<T, Null = never, ExtArgs extends runtim
   connectorAccess<T extends Prisma.Workspace$connectorAccessArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$connectorAccessArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkspaceConnectorAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   letterhead<T extends Prisma.Workspace$letterheadArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$letterheadArgs<ExtArgs>>): Prisma.Prisma__WorkspaceLetterheadClient<runtime.Types.Result.GetResult<Prisma.$WorkspaceLetterheadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   users<T extends Prisma.Workspace$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_client_groups<T extends Prisma.Workspace$workflow_client_groupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$workflow_client_groupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_client_groupsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_engagements<T extends Prisma.Workspace$workflow_engagementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$workflow_engagementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_engagementsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_instances<T extends Prisma.Workspace$workflow_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$workflow_instancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_instancesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_notification_log<T extends Prisma.Workspace$workflow_notification_logArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$workflow_notification_logArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_notification_logPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_project_instances<T extends Prisma.Workspace$workflow_project_instancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$workflow_project_instancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_project_instancesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_project_settings<T extends Prisma.Workspace$workflow_project_settingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$workflow_project_settingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_project_settingsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_scheduled_instances_queue<T extends Prisma.Workspace$workflow_scheduled_instances_queueArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$workflow_scheduled_instances_queueArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_scheduled_instances_queuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  workflow_service_definitions<T extends Prisma.Workspace$workflow_service_definitionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$workflow_service_definitionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$workflow_service_definitionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  taskPipelines<T extends Prisma.Workspace$taskPipelinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$taskPipelinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskPipelinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  taskPipelineVersions<T extends Prisma.Workspace$taskPipelineVersionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$taskPipelineVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskPipelineVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  taskPipelineStages<T extends Prisma.Workspace$taskPipelineStagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$taskPipelineStagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskPipelineStagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  tasks<T extends Prisma.Workspace$tasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$tasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  taskStages<T extends Prisma.Workspace$taskStagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$taskStagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  taskStageChecklistItems<T extends Prisma.Workspace$taskStageChecklistItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$taskStageChecklistItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStageChecklistItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  taskStageOutcomes<T extends Prisma.Workspace$taskStageOutcomesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$taskStageOutcomesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStageOutcomePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -11037,195 +10643,171 @@ export type Workspace$usersArgs<ExtArgs extends runtime.Types.Extensions.Interna
 }
 
 /**
- * Workspace.workflow_client_groups
+ * Workspace.taskPipelines
  */
-export type Workspace$workflow_client_groupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Workspace$taskPipelinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the workflow_client_groups
+   * Select specific fields to fetch from the TaskPipeline
    */
-  select?: Prisma.workflow_client_groupsSelect<ExtArgs> | null
+  select?: Prisma.TaskPipelineSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the workflow_client_groups
+   * Omit specific fields from the TaskPipeline
    */
-  omit?: Prisma.workflow_client_groupsOmit<ExtArgs> | null
+  omit?: Prisma.TaskPipelineOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.workflow_client_groupsInclude<ExtArgs> | null
-  where?: Prisma.workflow_client_groupsWhereInput
-  orderBy?: Prisma.workflow_client_groupsOrderByWithRelationInput | Prisma.workflow_client_groupsOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_client_groupsWhereUniqueInput
+  include?: Prisma.TaskPipelineInclude<ExtArgs> | null
+  where?: Prisma.TaskPipelineWhereInput
+  orderBy?: Prisma.TaskPipelineOrderByWithRelationInput | Prisma.TaskPipelineOrderByWithRelationInput[]
+  cursor?: Prisma.TaskPipelineWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.Workflow_client_groupsScalarFieldEnum | Prisma.Workflow_client_groupsScalarFieldEnum[]
+  distinct?: Prisma.TaskPipelineScalarFieldEnum | Prisma.TaskPipelineScalarFieldEnum[]
 }
 
 /**
- * Workspace.workflow_engagements
+ * Workspace.taskPipelineVersions
  */
-export type Workspace$workflow_engagementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Workspace$taskPipelineVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the workflow_engagements
+   * Select specific fields to fetch from the TaskPipelineVersion
    */
-  select?: Prisma.workflow_engagementsSelect<ExtArgs> | null
+  select?: Prisma.TaskPipelineVersionSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the workflow_engagements
+   * Omit specific fields from the TaskPipelineVersion
    */
-  omit?: Prisma.workflow_engagementsOmit<ExtArgs> | null
+  omit?: Prisma.TaskPipelineVersionOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.workflow_engagementsInclude<ExtArgs> | null
-  where?: Prisma.workflow_engagementsWhereInput
-  orderBy?: Prisma.workflow_engagementsOrderByWithRelationInput | Prisma.workflow_engagementsOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_engagementsWhereUniqueInput
+  include?: Prisma.TaskPipelineVersionInclude<ExtArgs> | null
+  where?: Prisma.TaskPipelineVersionWhereInput
+  orderBy?: Prisma.TaskPipelineVersionOrderByWithRelationInput | Prisma.TaskPipelineVersionOrderByWithRelationInput[]
+  cursor?: Prisma.TaskPipelineVersionWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.Workflow_engagementsScalarFieldEnum | Prisma.Workflow_engagementsScalarFieldEnum[]
+  distinct?: Prisma.TaskPipelineVersionScalarFieldEnum | Prisma.TaskPipelineVersionScalarFieldEnum[]
 }
 
 /**
- * Workspace.workflow_instances
+ * Workspace.taskPipelineStages
  */
-export type Workspace$workflow_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Workspace$taskPipelineStagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the workflow_instances
+   * Select specific fields to fetch from the TaskPipelineStage
    */
-  select?: Prisma.workflow_instancesSelect<ExtArgs> | null
+  select?: Prisma.TaskPipelineStageSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the workflow_instances
+   * Omit specific fields from the TaskPipelineStage
    */
-  omit?: Prisma.workflow_instancesOmit<ExtArgs> | null
+  omit?: Prisma.TaskPipelineStageOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.workflow_instancesInclude<ExtArgs> | null
-  where?: Prisma.workflow_instancesWhereInput
-  orderBy?: Prisma.workflow_instancesOrderByWithRelationInput | Prisma.workflow_instancesOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_instancesWhereUniqueInput
+  include?: Prisma.TaskPipelineStageInclude<ExtArgs> | null
+  where?: Prisma.TaskPipelineStageWhereInput
+  orderBy?: Prisma.TaskPipelineStageOrderByWithRelationInput | Prisma.TaskPipelineStageOrderByWithRelationInput[]
+  cursor?: Prisma.TaskPipelineStageWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.Workflow_instancesScalarFieldEnum | Prisma.Workflow_instancesScalarFieldEnum[]
+  distinct?: Prisma.TaskPipelineStageScalarFieldEnum | Prisma.TaskPipelineStageScalarFieldEnum[]
 }
 
 /**
- * Workspace.workflow_notification_log
+ * Workspace.tasks
  */
-export type Workspace$workflow_notification_logArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Workspace$tasksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the workflow_notification_log
+   * Select specific fields to fetch from the Task
    */
-  select?: Prisma.workflow_notification_logSelect<ExtArgs> | null
+  select?: Prisma.TaskSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the workflow_notification_log
+   * Omit specific fields from the Task
    */
-  omit?: Prisma.workflow_notification_logOmit<ExtArgs> | null
+  omit?: Prisma.TaskOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.workflow_notification_logInclude<ExtArgs> | null
-  where?: Prisma.workflow_notification_logWhereInput
-  orderBy?: Prisma.workflow_notification_logOrderByWithRelationInput | Prisma.workflow_notification_logOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_notification_logWhereUniqueInput
+  include?: Prisma.TaskInclude<ExtArgs> | null
+  where?: Prisma.TaskWhereInput
+  orderBy?: Prisma.TaskOrderByWithRelationInput | Prisma.TaskOrderByWithRelationInput[]
+  cursor?: Prisma.TaskWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.Workflow_notification_logScalarFieldEnum | Prisma.Workflow_notification_logScalarFieldEnum[]
+  distinct?: Prisma.TaskScalarFieldEnum | Prisma.TaskScalarFieldEnum[]
 }
 
 /**
- * Workspace.workflow_project_instances
+ * Workspace.taskStages
  */
-export type Workspace$workflow_project_instancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Workspace$taskStagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the workflow_project_instances
+   * Select specific fields to fetch from the TaskStage
    */
-  select?: Prisma.workflow_project_instancesSelect<ExtArgs> | null
+  select?: Prisma.TaskStageSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the workflow_project_instances
+   * Omit specific fields from the TaskStage
    */
-  omit?: Prisma.workflow_project_instancesOmit<ExtArgs> | null
+  omit?: Prisma.TaskStageOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.workflow_project_instancesInclude<ExtArgs> | null
-  where?: Prisma.workflow_project_instancesWhereInput
-  orderBy?: Prisma.workflow_project_instancesOrderByWithRelationInput | Prisma.workflow_project_instancesOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_project_instancesWhereUniqueInput
+  include?: Prisma.TaskStageInclude<ExtArgs> | null
+  where?: Prisma.TaskStageWhereInput
+  orderBy?: Prisma.TaskStageOrderByWithRelationInput | Prisma.TaskStageOrderByWithRelationInput[]
+  cursor?: Prisma.TaskStageWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.Workflow_project_instancesScalarFieldEnum | Prisma.Workflow_project_instancesScalarFieldEnum[]
+  distinct?: Prisma.TaskStageScalarFieldEnum | Prisma.TaskStageScalarFieldEnum[]
 }
 
 /**
- * Workspace.workflow_project_settings
+ * Workspace.taskStageChecklistItems
  */
-export type Workspace$workflow_project_settingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Workspace$taskStageChecklistItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the workflow_project_settings
+   * Select specific fields to fetch from the TaskStageChecklistItem
    */
-  select?: Prisma.workflow_project_settingsSelect<ExtArgs> | null
+  select?: Prisma.TaskStageChecklistItemSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the workflow_project_settings
+   * Omit specific fields from the TaskStageChecklistItem
    */
-  omit?: Prisma.workflow_project_settingsOmit<ExtArgs> | null
+  omit?: Prisma.TaskStageChecklistItemOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.workflow_project_settingsInclude<ExtArgs> | null
-  where?: Prisma.workflow_project_settingsWhereInput
-  orderBy?: Prisma.workflow_project_settingsOrderByWithRelationInput | Prisma.workflow_project_settingsOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_project_settingsWhereUniqueInput
+  include?: Prisma.TaskStageChecklistItemInclude<ExtArgs> | null
+  where?: Prisma.TaskStageChecklistItemWhereInput
+  orderBy?: Prisma.TaskStageChecklistItemOrderByWithRelationInput | Prisma.TaskStageChecklistItemOrderByWithRelationInput[]
+  cursor?: Prisma.TaskStageChecklistItemWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.Workflow_project_settingsScalarFieldEnum | Prisma.Workflow_project_settingsScalarFieldEnum[]
+  distinct?: Prisma.TaskStageChecklistItemScalarFieldEnum | Prisma.TaskStageChecklistItemScalarFieldEnum[]
 }
 
 /**
- * Workspace.workflow_scheduled_instances_queue
+ * Workspace.taskStageOutcomes
  */
-export type Workspace$workflow_scheduled_instances_queueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Workspace$taskStageOutcomesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the workflow_scheduled_instances_queue
+   * Select specific fields to fetch from the TaskStageOutcome
    */
-  select?: Prisma.workflow_scheduled_instances_queueSelect<ExtArgs> | null
+  select?: Prisma.TaskStageOutcomeSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the workflow_scheduled_instances_queue
+   * Omit specific fields from the TaskStageOutcome
    */
-  omit?: Prisma.workflow_scheduled_instances_queueOmit<ExtArgs> | null
+  omit?: Prisma.TaskStageOutcomeOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.workflow_scheduled_instances_queueInclude<ExtArgs> | null
-  where?: Prisma.workflow_scheduled_instances_queueWhereInput
-  orderBy?: Prisma.workflow_scheduled_instances_queueOrderByWithRelationInput | Prisma.workflow_scheduled_instances_queueOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_scheduled_instances_queueWhereUniqueInput
+  include?: Prisma.TaskStageOutcomeInclude<ExtArgs> | null
+  where?: Prisma.TaskStageOutcomeWhereInput
+  orderBy?: Prisma.TaskStageOutcomeOrderByWithRelationInput | Prisma.TaskStageOutcomeOrderByWithRelationInput[]
+  cursor?: Prisma.TaskStageOutcomeWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.Workflow_scheduled_instances_queueScalarFieldEnum | Prisma.Workflow_scheduled_instances_queueScalarFieldEnum[]
-}
-
-/**
- * Workspace.workflow_service_definitions
- */
-export type Workspace$workflow_service_definitionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the workflow_service_definitions
-   */
-  select?: Prisma.workflow_service_definitionsSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the workflow_service_definitions
-   */
-  omit?: Prisma.workflow_service_definitionsOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.workflow_service_definitionsInclude<ExtArgs> | null
-  where?: Prisma.workflow_service_definitionsWhereInput
-  orderBy?: Prisma.workflow_service_definitionsOrderByWithRelationInput | Prisma.workflow_service_definitionsOrderByWithRelationInput[]
-  cursor?: Prisma.workflow_service_definitionsWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.Workflow_service_definitionsScalarFieldEnum | Prisma.Workflow_service_definitionsScalarFieldEnum[]
+  distinct?: Prisma.TaskStageOutcomeScalarFieldEnum | Prisma.TaskStageOutcomeScalarFieldEnum[]
 }
 
 /**

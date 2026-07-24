@@ -445,112 +445,37 @@ export type ChartOfAccount = Prisma.ChartOfAccountModel
  */
 export type ChartOfAccountsMapping = Prisma.ChartOfAccountsMappingModel
 /**
- * Model workflow_artifacts
+ * Model TaskPipeline
  * 
  */
-export type workflow_artifacts = Prisma.workflow_artifactsModel
+export type TaskPipeline = Prisma.TaskPipelineModel
 /**
- * Model workflow_billing_states
+ * Model TaskPipelineVersion
  * 
  */
-export type workflow_billing_states = Prisma.workflow_billing_statesModel
+export type TaskPipelineVersion = Prisma.TaskPipelineVersionModel
 /**
- * Model workflow_blockers
+ * Model TaskPipelineStage
  * 
  */
-export type workflow_blockers = Prisma.workflow_blockersModel
+export type TaskPipelineStage = Prisma.TaskPipelineStageModel
 /**
- * Model workflow_client_group_members
+ * Model Task
  * 
  */
-export type workflow_client_group_members = Prisma.workflow_client_group_membersModel
+export type Task = Prisma.TaskModel
 /**
- * Model workflow_client_groups
+ * Model TaskStage
  * 
  */
-export type workflow_client_groups = Prisma.workflow_client_groupsModel
+export type TaskStage = Prisma.TaskStageModel
 /**
- * Model workflow_communication_log_entries
+ * Model TaskStageChecklistItem
  * 
  */
-export type workflow_communication_log_entries = Prisma.workflow_communication_log_entriesModel
+export type TaskStageChecklistItem = Prisma.TaskStageChecklistItemModel
 /**
- * Model workflow_cross_dependencies
+ * Model TaskStageOutcome
  * 
  */
-export type workflow_cross_dependencies = Prisma.workflow_cross_dependenciesModel
-/**
- * Model workflow_deviations
- * 
- */
-export type workflow_deviations = Prisma.workflow_deviationsModel
-/**
- * Model workflow_engagement_services
- * 
- */
-export type workflow_engagement_services = Prisma.workflow_engagement_servicesModel
-/**
- * Model workflow_engagements
- * 
- */
-export type workflow_engagements = Prisma.workflow_engagementsModel
-/**
- * Model workflow_instances
- * 
- */
-export type workflow_instances = Prisma.workflow_instancesModel
-/**
- * Model workflow_milestone_templates
- * 
- */
-export type workflow_milestone_templates = Prisma.workflow_milestone_templatesModel
-/**
- * Model workflow_milestones
- * 
- */
-export type workflow_milestones = Prisma.workflow_milestonesModel
-/**
- * Model workflow_notification_log
- * 
- */
-export type workflow_notification_log = Prisma.workflow_notification_logModel
-/**
- * Model workflow_program_requirements
- * 
- */
-export type workflow_program_requirements = Prisma.workflow_program_requirementsModel
-/**
- * Model workflow_project_instances
- * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
- */
-export type workflow_project_instances = Prisma.workflow_project_instancesModel
-/**
- * Model workflow_project_settings
- * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
- */
-export type workflow_project_settings = Prisma.workflow_project_settingsModel
-/**
- * Model workflow_scheduled_instances_queue
- * 
- */
-export type workflow_scheduled_instances_queue = Prisma.workflow_scheduled_instances_queueModel
-/**
- * Model workflow_service_definitions
- * 
- */
-export type workflow_service_definitions = Prisma.workflow_service_definitionsModel
-/**
- * Model workflow_task_dependencies
- * 
- */
-export type workflow_task_dependencies = Prisma.workflow_task_dependenciesModel
-/**
- * Model workflow_task_items
- * 
- */
-export type workflow_task_items = Prisma.workflow_task_itemsModel
-/**
- * Model workflow_task_templates
- * 
- */
-export type workflow_task_templates = Prisma.workflow_task_templatesModel
+export type TaskStageOutcome = Prisma.TaskStageOutcomeModel

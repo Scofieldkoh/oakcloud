@@ -8,58 +8,57 @@ datasource db {
 }
 
 model Workspace {
-  id                                 String                               @id @default(uuid())
-  name                               String
-  slug                               String                               @unique
-  status                             WorkspaceStatus                      @default(PENDING_SETUP)
-  contactEmail                       String?
-  contactPhone                       String?
-  settings                           Json?
-  maxUsers                           Int                                  @default(50)
-  maxCompanies                       Int                                  @default(100)
-  maxStorageMb                       Int                                  @default(10240)
-  logoUrl                            String?
-  primaryColor                       String?                              @default("#294d44")
-  createdAt                          DateTime                             @default(now())
-  updatedAt                          DateTime                             @updatedAt
-  deletedAt                          DateTime?
-  deletedReason                      String?
-  activatedAt                        DateTime?
-  suspendedAt                        DateTime?
-  suspendReason                      String?
-  aiConversations                    AiConversation[]
-  auditLogs                          AuditLog[]
-  backupSchedule                     BackupSchedule?
-  chartOfAccounts                    ChartOfAccount[]
-  companies                          Company[]
-  connectorUsageLogs                 ConnectorUsageLog[]
-  connectors                         Connector[]
-  contactDetails                     ContactDetail[]
-  contacts                           Contact[]
-  documentTemplates                  DocumentTemplate[]
-  documents                          Document[]
-  exchangeRates                      ExchangeRate[]
-  formFields                         FormField[]
-  formDrafts                         FormDraft[]
-  formSubmissions                    FormSubmission[]
-  formUploads                        FormUpload[]
-  forms                              Form[]
-  generatedDocuments                 GeneratedDocument[]
-  esigningEnvelopes                  EsigningEnvelope[]
-  roles                              Role[]
-  templatePartials                   TemplatePartial[]
-  backups                            WorkspaceBackup[]
-  connectorAccess                    WorkspaceConnectorAccess[]
-  letterhead                         WorkspaceLetterhead?
-  users                              User[]
-  workflow_client_groups             workflow_client_groups[]
-  workflow_engagements               workflow_engagements[]
-  workflow_instances                 workflow_instances[]
-  workflow_notification_log          workflow_notification_log[]
-  workflow_project_instances         workflow_project_instances[]
-  workflow_project_settings          workflow_project_settings[]
-  workflow_scheduled_instances_queue workflow_scheduled_instances_queue[]
-  workflow_service_definitions       workflow_service_definitions[]
+  id                      String                     @id @default(uuid())
+  name                    String
+  slug                    String                     @unique
+  status                  WorkspaceStatus            @default(PENDING_SETUP)
+  contactEmail            String?
+  contactPhone            String?
+  settings                Json?
+  maxUsers                Int                        @default(50)
+  maxCompanies            Int                        @default(100)
+  maxStorageMb            Int                        @default(10240)
+  logoUrl                 String?
+  primaryColor            String?                    @default("#294d44")
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+  deletedAt               DateTime?
+  deletedReason           String?
+  activatedAt             DateTime?
+  suspendedAt             DateTime?
+  suspendReason           String?
+  aiConversations         AiConversation[]
+  auditLogs               AuditLog[]
+  backupSchedule          BackupSchedule?
+  chartOfAccounts         ChartOfAccount[]
+  companies               Company[]
+  connectorUsageLogs      ConnectorUsageLog[]
+  connectors              Connector[]
+  contactDetails          ContactDetail[]
+  contacts                Contact[]
+  documentTemplates       DocumentTemplate[]
+  documents               Document[]
+  exchangeRates           ExchangeRate[]
+  formFields              FormField[]
+  formDrafts              FormDraft[]
+  formSubmissions         FormSubmission[]
+  formUploads             FormUpload[]
+  forms                   Form[]
+  generatedDocuments      GeneratedDocument[]
+  esigningEnvelopes       EsigningEnvelope[]
+  roles                   Role[]
+  templatePartials        TemplatePartial[]
+  backups                 WorkspaceBackup[]
+  connectorAccess         WorkspaceConnectorAccess[]
+  letterhead              WorkspaceLetterhead?
+  users                   User[]
+  taskPipelines           TaskPipeline[]
+  taskPipelineVersions    TaskPipelineVersion[]
+  taskPipelineStages      TaskPipelineStage[]
+  tasks                   Task[]
+  taskStages              TaskStage[]
+  taskStageChecklistItems TaskStageChecklistItem[]
+  taskStageOutcomes       TaskStageOutcome[]
 
   @@index([slug])
   @@index([status])
@@ -131,62 +130,40 @@ model UserRoleAssignment {
 }
 
 model User {
-  id                                                                                             String                               @id @default(uuid())
-  email                                                                                          String                               @unique
-  passwordHash                                                                                   String
-  firstName                                                                                      String
-  lastName                                                                                       String
-  isActive                                                                                       Boolean                              @default(true)
-  lastLoginAt                                                                                    DateTime?
-  createdAt                                                                                      DateTime                             @default(now())
-  updatedAt                                                                                      DateTime                             @updatedAt
-  deletedAt                                                                                      DateTime?
-  mustChangePassword                                                                             Boolean                              @default(false)
-  passwordResetToken                                                                             String?                              @unique
-  passwordResetExpires                                                                           DateTime?
-  passwordChangedAt                                                                              DateTime?
-  tenantId                                                                                       String?
-  aiConversations                                                                                AiConversation[]                     @relation("ConversationOwner")
-  auditLogs                                                                                      AuditLog[]
-  connectorUsageLogs                                                                             ConnectorUsageLog[]
-  hiddenComments                                                                                 DocumentComment[]                    @relation("CommentHider")
-  resolvedComments                                                                               DocumentComment[]                    @relation("CommentResolver")
-  authoredComments                                                                               DocumentComment[]                    @relation("CommentAuthor")
-  documentDrafts                                                                                 DocumentDraft[]                      @relation("DraftAuthor")
-  createdTemplates                                                                               DocumentTemplate[]                   @relation("TemplateCreator")
-  uploadedDocuments                                                                              Document[]
-  createdDocuments                                                                               GeneratedDocument[]                  @relation("DocumentCreator")
-  createdEsigningEnvelopes                                                                       EsigningEnvelope[]                   @relation("EsigningEnvelopeCreatedBy")
-  finalizedDocuments                                                                             GeneratedDocument[]                  @relation("DocumentFinalizer")
-  createdPartials                                                                                TemplatePartial[]                    @relation("PartialCreator")
-  companyAssignments                                                                             UserCompanyAssignment[]
-  preferences                                                                                    UserPreference[]
-  roleAssignments                                                                                UserRoleAssignment[]
-  tenant                                                                                         Workspace?                           @relation(fields: [tenantId], references: [id])
-  workflow_artifacts                                                                             workflow_artifacts[]
-  workflow_billing_states                                                                        workflow_billing_states[]
-  workflow_blockers_workflow_blockers_owner_idTousers                                            workflow_blockers[]                  @relation("workflow_blockers_owner_idTousers")
-  workflow_blockers_workflow_blockers_raised_byTousers                                           workflow_blockers[]                  @relation("workflow_blockers_raised_byTousers")
-  workflow_blockers_workflow_blockers_resolved_byTousers                                         workflow_blockers[]                  @relation("workflow_blockers_resolved_byTousers")
-  workflow_communication_log_entries                                                             workflow_communication_log_entries[]
-  workflow_cross_dependencies                                                                    workflow_cross_dependencies[]
-  workflow_deviations                                                                            workflow_deviations[]
-  workflow_engagements_workflow_engagements_created_byTousers                                    workflow_engagements[]               @relation("workflow_engagements_created_byTousers")
-  workflow_engagements_workflow_engagements_director_poc_idTousers                               workflow_engagements[]               @relation("workflow_engagements_director_poc_idTousers")
-  workflow_instances_workflow_instances_assigned_owner_idTousers                                 workflow_instances[]                 @relation("workflow_instances_assigned_owner_idTousers")
-  workflow_instances_workflow_instances_cancelled_byTousers                                      workflow_instances[]                 @relation("workflow_instances_cancelled_byTousers")
-  workflow_instances_workflow_instances_created_byTousers                                        workflow_instances[]                 @relation("workflow_instances_created_byTousers")
-  workflow_milestones_workflow_milestones_completed_byTousers                                    workflow_milestones[]                @relation("workflow_milestones_completed_byTousers")
-  workflow_milestones_workflow_milestones_owner_idTousers                                        workflow_milestones[]                @relation("workflow_milestones_owner_idTousers")
-  workflow_milestones_workflow_milestones_reviewed_byTousers                                     workflow_milestones[]                @relation("workflow_milestones_reviewed_byTousers")
-  workflow_notification_log                                                                      workflow_notification_log[]
-  workflow_program_requirements                                                                  workflow_program_requirements[]
-  workflow_scheduled_instances_queue_workflow_scheduled_instances_queue_confirmed_byTousers      workflow_scheduled_instances_queue[] @relation("workflow_scheduled_instances_queue_confirmed_byTousers")
-  workflow_scheduled_instances_queue_workflow_scheduled_instances_queue_proposed_owner_idTousers workflow_scheduled_instances_queue[] @relation("workflow_scheduled_instances_queue_proposed_owner_idTousers")
-  workflow_service_definitions                                                                   workflow_service_definitions[]
-  workflow_task_dependencies                                                                     workflow_task_dependencies[]
-  workflow_task_items_workflow_task_items_completed_byTousers                                    workflow_task_items[]                @relation("workflow_task_items_completed_byTousers")
-  workflow_task_items_workflow_task_items_owner_idTousers                                        workflow_task_items[]                @relation("workflow_task_items_owner_idTousers")
+  id                       String                  @id @default(uuid())
+  email                    String                  @unique
+  passwordHash             String
+  firstName                String
+  lastName                 String
+  isActive                 Boolean                 @default(true)
+  lastLoginAt              DateTime?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  deletedAt                DateTime?
+  mustChangePassword       Boolean                 @default(false)
+  passwordResetToken       String?                 @unique
+  passwordResetExpires     DateTime?
+  passwordChangedAt        DateTime?
+  tenantId                 String?
+  aiConversations          AiConversation[]        @relation("ConversationOwner")
+  auditLogs                AuditLog[]
+  connectorUsageLogs       ConnectorUsageLog[]
+  hiddenComments           DocumentComment[]       @relation("CommentHider")
+  resolvedComments         DocumentComment[]       @relation("CommentResolver")
+  authoredComments         DocumentComment[]       @relation("CommentAuthor")
+  documentDrafts           DocumentDraft[]         @relation("DraftAuthor")
+  createdTemplates         DocumentTemplate[]      @relation("TemplateCreator")
+  uploadedDocuments        Document[]
+  createdDocuments         GeneratedDocument[]     @relation("DocumentCreator")
+  createdEsigningEnvelopes EsigningEnvelope[]      @relation("EsigningEnvelopeCreatedBy")
+  finalizedDocuments       GeneratedDocument[]     @relation("DocumentFinalizer")
+  createdPartials          TemplatePartial[]       @relation("PartialCreator")
+  companyAssignments       UserCompanyAssignment[]
+  preferences              UserPreference[]
+  roleAssignments          UserRoleAssignment[]
+  tenant                   Workspace?              @relation(fields: [tenantId], references: [id])
+  ownedTasks               Task[]                  @relation("TaskOwner")
+  assignedTaskStages       TaskStage[]             @relation("TaskStageAssignee")
 
   @@index([email])
   @@index([tenantId])
@@ -242,80 +219,76 @@ model UserCompanyAssignment {
 }
 
 model Company {
-  id                                 String                               @id @default(uuid())
-  tenantId                           String
-  uen                                String
-  name                               String
-  formerName                         String?
-  dateOfNameChange                   DateTime?
-  entityType                         EntityType                           @default(PRIVATE_LIMITED)
-  status                             CompanyStatus                        @default(LIVE)
-  statusDate                         DateTime?
-  incorporationDate                  DateTime?
-  registrationDate                   DateTime?
-  dateOfAddress                      DateTime?
-  primarySsicCode                    String?
-  primarySsicDescription             String?
-  secondarySsicCode                  String?
-  secondarySsicDescription           String?
-  financialYearEndDay                Int?
-  financialYearEndMonth              Int?
-  fyeAsAtLastAr                      DateTime?
-  homeCurrency                       String?                              @default("SGD")
-  lastAgmDate                        DateTime?
-  lastArFiledDate                    DateTime?
-  nextAgmDueDate                     DateTime?
-  nextArDueDate                      DateTime?
-  accountsDueDate                    DateTime?
-  paidUpCapitalCurrency              String?                              @default("SGD")
-  paidUpCapitalAmount                Decimal?                             @db.Decimal(18, 2)
-  issuedCapitalCurrency              String?                              @default("SGD")
-  issuedCapitalAmount                Decimal?                             @db.Decimal(18, 2)
-  hasCharges                         Boolean                              @default(false)
-  currentOfficerCount                Int                                  @default(0) @map("current_officer_count")
-  currentShareholderCount            Int                                  @default(0) @map("current_shareholder_count")
-  activeChargeCount                  Int                                  @default(0) @map("active_charge_count")
-  documentCount                      Int                                  @default(0) @map("document_count")
-  hasPoc                             Boolean                              @default(false) @map("has_poc")
-  isGstRegistered                    Boolean                              @default(false)
-  gstRegistrationNumber              String?
-  gstRegistrationDate                DateTime?
-  isRegisteredCharity                Boolean                              @default(false)
-  charityRegistrationDate            DateTime?
-  charityUEN                         String?
-  isIPC                              Boolean                              @default(false)
-  ipcEffectiveDate                   DateTime?
-  ipcExpiryDate                      DateTime?
-  annualReceiptsOrExpenditure        Decimal?                             @db.Decimal(18, 2)
-  createdAt                          DateTime                             @default(now())
-  updatedAt                          DateTime                             @updatedAt
-  deletedAt                          DateTime?
-  deletedReason                      String?
-  auditLogs                          AuditLog[]
-  chartOfAccounts                    ChartOfAccount[]
-  accountMappings                    ChartOfAccountsMapping[]
-  tenant                             Workspace                            @relation(fields: [tenantId], references: [id])
-  addresses                          CompanyAddress[]
-  charges                            CompanyCharge[]
-  contacts                           CompanyContact[]
-  formerNames                        CompanyFormerName[]
-  officers                           CompanyOfficer[]
-  shareholders                       CompanyShareholder[]
-  contactDetails                     ContactDetail[]
-  documentTags                       DocumentTag[]
-  documents                          Document[]
-  esigningEnvelopes                  EsigningEnvelope[]
-  generatedDocuments                 GeneratedDocument[]
-  noteTabs                           NoteTab[]
-  shareCapital                       ShareCapital[]
-  userAssignments                    UserCompanyAssignment[]
-  roleAssignments                    UserRoleAssignment[]
-  workflow_client_group_members      workflow_client_group_members[]
-  workflow_engagements               workflow_engagements[]
-  workflow_instances                 workflow_instances[]
-  workflow_project_instances         workflow_project_instances[]
-  workflow_project_settings          workflow_project_settings?
-  workflow_scheduled_instances_queue workflow_scheduled_instances_queue[]
+  id                          String                   @id @default(uuid())
+  tenantId                    String
+  uen                         String
+  name                        String
+  formerName                  String?
+  dateOfNameChange            DateTime?
+  entityType                  EntityType               @default(PRIVATE_LIMITED)
+  status                      CompanyStatus            @default(LIVE)
+  statusDate                  DateTime?
+  incorporationDate           DateTime?
+  registrationDate            DateTime?
+  dateOfAddress               DateTime?
+  primarySsicCode             String?
+  primarySsicDescription      String?
+  secondarySsicCode           String?
+  secondarySsicDescription    String?
+  financialYearEndDay         Int?
+  financialYearEndMonth       Int?
+  fyeAsAtLastAr               DateTime?
+  homeCurrency                String?                  @default("SGD")
+  lastAgmDate                 DateTime?
+  lastArFiledDate             DateTime?
+  nextAgmDueDate              DateTime?
+  nextArDueDate               DateTime?
+  accountsDueDate             DateTime?
+  paidUpCapitalCurrency       String?                  @default("SGD")
+  paidUpCapitalAmount         Decimal?                 @db.Decimal(18, 2)
+  issuedCapitalCurrency       String?                  @default("SGD")
+  issuedCapitalAmount         Decimal?                 @db.Decimal(18, 2)
+  hasCharges                  Boolean                  @default(false)
+  currentOfficerCount         Int                      @default(0) @map("current_officer_count")
+  currentShareholderCount     Int                      @default(0) @map("current_shareholder_count")
+  activeChargeCount           Int                      @default(0) @map("active_charge_count")
+  documentCount               Int                      @default(0) @map("document_count")
+  hasPoc                      Boolean                  @default(false) @map("has_poc")
+  isGstRegistered             Boolean                  @default(false)
+  gstRegistrationNumber       String?
+  gstRegistrationDate         DateTime?
+  isRegisteredCharity         Boolean                  @default(false)
+  charityRegistrationDate     DateTime?
+  charityUEN                  String?
+  isIPC                       Boolean                  @default(false)
+  ipcEffectiveDate            DateTime?
+  ipcExpiryDate               DateTime?
+  annualReceiptsOrExpenditure Decimal?                 @db.Decimal(18, 2)
+  createdAt                   DateTime                 @default(now())
+  updatedAt                   DateTime                 @updatedAt
+  deletedAt                   DateTime?
+  deletedReason               String?
+  auditLogs                   AuditLog[]
+  chartOfAccounts             ChartOfAccount[]
+  accountMappings             ChartOfAccountsMapping[]
+  tenant                      Workspace                @relation(fields: [tenantId], references: [id])
+  addresses                   CompanyAddress[]
+  charges                     CompanyCharge[]
+  contacts                    CompanyContact[]
+  formerNames                 CompanyFormerName[]
+  officers                    CompanyOfficer[]
+  shareholders                CompanyShareholder[]
+  contactDetails              ContactDetail[]
+  documentTags                DocumentTag[]
+  documents                   Document[]
+  esigningEnvelopes           EsigningEnvelope[]
+  generatedDocuments          GeneratedDocument[]
+  noteTabs                    NoteTab[]
+  shareCapital                ShareCapital[]
+  userAssignments             UserCompanyAssignment[]
+  roleAssignments             UserRoleAssignment[]
+  tasks                       Task[]
+  taskStageOutcomes           TaskStageOutcome[]
 
   @@unique([tenantId, uen])
   @@index([tenantId])
@@ -382,35 +355,33 @@ model CompanyAddress {
 }
 
 model Contact {
-  id                                 String                               @id @default(uuid())
-  tenantId                           String
-  contactType                        ContactType                          @default(INDIVIDUAL)
-  firstName                          String?
-  lastName                           String?
-  fullName                           String
-  canonicalName                      String?
-  alias                              String?
-  canonicalAlias                     String?
-  identificationType                 IdentificationType?
-  identificationNumber               String?
-  nationality                        String?
-  dateOfBirth                        DateTime?
-  corporateName                      String?
-  corporateUen                       String?
-  fullAddress                        String?
-  isActive                           Boolean                              @default(true)
-  createdAt                          DateTime                             @default(now())
-  updatedAt                          DateTime                             @updatedAt
-  deletedAt                          DateTime?
-  chargeHoldings                     CompanyCharge[]
-  companyRelations                   CompanyContact[]
-  officerPositions                   CompanyOfficer[]
-  shareholdings                      CompanyShareholder[]
-  contactDetails                     ContactDetail[]
-  tenant                             Workspace                            @relation(fields: [tenantId], references: [id])
-  noteTabs                           NoteTab[]
-  workflow_communication_log_entries workflow_communication_log_entries[]
-  workflow_milestones                workflow_milestones[]
+  id                   String               @id @default(uuid())
+  tenantId             String
+  contactType          ContactType          @default(INDIVIDUAL)
+  firstName            String?
+  lastName             String?
+  fullName             String
+  canonicalName        String?
+  alias                String?
+  canonicalAlias       String?
+  identificationType   IdentificationType?
+  identificationNumber String?
+  nationality          String?
+  dateOfBirth          DateTime?
+  corporateName        String?
+  corporateUen         String?
+  fullAddress          String?
+  isActive             Boolean              @default(true)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  deletedAt            DateTime?
+  chargeHoldings       CompanyCharge[]
+  companyRelations     CompanyContact[]
+  officerPositions     CompanyOfficer[]
+  shareholdings        CompanyShareholder[]
+  contactDetails       ContactDetail[]
+  tenant               Workspace            @relation(fields: [tenantId], references: [id])
+  noteTabs             NoteTab[]
 
   @@unique([tenantId, identificationType, identificationNumber])
   @@index([tenantId])
@@ -623,7 +594,6 @@ model Document {
   uploadedBy         User                 @relation(fields: [uploadedById], references: [id])
   processingDocument ProcessingDocument?
   shareCapital       ShareCapital[]
-  workflow_artifacts workflow_artifacts[]
 
   @@index([tenantId])
   @@index([companyId])
@@ -807,34 +777,34 @@ model DocumentTemplate {
 }
 
 model GeneratedDocument {
-  id                 String                  @id @default(uuid())
-  tenantId           String                  @map("tenant_id")
-  templateId         String?                 @map("template_id")
-  templateVersion    Int?                    @map("template_version")
-  companyId          String?                 @map("company_id")
-  title              String                  @db.VarChar(300)
-  content            String
-  contentJson        Json?                   @map("content_json")
-  status             GeneratedDocumentStatus @default(DRAFT)
-  finalizedAt        DateTime?               @map("finalized_at")
-  finalizedById      String?                 @map("finalized_by_id")
-  unfinalizedAt      DateTime?               @map("unfinalized_at")
-  useLetterhead      Boolean                 @default(true) @map("use_letterhead")
-  placeholderData    Json?                   @map("placeholder_data")
-  metadata           Json?
-  createdById        String                  @map("created_by_id")
-  createdAt          DateTime                @default(now()) @map("created_at")
-  updatedAt          DateTime                @updatedAt @map("updated_at")
-  deletedAt          DateTime?               @map("deleted_at")
-  comments           DocumentComment[]
-  drafts             DocumentDraft[]
-  sections           DocumentSection[]
-  company            Company?                @relation(fields: [companyId], references: [id])
-  createdBy          User                    @relation("DocumentCreator", fields: [createdById], references: [id])
-  finalizedBy        User?                   @relation("DocumentFinalizer", fields: [finalizedById], references: [id])
-  template           DocumentTemplate?       @relation(fields: [templateId], references: [id])
-  tenant             Workspace               @relation(fields: [tenantId], references: [id])
-  workflow_artifacts workflow_artifacts[]
+  id                String                  @id @default(uuid())
+  tenantId          String                  @map("tenant_id")
+  templateId        String?                 @map("template_id")
+  templateVersion   Int?                    @map("template_version")
+  companyId         String?                 @map("company_id")
+  title             String                  @db.VarChar(300)
+  content           String
+  contentJson       Json?                   @map("content_json")
+  status            GeneratedDocumentStatus @default(DRAFT)
+  finalizedAt       DateTime?               @map("finalized_at")
+  finalizedById     String?                 @map("finalized_by_id")
+  unfinalizedAt     DateTime?               @map("unfinalized_at")
+  useLetterhead     Boolean                 @default(true) @map("use_letterhead")
+  placeholderData   Json?                   @map("placeholder_data")
+  metadata          Json?
+  createdById       String                  @map("created_by_id")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+  deletedAt         DateTime?               @map("deleted_at")
+  comments          DocumentComment[]
+  drafts            DocumentDraft[]
+  sections          DocumentSection[]
+  company           Company?                @relation(fields: [companyId], references: [id])
+  createdBy         User                    @relation("DocumentCreator", fields: [createdById], references: [id])
+  finalizedBy       User?                   @relation("DocumentFinalizer", fields: [finalizedById], references: [id])
+  template          DocumentTemplate?       @relation(fields: [templateId], references: [id])
+  tenant            Workspace               @relation(fields: [tenantId], references: [id])
+  taskStageOutcomes TaskStageOutcome[]
 
   @@index([tenantId])
   @@index([templateId])
@@ -1004,6 +974,7 @@ model EsigningEnvelope {
   events                    EsigningEnvelopeEvent[]
   fieldDefinitions          EsigningDocumentFieldDefinition[]
   recipients                EsigningEnvelopeRecipient[]
+  taskStageOutcomes         TaskStageOutcome[]
 
   @@index([tenantId, status, createdAt])
   @@index([createdById, status, createdAt])
@@ -1208,7 +1179,6 @@ model ProcessingDocument {
   rootDocument          ProcessingDocument?     @relation("DocumentVersions", fields: [rootDocumentId], references: [id])
   versions              ProcessingDocument[]    @relation("DocumentVersions")
   splitPlans            SplitPlan[]
-  workflow_artifacts    workflow_artifacts[]
 
   @@index([documentId])
   @@index([tenantId])
@@ -2147,573 +2117,187 @@ model ChartOfAccountsMapping {
   @@map("chart_of_accounts_mappings")
 }
 
-model workflow_artifacts {
-  id                            String                     @id
-  workflow_instance_id          String
-  milestone_id                  String?
-  task_item_id                  String?
-  artifact_type                 WorkflowArtifactType
-  name                          String                     @db.VarChar(500)
-  description                   String?
-  file_url                      String?
-  file_name                     String?                    @db.VarChar(500)
-  file_size_bytes               Int?
-  mime_type                     String?                    @db.VarChar(100)
-  text_content                  String?
-  uploaded_by                   String
-  is_mandatory_artifact         Boolean                    @default(false)
-  created_at                    DateTime                   @default(now())
-  source_type                   WorkflowArtifactSourceType @default(INLINE)
-  source_document_id            String?
-  source_processing_document_id String?
-  source_generated_document_id  String?
-  workflow_milestones           workflow_milestones?       @relation(fields: [milestone_id], references: [id])
-  documents                     Document?                  @relation(fields: [source_document_id], references: [id])
-  generated_documents           GeneratedDocument?         @relation(fields: [source_generated_document_id], references: [id])
-  processing_documents          ProcessingDocument?        @relation(fields: [source_processing_document_id], references: [id])
-  workflow_task_items           workflow_task_items?       @relation(fields: [task_item_id], references: [id])
-  users                         User                       @relation(fields: [uploaded_by], references: [id])
-  workflow_instances            workflow_instances         @relation(fields: [workflow_instance_id], references: [id], onDelete: Cascade)
+model TaskPipeline {
+  id            String                @id @default(uuid())
+  tenantId      String                @map("tenant_id")
+  name          String                @db.VarChar(200)
+  description   String?
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+  deletedAt     DateTime?             @map("deleted_at")
+  deletedReason String?               @map("deleted_reason")
+  tenant        Workspace             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  versions      TaskPipelineVersion[]
 
-  @@index([source_document_id])
-  @@index([source_generated_document_id])
-  @@index([source_processing_document_id])
-  @@index([source_type])
-  @@index([workflow_instance_id, milestone_id])
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, name])
+  @@map("task_pipelines")
 }
 
-model workflow_billing_states {
-  id                   String                     @id
-  workflow_instance_id String                     @unique
-  status               WorkflowBillingStateStatus @default(NOT_TRIGGERED)
-  trigger_reached_at   DateTime?
-  trigger_milestone_id String?
-  billing_amount       Decimal?                   @db.Decimal(12, 2)
-  billing_currency     String?                    @default("SGD") @db.VarChar(3)
-  invoice_raised       Boolean                    @default(false)
-  xero_invoice_number  String?                    @db.VarChar(100)
-  invoice_raised_at    DateTime?
-  invoice_raised_by    String?
-  notes                String?
-  created_at           DateTime                   @default(now())
-  updated_at           DateTime
-  users                User?                      @relation(fields: [invoice_raised_by], references: [id])
-  workflow_milestones  workflow_milestones?       @relation(fields: [trigger_milestone_id], references: [id])
-  workflow_instances   workflow_instances         @relation(fields: [workflow_instance_id], references: [id], onDelete: Cascade)
+model TaskPipelineVersion {
+  id         String              @id @default(uuid())
+  tenantId   String              @map("tenant_id")
+  pipelineId String              @map("pipeline_id")
+  version    Int
+  createdAt  DateTime            @default(now()) @map("created_at")
+  tenant     Workspace           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pipeline   TaskPipeline        @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  stages     TaskPipelineStage[]
+  tasks      Task[]
 
-  @@index([status, invoice_raised])
+  @@unique([pipelineId, version])
+  @@index([tenantId, pipelineId, version])
+  @@map("task_pipeline_versions")
 }
 
-model workflow_blockers {
-  id                                         String                @id
-  workflow_instance_id                       String
-  milestone_id                               String?
-  blocker_type                               WorkflowBlockerType
-  description                                String
-  assumption_text                            String?
-  assumption_communicated                    Boolean?
-  owner_id                                   String
-  expected_resolution_date                   DateTime              @db.Date
-  status                                     WorkflowBlockerStatus @default(OPEN)
-  escalation_level                           Int                   @default(0)
-  resolution_note                            String?
-  resolved_by                                String?
-  resolved_at                                DateTime?
-  raised_by                                  String
-  raised_at                                  DateTime              @default(now())
-  created_at                                 DateTime              @default(now())
-  updated_at                                 DateTime
-  workflow_milestones                        workflow_milestones?  @relation(fields: [milestone_id], references: [id])
-  users_workflow_blockers_owner_idTousers    User                  @relation("workflow_blockers_owner_idTousers", fields: [owner_id], references: [id])
-  users_workflow_blockers_raised_byTousers   User                  @relation("workflow_blockers_raised_byTousers", fields: [raised_by], references: [id])
-  users_workflow_blockers_resolved_byTousers User?                 @relation("workflow_blockers_resolved_byTousers", fields: [resolved_by], references: [id])
-  workflow_instances                         workflow_instances    @relation(fields: [workflow_instance_id], references: [id], onDelete: Cascade)
+model TaskPipelineStage {
+  id           String              @id @default(uuid())
+  tenantId     String              @map("tenant_id")
+  versionId    String              @map("version_id")
+  name         String              @db.VarChar(200)
+  description  String?
+  position     Int
+  actionType   TaskStageActionType @map("action_type")
+  icon         String              @db.VarChar(100)
+  isRequired   Boolean             @default(true) @map("is_required")
+  actionConfig Json?               @map("action_config")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  tenant       Workspace           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  version      TaskPipelineVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
-  @@index([expected_resolution_date])
-  @@index([owner_id, status])
-  @@index([workflow_instance_id, status])
+  @@unique([versionId, position])
+  @@index([tenantId, versionId, position])
+  @@map("task_pipeline_stages")
 }
 
-model workflow_client_group_members {
-  id                     String                 @id
-  client_group_id        String
-  company_id             String
-  created_at             DateTime               @default(now())
-  workflow_client_groups workflow_client_groups @relation(fields: [client_group_id], references: [id], onDelete: Cascade)
-  companies              Company                @relation(fields: [company_id], references: [id], onDelete: Cascade)
+model Task {
+  id                String              @id @default(uuid())
+  tenantId          String              @map("tenant_id")
+  pipelineVersionId String              @map("pipeline_version_id")
+  companyId         String?             @map("company_id")
+  ownerId           String?             @map("owner_id")
+  title             String              @db.VarChar(300)
+  description       String?
+  status            TaskStatus          @default(NOT_STARTED)
+  dueDate           DateTime?           @map("due_date") @db.Date
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  deletedAt         DateTime?           @map("deleted_at")
+  deletedReason     String?             @map("deleted_reason")
+  tenant            Workspace           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pipelineVersion   TaskPipelineVersion @relation(fields: [pipelineVersionId], references: [id])
+  company           Company?            @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  owner             User?               @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  stages            TaskStage[]
 
-  @@unique([client_group_id, company_id])
-  @@index([company_id])
+  @@index([tenantId, status, deletedAt])
+  @@index([tenantId, pipelineVersionId])
+  @@index([tenantId, companyId])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, dueDate])
+  @@map("tasks")
 }
 
-model workflow_client_groups {
-  id                            String                          @id
-  tenant_id                     String
-  name                          String
-  created_at                    DateTime                        @default(now())
-  updated_at                    DateTime
-  workflow_client_group_members workflow_client_group_members[]
-  tenants                       Workspace                       @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+model TaskStage {
+  id             String                   @id @default(uuid())
+  tenantId       String                   @map("tenant_id")
+  taskId         String                   @map("task_id")
+  name           String                   @db.VarChar(200)
+  description    String?
+  position       Int
+  actionType     TaskStageActionType      @map("action_type")
+  icon           String                   @db.VarChar(100)
+  isRequired     Boolean                  @default(true) @map("is_required")
+  actionConfig   Json?                    @map("action_config")
+  status         TaskStageStatus          @default(NOT_STARTED)
+  assigneeId     String?                  @map("assignee_id")
+  notes          String?
+  skipReason     String?                  @map("skip_reason")
+  startedAt      DateTime?                @map("started_at")
+  completedAt    DateTime?                @map("completed_at")
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  updatedAt      DateTime                 @updatedAt @map("updated_at")
+  tenant         Workspace                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  task           Task                     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  assignee       User?                    @relation("TaskStageAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  checklistItems TaskStageChecklistItem[]
+  outcome        TaskStageOutcome?
 
-  @@index([tenant_id])
+  @@unique([taskId, position])
+  @@index([tenantId, taskId, status])
+  @@index([tenantId, assigneeId])
+  @@map("task_stages")
 }
 
-model workflow_communication_log_entries {
-  id                   String                         @id
-  workflow_instance_id String
-  channel              WorkflowCommunicationChannel
-  direction            WorkflowCommunicationDirection
-  contact_id           String?
-  contact_name         String?                        @db.VarChar(255)
-  summary              String
-  logged_by            String
-  communication_date   DateTime                       @default(now()) @db.Date
-  created_at           DateTime                       @default(now())
-  contacts             Contact?                       @relation(fields: [contact_id], references: [id])
-  users                User                           @relation(fields: [logged_by], references: [id])
-  workflow_instances   workflow_instances             @relation(fields: [workflow_instance_id], references: [id], onDelete: Cascade)
+model TaskStageChecklistItem {
+  id          String    @id @default(uuid())
+  tenantId    String    @map("tenant_id")
+  taskStageId String    @map("task_stage_id")
+  label       String    @db.VarChar(300)
+  position    Int
+  isCompleted Boolean   @default(false) @map("is_completed")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  tenant      Workspace @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  taskStage   TaskStage @relation(fields: [taskStageId], references: [id], onDelete: Cascade)
 
-  @@index([workflow_instance_id, communication_date])
+  @@unique([taskStageId, position])
+  @@index([tenantId, taskStageId, position])
+  @@map("task_stage_checklist_items")
 }
 
-model workflow_cross_dependencies {
-  id                                                                                            String                      @id
-  predecessor_workflow_id                                                                       String
-  predecessor_milestone_id                                                                      String?
-  predecessor_task_id                                                                           String?
-  successor_workflow_id                                                                         String
-  successor_milestone_id                                                                        String?
-  successor_task_id                                                                             String?
-  dependency_type                                                                               WorkflowCrossDependencyType @default(BLOCKING)
-  lag_days                                                                                      Int                         @default(0)
-  created_by                                                                                    String
-  created_at                                                                                    DateTime                    @default(now())
-  users                                                                                         User                        @relation(fields: [created_by], references: [id])
-  workflow_milestones_workflow_cross_dependencies_predecessor_milestone_idToworkflow_milestones workflow_milestones?        @relation("workflow_cross_dependencies_predecessor_milestone_idToworkflow_milestones", fields: [predecessor_milestone_id], references: [id])
-  workflow_task_items_workflow_cross_dependencies_predecessor_task_idToworkflow_task_items      workflow_task_items?        @relation("workflow_cross_dependencies_predecessor_task_idToworkflow_task_items", fields: [predecessor_task_id], references: [id])
-  workflow_instances_workflow_cross_dependencies_predecessor_workflow_idToworkflow_instances    workflow_instances          @relation("workflow_cross_dependencies_predecessor_workflow_idToworkflow_instances", fields: [predecessor_workflow_id], references: [id], onDelete: Cascade)
-  workflow_milestones_workflow_cross_dependencies_successor_milestone_idToworkflow_milestones   workflow_milestones?        @relation("workflow_cross_dependencies_successor_milestone_idToworkflow_milestones", fields: [successor_milestone_id], references: [id])
-  workflow_task_items_workflow_cross_dependencies_successor_task_idToworkflow_task_items        workflow_task_items?        @relation("workflow_cross_dependencies_successor_task_idToworkflow_task_items", fields: [successor_task_id], references: [id])
-  workflow_instances_workflow_cross_dependencies_successor_workflow_idToworkflow_instances      workflow_instances          @relation("workflow_cross_dependencies_successor_workflow_idToworkflow_instances", fields: [successor_workflow_id], references: [id], onDelete: Cascade)
+model TaskStageOutcome {
+  id                  String               @id @default(uuid())
+  tenantId            String               @map("tenant_id")
+  taskStageId         String               @unique @map("task_stage_id")
+  type                TaskStageOutcomeType
+  companyId           String?              @map("company_id")
+  generatedDocumentId String?              @map("generated_document_id")
+  esigningEnvelopeId  String?              @map("esigning_envelope_id")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  tenant              Workspace            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  taskStage           TaskStage            @relation(fields: [taskStageId], references: [id], onDelete: Cascade)
+  company             Company?             @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  generatedDocument   GeneratedDocument?   @relation(fields: [generatedDocumentId], references: [id], onDelete: SetNull)
+  esigningEnvelope    EsigningEnvelope?    @relation(fields: [esigningEnvelopeId], references: [id], onDelete: SetNull)
 
-  @@index([predecessor_task_id])
-  @@index([predecessor_workflow_id])
-  @@index([successor_task_id])
-  @@index([successor_workflow_id, dependency_type])
-  @@index([successor_workflow_id])
+  @@index([tenantId, type])
+  @@index([tenantId, companyId])
+  @@index([tenantId, generatedDocumentId])
+  @@index([tenantId, esigningEnvelopeId])
+  @@map("task_stage_outcomes")
 }
 
-model workflow_deviations {
-  id                   String                @id
-  workflow_instance_id String
-  deviation_type       WorkflowDeviationType
-  reason               String
-  affected_entity_type String?               @db.VarChar(50)
-  affected_entity_id   String?
-  approved_by          String
-  created_at           DateTime              @default(now())
-  users                User                  @relation(fields: [approved_by], references: [id])
-  workflow_instances   workflow_instances    @relation(fields: [workflow_instance_id], references: [id], onDelete: Cascade)
-
-  @@index([workflow_instance_id, created_at])
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+  CANCELLED
 }
 
-model workflow_engagement_services {
-  id                                 String                               @id
-  engagement_id                      String
-  service_definition_id              String
-  billing_type                       WorkflowBillingType                  @default(FIXED_RETAINER)
-  billing_amount                     Decimal?                             @db.Decimal(12, 2)
-  billing_currency                   String                               @default("SGD") @db.VarChar(3)
-  is_active                          Boolean                              @default(true)
-  notes                              String?
-  created_at                         DateTime                             @default(now())
-  updated_at                         DateTime
-  auto_spawn_enabled                 Boolean                              @default(true)
-  auto_spawn_mode                    WorkflowSpawnType                    @default(AUTO)
-  recurrence_period_type             WorkflowPeriodType?
-  spawn_lead_days_override           Int?
-  workflow_engagements               workflow_engagements                 @relation(fields: [engagement_id], references: [id], onDelete: Cascade)
-  workflow_service_definitions       workflow_service_definitions         @relation(fields: [service_definition_id], references: [id])
-  workflow_instances                 workflow_instances[]
-  workflow_scheduled_instances_queue workflow_scheduled_instances_queue[]
-
-  @@unique([engagement_id, service_definition_id])
-  @@index([engagement_id, is_active])
+enum TaskStageStatus {
+  NOT_STARTED
+  BLOCKED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  FAILED
 }
 
-model workflow_engagements {
-  id                                                String                          @id
-  tenant_id                                         String
-  company_id                                        String
-  name                                              String                          @db.VarChar(255)
-  status                                            WorkflowEngagementStatus        @default(ACTIVE)
-  commencement_date                                 DateTime                        @db.Date
-  end_date                                          DateTime?                       @db.Date
-  is_ad_hoc                                         Boolean                         @default(false)
-  master_agreement_reference                        String?
-  sow_reference                                     String?
-  sow_document_url                                  String?
-  pricing_notes                                     String?
-  director_poc_id                                   String?
-  notes                                             String?
-  created_by                                        String
-  created_at                                        DateTime                        @default(now())
-  updated_at                                        DateTime
-  workflow_engagement_services                      workflow_engagement_services[]
-  companies                                         Company                         @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  users_workflow_engagements_created_byTousers      User                            @relation("workflow_engagements_created_byTousers", fields: [created_by], references: [id])
-  users_workflow_engagements_director_poc_idTousers User?                           @relation("workflow_engagements_director_poc_idTousers", fields: [director_poc_id], references: [id])
-  tenants                                           Workspace                       @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  workflow_instances                                workflow_instances[]
-  workflow_program_requirements                     workflow_program_requirements[]
-
-  @@index([company_id, status])
-  @@index([tenant_id, status])
+enum TaskStageActionType {
+  MANUAL
+  COMPANY_PROFILE
+  DOCUMENT_GENERATION
+  ESIGNING
 }
 
-model workflow_instances {
-  id                                                                                                  String                               @id
-  tenant_id                                                                                           String
-  engagement_id                                                                                       String
-  company_id                                                                                          String
-  engagement_service_id                                                                               String
-  service_definition_id                                                                               String
-  service_definition_version                                                                          Int
-  period_label                                                                                        String                               @db.VarChar(100)
-  period_start_date                                                                                   DateTime?                            @db.Date
-  period_end_date                                                                                     DateTime?                            @db.Date
-  status                                                                                              WorkflowInstanceStatus               @default(SCHEDULED)
-  status_before_hold                                                                                  WorkflowInstanceStatus?
-  internal_sla_date                                                                                   DateTime                             @db.Date
-  statutory_deadline_date                                                                             DateTime?                            @db.Date
-  statutory_deadline_label                                                                            String?                              @db.VarChar(255)
-  assigned_owner_id                                                                                   String?
-  spawn_type                                                                                          WorkflowSpawnType                    @default(MANUAL)
-  on_hold_reason                                                                                      String?
-  on_hold_resume_date                                                                                 DateTime?                            @db.Date
-  cancelled_reason                                                                                    String?
-  cancelled_at                                                                                        DateTime?
-  cancelled_by                                                                                        String?
-  notes                                                                                               String?
-  regulatory_breach                                                                                   Boolean                              @default(false)
-  created_by                                                                                          String
-  created_at                                                                                          DateTime                             @default(now())
-  updated_at                                                                                          DateTime
-  workflow_artifacts                                                                                  workflow_artifacts[]
-  workflow_billing_states                                                                             workflow_billing_states?
-  workflow_blockers                                                                                   workflow_blockers[]
-  workflow_communication_log_entries                                                                  workflow_communication_log_entries[]
-  workflow_cross_dependencies_workflow_cross_dependencies_predecessor_workflow_idToworkflow_instances workflow_cross_dependencies[]        @relation("workflow_cross_dependencies_predecessor_workflow_idToworkflow_instances")
-  workflow_cross_dependencies_workflow_cross_dependencies_successor_workflow_idToworkflow_instances   workflow_cross_dependencies[]        @relation("workflow_cross_dependencies_successor_workflow_idToworkflow_instances")
-  workflow_deviations                                                                                 workflow_deviations[]
-  users_workflow_instances_assigned_owner_idTousers                                                   User?                                @relation("workflow_instances_assigned_owner_idTousers", fields: [assigned_owner_id], references: [id])
-  users_workflow_instances_cancelled_byTousers                                                        User?                                @relation("workflow_instances_cancelled_byTousers", fields: [cancelled_by], references: [id])
-  companies                                                                                           Company                              @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  users_workflow_instances_created_byTousers                                                          User                                 @relation("workflow_instances_created_byTousers", fields: [created_by], references: [id])
-  workflow_engagements                                                                                workflow_engagements                 @relation(fields: [engagement_id], references: [id])
-  workflow_engagement_services                                                                        workflow_engagement_services         @relation(fields: [engagement_service_id], references: [id])
-  workflow_service_definitions                                                                        workflow_service_definitions         @relation(fields: [service_definition_id], references: [id])
-  tenants                                                                                             Workspace                            @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  workflow_milestones                                                                                 workflow_milestones[]
-  workflow_scheduled_instances_queue                                                                  workflow_scheduled_instances_queue[]
-
-  @@index([assigned_owner_id])
-  @@index([company_id, status])
-  @@index([internal_sla_date])
-  @@index([statutory_deadline_date])
-  @@index([tenant_id, status])
-}
-
-model workflow_milestone_templates {
-  id                             String                       @id
-  service_definition_id          String
-  name                           String                       @db.VarChar(255)
-  description                    String?
-  display_order                  Int
-  milestone_type                 WorkflowMilestoneType
-  sla_days_from_period_end       Int?
-  sla_days_from_previous         Int?
-  sla_description                String?                      @db.VarChar(255)
-  requires_mandatory_artifact    Boolean                      @default(false)
-  mandatory_artifact_description String?
-  reviewer_role                  String?                      @db.VarChar(50)
-  is_skippable                   Boolean                      @default(false)
-  is_billing_trigger             Boolean                      @default(false)
-  created_at                     DateTime                     @default(now())
-  workflow_service_definitions   workflow_service_definitions @relation(fields: [service_definition_id], references: [id], onDelete: Cascade)
-  workflow_milestones            workflow_milestones[]
-  workflow_task_templates        workflow_task_templates[]
-
-  @@unique([service_definition_id, display_order])
-  @@index([service_definition_id, is_billing_trigger])
-}
-
-model workflow_milestones {
-  id                                                                                                    String                        @id
-  workflow_instance_id                                                                                  String
-  milestone_template_id                                                                                 String?
-  name                                                                                                  String                        @db.VarChar(255)
-  description                                                                                           String?
-  display_order                                                                                         Int
-  milestone_type                                                                                        WorkflowMilestoneType
-  status                                                                                                WorkflowMilestoneStatus       @default(PENDING)
-  owner_id                                                                                              String?
-  internal_sla_date                                                                                     DateTime?                     @db.Date
-  is_billing_trigger                                                                                    Boolean                       @default(false)
-  requires_mandatory_artifact                                                                           Boolean                       @default(false)
-  mandatory_artifact_description                                                                        String?
-  is_skippable                                                                                          Boolean                       @default(false)
-  approval_document_sent_date                                                                           DateTime?                     @db.Date
-  approval_document_sent_method                                                                         String?                       @db.VarChar(50)
-  approval_contact_id                                                                                   String?
-  approved                                                                                              Boolean?
-  approved_at                                                                                           DateTime?
-  approver_name                                                                                         String?                       @db.VarChar(255)
-  reviewed_by                                                                                           String?
-  reviewed_at                                                                                           DateTime?
-  rejection_reason                                                                                      String?
-  completed_by                                                                                          String?
-  completed_at                                                                                          DateTime?
-  started_at                                                                                            DateTime?
-  created_at                                                                                            DateTime                      @default(now())
-  updated_at                                                                                            DateTime
-  workflow_artifacts                                                                                    workflow_artifacts[]
-  workflow_billing_states                                                                               workflow_billing_states[]
-  workflow_blockers                                                                                     workflow_blockers[]
-  workflow_cross_dependencies_workflow_cross_dependencies_predecessor_milestone_idToworkflow_milestones workflow_cross_dependencies[] @relation("workflow_cross_dependencies_predecessor_milestone_idToworkflow_milestones")
-  workflow_cross_dependencies_workflow_cross_dependencies_successor_milestone_idToworkflow_milestones   workflow_cross_dependencies[] @relation("workflow_cross_dependencies_successor_milestone_idToworkflow_milestones")
-  contacts                                                                                              Contact?                      @relation(fields: [approval_contact_id], references: [id])
-  users_workflow_milestones_completed_byTousers                                                         User?                         @relation("workflow_milestones_completed_byTousers", fields: [completed_by], references: [id])
-  workflow_milestone_templates                                                                          workflow_milestone_templates? @relation(fields: [milestone_template_id], references: [id])
-  users_workflow_milestones_owner_idTousers                                                             User?                         @relation("workflow_milestones_owner_idTousers", fields: [owner_id], references: [id])
-  users_workflow_milestones_reviewed_byTousers                                                          User?                         @relation("workflow_milestones_reviewed_byTousers", fields: [reviewed_by], references: [id])
-  workflow_instances                                                                                    workflow_instances            @relation(fields: [workflow_instance_id], references: [id], onDelete: Cascade)
-  workflow_task_items                                                                                   workflow_task_items[]
-
-  @@unique([workflow_instance_id, display_order])
-  @@index([owner_id])
-  @@index([workflow_instance_id, status])
-}
-
-model workflow_notification_log {
-  id                  String                      @id
-  tenant_id           String
-  recipient_user_id   String
-  notification_type   String
-  channel             WorkflowNotificationChannel
-  subject             String?                     @db.VarChar(500)
-  body                String?
-  related_entity_type String?                     @db.VarChar(100)
-  related_entity_id   String?
-  status              WorkflowNotificationStatus  @default(PENDING)
-  sent_at             DateTime?
-  error_message       String?
-  created_at          DateTime                    @default(now())
-  read_at             DateTime?
-  users               User                        @relation(fields: [recipient_user_id], references: [id], onDelete: Cascade)
-  tenants             Workspace                   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-
-  @@index([notification_type, created_at])
-  @@index([tenant_id, recipient_user_id, read_at])
-  @@index([tenant_id, recipient_user_id, status])
-}
-
-model workflow_program_requirements {
-  id                             String                           @id
-  engagement_id                  String
-  requirement_type               WorkflowProgramRequirementType
-  code                           String
-  config                         Json?
-  is_compliance_critical         Boolean                          @default(false)
-  requires_explicit_confirmation Boolean                          @default(false)
-  status                         WorkflowProgramRequirementStatus @default(MISSING)
-  satisfied_by_type              String?
-  satisfied_by_id                String?
-  satisfied_at                   DateTime?
-  confirmed_by_id                String?
-  confirmed_at                   DateTime?
-  stale_detected_at              DateTime?
-  stale_grace_ends_at            DateTime?
-  stale_reopen_at                DateTime?
-  created_at                     DateTime                         @default(now())
-  updated_at                     DateTime
-  users                          User?                            @relation(fields: [confirmed_by_id], references: [id])
-  workflow_engagements           workflow_engagements             @relation(fields: [engagement_id], references: [id], onDelete: Cascade)
-
-  @@index([engagement_id, code])
-  @@index([engagement_id, status])
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model workflow_project_instances {
-  id                               String                       @id
-  company_id                       String
-  tenant_id                        String
-  project_name                     String
-  start_date                       DateTime                     @db.Date
-  due_date                         DateTime                     @db.Date
-  recurrence_months                Int?
-  source_instance_id               String?
-  created_at                       DateTime                     @default(now()) @db.Timestamptz(6)
-  updated_at                       DateTime                     @default(now()) @db.Timestamptz(6)
-  companies                        Company                      @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  workflow_project_instances       workflow_project_instances?  @relation("workflow_project_instancesToworkflow_project_instances", fields: [source_instance_id], references: [id], onUpdate: NoAction)
-  other_workflow_project_instances workflow_project_instances[] @relation("workflow_project_instancesToworkflow_project_instances")
-  tenants                          Workspace                    @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@unique([company_id, start_date, due_date], map: "workflow_project_instances_company_window_key")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model workflow_project_settings {
-  company_id             String    @id
-  tenant_id              String
-  project_name           String?
-  start_date             DateTime? @db.Date
-  due_date               DateTime? @db.Date
-  recurrence_months      Int?
-  created_at             DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at             DateTime  @default(now()) @db.Timestamptz(6)
-  billing_mode           String?
-  billing_fixed_price    Decimal?  @db.Decimal(18, 2)
-  billing_currency       String?
-  billing_tiered_pricing Json?
-  workspace_state        Json?
-  companies              Company   @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tenants                Workspace @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model workflow_scheduled_instances_queue {
-  id                                                                String                       @id
-  tenant_id                                                         String
-  engagement_service_id                                             String
-  company_id                                                        String
-  service_definition_id                                             String
-  period_label                                                      String                       @db.VarChar(100)
-  period_start_date                                                 DateTime?                    @db.Date
-  period_end_date                                                   DateTime?                    @db.Date
-  proposed_sla_date                                                 DateTime                     @db.Date
-  statutory_deadline_date                                           DateTime?                    @db.Date
-  proposed_owner_id                                                 String?
-  spawn_mode                                                        WorkflowSpawnType            @default(AUTO)
-  status                                                            WorkflowScheduledQueueStatus @default(PENDING)
-  workflow_instance_id                                              String?
-  unique_key                                                        String                       @unique @db.VarChar(255)
-  confirmed_by                                                      String?
-  confirmed_at                                                      DateTime?
-  rejection_reason                                                  String?
-  generated_at                                                      DateTime                     @default(now())
-  expires_at                                                        DateTime?
-  created_at                                                        DateTime                     @default(now())
-  updated_at                                                        DateTime
-  companies                                                         Company                      @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  users_workflow_scheduled_instances_queue_confirmed_byTousers      User?                        @relation("workflow_scheduled_instances_queue_confirmed_byTousers", fields: [confirmed_by], references: [id])
-  workflow_engagement_services                                      workflow_engagement_services @relation(fields: [engagement_service_id], references: [id], onDelete: Cascade)
-  users_workflow_scheduled_instances_queue_proposed_owner_idTousers User?                        @relation("workflow_scheduled_instances_queue_proposed_owner_idTousers", fields: [proposed_owner_id], references: [id])
-  workflow_service_definitions                                      workflow_service_definitions @relation(fields: [service_definition_id], references: [id])
-  tenants                                                           Workspace                    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  workflow_instances                                                workflow_instances?          @relation(fields: [workflow_instance_id], references: [id])
-
-  @@index([company_id, status])
-  @@index([engagement_service_id, status])
-  @@index([tenant_id, status])
-}
-
-model workflow_service_definitions {
-  id                                 String                               @id
-  tenant_id                          String
-  name                               String                               @db.VarChar(255)
-  description                        String?
-  category                           WorkflowServiceCategory
-  default_period_type                WorkflowPeriodType
-  statutory_deadline_type            String?                              @db.VarChar(100)
-  statutory_deadline_notes           String?
-  internal_sla_days                  Int?
-  risk_level                         WorkflowRiskLevel                    @default(MEDIUM)
-  requires_review_milestone          Boolean                              @default(true)
-  billing_trigger_milestone_order    Int?
-  spawn_lead_days                    Int                                  @default(7)
-  is_active                          Boolean                              @default(true)
-  version                            Int                                  @default(1)
-  created_by                         String
-  created_at                         DateTime                             @default(now())
-  updated_at                         DateTime
-  workflow_engagement_services       workflow_engagement_services[]
-  workflow_instances                 workflow_instances[]
-  workflow_milestone_templates       workflow_milestone_templates[]
-  workflow_scheduled_instances_queue workflow_scheduled_instances_queue[]
-  users                              User                                 @relation(fields: [created_by], references: [id])
-  tenants                            Workspace                            @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-
-  @@index([tenant_id, is_active])
-  @@index([tenant_id, name])
-}
-
-model workflow_task_dependencies {
-  id                                                                                      String              @id
-  predecessor_task_id                                                                     String
-  successor_task_id                                                                       String
-  lag_days                                                                                Int                 @default(0)
-  created_by                                                                              String
-  created_at                                                                              DateTime            @default(now())
-  users                                                                                   User                @relation(fields: [created_by], references: [id])
-  workflow_task_items_workflow_task_dependencies_predecessor_task_idToworkflow_task_items workflow_task_items @relation("workflow_task_dependencies_predecessor_task_idToworkflow_task_items", fields: [predecessor_task_id], references: [id], onDelete: Cascade)
-  workflow_task_items_workflow_task_dependencies_successor_task_idToworkflow_task_items   workflow_task_items @relation("workflow_task_dependencies_successor_task_idToworkflow_task_items", fields: [successor_task_id], references: [id], onDelete: Cascade)
-
-  @@unique([predecessor_task_id, successor_task_id])
-  @@index([successor_task_id])
-}
-
-model workflow_task_items {
-  id                                                                                               String                        @id
-  milestone_id                                                                                     String
-  task_template_id                                                                                 String?
-  name                                                                                             String                        @db.VarChar(500)
-  description                                                                                      String?
-  is_required                                                                                      Boolean                       @default(false)
-  display_order                                                                                    Int
-  status                                                                                           WorkflowTaskItemStatus        @default(OPEN)
-  completed_by                                                                                     String?
-  completed_at                                                                                     DateTime?
-  created_at                                                                                       DateTime                      @default(now())
-  updated_at                                                                                       DateTime
-  owner_id                                                                                         String?
-  due_date                                                                                         DateTime?                     @db.Date
-  estimated_minutes                                                                                Int?
-  actual_minutes                                                                                   Int?
-  automation_rule_code                                                                             String?
-  automation_config                                                                                Json?
-  workflow_artifacts                                                                               workflow_artifacts[]
-  workflow_cross_dependencies_workflow_cross_dependencies_predecessor_task_idToworkflow_task_items workflow_cross_dependencies[] @relation("workflow_cross_dependencies_predecessor_task_idToworkflow_task_items")
-  workflow_cross_dependencies_workflow_cross_dependencies_successor_task_idToworkflow_task_items   workflow_cross_dependencies[] @relation("workflow_cross_dependencies_successor_task_idToworkflow_task_items")
-  workflow_task_dependencies_workflow_task_dependencies_predecessor_task_idToworkflow_task_items   workflow_task_dependencies[]  @relation("workflow_task_dependencies_predecessor_task_idToworkflow_task_items")
-  workflow_task_dependencies_workflow_task_dependencies_successor_task_idToworkflow_task_items     workflow_task_dependencies[]  @relation("workflow_task_dependencies_successor_task_idToworkflow_task_items")
-  users_workflow_task_items_completed_byTousers                                                    User?                         @relation("workflow_task_items_completed_byTousers", fields: [completed_by], references: [id])
-  workflow_milestones                                                                              workflow_milestones           @relation(fields: [milestone_id], references: [id], onDelete: Cascade)
-  users_workflow_task_items_owner_idTousers                                                        User?                         @relation("workflow_task_items_owner_idTousers", fields: [owner_id], references: [id])
-  workflow_task_templates                                                                          workflow_task_templates?      @relation(fields: [task_template_id], references: [id])
-
-  @@unique([milestone_id, display_order])
-  @@index([due_date])
-  @@index([milestone_id, status])
-  @@index([owner_id])
-}
-
-model workflow_task_templates {
-  id                           String                       @id
-  milestone_template_id        String
-  name                         String                       @db.VarChar(500)
-  description                  String?
-  is_required                  Boolean                      @default(false)
-  display_order                Int
-  created_at                   DateTime                     @default(now())
-  automation_rule_code         String?
-  automation_config            Json?
-  workflow_task_items          workflow_task_items[]
-  workflow_milestone_templates workflow_milestone_templates @relation(fields: [milestone_template_id], references: [id], onDelete: Cascade)
-
-  @@unique([milestone_template_id, display_order])
+enum TaskStageOutcomeType {
+  COMPANY
+  GENERATED_DOCUMENT
+  ESIGNING_ENVELOPE
 }
 
 enum WorkspaceStatus {
@@ -3346,182 +2930,4 @@ enum AccountStatus {
   ACTIVE
   INACTIVE
   ARCHIVED
-}
-
-enum WorkflowArtifactSourceType {
-  INLINE
-  DOCUMENT
-  PROCESSING_DOCUMENT
-  GENERATED_DOCUMENT
-}
-
-enum WorkflowArtifactType {
-  UPLOADED_DOCUMENT
-  SYSTEM_RECORD
-  FILING_CONFIRMATION
-  APPROVAL_RECORD
-  COMMUNICATION_RECORD
-}
-
-enum WorkflowBillingStateStatus {
-  NOT_TRIGGERED
-  TRIGGERED_PENDING
-  INVOICE_RAISED
-  CLOSED
-}
-
-enum WorkflowBillingType {
-  FIXED_RETAINER
-  MILESTONE_BASED
-  MANUAL
-}
-
-enum WorkflowBlockerStatus {
-  OPEN
-  ESCALATED
-  RESOLVED
-  CLOSED_WITH_WORKFLOW
-}
-
-enum WorkflowBlockerType {
-  AWAITING_CLIENT_DOCUMENT
-  AWAITING_CLIENT_APPROVAL
-  AWAITING_EXTERNAL_PARTY
-  WORKING_ON_ASSUMPTION
-  INTERNAL_DEPENDENCY
-  INTERNAL_BLOCKER
-  OTHER
-}
-
-enum WorkflowCommunicationChannel {
-  EMAIL
-  WHATSAPP
-  PHONE
-  MEETING
-  OTHER
-}
-
-enum WorkflowCommunicationDirection {
-  INBOUND
-  OUTBOUND
-}
-
-enum WorkflowCrossDependencyType {
-  BLOCKING
-  SOFT_WARNING
-  INFO
-}
-
-enum WorkflowDeviationType {
-  MILESTONE_SKIPPED
-  REQUIRED_TASK_REMOVED
-  MILESTONE_ADDED
-  TASK_ADDED
-  DEADLINE_EXTENDED
-  DEPENDENCY_OVERRIDDEN
-  REVIEWER_CONSTRAINT_OVERRIDDEN
-  SCOPE_CHANGE
-  OTHER
-}
-
-enum WorkflowEngagementStatus {
-  PENDING
-  ACTIVE
-  SUSPENDED
-  TERMINATED
-}
-
-enum WorkflowInstanceStatus {
-  SCHEDULED
-  OPEN
-  BLOCKED
-  IN_REVIEW
-  AWAITING_CLIENT_APPROVAL
-  DELIVERED
-  BILLED
-  CLOSED
-  CANCELLED
-  ON_HOLD
-}
-
-enum WorkflowMilestoneStatus {
-  PENDING
-  IN_PROGRESS
-  BLOCKED
-  AWAITING_REVIEW
-  AWAITING_APPROVAL
-  COMPLETE
-  REJECTED
-  SKIPPED
-}
-
-enum WorkflowMilestoneType {
-  EXECUTION
-  REVIEW
-  CLIENT_APPROVAL_GATE
-  ADMIN
-}
-
-enum WorkflowNotificationChannel {
-  EMAIL
-  IN_APP
-  WHATSAPP
-}
-
-enum WorkflowNotificationStatus {
-  PENDING
-  SENT
-  FAILED
-  SUPPRESSED
-}
-
-enum WorkflowPeriodType {
-  MONTHLY
-  QUARTERLY
-  ANNUAL
-  ONE_OFF
-}
-
-enum WorkflowProgramRequirementStatus {
-  MISSING
-  SATISFIED
-  STALE
-}
-
-enum WorkflowProgramRequirementType {
-  DOCUMENT
-  CONTACT
-  COMPANY_FIELD
-}
-
-enum WorkflowRiskLevel {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-enum WorkflowScheduledQueueStatus {
-  PENDING
-  CONFIRMED
-  SPAWNED
-  REJECTED
-  EXPIRED
-}
-
-enum WorkflowServiceCategory {
-  RECURRING_COMPLIANCE
-  PROJECT
-  AD_HOC
-}
-
-enum WorkflowSpawnType {
-  AUTO
-  MANUAL
-  DIRECTOR_CONFIRMED
-}
-
-enum WorkflowTaskItemStatus {
-  OPEN
-  COMPLETE
-  NA
 }
