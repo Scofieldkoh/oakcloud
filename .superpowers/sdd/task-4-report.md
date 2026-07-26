@@ -88,6 +88,11 @@ Complete. Implementation commits: `575b83d`, `0e26b0b`.
 - GREEN 13: stage detail accepts an optional actor and propagates it through
   synchronization and reconciliation. Hard-delete callbacks pass the deleter;
   ordinary detail reads remain backward-compatible with system/undefined actor.
+- RED 14: a recovery correction audit was immediately followed by a redundant
+  reconciliation audit, and later unchanged reads audited the same state again.
+- GREEN 14: changed recovery synchronization skips immediate reconciliation;
+  later reconciliation compares derived stage/Task state and performs no
+  writes or audit when already aligned, while lifecycle changes still reconcile.
 
 Final focused verification:
 
@@ -138,6 +143,12 @@ Final hard-delete tombstone verification:
 Final deletion-actor audit verification:
 
 - 4 covering files passed with 75 tests.
+- `npx.cmd tsc --noEmit` passed.
+- Focused ESLint and `git diff --check` passed.
+
+Final recovery audit de-duplication verification:
+
+- 4 covering files passed with 76 tests.
 - `npx.cmd tsc --noEmit` passed.
 - Focused ESLint and `git diff --check` passed.
 
