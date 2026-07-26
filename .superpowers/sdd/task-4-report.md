@@ -50,6 +50,13 @@ Complete. Implementation commits: `575b83d`, `0e26b0b`.
 - GREEN 7: `processBizFileExtraction` now writes the optional context into both
   Company upsert branches atomically, while no-context confirmations retain
   their existing service call and completed confirmations retain idempotency.
+- RED 8: concurrent task A/task B BizFile confirmations for the same existing
+  Company had no durable per-stage association, and duplicate requests had no
+  unique recovery key.
+- GREEN 8: a dedicated `TaskCompanyRecoveryContext` relation now uses a
+  transactional upsert and a unique tenant/stage/Company key. Each task
+  recovers independently, duplicate requests converge, and legacy single-object
+  Company context remains a stage-read fallback.
 
 Final focused verification:
 
@@ -65,6 +72,12 @@ Final BizFile review verification:
 
 - 3 covering files passed with 41 tests.
 - `npx.cmd tsc --noEmit` passed.
+- Focused ESLint and `git diff --check` passed.
+
+Final multi-context review verification:
+
+- 4 covering files passed with 62 tests.
+- Prisma Client generation and `npx.cmd tsc --noEmit` passed.
 - Focused ESLint and `git diff --check` passed.
 
 ## Compatibility verification
