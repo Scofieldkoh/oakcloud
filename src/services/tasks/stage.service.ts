@@ -50,6 +50,30 @@ function hasLinkedOutcomeEntity(outcome: {
   );
 }
 
+interface LockedCompanyRecoveryContext {
+  taskId: string;
+  companyId: string;
+}
+
+async function lockCompanyRecoveryContext(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  taskId: string,
+  taskStageId: string,
+) {
+  const rows = await tx.$queryRaw<LockedCompanyRecoveryContext[]>(Prisma.sql`
+    SELECT
+      task_id AS "taskId",
+      company_id AS "companyId"
+    FROM task_company_recovery_contexts
+    WHERE tenant_id = ${tenantId}
+      AND task_id = ${taskId}
+      AND task_stage_id = ${taskStageId}
+    FOR UPDATE
+  `);
+  return rows[0] ?? null;
+}
+
 export async function getTaskStageDetail(
   tenantId: string,
   taskId: string,
@@ -537,6 +561,30 @@ export async function linkTaskStageOutcome(
     const stage = await requireStage(tx, tenantId, stageId);
     const lockedTask = await lockTaskForUpdate(tx, tenantId, stage.taskId);
     assertOutcomeMatchesAction(stage.actionType, parsed.type);
+    if (
+      parsed.type === TaskStageOutcomeType.COMPANY
+      && parsed.companyId
+    ) {
+      const recovery = await lockCompanyRecoveryContext(
+        tx,
+        tenantId,
+        stage.taskId,
+        stage.id,
+      );
+      if (
+        recovery?.taskId === stage.taskId
+        && recovery.companyId
+        && recovery.companyId !== parsed.companyId
+      ) {
+        return {
+          stale: true,
+          authoritativeCompanyId: recovery.companyId,
+          status: stage.status,
+          taskStatus: lockedTask.status,
+          outcome: stage.outcome,
+        };
+      }
+    }
     const authoritative = await resolveAuthoritativeOutcome(tx, tenantId, parsed);
     const resolution = resolveStageActionOutcome(stage.actionType, authoritative);
     const ids = outcomeEntityIds(parsed);

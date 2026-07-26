@@ -55,7 +55,9 @@ const tx = {
 };
 
 function expectTaskLock(taskId = 'task-1', tenantId = 'tenant-a') {
-  const query = mocks.rawQuery.mock.calls.at(-1)?.[0] as {
+  const query = mocks.rawQuery.mock.calls
+    .map(([value]) => value as { sql?: string; values?: unknown[] })
+    .find((value) => value.sql?.includes('FROM tasks')) as {
     sql?: string;
     values?: unknown[];
   } | undefined;
@@ -219,6 +221,113 @@ describe('task snapshots and stage mutations', () => {
       title: 'Annual return',
       companyId: null,
     }]);
+  });
+
+  describe('stage-authoritative Company callback ordering', () => {
+    const companyA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const companyB = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    let recoveryCompanyId = companyA;
+
+    beforeEach(() => {
+      mocks.stageFindFirst.mockResolvedValue({
+        id: 'stage-1',
+        tenantId: 'tenant-a',
+        taskId: 'task-1',
+        actionType: TaskStageActionType.COMPANY_PROFILE,
+        status: TaskStageStatus.NOT_STARTED,
+        startedAt: null,
+        task: {
+          id: 'task-1',
+          status: TaskStatus.NOT_STARTED,
+          companyId: null,
+          deletedAt: null,
+        },
+        outcome: null,
+        checklistItems: [],
+      });
+      mocks.rawQuery.mockImplementation((query: { sql?: string }) => {
+        if (query.sql?.includes('task_company_recovery_contexts')) {
+          return Promise.resolve([{
+            taskId: 'task-1',
+            companyId: recoveryCompanyId,
+          }]);
+        }
+        return Promise.resolve([{
+          id: 'task-1',
+          tenantId: 'tenant-a',
+          status: TaskStatus.NOT_STARTED,
+          title: 'Onboarding',
+          companyId: null,
+        }]);
+      });
+      mocks.companyFindFirst.mockImplementation(({ where }: {
+        where: { id: string };
+      }) => Promise.resolve({ id: where.id, name: `Company ${where.id}` }));
+      mocks.outcomeUpsert.mockResolvedValue({ id: 'outcome-1' });
+      mocks.stageUpdate.mockResolvedValue({ id: 'stage-1' });
+      mocks.stageFindMany.mockResolvedValue([{ status: TaskStageStatus.COMPLETED }]);
+      mocks.taskUpdate.mockResolvedValue({ id: 'task-1' });
+    });
+
+    it('does not let delayed Company A overwrite Company B after B recovery commits', async () => {
+      recoveryCompanyId = companyB;
+
+      const result = await linkTaskStageOutcome('tenant-a', 'stage-1', {
+        type: 'COMPANY',
+        companyId: companyA,
+      }, 'user-1');
+
+      expect(result).toEqual(expect.objectContaining({
+        stale: true,
+        authoritativeCompanyId: companyB,
+      }));
+      expect(mocks.outcomeUpsert).not.toHaveBeenCalled();
+      expect(mocks.taskUpdate).not.toHaveBeenCalled();
+      expect(mocks.stageUpdate).not.toHaveBeenCalled();
+    });
+
+    it('lets Company B win when A links before the B recovery commit', async () => {
+      recoveryCompanyId = companyA;
+      await linkTaskStageOutcome('tenant-a', 'stage-1', {
+        type: 'COMPANY',
+        companyId: companyA,
+      }, 'user-1');
+
+      recoveryCompanyId = companyB;
+      await linkTaskStageOutcome('tenant-a', 'stage-1', {
+        type: 'COMPANY',
+        companyId: companyB,
+      }, 'user-1');
+
+      expect(mocks.outcomeUpsert).toHaveBeenNthCalledWith(1, expect.objectContaining({
+        update: expect.objectContaining({ companyId: companyA }),
+      }));
+      expect(mocks.outcomeUpsert).toHaveBeenNthCalledWith(2, expect.objectContaining({
+        update: expect.objectContaining({ companyId: companyB }),
+      }));
+      expect(mocks.taskUpdate).toHaveBeenLastCalledWith({
+        where: { id: 'task-1' },
+        data: { status: TaskStatus.COMPLETED },
+      });
+    });
+
+    it('links the same authoritative Company idempotently', async () => {
+      recoveryCompanyId = companyB;
+
+      await linkTaskStageOutcome('tenant-a', 'stage-1', {
+        type: 'COMPANY',
+        companyId: companyB,
+      }, 'user-1');
+      await linkTaskStageOutcome('tenant-a', 'stage-1', {
+        type: 'COMPANY',
+        companyId: companyB,
+      }, 'user-1');
+
+      expect(mocks.outcomeUpsert).toHaveBeenCalledTimes(2);
+      expect(mocks.outcomeUpsert).toHaveBeenLastCalledWith(expect.objectContaining({
+        update: expect.objectContaining({ companyId: companyB }),
+      }));
+    });
   });
 
   it('locks a task snapshot only after stages and checklist items are inserted', async () => {
