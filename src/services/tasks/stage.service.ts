@@ -90,6 +90,22 @@ export async function getTaskStageDetail(
   });
   if (!stage) throw new NotFoundError('Task stage not found');
 
+  const synchronizedCompanyOutcome = stage.actionType === TaskStageActionType.COMPANY_PROFILE
+    ? await synchronizeCompanyOutcomeWithRecovery(tenantId, stage.id)
+    : false;
+  if (synchronizedCompanyOutcome) {
+    stage = await prisma.taskStage.findFirst({
+      where: {
+        id: stageId,
+        taskId,
+        tenantId,
+        task: { deletedAt: null },
+      },
+      include: stageDetailInclude,
+    });
+    if (!stage) throw new NotFoundError('Task stage not found');
+  }
+
   const recovered = !stage.outcome
     ? await recoverTaskStageOutcomeFromDurableContext(tenantId, stage)
     : false;
@@ -138,6 +154,98 @@ export async function getTaskStageDetail(
     launch: adapter.launch(adapterContext),
     outcomeSummary: adapter.outcomeSummary(resolvedOutcome),
   };
+}
+
+export async function synchronizeCompanyOutcomeWithRecovery(
+  tenantId: string,
+  stageId: string,
+  userId?: string,
+) {
+  return prisma.$transaction(async (tx) => {
+    const stage = await requireStage(tx, tenantId, stageId);
+    if (stage.actionType !== TaskStageActionType.COMPANY_PROFILE) {
+      return false;
+    }
+    const lockedTask = await lockTaskForUpdate(tx, tenantId, stage.taskId);
+    const recovery = await lockCompanyRecoveryContext(
+      tx,
+      tenantId,
+      stage.taskId,
+      stage.id,
+    );
+    if (
+      !recovery
+      || recovery.taskId !== stage.taskId
+      || recovery.companyId === stage.outcome?.companyId
+    ) {
+      return false;
+    }
+
+    const company = await tx.company.findFirst({
+      where: { id: recovery.companyId, tenantId },
+      select: { id: true, name: true, deletedAt: true },
+    });
+    if (!company) {
+      return false;
+    }
+
+    await tx.taskStageOutcome.upsert({
+      where: { taskStageId: stage.id },
+      create: {
+        tenantId,
+        taskStageId: stage.id,
+        type: TaskStageOutcomeType.COMPANY,
+        companyId: company.id,
+      },
+      update: {
+        type: TaskStageOutcomeType.COMPANY,
+        companyId: company.id,
+        generatedDocumentId: null,
+        esigningEnvelopeId: null,
+      },
+    });
+    if (lockedTask.companyId !== company.id) {
+      await tx.task.update({
+        where: { id: stage.taskId },
+        data: { companyId: company.id },
+      });
+    }
+
+    const status = company.deletedAt
+      ? TaskStageStatus.FAILED
+      : TaskStageStatus.COMPLETED;
+    const now = new Date();
+    await tx.taskStage.update({
+      where: { id: stage.id },
+      data: {
+        status,
+        startedAt: stage.startedAt ?? now,
+        completedAt: status === TaskStageStatus.COMPLETED ? now : null,
+      },
+    });
+    const taskStatus = await updateParentTaskStatus(
+      tx,
+      tenantId,
+      stage.taskId,
+      lockedTask.status,
+    );
+    await auditStageMutation(tx, {
+      tenantId,
+      userId,
+      stageId: stage.id,
+      companyId: company.id,
+      summary: company.deletedAt
+        ? 'Recovered Company outcome is no longer available'
+        : `Recovered Company outcome: ${company.name}`,
+      metadata: {
+        previousCompanyId: stage.outcome?.companyId ?? null,
+        companyId: company.id,
+        status,
+        taskStatus,
+      },
+    });
+    return true;
+  });
 }
 
 export async function recoverTaskStageOutcomeFromDurableContext(
