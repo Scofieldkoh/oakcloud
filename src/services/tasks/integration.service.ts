@@ -269,7 +269,7 @@ export async function safelyCaptureEsigningTaskStageIds(
 export function safelyReconcileTaskStageIds(
   tenantId: string,
   taskStageIds: string[],
-  _userId?: string,
+  userId?: string,
 ) {
   return safelyRunTaskCallback(
     'authoritative record deletion',
@@ -279,7 +279,7 @@ export function safelyReconcileTaskStageIds(
         select: { id: true, taskId: true },
       });
       await Promise.all(stages.map(({ id, taskId }) => (
-        getTaskStageDetail(tenantId, taskId, id)
+        getTaskStageDetail(tenantId, taskId, id, userId)
       )));
     },
   );

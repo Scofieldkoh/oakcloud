@@ -504,6 +504,33 @@ describe('task snapshots and stage mutations', () => {
       }));
       expect(detail.status).toBe(TaskStageStatus.COMPLETED);
     });
+
+    it('attributes hard-delete tombstone self-heal audits to the deleter', async () => {
+      recoveryCompanyId = null;
+
+      await getTaskStageDetail(
+        'tenant-a',
+        'task-1',
+        'stage-1',
+        'deleter-user',
+      );
+
+      expect(mocks.audit).toHaveBeenCalled();
+      expect(mocks.audit.mock.calls.every(
+        ([entry]) => (entry as { userId?: string }).userId === 'deleter-user',
+      )).toBe(true);
+    });
+
+    it('allows detail-read recovery to audit without an explicit actor', async () => {
+      recoveryCompanyId = null;
+
+      await getTaskStageDetail('tenant-a', 'task-1', 'stage-1');
+
+      expect(mocks.audit).toHaveBeenCalled();
+      expect(mocks.audit.mock.calls.every(
+        ([entry]) => (entry as { userId?: string }).userId === undefined,
+      )).toBe(true);
+    });
   });
 
   it('locks a task snapshot only after stages and checklist items are inserted', async () => {

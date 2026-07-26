@@ -398,6 +398,9 @@ describe('authoritative module callback contracts', () => {
     expect(source('src/services/tasks/integration.service.ts')).toMatch(
       /safelyCaptureCompanyTaskStageIds[\s\S]+taskCompanyRecoveryContext\.findMany/,
     );
+    expect(source('src/services/tasks/integration.service.ts')).toMatch(
+      /safelyReconcileTaskStageIds[\s\S]+getTaskStageDetail\(tenantId, taskId, id, userId\)/,
+    );
     expect(envelopeRoute).toMatch(
       /uploadGeneratedDocumentToEsigningEnvelope[\s\S]+deleteDraftEsigningEnvelope/,
     );

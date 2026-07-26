@@ -78,6 +78,7 @@ export async function getTaskStageDetail(
   tenantId: string,
   taskId: string,
   stageId: string,
+  actorUserId?: string,
 ) {
   let stage = await prisma.taskStage.findFirst({
     where: {
@@ -91,7 +92,11 @@ export async function getTaskStageDetail(
   if (!stage) throw new NotFoundError('Task stage not found');
 
   const synchronizedCompanyOutcome = stage.actionType === TaskStageActionType.COMPANY_PROFILE
-    ? await synchronizeCompanyOutcomeWithRecovery(tenantId, stage.id)
+    ? await synchronizeCompanyOutcomeWithRecovery(
+      tenantId,
+      stage.id,
+      actorUserId,
+    )
     : false;
   if (synchronizedCompanyOutcome) {
     stage = await prisma.taskStage.findFirst({
@@ -110,7 +115,7 @@ export async function getTaskStageDetail(
     ? await recoverTaskStageOutcomeFromDurableContext(tenantId, stage)
     : false;
   if (stage.outcome || recovered) {
-    await reconcileTaskStageOutcome(tenantId, stage.id);
+    await reconcileTaskStageOutcome(tenantId, stage.id, actorUserId);
     stage = await prisma.taskStage.findFirst({
       where: {
         id: stageId,
