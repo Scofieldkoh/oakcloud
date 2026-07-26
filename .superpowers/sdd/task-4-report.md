@@ -64,6 +64,12 @@ Complete. Implementation commits: `575b83d`, `0e26b0b`.
   with another Company deterministically replaces the authoritative association;
   Task, tenant, stage, action, and Company ownership are checked during recovery,
   while distinct stages and duplicate requests remain independent/idempotent.
+- RED 10: a delayed Company A callback could still overwrite Company B after
+  B became the stage-authoritative recovery association.
+- GREEN 10: Company outcome linking now locks the durable recovery row inside
+  the outcome transaction and treats a mismatched callback as stale before any
+  outcome, Task company, stage status, or audit write. Manual links without a
+  recovery row and matching/idempotent callbacks retain existing behavior.
 
 Final focused verification:
 
@@ -91,6 +97,12 @@ Final singular-stage ownership verification:
 
 - 4 covering files passed with 64 tests.
 - Prisma Client generation and `npx.cmd tsc --noEmit` passed.
+- Focused ESLint and `git diff --check` passed.
+
+Final stale-callback race verification:
+
+- 4 covering files passed with 67 tests.
+- `npx.cmd tsc --noEmit` passed.
 - Focused ESLint and `git diff --check` passed.
 
 ## Compatibility verification
