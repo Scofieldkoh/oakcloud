@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   companyFindFirst: vi.fn(),
   documentFindFirst: vi.fn(),
   envelopeFindFirst: vi.fn(),
+  recoveryFindFirst: vi.fn(),
   userFindFirst: vi.fn(),
   checklistFindFirst: vi.fn(),
   checklistUpdate: vi.fn(),
@@ -68,6 +69,8 @@ vi.mock('@/lib/prisma', () => ({
     $transaction: mocks.transaction,
     taskStage: { findFirst: mocks.stageFindFirst },
     generatedDocument: { findFirst: mocks.documentFindFirst },
+    company: { findFirst: mocks.companyFindFirst },
+    taskCompanyRecoveryContext: { findFirst: mocks.recoveryFindFirst },
   },
 }));
 
@@ -96,7 +99,47 @@ import {
   skipTaskStage,
   updateTaskStageChecklistItem,
   updateTaskStageMetadata,
+  recoverTaskStageOutcomeFromDurableContext,
 } from '@/services/tasks/stage.service';
+
+describe('Company recovery ownership', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.companyFindFirst.mockResolvedValue(null);
+  });
+
+  it('ignores a recovery row whose task does not own the requested stage', async () => {
+    mocks.recoveryFindFirst.mockResolvedValue({
+      taskId: 'task-other',
+      company: { id: 'company-b' },
+    });
+
+    await expect(recoverTaskStageOutcomeFromDurableContext('tenant-a', {
+      id: 'stage-1',
+      taskId: 'task-1',
+      actionType: TaskStageActionType.COMPANY_PROFILE,
+    })).resolves.toBe(false);
+
+    expect(mocks.recoveryFindFirst).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'tenant-a',
+        taskId: 'task-1',
+        taskStageId: 'stage-1',
+        taskStage: {
+          actionType: TaskStageActionType.COMPANY_PROFILE,
+          taskId: 'task-1',
+          tenantId: 'tenant-a',
+        },
+        company: { deletedAt: null, tenantId: 'tenant-a' },
+      },
+      select: {
+        taskId: true,
+        company: { select: { id: true } },
+      },
+    });
+    expect(mocks.outcomeUpsert).not.toHaveBeenCalled();
+  });
+});
 
 describe('stage action registry', () => {
   it('provides curated defaults, blockers, and launch context', () => {

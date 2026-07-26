@@ -351,7 +351,8 @@ describe('authoritative module callback contracts', () => {
 
     expect(schema).toContain('taskIntegrationContext');
     expect(schema).toContain('model TaskCompanyRecoveryContext');
-    expect(schema).toContain('@@unique([tenantId, taskStageId, companyId])');
+    expect(schema).toContain('@@unique([tenantId, taskStageId])');
+    expect(schema).toMatch(/task\s+Task\s+@relation/);
     expect(company).toContain('taskIntegrationContext');
     expect(generationSession).toContain('taskIntegrationContext');
     expect(envelope).toContain('taskIntegrationContext');

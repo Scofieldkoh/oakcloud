@@ -137,12 +137,25 @@ export async function recoverTaskStageOutcomeFromDurableContext(
     const recovery = await prisma.taskCompanyRecoveryContext.findFirst({
       where: {
         tenantId,
+        taskId: stage.taskId,
         taskStageId: stage.id,
-        company: { deletedAt: null },
+        taskStage: {
+          actionType: TaskStageActionType.COMPANY_PROFILE,
+          taskId: stage.taskId,
+          tenantId,
+        },
+        company: { deletedAt: null, tenantId },
       },
-      select: { company: { select: { id: true } } },
+      select: {
+        taskId: true,
+        company: { select: { id: true } },
+      },
     });
-    const company = recovery?.company ?? await prisma.company.findFirst({
+    const company = (
+      recovery?.taskId === stage.taskId
+        ? recovery.company
+        : null
+    ) ?? await prisma.company.findFirst({
       where: {
         tenantId,
         deletedAt: null,

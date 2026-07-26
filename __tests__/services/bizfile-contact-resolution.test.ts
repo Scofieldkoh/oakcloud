@@ -135,19 +135,17 @@ describe('BizFile contact identity resolution', () => {
 
     expect(mocks.recoveryUpsert).toHaveBeenCalledWith(expect.objectContaining({
       where: {
-        tenantId_taskStageId_companyId: {
+        tenantId_taskStageId: {
           tenantId: 'tenant-1',
           taskStageId: taskContext.taskStageId,
-          companyId: 'company-existing',
         },
       },
     }));
     expect(mocks.recoveryUpsert).toHaveBeenCalledWith(expect.objectContaining({
       where: {
-        tenantId_taskStageId_companyId: {
+        tenantId_taskStageId: {
           tenantId: 'tenant-1',
           taskStageId: taskBContext.taskStageId,
-          companyId: 'company-existing',
         },
       },
     }));
@@ -173,20 +171,49 @@ describe('BizFile contact identity resolution', () => {
     const recoveryKeys = mocks.recoveryUpsert.mock.calls.map(([input]) => input.where);
     expect(recoveryKeys).toEqual([
       {
-        tenantId_taskStageId_companyId: {
+        tenantId_taskStageId: {
           tenantId: 'tenant-1',
           taskStageId: taskContext.taskStageId,
-          companyId: 'company-existing',
         },
       },
       {
-        tenantId_taskStageId_companyId: {
+        tenantId_taskStageId: {
           tenantId: 'tenant-1',
           taskStageId: taskContext.taskStageId,
-          companyId: 'company-existing',
         },
       },
     ]);
+  });
+
+  it('replaces Company A with Company B for the same task stage', async () => {
+    mocks.companyFindFirst.mockResolvedValue({ id: 'company-existing' });
+    tx.company.upsert
+      .mockResolvedValueOnce({ id: 'company-a' })
+      .mockResolvedValueOnce({ id: 'company-b' });
+    mocks.resolveOrCreateContact.mockResolvedValue({ contact: { id: 'contact-existing' } });
+    const { processBizFileExtraction } = await import('@/services/bizfile/processor');
+
+    await processBizFileExtraction(
+      'doc-a', extractedData, 'user-1', 'tenant-1',
+      undefined, undefined, taskContext,
+    );
+    await processBizFileExtraction(
+      'doc-b', extractedData, 'user-1', 'tenant-1',
+      undefined, undefined, taskContext,
+    );
+
+    expect(mocks.recoveryUpsert).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      update: expect.objectContaining({ companyId: 'company-a' }),
+    }));
+    expect(mocks.recoveryUpsert).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      where: {
+        tenantId_taskStageId: {
+          tenantId: 'tenant-1',
+          taskStageId: taskContext.taskStageId,
+        },
+      },
+      update: expect.objectContaining({ companyId: 'company-b' }),
+    }));
   });
 
   it('captures all available identity fields and decisions in the full new-company transaction', async () => {

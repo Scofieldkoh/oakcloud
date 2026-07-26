@@ -762,10 +762,9 @@ export async function processBizFileExtraction(
     if (taskIntegrationContext) {
       await tx.taskCompanyRecoveryContext.upsert({
         where: {
-          tenantId_taskStageId_companyId: {
+          tenantId_taskStageId: {
             tenantId,
             taskStageId: taskIntegrationContext.taskStageId,
-            companyId: company.id,
           },
         },
         create: {
@@ -776,6 +775,7 @@ export async function processBizFileExtraction(
           returnTo: taskIntegrationContext.returnTo,
         },
         update: {
+          companyId: company.id,
           taskId: taskIntegrationContext.taskId,
           returnTo: taskIntegrationContext.returnTo,
         },

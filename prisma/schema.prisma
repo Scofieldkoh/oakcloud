@@ -2194,6 +2194,7 @@ model Task {
   company           Company?            @relation(fields: [companyId], references: [id], onDelete: SetNull)
   owner             User?               @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   stages            TaskStage[]
+  companyRecoveryContexts TaskCompanyRecoveryContext[]
 
   @@index([tenantId, status, deletedAt])
   @@index([tenantId, pipelineVersionId])
@@ -2288,8 +2289,9 @@ model TaskCompanyRecoveryContext {
   tenant      Workspace @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   taskStage   TaskStage @relation(fields: [taskStageId], references: [id], onDelete: Cascade)
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-  @@unique([tenantId, taskStageId, companyId])
+  @@unique([tenantId, taskStageId])
   @@index([tenantId, companyId])
   @@index([tenantId, taskStageId])
   @@map("task_company_recovery_contexts")
