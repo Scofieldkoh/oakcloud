@@ -76,6 +76,13 @@ Complete. Implementation commits: `575b83d`, `0e26b0b`.
   stored outcome, synchronize `Task.companyId`, derive and persist stage/task
   status, and then perform normal reconciliation. Matching/no-recovery manual
   outcomes remain unchanged; soft-deleted recovered Companies persist FAILED.
+- RED 12: hard-deleting the current recovery Company cascaded away the recovery
+  association, allowing an older/no outcome to lose authoritative deletion
+  evidence.
+- GREEN 12: Company deletion now leaves a nullable recovery tombstone through
+  `onDelete: SetNull`. Recovery-only stages are captured before hard delete;
+  detail/reconciliation clears stale outcomes and Task company, persists FAILED
+  attention across reads, and a later Company recovery replaces the tombstone.
 
 Final focused verification:
 
@@ -115,6 +122,12 @@ Final existing-outcome self-heal verification:
 
 - 4 covering files passed with 70 tests.
 - `npx.cmd tsc --noEmit` passed.
+- Focused ESLint and `git diff --check` passed.
+
+Final hard-delete tombstone verification:
+
+- 4 covering files passed with 73 tests.
+- Prisma Client generation and `npx.cmd tsc --noEmit` passed.
 - Focused ESLint and `git diff --check` passed.
 
 ## Compatibility verification
