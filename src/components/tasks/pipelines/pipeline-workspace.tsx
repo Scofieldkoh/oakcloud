@@ -1,0 +1,36 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Alert } from '@/components/ui/alert';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useArchiveTaskPipeline, useCreateTaskPipeline, useDuplicateTaskPipeline, useTaskPipeline, useTaskPipelines, useUpdateTaskPipeline } from '@/hooks/use-task-pipelines';
+import type { TaskPipelineCreatePayload } from '@/services/tasks/types';
+import { PipelineBuilder, pipelineToDraft, type TemplateOption } from './pipeline-builder';
+import { PipelineList } from './pipeline-list';
+
+function useTemplateOptions() {
+  const [templates, setTemplates] = useState<TemplateOption[]>([]);
+  useEffect(() => { let active = true; fetch('/api/document-templates?isActive=true').then((response) => response.ok ? response.json() : []).then((result) => { const items = Array.isArray(result) ? result : result.templates ?? []; if (active) setTemplates(items.map((template: { id: string; name: string }) => ({ id: template.id, name: template.name }))); }).catch(() => undefined); return () => { active = false; }; }, []);
+  return templates;
+}
+
+export function PipelinesListWorkspace({ onCreate, onEdit }: { onCreate: () => void; onEdit: (id: string) => void }) {
+  const { data: pipelines = [], isLoading, error } = useTaskPipelines(); const duplicate = useDuplicateTaskPipeline(); const archive = useArchiveTaskPipeline();
+  const [archiveId, setArchiveId] = useState<string | null>(null);
+  if (isLoading) return <div className="card p-6 text-sm text-text-secondary" role="status">Loading pipelines…</div>;
+  if (error) return <Alert variant="error">{error.message}</Alert>;
+  const selected = pipelines.find((pipeline) => pipeline.id === archiveId);
+  return <><PipelineList pipelines={pipelines} onCreate={onCreate} onEdit={(pipeline) => onEdit(pipeline.id)} onDuplicate={(pipeline) => duplicate.mutate({ id: pipeline.id })} onArchive={(pipeline) => setArchiveId(pipeline.id)} /><ConfirmDialog isOpen={Boolean(selected)} onClose={() => setArchiveId(null)} onConfirm={async (reason) => { if (selected && reason) { await archive.mutateAsync({ id: selected.id, reason }); setArchiveId(null); } }} title="Archive pipeline?" description="Archived pipelines cannot be used for new tasks." confirmLabel="Archive pipeline" requireReason reasonMinLength={1} isLoading={archive.isPending} /></>;
+}
+
+export function NewPipelineWorkspace({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
+  const create = useCreateTaskPipeline(); const templates = useTemplateOptions();
+  return <>{create.error && <Alert variant="error" className="mb-4">{create.error.message}</Alert>}<PipelineBuilder initialDraft={{ name: '', description: '', stages: [] }} templates={templates} onCancel={onCancel} isSaving={create.isPending} onSave={async (payload) => { await create.mutateAsync(payload); onSaved(); }} /></>;
+}
+
+export function EditPipelineWorkspace({ pipelineId, onSaved, onCancel }: { pipelineId: string; onSaved: () => void; onCancel: () => void }) {
+  const { data: pipeline, isLoading, error } = useTaskPipeline(pipelineId); const update = useUpdateTaskPipeline(); const templates = useTemplateOptions();
+  if (isLoading) return <div className="card p-6 text-sm text-text-secondary" role="status">Loading pipeline…</div>;
+  if (error || !pipeline) return <Alert variant="error">{error?.message ?? 'Pipeline not found'}</Alert>;
+  return <>{update.error && <Alert variant="error" className="mb-4">{update.error.message}</Alert>}<PipelineBuilder key={pipeline.id} initialDraft={pipelineToDraft(pipeline)} templates={templates} onCancel={onCancel} isSaving={update.isPending} onSave={async (payload: TaskPipelineCreatePayload) => { await update.mutateAsync({ id: pipeline.id, payload }); onSaved(); }} /></>;
+}
