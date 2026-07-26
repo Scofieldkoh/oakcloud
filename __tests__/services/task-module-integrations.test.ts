@@ -346,11 +346,17 @@ describe('authoritative module callback contracts', () => {
     const generationSession = source('src/services/document-generation-session.service.ts');
     const envelope = source('src/services/esigning-envelope.service.ts');
     const stage = source('src/services/tasks/stage.service.ts');
+    const bizfile = source('src/services/bizfile/processor.ts');
+    const bizfileRoute = source('src/app/api/documents/[documentId]/confirm/route.ts');
 
     expect(schema).toContain('taskIntegrationContext');
     expect(company).toContain('taskIntegrationContext');
     expect(generationSession).toContain('taskIntegrationContext');
     expect(envelope).toContain('taskIntegrationContext');
+    expect(bizfile).toContain('taskIntegrationContext');
+    expect(bizfileRoute).toMatch(
+      /processBizFileExtraction\([\s\S]+taskContext/,
+    );
     expect(stage).toContain('recoverTaskStageOutcomeFromDurableContext');
     expect(stage).toContain('reconcileTaskStageOutcome');
   });

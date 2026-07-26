@@ -133,14 +133,24 @@ export async function POST(
     }
 
     const correctedData = normalizeBizFileReviewDraft(parsed.data);
-    const result = await processBizFileExtraction(
-      documentId,
-      correctedData,
-      session.id,
-      document.tenantId,
-      document.storageKey || undefined,
-      document.mimeType
-    );
+    const result = taskContext
+      ? await processBizFileExtraction(
+        documentId,
+        correctedData,
+        session.id,
+        document.tenantId,
+        document.storageKey || undefined,
+        document.mimeType,
+        taskContext,
+      )
+      : await processBizFileExtraction(
+        documentId,
+        correctedData,
+        session.id,
+        document.tenantId,
+        document.storageKey || undefined,
+        document.mimeType,
+      );
     if (taskContext) {
       await safelyLinkCompanyTaskOutcome({
         tenantId: document.tenantId,

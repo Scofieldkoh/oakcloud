@@ -52,6 +52,11 @@ const extractedData = {
   entityDetails: { uen: '202600001A', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE' },
   officers: [officer], shareholders: [shareholder],
 };
+const taskContext = {
+  taskId: '11111111-1111-4111-8111-111111111111',
+  taskStageId: '22222222-2222-4222-8222-222222222222',
+  returnTo: '/tasks/11111111-1111-4111-8111-111111111111',
+};
 
 describe('BizFile contact identity resolution', () => {
   beforeEach(() => {
@@ -67,6 +72,42 @@ describe('BizFile contact identity resolution', () => {
     mocks.resolveOrCreateContact
       .mockResolvedValueOnce({ contact: { id: 'contact-existing' } })
       .mockResolvedValueOnce({ contact: { id: 'contact-new-corporate' } });
+  });
+
+  it('stores task recovery context in the BizFile company create branch', async () => {
+    const { processBizFileExtraction } = await import('@/services/bizfile/processor');
+    await processBizFileExtraction(
+      'doc-1',
+      extractedData,
+      'user-1',
+      'tenant-1',
+      undefined,
+      undefined,
+      taskContext,
+    );
+
+    expect(tx.company.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ taskIntegrationContext: taskContext }),
+    }));
+  });
+
+  it('stores task recovery context in the BizFile existing-company update branch', async () => {
+    mocks.companyFindFirst.mockResolvedValue({ id: 'company-existing' });
+    tx.company.upsert.mockResolvedValue({ id: 'company-existing' });
+    const { processBizFileExtraction } = await import('@/services/bizfile/processor');
+    await processBizFileExtraction(
+      'doc-1',
+      extractedData,
+      'user-1',
+      'tenant-1',
+      undefined,
+      undefined,
+      taskContext,
+    );
+
+    expect(tx.company.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      update: expect.objectContaining({ taskIntegrationContext: taskContext }),
+    }));
   });
 
   it('captures all available identity fields and decisions in the full new-company transaction', async () => {

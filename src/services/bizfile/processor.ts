@@ -23,6 +23,7 @@ import { prepareDocumentPages } from '../document-processing.service';
 import { generateApprovedDocumentFilename, buildApprovedStorageKey, getFileExtension } from '@/lib/storage/filename';
 import { storage } from '@/lib/storage';
 import { createLogger } from '@/lib/logger';
+import type { TaskLaunchContext } from '@/services/tasks/types';
 
 const log = createLogger('bizfile-processor');
 
@@ -645,7 +646,8 @@ export async function processBizFileExtraction(
   userId: string,
   tenantId: string,
   storageKey?: string,
-  mimeType?: string
+  mimeType?: string,
+  taskIntegrationContext?: TaskLaunchContext,
 ): Promise<ProcessingResult> {
   // Normalize all text fields before processing
   const normalizedData = normalizeExtractedData(extractedData);
@@ -657,6 +659,15 @@ export async function processBizFileExtraction(
   });
 
   const isNewCompany = !company;
+  const durableTaskContext = taskIntegrationContext
+    ? {
+      taskId: taskIntegrationContext.taskId,
+      taskStageId: taskIntegrationContext.taskStageId,
+      ...(taskIntegrationContext.returnTo
+        ? { returnTo: taskIntegrationContext.returnTo }
+        : {}),
+    }
+    : undefined;
 
   // Create or update company in a transaction
   const result = await prisma.$transaction(async (tx) => {
@@ -706,6 +717,7 @@ export async function processBizFileExtraction(
           ? new Date(normalizedData.compliance.accountsDueDate)
           : null,
         hasCharges: (normalizedData.charges?.length || 0) > 0,
+        taskIntegrationContext: durableTaskContext,
       },
       update: {
         name: entityDetails.name,
@@ -744,6 +756,7 @@ export async function processBizFileExtraction(
           ? new Date(normalizedData.compliance.accountsDueDate)
           : undefined,
         hasCharges: (normalizedData.charges?.length || 0) > 0,
+        taskIntegrationContext: durableTaskContext,
       },
     });
 
