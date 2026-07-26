@@ -83,6 +83,11 @@ Complete. Implementation commits: `575b83d`, `0e26b0b`.
   `onDelete: SetNull`. Recovery-only stages are captured before hard delete;
   detail/reconciliation clears stale outcomes and Task company, persists FAILED
   attention across reads, and a later Company recovery replaces the tombstone.
+- RED 13: hard-delete reconciliation dropped the deleter user ID before
+  tombstone synchronization and follow-up reconciliation audit events.
+- GREEN 13: stage detail accepts an optional actor and propagates it through
+  synchronization and reconciliation. Hard-delete callbacks pass the deleter;
+  ordinary detail reads remain backward-compatible with system/undefined actor.
 
 Final focused verification:
 
@@ -128,6 +133,12 @@ Final hard-delete tombstone verification:
 
 - 4 covering files passed with 73 tests.
 - Prisma Client generation and `npx.cmd tsc --noEmit` passed.
+- Focused ESLint and `git diff --check` passed.
+
+Final deletion-actor audit verification:
+
+- 4 covering files passed with 75 tests.
+- `npx.cmd tsc --noEmit` passed.
 - Focused ESLint and `git diff --check` passed.
 
 ## Compatibility verification
