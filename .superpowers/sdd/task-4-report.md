@@ -57,6 +57,13 @@ Complete. Implementation commits: `575b83d`, `0e26b0b`.
   transactional upsert and a unique tenant/stage/Company key. Each task
   recovers independently, duplicate requests converge, and legacy single-object
   Company context remains a stage-read fallback.
+- RED 9: the recovery key still allowed one task stage to retain multiple
+  Companies, making a same-stage retry ambiguous, and recovery did not
+  explicitly verify Task ownership.
+- GREEN 9: recovery is now uniquely keyed by tenant and task stage. Retrying
+  with another Company deterministically replaces the authoritative association;
+  Task, tenant, stage, action, and Company ownership are checked during recovery,
+  while distinct stages and duplicate requests remain independent/idempotent.
 
 Final focused verification:
 
@@ -77,6 +84,12 @@ Final BizFile review verification:
 Final multi-context review verification:
 
 - 4 covering files passed with 62 tests.
+- Prisma Client generation and `npx.cmd tsc --noEmit` passed.
+- Focused ESLint and `git diff --check` passed.
+
+Final singular-stage ownership verification:
+
+- 4 covering files passed with 64 tests.
 - Prisma Client generation and `npx.cmd tsc --noEmit` passed.
 - Focused ESLint and `git diff --check` passed.
 
