@@ -321,6 +321,7 @@ export type TaskStageWhereInput = {
   assignee?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   checklistItems?: Prisma.TaskStageChecklistItemListRelationFilter
   outcome?: Prisma.XOR<Prisma.TaskStageOutcomeNullableScalarRelationFilter, Prisma.TaskStageOutcomeWhereInput> | null
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextListRelationFilter
 }
 
 export type TaskStageOrderByWithRelationInput = {
@@ -347,6 +348,7 @@ export type TaskStageOrderByWithRelationInput = {
   assignee?: Prisma.UserOrderByWithRelationInput
   checklistItems?: Prisma.TaskStageChecklistItemOrderByRelationAggregateInput
   outcome?: Prisma.TaskStageOutcomeOrderByWithRelationInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextOrderByRelationAggregateInput
 }
 
 export type TaskStageWhereUniqueInput = Prisma.AtLeast<{
@@ -377,6 +379,7 @@ export type TaskStageWhereUniqueInput = Prisma.AtLeast<{
   assignee?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   checklistItems?: Prisma.TaskStageChecklistItemListRelationFilter
   outcome?: Prisma.XOR<Prisma.TaskStageOutcomeNullableScalarRelationFilter, Prisma.TaskStageOutcomeWhereInput> | null
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextListRelationFilter
 }, "id" | "taskId_position">
 
 export type TaskStageOrderByWithAggregationInput = {
@@ -450,6 +453,7 @@ export type TaskStageCreateInput = {
   assignee?: Prisma.UserCreateNestedOneWithoutAssignedTaskStagesInput
   checklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTaskStageInput
   outcome?: Prisma.TaskStageOutcomeCreateNestedOneWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageUncheckedCreateInput = {
@@ -473,6 +477,7 @@ export type TaskStageUncheckedCreateInput = {
   updatedAt?: Date | string
   checklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTaskStageInput
   outcome?: Prisma.TaskStageOutcomeUncheckedCreateNestedOneWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageUpdateInput = {
@@ -496,6 +501,7 @@ export type TaskStageUpdateInput = {
   assignee?: Prisma.UserUpdateOneWithoutAssignedTaskStagesNestedInput
   checklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTaskStageNestedInput
   outcome?: Prisma.TaskStageOutcomeUpdateOneWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTaskStageNestedInput
 }
 
 export type TaskStageUncheckedUpdateInput = {
@@ -519,6 +525,7 @@ export type TaskStageUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   checklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTaskStageNestedInput
   outcome?: Prisma.TaskStageOutcomeUncheckedUpdateOneWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTaskStageNestedInput
 }
 
 export type TaskStageCreateManyInput = {
@@ -828,6 +835,20 @@ export type TaskStageUpdateOneRequiredWithoutOutcomeNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TaskStageUpdateToOneWithWhereWithoutOutcomeInput, Prisma.TaskStageUpdateWithoutOutcomeInput>, Prisma.TaskStageUncheckedUpdateWithoutOutcomeInput>
 }
 
+export type TaskStageCreateNestedOneWithoutCompanyRecoveryContextsInput = {
+  create?: Prisma.XOR<Prisma.TaskStageCreateWithoutCompanyRecoveryContextsInput, Prisma.TaskStageUncheckedCreateWithoutCompanyRecoveryContextsInput>
+  connectOrCreate?: Prisma.TaskStageCreateOrConnectWithoutCompanyRecoveryContextsInput
+  connect?: Prisma.TaskStageWhereUniqueInput
+}
+
+export type TaskStageUpdateOneRequiredWithoutCompanyRecoveryContextsNestedInput = {
+  create?: Prisma.XOR<Prisma.TaskStageCreateWithoutCompanyRecoveryContextsInput, Prisma.TaskStageUncheckedCreateWithoutCompanyRecoveryContextsInput>
+  connectOrCreate?: Prisma.TaskStageCreateOrConnectWithoutCompanyRecoveryContextsInput
+  upsert?: Prisma.TaskStageUpsertWithoutCompanyRecoveryContextsInput
+  connect?: Prisma.TaskStageWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TaskStageUpdateToOneWithWhereWithoutCompanyRecoveryContextsInput, Prisma.TaskStageUpdateWithoutCompanyRecoveryContextsInput>, Prisma.TaskStageUncheckedUpdateWithoutCompanyRecoveryContextsInput>
+}
+
 export type TaskStageCreateWithoutTenantInput = {
   id?: string
   name: string
@@ -848,6 +869,7 @@ export type TaskStageCreateWithoutTenantInput = {
   assignee?: Prisma.UserCreateNestedOneWithoutAssignedTaskStagesInput
   checklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTaskStageInput
   outcome?: Prisma.TaskStageOutcomeCreateNestedOneWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageUncheckedCreateWithoutTenantInput = {
@@ -870,6 +892,7 @@ export type TaskStageUncheckedCreateWithoutTenantInput = {
   updatedAt?: Date | string
   checklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTaskStageInput
   outcome?: Prisma.TaskStageOutcomeUncheckedCreateNestedOneWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageCreateOrConnectWithoutTenantInput = {
@@ -942,6 +965,7 @@ export type TaskStageCreateWithoutAssigneeInput = {
   task: Prisma.TaskCreateNestedOneWithoutStagesInput
   checklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTaskStageInput
   outcome?: Prisma.TaskStageOutcomeCreateNestedOneWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageUncheckedCreateWithoutAssigneeInput = {
@@ -964,6 +988,7 @@ export type TaskStageUncheckedCreateWithoutAssigneeInput = {
   updatedAt?: Date | string
   checklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTaskStageInput
   outcome?: Prisma.TaskStageOutcomeUncheckedCreateNestedOneWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageCreateOrConnectWithoutAssigneeInput = {
@@ -1012,6 +1037,7 @@ export type TaskStageCreateWithoutTaskInput = {
   assignee?: Prisma.UserCreateNestedOneWithoutAssignedTaskStagesInput
   checklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTaskStageInput
   outcome?: Prisma.TaskStageOutcomeCreateNestedOneWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageUncheckedCreateWithoutTaskInput = {
@@ -1034,6 +1060,7 @@ export type TaskStageUncheckedCreateWithoutTaskInput = {
   updatedAt?: Date | string
   checklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTaskStageInput
   outcome?: Prisma.TaskStageOutcomeUncheckedCreateNestedOneWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageCreateOrConnectWithoutTaskInput = {
@@ -1082,6 +1109,7 @@ export type TaskStageCreateWithoutChecklistItemsInput = {
   task: Prisma.TaskCreateNestedOneWithoutStagesInput
   assignee?: Prisma.UserCreateNestedOneWithoutAssignedTaskStagesInput
   outcome?: Prisma.TaskStageOutcomeCreateNestedOneWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageUncheckedCreateWithoutChecklistItemsInput = {
@@ -1104,6 +1132,7 @@ export type TaskStageUncheckedCreateWithoutChecklistItemsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   outcome?: Prisma.TaskStageOutcomeUncheckedCreateNestedOneWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageCreateOrConnectWithoutChecklistItemsInput = {
@@ -1142,6 +1171,7 @@ export type TaskStageUpdateWithoutChecklistItemsInput = {
   task?: Prisma.TaskUpdateOneRequiredWithoutStagesNestedInput
   assignee?: Prisma.UserUpdateOneWithoutAssignedTaskStagesNestedInput
   outcome?: Prisma.TaskStageOutcomeUpdateOneWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTaskStageNestedInput
 }
 
 export type TaskStageUncheckedUpdateWithoutChecklistItemsInput = {
@@ -1164,6 +1194,7 @@ export type TaskStageUncheckedUpdateWithoutChecklistItemsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   outcome?: Prisma.TaskStageOutcomeUncheckedUpdateOneWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTaskStageNestedInput
 }
 
 export type TaskStageCreateWithoutOutcomeInput = {
@@ -1186,6 +1217,7 @@ export type TaskStageCreateWithoutOutcomeInput = {
   task: Prisma.TaskCreateNestedOneWithoutStagesInput
   assignee?: Prisma.UserCreateNestedOneWithoutAssignedTaskStagesInput
   checklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageUncheckedCreateWithoutOutcomeInput = {
@@ -1208,6 +1240,7 @@ export type TaskStageUncheckedCreateWithoutOutcomeInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   checklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTaskStageInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTaskStageInput
 }
 
 export type TaskStageCreateOrConnectWithoutOutcomeInput = {
@@ -1246,6 +1279,7 @@ export type TaskStageUpdateWithoutOutcomeInput = {
   task?: Prisma.TaskUpdateOneRequiredWithoutStagesNestedInput
   assignee?: Prisma.UserUpdateOneWithoutAssignedTaskStagesNestedInput
   checklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTaskStageNestedInput
 }
 
 export type TaskStageUncheckedUpdateWithoutOutcomeInput = {
@@ -1268,6 +1302,115 @@ export type TaskStageUncheckedUpdateWithoutOutcomeInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   checklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTaskStageNestedInput
+}
+
+export type TaskStageCreateWithoutCompanyRecoveryContextsInput = {
+  id?: string
+  name: string
+  description?: string | null
+  position: number
+  actionType: $Enums.TaskStageActionType
+  icon: string
+  isRequired?: boolean
+  actionConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.TaskStageStatus
+  notes?: string | null
+  skipReason?: string | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutTaskStagesInput
+  task: Prisma.TaskCreateNestedOneWithoutStagesInput
+  assignee?: Prisma.UserCreateNestedOneWithoutAssignedTaskStagesInput
+  checklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTaskStageInput
+  outcome?: Prisma.TaskStageOutcomeCreateNestedOneWithoutTaskStageInput
+}
+
+export type TaskStageUncheckedCreateWithoutCompanyRecoveryContextsInput = {
+  id?: string
+  tenantId: string
+  taskId: string
+  name: string
+  description?: string | null
+  position: number
+  actionType: $Enums.TaskStageActionType
+  icon: string
+  isRequired?: boolean
+  actionConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.TaskStageStatus
+  assigneeId?: string | null
+  notes?: string | null
+  skipReason?: string | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  checklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTaskStageInput
+  outcome?: Prisma.TaskStageOutcomeUncheckedCreateNestedOneWithoutTaskStageInput
+}
+
+export type TaskStageCreateOrConnectWithoutCompanyRecoveryContextsInput = {
+  where: Prisma.TaskStageWhereUniqueInput
+  create: Prisma.XOR<Prisma.TaskStageCreateWithoutCompanyRecoveryContextsInput, Prisma.TaskStageUncheckedCreateWithoutCompanyRecoveryContextsInput>
+}
+
+export type TaskStageUpsertWithoutCompanyRecoveryContextsInput = {
+  update: Prisma.XOR<Prisma.TaskStageUpdateWithoutCompanyRecoveryContextsInput, Prisma.TaskStageUncheckedUpdateWithoutCompanyRecoveryContextsInput>
+  create: Prisma.XOR<Prisma.TaskStageCreateWithoutCompanyRecoveryContextsInput, Prisma.TaskStageUncheckedCreateWithoutCompanyRecoveryContextsInput>
+  where?: Prisma.TaskStageWhereInput
+}
+
+export type TaskStageUpdateToOneWithWhereWithoutCompanyRecoveryContextsInput = {
+  where?: Prisma.TaskStageWhereInput
+  data: Prisma.XOR<Prisma.TaskStageUpdateWithoutCompanyRecoveryContextsInput, Prisma.TaskStageUncheckedUpdateWithoutCompanyRecoveryContextsInput>
+}
+
+export type TaskStageUpdateWithoutCompanyRecoveryContextsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  actionType?: Prisma.EnumTaskStageActionTypeFieldUpdateOperationsInput | $Enums.TaskStageActionType
+  icon?: Prisma.StringFieldUpdateOperationsInput | string
+  isRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  actionConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumTaskStageStatusFieldUpdateOperationsInput | $Enums.TaskStageStatus
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skipReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutTaskStagesNestedInput
+  task?: Prisma.TaskUpdateOneRequiredWithoutStagesNestedInput
+  assignee?: Prisma.UserUpdateOneWithoutAssignedTaskStagesNestedInput
+  checklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTaskStageNestedInput
+  outcome?: Prisma.TaskStageOutcomeUpdateOneWithoutTaskStageNestedInput
+}
+
+export type TaskStageUncheckedUpdateWithoutCompanyRecoveryContextsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  taskId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  actionType?: Prisma.EnumTaskStageActionTypeFieldUpdateOperationsInput | $Enums.TaskStageActionType
+  icon?: Prisma.StringFieldUpdateOperationsInput | string
+  isRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  actionConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumTaskStageStatusFieldUpdateOperationsInput | $Enums.TaskStageStatus
+  assigneeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skipReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  checklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTaskStageNestedInput
+  outcome?: Prisma.TaskStageOutcomeUncheckedUpdateOneWithoutTaskStageNestedInput
 }
 
 export type TaskStageCreateManyTenantInput = {
@@ -1310,6 +1453,7 @@ export type TaskStageUpdateWithoutTenantInput = {
   assignee?: Prisma.UserUpdateOneWithoutAssignedTaskStagesNestedInput
   checklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTaskStageNestedInput
   outcome?: Prisma.TaskStageOutcomeUpdateOneWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTaskStageNestedInput
 }
 
 export type TaskStageUncheckedUpdateWithoutTenantInput = {
@@ -1332,6 +1476,7 @@ export type TaskStageUncheckedUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   checklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTaskStageNestedInput
   outcome?: Prisma.TaskStageOutcomeUncheckedUpdateOneWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTaskStageNestedInput
 }
 
 export type TaskStageUncheckedUpdateManyWithoutTenantInput = {
@@ -1394,6 +1539,7 @@ export type TaskStageUpdateWithoutAssigneeInput = {
   task?: Prisma.TaskUpdateOneRequiredWithoutStagesNestedInput
   checklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTaskStageNestedInput
   outcome?: Prisma.TaskStageOutcomeUpdateOneWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTaskStageNestedInput
 }
 
 export type TaskStageUncheckedUpdateWithoutAssigneeInput = {
@@ -1416,6 +1562,7 @@ export type TaskStageUncheckedUpdateWithoutAssigneeInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   checklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTaskStageNestedInput
   outcome?: Prisma.TaskStageOutcomeUncheckedUpdateOneWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTaskStageNestedInput
 }
 
 export type TaskStageUncheckedUpdateManyWithoutAssigneeInput = {
@@ -1478,6 +1625,7 @@ export type TaskStageUpdateWithoutTaskInput = {
   assignee?: Prisma.UserUpdateOneWithoutAssignedTaskStagesNestedInput
   checklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTaskStageNestedInput
   outcome?: Prisma.TaskStageOutcomeUpdateOneWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTaskStageNestedInput
 }
 
 export type TaskStageUncheckedUpdateWithoutTaskInput = {
@@ -1500,6 +1648,7 @@ export type TaskStageUncheckedUpdateWithoutTaskInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   checklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTaskStageNestedInput
   outcome?: Prisma.TaskStageOutcomeUncheckedUpdateOneWithoutTaskStageNestedInput
+  companyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTaskStageNestedInput
 }
 
 export type TaskStageUncheckedUpdateManyWithoutTaskInput = {
@@ -1529,10 +1678,12 @@ export type TaskStageUncheckedUpdateManyWithoutTaskInput = {
 
 export type TaskStageCountOutputType = {
   checklistItems: number
+  companyRecoveryContexts: number
 }
 
 export type TaskStageCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   checklistItems?: boolean | TaskStageCountOutputTypeCountChecklistItemsArgs
+  companyRecoveryContexts?: boolean | TaskStageCountOutputTypeCountCompanyRecoveryContextsArgs
 }
 
 /**
@@ -1550,6 +1701,13 @@ export type TaskStageCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ex
  */
 export type TaskStageCountOutputTypeCountChecklistItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.TaskStageChecklistItemWhereInput
+}
+
+/**
+ * TaskStageCountOutputType without action
+ */
+export type TaskStageCountOutputTypeCountCompanyRecoveryContextsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskCompanyRecoveryContextWhereInput
 }
 
 
@@ -1577,6 +1735,7 @@ export type TaskStageSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   assignee?: boolean | Prisma.TaskStage$assigneeArgs<ExtArgs>
   checklistItems?: boolean | Prisma.TaskStage$checklistItemsArgs<ExtArgs>
   outcome?: boolean | Prisma.TaskStage$outcomeArgs<ExtArgs>
+  companyRecoveryContexts?: boolean | Prisma.TaskStage$companyRecoveryContextsArgs<ExtArgs>
   _count?: boolean | Prisma.TaskStageCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["taskStage"]>
 
@@ -1656,6 +1815,7 @@ export type TaskStageInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   assignee?: boolean | Prisma.TaskStage$assigneeArgs<ExtArgs>
   checklistItems?: boolean | Prisma.TaskStage$checklistItemsArgs<ExtArgs>
   outcome?: boolean | Prisma.TaskStage$outcomeArgs<ExtArgs>
+  companyRecoveryContexts?: boolean | Prisma.TaskStage$companyRecoveryContextsArgs<ExtArgs>
   _count?: boolean | Prisma.TaskStageCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TaskStageIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1677,6 +1837,7 @@ export type $TaskStagePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     assignee: Prisma.$UserPayload<ExtArgs> | null
     checklistItems: Prisma.$TaskStageChecklistItemPayload<ExtArgs>[]
     outcome: Prisma.$TaskStageOutcomePayload<ExtArgs> | null
+    companyRecoveryContexts: Prisma.$TaskCompanyRecoveryContextPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2096,6 +2257,7 @@ export interface Prisma__TaskStageClient<T, Null = never, ExtArgs extends runtim
   assignee<T extends Prisma.TaskStage$assigneeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskStage$assigneeArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   checklistItems<T extends Prisma.TaskStage$checklistItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskStage$checklistItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStageChecklistItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   outcome<T extends Prisma.TaskStage$outcomeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskStage$outcomeArgs<ExtArgs>>): Prisma.Prisma__TaskStageOutcomeClient<runtime.Types.Result.GetResult<Prisma.$TaskStageOutcomePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  companyRecoveryContexts<T extends Prisma.TaskStage$companyRecoveryContextsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskStage$companyRecoveryContextsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskCompanyRecoveryContextPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2598,6 +2760,30 @@ export type TaskStage$outcomeArgs<ExtArgs extends runtime.Types.Extensions.Inter
    */
   include?: Prisma.TaskStageOutcomeInclude<ExtArgs> | null
   where?: Prisma.TaskStageOutcomeWhereInput
+}
+
+/**
+ * TaskStage.companyRecoveryContexts
+ */
+export type TaskStage$companyRecoveryContextsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TaskCompanyRecoveryContext
+   */
+  select?: Prisma.TaskCompanyRecoveryContextSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TaskCompanyRecoveryContext
+   */
+  omit?: Prisma.TaskCompanyRecoveryContextOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TaskCompanyRecoveryContextInclude<ExtArgs> | null
+  where?: Prisma.TaskCompanyRecoveryContextWhereInput
+  orderBy?: Prisma.TaskCompanyRecoveryContextOrderByWithRelationInput | Prisma.TaskCompanyRecoveryContextOrderByWithRelationInput[]
+  cursor?: Prisma.TaskCompanyRecoveryContextWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TaskCompanyRecoveryContextScalarFieldEnum | Prisma.TaskCompanyRecoveryContextScalarFieldEnum[]
 }
 
 /**

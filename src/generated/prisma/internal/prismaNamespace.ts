@@ -471,7 +471,8 @@ export const ModelName = {
   Task: 'Task',
   TaskStage: 'TaskStage',
   TaskStageChecklistItem: 'TaskStageChecklistItem',
-  TaskStageOutcome: 'TaskStageOutcome'
+  TaskStageOutcome: 'TaskStageOutcome',
+  TaskCompanyRecoveryContext: 'TaskCompanyRecoveryContext'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -487,7 +488,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskCompanyRecoveryContext"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -7003,6 +7004,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    TaskCompanyRecoveryContext: {
+      payload: Prisma.$TaskCompanyRecoveryContextPayload<ExtArgs>
+      fields: Prisma.TaskCompanyRecoveryContextFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TaskCompanyRecoveryContextFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskCompanyRecoveryContextPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TaskCompanyRecoveryContextFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskCompanyRecoveryContextPayload>
+        }
+        findFirst: {
+          args: Prisma.TaskCompanyRecoveryContextFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskCompanyRecoveryContextPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TaskCompanyRecoveryContextFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskCompanyRecoveryContextPayload>
+        }
+        findMany: {
+          args: Prisma.TaskCompanyRecoveryContextFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskCompanyRecoveryContextPayload>[]
+        }
+        create: {
+          args: Prisma.TaskCompanyRecoveryContextCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskCompanyRecoveryContextPayload>
+        }
+        createMany: {
+          args: Prisma.TaskCompanyRecoveryContextCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TaskCompanyRecoveryContextCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskCompanyRecoveryContextPayload>[]
+        }
+        delete: {
+          args: Prisma.TaskCompanyRecoveryContextDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskCompanyRecoveryContextPayload>
+        }
+        update: {
+          args: Prisma.TaskCompanyRecoveryContextUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskCompanyRecoveryContextPayload>
+        }
+        deleteMany: {
+          args: Prisma.TaskCompanyRecoveryContextDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TaskCompanyRecoveryContextUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TaskCompanyRecoveryContextUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskCompanyRecoveryContextPayload>[]
+        }
+        upsert: {
+          args: Prisma.TaskCompanyRecoveryContextUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskCompanyRecoveryContextPayload>
+        }
+        aggregate: {
+          args: Prisma.TaskCompanyRecoveryContextAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTaskCompanyRecoveryContext>
+        }
+        groupBy: {
+          args: Prisma.TaskCompanyRecoveryContextGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TaskCompanyRecoveryContextGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TaskCompanyRecoveryContextCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TaskCompanyRecoveryContextCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -8768,6 +8843,20 @@ export const TaskStageOutcomeScalarFieldEnum = {
 export type TaskStageOutcomeScalarFieldEnum = (typeof TaskStageOutcomeScalarFieldEnum)[keyof typeof TaskStageOutcomeScalarFieldEnum]
 
 
+export const TaskCompanyRecoveryContextScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  taskId: 'taskId',
+  taskStageId: 'taskStageId',
+  returnTo: 'returnTo',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TaskCompanyRecoveryContextScalarFieldEnum = (typeof TaskCompanyRecoveryContextScalarFieldEnum)[keyof typeof TaskCompanyRecoveryContextScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -10089,6 +10178,7 @@ export type GlobalOmitConfig = {
   taskStage?: Prisma.TaskStageOmit
   taskStageChecklistItem?: Prisma.TaskStageChecklistItemOmit
   taskStageOutcome?: Prisma.TaskStageOutcomeOmit
+  taskCompanyRecoveryContext?: Prisma.TaskCompanyRecoveryContextOmit
 }
 
 /* Types for Logging */

@@ -759,6 +759,28 @@ export async function processBizFileExtraction(
         taskIntegrationContext: durableTaskContext,
       },
     });
+    if (taskIntegrationContext) {
+      await tx.taskCompanyRecoveryContext.upsert({
+        where: {
+          tenantId_taskStageId_companyId: {
+            tenantId,
+            taskStageId: taskIntegrationContext.taskStageId,
+            companyId: company.id,
+          },
+        },
+        create: {
+          tenantId,
+          companyId: company.id,
+          taskId: taskIntegrationContext.taskId,
+          taskStageId: taskIntegrationContext.taskStageId,
+          returnTo: taskIntegrationContext.returnTo,
+        },
+        update: {
+          taskId: taskIntegrationContext.taskId,
+          returnTo: taskIntegrationContext.returnTo,
+        },
+      });
+    }
 
     // Update document with company reference
     await tx.document.update({

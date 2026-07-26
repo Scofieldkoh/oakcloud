@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   createCompanyContactRelation: vi.fn(),
   generateBizFileDiff: vi.fn(),
   createAuditLog: vi.fn(),
+  recoveryUpsert: vi.fn(),
 }));
 
 const tx = {
@@ -17,6 +18,7 @@ const tx = {
   companyShareholder: { create: vi.fn(), update: vi.fn(), findMany: vi.fn() },
   processingDocument: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
   documentRevision: { create: vi.fn() },
+  taskCompanyRecoveryContext: { upsert: mocks.recoveryUpsert },
 };
 
 vi.mock('@/lib/prisma', () => ({
@@ -108,6 +110,83 @@ describe('BizFile contact identity resolution', () => {
     expect(tx.company.upsert).toHaveBeenCalledWith(expect.objectContaining({
       update: expect.objectContaining({ taskIntegrationContext: taskContext }),
     }));
+  });
+
+  it('keeps task A and task B recovery associations for the same existing company', async () => {
+    const taskBContext = {
+      taskId: '33333333-3333-4333-8333-333333333333',
+      taskStageId: '44444444-4444-4444-8444-444444444444',
+    };
+    mocks.companyFindFirst.mockResolvedValue({ id: 'company-existing' });
+    tx.company.upsert.mockResolvedValue({ id: 'company-existing' });
+    mocks.resolveOrCreateContact.mockResolvedValue({ contact: { id: 'contact-existing' } });
+    const { processBizFileExtraction } = await import('@/services/bizfile/processor');
+
+    await Promise.all([
+      processBizFileExtraction(
+        'doc-a', extractedData, 'user-1', 'tenant-1',
+        undefined, undefined, taskContext,
+      ),
+      processBizFileExtraction(
+        'doc-b', extractedData, 'user-1', 'tenant-1',
+        undefined, undefined, taskBContext,
+      ),
+    ]);
+
+    expect(mocks.recoveryUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        tenantId_taskStageId_companyId: {
+          tenantId: 'tenant-1',
+          taskStageId: taskContext.taskStageId,
+          companyId: 'company-existing',
+        },
+      },
+    }));
+    expect(mocks.recoveryUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        tenantId_taskStageId_companyId: {
+          tenantId: 'tenant-1',
+          taskStageId: taskBContext.taskStageId,
+          companyId: 'company-existing',
+        },
+      },
+    }));
+  });
+
+  it('upserts the same recovery association idempotently under duplicate requests', async () => {
+    mocks.companyFindFirst.mockResolvedValue({ id: 'company-existing' });
+    tx.company.upsert.mockResolvedValue({ id: 'company-existing' });
+    mocks.resolveOrCreateContact.mockResolvedValue({ contact: { id: 'contact-existing' } });
+    const { processBizFileExtraction } = await import('@/services/bizfile/processor');
+
+    await Promise.all([
+      processBizFileExtraction(
+        'doc-a', extractedData, 'user-1', 'tenant-1',
+        undefined, undefined, taskContext,
+      ),
+      processBizFileExtraction(
+        'doc-a', extractedData, 'user-1', 'tenant-1',
+        undefined, undefined, taskContext,
+      ),
+    ]);
+
+    const recoveryKeys = mocks.recoveryUpsert.mock.calls.map(([input]) => input.where);
+    expect(recoveryKeys).toEqual([
+      {
+        tenantId_taskStageId_companyId: {
+          tenantId: 'tenant-1',
+          taskStageId: taskContext.taskStageId,
+          companyId: 'company-existing',
+        },
+      },
+      {
+        tenantId_taskStageId_companyId: {
+          tenantId: 'tenant-1',
+          taskStageId: taskContext.taskStageId,
+          companyId: 'company-existing',
+        },
+      },
+    ]);
   });
 
   it('captures all available identity fields and decisions in the full new-company transaction', async () => {

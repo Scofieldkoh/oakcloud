@@ -59,6 +59,7 @@ model Workspace {
   taskStages              TaskStage[]
   taskStageChecklistItems TaskStageChecklistItem[]
   taskStageOutcomes       TaskStageOutcome[]
+  taskCompanyRecoveryContexts TaskCompanyRecoveryContext[]
 
   @@index([slug])
   @@index([status])
@@ -290,6 +291,7 @@ model Company {
   roleAssignments             UserRoleAssignment[]
   tasks                       Task[]
   taskStageOutcomes           TaskStageOutcome[]
+  taskRecoveryContexts        TaskCompanyRecoveryContext[]
 
   @@unique([tenantId, uen])
   @@index([tenantId])
@@ -2225,6 +2227,7 @@ model TaskStage {
   assignee       User?                    @relation("TaskStageAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   checklistItems TaskStageChecklistItem[]
   outcome        TaskStageOutcome?
+  companyRecoveryContexts TaskCompanyRecoveryContext[]
 
   @@unique([taskId, position])
   @@index([tenantId, taskId, status])
@@ -2271,6 +2274,25 @@ model TaskStageOutcome {
   @@index([tenantId, generatedDocumentId])
   @@index([tenantId, esigningEnvelopeId])
   @@map("task_stage_outcomes")
+}
+
+model TaskCompanyRecoveryContext {
+  id          String    @id @default(uuid())
+  tenantId    String    @map("tenant_id")
+  companyId   String    @map("company_id")
+  taskId      String    @map("task_id")
+  taskStageId String    @map("task_stage_id")
+  returnTo    String?   @map("return_to") @db.VarChar(2000)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  tenant      Workspace @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  taskStage   TaskStage @relation(fields: [taskStageId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, taskStageId, companyId])
+  @@index([tenantId, companyId])
+  @@index([tenantId, taskStageId])
+  @@map("task_company_recovery_contexts")
 }
 
 enum TaskStatus {

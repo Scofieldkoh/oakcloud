@@ -24,7 +24,7 @@ export * as $Enums from './enums'
 export * from "./enums"
 /**
  * ## Prisma Client
- * 
+ *
  * Type-safe database client for TypeScript
  * @example
  * ```
@@ -479,3 +479,8 @@ export type TaskStageChecklistItem = Prisma.TaskStageChecklistItemModel
  * 
  */
 export type TaskStageOutcome = Prisma.TaskStageOutcomeModel
+/**
+ * Model TaskCompanyRecoveryContext
+ *
+ */
+export type TaskCompanyRecoveryContext = Prisma.TaskCompanyRecoveryContextModel

@@ -625,6 +625,7 @@ export type CompanyWhereInput = {
   roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
   tasks?: Prisma.TaskListRelationFilter
   taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextListRelationFilter
 }
 
 export type CompanyOrderByWithRelationInput = {
@@ -699,6 +700,7 @@ export type CompanyOrderByWithRelationInput = {
   roleAssignments?: Prisma.UserRoleAssignmentOrderByRelationAggregateInput
   tasks?: Prisma.TaskOrderByRelationAggregateInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeOrderByRelationAggregateInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextOrderByRelationAggregateInput
 }
 
 export type CompanyWhereUniqueInput = Prisma.AtLeast<{
@@ -777,6 +779,7 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   roleAssignments?: Prisma.UserRoleAssignmentListRelationFilter
   tasks?: Prisma.TaskListRelationFilter
   taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextListRelationFilter
 }, "id" | "tenantId_uen">
 
 export type CompanyOrderByWithAggregationInput = {
@@ -964,6 +967,7 @@ export type CompanyCreateInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateInput = {
@@ -1037,6 +1041,7 @@ export type CompanyUncheckedCreateInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUpdateInput = {
@@ -1110,6 +1115,7 @@ export type CompanyUpdateInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateInput = {
@@ -1183,6 +1189,7 @@ export type CompanyUncheckedUpdateInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyInput = {
@@ -1917,6 +1924,20 @@ export type CompanyUpdateOneWithoutTaskStageOutcomesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutTaskStageOutcomesInput, Prisma.CompanyUpdateWithoutTaskStageOutcomesInput>, Prisma.CompanyUncheckedUpdateWithoutTaskStageOutcomesInput>
 }
 
+export type CompanyCreateNestedOneWithoutTaskRecoveryContextsInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutTaskRecoveryContextsInput, Prisma.CompanyUncheckedCreateWithoutTaskRecoveryContextsInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutTaskRecoveryContextsInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutTaskRecoveryContextsNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutTaskRecoveryContextsInput, Prisma.CompanyUncheckedCreateWithoutTaskRecoveryContextsInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutTaskRecoveryContextsInput
+  upsert?: Prisma.CompanyUpsertWithoutTaskRecoveryContextsInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutTaskRecoveryContextsInput, Prisma.CompanyUpdateWithoutTaskRecoveryContextsInput>, Prisma.CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput>
+}
+
 export type CompanyCreateWithoutTenantInput = {
   id?: string
   uen: string
@@ -1987,6 +2008,7 @@ export type CompanyCreateWithoutTenantInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTenantInput = {
@@ -2059,6 +2081,7 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTenantInput = {
@@ -2213,6 +2236,7 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
@@ -2285,6 +2309,7 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutRoleAssignmentsInput = {
@@ -2373,6 +2398,7 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
@@ -2445,6 +2471,7 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutUserAssignmentsInput = {
@@ -2517,6 +2544,7 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
@@ -2589,6 +2617,7 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutUserAssignmentsInput = {
@@ -2677,6 +2706,7 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
@@ -2749,6 +2779,7 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutFormerNamesInput = {
@@ -2821,6 +2852,7 @@ export type CompanyCreateWithoutFormerNamesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutFormerNamesInput = {
@@ -2893,6 +2925,7 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutFormerNamesInput = {
@@ -2981,6 +3014,7 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
@@ -3053,6 +3087,7 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAddressesInput = {
@@ -3125,6 +3160,7 @@ export type CompanyCreateWithoutAddressesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAddressesInput = {
@@ -3197,6 +3233,7 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAddressesInput = {
@@ -3285,6 +3322,7 @@ export type CompanyUpdateWithoutAddressesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAddressesInput = {
@@ -3357,6 +3395,7 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactsInput = {
@@ -3429,6 +3468,7 @@ export type CompanyCreateWithoutContactsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactsInput = {
@@ -3501,6 +3541,7 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactsInput = {
@@ -3589,6 +3630,7 @@ export type CompanyUpdateWithoutContactsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactsInput = {
@@ -3661,6 +3703,7 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactDetailsInput = {
@@ -3733,6 +3776,7 @@ export type CompanyCreateWithoutContactDetailsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactDetailsInput = {
@@ -3805,6 +3849,7 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactDetailsInput = {
@@ -3893,6 +3938,7 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
@@ -3965,6 +4011,7 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutOfficersInput = {
@@ -4037,6 +4084,7 @@ export type CompanyCreateWithoutOfficersInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutOfficersInput = {
@@ -4109,6 +4157,7 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutOfficersInput = {
@@ -4197,6 +4246,7 @@ export type CompanyUpdateWithoutOfficersInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutOfficersInput = {
@@ -4269,6 +4319,7 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareCapitalInput = {
@@ -4341,6 +4392,7 @@ export type CompanyCreateWithoutShareCapitalInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareCapitalInput = {
@@ -4413,6 +4465,7 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareCapitalInput = {
@@ -4501,6 +4554,7 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
@@ -4573,6 +4627,7 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareholdersInput = {
@@ -4645,6 +4700,7 @@ export type CompanyCreateWithoutShareholdersInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareholdersInput = {
@@ -4717,6 +4773,7 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareholdersInput = {
@@ -4805,6 +4862,7 @@ export type CompanyUpdateWithoutShareholdersInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareholdersInput = {
@@ -4877,6 +4935,7 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChargesInput = {
@@ -4949,6 +5008,7 @@ export type CompanyCreateWithoutChargesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChargesInput = {
@@ -5021,6 +5081,7 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChargesInput = {
@@ -5109,6 +5170,7 @@ export type CompanyUpdateWithoutChargesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChargesInput = {
@@ -5181,6 +5243,7 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentsInput = {
@@ -5253,6 +5316,7 @@ export type CompanyCreateWithoutDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentsInput = {
@@ -5325,6 +5389,7 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentsInput = {
@@ -5413,6 +5478,7 @@ export type CompanyUpdateWithoutDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentsInput = {
@@ -5485,6 +5551,7 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAuditLogsInput = {
@@ -5557,6 +5624,7 @@ export type CompanyCreateWithoutAuditLogsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAuditLogsInput = {
@@ -5629,6 +5697,7 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAuditLogsInput = {
@@ -5717,6 +5786,7 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
@@ -5789,6 +5859,7 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutNoteTabsInput = {
@@ -5861,6 +5932,7 @@ export type CompanyCreateWithoutNoteTabsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutNoteTabsInput = {
@@ -5933,6 +6005,7 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutNoteTabsInput = {
@@ -6021,6 +6094,7 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
@@ -6093,6 +6167,7 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutGeneratedDocumentsInput = {
@@ -6165,6 +6240,7 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -6237,6 +6313,7 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -6325,6 +6402,7 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -6397,6 +6475,7 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutEsigningEnvelopesInput = {
@@ -6469,6 +6548,7 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
@@ -6541,6 +6621,7 @@ export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutEsigningEnvelopesInput = {
@@ -6629,6 +6710,7 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
@@ -6701,6 +6783,7 @@ export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentTagsInput = {
@@ -6773,6 +6856,7 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
@@ -6845,6 +6929,7 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentTagsInput = {
@@ -6933,6 +7018,7 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
@@ -7005,6 +7091,7 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChartOfAccountsInput = {
@@ -7077,6 +7164,7 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
@@ -7149,6 +7237,7 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChartOfAccountsInput = {
@@ -7237,6 +7326,7 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
@@ -7309,6 +7399,7 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAccountMappingsInput = {
@@ -7381,6 +7472,7 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
@@ -7453,6 +7545,7 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAccountMappingsInput = {
@@ -7541,6 +7634,7 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
@@ -7613,6 +7707,7 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutTasksInput = {
@@ -7685,6 +7780,7 @@ export type CompanyCreateWithoutTasksInput = {
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTasksInput = {
@@ -7757,6 +7853,7 @@ export type CompanyUncheckedCreateWithoutTasksInput = {
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTasksInput = {
@@ -7845,6 +7942,7 @@ export type CompanyUpdateWithoutTasksInput = {
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTasksInput = {
@@ -7917,6 +8015,7 @@ export type CompanyUncheckedUpdateWithoutTasksInput = {
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutTaskStageOutcomesInput = {
@@ -7989,6 +8088,7 @@ export type CompanyCreateWithoutTaskStageOutcomesInput = {
   userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
@@ -8061,6 +8161,7 @@ export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
   tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTaskStageOutcomesInput = {
@@ -8149,6 +8250,7 @@ export type CompanyUpdateWithoutTaskStageOutcomesInput = {
   userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
@@ -8221,6 +8323,315 @@ export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
   userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyCreateWithoutTaskRecoveryContextsInput = {
+  id?: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyUncheckedCreateWithoutTaskRecoveryContextsInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyCreateOrConnectWithoutTaskRecoveryContextsInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutTaskRecoveryContextsInput, Prisma.CompanyUncheckedCreateWithoutTaskRecoveryContextsInput>
+}
+
+export type CompanyUpsertWithoutTaskRecoveryContextsInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutTaskRecoveryContextsInput, Prisma.CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutTaskRecoveryContextsInput, Prisma.CompanyUncheckedCreateWithoutTaskRecoveryContextsInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutTaskRecoveryContextsInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutTaskRecoveryContextsInput, Prisma.CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput>
+}
+
+export type CompanyUpdateWithoutTaskRecoveryContextsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyTenantInput = {
@@ -8345,6 +8756,7 @@ export type CompanyUpdateWithoutTenantInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTenantInput = {
@@ -8417,6 +8829,7 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateManyWithoutTenantInput = {
@@ -8497,6 +8910,7 @@ export type CompanyCountOutputType = {
   roleAssignments: number
   tasks: number
   taskStageOutcomes: number
+  taskRecoveryContexts: number
 }
 
 export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -8520,6 +8934,7 @@ export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   roleAssignments?: boolean | CompanyCountOutputTypeCountRoleAssignmentsArgs
   tasks?: boolean | CompanyCountOutputTypeCountTasksArgs
   taskStageOutcomes?: boolean | CompanyCountOutputTypeCountTaskStageOutcomesArgs
+  taskRecoveryContexts?: boolean | CompanyCountOutputTypeCountTaskRecoveryContextsArgs
 }
 
 /**
@@ -8672,6 +9087,13 @@ export type CompanyCountOutputTypeCountTaskStageOutcomesArgs<ExtArgs extends run
   where?: Prisma.TaskStageOutcomeWhereInput
 }
 
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountTaskRecoveryContextsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskCompanyRecoveryContextWhereInput
+}
+
 
 export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -8745,6 +9167,7 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   roleAssignments?: boolean | Prisma.Company$roleAssignmentsArgs<ExtArgs>
   tasks?: boolean | Prisma.Company$tasksArgs<ExtArgs>
   taskStageOutcomes?: boolean | Prisma.Company$taskStageOutcomesArgs<ExtArgs>
+  taskRecoveryContexts?: boolean | Prisma.Company$taskRecoveryContextsArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
@@ -8932,6 +9355,7 @@ export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   roleAssignments?: boolean | Prisma.Company$roleAssignmentsArgs<ExtArgs>
   tasks?: boolean | Prisma.Company$tasksArgs<ExtArgs>
   taskStageOutcomes?: boolean | Prisma.Company$taskStageOutcomesArgs<ExtArgs>
+  taskRecoveryContexts?: boolean | Prisma.Company$taskRecoveryContextsArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CompanyIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -8965,6 +9389,7 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     roleAssignments: Prisma.$UserRoleAssignmentPayload<ExtArgs>[]
     tasks: Prisma.$TaskPayload<ExtArgs>[]
     taskStageOutcomes: Prisma.$TaskStageOutcomePayload<ExtArgs>[]
+    taskRecoveryContexts: Prisma.$TaskCompanyRecoveryContextPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -9432,6 +9857,7 @@ export interface Prisma__CompanyClient<T, Null = never, ExtArgs extends runtime.
   roleAssignments<T extends Prisma.Company$roleAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$roleAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserRoleAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tasks<T extends Prisma.Company$tasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$tasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   taskStageOutcomes<T extends Prisma.Company$taskStageOutcomesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$taskStageOutcomesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStageOutcomePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  taskRecoveryContexts<T extends Prisma.Company$taskRecoveryContextsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$taskRecoveryContextsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskCompanyRecoveryContextPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -10384,6 +10810,30 @@ export type Company$taskStageOutcomesArgs<ExtArgs extends runtime.Types.Extensio
   take?: number
   skip?: number
   distinct?: Prisma.TaskStageOutcomeScalarFieldEnum | Prisma.TaskStageOutcomeScalarFieldEnum[]
+}
+
+/**
+ * Company.taskRecoveryContexts
+ */
+export type Company$taskRecoveryContextsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TaskCompanyRecoveryContext
+   */
+  select?: Prisma.TaskCompanyRecoveryContextSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TaskCompanyRecoveryContext
+   */
+  omit?: Prisma.TaskCompanyRecoveryContextOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TaskCompanyRecoveryContextInclude<ExtArgs> | null
+  where?: Prisma.TaskCompanyRecoveryContextWhereInput
+  orderBy?: Prisma.TaskCompanyRecoveryContextOrderByWithRelationInput | Prisma.TaskCompanyRecoveryContextOrderByWithRelationInput[]
+  cursor?: Prisma.TaskCompanyRecoveryContextWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TaskCompanyRecoveryContextScalarFieldEnum | Prisma.TaskCompanyRecoveryContextScalarFieldEnum[]
 }
 
 /**

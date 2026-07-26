@@ -350,6 +350,8 @@ describe('authoritative module callback contracts', () => {
     const bizfileRoute = source('src/app/api/documents/[documentId]/confirm/route.ts');
 
     expect(schema).toContain('taskIntegrationContext');
+    expect(schema).toContain('model TaskCompanyRecoveryContext');
+    expect(schema).toContain('@@unique([tenantId, taskStageId, companyId])');
     expect(company).toContain('taskIntegrationContext');
     expect(generationSession).toContain('taskIntegrationContext');
     expect(envelope).toContain('taskIntegrationContext');
@@ -358,6 +360,7 @@ describe('authoritative module callback contracts', () => {
       /processBizFileExtraction\([\s\S]+taskContext/,
     );
     expect(stage).toContain('recoverTaskStageOutcomeFromDurableContext');
+    expect(stage).toContain('taskCompanyRecoveryContext');
     expect(stage).toContain('reconcileTaskStageOutcome');
   });
 

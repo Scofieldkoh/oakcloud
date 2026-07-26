@@ -138,7 +138,8 @@ export const ModelName = {
   Task: 'Task',
   TaskStage: 'TaskStage',
   TaskStageChecklistItem: 'TaskStageChecklistItem',
-  TaskStageOutcome: 'TaskStageOutcome'
+  TaskStageOutcome: 'TaskStageOutcome',
+  TaskCompanyRecoveryContext: 'TaskCompanyRecoveryContext'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1881,6 +1882,20 @@ export const TaskStageOutcomeScalarFieldEnum = {
 } as const
 
 export type TaskStageOutcomeScalarFieldEnum = (typeof TaskStageOutcomeScalarFieldEnum)[keyof typeof TaskStageOutcomeScalarFieldEnum]
+
+
+export const TaskCompanyRecoveryContextScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  taskId: 'taskId',
+  taskStageId: 'taskStageId',
+  returnTo: 'returnTo',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TaskCompanyRecoveryContextScalarFieldEnum = (typeof TaskCompanyRecoveryContextScalarFieldEnum)[keyof typeof TaskCompanyRecoveryContextScalarFieldEnum]
 
 
 export const SortOrder = {
