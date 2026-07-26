@@ -114,7 +114,7 @@ export async function getTaskStageDetail(
   const recovered = !stage.outcome
     ? await recoverTaskStageOutcomeFromDurableContext(tenantId, stage)
     : false;
-  if (stage.outcome || recovered) {
+  if ((stage.outcome || recovered) && !synchronizedCompanyOutcome) {
     await reconcileTaskStageOutcome(tenantId, stage.id, actorUserId);
     stage = await prisma.taskStage.findFirst({
       where: {
@@ -398,10 +398,12 @@ async function updateParentTaskStatus(
     select: { status: true },
   });
   const status = deriveTaskStatus(stages, currentStatus);
-  await tx.task.update({
-    where: { id: taskId },
-    data: { status },
-  });
+  if (status !== currentStatus) {
+    await tx.task.update({
+      where: { id: taskId },
+      data: { status },
+    });
+  }
   return status;
 }
 
@@ -779,16 +781,22 @@ export async function reconcileTaskStageOutcome(
     if (!stage.outcome) {
       const adapter = getStageActionAdapter(stage.actionType);
       const status = adapter.deriveStatus(null);
-      await tx.taskStage.update({
-        where: { id: stage.id },
-        data: { status, completedAt: null },
-      });
+      const stageChanged = stage.status !== status || stage.completedAt !== null;
+      if (stageChanged) {
+        await tx.taskStage.update({
+          where: { id: stage.id },
+          data: { status, completedAt: null },
+        });
+      }
       const taskStatus = await updateParentTaskStatus(
         tx,
         tenantId,
         stage.taskId,
         lockedTask.status,
       );
+      if (!stageChanged && taskStatus === lockedTask.status) {
+        return { status, summary: null, taskStatus };
+      }
       await auditStageMutation(tx, {
         tenantId,
         userId,
@@ -803,16 +811,26 @@ export async function reconcileTaskStageOutcome(
 
     const failUnavailableOutcome = async () => {
       const status = TaskStageStatus.FAILED;
-      await tx.taskStage.update({
-        where: { id: stage.id },
-        data: { status, completedAt: null },
-      });
+      const stageChanged = stage.status !== status || stage.completedAt !== null;
+      if (stageChanged) {
+        await tx.taskStage.update({
+          where: { id: stage.id },
+          data: { status, completedAt: null },
+        });
+      }
       const taskStatus = await updateParentTaskStatus(
         tx,
         tenantId,
         stage.taskId,
         lockedTask.status,
       );
+      if (!stageChanged && taskStatus === lockedTask.status) {
+        return {
+          status,
+          summary: 'Linked outcome is no longer available',
+          taskStatus,
+        };
+      }
       await auditStageMutation(tx, {
         tenantId,
         userId,
@@ -847,19 +865,35 @@ export async function reconcileTaskStageOutcome(
       return failUnavailableOutcome();
     }
     const resolution = resolveStageActionOutcome(stage.actionType, authoritative);
-    await tx.taskStage.update({
-      where: { id: stage.id },
-      data: {
-        status: resolution.status,
-        completedAt: resolution.status === TaskStageStatus.COMPLETED ? new Date() : null,
-      },
-    });
+    const completedAt = resolution.status === TaskStageStatus.COMPLETED
+      ? stage.completedAt ?? new Date()
+      : null;
+    const stageChanged = (
+      stage.status !== resolution.status
+      || stage.completedAt?.getTime() !== completedAt?.getTime()
+    );
+    if (stageChanged) {
+      await tx.taskStage.update({
+        where: { id: stage.id },
+        data: {
+          status: resolution.status,
+          completedAt,
+        },
+      });
+    }
     const taskStatus = await updateParentTaskStatus(
       tx,
       tenantId,
       stage.taskId,
       lockedTask.status,
     );
+    if (!stageChanged && taskStatus === lockedTask.status) {
+      return {
+        status: resolution.status,
+        summary: resolution.summary,
+        taskStatus,
+      };
+    }
     await auditStageMutation(tx, {
       tenantId,
       userId,

@@ -344,6 +344,9 @@ describe('task snapshots and stage mutations', () => {
     let hasRecovery: boolean;
     let deletedCompanyId: string | null;
     let taskCompanyId: string | null;
+    let currentStageStatus: TaskStageStatus;
+    let currentTaskStatus: TaskStatus;
+    let currentCompletedAt: Date | null;
 
     beforeEach(() => {
       currentOutcome = {
@@ -357,19 +360,22 @@ describe('task snapshots and stage mutations', () => {
       hasRecovery = true;
       deletedCompanyId = null;
       taskCompanyId = companyA;
+      currentStageStatus = TaskStageStatus.COMPLETED;
+      currentTaskStatus = TaskStatus.COMPLETED;
+      currentCompletedAt = new Date();
       mocks.stageFindFirst.mockImplementation(() => Promise.resolve({
         id: 'stage-1',
         tenantId: 'tenant-a',
         taskId: 'task-1',
         actionType: TaskStageActionType.COMPANY_PROFILE,
         actionConfig: null,
-        status: TaskStageStatus.COMPLETED,
+        status: currentStageStatus,
         isRequired: true,
         startedAt: new Date(),
-        completedAt: new Date(),
+        completedAt: currentCompletedAt,
         task: {
           id: 'task-1',
-          status: TaskStatus.COMPLETED,
+          status: currentTaskStatus,
           companyId: taskCompanyId,
           deletedAt: null,
         },
@@ -386,7 +392,7 @@ describe('task snapshots and stage mutations', () => {
         return Promise.resolve([{
           id: 'task-1',
           tenantId: 'tenant-a',
-          status: TaskStatus.COMPLETED,
+          status: currentTaskStatus,
           title: 'Onboarding',
           companyId: taskCompanyId,
         }]);
@@ -415,12 +421,21 @@ describe('task snapshots and stage mutations', () => {
         };
         return Promise.resolve(currentOutcome);
       });
-      mocks.stageUpdate.mockResolvedValue({ id: 'stage-1' });
-      mocks.stageFindMany.mockResolvedValue([{ status: TaskStageStatus.COMPLETED }]);
+      mocks.stageUpdate.mockImplementation(({ data }: {
+        data: { status?: TaskStageStatus; completedAt?: Date | null };
+      }) => {
+        if (data.status) currentStageStatus = data.status;
+        if ('completedAt' in data) currentCompletedAt = data.completedAt ?? null;
+        return Promise.resolve({ id: 'stage-1' });
+      });
+      mocks.stageFindMany.mockImplementation(() => Promise.resolve([
+        { status: currentStageStatus },
+      ]));
       mocks.taskUpdate.mockImplementation(({ data }: {
-        data: { companyId?: string | null };
+        data: { companyId?: string | null; status?: TaskStatus };
       }) => {
         if ('companyId' in data) taskCompanyId = data.companyId ?? null;
+        if (data.status) currentTaskStatus = data.status;
         return Promise.resolve({ id: 'task-1' });
       });
     });
@@ -436,6 +451,7 @@ describe('task snapshots and stage mutations', () => {
         data: { companyId: companyB },
       });
       expect(detail.outcomeSummary).toBe('Linked company: Company B');
+      expect(mocks.audit).toHaveBeenCalledTimes(1);
       const taskLockOrder = mocks.rawQuery.mock.calls.findIndex(
         ([query]) => (query as { sql?: string }).sql?.includes('FROM tasks'),
       );
@@ -516,6 +532,7 @@ describe('task snapshots and stage mutations', () => {
       );
 
       expect(mocks.audit).toHaveBeenCalled();
+      expect(mocks.audit).toHaveBeenCalledTimes(1);
       expect(mocks.audit.mock.calls.every(
         ([entry]) => (entry as { userId?: string }).userId === 'deleter-user',
       )).toBe(true);
@@ -530,6 +547,16 @@ describe('task snapshots and stage mutations', () => {
       expect(mocks.audit.mock.calls.every(
         ([entry]) => (entry as { userId?: string }).userId === undefined,
       )).toBe(true);
+    });
+
+    it('does not re-audit an unchanged Company correction on later reads', async () => {
+      await getTaskStageDetail('tenant-a', 'task-1', 'stage-1', 'deleter-user');
+      expect(mocks.audit).toHaveBeenCalledTimes(1);
+
+      mocks.audit.mockClear();
+      await getTaskStageDetail('tenant-a', 'task-1', 'stage-1', 'deleter-user');
+
+      expect(mocks.audit).not.toHaveBeenCalled();
     });
   });
 
@@ -1081,10 +1108,7 @@ describe('task snapshots and stage mutations', () => {
     const result = await reconcileTaskStageOutcome('tenant-a', 'stage-1', 'user-1');
 
     expect(result.taskStatus).toBe('PAUSED');
-    expect(mocks.taskUpdate).toHaveBeenCalledWith({
-      where: { id: 'task-1' },
-      data: { status: 'PAUSED' },
-    });
+    expect(mocks.taskUpdate).not.toHaveBeenCalled();
     expect(mocks.rawQuery.mock.invocationCallOrder[0])
       .toBeLessThan(mocks.stageUpdate.mock.invocationCallOrder[0]);
   });
