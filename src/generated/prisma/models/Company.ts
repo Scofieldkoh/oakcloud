@@ -1930,10 +1930,12 @@ export type CompanyCreateNestedOneWithoutTaskRecoveryContextsInput = {
   connect?: Prisma.CompanyWhereUniqueInput
 }
 
-export type CompanyUpdateOneRequiredWithoutTaskRecoveryContextsNestedInput = {
+export type CompanyUpdateOneWithoutTaskRecoveryContextsNestedInput = {
   create?: Prisma.XOR<Prisma.CompanyCreateWithoutTaskRecoveryContextsInput, Prisma.CompanyUncheckedCreateWithoutTaskRecoveryContextsInput>
   connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutTaskRecoveryContextsInput
   upsert?: Prisma.CompanyUpsertWithoutTaskRecoveryContextsInput
+  disconnect?: Prisma.CompanyWhereInput | boolean
+  delete?: Prisma.CompanyWhereInput | boolean
   connect?: Prisma.CompanyWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutTaskRecoveryContextsInput, Prisma.CompanyUpdateWithoutTaskRecoveryContextsInput>, Prisma.CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput>
 }

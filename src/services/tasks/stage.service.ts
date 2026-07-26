@@ -52,7 +52,7 @@ function hasLinkedOutcomeEntity(outcome: {
 
 interface LockedCompanyRecoveryContext {
   taskId: string;
-  companyId: string;
+  companyId: string | null;
 }
 
 async function lockCompanyRecoveryContext(
@@ -176,16 +176,21 @@ export async function synchronizeCompanyOutcomeWithRecovery(
     if (
       !recovery
       || recovery.taskId !== stage.taskId
-      || recovery.companyId === stage.outcome?.companyId
+      || (
+        Boolean(stage.outcome)
+        && recovery.companyId === stage.outcome?.companyId
+      )
     ) {
       return false;
     }
 
-    const company = await tx.company.findFirst({
-      where: { id: recovery.companyId, tenantId },
-      select: { id: true, name: true, deletedAt: true },
-    });
-    if (!company) {
+    const company = recovery.companyId
+      ? await tx.company.findFirst({
+        where: { id: recovery.companyId, tenantId },
+        select: { id: true, name: true, deletedAt: true },
+      })
+      : null;
+    if (recovery.companyId && !company) {
       return false;
     }
 
@@ -195,23 +200,23 @@ export async function synchronizeCompanyOutcomeWithRecovery(
         tenantId,
         taskStageId: stage.id,
         type: TaskStageOutcomeType.COMPANY,
-        companyId: company.id,
+        companyId: company?.id ?? null,
       },
       update: {
         type: TaskStageOutcomeType.COMPANY,
-        companyId: company.id,
+        companyId: company?.id ?? null,
         generatedDocumentId: null,
         esigningEnvelopeId: null,
       },
     });
-    if (lockedTask.companyId !== company.id) {
+    if (lockedTask.companyId !== (company?.id ?? null)) {
       await tx.task.update({
         where: { id: stage.taskId },
-        data: { companyId: company.id },
+        data: { companyId: company?.id ?? null },
       });
     }
 
-    const status = company.deletedAt
+    const status = !company || company.deletedAt
       ? TaskStageStatus.FAILED
       : TaskStageStatus.COMPLETED;
     const now = new Date();
@@ -233,13 +238,15 @@ export async function synchronizeCompanyOutcomeWithRecovery(
       tenantId,
       userId,
       stageId: stage.id,
-      companyId: company.id,
-      summary: company.deletedAt
+      companyId: company?.id ?? null,
+      summary: !company
+        ? 'Recovered Company outcome was permanently deleted'
+        : company.deletedAt
         ? 'Recovered Company outcome is no longer available'
         : `Recovered Company outcome: ${company.name}`,
       metadata: {
         previousCompanyId: stage.outcome?.companyId ?? null,
-        companyId: company.id,
+        companyId: company?.id ?? null,
         status,
         taskStatus,
       },
@@ -681,7 +688,6 @@ export async function linkTaskStageOutcome(
       );
       if (
         recovery?.taskId === stage.taskId
-        && recovery.companyId
         && recovery.companyId !== parsed.companyId
       ) {
         return {

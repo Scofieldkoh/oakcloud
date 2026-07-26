@@ -2280,14 +2280,14 @@ model TaskStageOutcome {
 model TaskCompanyRecoveryContext {
   id          String    @id @default(uuid())
   tenantId    String    @map("tenant_id")
-  companyId   String    @map("company_id")
+  companyId   String?   @map("company_id")
   taskId      String    @map("task_id")
   taskStageId String    @map("task_stage_id")
   returnTo    String?   @map("return_to") @db.VarChar(2000)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   tenant      Workspace @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company     Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
   taskStage   TaskStage @relation(fields: [taskStageId], references: [id], onDelete: Cascade)
   task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
 

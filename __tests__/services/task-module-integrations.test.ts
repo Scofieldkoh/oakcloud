@@ -353,6 +353,10 @@ describe('authoritative module callback contracts', () => {
     expect(schema).toContain('model TaskCompanyRecoveryContext');
     expect(schema).toContain('@@unique([tenantId, taskStageId])');
     expect(schema).toMatch(/task\s+Task\s+@relation/);
+    expect(schema).toMatch(/companyId\s+String\?\s+@map\("company_id"\)/);
+    expect(schema).toMatch(
+      /model TaskCompanyRecoveryContext[\s\S]+company\s+Company\?\s+@relation\([\s\S]+onDelete: SetNull/,
+    );
     expect(company).toContain('taskIntegrationContext');
     expect(generationSession).toContain('taskIntegrationContext');
     expect(envelope).toContain('taskIntegrationContext');
@@ -390,6 +394,9 @@ describe('authoritative module callback contracts', () => {
     );
     expect(company).toMatch(
       /permanentDeleteCompany[\s\S]+safelyReconcileTaskStageIds/,
+    );
+    expect(source('src/services/tasks/integration.service.ts')).toMatch(
+      /safelyCaptureCompanyTaskStageIds[\s\S]+taskCompanyRecoveryContext\.findMany/,
     );
     expect(envelopeRoute).toMatch(
       /uploadGeneratedDocumentToEsigningEnvelope[\s\S]+deleteDraftEsigningEnvelope/,

@@ -168,7 +168,7 @@ export type TaskCompanyRecoveryContextGroupByArgs<ExtArgs extends runtime.Types.
 export type TaskCompanyRecoveryContextGroupByOutputType = {
   id: string
   tenantId: string
-  companyId: string
+  companyId: string | null
   taskId: string
   taskStageId: string
   returnTo: string | null
@@ -200,14 +200,14 @@ export type TaskCompanyRecoveryContextWhereInput = {
   NOT?: Prisma.TaskCompanyRecoveryContextWhereInput | Prisma.TaskCompanyRecoveryContextWhereInput[]
   id?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
   tenantId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
-  companyId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
+  companyId?: Prisma.StringNullableFilter<"TaskCompanyRecoveryContext"> | string | null
   taskId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
   taskStageId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
   returnTo?: Prisma.StringNullableFilter<"TaskCompanyRecoveryContext"> | string | null
   createdAt?: Prisma.DateTimeFilter<"TaskCompanyRecoveryContext"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"TaskCompanyRecoveryContext"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
-  company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
+  company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
   taskStage?: Prisma.XOR<Prisma.TaskStageScalarRelationFilter, Prisma.TaskStageWhereInput>
   task?: Prisma.XOR<Prisma.TaskScalarRelationFilter, Prisma.TaskWhereInput>
 }
@@ -215,7 +215,7 @@ export type TaskCompanyRecoveryContextWhereInput = {
 export type TaskCompanyRecoveryContextOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
-  companyId?: Prisma.SortOrder
+  companyId?: Prisma.SortOrderInput | Prisma.SortOrder
   taskId?: Prisma.SortOrder
   taskStageId?: Prisma.SortOrder
   returnTo?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -234,14 +234,14 @@ export type TaskCompanyRecoveryContextWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.TaskCompanyRecoveryContextWhereInput[]
   NOT?: Prisma.TaskCompanyRecoveryContextWhereInput | Prisma.TaskCompanyRecoveryContextWhereInput[]
   tenantId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
-  companyId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
+  companyId?: Prisma.StringNullableFilter<"TaskCompanyRecoveryContext"> | string | null
   taskId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
   taskStageId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
   returnTo?: Prisma.StringNullableFilter<"TaskCompanyRecoveryContext"> | string | null
   createdAt?: Prisma.DateTimeFilter<"TaskCompanyRecoveryContext"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"TaskCompanyRecoveryContext"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
-  company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
+  company?: Prisma.XOR<Prisma.CompanyNullableScalarRelationFilter, Prisma.CompanyWhereInput> | null
   taskStage?: Prisma.XOR<Prisma.TaskStageScalarRelationFilter, Prisma.TaskStageWhereInput>
   task?: Prisma.XOR<Prisma.TaskScalarRelationFilter, Prisma.TaskWhereInput>
 }, "id" | "tenantId_taskStageId">
@@ -249,7 +249,7 @@ export type TaskCompanyRecoveryContextWhereUniqueInput = Prisma.AtLeast<{
 export type TaskCompanyRecoveryContextOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
-  companyId?: Prisma.SortOrder
+  companyId?: Prisma.SortOrderInput | Prisma.SortOrder
   taskId?: Prisma.SortOrder
   taskStageId?: Prisma.SortOrder
   returnTo?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -266,7 +266,7 @@ export type TaskCompanyRecoveryContextScalarWhereWithAggregatesInput = {
   NOT?: Prisma.TaskCompanyRecoveryContextScalarWhereWithAggregatesInput | Prisma.TaskCompanyRecoveryContextScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"TaskCompanyRecoveryContext"> | string
   tenantId?: Prisma.StringWithAggregatesFilter<"TaskCompanyRecoveryContext"> | string
-  companyId?: Prisma.StringWithAggregatesFilter<"TaskCompanyRecoveryContext"> | string
+  companyId?: Prisma.StringNullableWithAggregatesFilter<"TaskCompanyRecoveryContext"> | string | null
   taskId?: Prisma.StringWithAggregatesFilter<"TaskCompanyRecoveryContext"> | string
   taskStageId?: Prisma.StringWithAggregatesFilter<"TaskCompanyRecoveryContext"> | string
   returnTo?: Prisma.StringNullableWithAggregatesFilter<"TaskCompanyRecoveryContext"> | string | null
@@ -280,7 +280,7 @@ export type TaskCompanyRecoveryContextCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutTaskCompanyRecoveryContextsInput
-  company: Prisma.CompanyCreateNestedOneWithoutTaskRecoveryContextsInput
+  company?: Prisma.CompanyCreateNestedOneWithoutTaskRecoveryContextsInput
   taskStage: Prisma.TaskStageCreateNestedOneWithoutCompanyRecoveryContextsInput
   task: Prisma.TaskCreateNestedOneWithoutCompanyRecoveryContextsInput
 }
@@ -288,7 +288,7 @@ export type TaskCompanyRecoveryContextCreateInput = {
 export type TaskCompanyRecoveryContextUncheckedCreateInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   taskId: string
   taskStageId: string
   returnTo?: string | null
@@ -302,7 +302,7 @@ export type TaskCompanyRecoveryContextUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutTaskCompanyRecoveryContextsNestedInput
-  company?: Prisma.CompanyUpdateOneRequiredWithoutTaskRecoveryContextsNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutTaskRecoveryContextsNestedInput
   taskStage?: Prisma.TaskStageUpdateOneRequiredWithoutCompanyRecoveryContextsNestedInput
   task?: Prisma.TaskUpdateOneRequiredWithoutCompanyRecoveryContextsNestedInput
 }
@@ -310,7 +310,7 @@ export type TaskCompanyRecoveryContextUpdateInput = {
 export type TaskCompanyRecoveryContextUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   taskStageId?: Prisma.StringFieldUpdateOperationsInput | string
   returnTo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -321,7 +321,7 @@ export type TaskCompanyRecoveryContextUncheckedUpdateInput = {
 export type TaskCompanyRecoveryContextCreateManyInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   taskId: string
   taskStageId: string
   returnTo?: string | null
@@ -339,7 +339,7 @@ export type TaskCompanyRecoveryContextUpdateManyMutationInput = {
 export type TaskCompanyRecoveryContextUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   taskStageId?: Prisma.StringFieldUpdateOperationsInput | string
   returnTo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -568,14 +568,14 @@ export type TaskCompanyRecoveryContextCreateWithoutTenantInput = {
   returnTo?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  company: Prisma.CompanyCreateNestedOneWithoutTaskRecoveryContextsInput
+  company?: Prisma.CompanyCreateNestedOneWithoutTaskRecoveryContextsInput
   taskStage: Prisma.TaskStageCreateNestedOneWithoutCompanyRecoveryContextsInput
   task: Prisma.TaskCreateNestedOneWithoutCompanyRecoveryContextsInput
 }
 
 export type TaskCompanyRecoveryContextUncheckedCreateWithoutTenantInput = {
   id?: string
-  companyId: string
+  companyId?: string | null
   taskId: string
   taskStageId: string
   returnTo?: string | null
@@ -615,7 +615,7 @@ export type TaskCompanyRecoveryContextScalarWhereInput = {
   NOT?: Prisma.TaskCompanyRecoveryContextScalarWhereInput | Prisma.TaskCompanyRecoveryContextScalarWhereInput[]
   id?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
   tenantId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
-  companyId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
+  companyId?: Prisma.StringNullableFilter<"TaskCompanyRecoveryContext"> | string | null
   taskId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
   taskStageId?: Prisma.StringFilter<"TaskCompanyRecoveryContext"> | string
   returnTo?: Prisma.StringNullableFilter<"TaskCompanyRecoveryContext"> | string | null
@@ -675,14 +675,14 @@ export type TaskCompanyRecoveryContextCreateWithoutTaskInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutTaskCompanyRecoveryContextsInput
-  company: Prisma.CompanyCreateNestedOneWithoutTaskRecoveryContextsInput
+  company?: Prisma.CompanyCreateNestedOneWithoutTaskRecoveryContextsInput
   taskStage: Prisma.TaskStageCreateNestedOneWithoutCompanyRecoveryContextsInput
 }
 
 export type TaskCompanyRecoveryContextUncheckedCreateWithoutTaskInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   taskStageId: string
   returnTo?: string | null
   createdAt?: Date | string
@@ -721,14 +721,14 @@ export type TaskCompanyRecoveryContextCreateWithoutTaskStageInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutTaskCompanyRecoveryContextsInput
-  company: Prisma.CompanyCreateNestedOneWithoutTaskRecoveryContextsInput
+  company?: Prisma.CompanyCreateNestedOneWithoutTaskRecoveryContextsInput
   task: Prisma.TaskCreateNestedOneWithoutCompanyRecoveryContextsInput
 }
 
 export type TaskCompanyRecoveryContextUncheckedCreateWithoutTaskStageInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   taskId: string
   returnTo?: string | null
   createdAt?: Date | string
@@ -763,7 +763,7 @@ export type TaskCompanyRecoveryContextUpdateManyWithWhereWithoutTaskStageInput =
 
 export type TaskCompanyRecoveryContextCreateManyTenantInput = {
   id?: string
-  companyId: string
+  companyId?: string | null
   taskId: string
   taskStageId: string
   returnTo?: string | null
@@ -776,14 +776,14 @@ export type TaskCompanyRecoveryContextUpdateWithoutTenantInput = {
   returnTo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  company?: Prisma.CompanyUpdateOneRequiredWithoutTaskRecoveryContextsNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutTaskRecoveryContextsNestedInput
   taskStage?: Prisma.TaskStageUpdateOneRequiredWithoutCompanyRecoveryContextsNestedInput
   task?: Prisma.TaskUpdateOneRequiredWithoutCompanyRecoveryContextsNestedInput
 }
 
 export type TaskCompanyRecoveryContextUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   taskStageId?: Prisma.StringFieldUpdateOperationsInput | string
   returnTo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -793,7 +793,7 @@ export type TaskCompanyRecoveryContextUncheckedUpdateWithoutTenantInput = {
 
 export type TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   taskStageId?: Prisma.StringFieldUpdateOperationsInput | string
   returnTo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -844,7 +844,7 @@ export type TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyInput = {
 export type TaskCompanyRecoveryContextCreateManyTaskInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   taskStageId: string
   returnTo?: string | null
   createdAt?: Date | string
@@ -857,14 +857,14 @@ export type TaskCompanyRecoveryContextUpdateWithoutTaskInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutTaskCompanyRecoveryContextsNestedInput
-  company?: Prisma.CompanyUpdateOneRequiredWithoutTaskRecoveryContextsNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutTaskRecoveryContextsNestedInput
   taskStage?: Prisma.TaskStageUpdateOneRequiredWithoutCompanyRecoveryContextsNestedInput
 }
 
 export type TaskCompanyRecoveryContextUncheckedUpdateWithoutTaskInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskStageId?: Prisma.StringFieldUpdateOperationsInput | string
   returnTo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -874,7 +874,7 @@ export type TaskCompanyRecoveryContextUncheckedUpdateWithoutTaskInput = {
 export type TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTaskInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskStageId?: Prisma.StringFieldUpdateOperationsInput | string
   returnTo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -884,7 +884,7 @@ export type TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTaskInput = {
 export type TaskCompanyRecoveryContextCreateManyTaskStageInput = {
   id?: string
   tenantId: string
-  companyId: string
+  companyId?: string | null
   taskId: string
   returnTo?: string | null
   createdAt?: Date | string
@@ -897,14 +897,14 @@ export type TaskCompanyRecoveryContextUpdateWithoutTaskStageInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutTaskCompanyRecoveryContextsNestedInput
-  company?: Prisma.CompanyUpdateOneRequiredWithoutTaskRecoveryContextsNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutTaskRecoveryContextsNestedInput
   task?: Prisma.TaskUpdateOneRequiredWithoutCompanyRecoveryContextsNestedInput
 }
 
 export type TaskCompanyRecoveryContextUncheckedUpdateWithoutTaskStageInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   returnTo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -914,7 +914,7 @@ export type TaskCompanyRecoveryContextUncheckedUpdateWithoutTaskStageInput = {
 export type TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTaskStageInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   taskId?: Prisma.StringFieldUpdateOperationsInput | string
   returnTo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -933,7 +933,7 @@ export type TaskCompanyRecoveryContextSelect<ExtArgs extends runtime.Types.Exten
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  company?: boolean | Prisma.TaskCompanyRecoveryContext$companyArgs<ExtArgs>
   taskStage?: boolean | Prisma.TaskStageDefaultArgs<ExtArgs>
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["taskCompanyRecoveryContext"]>
@@ -948,7 +948,7 @@ export type TaskCompanyRecoveryContextSelectCreateManyAndReturn<ExtArgs extends 
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  company?: boolean | Prisma.TaskCompanyRecoveryContext$companyArgs<ExtArgs>
   taskStage?: boolean | Prisma.TaskStageDefaultArgs<ExtArgs>
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["taskCompanyRecoveryContext"]>
@@ -963,7 +963,7 @@ export type TaskCompanyRecoveryContextSelectUpdateManyAndReturn<ExtArgs extends 
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  company?: boolean | Prisma.TaskCompanyRecoveryContext$companyArgs<ExtArgs>
   taskStage?: boolean | Prisma.TaskStageDefaultArgs<ExtArgs>
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["taskCompanyRecoveryContext"]>
@@ -982,19 +982,19 @@ export type TaskCompanyRecoveryContextSelectScalar = {
 export type TaskCompanyRecoveryContextOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "taskId" | "taskStageId" | "returnTo" | "createdAt" | "updatedAt", ExtArgs["result"]["taskCompanyRecoveryContext"]>
 export type TaskCompanyRecoveryContextInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  company?: boolean | Prisma.TaskCompanyRecoveryContext$companyArgs<ExtArgs>
   taskStage?: boolean | Prisma.TaskStageDefaultArgs<ExtArgs>
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
 }
 export type TaskCompanyRecoveryContextIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  company?: boolean | Prisma.TaskCompanyRecoveryContext$companyArgs<ExtArgs>
   taskStage?: boolean | Prisma.TaskStageDefaultArgs<ExtArgs>
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
 }
 export type TaskCompanyRecoveryContextIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
-  company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
+  company?: boolean | Prisma.TaskCompanyRecoveryContext$companyArgs<ExtArgs>
   taskStage?: boolean | Prisma.TaskStageDefaultArgs<ExtArgs>
   task?: boolean | Prisma.TaskDefaultArgs<ExtArgs>
 }
@@ -1003,14 +1003,14 @@ export type $TaskCompanyRecoveryContextPayload<ExtArgs extends runtime.Types.Ext
   name: "TaskCompanyRecoveryContext"
   objects: {
     tenant: Prisma.$WorkspacePayload<ExtArgs>
-    company: Prisma.$CompanyPayload<ExtArgs>
+    company: Prisma.$CompanyPayload<ExtArgs> | null
     taskStage: Prisma.$TaskStagePayload<ExtArgs>
     task: Prisma.$TaskPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     tenantId: string
-    companyId: string
+    companyId: string | null
     taskId: string
     taskStageId: string
     returnTo: string | null
@@ -1411,7 +1411,7 @@ readonly fields: TaskCompanyRecoveryContextFieldRefs;
 export interface Prisma__TaskCompanyRecoveryContextClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  company<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  company<T extends Prisma.TaskCompanyRecoveryContext$companyArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskCompanyRecoveryContext$companyArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   taskStage<T extends Prisma.TaskStageDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskStageDefaultArgs<ExtArgs>>): Prisma.Prisma__TaskStageClient<runtime.Types.Result.GetResult<Prisma.$TaskStagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   task<T extends Prisma.TaskDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TaskDefaultArgs<ExtArgs>>): Prisma.Prisma__TaskClient<runtime.Types.Result.GetResult<Prisma.$TaskPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
@@ -1844,6 +1844,25 @@ export type TaskCompanyRecoveryContextDeleteManyArgs<ExtArgs extends runtime.Typ
    * Limit how many TaskCompanyRecoveryContexts to delete.
    */
   limit?: number
+}
+
+/**
+ * TaskCompanyRecoveryContext.company
+ */
+export type TaskCompanyRecoveryContext$companyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Company
+   */
+  select?: Prisma.CompanySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Company
+   */
+  omit?: Prisma.CompanyOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanyInclude<ExtArgs> | null
+  where?: Prisma.CompanyWhereInput
 }
 
 /**

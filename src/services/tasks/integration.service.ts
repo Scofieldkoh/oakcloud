@@ -211,11 +211,20 @@ export async function safelyCaptureCompanyTaskStageIds(
   companyId: string,
 ) {
   try {
-    const outcomes = await prisma.taskStageOutcome.findMany({
-      where: { tenantId, companyId },
-      select: { taskStageId: true },
-    });
-    return outcomes.map(({ taskStageId }) => taskStageId);
+    const [outcomes, recoveries] = await Promise.all([
+      prisma.taskStageOutcome.findMany({
+        where: { tenantId, companyId },
+        select: { taskStageId: true },
+      }),
+      prisma.taskCompanyRecoveryContext.findMany({
+        where: { tenantId, companyId },
+        select: { taskStageId: true },
+      }),
+    ]);
+    return Array.from(new Set([
+      ...outcomes.map(({ taskStageId }) => taskStageId),
+      ...recoveries.map(({ taskStageId }) => taskStageId),
+    ]));
   } catch (error) {
     log.warn('Failed to capture linked task stages before company deletion', {
       error,
@@ -260,15 +269,19 @@ export async function safelyCaptureEsigningTaskStageIds(
 export function safelyReconcileTaskStageIds(
   tenantId: string,
   taskStageIds: string[],
-  userId?: string,
+  _userId?: string,
 ) {
   return safelyRunTaskCallback(
     'authoritative record deletion',
-    () => Promise.all(
-      taskStageIds.map((stageId) => (
-        reconcileTaskStageOutcome(tenantId, stageId, userId)
-      )),
-    ),
+    async () => {
+      const stages = await prisma.taskStage.findMany({
+        where: { tenantId, id: { in: taskStageIds } },
+        select: { id: true, taskId: true },
+      });
+      await Promise.all(stages.map(({ id, taskId }) => (
+        getTaskStageDetail(tenantId, taskId, id)
+      )));
+    },
   );
 }
 
