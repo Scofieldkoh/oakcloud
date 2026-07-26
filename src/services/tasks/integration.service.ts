@@ -132,6 +132,7 @@ export function safelyLinkEsigningEnvelopeTaskOutcome(input: LinkTaskOutcomeInpu
 async function reconcileLinkedOutcomes(
   tenantId: string,
   where:
+    | { companyId: string }
     | { generatedDocumentId: string }
     | { esigningEnvelopeId: string },
   userId?: string,
@@ -145,6 +146,14 @@ async function reconcileLinkedOutcomes(
       reconcileTaskStageOutcome(tenantId, taskStageId, userId)
     )),
   );
+}
+
+export function reconcileCompanyTaskOutcomes(
+  tenantId: string,
+  companyId: string,
+  userId?: string,
+) {
+  return reconcileLinkedOutcomes(tenantId, { companyId }, userId);
 }
 
 export function reconcileGeneratedDocumentTaskOutcomes(
@@ -184,6 +193,35 @@ export function safelyReconcileGeneratedDocumentTaskOutcomes(
       userId,
     ),
   );
+}
+
+export function safelyReconcileCompanyTaskOutcomes(
+  tenantId: string,
+  companyId: string,
+  userId?: string,
+) {
+  return safelyRunTaskCallback(
+    'company lifecycle change',
+    () => reconcileCompanyTaskOutcomes(tenantId, companyId, userId),
+  );
+}
+
+export async function safelyCaptureCompanyTaskStageIds(
+  tenantId: string,
+  companyId: string,
+) {
+  try {
+    const outcomes = await prisma.taskStageOutcome.findMany({
+      where: { tenantId, companyId },
+      select: { taskStageId: true },
+    });
+    return outcomes.map(({ taskStageId }) => taskStageId);
+  } catch (error) {
+    log.warn('Failed to capture linked task stages before company deletion', {
+      error,
+    });
+    return [];
+  }
 }
 
 export function safelyReconcileEsigningEnvelopeTaskOutcomes(

@@ -335,7 +335,8 @@ export const CompanyScalarFieldEnum = {
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',
-  deletedReason: 'deletedReason'
+  deletedReason: 'deletedReason',
+  taskIntegrationContext: 'taskIntegrationContext'
 } as const
 
 export type CompanyScalarFieldEnum = (typeof CompanyScalarFieldEnum)[keyof typeof CompanyScalarFieldEnum]

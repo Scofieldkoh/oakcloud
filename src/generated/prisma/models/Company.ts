@@ -204,6 +204,7 @@ export type CompanyCountAggregateOutputType = {
   updatedAt: number
   deletedAt: number
   deletedReason: number
+  taskIntegrationContext: number
   _all: number
 }
 
@@ -386,6 +387,7 @@ export type CompanyCountAggregateInputType = {
   updatedAt?: true
   deletedAt?: true
   deletedReason?: true
+  taskIntegrationContext?: true
   _all?: true
 }
 
@@ -525,6 +527,7 @@ export type CompanyGroupByOutputType = {
   updatedAt: Date
   deletedAt: Date | null
   deletedReason: string | null
+  taskIntegrationContext: runtime.JsonValue | null
   _count: CompanyCountAggregateOutputType | null
   _avg: CompanyAvgAggregateOutputType | null
   _sum: CompanySumAggregateOutputType | null
@@ -600,6 +603,7 @@ export type CompanyWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Company"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   deletedReason?: Prisma.StringNullableFilter<"Company"> | string | null
+  taskIntegrationContext?: Prisma.JsonNullableFilter<"Company">
   auditLogs?: Prisma.AuditLogListRelationFilter
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   accountMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
@@ -673,6 +677,7 @@ export type CompanyOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  taskIntegrationContext?: Prisma.SortOrderInput | Prisma.SortOrder
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
   chartOfAccounts?: Prisma.ChartOfAccountOrderByRelationAggregateInput
   accountMappings?: Prisma.ChartOfAccountsMappingOrderByRelationAggregateInput
@@ -750,6 +755,7 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"Company"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   deletedReason?: Prisma.StringNullableFilter<"Company"> | string | null
+  taskIntegrationContext?: Prisma.JsonNullableFilter<"Company">
   auditLogs?: Prisma.AuditLogListRelationFilter
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   accountMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
@@ -823,6 +829,7 @@ export type CompanyOrderByWithAggregationInput = {
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  taskIntegrationContext?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.CompanyCountOrderByAggregateInput
   _avg?: Prisma.CompanyAvgOrderByAggregateInput
   _max?: Prisma.CompanyMaxOrderByAggregateInput
@@ -883,6 +890,7 @@ export type CompanyScalarWhereWithAggregatesInput = {
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Company"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Company"> | Date | string | null
   deletedReason?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
+  taskIntegrationContext?: Prisma.JsonNullableWithAggregatesFilter<"Company">
 }
 
 export type CompanyCreateInput = {
@@ -934,6 +942,7 @@ export type CompanyCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -1007,6 +1016,7 @@ export type CompanyUncheckedCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -1078,6 +1088,7 @@ export type CompanyUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -1151,6 +1162,7 @@ export type CompanyUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -1223,6 +1235,7 @@ export type CompanyCreateManyInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type CompanyUpdateManyMutationInput = {
@@ -1274,6 +1287,7 @@ export type CompanyUpdateManyMutationInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type CompanyUncheckedUpdateManyInput = {
@@ -1326,6 +1340,7 @@ export type CompanyUncheckedUpdateManyInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type CompanyListRelationFilter = {
@@ -1403,6 +1418,7 @@ export type CompanyCountOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
   deletedReason?: Prisma.SortOrder
+  taskIntegrationContext?: Prisma.SortOrder
 }
 
 export type CompanyAvgOrderByAggregateInput = {
@@ -1950,6 +1966,7 @@ export type CompanyCreateWithoutTenantInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -2021,6 +2038,7 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -2122,6 +2140,7 @@ export type CompanyScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Company"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Company"> | Date | string | null
   deletedReason?: Prisma.StringNullableFilter<"Company"> | string | null
+  taskIntegrationContext?: Prisma.JsonNullableFilter<"Company">
 }
 
 export type CompanyCreateWithoutRoleAssignmentsInput = {
@@ -2173,6 +2192,7 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -2245,6 +2265,7 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -2331,6 +2352,7 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -2403,6 +2425,7 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -2473,6 +2496,7 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -2545,6 +2569,7 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -2631,6 +2656,7 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -2703,6 +2729,7 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -2773,6 +2800,7 @@ export type CompanyCreateWithoutFormerNamesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -2845,6 +2873,7 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -2931,6 +2960,7 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -3003,6 +3033,7 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -3073,6 +3104,7 @@ export type CompanyCreateWithoutAddressesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -3145,6 +3177,7 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -3231,6 +3264,7 @@ export type CompanyUpdateWithoutAddressesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -3303,6 +3337,7 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -3373,6 +3408,7 @@ export type CompanyCreateWithoutContactsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -3445,6 +3481,7 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -3531,6 +3568,7 @@ export type CompanyUpdateWithoutContactsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -3603,6 +3641,7 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -3673,6 +3712,7 @@ export type CompanyCreateWithoutContactDetailsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -3745,6 +3785,7 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -3831,6 +3872,7 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -3903,6 +3945,7 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -3973,6 +4016,7 @@ export type CompanyCreateWithoutOfficersInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -4045,6 +4089,7 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -4131,6 +4176,7 @@ export type CompanyUpdateWithoutOfficersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -4203,6 +4249,7 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -4273,6 +4320,7 @@ export type CompanyCreateWithoutShareCapitalInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -4345,6 +4393,7 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -4431,6 +4480,7 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -4503,6 +4553,7 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -4573,6 +4624,7 @@ export type CompanyCreateWithoutShareholdersInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -4645,6 +4697,7 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -4731,6 +4784,7 @@ export type CompanyUpdateWithoutShareholdersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -4803,6 +4857,7 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -4873,6 +4928,7 @@ export type CompanyCreateWithoutChargesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -4945,6 +5001,7 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -5031,6 +5088,7 @@ export type CompanyUpdateWithoutChargesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -5103,6 +5161,7 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -5173,6 +5232,7 @@ export type CompanyCreateWithoutDocumentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -5245,6 +5305,7 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -5331,6 +5392,7 @@ export type CompanyUpdateWithoutDocumentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -5403,6 +5465,7 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -5473,6 +5536,7 @@ export type CompanyCreateWithoutAuditLogsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
@@ -5545,6 +5609,7 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
@@ -5631,6 +5696,7 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
@@ -5703,6 +5769,7 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
@@ -5773,6 +5840,7 @@ export type CompanyCreateWithoutNoteTabsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -5845,6 +5913,7 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -5931,6 +6000,7 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -6003,6 +6073,7 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -6073,6 +6144,7 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -6145,6 +6217,7 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -6231,6 +6304,7 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -6303,6 +6377,7 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -6373,6 +6448,7 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -6445,6 +6521,7 @@ export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -6531,6 +6608,7 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -6603,6 +6681,7 @@ export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -6673,6 +6752,7 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -6745,6 +6825,7 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -6831,6 +6912,7 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -6903,6 +6985,7 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -6973,6 +7056,7 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
@@ -7045,6 +7129,7 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
@@ -7131,6 +7216,7 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
@@ -7203,6 +7289,7 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
@@ -7273,6 +7360,7 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
@@ -7345,6 +7433,7 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
@@ -7431,6 +7520,7 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
@@ -7503,6 +7593,7 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
@@ -7573,6 +7664,7 @@ export type CompanyCreateWithoutTasksInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -7645,6 +7737,7 @@ export type CompanyUncheckedCreateWithoutTasksInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -7731,6 +7824,7 @@ export type CompanyUpdateWithoutTasksInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -7803,6 +7897,7 @@ export type CompanyUncheckedUpdateWithoutTasksInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -7873,6 +7968,7 @@ export type CompanyCreateWithoutTaskStageOutcomesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
@@ -7945,6 +8041,7 @@ export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
@@ -8031,6 +8128,7 @@ export type CompanyUpdateWithoutTaskStageOutcomesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -8103,6 +8201,7 @@ export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -8173,6 +8272,7 @@ export type CompanyCreateManyTenantInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type CompanyUpdateWithoutTenantInput = {
@@ -8224,6 +8324,7 @@ export type CompanyUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
@@ -8295,6 +8396,7 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
@@ -8366,6 +8468,7 @@ export type CompanyUncheckedUpdateManyWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 
@@ -8620,6 +8723,7 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   updatedAt?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
+  taskIntegrationContext?: boolean
   auditLogs?: boolean | Prisma.Company$auditLogsArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
   accountMappings?: boolean | Prisma.Company$accountMappingsArgs<ExtArgs>
@@ -8694,6 +8798,7 @@ export type CompanySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   updatedAt?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
+  taskIntegrationContext?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
@@ -8747,6 +8852,7 @@ export type CompanySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   updatedAt?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
+  taskIntegrationContext?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
@@ -8800,9 +8906,10 @@ export type CompanySelectScalar = {
   updatedAt?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
+  taskIntegrationContext?: boolean
 }
 
-export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "nextAgmDueDate" | "nextArDueDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "currentOfficerCount" | "currentShareholderCount" | "activeChargeCount" | "documentCount" | "hasPoc" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["company"]>
+export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "uen" | "name" | "formerName" | "dateOfNameChange" | "entityType" | "status" | "statusDate" | "incorporationDate" | "registrationDate" | "dateOfAddress" | "primarySsicCode" | "primarySsicDescription" | "secondarySsicCode" | "secondarySsicDescription" | "financialYearEndDay" | "financialYearEndMonth" | "fyeAsAtLastAr" | "homeCurrency" | "lastAgmDate" | "lastArFiledDate" | "nextAgmDueDate" | "nextArDueDate" | "accountsDueDate" | "paidUpCapitalCurrency" | "paidUpCapitalAmount" | "issuedCapitalCurrency" | "issuedCapitalAmount" | "hasCharges" | "currentOfficerCount" | "currentShareholderCount" | "activeChargeCount" | "documentCount" | "hasPoc" | "isGstRegistered" | "gstRegistrationNumber" | "gstRegistrationDate" | "isRegisteredCharity" | "charityRegistrationDate" | "charityUEN" | "isIPC" | "ipcEffectiveDate" | "ipcExpiryDate" | "annualReceiptsOrExpenditure" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason" | "taskIntegrationContext", ExtArgs["result"]["company"]>
 export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   auditLogs?: boolean | Prisma.Company$auditLogsArgs<ExtArgs>
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
@@ -8909,6 +9016,7 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     updatedAt: Date
     deletedAt: Date | null
     deletedReason: string | null
+    taskIntegrationContext: runtime.JsonValue | null
   }, ExtArgs["result"]["company"]>
   composites: {}
 }
@@ -9402,6 +9510,7 @@ export interface CompanyFieldRefs {
   readonly updatedAt: Prisma.FieldRef<"Company", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"Company", 'DateTime'>
   readonly deletedReason: Prisma.FieldRef<"Company", 'String'>
+  readonly taskIntegrationContext: Prisma.FieldRef<"Company", 'Json'>
 }
     
 

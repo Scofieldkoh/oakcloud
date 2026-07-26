@@ -10,6 +10,7 @@ import {
 } from '@/lib/validations/esigning';
 import {
   createEsigningEnvelope,
+  deleteDraftEsigningEnvelope,
   listEsigningEnvelopes,
   uploadGeneratedDocumentToEsigningEnvelope,
 } from '@/services/esigning-envelope.service';
@@ -54,6 +55,9 @@ export async function POST(request: NextRequest) {
     if (selectedGeneratedDocumentId && !taskContext) {
       throw new Error('Task context is required to select a generated document');
     }
+    if (taskContext) {
+      await requirePermission(session, 'document', 'read');
+    }
     const generatedDocument = taskContext
       ? await resolveEsigningGeneratedDocument(
         tenantId,
@@ -62,14 +66,24 @@ export async function POST(request: NextRequest) {
       )
       : null;
 
-    let result = await createEsigningEnvelope(session, tenantId, payload);
-    if (generatedDocument) {
-      result = await uploadGeneratedDocumentToEsigningEnvelope(
-        session,
-        tenantId,
-        result.id,
-        generatedDocument.id,
-      );
+    let result = await createEsigningEnvelope(
+      session,
+      tenantId,
+      payload,
+      taskContext,
+    );
+    try {
+      if (generatedDocument) {
+        result = await uploadGeneratedDocumentToEsigningEnvelope(
+          session,
+          tenantId,
+          result.id,
+          generatedDocument.id,
+        );
+      }
+    } catch (error) {
+      await deleteDraftEsigningEnvelope(session, tenantId, result.id);
+      throw error;
     }
     if (taskContext) {
       await safelyLinkEsigningEnvelopeTaskOutcome({

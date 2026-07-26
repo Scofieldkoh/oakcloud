@@ -55,7 +55,7 @@ export async function getTaskStageDetail(
   taskId: string,
   stageId: string,
 ) {
-  const stage = await prisma.taskStage.findFirst({
+  let stage = await prisma.taskStage.findFirst({
     where: {
       id: stageId,
       taskId,
@@ -65,6 +65,23 @@ export async function getTaskStageDetail(
     include: stageDetailInclude,
   });
   if (!stage) throw new NotFoundError('Task stage not found');
+
+  const recovered = !stage.outcome
+    ? await recoverTaskStageOutcomeFromDurableContext(tenantId, stage)
+    : false;
+  if (stage.outcome || recovered) {
+    await reconcileTaskStageOutcome(tenantId, stage.id);
+    stage = await prisma.taskStage.findFirst({
+      where: {
+        id: stageId,
+        taskId,
+        tenantId,
+        task: { deletedAt: null },
+      },
+      include: stageDetailInclude,
+    });
+    if (!stage) throw new NotFoundError('Task stage not found');
+  }
 
   const adapter = getStageActionAdapter(stage.actionType);
   const adapterContext = { tenantId, stage };
@@ -97,6 +114,74 @@ export async function getTaskStageDetail(
     launch: adapter.launch(adapterContext),
     outcomeSummary: adapter.outcomeSummary(resolvedOutcome),
   };
+}
+
+export async function recoverTaskStageOutcomeFromDurableContext(
+  tenantId: string,
+  stage: {
+    id: string;
+    taskId: string;
+    actionType: TaskStageActionType;
+  },
+) {
+  const contextFilter = {
+    path: ['taskStageId'],
+    equals: stage.id,
+  } as const;
+  const metadataContextFilter = {
+    path: ['taskIntegrationContext', 'taskStageId'],
+    equals: stage.id,
+  } as const;
+
+  if (stage.actionType === TaskStageActionType.COMPANY_PROFILE) {
+    const company = await prisma.company.findFirst({
+      where: {
+        tenantId,
+        deletedAt: null,
+        taskIntegrationContext: contextFilter,
+      },
+      select: { id: true },
+    });
+    if (!company) return false;
+    await linkTaskStageOutcome(tenantId, stage.id, {
+      type: TaskStageOutcomeType.COMPANY,
+      companyId: company.id,
+    });
+    return true;
+  }
+  if (stage.actionType === TaskStageActionType.DOCUMENT_GENERATION) {
+    const document = await prisma.generatedDocument.findFirst({
+      where: {
+        tenantId,
+        deletedAt: null,
+        metadata: metadataContextFilter,
+      },
+      select: { id: true },
+    });
+    if (!document) return false;
+    await linkTaskStageOutcome(tenantId, stage.id, {
+      type: TaskStageOutcomeType.GENERATED_DOCUMENT,
+      generatedDocumentId: document.id,
+    });
+    return true;
+  }
+  if (stage.actionType === TaskStageActionType.ESIGNING) {
+    const envelope = await prisma.esigningEnvelope.findFirst({
+      where: {
+        tenantId,
+        deletedAt: null,
+        metadata: metadataContextFilter,
+      },
+      select: { id: true },
+    });
+    if (!envelope) return false;
+    await linkTaskStageOutcome(tenantId, stage.id, {
+      type: TaskStageOutcomeType.ESIGNING_ENVELOPE,
+      esigningEnvelopeId: envelope.id,
+    });
+    return true;
+  }
+  return false;
 }
 
 async function requireStage(

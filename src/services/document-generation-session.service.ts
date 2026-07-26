@@ -8,6 +8,7 @@ import { NotFoundError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import type { SaveGenerationSessionInput } from '@/lib/validations/generated-document';
 import type { TenantAwareParams } from '@/lib/types';
+import type { TaskLaunchContext } from '@/services/tasks/types';
 
 interface SessionReferences {
   templateName: string | null;
@@ -76,16 +77,27 @@ async function validateSessionReferences(
 function generationSessionMetadata(
   input: SaveGenerationSessionInput,
   existingMetadata?: unknown,
+  taskIntegrationContext?: TaskLaunchContext,
 ): Prisma.InputJsonValue {
   return {
     ...metadataRecord(existingMetadata),
     generationSession: input,
+    ...(taskIntegrationContext ? {
+      taskIntegrationContext: {
+        taskId: taskIntegrationContext.taskId,
+        taskStageId: taskIntegrationContext.taskStageId,
+        ...(taskIntegrationContext.returnTo
+          ? { returnTo: taskIntegrationContext.returnTo }
+          : {}),
+      },
+    } : {}),
   } as Prisma.InputJsonValue;
 }
 
 export async function createGenerationSession(
   input: SaveGenerationSessionInput,
   params: TenantAwareParams,
+  taskIntegrationContext?: TaskLaunchContext,
 ): Promise<GenerationSessionEnvelope> {
   const references = await validateSessionReferences(input, params.tenantId);
   const title = sessionTitle(input, references.templateName);
@@ -98,7 +110,7 @@ export async function createGenerationSession(
       content: input.editedContent ?? input.previewContent ?? '',
       status: 'DRAFT',
       useLetterhead: input.useLetterhead,
-      metadata: generationSessionMetadata(input),
+      metadata: generationSessionMetadata(input, undefined, taskIntegrationContext),
       createdById: params.userId,
     },
   });

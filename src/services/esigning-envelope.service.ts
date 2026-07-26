@@ -71,6 +71,7 @@ import {
   safelyReconcileEsigningEnvelopeTaskOutcomes,
   safelyReconcileTaskStageIds,
 } from '@/services/tasks/integration.service';
+import type { TaskLaunchContext } from '@/services/tasks/types';
 
 const log = createLogger('esigning-envelope');
 
@@ -494,7 +495,8 @@ export async function getEsigningEnvelopeDetail(
 export async function createEsigningEnvelope(
   session: SessionUser,
   tenantId: string,
-  input: CreateEsigningEnvelopeInput
+  input: CreateEsigningEnvelopeInput,
+  taskIntegrationContext?: TaskLaunchContext,
 ): Promise<EsigningEnvelopeDetailDto> {
   const scope = await resolveEsigningActorScope(session, tenantId);
   if (!scope.canCreate) {
@@ -517,6 +519,17 @@ export async function createEsigningEnvelope(
       expiryWarningDays: input.expiryWarningDays ?? null,
       companyId: input.companyId ?? null,
       certificateId,
+      metadata: taskIntegrationContext
+        ? {
+          taskIntegrationContext: {
+            taskId: taskIntegrationContext.taskId,
+            taskStageId: taskIntegrationContext.taskStageId,
+            ...(taskIntegrationContext.returnTo
+              ? { returnTo: taskIntegrationContext.returnTo }
+              : {}),
+          },
+        }
+        : undefined,
     },
   });
 

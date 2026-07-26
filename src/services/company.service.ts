@@ -17,6 +17,12 @@ import type {
 import { Prisma } from '@/generated/prisma';
 import type { Company } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
+import type { TaskLaunchContext } from '@/services/tasks/types';
+import {
+  safelyCaptureCompanyTaskStageIds,
+  safelyReconcileCompanyTaskOutcomes,
+  safelyReconcileTaskStageIds,
+} from '@/services/tasks/integration.service';
 
 type Decimal = Prisma.Decimal;
 
@@ -132,7 +138,8 @@ const COMPANY_SCOPE_INCLUDE = {
 
 export async function createCompany(
   data: CreateCompanyInput,
-  params: TenantAwareParams
+  params: TenantAwareParams,
+  taskIntegrationContext?: TaskLaunchContext,
 ): Promise<Company> {
   const { tenantId, userId } = params;
 
@@ -207,6 +214,15 @@ export async function createCompany(
       isGstRegistered: data.isGstRegistered,
       gstRegistrationNumber: data.gstRegistrationNumber,
       gstRegistrationDate: data.gstRegistrationDate ? new Date(data.gstRegistrationDate) : null,
+      taskIntegrationContext: taskIntegrationContext
+        ? {
+          taskId: taskIntegrationContext.taskId,
+          taskStageId: taskIntegrationContext.taskStageId,
+          ...(taskIntegrationContext.returnTo
+            ? { returnTo: taskIntegrationContext.returnTo }
+            : {}),
+        }
+        : undefined,
     },
   });
 
@@ -222,6 +238,7 @@ export async function createCompany(
     changeSource: 'MANUAL',
     metadata: { uen: company.uen, name: company.name },
   });
+  await safelyReconcileCompanyTaskOutcomes(tenantId, company.id, userId);
 
   return company;
 }
@@ -507,6 +524,7 @@ export async function deleteCompany(
     reason,
     metadata: { uen: company.uen, name: company.name },
   });
+  await safelyReconcileCompanyTaskOutcomes(tenantId, company.id, userId);
 
   return company;
 }
@@ -553,6 +571,7 @@ export async function restoreCompany(
     changeSource: 'MANUAL',
     metadata: { uen: company.uen, name: company.name },
   });
+  await safelyReconcileCompanyTaskOutcomes(tenantId, company.id, userId);
 
   return company;
 }
@@ -579,6 +598,7 @@ export async function permanentDeleteCompany(
     throw new Error('Company must be soft-deleted before permanent deletion');
   }
 
+  const linkedTaskStageIds = await safelyCaptureCompanyTaskStageIds(tenantId, id);
   await prisma.$transaction(async (tx) => {
     await tx.companyCharge.deleteMany({ where: { companyId: id } });
     await tx.companyShareholder.deleteMany({ where: { companyId: id } });
@@ -632,6 +652,7 @@ export async function permanentDeleteCompany(
     reason: 'Permanent deletion to allow re-creation via BizFile upload',
     metadata: { uen: existing.uen, name: existing.name, permanent: true },
   });
+  await safelyReconcileTaskStageIds(tenantId, linkedTaskStageIds, userId);
 }
 
 // ============================================================================

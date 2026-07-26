@@ -158,7 +158,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const company = await createCompany(data, { tenantId, userId: session.id });
+    const company = await createCompany(
+      data,
+      { tenantId, userId: session.id },
+      taskContext,
+    );
     if (taskContext) {
       await safelyLinkCompanyTaskOutcome({
         tenantId,

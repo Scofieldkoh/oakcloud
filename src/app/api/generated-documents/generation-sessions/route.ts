@@ -31,10 +31,10 @@ export async function POST(request: NextRequest) {
         'DOCUMENT_GENERATION',
       );
     }
-    const result = await createGenerationSession(input, {
-      tenantId,
-      userId: session.id,
-    });
+    const params = { tenantId, userId: session.id };
+    const result = taskContext
+      ? await createGenerationSession(input, params, taskContext)
+      : await createGenerationSession(input, params);
     if (taskContext) {
       await safelyLinkGeneratedDocumentTaskOutcome({
         tenantId,

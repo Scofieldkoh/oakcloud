@@ -38,12 +38,18 @@ Complete. Implementation commits: `575b83d`, `0e26b0b`.
   threw during detail/reconciliation.
 - GREEN 5: both null-FK and soft-delete paths now return and persist FAILED
   attention state without breaking stage detail.
+- RED 6: 3 focused review contracts exposed non-durable post-creation
+  callbacks, missing document-read authorization before E-sign import, and
+  missing Company lifecycle/E-sign failure compensation.
+- GREEN 6: creation records now persist recovery context, stage reads repair
+  missed links and reconcile authoritative status, Company delete/restore/hard
+  delete reconcile linked tasks, and failed E-sign imports delete their draft.
 
 Final focused verification:
 
 - `npm.cmd run test:run -- __tests__/services/task-stage-registry.test.ts __tests__/services/task-module-integrations.test.ts __tests__/api/bizfile-confirm-route.test.ts __tests__/api/generated-document-generation-sessions-route.test.ts __tests__/api/generated-documents-workspace.test.ts __tests__/services/document-generator.service.test.ts __tests__/services/esigning-email-delivery.test.ts __tests__/api/esigning-document-conversion-route.test.ts`
   - 8 files passed
-  - 82 tests passed
+- 85 tests passed
 - `npx.cmd tsc --noEmit` passed.
 - Focused ESLint over all changed production and test files passed.
 - `git diff --check` passed.
@@ -74,6 +80,10 @@ Final focused verification:
 - Linking a Company outcome updates `Task.companyId` in the same transaction.
 - Lifecycle callbacks run only after the authoritative mutation succeeds.
 - Soft-deleted and SetNull outcomes reconcile to FAILED and remain readable.
+- Missed best-effort creation callbacks self-heal from durable context stored on
+  the authoritative Company, GeneratedDocument, or EsigningEnvelope.
+- E-sign document imports require authoritative document-read permission and
+  compensate failed uploads by deleting the newly-created draft envelope.
 - No task forms or business rules were duplicated in the Tasks module.
 
 ## Concerns

@@ -85,10 +85,16 @@ export async function POST(request: NextRequest) {
     // Create from template or blank based on type
     if (type === 'blank' || !documentData.templateId) {
       const data = createBlankDocumentSchema.parse(documentData);
-      document = await createBlankDocument(data, { tenantId, userId: session.id });
+      const params = { tenantId, userId: session.id };
+      document = taskContext
+        ? await createBlankDocument(data, params, taskContext)
+        : await createBlankDocument(data, params);
     } else {
       const data = createDocumentFromTemplateSchema.parse(documentData);
-      document = await createDocumentFromTemplate(data, { tenantId, userId: session.id });
+      const params = { tenantId, userId: session.id };
+      document = taskContext
+        ? await createDocumentFromTemplate(data, params, taskContext)
+        : await createDocumentFromTemplate(data, params);
     }
     if (taskContext) {
       await safelyLinkGeneratedDocumentTaskOutcome({

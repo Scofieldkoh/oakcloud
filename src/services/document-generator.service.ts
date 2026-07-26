@@ -43,6 +43,7 @@ import type {
   GeneratedDocumentStatus,
 } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
+import type { TaskLaunchContext } from '@/services/tasks/types';
 import { NotFoundError } from '@/lib/errors';
 import { readActiveGenerationSession } from '@/lib/document-generation-session';
 import { safelyReconcileGeneratedDocumentTaskOutcomes } from '@/services/tasks/integration.service';
@@ -500,7 +501,8 @@ export async function renderTemplateForGeneration(
 
 export async function createDocumentFromTemplate(
   data: CreateDocumentFromTemplateInput,
-  params: TenantAwareParams
+  params: TenantAwareParams,
+  taskIntegrationContext?: TaskLaunchContext,
 ): Promise<GeneratedDocument> {
   const { tenantId, userId } = params;
   const contactIds = data.contactIds ?? [];
@@ -569,6 +571,15 @@ export async function createDocumentFromTemplate(
     unknownPlaceholders: rendered.diagnostics.unknownPlaceholders,
     dependencySnapshot: rendered.dependencySnapshot,
     selectedParties,
+    ...(taskIntegrationContext ? {
+      taskIntegrationContext: {
+        taskId: taskIntegrationContext.taskId,
+        taskStageId: taskIntegrationContext.taskStageId,
+        ...(taskIntegrationContext.returnTo
+          ? { returnTo: taskIntegrationContext.returnTo }
+          : {}),
+      },
+    } : {}),
   };
 
   const document = data.draftId
@@ -633,7 +644,8 @@ export async function createDocumentFromTemplate(
 
 export async function createBlankDocument(
   data: CreateBlankDocumentInput,
-  params: TenantAwareParams
+  params: TenantAwareParams,
+  taskIntegrationContext?: TaskLaunchContext,
 ): Promise<GeneratedDocument> {
   const { tenantId, userId } = params;
 
@@ -656,6 +668,17 @@ export async function createBlankDocument(
       contentJson: data.contentJson ?? undefined,
       status: 'DRAFT',
       useLetterhead: data.useLetterhead,
+      metadata: taskIntegrationContext
+        ? {
+          taskIntegrationContext: {
+            taskId: taskIntegrationContext.taskId,
+            taskStageId: taskIntegrationContext.taskStageId,
+            ...(taskIntegrationContext.returnTo
+              ? { returnTo: taskIntegrationContext.returnTo }
+              : {}),
+          },
+        }
+        : undefined,
       createdById: userId,
     },
   });

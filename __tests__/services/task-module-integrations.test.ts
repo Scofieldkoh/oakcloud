@@ -339,4 +339,50 @@ describe('authoritative module callback contracts', () => {
       /deleteDraftEsigningEnvelope[\s\S]+safelyReconcileTaskStageIds/,
     );
   });
+
+  it('persists durable creation context and self-heals missed links on stage reads', () => {
+    const schema = source('prisma/schema.prisma');
+    const company = source('src/services/company.service.ts');
+    const generationSession = source('src/services/document-generation-session.service.ts');
+    const envelope = source('src/services/esigning-envelope.service.ts');
+    const stage = source('src/services/tasks/stage.service.ts');
+
+    expect(schema).toContain('taskIntegrationContext');
+    expect(company).toContain('taskIntegrationContext');
+    expect(generationSession).toContain('taskIntegrationContext');
+    expect(envelope).toContain('taskIntegrationContext');
+    expect(stage).toContain('recoverTaskStageOutcomeFromDurableContext');
+    expect(stage).toContain('reconcileTaskStageOutcome');
+  });
+
+  it('checks document read permission before resolving or exporting an E-sign document', () => {
+    const route = source('src/app/api/esigning/envelopes/route.ts');
+    const permissionIndex = route.indexOf(
+      "requirePermission(session, 'document', 'read')",
+    );
+    const resolutionIndex = route.lastIndexOf('resolveEsigningGeneratedDocument');
+    const exportIndex = route.lastIndexOf('uploadGeneratedDocumentToEsigningEnvelope');
+
+    expect(permissionIndex).toBeGreaterThan(-1);
+    expect(permissionIndex).toBeLessThan(resolutionIndex);
+    expect(permissionIndex).toBeLessThan(exportIndex);
+  });
+
+  it('reconciles company delete/restore and compensates failed E-sign imports', () => {
+    const company = source('src/services/company.service.ts');
+    const envelopeRoute = source('src/app/api/esigning/envelopes/route.ts');
+
+    expect(company).toMatch(
+      /deleteCompany[\s\S]+safelyReconcileCompanyTaskOutcomes/,
+    );
+    expect(company).toMatch(
+      /restoreCompany[\s\S]+safelyReconcileCompanyTaskOutcomes/,
+    );
+    expect(company).toMatch(
+      /permanentDeleteCompany[\s\S]+safelyReconcileTaskStageIds/,
+    );
+    expect(envelopeRoute).toMatch(
+      /uploadGeneratedDocumentToEsigningEnvelope[\s\S]+deleteDraftEsigningEnvelope/,
+    );
+  });
 });
