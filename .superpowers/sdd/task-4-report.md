@@ -70,6 +70,12 @@ Complete. Implementation commits: `575b83d`, `0e26b0b`.
   the outcome transaction and treats a mismatched callback as stale before any
   outcome, Task company, stage status, or audit write. Manual links without a
   recovery row and matching/idempotent callbacks retain existing behavior.
+- RED 11: when a newer Company recovery association existed but its callback
+  failed, stage reads kept reconciling the older stored Company outcome.
+- GREEN 11: Company stage reads now lock Task then recovery, replace a stale
+  stored outcome, synchronize `Task.companyId`, derive and persist stage/task
+  status, and then perform normal reconciliation. Matching/no-recovery manual
+  outcomes remain unchanged; soft-deleted recovered Companies persist FAILED.
 
 Final focused verification:
 
@@ -102,6 +108,12 @@ Final singular-stage ownership verification:
 Final stale-callback race verification:
 
 - 4 covering files passed with 67 tests.
+- `npx.cmd tsc --noEmit` passed.
+- Focused ESLint and `git diff --check` passed.
+
+Final existing-outcome self-heal verification:
+
+- 4 covering files passed with 70 tests.
 - `npx.cmd tsc --noEmit` passed.
 - Focused ESLint and `git diff --check` passed.
 
