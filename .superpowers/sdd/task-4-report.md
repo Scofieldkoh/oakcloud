@@ -44,6 +44,12 @@ Complete. Implementation commits: `575b83d`, `0e26b0b`.
 - GREEN 6: creation records now persist recovery context, stage reads repair
   missed links and reconcile authoritative status, Company delete/restore/hard
   delete reconcile linked tasks, and failed E-sign imports delete their draft.
+- RED 7: focused BizFile tests showed that neither the Company upsert create
+  branch nor its existing-company update branch stored the validated task
+  context needed by stage-read recovery.
+- GREEN 7: `processBizFileExtraction` now writes the optional context into both
+  Company upsert branches atomically, while no-context confirmations retain
+  their existing service call and completed confirmations retain idempotency.
 
 Final focused verification:
 
@@ -54,6 +60,12 @@ Final focused verification:
 - Focused ESLint over all changed production and test files passed.
 - `git diff --check` passed.
 - The full suite was intentionally not run, per user instruction.
+
+Final BizFile review verification:
+
+- 3 covering files passed with 41 tests.
+- `npx.cmd tsc --noEmit` passed.
+- Focused ESLint and `git diff --check` passed.
 
 ## Compatibility verification
 
@@ -69,6 +81,8 @@ Final focused verification:
 - Post-commit task link/reconcile failures are logged and isolated from the
   successful Company, Document, or E-signing operation.
 - The already-completed BizFile branch can repair a missed task outcome link.
+- BizFile create and existing-company update flows persist recovery context in
+  the same transaction as the authoritative Company mutation.
 
 ## Self-review
 
