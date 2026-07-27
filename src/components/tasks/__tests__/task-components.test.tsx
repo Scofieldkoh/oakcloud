@@ -5,7 +5,9 @@ import { TaskFormModal } from '@/components/tasks/task-form-modal';
 import { TaskList } from '@/components/tasks/task-list';
 import { TaskStageModal } from '@/components/tasks/task-stage-modal';
 import { TaskStagePipeline } from '@/components/tasks/task-stage-pipeline';
+import { TaskStageActionType } from '@/generated/prisma';
 import type { TaskPipeline } from '@/hooks/use-task-pipelines';
+import { getStageActionAdapter } from '@/services/tasks/action-registry';
 import type {
   TaskListItem,
   TaskStageDetail,
@@ -226,6 +228,69 @@ describe('TaskFormModal', () => {
 });
 
 describe('TaskStageModal', () => {
+  it('honors the Company stage create policy while keeping existing-company linking available', () => {
+    const companyAdapter = getStageActionAdapter(TaskStageActionType.COMPANY_PROFILE);
+    const makeCompanyStage = (allowCreate: boolean): TaskStageDetail => ({
+      ...stageDetail,
+      id: 'stage-company',
+      actionType: 'COMPANY_PROFILE',
+      blockers: [],
+      launch: companyAdapter.launch({
+        tenantId: 'tenant-1',
+        stage: {
+          id: 'stage-company',
+          tenantId: 'tenant-1',
+          taskId: task.id,
+          actionType: TaskStageActionType.COMPANY_PROFILE,
+          actionConfig: { allowCreate },
+          status: 'NOT_STARTED',
+          task: { companyId: null },
+        },
+      }),
+    });
+    const onTransition = vi.fn();
+    const { rerender } = render(
+      <TaskStageModal
+        isOpen
+        stage={makeCompanyStage(false)}
+        companies={[task.company!]}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={onTransition}
+      />,
+    );
+
+    expect(screen.queryByRole('link', { name: 'Create company' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Create a new company' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Existing company' }), {
+      target: { value: task.company!.id },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Link selected company' }));
+    expect(onTransition).toHaveBeenCalledWith({
+      action: 'linkOutcome',
+      outcome: { type: 'COMPANY', companyId: task.company!.id },
+    });
+
+    rerender(
+      <TaskStageModal
+        isOpen
+        stage={makeCompanyStage(true)}
+        companies={[task.company!]}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={onTransition}
+      />,
+    );
+    fireEvent.change(screen.getByRole('combobox', { name: 'Existing company' }), {
+      target: { value: '' },
+    });
+    expect(screen.getByRole('link', { name: 'Create company' })).toHaveAttribute(
+      'href',
+      '/companies/new?taskId=task-1&taskStageId=stage-company&returnTo=%2Ftasks',
+    );
+    expect(screen.getByRole('option', { name: 'Create a new company' })).toBeInTheDocument();
+  });
+
   it('keeps inspection available, shows all detail, and exposes exactly one blocked primary action', () => {
     render(
       <TaskStageModal

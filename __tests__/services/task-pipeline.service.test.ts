@@ -278,6 +278,35 @@ describe('task pipeline service', () => {
     expect(result).toEqual(persistedCopy);
   });
 
+  it('rejects an uncurated persisted stage icon before duplicating the pipeline', async () => {
+    mocks.pipelineFindFirst.mockResolvedValueOnce({
+      id: 'pipeline-1',
+      tenantId: 'tenant-a',
+      name: 'Legacy onboarding',
+      description: null,
+      versions: [{
+        id: 'version-1',
+        version: 1,
+        stages: [{
+          name: 'Legacy stage',
+          description: null,
+          position: 0,
+          actionType: 'MANUAL',
+          icon: 'UntrustedIcon',
+          isRequired: true,
+          actionConfig: {},
+        }],
+      }],
+    });
+
+    await expect(
+      duplicateTaskPipeline('tenant-a', 'pipeline-1', {}, 'user-1'),
+    ).rejects.toThrow();
+
+    expect(mocks.pipelineCreate).not.toHaveBeenCalled();
+    expect(mocks.versionCreate).not.toHaveBeenCalled();
+  });
+
   it('validates stage action configuration through the registry before publishing', async () => {
     await expect(createTaskPipeline('tenant-a', {
       name: 'Broken template',

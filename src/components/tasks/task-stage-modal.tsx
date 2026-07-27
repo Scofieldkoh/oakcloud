@@ -84,6 +84,8 @@ export function TaskStageModal({
   }, [stage?.id, stage?.isRequired, stage?.notes, taskCompanyId]);
 
   const resolvedLaunchHref = useMemo(() => stage ? launchHref(stage) : null, [stage]);
+  const canCreateCompany = stage?.actionType === 'COMPANY_PROFILE'
+    && resolvedLaunchHref?.startsWith('/companies/new');
 
   if (!isOpen) return null;
 
@@ -139,6 +141,17 @@ export function TaskStageModal({
           leftIcon={<Link2 />}
         >
           Link selected company
+        </Button>
+      );
+    }
+    if (stage.actionType === 'COMPANY_PROFILE' && !canCreateCompany) {
+      return (
+        <Button
+          data-testid="stage-primary-action"
+          disabled
+          leftIcon={<Link2 />}
+        >
+          Select an existing company
         </Button>
       );
     }
@@ -219,13 +232,19 @@ export function TaskStageModal({
                   disabled={isMutating}
                   className="input input-sm w-full"
                 >
-                  <option value="">Create a new company</option>
+                  <option value="">
+                    {canCreateCompany
+                      ? 'Create a new company'
+                      : 'Select a company'}
+                  </option>
                   {companies.map((company) => (
                     <option key={company.id} value={company.id}>{company.name}</option>
                   ))}
                 </select>
                 <p className="mt-1 text-xs text-text-muted">
-                  Select an existing company to link it, or continue to create a new one.
+                  {canCreateCompany
+                    ? 'Select an existing company to link it, or continue to create a new one.'
+                    : 'Select an existing company to link it to this task.'}
                 </p>
               </section>
             ) : null}

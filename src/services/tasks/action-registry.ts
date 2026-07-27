@@ -89,12 +89,15 @@ const companyAdapter: StageActionAdapter = {
   defaultIcon: 'Building2',
   parseConfig: (value) => parseWith(companyConfigSchema, value),
   blockers: noBlockers,
-  launch: (context) => launch(
-    context.stage.task?.companyId
+  launch: (context) => {
+    const config = companyConfigSchema.parse(context.stage.actionConfig ?? {});
+    const href = context.stage.task?.companyId
       ? `/companies/${context.stage.task.companyId}`
-      : '/companies/new',
-    context,
-  ),
+      : config.allowCreate === false
+        ? null
+        : '/companies/new';
+    return launch(href, context);
+  },
   outcomeSummary: (outcome) => (
     outcome?.entity.kind === 'company'
       ? `Linked company: ${outcome.entity.name}`

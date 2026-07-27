@@ -8,6 +8,10 @@ const migration = readFileSync(
   join(root, "prisma", "migrations", "20260724090000_modular_tasks_reset", "migration.sql"),
   "utf8",
 );
+const snapshotGuardsMigration = readFileSync(
+  join(root, "prisma", "migrations", "20260727030000_task_snapshot_guards", "migration.sql"),
+  "utf8",
+);
 const sharedDocumentsCleanupMigration = readFileSync(
   join(root, "prisma", "migrations", "20260627231500_remove_shared_documents", "migration.sql"),
   "utf8",
@@ -28,7 +32,7 @@ function schemaBlock(kind: "model" | "enum", name: string): string {
 }
 
 function migrationFunction(name: string): string {
-  const match = migration.match(
+  const match = snapshotGuardsMigration.match(
     new RegExp(
       `CREATE OR REPLACE FUNCTION "${name}"\\(\\)[\\s\\S]*?\\$\\$ LANGUAGE plpgsql;`,
     ),
@@ -101,8 +105,10 @@ describe("modular task schema reset", () => {
 
     expect(taskStageStatus).toMatch(/\bWAITING\b/);
     expect(taskStageStatus).not.toMatch(/\bBLOCKED\b/);
-    expect(migration).toMatch(/CREATE TYPE "TaskStageStatus"[\s\S]*?'WAITING'/);
-    expect(migration).not.toMatch(/CREATE TYPE "TaskStageStatus"[\s\S]*?'BLOCKED'/);
+    expect(migration).toMatch(/CREATE TYPE "TaskStageStatus"[\s\S]*?'BLOCKED'/);
+    expect(snapshotGuardsMigration).toMatch(
+      /ALTER TYPE "TaskStageStatus" RENAME VALUE 'BLOCKED' TO 'WAITING'/,
+    );
     expect(generatedEnums).toMatch(/WAITING: 'WAITING'/);
     expect(generatedEnums).not.toMatch(/BLOCKED: 'BLOCKED'/);
   });
@@ -140,7 +146,7 @@ describe("modular task schema reset", () => {
     const pipelineVersionGuard = migrationFunction("prevent_published_task_pipeline_version_change");
     const pipelineStageGuard = migrationFunction("prevent_published_task_pipeline_stage_change");
 
-    expect(migration).toContain('"published_at" TIMESTAMP(3)');
+    expect(snapshotGuardsMigration).toContain('"published_at" TIMESTAMP(3)');
     expect(pipelineVersionGuard).toContain('OLD."published_at" IS NOT NULL');
     expect(pipelineVersionGuard).toContain('NEW."published_at" IS DISTINCT FROM OLD."published_at"');
     expect(pipelineStageGuard).toContain('"published_at" IS NOT NULL');
@@ -150,7 +156,7 @@ describe("modular task schema reset", () => {
       ["prevent_published_task_pipeline_stage_change", "task_pipeline_stages", "INSERT OR UPDATE OR DELETE"],
     ]) {
       expect(migrationFunction(functionName)).not.toBe("");
-      expect(migration).toMatch(new RegExp(`CREATE TRIGGER "${functionName}_trigger"[\\s\\S]*?BEFORE ${event} ON "${table}"`));
+      expect(snapshotGuardsMigration).toMatch(new RegExp(`CREATE TRIGGER "${functionName}_trigger"[\\s\\S]*?BEFORE ${event} ON "${table}"`));
     }
   });
 
@@ -159,7 +165,7 @@ describe("modular task schema reset", () => {
     const taskStageGuard = migrationFunction("prevent_locked_task_stage_change");
     const checklistGuard = migrationFunction("prevent_locked_task_stage_checklist_item_change");
 
-    expect(migration).toContain('"snapshot_locked_at" TIMESTAMP(3)');
+    expect(snapshotGuardsMigration).toContain('"snapshot_locked_at" TIMESTAMP(3)');
     expect(taskGuard).toContain('OLD."snapshot_locked_at" IS NOT NULL');
     expect(taskGuard).toContain('NEW."snapshot_locked_at" IS DISTINCT FROM OLD."snapshot_locked_at"');
     expect(taskGuard).toContain('NEW."pipeline_version_id" IS DISTINCT FROM OLD."pipeline_version_id"');
@@ -170,12 +176,12 @@ describe("modular task schema reset", () => {
     for (const operationalField of ["status", "assignee_id", "notes", "skip_reason", "started_at", "completed_at"]) {
       expect(taskStageGuard).not.toContain(`NEW."${operationalField}"`);
     }
-    expect(migration).toMatch(/CREATE TRIGGER "prevent_locked_task_stage_change_trigger"[\s\S]*?BEFORE INSERT OR UPDATE OR DELETE ON "task_stages"/);
+    expect(snapshotGuardsMigration).toMatch(/CREATE TRIGGER "prevent_locked_task_stage_change_trigger"[\s\S]*?BEFORE INSERT OR UPDATE OR DELETE ON "task_stages"/);
 
     expect(checklistGuard).not.toBe("");
     for (const field of ["tenant_id", "task_stage_id", "label", "position"]) {
       expect(checklistGuard).toContain(`NEW."${field}" IS DISTINCT FROM OLD."${field}"`);
     }
-    expect(migration).toMatch(/CREATE TRIGGER "prevent_locked_task_stage_checklist_item_change_trigger"[\s\S]*?BEFORE INSERT OR UPDATE OR DELETE ON "task_stage_checklist_items"/);
+    expect(snapshotGuardsMigration).toMatch(/CREATE TRIGGER "prevent_locked_task_stage_checklist_item_change_trigger"[\s\S]*?BEFORE INSERT OR UPDATE OR DELETE ON "task_stage_checklist_items"/);
   });
 });

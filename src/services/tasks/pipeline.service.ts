@@ -324,7 +324,12 @@ export async function duplicateTaskPipeline(
         checklistItems,
       };
     });
-    await validateStageConfigs(tx, tenantId, duplicateStages);
+    const parsedDuplicateStages = createTaskPipelineSchema.parse({
+      name: source.name,
+      description: source.description,
+      stages: duplicateStages,
+    }).stages;
+    await validateStageConfigs(tx, tenantId, parsedDuplicateStages);
     const pipeline = await tx.taskPipeline.create({
       data: {
         tenantId,
@@ -336,7 +341,7 @@ export async function duplicateTaskPipeline(
       tenantId,
       pipelineId: pipeline.id,
       version: 1,
-      stages: duplicateStages,
+      stages: parsedDuplicateStages,
     });
 
     await createAuditLog({
