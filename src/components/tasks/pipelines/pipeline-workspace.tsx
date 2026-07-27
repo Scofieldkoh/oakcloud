@@ -20,17 +20,44 @@ export function PipelinesListWorkspace({ onCreate, onEdit }: { onCreate: () => v
   if (isLoading) return <div className="card p-6 text-sm text-text-secondary" role="status">Loading pipelines…</div>;
   if (error) return <Alert variant="error">{error.message}</Alert>;
   const selected = pipelines.find((pipeline) => pipeline.id === archiveId);
-  return <><PipelineList pipelines={pipelines} onCreate={onCreate} onEdit={(pipeline) => onEdit(pipeline.id)} onDuplicate={(pipeline) => duplicate.mutate({ id: pipeline.id })} onArchive={(pipeline) => setArchiveId(pipeline.id)} /><ConfirmDialog isOpen={Boolean(selected)} onClose={() => setArchiveId(null)} onConfirm={async (reason) => { if (selected && reason) { await archive.mutateAsync({ id: selected.id, reason }); setArchiveId(null); } }} title="Archive pipeline?" description="Archived pipelines cannot be used for new tasks." confirmLabel="Archive pipeline" requireReason reasonMinLength={1} isLoading={archive.isPending} /></>;
+  return <div className="space-y-4">
+    {duplicate.error && <Alert variant="error" title="Could not duplicate pipeline" onClose={duplicate.reset}>{duplicate.error.message}</Alert>}
+    {archive.error && <Alert variant="error" title="Could not archive pipeline" onClose={archive.reset}>{archive.error.message}</Alert>}
+    <PipelineList
+      pipelines={pipelines}
+      onCreate={onCreate}
+      onEdit={(pipeline) => onEdit(pipeline.id)}
+      onDuplicate={(pipeline) => duplicate.mutate({ id: pipeline.id })}
+      onArchive={(pipeline) => { archive.reset(); setArchiveId(pipeline.id); }}
+      duplicatingId={duplicate.isPending ? duplicate.variables?.id ?? null : null}
+    />
+    <ConfirmDialog
+      isOpen={Boolean(selected)}
+      onClose={() => setArchiveId(null)}
+      onConfirm={async (reason) => {
+        if (selected && reason) {
+          await archive.mutateAsync({ id: selected.id, reason });
+          setArchiveId(null);
+        }
+      }}
+      title="Archive pipeline?"
+      description="Archived pipelines cannot be used for new tasks."
+      confirmLabel="Archive pipeline"
+      requireReason
+      reasonMinLength={1}
+      isLoading={archive.isPending}
+    />
+  </div>;
 }
 
 export function NewPipelineWorkspace({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
   const create = useCreateTaskPipeline(); const templates = useTemplateOptions();
-  return <>{create.error && <Alert variant="error" className="mb-4">{create.error.message}</Alert>}<PipelineBuilder initialDraft={{ name: '', description: '', stages: [] }} templates={templates} onCancel={onCancel} isSaving={create.isPending} onSave={async (payload) => { await create.mutateAsync(payload); onSaved(); }} /></>;
+  return <>{create.error && <Alert variant="error" title="Could not create pipeline" className="mb-4" onClose={create.reset}>{create.error.message}</Alert>}<PipelineBuilder initialDraft={{ name: '', description: '', stages: [] }} templates={templates} onCancel={onCancel} isSaving={create.isPending} onSave={async (payload) => { await create.mutateAsync(payload); onSaved(); }} /></>;
 }
 
 export function EditPipelineWorkspace({ pipelineId, onSaved, onCancel }: { pipelineId: string; onSaved: () => void; onCancel: () => void }) {
   const { data: pipeline, isLoading, error } = useTaskPipeline(pipelineId); const update = useUpdateTaskPipeline(); const templates = useTemplateOptions();
   if (isLoading) return <div className="card p-6 text-sm text-text-secondary" role="status">Loading pipeline…</div>;
   if (error || !pipeline) return <Alert variant="error">{error?.message ?? 'Pipeline not found'}</Alert>;
-  return <>{update.error && <Alert variant="error" className="mb-4">{update.error.message}</Alert>}<PipelineBuilder key={pipeline.id} initialDraft={pipelineToDraft(pipeline)} templates={templates} onCancel={onCancel} isSaving={update.isPending} onSave={async (payload: TaskPipelineCreatePayload) => { await update.mutateAsync({ id: pipeline.id, payload }); onSaved(); }} /></>;
+  return <>{update.error && <Alert variant="error" title="Could not update pipeline" className="mb-4" onClose={update.reset}>{update.error.message}</Alert>}<PipelineBuilder key={pipeline.id} initialDraft={pipelineToDraft(pipeline)} templates={templates} onCancel={onCancel} isSaving={update.isPending} onSave={async (payload: TaskPipelineCreatePayload) => { await update.mutateAsync({ id: pipeline.id, payload }); onSaved(); }} /></>;
 }

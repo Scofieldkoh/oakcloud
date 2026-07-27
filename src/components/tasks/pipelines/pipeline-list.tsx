@@ -4,12 +4,13 @@ import { Archive, Copy, Pencil, Plus, Workflow } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { TaskPipeline } from '@/hooks/use-task-pipelines';
 
-export function PipelineList({ pipelines, onCreate, onEdit, onDuplicate, onArchive }: {
+export function PipelineList({ pipelines, onCreate, onEdit, onDuplicate, onArchive, duplicatingId = null }: {
   pipelines: TaskPipeline[];
   onCreate: () => void;
   onEdit: (pipeline: TaskPipeline) => void;
   onDuplicate: (pipeline: TaskPipeline) => void;
   onArchive: (pipeline: TaskPipeline) => void;
+  duplicatingId?: string | null;
 }) {
   return (
     <section aria-labelledby="pipelines-heading" className="space-y-4">
@@ -28,7 +29,7 @@ export function PipelineList({ pipelines, onCreate, onEdit, onDuplicate, onArchi
               <div className="flex items-center justify-between gap-2 text-xs text-text-muted"><span>{activeVersion?.stages.length ?? 0} stages</span><span>v{activeVersion?.version ?? 0}</span></div>
               <div className="flex flex-wrap gap-2 border-t border-border-primary pt-3">
                 <Button variant="secondary" size="xs" leftIcon={<Pencil />} onClick={() => onEdit(pipeline)} aria-label={`Edit ${pipeline.name}`}>Edit</Button>
-                <Button variant="ghost" size="xs" leftIcon={<Copy />} onClick={() => onDuplicate(pipeline)} aria-label={`Duplicate ${pipeline.name}`}>Duplicate</Button>
+                <Button variant="ghost" size="xs" leftIcon={<Copy />} isLoading={duplicatingId === pipeline.id} onClick={() => onDuplicate(pipeline)} aria-label={`Duplicate ${pipeline.name}`}>Duplicate</Button>
                 <Button variant="ghost" size="xs" leftIcon={<Archive />} className="text-status-error hover:text-status-error" onClick={() => onArchive(pipeline)} aria-label={`Archive ${pipeline.name}`}>Archive</Button>
               </div>
             </article>;
