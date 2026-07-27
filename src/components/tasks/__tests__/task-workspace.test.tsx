@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskWorkspace } from '@/components/tasks/task-workspace';
@@ -91,14 +92,33 @@ const stage: TaskStageDetail = {
   outcomeSummary: null,
 };
 
-function mutationMock(mutateAsync: (variables: unknown) => Promise<unknown>) {
+function useMutationMock(mutation: (variables: unknown) => Promise<unknown>) {
+  const [error, setError] = useState<Error | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const [variables, setVariables] = useState<unknown>();
+
+  const mutateAsync = async (nextVariables: unknown) => {
+    setError(null);
+    setIsPending(true);
+    setVariables(nextVariables);
+    try {
+      return await mutation(nextVariables);
+    } catch (caughtError) {
+      const nextError = caughtError instanceof Error ? caughtError : new Error('Mutation failed');
+      setError(nextError);
+      throw nextError;
+    } finally {
+      setIsPending(false);
+    }
+  };
+
   return {
-    error: null,
-    isPending: false,
-    mutate: (variables: unknown) => { void mutateAsync(variables); },
+    error,
+    isPending,
+    mutate: (nextVariables: unknown) => { void mutateAsync(nextVariables).catch(() => undefined); },
     mutateAsync,
-    reset: vi.fn(),
-    variables: undefined,
+    reset: () => setError(null),
+    variables,
   };
 }
 
@@ -119,12 +139,12 @@ beforeEach(() => {
   hookMocks.stageUpdate.mockResolvedValue(task);
   hookMocks.status.mockResolvedValue(task);
   hookMocks.update.mockResolvedValue(task);
-  hookMocks.useArchiveTask.mockReturnValue(mutationMock(hookMocks.archive));
-  hookMocks.useCreateTask.mockReturnValue(mutationMock(hookMocks.create));
-  hookMocks.useTaskStageTransition.mockReturnValue(mutationMock(hookMocks.stageTransition));
-  hookMocks.useUpdateTaskStage.mockReturnValue(mutationMock(hookMocks.stageUpdate));
-  hookMocks.useTaskStatusMutation.mockReturnValue(mutationMock(hookMocks.status));
-  hookMocks.useUpdateTask.mockReturnValue(mutationMock(hookMocks.update));
+  hookMocks.useArchiveTask.mockImplementation(() => useMutationMock(hookMocks.archive));
+  hookMocks.useCreateTask.mockImplementation(() => useMutationMock(hookMocks.create));
+  hookMocks.useTaskStageTransition.mockImplementation(() => useMutationMock(hookMocks.stageTransition));
+  hookMocks.useUpdateTaskStage.mockImplementation(() => useMutationMock(hookMocks.stageUpdate));
+  hookMocks.useTaskStatusMutation.mockImplementation(() => useMutationMock(hookMocks.status));
+  hookMocks.useUpdateTask.mockImplementation(() => useMutationMock(hookMocks.update));
 });
 
 describe('TaskWorkspace', () => {
@@ -175,5 +195,89 @@ describe('TaskWorkspace', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /Review stage/i })[0]);
     await waitFor(() => expect(hookMocks.useTaskStage).toHaveBeenLastCalledWith(task.id, 'stage-1'));
     expect(screen.getByRole('dialog')).toHaveTextContent('Review records.');
+  });
+
+  it('keeps a failed stage transition visible in the modal and retries it', async () => {
+    hookMocks.stageTransition
+      .mockRejectedValueOnce(new Error('Stage transition failed'))
+      .mockResolvedValueOnce(task);
+
+    render(<TaskWorkspace />);
+    fireEvent.click(screen.getAllByRole('button', { name: /Review stage/i })[0]);
+    const dialog = screen.getByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Complete stage' }));
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Stage transition failed');
+    expect(dialog).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Complete stage' }));
+    await waitFor(() => expect(hookMocks.stageTransition).toHaveBeenCalledTimes(2));
+  });
+
+  it('retains stage notes after an update failure and retries them from the modal', async () => {
+    hookMocks.stageUpdate
+      .mockRejectedValueOnce(new Error('Stage update failed'))
+      .mockResolvedValueOnce(task);
+
+    render(<TaskWorkspace />);
+    fireEvent.click(screen.getAllByRole('button', { name: /Review stage/i })[0]);
+    const dialog = screen.getByRole('dialog');
+    const notes = within(dialog).getByRole('textbox', { name: 'Notes' });
+    fireEvent.change(notes, { target: { value: 'Keep this note for retry' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save notes' }));
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Stage update failed');
+    expect(notes).toHaveValue('Keep this note for retry');
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save notes' }));
+    await waitFor(() => {
+      expect(hookMocks.stageUpdate).toHaveBeenCalledTimes(2);
+      expect(hookMocks.stageUpdate).toHaveBeenLastCalledWith({
+        taskId: task.id,
+        stageId: stage.id,
+        payload: { notes: 'Keep this note for retry' },
+      });
+    });
+  });
+
+  it('keeps a failed cancellation visible in its confirmation dialog and retries it', async () => {
+    hookMocks.status
+      .mockRejectedValueOnce(new Error('Cancellation failed'))
+      .mockResolvedValueOnce(task);
+
+    render(<TaskWorkspace />);
+    fireEvent.click(screen.getAllByRole('button', { name: `Cancel ${task.title}` })[0]);
+    const dialog = screen.getByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel task' }));
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Cancellation failed');
+    expect(dialog).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel task' }));
+    await waitFor(() => expect(hookMocks.status).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('retains the archive reason after failure and retries it from the confirmation dialog', async () => {
+    hookMocks.archive
+      .mockRejectedValueOnce(new Error('Archive failed'))
+      .mockResolvedValueOnce(task);
+
+    render(<TaskWorkspace />);
+    fireEvent.click(screen.getAllByRole('button', { name: `Delete ${task.title}` })[0]);
+    const dialog = screen.getByRole('dialog');
+    const reason = within(dialog).getByRole('textbox', { name: 'Reason' });
+    fireEvent.change(reason, { target: { value: 'Created in error' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete task' }));
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Archive failed');
+    expect(reason).toHaveValue('Created in error');
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete task' }));
+    await waitFor(() => {
+      expect(hookMocks.archive).toHaveBeenCalledTimes(2);
+      expect(hookMocks.archive).toHaveBeenLastCalledWith({ id: task.id, reason: 'Created in error' });
+    });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 });

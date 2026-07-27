@@ -44,8 +44,11 @@ function launchHref(stage: TaskStageDetail) {
 }
 
 function primaryActionLabel(stage: TaskStageDetail) {
-  if (stage.status === 'COMPLETED' || stage.status === 'SKIPPED') return 'Reopen stage';
-  if (stage.actionType === 'MANUAL') return 'Complete stage';
+  if (stage.actionType === 'MANUAL') {
+    return stage.status === 'COMPLETED' || stage.status === 'SKIPPED'
+      ? 'Reopen stage'
+      : 'Complete stage';
+  }
   return {
     COMPANY_PROFILE: 'Open company workspace',
     DOCUMENT_GENERATION: 'Open document generator',
@@ -79,16 +82,24 @@ export function TaskStageModal({
 
   if (!isOpen) return null;
 
+  const runAction = (action: () => void | Promise<void>) => {
+    try {
+      void Promise.resolve(action()).catch(() => undefined);
+    } catch {
+      // The owning workspace supplies the recoverable mutation error.
+    }
+  };
+
   const renderPrimaryAction = () => {
     if (!stage) return null;
     const label = primaryActionLabel(stage);
     const isBlocked = stage.blockers.length > 0;
 
-    if (stage.status === 'COMPLETED' || stage.status === 'SKIPPED') {
+    if (stage.actionType === 'MANUAL' && (stage.status === 'COMPLETED' || stage.status === 'SKIPPED')) {
       return (
         <Button
           data-testid="stage-primary-action"
-          onClick={() => onTransition({ action: 'reopen' })}
+          onClick={() => runAction(() => onTransition({ action: 'reopen' }))}
           isLoading={isMutating}
           leftIcon={<CheckCircle2 />}
         >
@@ -100,7 +111,7 @@ export function TaskStageModal({
       return (
         <Button
           data-testid="stage-primary-action"
-          onClick={() => onTransition({ action: 'complete' })}
+          onClick={() => runAction(() => onTransition({ action: 'complete' }))}
           disabled={isBlocked}
           isLoading={isMutating}
           leftIcon={<CheckCircle2 />}
@@ -180,7 +191,7 @@ export function TaskStageModal({
                       <input
                         type="checkbox"
                         checked={item.isCompleted}
-                        onChange={(event) => onTransition({ action: 'checklist', checklistItemId: item.id, isCompleted: event.target.checked })}
+                        onChange={(event) => runAction(() => onTransition({ action: 'checklist', checklistItemId: item.id, isCompleted: event.target.checked }))}
                         disabled={isMutating}
                         className="h-4 w-4 rounded border-border-secondary text-oak-primary focus:ring-oak-primary"
                       />
@@ -204,7 +215,14 @@ export function TaskStageModal({
                 className="input w-full resize-y px-3 py-2 text-sm"
               />
               <div className="mt-2 flex justify-end">
-                <Button variant="secondary" size="xs" onClick={() => onUpdateMetadata({ notes: notes.trim() || null })} disabled={isMutating || notes === (stage.notes ?? '')}>Save notes</Button>
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  onClick={() => runAction(() => onUpdateMetadata({ notes: notes.trim() || null }))}
+                  disabled={isMutating || notes === (stage.notes ?? '')}
+                >
+                  Save notes
+                </Button>
               </div>
             </section>
 
@@ -248,7 +266,7 @@ export function TaskStageModal({
                             setSkipError('Skip reason is required');
                             return;
                           }
-                          void onTransition({ action: 'skip', reason: skipReason.trim() });
+                          runAction(() => onTransition({ action: 'skip', reason: skipReason.trim() }));
                         }}
                       >
                         Confirm skip

@@ -269,6 +269,72 @@ describe('TaskStageModal', () => {
     );
   });
 
+  it.each(['COMPLETED', 'SKIPPED'] as const)(
+    'keeps the authoritative integrated workspace action for a %s stage',
+    (status) => {
+      const onTransition = vi.fn();
+      render(
+        <TaskStageModal
+          isOpen
+          stage={{ ...stageDetail, status, blockers: [] }}
+          onClose={vi.fn()}
+          onUpdateMetadata={vi.fn()}
+          onTransition={onTransition}
+        />,
+      );
+
+      const primaryActions = screen.getAllByTestId('stage-primary-action');
+      expect(primaryActions).toHaveLength(1);
+      expect(primaryActions[0]).toHaveTextContent('Open document generator');
+      expect(primaryActions[0]).toHaveAttribute(
+        'href',
+        '/document-generation?taskId=task-1&taskStageId=stage-2&returnTo=%2Ftasks',
+      );
+      expect(screen.queryByRole('button', { name: 'Reopen stage' })).not.toBeInTheDocument();
+      expect(onTransition).not.toHaveBeenCalled();
+    },
+  );
+
+  it('keeps a blocked integrated terminal stage inspectable with one disabled workspace action', () => {
+    render(
+      <TaskStageModal
+        isOpen
+        stage={{ ...stageDetail, status: 'COMPLETED' }}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={vi.fn()}
+      />,
+    );
+
+    const primaryActions = screen.getAllByTestId('stage-primary-action');
+    expect(primaryActions).toHaveLength(1);
+    expect(primaryActions[0]).toHaveTextContent('Open document generator');
+    expect(primaryActions[0]).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Reopen stage' })).not.toBeInTheDocument();
+  });
+
+  it('still reopens a completed manual stage', () => {
+    const onTransition = vi.fn().mockResolvedValue(undefined);
+    render(
+      <TaskStageModal
+        isOpen
+        stage={{
+          ...stageDetail,
+          actionType: 'MANUAL',
+          status: 'COMPLETED',
+          blockers: [],
+          launch: { href: null, context: stageDetail.launch.context },
+        }}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={onTransition}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen stage' }));
+    expect(onTransition).toHaveBeenCalledWith({ action: 'reopen' });
+  });
+
   it('requires a reason to skip optional stages and never offers skip for required stages', () => {
     const onTransition = vi.fn();
     const optionalStage = {

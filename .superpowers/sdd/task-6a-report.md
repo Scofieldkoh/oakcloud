@@ -105,6 +105,33 @@ None in Task 6A. Legacy Workflow routes, components, hooks, services, tests, and
 - Rendered browser acceptance is deferred by the parent to the integrated app after Task 6B/navigation. No visual-QA harness is committed.
 - A direct Next.js dev boot after the route rename progressed past route collection but required a configured `DATABASE_URL`; the repository’s authenticated integrated runtime is outside this bounded component task.
 
+## Review fix round 1
+
+### Findings addressed
+
+- Integrated completed and skipped stages now retain their authoritative workspace launch action. Reopening is offered only for manual completed or skipped stages, so integrated stages no longer call the manual-only reopen transition.
+- Integrated terminal stages still respect blockers and render exactly one primary action; a blocked action remains visible but disabled.
+- Stage transition and metadata mutation errors now render inside the active stage modal. Rejected callbacks are handled locally, the modal stays open, and notes remain available for retry.
+- Cancellation and archival mutation errors now render inside their active confirmation dialogs. The dialog remains open on failure, archival reason input is retained, and each dialog closes only after a successful retry.
+
+### TDD evidence
+
+- RED: 7 intended failures across the stage modal and workspace suites. Integrated terminal stages rendered `Reopen stage`; mutation errors were absent from all four active overlays; Vitest reported two unhandled stage mutation rejections.
+- GREEN: 2 focused files, 22/22 tests passed with no unhandled rejection report.
+
+### Verification
+
+- `npx.cmd vitest run src/components/tasks/__tests__/task-components.test.tsx src/components/tasks/__tests__/task-workspace.test.tsx`
+  - Passed: 2 files, 22 tests.
+- Full focused Task 6A regression set, including the Tasks API route suite
+  - Passed: 7 files, 45 tests.
+- `npx.cmd tsc --noEmit`
+  - Passed with exit code 0.
+- Focused ESLint over the four changed production/test files
+  - Passed with exit code 0 and no warnings.
+- `git diff --check`
+  - Passed with no whitespace errors.
+
 ## Commit
 
 This report is included in the Task 6A commit; the final commit hash is returned in the handoff.

@@ -87,6 +87,7 @@ export function TaskWorkspace() {
 
   const handleStatusAction = (task: TaskListItem, action: TaskStatusAction) => {
     if (action === 'cancel') {
+      statusMutation.reset();
       setConfirmation({ task, type: 'cancel' });
       return;
     }
@@ -168,7 +169,11 @@ export function TaskWorkspace() {
       ) : (
         <TaskList
           tasks={tasks}
-          onSelectStage={(task, stage) => setSelectedStage({ task, stage })}
+          onSelectStage={(task, stage) => {
+            updateStage.reset();
+            transitionStage.reset();
+            setSelectedStage({ task, stage });
+          }}
           onEdit={(task) => {
             updateTask.reset();
             setEditingTask(task);
@@ -210,8 +215,12 @@ export function TaskWorkspace() {
         isOpen={Boolean(selectedStage)}
         stage={stageQuery.data}
         isLoading={stageQuery.isLoading}
-        error={stageQuery.error ?? null}
-        onClose={() => setSelectedStage(null)}
+        error={stageQuery.error ?? updateStage.error ?? transitionStage.error ?? null}
+        onClose={() => {
+          updateStage.reset();
+          transitionStage.reset();
+          setSelectedStage(null);
+        }}
         onUpdateMetadata={async (payload) => {
           if (!selectedStage) return;
           await updateStage.mutateAsync({
@@ -233,7 +242,10 @@ export function TaskWorkspace() {
 
       <ConfirmDialog
         isOpen={confirmation?.type === 'cancel'}
-        onClose={() => setConfirmation(null)}
+        onClose={() => {
+          statusMutation.reset();
+          setConfirmation(null);
+        }}
         onConfirm={async () => {
           if (!confirmation) return;
           await statusMutation.mutateAsync({ id: confirmation.task.id, action: 'cancel' });
@@ -244,11 +256,20 @@ export function TaskWorkspace() {
         confirmLabel="Cancel task"
         variant="warning"
         isLoading={statusMutation.isPending}
-      />
+      >
+        {statusMutation.error ? (
+          <Alert variant="error" title="Cancellation failed">
+            {statusMutation.error.message}
+          </Alert>
+        ) : null}
+      </ConfirmDialog>
 
       <ConfirmDialog
         isOpen={confirmation?.type === 'archive'}
-        onClose={() => setConfirmation(null)}
+        onClose={() => {
+          archiveTask.reset();
+          setConfirmation(null);
+        }}
         onConfirm={async (reason) => {
           if (!confirmation || !reason) return;
           await archiveTask.mutateAsync({ id: confirmation.task.id, reason });
@@ -260,7 +281,13 @@ export function TaskWorkspace() {
         requireReason
         reasonMinLength={1}
         isLoading={archiveTask.isPending}
-      />
+      >
+        {archiveTask.error ? (
+          <Alert variant="error" title="Delete failed">
+            {archiveTask.error.message}
+          </Alert>
+        ) : null}
+      </ConfirmDialog>
     </div>
   );
 }
