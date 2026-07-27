@@ -13,13 +13,14 @@ import {
 } from '@/services/tasks';
 
 interface RouteParams {
-  params: Promise<{ id: string }>;
+  params: Promise<{ taskId: string }>;
 }
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
-    const { id } = taskRouteParamsSchema.parse(await params);
+    const { taskId } = await params;
+    const { id } = taskRouteParamsSchema.parse({ id: taskId });
 
     return NextResponse.json(await getTask(requireSessionWorkspaceId(session), id));
   } catch (error) {
@@ -31,7 +32,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const { id } = taskRouteParamsSchema.parse(await params);
+    const { taskId } = await params;
+    const { id } = taskRouteParamsSchema.parse({ id: taskId });
     const body = await request.json();
     const { tenantId: _ignoredTenantId, ...input } = body;
     const parsed = updateTaskMetadataSchema.parse(input);
@@ -48,7 +50,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const { id } = taskRouteParamsSchema.parse(await params);
+    const { taskId } = await params;
+    const { id } = taskRouteParamsSchema.parse({ id: taskId });
     const parsed = archiveTaskSchema.parse(await request.json());
 
     await archiveTask(tenantId, id, parsed.reason, session.id);

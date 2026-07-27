@@ -154,6 +154,8 @@ export async function getTaskStageDetail(
 
   return {
     ...stage,
+    startedAt: stage.startedAt?.toISOString() ?? null,
+    completedAt: stage.completedAt?.toISOString() ?? null,
     ...(outcomeUnavailable ? { status: TaskStageStatus.FAILED } : {}),
     blockers: adapter.blockers(adapterContext),
     launch: adapter.launch(adapterContext),

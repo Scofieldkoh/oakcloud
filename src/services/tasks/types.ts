@@ -186,6 +186,8 @@ export interface TaskStageDetail extends TaskStageSummary {
   description: string | null;
   notes: string | null;
   skipReason: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
   assigneeId: string | null;
   assignee: {
     id: string;

@@ -8,14 +8,15 @@ import {
 import { cancelTask, pauseTask, resumeTask } from '@/services/tasks';
 
 interface RouteParams {
-  params: Promise<{ id: string }>;
+  params: Promise<{ taskId: string }>;
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await requireAuth();
     const tenantId = requireSessionWorkspaceId(session);
-    const { id } = taskRouteParamsSchema.parse(await params);
+    const { taskId } = await params;
+    const { id } = taskRouteParamsSchema.parse({ id: taskId });
     const { action } = taskStatusTransitionSchema.parse(await request.json());
     const transition = {
       pause: pauseTask,

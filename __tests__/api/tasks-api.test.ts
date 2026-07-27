@@ -84,9 +84,9 @@ import {
   DELETE as archiveTaskRoute,
   GET as getTaskRoute,
   PATCH as updateTaskRoute,
-} from '@/app/api/tasks/[id]/route';
-import { POST as updateTaskStatus } from '@/app/api/tasks/[id]/status/route';
-import * as taskStatusRoute from '@/app/api/tasks/[id]/status/route';
+} from '@/app/api/tasks/[taskId]/route';
+import { POST as updateTaskStatus } from '@/app/api/tasks/[taskId]/status/route';
+import * as taskStatusRoute from '@/app/api/tasks/[taskId]/status/route';
 import {
   GET as getStage,
   PATCH as updateStage,
@@ -317,13 +317,13 @@ describe('task API routes', () => {
 
     expect((await getTaskRoute(
       request(`http://localhost/api/tasks/${taskId}`),
-      routeParams({ id: taskId }),
+      routeParams({ taskId }),
     )).status).toBe(200);
     expect(getTask).toHaveBeenCalledWith(workspaceId, taskId);
 
     expect((await updateTaskRoute(
       request(`http://localhost/api/tasks/${taskId}`, 'PATCH', { ownerId: null }),
-      routeParams({ id: taskId }),
+      routeParams({ taskId }),
     )).status).toBe(200);
     expect(updateTaskMetadata).toHaveBeenCalledWith(
       workspaceId,
@@ -334,7 +334,7 @@ describe('task API routes', () => {
 
     const archiveResponse = await archiveTaskRoute(
       request(`http://localhost/api/tasks/${taskId}`, 'DELETE', { reason: 'Duplicate' }),
-      routeParams({ id: taskId }),
+      routeParams({ taskId }),
     );
     expect(archiveResponse.status).toBe(200);
     expect(await archiveResponse.json()).toEqual({ id: taskId, archived: true });
@@ -349,13 +349,13 @@ describe('task API routes', () => {
   it('dispatches only approved task status actions', async () => {
     expect((await updateTaskStatus(
       request(`http://localhost/api/tasks/${taskId}/status`, 'POST', { action: 'pause' }),
-      routeParams({ id: taskId }),
+      routeParams({ taskId }),
     )).status).toBe(200);
     expect(pauseTask).toHaveBeenCalledWith(workspaceId, taskId, session.id);
 
     const response = await updateTaskStatus(
       request(`http://localhost/api/tasks/${taskId}/status`, 'POST', { action: 'complete' }),
-      routeParams({ id: taskId }),
+      routeParams({ taskId }),
     );
     expect(response.status).toBe(400);
   });
@@ -365,7 +365,7 @@ describe('task API routes', () => {
 
     const response = await getTaskRoute(
       request(`http://localhost/api/tasks/${taskId}`),
-      routeParams({ id: taskId }),
+      routeParams({ taskId }),
     );
     expect(response.status).toBe(400);
     expect(getTask).not.toHaveBeenCalled();
@@ -568,19 +568,19 @@ describe('task route UUID validation', () => {
     const responses = await Promise.all([
       getTaskRoute(
         request(`http://localhost/api/tasks/${invalid}`),
-        routeParams({ id: invalid }),
+        routeParams({ taskId: invalid }),
       ),
       updateTaskRoute(
         request(`http://localhost/api/tasks/${invalid}`, 'PATCH', { title: 'No' }),
-        routeParams({ id: invalid }),
+        routeParams({ taskId: invalid }),
       ),
       archiveTaskRoute(
         request(`http://localhost/api/tasks/${invalid}`, 'DELETE', { reason: 'Invalid' }),
-        routeParams({ id: invalid }),
+        routeParams({ taskId: invalid }),
       ),
       updateTaskStatus(
         request(`http://localhost/api/tasks/${invalid}/status`, 'POST', { action: 'pause' }),
-        routeParams({ id: invalid }),
+        routeParams({ taskId: invalid }),
       ),
     ]);
 
