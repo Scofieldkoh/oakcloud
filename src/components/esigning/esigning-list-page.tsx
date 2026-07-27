@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
@@ -54,6 +55,10 @@ import {
   formatEsigningDateTime,
 } from '@/components/esigning/esigning-shared';
 import { cn } from '@/lib/utils';
+import {
+  readTaskLaunchContext,
+  withTaskLaunchContext,
+} from '@/lib/task-launch-context';
 
 type StatusFilter =
   | 'DRAFT'
@@ -234,6 +239,20 @@ export function EnvelopeActionsDropdown({
 }
 
 export function EsigningListPage() {
+  const searchParams = useSearchParams();
+  const taskContext = useMemo(
+    () => readTaskLaunchContext(searchParams),
+    [searchParams],
+  );
+  const generatedDocumentId = searchParams.get('generatedDocumentId') ?? undefined;
+  const configuredSigningOrder = searchParams.get('signingOrder');
+  const signingOrder = (
+    configuredSigningOrder
+    && ['PARALLEL', 'SEQUENTIAL', 'MIXED'].includes(configuredSigningOrder)
+  )
+    ? configuredSigningOrder as 'PARALLEL' | 'SEQUENTIAL' | 'MIXED'
+    : 'PARALLEL';
+  const expiresInDays = Number(searchParams.get('expiresInDays'));
   const { can } = usePermissions();
   const toast = useToast();
   const { data: session } = useSession();
@@ -337,8 +356,17 @@ export function EsigningListPage() {
     try {
       setIsStarting(true);
       const title = file ? getEnvelopeTitleFromFile(file) : 'New Envelope';
-      const envelope = await createEnvelope.mutateAsync({ title, signingOrder: 'PARALLEL' });
-      const destination = `/esigning/${envelope.id}`;
+      const expiresAt = Number.isInteger(expiresInDays) && expiresInDays > 0
+        ? new Date(Date.now() + expiresInDays * 86_400_000).toISOString()
+        : undefined;
+      const envelope = await createEnvelope.mutateAsync({
+        title,
+        signingOrder,
+        expiresAt,
+        taskContext,
+        generatedDocumentId,
+      });
+      const destination = withTaskLaunchContext(`/esigning/${envelope.id}`, taskContext);
 
       if (file) {
         await uploadEsigningDocumentRequest(envelope.id, file, activeTenantId);

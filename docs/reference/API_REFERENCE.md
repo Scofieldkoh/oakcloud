@@ -1028,7 +1028,7 @@ Get stage detail, checklist, blockers, launch context, linked outcome summary, a
 Update optional assignee, notes, and other stage metadata.
 
 ### POST /api/tasks/[taskId]/stages/[stageId]/transition
-Apply a validated `complete`, `reopen`, `skip`, `checklist`, `linkOutcome`, or `reconcile` transition. Manual completion/reopen is restricted to manual stages; required stages cannot be skipped.
+Apply a validated `complete`, `reopen`, `skip`, `checklist`, `linkOutcome`, or `reconcile` transition. Manual completion is restricted to manual stages. Reopen is available for manual stages and for skipped integrated stages so the authoritative module can resume reconciliation. Required stages cannot be skipped.
 
 ---
 

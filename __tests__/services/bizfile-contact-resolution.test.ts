@@ -112,6 +112,37 @@ describe('BizFile contact identity resolution', () => {
     }));
   });
 
+  it('stores task recovery context during a selective existing-company update', async () => {
+    mocks.generateBizFileDiff.mockResolvedValue({
+      hasDifferences: false,
+      differences: [],
+      officerDiffs: [],
+      shareholderDiffs: [],
+    });
+    const { processBizFileExtractionSelective } = await import('@/services/bizfile/processor');
+    await processBizFileExtractionSelective(
+      'doc-1',
+      extractedData,
+      'user-1',
+      'tenant-1',
+      'company-1',
+      undefined,
+      taskContext,
+    );
+
+    expect(tx.company.update).toHaveBeenCalledWith({
+      where: { id: 'company-1' },
+      data: { taskIntegrationContext: taskContext },
+    });
+    expect(mocks.recoveryUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        companyId: 'company-1',
+        taskId: taskContext.taskId,
+        taskStageId: taskContext.taskStageId,
+      }),
+    }));
+  });
+
   it('keeps task A and task B recovery associations for the same existing company', async () => {
     const taskBContext = {
       taskId: '33333333-3333-4333-8333-333333333333',

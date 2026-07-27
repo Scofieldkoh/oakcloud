@@ -65,12 +65,14 @@ export async function POST(
             document.tenantId,
             taskContext,
             'COMPANY_PROFILE',
+            session,
           );
           await safelyLinkCompanyTaskOutcome({
             tenantId: document.tenantId,
             context: taskContext,
             authoritativeId: document.companyId,
             userId: session.id,
+            session,
           });
         }
         return NextResponse.json({
@@ -129,6 +131,7 @@ export async function POST(
         document.tenantId,
         taskContext,
         'COMPANY_PROFILE',
+        session,
       );
     }
 
@@ -157,6 +160,7 @@ export async function POST(
         context: taskContext,
         authoritativeId: result.companyId,
         userId: session.id,
+        session,
       });
     }
 

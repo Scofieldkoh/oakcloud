@@ -18,11 +18,11 @@ import type {
 const checklistSchema = z.array(z.object({
   label: z.string().trim().min(1).max(300),
   position: z.number().int().nonnegative(),
-})).optional();
+}).strict()).optional();
 
 const baseConfigSchema = z.object({
   checklistItems: checklistSchema,
-}).passthrough();
+}).strict();
 
 const companyConfigSchema = baseConfigSchema.extend({
   allowCreate: z.boolean().optional(),
@@ -35,13 +35,14 @@ const documentConfigSchema = baseConfigSchema.extend({
 const esigningConfigSchema = baseConfigSchema.extend({
   signingOrder: z.enum(['PARALLEL', 'SEQUENTIAL', 'MIXED']).optional(),
   expiresInDays: z.number().int().positive().optional(),
+  generatedDocumentId: z.string().uuid().optional(),
 });
 
 function parseWith(
-  schema: typeof baseConfigSchema,
+  schema: z.ZodTypeAny,
   value: unknown,
 ): StageActionConfig {
-  return schema.parse(value ?? {});
+  return schema.parse(value ?? {}) as StageActionConfig;
 }
 
 function launch(
@@ -61,6 +62,18 @@ function noBlockers(): StageActionBlocker[] {
   return [];
 }
 
+function configQuery(
+  path: string,
+  values: Record<string, string | number | undefined>,
+) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(values)) {
+    if (value !== undefined) params.set(key, String(value));
+  }
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
+}
+
 const manualAdapter: StageActionAdapter = {
   actionType: TaskStageActionType.MANUAL,
   defaultIcon: 'CircleCheckBig',
@@ -75,11 +88,7 @@ const companyAdapter: StageActionAdapter = {
   actionType: TaskStageActionType.COMPANY_PROFILE,
   defaultIcon: 'Building2',
   parseConfig: (value) => parseWith(companyConfigSchema, value),
-  blockers: (context) => (
-    context.stage.task?.companyId
-      ? []
-      : [{ code: 'COMPANY_REQUIRED', message: 'Link a company to continue' }]
-  ),
+  blockers: noBlockers,
   launch: (context) => launch(
     context.stage.task?.companyId
       ? `/companies/${context.stage.task.companyId}`
@@ -103,7 +112,12 @@ const documentAdapter: StageActionAdapter = {
   defaultIcon: 'FileText',
   parseConfig: (value) => parseWith(documentConfigSchema, value),
   blockers: noBlockers,
-  launch: (context) => launch('/document-generation', context),
+  launch: (context) => {
+    const config = documentConfigSchema.parse(context.stage.actionConfig ?? {});
+    return launch(configQuery('/generated-documents/generate', {
+      templateId: config.templateId,
+    }), context);
+  },
   outcomeSummary: (outcome) => (
     outcome?.entity.kind === 'generatedDocument'
       ? `${outcome.entity.title} (${outcome.entity.status})`
@@ -124,7 +138,14 @@ const esigningAdapter: StageActionAdapter = {
   defaultIcon: 'PenLine',
   parseConfig: (value) => parseWith(esigningConfigSchema, value),
   blockers: noBlockers,
-  launch: (context) => launch('/esigning', context),
+  launch: (context) => {
+    const config = esigningConfigSchema.parse(context.stage.actionConfig ?? {});
+    return launch(configQuery('/esigning', {
+      signingOrder: config.signingOrder,
+      expiresInDays: config.expiresInDays,
+      generatedDocumentId: config.generatedDocumentId,
+    }), context);
+  },
   outcomeSummary: (outcome) => (
     outcome?.entity.kind === 'esigningEnvelope'
       ? `${outcome.entity.title}: ${outcome.entity.completedSignatures}/${outcome.entity.requiredSignatures} signed`

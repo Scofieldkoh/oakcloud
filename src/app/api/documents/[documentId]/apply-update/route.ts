@@ -3,6 +3,11 @@ import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { processBizFileExtractionSelective, type ExtractedBizFileData, type OfficerAction } from '@/services/bizfile';
 import { bizFileReviewSchema, normalizeBizFileReviewDraft } from '@/lib/validations/bizfile-review';
+import {
+  parseTaskLaunchContext,
+  preflightTaskLaunchContext,
+  safelyLinkCompanyTaskOutcome,
+} from '@/services/tasks/integration.service';
 
 /**
  * POST /api/documents/:documentId/apply-update
@@ -29,6 +34,7 @@ export async function POST(
 
     // Parse request body
     const body = await request.json();
+    const taskContext = parseTaskLaunchContext(body.taskContext);
     const { companyId, extractedData: rawExtractedData, officerActions, expectedUpdatedAt } = body as {
       companyId: string;
       extractedData: unknown;
@@ -42,7 +48,6 @@ export async function POST(
         { status: 400 }
       );
     }
-
     const parsed = bizFileReviewSchema.safeParse(rawExtractedData);
     if (!parsed.success) {
       return NextResponse.json(
@@ -106,6 +111,14 @@ export async function POST(
         );
       }
     }
+    if (taskContext) {
+      await preflightTaskLaunchContext(
+        company.tenantId,
+        taskContext,
+        'COMPANY_PROFILE',
+        session,
+      );
+    }
 
     // Apply selective update
     const result = await processBizFileExtractionSelective(
@@ -114,8 +127,18 @@ export async function POST(
       session.id,
       company.tenantId,
       companyId,
-      officerActions
+      officerActions,
+      taskContext,
     );
+    if (taskContext) {
+      await safelyLinkCompanyTaskOutcome({
+        tenantId: company.tenantId,
+        context: taskContext,
+        authoritativeId: result.companyId,
+        userId: session.id,
+        session,
+      });
+    }
 
     // Build detailed message
     const messageParts: string[] = [];

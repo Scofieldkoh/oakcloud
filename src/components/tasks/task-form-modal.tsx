@@ -38,7 +38,7 @@ interface TaskFormModalProps {
 }
 
 function dateInputValue(value: string | null | undefined) {
-  return value ? new Date(value).toISOString().slice(0, 10) : '';
+  return value?.slice(0, 10) ?? '';
 }
 
 export function TaskFormModal({
@@ -95,7 +95,7 @@ export function TaskFormModal({
         ...(description.trim() ? { description: description.trim() } : {}),
         ...(companyId ? { companyId } : {}),
         ...(ownerId ? { ownerId } : {}),
-        ...(dueDate ? { dueDate: new Date(`${dueDate}T00:00:00`) } : {}),
+        ...(dueDate ? { dueDate } : {}),
       };
       void onSubmit(payload);
       return;
@@ -106,7 +106,7 @@ export function TaskFormModal({
       description: description.trim() || null,
       companyId: companyId || null,
       ownerId: ownerId || null,
-      dueDate: dueDate ? new Date(`${dueDate}T00:00:00`) : null,
+      dueDate: dueDate || null,
     });
   };
 

@@ -88,14 +88,52 @@ function stageCreateManyData(
   });
 }
 
-function validateStageConfigs(
+async function validateStageConfigs(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
   stages: ParsedCreateTaskPipelineInput['stages'] | ParsedUpdateTaskPipelineInput['stages'],
 ) {
+  const templateIds = new Set<string>();
+  const generatedDocumentIds = new Set<string>();
   for (const stage of stages) {
-    getStageActionAdapter(stage.actionType).parseConfig({
+    const config = getStageActionAdapter(stage.actionType).parseConfig({
       ...(stage.actionConfig ?? {}),
       checklistItems: stage.checklistItems,
     });
+    if (stage.actionType === 'DOCUMENT_GENERATION' && typeof config.templateId === 'string') {
+      templateIds.add(config.templateId);
+    }
+    if (stage.actionType === 'ESIGNING' && typeof config.generatedDocumentId === 'string') {
+      generatedDocumentIds.add(config.generatedDocumentId);
+    }
+  }
+  if (templateIds.size > 0) {
+    const templates = await tx.documentTemplate.findMany({
+      where: {
+        tenantId,
+        id: { in: [...templateIds] },
+        isActive: true,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (templates.length !== templateIds.size) {
+      throw new NotFoundError('Document template must be active in this workspace');
+    }
+  }
+  if (generatedDocumentIds.size > 0) {
+    const documents = await tx.generatedDocument.findMany({
+      where: {
+        tenantId,
+        id: { in: [...generatedDocumentIds] },
+        status: 'FINALIZED',
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (documents.length !== generatedDocumentIds.size) {
+      throw new NotFoundError('E-signing document must be finalized in this workspace');
+    }
   }
 }
 
@@ -148,9 +186,9 @@ export async function createTaskPipeline(
   userId?: string,
 ) {
   const parsed = createTaskPipelineSchema.parse(input);
-  validateStageConfigs(parsed.stages);
 
   return prisma.$transaction(async (tx) => {
+    await validateStageConfigs(tx, tenantId, parsed.stages);
     const pipeline = await tx.taskPipeline.create({
       data: {
         tenantId,
@@ -211,9 +249,9 @@ export async function updateTaskPipeline(
   userId?: string,
 ) {
   const parsed = updateTaskPipelineSchema.parse(input);
-  validateStageConfigs(parsed.stages);
 
   return prisma.$transaction(async (tx) => {
+    await validateStageConfigs(tx, tenantId, parsed.stages);
     await lockTaskPipelineForUpdate(tx, tenantId, pipelineId);
     const existing = await requirePipelineForUpdate(tx, tenantId, pipelineId);
     const nextVersion = (existing.versions[0]?.version ?? 0) + 1;
@@ -286,7 +324,7 @@ export async function duplicateTaskPipeline(
         checklistItems,
       };
     });
-    validateStageConfigs(duplicateStages);
+    await validateStageConfigs(tx, tenantId, duplicateStages);
     const pipeline = await tx.taskPipeline.create({
       data: {
         tenantId,

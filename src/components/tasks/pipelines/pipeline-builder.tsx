@@ -54,7 +54,7 @@ function validationMessage(issue: ZodIssue) {
   const prefix = `Stage ${Number(stageIndex) + 1}`;
   if (stageField === 'name') return issue.code === 'too_big' ? `${prefix} name must be 200 characters or fewer` : `${prefix} name is required`;
   if (stageField === 'description') return `${prefix} description must be 2000 characters or fewer`;
-  if (stageField === 'icon') return issue.code === 'too_big' ? `${prefix} icon must be 100 characters or fewer` : `${prefix} icon is required`;
+  if (stageField === 'icon') return `${prefix} icon must use a curated option`;
   if (stageField === 'checklistItems' && typeof checklistIndex === 'number' && checklistField === 'label') {
     return issue.code === 'too_big'
       ? `${prefix} checklist item ${checklistIndex + 1} must be 300 characters or fewer`

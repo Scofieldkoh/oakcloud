@@ -38,9 +38,25 @@ function taskStatusLabel(status: TaskStatus) {
 function dueDateLabel(value: string | null) {
   if (!value) return { date: 'No due date', detail: 'Unscheduled' };
   const date = new Date(value);
+  const dueDay = value.slice(0, 10);
+  const todayParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Singapore',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const todayValue = (type: 'year' | 'month' | 'day') => (
+    todayParts.find((part) => part.type === type)?.value ?? ''
+  );
+  const today = `${todayValue('year')}-${todayValue('month')}-${todayValue('day')}`;
   return {
-    date: new Intl.DateTimeFormat('en-SG', { day: '2-digit', month: 'short', year: 'numeric' }).format(date),
-    detail: date.getTime() < Date.now() ? 'Overdue' : 'Scheduled',
+    date: new Intl.DateTimeFormat('en-SG', {
+      timeZone: 'Asia/Singapore',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(date),
+    detail: dueDay < today ? 'Overdue' : dueDay === today ? 'Today' : 'Scheduled',
   };
 }
 

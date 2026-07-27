@@ -6,6 +6,7 @@ import {
   taskStatusTransitionSchema,
 } from '@/lib/validations/task-api';
 import { cancelTask, pauseTask, resumeTask } from '@/services/tasks';
+import { requireTaskAccess } from '@/services/tasks/access';
 
 interface RouteParams {
   params: Promise<{ taskId: string }>;
@@ -18,6 +19,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { taskId } = await params;
     const { id } = taskRouteParamsSchema.parse({ id: taskId });
     const { action } = taskStatusTransitionSchema.parse(await request.json());
+    await requireTaskAccess(session, tenantId, id, 'update');
     const transition = {
       pause: pauseTask,
       resume: resumeTask,

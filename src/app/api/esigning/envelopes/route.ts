@@ -53,7 +53,11 @@ export async function POST(request: NextRequest) {
       body.generatedDocumentId,
     );
     if (selectedGeneratedDocumentId && !taskContext) {
-      throw new Error('Task context is required to select a generated document');
+      throw new z.ZodError([{
+        code: z.ZodIssueCode.custom,
+        path: ['generatedDocumentId'],
+        message: 'Task context is required to select a generated document',
+      }]);
     }
     if (taskContext) {
       await requirePermission(session, 'document', 'read');
@@ -63,6 +67,7 @@ export async function POST(request: NextRequest) {
         tenantId,
         taskContext,
         selectedGeneratedDocumentId,
+        session,
       )
       : null;
 
@@ -91,6 +96,7 @@ export async function POST(request: NextRequest) {
         context: taskContext,
         authoritativeId: result.id,
         userId: session.id,
+        session,
       });
     }
     return NextResponse.json(result, { status: 201 });

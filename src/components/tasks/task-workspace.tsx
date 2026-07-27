@@ -251,6 +251,8 @@ export function TaskWorkspace() {
           });
         }}
         isMutating={updateStage.isPending || transitionStage.isPending}
+        companies={companies}
+        taskCompanyId={selectedStage?.task.company?.id ?? null}
       />
 
       <ConfirmDialog

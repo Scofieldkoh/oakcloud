@@ -261,10 +261,10 @@ describe('PipelineBuilder', () => {
     expect(screen.getByText('Pipeline description must be 2000 characters or fewer')).toBeInTheDocument();
     expect(screen.getByText('Stage 1 name is required')).toBeInTheDocument();
     expect(screen.getByText('Stage 1 description must be 2000 characters or fewer')).toBeInTheDocument();
-    expect(screen.getByText('Stage 1 icon is required')).toBeInTheDocument();
+    expect(screen.getByText('Stage 1 icon must use a curated option')).toBeInTheDocument();
     expect(screen.getByText('Stage 1 checklist item 1 is required')).toBeInTheDocument();
     expect(screen.getByText('Stage 1 expiry must be a whole number of days')).toBeInTheDocument();
-    expect(screen.getByText('Stage 2 icon must be 100 characters or fewer')).toBeInTheDocument();
+    expect(screen.getByText('Stage 2 icon must use a curated option')).toBeInTheDocument();
     expect(screen.getByText('Stage 2 checklist item 1 must be 300 characters or fewer')).toBeInTheDocument();
     expect(screen.getByText('Stage 2 template must be a valid document template')).toBeInTheDocument();
     expect(screen.getByText('Stage 3 allow-create setting must be true or false')).toBeInTheDocument();

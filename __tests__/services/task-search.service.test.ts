@@ -54,22 +54,22 @@ describe('searchTasks query construction', () => {
 
       const call = taskFindMany.mock.calls.at(-1)?.[0];
       const dueDate = call.where.dueDate as { gte?: Date; lt?: Date };
-      const midnight = new Date(2026, 6, 24);
+      const midnight = new Date(Date.UTC(2026, 6, 24));
 
       if (Number.isFinite(startOffset)) {
-        expect(dueDate.gte).toEqual(new Date(
-          midnight.getFullYear(),
-          midnight.getMonth(),
-          midnight.getDate() + startOffset,
-        ));
+        expect(dueDate.gte).toEqual(new Date(Date.UTC(
+          midnight.getUTCFullYear(),
+          midnight.getUTCMonth(),
+          midnight.getUTCDate() + startOffset,
+        )));
       } else {
         expect(dueDate).not.toHaveProperty('gte');
       }
-      expect(dueDate.lt).toEqual(new Date(
-        midnight.getFullYear(),
-        midnight.getMonth(),
-        midnight.getDate() + endOffset,
-      ));
+      expect(dueDate.lt).toEqual(new Date(Date.UTC(
+        midnight.getUTCFullYear(),
+        midnight.getUTCMonth(),
+        midnight.getUTCDate() + endOffset,
+      )));
       expect(dueDate).not.toEqual({});
       expect(call.where).not.toHaveProperty('dueDate.equals', null);
     },

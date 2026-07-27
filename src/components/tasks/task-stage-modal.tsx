@@ -6,6 +6,7 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { cn } from '@/lib/utils';
+import { withTaskLaunchContext } from '@/lib/task-launch-context';
 import type { TaskStageTransition } from '@/hooks/use-tasks';
 import type { TaskStageDetail } from '@/services/tasks/types';
 import { formatTaskStageStatus } from './task-stage-pipeline';
@@ -19,6 +20,8 @@ interface TaskStageModalProps {
   onUpdateMetadata: (payload: { notes?: string | null; assigneeId?: string | null }) => void | Promise<void>;
   onTransition: (transition: TaskStageTransition) => void | Promise<void>;
   isMutating?: boolean;
+  companies?: Array<{ id: string; name: string }>;
+  taskCompanyId?: string | null;
 }
 
 function dateTimeLabel(value: string | null) {
@@ -35,22 +38,20 @@ function dateTimeLabel(value: string | null) {
 
 function launchHref(stage: TaskStageDetail) {
   if (!stage.launch.href) return null;
-  const [path, existingQuery = ''] = stage.launch.href.split('?');
-  const params = new URLSearchParams(existingQuery);
-  params.set('taskId', stage.launch.context.taskId);
-  params.set('taskStageId', stage.launch.context.taskStageId);
-  params.set('returnTo', stage.launch.context.returnTo ?? '/tasks');
-  return `${path}?${params.toString()}`;
+  return withTaskLaunchContext(stage.launch.href, {
+    ...stage.launch.context,
+    returnTo: stage.launch.context.returnTo ?? '/tasks',
+  });
 }
 
 function primaryActionLabel(stage: TaskStageDetail) {
-  if (stage.actionType === 'MANUAL') {
+  if (stage.actionType === 'MANUAL' || stage.status === 'SKIPPED') {
     return stage.status === 'COMPLETED' || stage.status === 'SKIPPED'
       ? 'Reopen stage'
       : 'Complete stage';
   }
   return {
-    COMPANY_PROFILE: 'Open company workspace',
+    COMPANY_PROFILE: 'Create company',
     DOCUMENT_GENERATION: 'Open document generator',
     ESIGNING: 'Open e-signing workspace',
   }[stage.actionType];
@@ -65,18 +66,22 @@ export function TaskStageModal({
   onUpdateMetadata,
   onTransition,
   isMutating = false,
+  companies = [],
+  taskCompanyId,
 }: TaskStageModalProps) {
   const [notes, setNotes] = useState('');
   const [showSkip, setShowSkip] = useState(false);
   const [skipReason, setSkipReason] = useState('');
   const [skipError, setSkipError] = useState('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
 
   useEffect(() => {
     setNotes(stage?.notes ?? '');
     setShowSkip(false);
     setSkipReason('');
     setSkipError('');
-  }, [stage?.id, stage?.isRequired, stage?.notes]);
+    setSelectedCompanyId(taskCompanyId ?? '');
+  }, [stage?.id, stage?.isRequired, stage?.notes, taskCompanyId]);
 
   const resolvedLaunchHref = useMemo(() => stage ? launchHref(stage) : null, [stage]);
 
@@ -95,7 +100,9 @@ export function TaskStageModal({
     const label = primaryActionLabel(stage);
     const isBlocked = stage.blockers.length > 0;
 
-    if (stage.actionType === 'MANUAL' && (stage.status === 'COMPLETED' || stage.status === 'SKIPPED')) {
+    if (stage.status === 'SKIPPED' || (
+      stage.actionType === 'MANUAL' && stage.status === 'COMPLETED'
+    )) {
       return (
         <Button
           data-testid="stage-primary-action"
@@ -117,6 +124,21 @@ export function TaskStageModal({
           leftIcon={<CheckCircle2 />}
         >
           {label}
+        </Button>
+      );
+    }
+    if (stage.actionType === 'COMPANY_PROFILE' && selectedCompanyId) {
+      return (
+        <Button
+          data-testid="stage-primary-action"
+          onClick={() => runAction(() => onTransition({
+            action: 'linkOutcome',
+            outcome: { type: 'COMPANY', companyId: selectedCompanyId },
+          }))}
+          isLoading={isMutating}
+          leftIcon={<Link2 />}
+        >
+          Link selected company
         </Button>
       );
     }
@@ -181,6 +203,32 @@ export function TaskStageModal({
                 </div>
               </div>
             </section>
+
+            {stage.actionType === 'COMPANY_PROFILE' && stage.status !== 'SKIPPED' ? (
+              <section>
+                <label
+                  htmlFor="task-stage-company"
+                  className="mb-2 block text-sm font-semibold text-text-primary"
+                >
+                  Existing company
+                </label>
+                <select
+                  id="task-stage-company"
+                  value={selectedCompanyId}
+                  onChange={(event) => setSelectedCompanyId(event.target.value)}
+                  disabled={isMutating}
+                  className="input input-sm w-full"
+                >
+                  <option value="">Create a new company</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>{company.name}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-text-muted">
+                  Select an existing company to link it, or continue to create a new one.
+                </p>
+              </section>
+            ) : null}
 
             {stage.checklistItems.length > 0 ? (
               <section>

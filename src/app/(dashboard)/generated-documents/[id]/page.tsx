@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useMemo, useState, useEffect } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Loader2,
@@ -30,6 +30,10 @@ import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { A4PageEditor } from '@/components/documents/a4-page-editor';
 import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
+import {
+  readTaskLaunchContext,
+  withTaskLaunchContext,
+} from '@/lib/task-launch-context';
 
 // ============================================================================
 // Helper Functions
@@ -164,6 +168,12 @@ function StatusBadge({ status }: { status: string }) {
 export default function DocumentViewPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const taskContext = useMemo(
+    () => readTaskLaunchContext(searchParams),
+    [searchParams],
+  );
+  const returnHref = taskContext?.returnTo ?? '/generated-documents';
   const documentId = params.id as string;
   const { success, error: toastError } = useToast();
 
@@ -229,7 +239,7 @@ export default function DocumentViewPage() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ taskContext }),
         }
       );
 
@@ -389,7 +399,7 @@ export default function DocumentViewPage() {
           <h3 className="text-lg font-medium text-red-700 dark:text-red-400 mb-2">
             {error || 'Document not found'}
           </h3>
-          <Link href="/generated-documents">
+          <Link href={returnHref}>
             <Button variant="secondary">Back to Documents</Button>
           </Link>
         </div>
@@ -402,6 +412,12 @@ export default function DocumentViewPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
+          <Link
+            href={returnHref}
+            className="mb-2 inline-flex text-sm text-text-secondary hover:text-text-primary"
+          >
+            {taskContext ? 'Return to task' : 'Back to documents'}
+          </Link>
           <div className="flex items-center gap-3">
             <h1 className="text-xl sm:text-2xl font-semibold text-text-primary truncate">
               {docData.title}
@@ -441,7 +457,10 @@ export default function DocumentViewPage() {
 
           {/* Edit (only for drafts) */}
           {docData.status === 'DRAFT' && (
-            <Link href={`/generated-documents/${docData.id}/edit`}>
+            <Link href={withTaskLaunchContext(
+              `/generated-documents/${docData.id}/edit`,
+              taskContext,
+            )}>
               <Button variant="secondary" size="sm">
                 <Edit className="w-4 h-4 mr-2" />
                 Edit

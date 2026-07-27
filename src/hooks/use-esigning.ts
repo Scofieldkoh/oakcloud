@@ -17,6 +17,7 @@ import type {
   EsigningManualLinkDto,
   EsigningEnvelopeStatusCounts,
 } from '@/types/esigning';
+import type { TaskLaunchContext } from '@/services/tasks/types';
 
 export type { EsigningEnvelopeDetailDto } from '@/types/esigning';
 
@@ -78,8 +79,13 @@ async function fetchEsigningEnvelopeDetail(id: string, tenantId?: string | null)
   return response.json();
 }
 
+export type CreateEsigningEnvelopeRequest = CreateEsigningEnvelopeInput & {
+  taskContext?: TaskLaunchContext;
+  generatedDocumentId?: string;
+};
+
 async function createEnvelopeRequest(
-  payload: CreateEsigningEnvelopeInput & { tenantId?: string | null }
+  payload: CreateEsigningEnvelopeRequest & { tenantId?: string | null }
 ): Promise<EsigningEnvelopeDetailDto> {
   const response = await fetch('/api/esigning/envelopes', {
     method: 'POST',
@@ -279,12 +285,13 @@ async function saveFieldsRequest(
 
 async function sendEnvelopeRequest(
   envelopeId: string,
-  tenantId?: string | null
+  tenantId?: string | null,
+  taskContext?: TaskLaunchContext,
 ): Promise<{ envelope: EsigningEnvelopeDetailDto; manualLinks: EsigningManualLinkDto[] }> {
   const response = await fetch(`/api/esigning/envelopes/${envelopeId}/send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tenantId }),
+    body: JSON.stringify({ tenantId, taskContext }),
   });
 
   if (!response.ok) {
@@ -436,7 +443,7 @@ export function useCreateEsigningEnvelope() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateEsigningEnvelopeInput) =>
+    mutationFn: (payload: CreateEsigningEnvelopeRequest) =>
       createEnvelopeRequest({ ...payload, tenantId }),
     onSuccess: async (result) => {
       await invalidateEnvelopeQueries(queryClient, tenantId);
@@ -584,7 +591,9 @@ export function useSendEsigningEnvelope(envelopeId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => sendEnvelopeRequest(envelopeId, tenantId),
+    mutationFn: (taskContext?: TaskLaunchContext) => (
+      sendEnvelopeRequest(envelopeId, tenantId, taskContext)
+    ),
     onSuccess: async (result) => {
       queryClient.setQueryData(['esigning', 'detail', tenantId, envelopeId], result.envelope);
       await invalidateEnvelopeQueries(queryClient, tenantId);

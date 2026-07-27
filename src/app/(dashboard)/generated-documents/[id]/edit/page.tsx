@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Loader2,
@@ -18,6 +18,10 @@ import { cn } from '@/lib/utils';
 import { A4PageEditor, type A4PageEditorRef } from '@/components/documents/a4-page-editor';
 import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
 import { DraftRecoveryPrompt } from '@/components/documents/draft-recovery-prompt';
+import {
+  readTaskLaunchContext,
+  withTaskLaunchContext,
+} from '@/lib/task-launch-context';
 
 // ============================================================================
 // Types
@@ -55,7 +59,17 @@ interface Draft {
 export default function DocumentEditPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const documentId = params.id as string;
+  const taskContext = useMemo(
+    () => readTaskLaunchContext(searchParams),
+    [searchParams],
+  );
+  const documentHref = withTaskLaunchContext(
+    `/generated-documents/${documentId}`,
+    taskContext,
+  );
+  const returnHref = taskContext?.returnTo ?? '/generated-documents';
   const { success, error: toastError } = useToast();
   const editorRef = useRef<A4PageEditorRef>(null);
 
@@ -98,7 +112,7 @@ export default function DocumentEditPage() {
 
         // Check if document is editable
         if (docData.status !== 'DRAFT') {
-          router.replace(`/generated-documents/${documentId}`);
+          router.replace(documentHref);
           return;
         }
 
@@ -123,7 +137,7 @@ export default function DocumentEditPage() {
     };
 
     fetchData();
-  }, [documentId, router]);
+  }, [documentHref, documentId, router]);
 
   // Handle content change
   const handleContentChange = useCallback((html: string) => {
@@ -257,7 +271,7 @@ export default function DocumentEditPage() {
           <h3 className="text-lg font-medium text-red-700 dark:text-red-400 mb-2">
             {error || 'Document not found'}
           </h3>
-          <Link href="/generated-documents">
+          <Link href={returnHref}>
             <Button variant="secondary">Back to Documents</Button>
           </Link>
         </div>
@@ -338,7 +352,7 @@ export default function DocumentEditPage() {
               <div className="w-px h-6 bg-border-secondary mx-1" />
 
               {/* Cancel button */}
-              <Link href={`/generated-documents/${document.id}`}>
+              <Link href={documentHref}>
                 <Button variant="secondary" size="sm">
                   Cancel
                 </Button>

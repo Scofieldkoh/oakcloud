@@ -15,6 +15,10 @@ import {
   skipTaskStage,
   updateTaskStageChecklistItem,
 } from '@/services/tasks';
+import {
+  requireTaskAccess,
+  requireTaskOutcomeAccess,
+} from '@/services/tasks/access';
 
 interface RouteParams {
   params: Promise<{ taskId: string; stageId: string }>;
@@ -26,6 +30,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const tenantId = requireSessionWorkspaceId(session);
     const { taskId, stageId } = taskStageRouteParamsSchema.parse(await params);
     const transition = taskStageTransitionSchema.parse(await request.json());
+    await requireTaskAccess(session, tenantId, taskId, 'update');
+    if (transition.action === 'linkOutcome') {
+      await requireTaskOutcomeAccess(session, tenantId, transition.outcome);
+    }
 
     const stage = await getTaskStageDetail(tenantId, taskId, stageId);
     if (

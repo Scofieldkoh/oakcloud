@@ -2507,7 +2507,7 @@ The idempotent seed creates version 1 for every non-deleted tenant with required
 
 ### Legacy Workflow/Projects Reset
 
-Migration `20260724090000_modular_tasks_reset` deliberately drops all retired `workflow_*` tables before creating the Task/Pipeline enums, tables, constraints, indexes, and immutability triggers. This is a complete reset: there is no compatibility data copy, redirect, or legacy API. Company, Generated Document, E-signing, Contact, and other module data remain intact.
+Migration `20260724090000_modular_tasks_reset` deliberately drops all retired `workflow_*` tables before creating the initial Task/Pipeline enums, tables, constraints, and indexes. Forward migration `20260727030000_task_snapshot_guards` renames the initial `BLOCKED` enum value to `WAITING`, adds publish/snapshot lock columns, and installs immutability triggers. The split preserves the checksum of the already-created reset migration. This is a complete reset: there is no compatibility data copy, redirect, or legacy API. Company, Generated Document, E-signing, Contact, and other module data remain intact.
 
 ---
 

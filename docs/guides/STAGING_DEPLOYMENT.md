@@ -83,6 +83,24 @@ Access staging at `http://<staging-device-ip>:<port>` (or set up a subdomain lik
 
 ## Deploying to Production (Minimising Downtime)
 
+### Release blocker: modular-task migration history
+
+Before deploying the modular Tasks/Pipelines release, inspect the deployed
+`_prisma_migrations` row and physical schema for
+`20260724090000_modular_tasks_reset`. Do not deploy while its checksum state is
+unknown.
+
+- If the reset migration was never applied, deploy normally in timestamp order.
+- If its stored checksum matches the restored repository migration and the
+  schema still has `BLOCKED` without the lock columns/triggers, the forward
+  `20260727030000_task_snapshot_guards` migration is the expected next step.
+- If the database already has `WAITING`, `published_at`, `snapshot_locked_at`,
+  or the guard triggers under the reset migration's history, a DBA must compare
+  the stored checksum and physical objects, back up the database, and reconcile
+  migration history before deployment. Use `prisma migrate resolve` only after
+  that state is documented and confirmed; never edit `_prisma_migrations`
+  directly.
+
 Use this sequence to reduce the gap between old and new container:
 
 ```bash

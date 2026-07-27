@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
         tenantId,
         taskContext,
         'DOCUMENT_GENERATION',
+        session,
       );
     }
 
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
         context: taskContext,
         authoritativeId: document.id,
         userId: session.id,
+        session,
       });
     }
 

@@ -146,7 +146,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
     if (taskContext) {
-      await preflightTaskLaunchContext(tenantId, taskContext, 'COMPANY_PROFILE');
+      await preflightTaskLaunchContext(
+        tenantId,
+        taskContext,
+        'COMPANY_PROFILE',
+        session,
+      );
     }
 
     // Check if UEN already exists within tenant
@@ -169,6 +174,7 @@ export async function POST(request: NextRequest) {
         context: taskContext,
         authoritativeId: company.id,
         userId: session.id,
+        session,
       });
     }
 

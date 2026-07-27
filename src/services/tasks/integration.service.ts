@@ -2,50 +2,51 @@ import {
   TaskStageActionType,
   TaskStageOutcomeType,
 } from '@/generated/prisma';
-import { NotFoundError } from '@/lib/errors';
+import type { SessionUser } from '@/lib/auth';
+import { NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
-import { z } from 'zod';
+export {
+  parseTaskLaunchContext,
+  taskLaunchContextSchema,
+} from '@/lib/task-launch-context';
 import {
   getTaskStageDetail,
   linkTaskStageOutcome,
   reconcileTaskStageOutcome,
 } from './stage.service';
 import type { TaskLaunchContext } from './types';
+import {
+  requireTaskAccess,
+  requireTaskOutcomeAccess,
+} from './access';
 
 const log = createLogger('tasks:integration');
-
-export const taskLaunchContextSchema = z.object({
-  taskId: z.string().uuid(),
-  taskStageId: z.string().uuid(),
-  returnTo: z.string().trim().min(1).max(2_000).optional(),
-}).strict();
-
-export function parseTaskLaunchContext(value: unknown): TaskLaunchContext | undefined {
-  return value === undefined || value === null
-    ? undefined
-    : taskLaunchContextSchema.parse(value);
-}
 
 interface LinkTaskOutcomeInput {
   tenantId: string;
   context: TaskLaunchContext;
   authoritativeId: string;
   userId?: string;
+  session?: SessionUser;
 }
 
 export async function preflightTaskLaunchContext(
   tenantId: string,
   context: TaskLaunchContext,
   expectedAction: TaskStageActionType,
+  session?: SessionUser,
 ) {
+  if (session) {
+    await requireTaskAccess(session, tenantId, context.taskId, 'update');
+  }
   const stage = await getTaskStageDetail(
     tenantId,
     context.taskId,
     context.taskStageId,
   );
   if (stage.actionType !== expectedAction) {
-    throw new Error(`Task stage action must be ${expectedAction}`);
+    throw new ValidationError(`Task stage action must be ${expectedAction}`);
   }
   return stage;
 }
@@ -63,6 +64,9 @@ async function linkAuthoritativeOutcome(
       esigningEnvelopeId: string;
     },
 ) {
+  if (input.session) {
+    await requireTaskOutcomeAccess(input.session, input.tenantId, outcome);
+  }
   await getTaskStageDetail(
     input.tenantId,
     input.context.taskId,
@@ -330,16 +334,24 @@ export async function resolveEsigningGeneratedDocument(
   tenantId: string,
   context: TaskLaunchContext,
   selectedGeneratedDocumentId?: string,
+  session?: SessionUser,
 ) {
   await preflightTaskLaunchContext(
     tenantId,
     context,
     TaskStageActionType.ESIGNING,
+    session,
   );
   if (!selectedGeneratedDocumentId) {
     const preferred = await findPreferredEsigningDocument(tenantId, context);
     if (!preferred) {
       throw new NotFoundError('No eligible finalized document is available');
+    }
+    if (session) {
+      await requireTaskOutcomeAccess(session, tenantId, {
+        type: TaskStageOutcomeType.GENERATED_DOCUMENT,
+        generatedDocumentId: preferred.id,
+      });
     }
     return preferred;
   }
@@ -355,6 +367,12 @@ export async function resolveEsigningGeneratedDocument(
   });
   if (!selected) {
     throw new NotFoundError('Selected generated document must be finalized and eligible');
+  }
+  if (session) {
+    await requireTaskOutcomeAccess(session, tenantId, {
+      type: TaskStageOutcomeType.GENERATED_DOCUMENT,
+      generatedDocumentId: selected.id,
+    });
   }
   return selected;
 }

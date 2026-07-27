@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -14,6 +14,10 @@ import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { ENTITY_TYPES } from '@/lib/constants';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import {
+  readTaskLaunchContext,
+  withTaskLaunchContext,
+} from '@/lib/task-launch-context';
 
 const statuses = [
   { value: 'LIVE', label: 'Live' },
@@ -44,6 +48,12 @@ const months = [
 
 export default function NewCompanyPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const taskContext = useMemo(
+    () => readTaskLaunchContext(searchParams),
+    [searchParams],
+  );
+  const returnHref = taskContext?.returnTo ?? '/companies';
   const { data: session } = useSession();
   const createCompany = useCreateCompany();
   const { can, isLoading: permissionsLoading } = usePermissions();
@@ -72,7 +82,7 @@ export default function NewCompanyPage() {
   useUnsavedChangesWarning(isDirty, !isSubmitting);
 
   const handleCancel = () => {
-    router.push('/companies');
+    router.push(returnHref);
   };
 
   const onSubmit = async (data: CreateCompanyInput) => {
@@ -89,8 +99,9 @@ export default function NewCompanyPage() {
         ...data,
         // Include tenantId for SUPER_ADMIN
         ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
+        taskContext,
       });
-      router.push(`/companies/${company.id}`);
+      router.push(taskContext?.returnTo ?? `/companies/${company.id}`);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to create company');
     }
@@ -111,7 +122,7 @@ export default function NewCompanyPage() {
     },
     {
       key: 'F2',
-      handler: () => router.push('/companies/upload'),
+      handler: () => router.push(withTaskLaunchContext('/companies/upload', taskContext)),
       description: 'Upload BizFile',
     },
   ], !isSubmitting);
@@ -134,7 +145,7 @@ export default function NewCompanyPage() {
           <p className="text-sm text-text-secondary mb-4">
             You do not have permission to create companies.
           </p>
-          <Link href="/companies" className="btn-primary btn-sm inline-flex items-center gap-2">
+          <Link href={returnHref} className="btn-primary btn-sm inline-flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Companies
           </Link>
@@ -148,7 +159,7 @@ export default function NewCompanyPage() {
       {/* Header */}
       <div className="mb-6">
         <Link
-          href="/companies"
+          href={returnHref}
           title="Back to Companies (Ctrl+Backspace)"
           className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
         >
@@ -373,7 +384,7 @@ export default function NewCompanyPage() {
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
+          <Link href={returnHref} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
             <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
             <span className="sm:hidden">Cancel</span>
           </Link>

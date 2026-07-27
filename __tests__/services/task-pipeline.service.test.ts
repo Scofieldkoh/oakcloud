@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   stageCreateMany: vi.fn(),
   transaction: vi.fn(),
   rawQuery: vi.fn(),
+  templateFindMany: vi.fn(),
+  documentFindMany: vi.fn(),
 }));
 
 const tx = {
@@ -26,6 +28,8 @@ const tx = {
   taskPipelineStage: {
     createMany: mocks.stageCreateMany,
   },
+  documentTemplate: { findMany: mocks.templateFindMany },
+  generatedDocument: { findMany: mocks.documentFindMany },
   $queryRaw: mocks.rawQuery,
 };
 
@@ -286,6 +290,34 @@ describe('task pipeline service', () => {
 
     expect(mocks.pipelineCreate).not.toHaveBeenCalled();
     expect(mocks.versionCreate).not.toHaveBeenCalled();
+  });
+
+  it('rejects cross-workspace or ineligible configured module records', async () => {
+    mocks.templateFindMany.mockResolvedValue([]);
+
+    await expect(createTaskPipeline('tenant-a', {
+      name: 'Foreign template',
+      stages: [{
+        name: 'Generate document',
+        actionType: 'DOCUMENT_GENERATION',
+        actionConfig: {
+          templateId: '11111111-1111-4111-8111-111111111111',
+        },
+      }],
+    }, 'user-1')).rejects.toThrow(
+      'Document template must be active in this workspace',
+    );
+
+    expect(mocks.templateFindMany).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'tenant-a',
+        id: { in: ['11111111-1111-4111-8111-111111111111'] },
+        isActive: true,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    expect(mocks.pipelineCreate).not.toHaveBeenCalled();
   });
 
   it('soft deletes a tenant pipeline with a mandatory reason and audit record', async () => {

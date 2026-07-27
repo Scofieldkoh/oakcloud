@@ -16,27 +16,93 @@ import {
 } from '@/lib/validations/task';
 import { deriveTaskStatus } from './status';
 import { lockTaskForUpdate } from './locking';
-import type { ChecklistDefinition } from './types';
+import { getTaskStageDetail } from './stage.service';
+import type { ChecklistDefinition, TaskListItem } from './types';
 
-const taskDetailInclude = {
-  company: true,
-  owner: true,
-  pipelineVersion: { include: { pipeline: true } },
-  stages: {
-    orderBy: { position: 'asc' as const },
-    include: {
-      assignee: true,
-      checklistItems: { orderBy: { position: 'asc' as const } },
-      outcome: true,
+const taskPublicSelect = {
+  id: true,
+  title: true,
+  description: true,
+  status: true,
+  dueDate: true,
+  createdAt: true,
+  updatedAt: true,
+  company: { select: { id: true, name: true } },
+  owner: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
     },
   },
-} satisfies Prisma.TaskInclude;
+  pipelineVersion: {
+    select: {
+      id: true,
+      version: true,
+      pipeline: { select: { id: true, name: true } },
+    },
+  },
+  stages: {
+    orderBy: { position: 'asc' as const },
+    select: {
+      id: true,
+      name: true,
+      position: true,
+      actionType: true,
+      icon: true,
+      isRequired: true,
+      status: true,
+    },
+  },
+} satisfies Prisma.TaskSelect;
+
+type PublicTaskRecord = Prisma.TaskGetPayload<{ select: typeof taskPublicSelect }>;
+
+export function toPublicTaskDto(task: PublicTaskRecord): TaskListItem {
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    status: task.status,
+    dueDate: task.dueDate?.toISOString() ?? null,
+    createdAt: task.createdAt.toISOString(),
+    updatedAt: task.updatedAt.toISOString(),
+    company: task.company ? { id: task.company.id, name: task.company.name } : null,
+    owner: task.owner
+      ? {
+        id: task.owner.id,
+        firstName: task.owner.firstName,
+        lastName: task.owner.lastName,
+        email: task.owner.email,
+      }
+      : null,
+    pipelineVersion: {
+      id: task.pipelineVersion.id,
+      version: task.pipelineVersion.version,
+      pipeline: {
+        id: task.pipelineVersion.pipeline.id,
+        name: task.pipelineVersion.pipeline.name,
+      },
+    },
+    stages: task.stages.map((stage) => ({
+      id: stage.id,
+      name: stage.name,
+      position: stage.position,
+      actionType: stage.actionType,
+      icon: stage.icon,
+      isRequired: stage.isRequired,
+      status: stage.status,
+    })),
+  };
+}
 
 export interface ListTasksOptions {
   includeDeleted?: boolean;
   status?: TaskStatusValue;
   companyId?: string;
   ownerId?: string;
+  accessibleCompanyIds?: string[];
 }
 
 export type TaskDueBucket = 'today' | 'thisWeek' | 'nextWeek' | 'overdue';
@@ -61,37 +127,58 @@ export interface SearchTasksOptions {
   limit?: number;
   sortBy?: TaskSortField;
   sortOrder?: Prisma.SortOrder;
+  accessibleCompanyIds?: string[];
 }
 
 export async function listTasks(tenantId: string, options: ListTasksOptions = {}) {
-  return prisma.task.findMany({
+  const tasks = await prisma.task.findMany({
     where: {
       tenantId,
       ...(options.includeDeleted ? {} : { deletedAt: null }),
       ...(options.status ? { status: options.status } : {}),
       ...(options.companyId ? { companyId: options.companyId } : {}),
       ...(options.ownerId ? { ownerId: options.ownerId } : {}),
+      ...(options.accessibleCompanyIds
+        ? {
+          AND: [{
+            companyId: { in: options.accessibleCompanyIds },
+          }],
+        }
+        : {}),
     },
-    include: taskDetailInclude,
+    select: taskPublicSelect,
     orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
   });
+  return tasks.map(toPublicTaskDto);
 }
 
-function addDays(value: Date, days: number) {
+function addUtcDays(value: Date, days: number) {
   const date = new Date(value);
-  date.setDate(date.getDate() + days);
+  date.setUTCDate(date.getUTCDate() + days);
   return date;
 }
 
+function singaporeCalendarStart(now: Date) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Singapore',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+  const value = (type: 'year' | 'month' | 'day') => (
+    Number(parts.find((part) => part.type === type)?.value)
+  );
+  return new Date(Date.UTC(value('year'), value('month') - 1, value('day')));
+}
+
 function dueDateFilter(bucket: TaskDueBucket, now = new Date()): Prisma.DateTimeNullableFilter {
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = addDays(today, 1);
+  const today = singaporeCalendarStart(now);
+  const tomorrow = addUtcDays(today, 1);
 
   if (bucket === 'overdue') return { lt: today };
   if (bucket === 'today') return { gte: today, lt: tomorrow };
-  if (bucket === 'thisWeek') return { gte: tomorrow, lt: addDays(today, 8) };
-  return { gte: addDays(today, 8), lt: addDays(today, 15) };
+  if (bucket === 'thisWeek') return { gte: tomorrow, lt: addUtcDays(today, 8) };
+  return { gte: addUtcDays(today, 8), lt: addUtcDays(today, 15) };
 }
 
 function taskOrderBy(
@@ -135,6 +222,13 @@ export async function searchTasks(
     ...(options.status ? { status: options.status } : {}),
     ...(options.companyId ? { companyId: options.companyId } : {}),
     ...(options.ownerId ? { ownerId: options.ownerId } : {}),
+    ...(options.accessibleCompanyIds
+      ? {
+        AND: [{
+          companyId: { in: options.accessibleCompanyIds },
+        }],
+      }
+      : {}),
     ...(options.pipelineId
       ? { pipelineVersion: { pipelineId: options.pipelineId } }
       : {}),
@@ -161,7 +255,7 @@ export async function searchTasks(
   const [tasks, total] = await prisma.$transaction([
     prisma.task.findMany({
       where,
-      include: taskDetailInclude,
+      select: taskPublicSelect,
       orderBy: taskOrderBy(
         options.sortBy ?? 'dueDate',
         options.sortOrder ?? 'asc',
@@ -173,7 +267,7 @@ export async function searchTasks(
   ]);
 
   return {
-    tasks,
+    tasks: tasks.map(toPublicTaskDto),
     total,
     page,
     limit,
@@ -181,15 +275,29 @@ export async function searchTasks(
   };
 }
 
-export async function getTask(tenantId: string, taskId: string) {
-  const task = await prisma.task.findFirst({
+export async function getTask(
+  tenantId: string,
+  taskId: string,
+  actorUserId?: string,
+) {
+  const initial = await prisma.task.findFirst({
     where: { id: taskId, tenantId, deletedAt: null },
-    include: taskDetailInclude,
+    select: taskPublicSelect,
   });
-  if (!task) {
+  if (!initial) {
     throw new NotFoundError('Task not found');
   }
-  return task;
+  for (const stage of initial.stages.slice(0, 100)) {
+    if (stage.actionType !== 'MANUAL') {
+      await getTaskStageDetail(tenantId, taskId, stage.id, actorUserId);
+    }
+  }
+  const reconciled = await prisma.task.findFirst({
+    where: { id: taskId, tenantId, deletedAt: null },
+    select: taskPublicSelect,
+  });
+  if (!reconciled) throw new NotFoundError('Task not found');
+  return toPublicTaskDto(reconciled);
 }
 
 function checklistDefinitions(actionConfig: Prisma.JsonValue | null): ChecklistDefinition[] {
@@ -302,7 +410,7 @@ export async function createTask(
     const lockedTask = await tx.task.update({
       where: { id: task.id },
       data: { snapshotLockedAt: new Date() },
-      include: taskDetailInclude,
+      select: taskPublicSelect,
     });
 
     await createAuditLog({
@@ -320,7 +428,7 @@ export async function createTask(
       },
     }, tx);
 
-    return lockedTask;
+    return toPublicTaskDto(lockedTask);
   });
 }
 
@@ -350,19 +458,19 @@ export async function updateTaskMetadata(
     const updated = await tx.task.update({
       where: { id: existing.id },
       data: parsed,
-      include: taskDetailInclude,
+      select: taskPublicSelect,
     });
     await createAuditLog({
       tenantId,
       userId,
-      companyId: updated.companyId ?? undefined,
+      companyId: updated.company?.id ?? undefined,
       action: 'UPDATE',
       entityType: 'Task',
       entityId: existing.id,
       entityName: updated.title,
       summary: `Updated task "${updated.title}"`,
     }, tx);
-    return updated;
+    return toPublicTaskDto(updated);
   });
 }
 
@@ -430,7 +538,7 @@ async function setTaskStatus(
     const updated = await tx.task.update({
       where: { id: existing.id },
       data: { status: nextStatus },
-      include: taskDetailInclude,
+      select: taskPublicSelect,
     });
     await createAuditLog({
       tenantId,
@@ -443,7 +551,7 @@ async function setTaskStatus(
       summary: `Changed task status to ${nextStatus}`,
       metadata: { previousStatus: existing.status, status: nextStatus },
     }, tx);
-    return updated;
+    return toPublicTaskDto(updated);
   });
 }
 

@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
 const optionalUuid = z.string().uuid().nullable().optional();
+const optionalDueDate = z.string().date().transform(
+  (value) => new Date(`${value}T00:00:00.000Z`),
+).nullable().optional();
 
 export const createTaskSchema = z.object({
   title: z.string().trim().min(1).max(300),
@@ -8,7 +11,7 @@ export const createTaskSchema = z.object({
   description: z.string().trim().max(5000).nullable().optional(),
   companyId: optionalUuid,
   ownerId: optionalUuid,
-  dueDate: z.coerce.date().nullable().optional(),
+  dueDate: optionalDueDate,
 });
 
 export const updateTaskMetadataSchema = z.object({
@@ -16,7 +19,7 @@ export const updateTaskMetadataSchema = z.object({
   description: z.string().trim().max(5000).nullable().optional(),
   companyId: optionalUuid,
   ownerId: optionalUuid,
-  dueDate: z.coerce.date().nullable().optional(),
+  dueDate: optionalDueDate,
 }).refine((value) => Object.keys(value).length > 0, {
   message: 'At least one task field is required',
 });

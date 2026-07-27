@@ -66,6 +66,27 @@ function expectTaskLock(taskId = 'task-1', tenantId = 'tenant-a') {
   expect(query?.values).toEqual([taskId, tenantId]);
 }
 
+function publicTaskRecord(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'task-1',
+    title: 'Annual return',
+    description: null,
+    status: TaskStatus.NOT_STARTED,
+    dueDate: null,
+    createdAt: new Date('2026-07-24T00:00:00.000Z'),
+    updatedAt: new Date('2026-07-24T00:00:00.000Z'),
+    company: null,
+    owner: null,
+    pipelineVersion: {
+      id: 'version-1',
+      version: 1,
+      pipeline: { id: 'pipeline-1', name: 'Annual return' },
+    },
+    stages: [],
+    ...overrides,
+  };
+}
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     $transaction: mocks.transaction,
@@ -160,9 +181,7 @@ describe('stage action registry', () => {
     };
 
     expect(adapter.defaultIcon).toBe('Building2');
-    expect(adapter.blockers(context)).toEqual([
-      expect.objectContaining({ code: 'COMPANY_REQUIRED' }),
-    ]);
+    expect(adapter.blockers(context)).toEqual([]);
     expect(adapter.launch(context)).toEqual({
       href: '/companies/new',
       context: { taskId: 'task-1', taskStageId: 'stage-1' },
@@ -589,11 +608,9 @@ describe('task snapshots and stage mutations', () => {
     });
     mocks.stageCreate.mockResolvedValue({ id: 'stage-1' });
     mocks.checklistCreateMany.mockResolvedValue({ count: 2 });
-    mocks.taskUpdate.mockResolvedValue({
-      id: 'task-1',
-      title: 'Annual return',
+    mocks.taskUpdate.mockResolvedValue(publicTaskRecord({
       snapshotLockedAt: new Date(),
-    });
+    }));
 
     await createTask('tenant-a', {
       title: 'Annual return',
@@ -615,7 +632,7 @@ describe('task snapshots and stage mutations', () => {
     expect(mocks.taskUpdate).toHaveBeenCalledWith({
       where: { id: 'task-1' },
       data: { snapshotLockedAt: expect.any(Date) },
-      include: expect.any(Object),
+      select: expect.any(Object),
     });
     expect(mocks.checklistCreateMany.mock.invocationCallOrder[0])
       .toBeLessThan(mocks.taskUpdate.mock.invocationCallOrder[0]);
@@ -803,6 +820,37 @@ describe('task snapshots and stage mutations', () => {
       .resolves.toMatchObject({ status: 'FAILED' });
   });
 
+  it('preserves a skipped integrated stage until the user reopens it', async () => {
+    mocks.stageFindFirst.mockResolvedValue({
+      id: 'stage-1',
+      tenantId: 'tenant-a',
+      taskId: 'task-1',
+      name: 'Generate contract',
+      actionType: 'DOCUMENT_GENERATION',
+      status: 'SKIPPED',
+      completedAt: null,
+      task: {
+        id: 'task-1',
+        status: 'COMPLETED',
+        companyId: null,
+        deletedAt: null,
+      },
+      outcome: {
+        id: 'outcome-1',
+        type: 'GENERATED_DOCUMENT',
+        companyId: null,
+        generatedDocumentId: '33333333-3333-4333-8333-333333333333',
+        esigningEnvelopeId: null,
+      },
+      checklistItems: [],
+    });
+
+    await expect(reconcileTaskStageOutcome('tenant-a', 'stage-1'))
+      .resolves.toMatchObject({ status: 'SKIPPED', taskStatus: 'NOT_STARTED' });
+    expect(mocks.stageUpdate).not.toHaveBeenCalled();
+    expect(mocks.documentFindFirst).not.toHaveBeenCalled();
+  });
+
   it('requires a reason to skip and audits manual completion', async () => {
     await expect(skipTaskStage('tenant-a', 'stage-1', ' ', 'user-1')).rejects.toThrow();
 
@@ -901,6 +949,7 @@ describe('task snapshots and stage mutations', () => {
   });
 
   it('validates and stores optional task company, owner, due date, and stage assignee', async () => {
+    const dueDateInput = '2026-09-30';
     const dueDate = new Date('2026-09-30T00:00:00.000Z');
     mocks.versionFindFirst.mockResolvedValue({
       id: 'version-1',
@@ -915,16 +964,18 @@ describe('task snapshots and stage mutations', () => {
       title: 'Annual return',
       companyId: '11111111-1111-4111-8111-111111111111',
       ownerId: '22222222-2222-4222-8222-222222222222',
-      dueDate,
+      dueDate: '2026-09-30',
     });
-    mocks.taskUpdate.mockResolvedValue({ id: 'task-1' });
+    mocks.taskUpdate.mockResolvedValue(publicTaskRecord({
+      dueDate,
+    }));
 
     await createTask('tenant-a', {
       title: 'Annual return',
       pipelineVersionId: '7ff3c11a-4a8e-45c7-a201-56df360db96c',
       companyId: '11111111-1111-4111-8111-111111111111',
       ownerId: '22222222-2222-4222-8222-222222222222',
-      dueDate,
+      dueDate: dueDateInput,
     }, 'user-1');
 
     expect(mocks.taskCreate).toHaveBeenCalledWith({
@@ -1017,7 +1068,9 @@ describe('task snapshots and stage mutations', () => {
       status: 'PAUSED',
     }]);
     mocks.stageFindMany.mockResolvedValue([{ status: 'IN_PROGRESS' }]);
-    mocks.taskUpdate.mockResolvedValue({ id: 'task-1', status: 'IN_PROGRESS' });
+    mocks.taskUpdate.mockResolvedValue(publicTaskRecord({
+      status: TaskStatus.IN_PROGRESS,
+    }));
 
     await resumeTask('tenant-a', 'task-1', 'user-1');
 
@@ -1036,11 +1089,9 @@ describe('task snapshots and stage mutations', () => {
       status: 'NOT_STARTED',
       stages: [],
     });
-    mocks.taskUpdate.mockResolvedValue({
-      id: 'task-1',
+    mocks.taskUpdate.mockResolvedValue(publicTaskRecord({
       title: 'New title',
-      companyId: null,
-    });
+    }));
 
     await updateTaskMetadata('tenant-a', 'task-1', { title: 'New title' }, 'user-1');
     await archiveTask('tenant-a', 'task-1', 'Duplicate task', 'user-1');

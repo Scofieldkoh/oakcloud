@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -69,6 +69,10 @@ import { EsigningStepFields } from './prepare/esigning-step-fields';
 import { EsigningStepReview } from './prepare/esigning-step-review';
 import { EsigningRecipientCard } from './prepare/esigning-recipient-card';
 import type { PlacedField } from './prepare/esigning-field-canvas';
+import {
+  readTaskLaunchContext,
+  withTaskLaunchContext,
+} from '@/lib/task-launch-context';
 
 interface Props {
   envelopeId: string;
@@ -148,6 +152,12 @@ type WizardStep = 1 | 2 | 3;
 
 export function EsigningDetailPage({ envelopeId }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const taskContext = useMemo(
+    () => readTaskLaunchContext(searchParams),
+    [searchParams],
+  );
+  const returnHref = taskContext?.returnTo ?? '/esigning';
   const toast = useToast();
   const { can } = usePermissions();
   const sessionQuery = useSession();
@@ -429,7 +439,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       await deleteEnvelope.mutateAsync(envelopeId);
       toast.success('Draft deleted');
       setIsDeleteEnvelopeOpen(false);
-      router.push('/esigning');
+      router.push(returnHref);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to delete draft');
     }
@@ -439,7 +449,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     try {
       const duplicated = await duplicateEnvelope.mutateAsync(envelopeId);
       toast.success('Envelope duplicated');
-      router.push(`/esigning/${duplicated.id}`);
+      router.push(withTaskLaunchContext(`/esigning/${duplicated.id}`, taskContext));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to duplicate envelope');
     }
@@ -732,7 +742,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         <div className="border-b border-border-primary bg-background-secondary px-3 py-3 flex-shrink-0 sm:px-6 sm:py-3">
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
-              href="/esigning"
+              href={returnHref}
               aria-label="Back to envelopes"
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border-primary px-2.5 py-1.5 text-sm text-text-secondary hover:bg-background-tertiary sm:gap-2 sm:px-3"
             >
@@ -805,7 +815,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               }))}
               companiesLoading={companiesQuery.isLoading}
               onNext={() => setCurrentStep(2)}
-              onBack={() => window.location.assign('/esigning')}
+              onBack={() => window.location.assign(returnHref)}
             />
           )}
           {currentStep === 2 && (
@@ -831,7 +841,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               onSend={async () => {
                 try {
                   await persistFields({ silent: true });
-                  const result = await sendEnvelope.mutateAsync();
+                  const result = await sendEnvelope.mutateAsync(taskContext);
                   if (result.manualLinks.length > 0) {
                     setManualLinks(result.manualLinks);
                     setIsLinksModalOpen(true);
@@ -863,7 +873,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         {/* Back + status */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Link
-            href="/esigning"
+            href={returnHref}
             className="inline-flex items-center gap-2 rounded-full border border-border-primary bg-background-secondary px-3 py-1.5 text-sm text-text-secondary"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -919,7 +929,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   leftIcon={<Send className="h-4 w-4" />}
                   onClick={async () => {
                     try {
-                      const result = await sendEnvelope.mutateAsync();
+                      const result = await sendEnvelope.mutateAsync(taskContext);
                       if (result.manualLinks.length > 0) {
                         setManualLinks(result.manualLinks);
                         setIsLinksModalOpen(true);

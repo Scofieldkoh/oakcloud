@@ -36,6 +36,10 @@ import type { BizFileReviewIssue } from '@/lib/validations/bizfile-review';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
 import type { ContactMatchPreview, ContactResolutionDecision } from '@/types/contact-identity';
 import { fetchBizFileContactMatchPreviews } from '@/services/bizfile/contact-match-preview.client';
+import {
+  readTaskLaunchContext,
+  withTaskLaunchContext,
+} from '@/lib/task-launch-context';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'diff-preview' | 'saving' | 'complete';
 
@@ -173,6 +177,11 @@ interface AIMetadata {
 export default function UploadBizFilePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const taskContext = useMemo(
+    () => readTaskLaunchContext(searchParams),
+    [searchParams],
+  );
+  const returnHref = taskContext?.returnTo ?? '/companies';
   const { data: session } = useSession();
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -366,7 +375,7 @@ export default function UploadBizFilePage() {
       const response = await fetch(`/api/documents/${documentId}/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ extractedData: correctedData }),
+        body: JSON.stringify({ extractedData: correctedData, taskContext }),
         signal: controller.signal,
       });
 
@@ -475,6 +484,7 @@ export default function UploadBizFilePage() {
         body: JSON.stringify({
           companyId,
           extractedData,
+          taskContext,
           officerActions: officerActions.length > 0 ? officerActions : undefined,
           expectedUpdatedAt: companyUpdatedAt || undefined, // For concurrent update detection
         }),
@@ -608,7 +618,8 @@ export default function UploadBizFilePage() {
 
   const handleCancel = () => {
     if (step === 'upload') {
-      router.push(isUpdateMode ? `/companies/${existingCompanyId}` : '/companies');
+      router.push(taskContext?.returnTo
+        ?? (isUpdateMode ? `/companies/${existingCompanyId}` : '/companies'));
       return;
     }
 
@@ -623,7 +634,7 @@ export default function UploadBizFilePage() {
     }
 
     if (step === 'complete' && companyId) {
-      router.push(`/companies/${companyId}`);
+      router.push(taskContext?.returnTo ?? `/companies/${companyId}`);
     }
   };
 
@@ -642,7 +653,7 @@ export default function UploadBizFilePage() {
     }] : []),
     {
       key: 'F1',
-      handler: () => router.push('/companies/new'),
+      handler: () => router.push(withTaskLaunchContext('/companies/new', taskContext)),
       description: 'Create company',
     },
   ], step !== 'extracting' && step !== 'saving' && step !== 'preview');
@@ -818,7 +829,7 @@ export default function UploadBizFilePage() {
           />
 
           <div className="flex items-center justify-end gap-3">
-            <Link href="/companies" className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
+            <Link href={returnHref} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
               <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
               <span className="sm:hidden">Cancel</span>
             </Link>

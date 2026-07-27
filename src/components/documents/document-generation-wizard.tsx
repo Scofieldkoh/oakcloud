@@ -77,6 +77,7 @@ export interface GenerationWizardProps {
   partials?: TemplatePartial[];
   onGenerate: (data: GenerateDocumentData) => Promise<GeneratedDocumentResult>;
   initialSession?: GenerationSessionEnvelope | null;
+  initialTemplateId?: string;
   onSaveDraft?: (
     draftId: string | null,
     state: GenerationSessionState,
@@ -780,6 +781,7 @@ export function DocumentGenerationWizard({
   partials = [],
   onGenerate,
   initialSession = null,
+  initialTemplateId,
   onSaveDraft,
   onGenerationComplete,
   onPreviewTemplate,
@@ -860,6 +862,14 @@ export function DocumentGenerationWizard({
   useEffect(() => {
     window.localStorage.removeItem(WIZARD_DRAFT_STORAGE_KEY);
   }, []);
+
+  useEffect(() => {
+    if (initialSession || !initialTemplateId || state.selectedTemplate) return;
+    const selectedTemplate = templates.find((template) => template.id === initialTemplateId);
+    if (selectedTemplate) {
+      setState((previous) => ({ ...previous, selectedTemplate }));
+    }
+  }, [initialSession, initialTemplateId, state.selectedTemplate, templates]);
 
   useEffect(() => {
     if (hasHydratedSessionRef.current || !initialSession || templates.length === 0) return;

@@ -33,7 +33,14 @@ const stageDetailInclude = {
       deletedAt: true,
     },
   },
-  assignee: true,
+  assignee: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+    },
+  },
   outcome: true,
   checklistItems: { orderBy: { position: 'asc' as const } },
 } satisfies Prisma.TaskStageInclude;
@@ -91,7 +98,10 @@ export async function getTaskStageDetail(
   });
   if (!stage) throw new NotFoundError('Task stage not found');
 
-  const synchronizedCompanyOutcome = stage.actionType === TaskStageActionType.COMPANY_PROFILE
+  const synchronizedCompanyOutcome = (
+    stage.status !== TaskStageStatus.SKIPPED
+    && stage.actionType === TaskStageActionType.COMPANY_PROFILE
+  )
     ? await synchronizeCompanyOutcomeWithRecovery(
       tenantId,
       stage.id,
@@ -111,10 +121,14 @@ export async function getTaskStageDetail(
     if (!stage) throw new NotFoundError('Task stage not found');
   }
 
-  const recovered = !stage.outcome
+  const recovered = stage.status !== TaskStageStatus.SKIPPED && !stage.outcome
     ? await recoverTaskStageOutcomeFromDurableContext(tenantId, stage)
     : false;
-  if ((stage.outcome || recovered) && !synchronizedCompanyOutcome) {
+  if (
+    stage.status !== TaskStageStatus.SKIPPED
+    && (stage.outcome || recovered)
+    && !synchronizedCompanyOutcome
+  ) {
     await reconcileTaskStageOutcome(tenantId, stage.id, actorUserId);
     stage = await prisma.taskStage.findFirst({
       where: {
@@ -170,6 +184,7 @@ export async function synchronizeCompanyOutcomeWithRecovery(
 ) {
   return prisma.$transaction(async (tx) => {
     const stage = await requireStage(tx, tenantId, stageId);
+    if (stage.status === TaskStageStatus.SKIPPED) return false;
     if (stage.actionType !== TaskStageActionType.COMPANY_PROFILE) {
       return false;
     }
@@ -268,8 +283,10 @@ export async function recoverTaskStageOutcomeFromDurableContext(
     id: string;
     taskId: string;
     actionType: TaskStageActionType;
+    status?: TaskStageStatusValue;
   },
 ) {
+  if (stage.status === TaskStageStatus.SKIPPED) return false;
   const contextFilter = {
     path: ['taskStageId'],
     equals: stage.id,
@@ -525,7 +542,11 @@ async function setStageStatus(
   return prisma.$transaction(async (tx) => {
     const stage = await requireStage(tx, tenantId, stageId);
     const lockedTask = await lockTaskForUpdate(tx, tenantId, stage.taskId);
-    if (manualOnly && stage.actionType !== TaskStageActionType.MANUAL) {
+    if (
+      manualOnly
+      && stage.actionType !== TaskStageActionType.MANUAL
+      && !(status === TaskStageStatus.NOT_STARTED && stage.status === TaskStageStatus.SKIPPED)
+    ) {
       throw new ValidationError('Only MANUAL task stages support manual completion or reopening');
     }
     if (status === TaskStageStatus.SKIPPED && stage.isRequired) {
@@ -710,6 +731,9 @@ export async function linkTaskStageOutcome(
     }
     const authoritative = await resolveAuthoritativeOutcome(tx, tenantId, parsed);
     const resolution = resolveStageActionOutcome(stage.actionType, authoritative);
+    const effectiveStatus = stage.status === TaskStageStatus.SKIPPED
+      ? TaskStageStatus.SKIPPED
+      : resolution.status;
     const ids = outcomeEntityIds(parsed);
     const outcome = await tx.taskStageOutcome.upsert({
       where: { taskStageId: stage.id },
@@ -738,9 +762,13 @@ export async function linkTaskStageOutcome(
     await tx.taskStage.update({
       where: { id: stage.id },
       data: {
-        status: resolution.status,
-        startedAt: stage.startedAt ?? now,
-        completedAt: resolution.status === TaskStageStatus.COMPLETED ? now : null,
+        status: effectiveStatus,
+        ...(effectiveStatus === TaskStageStatus.SKIPPED
+          ? {}
+          : {
+            startedAt: stage.startedAt ?? now,
+            completedAt: effectiveStatus === TaskStageStatus.COMPLETED ? now : null,
+          }),
       },
     });
     const taskStatus = await updateParentTaskStatus(
@@ -757,7 +785,7 @@ export async function linkTaskStageOutcome(
       summary: resolution.summary ?? `Linked ${parsed.type} outcome`,
       metadata: { outcomeId: outcome.id, outcomeType: parsed.type, taskStatus },
     });
-    return { outcome, status: resolution.status, summary: resolution.summary, taskStatus };
+    return { outcome, status: effectiveStatus, summary: resolution.summary, taskStatus };
   });
 }
 
@@ -774,6 +802,13 @@ export async function reconcileTaskStageOutcome(
       throw new ValidationError('Task stage parent changed during reconciliation');
     }
     if (stage.actionType === TaskStageActionType.MANUAL) {
+      return {
+        status: stage.status,
+        summary: null,
+        taskStatus: lockedTask.status,
+      };
+    }
+    if (stage.status === TaskStageStatus.SKIPPED) {
       return {
         status: stage.status,
         summary: null,

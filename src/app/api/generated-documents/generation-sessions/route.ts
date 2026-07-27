@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
         tenantId,
         taskContext,
         'DOCUMENT_GENERATION',
+        session,
       );
     }
     const params = { tenantId, userId: session.id };
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
         context: taskContext,
         authoritativeId: result.id,
         userId: session.id,
+        session,
       });
     }
 

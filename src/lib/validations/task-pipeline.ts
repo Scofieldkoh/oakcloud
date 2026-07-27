@@ -14,21 +14,30 @@ export const DEFAULT_STAGE_ICONS = {
   ESIGNING: 'PenLine',
 } as const;
 
+export const CURATED_TASK_STAGE_ICONS = [
+  'CircleCheckBig',
+  'Building2',
+  'FileText',
+  'PenLine',
+  'CheckSquare',
+  'Mail',
+] as const;
+
 export const taskChecklistDefinitionSchema = z.object({
   label: z.string().trim().min(1).max(300),
   position: z.number().int().nonnegative().optional(),
-});
+}).strict();
 
 export const taskPipelineStageSchema = z.object({
   name: z.string().trim().min(1).max(200),
   description: z.string().trim().max(2000).nullable().optional(),
   position: z.number().int().nonnegative().optional(),
   actionType: z.enum(actionTypes),
-  icon: z.string().trim().min(1).max(100).optional(),
+  icon: z.enum(CURATED_TASK_STAGE_ICONS).optional(),
   isRequired: z.boolean().optional().default(true),
   actionConfig: z.record(z.unknown()).nullable().optional(),
   checklistItems: z.array(taskChecklistDefinitionSchema).optional().default([]),
-});
+}).strict();
 
 function normalizeStages(stages: z.infer<typeof taskPipelineStageSchema>[]) {
   return stages.map((stage, position) => ({

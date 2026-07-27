@@ -15,6 +15,7 @@ import type { CreateCompanyInput, UpdateCompanyInput } from '@/lib/validations/c
 import type { CompanyWithRelations, CompanyStats, CompanyLinkInfo } from '@/services/company/types';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import type { TaskLaunchContext } from '@/services/tasks/types';
 
 interface CompanySearchParams {
   query?: string;
@@ -127,7 +128,10 @@ async function fetchCompanyStats(tenantId?: string): Promise<CompanyStats> {
   return response.json();
 }
 
-async function createCompany(data: CreateCompanyInput & { tenantId?: string }): Promise<Company> {
+async function createCompany(data: CreateCompanyInput & {
+  tenantId?: string;
+  taskContext?: TaskLaunchContext;
+}): Promise<Company> {
   const response = await fetch('/api/companies', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -357,7 +361,10 @@ export function useCreateCompany() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateCompanyInput & { tenantId?: string }) => createCompany(data),
+    mutationFn: (data: CreateCompanyInput & {
+      tenantId?: string;
+      taskContext?: TaskLaunchContext;
+    }) => createCompany(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       queryClient.invalidateQueries({ queryKey: ['company-stats'] });

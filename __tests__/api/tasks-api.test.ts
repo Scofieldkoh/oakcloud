@@ -22,6 +22,13 @@ const session = {
 };
 
 vi.mock('@/lib/auth', () => ({ requireAuth: vi.fn() }));
+vi.mock('@/services/tasks/access', () => ({
+  requireTaskAccess: vi.fn(),
+  requireTaskCollectionAccess: vi.fn(),
+  requireTaskCompanyAccess: vi.fn(),
+  requireTaskOutcomeAccess: vi.fn(),
+  requireTenantWideTaskAccess: vi.fn(),
+}));
 vi.mock('@/services/tasks', () => ({
   archiveTask: vi.fn(),
   archiveTaskPipeline: vi.fn(),
@@ -135,7 +142,7 @@ describe('task pipeline API routes', () => {
     vi.mocked(archiveTaskPipeline).mockResolvedValue({ id: pipelineId } as never);
   });
 
-  it('uses only the authenticated workspace and does not require a new task RBAC resource', async () => {
+  it('uses the authenticated workspace and existing company RBAC boundary', async () => {
     const response = await listPipelines(
       request(`http://localhost/api/task-pipelines?tenantId=${otherWorkspaceId}&includeArchived=true`),
     );
@@ -319,7 +326,7 @@ describe('task API routes', () => {
       request(`http://localhost/api/tasks/${taskId}`),
       routeParams({ taskId }),
     )).status).toBe(200);
-    expect(getTask).toHaveBeenCalledWith(workspaceId, taskId);
+    expect(getTask).toHaveBeenCalledWith(workspaceId, taskId, session.id);
 
     expect((await updateTaskRoute(
       request(`http://localhost/api/tasks/${taskId}`, 'PATCH', { ownerId: null }),

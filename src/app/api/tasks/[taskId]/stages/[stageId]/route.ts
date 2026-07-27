@@ -7,6 +7,7 @@ import {
   getTaskStageDetail,
   updateTaskStageMetadata,
 } from '@/services/tasks';
+import { requireTaskAccess } from '@/services/tasks/access';
 
 interface RouteParams {
   params: Promise<{ taskId: string; stageId: string }>;
@@ -17,9 +18,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { taskId, stageId } = taskStageRouteParamsSchema.parse(await params);
 
+    const tenantId = requireSessionWorkspaceId(session);
+    await requireTaskAccess(session, tenantId, taskId, 'read');
     return NextResponse.json(
       await getTaskStageDetail(
-        requireSessionWorkspaceId(session),
+        tenantId,
         taskId,
         stageId,
       ),
@@ -35,6 +38,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const tenantId = requireSessionWorkspaceId(session);
     const { taskId, stageId } = taskStageRouteParamsSchema.parse(await params);
     const parsed = taskStageMetadataSchema.parse(await request.json());
+    await requireTaskAccess(session, tenantId, taskId, 'update');
 
     await getTaskStageDetail(tenantId, taskId, stageId);
     await updateTaskStageMetadata(tenantId, stageId, parsed, session.id);

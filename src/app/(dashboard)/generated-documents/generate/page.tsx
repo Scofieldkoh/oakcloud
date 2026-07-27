@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, FilePlus2, Loader2, AlertCircle } from 'lucide-react';
@@ -16,6 +16,10 @@ import {
 import type { DocumentTemplate } from '@/components/documents/template-selector';
 import type { GenerationSessionEnvelope } from '@/lib/document-generation-session';
 import type { GenerationSessionState } from '@/lib/validations/generated-document';
+import {
+  readTaskLaunchContext,
+  withTaskLaunchContext,
+} from '@/lib/task-launch-context';
 
 // ============================================================================
 // Types
@@ -39,6 +43,12 @@ export default function GenerateDocumentPage() {
   const searchParams = useSearchParams();
   const { success } = useToast();
   const requestedDraftId = searchParams.get('draft');
+  const requestedTemplateId = searchParams.get('templateId') ?? undefined;
+  const taskContext = useMemo(
+    () => readTaskLaunchContext(searchParams),
+    [searchParams],
+  );
+  const backHref = taskContext?.returnTo ?? '/generated-documents';
 
   // State
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
@@ -177,7 +187,7 @@ export default function GenerateDocumentPage() {
       {
         method: draftId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(state),
+        body: JSON.stringify({ ...state, taskContext }),
       },
     );
     if (!response.ok) {
@@ -185,7 +195,7 @@ export default function GenerateDocumentPage() {
       throw new Error(errorData.error || 'Failed to save draft');
     }
     return response.json();
-  }, []);
+  }, [taskContext]);
 
   // Handle document generation
   const handleGenerate = useCallback(
@@ -202,6 +212,7 @@ export default function GenerateDocumentPage() {
         customData: data.customData,
         useLetterhead: data.useLetterhead,
         editedContent: data.editedContent,
+        taskContext,
       };
 
       const response = await fetch('/api/generated-documents', {
@@ -226,7 +237,7 @@ export default function GenerateDocumentPage() {
         missingPlaceholders: result.metadata?.missingPlaceholders,
       };
     },
-    [success]
+    [success, taskContext]
   );
 
   // Handle template preview
@@ -286,7 +297,7 @@ export default function GenerateDocumentPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <Link
-              href="/generated-documents"
+              href={backHref}
               className="inline-flex min-h-11 items-center gap-1.5 text-sm text-text-secondary transition-colors hover:text-text-primary sm:min-h-0"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -372,9 +383,13 @@ export default function GenerateDocumentPage() {
             contacts={contacts}
             partials={partials}
             initialSession={initialSession}
+            initialTemplateId={requestedTemplateId}
             onSaveDraft={handleSaveDraft}
             onGenerate={handleGenerate}
-            onGenerationComplete={(result) => router.push(`/generated-documents/${result.id}`)}
+            onGenerationComplete={(result) => router.push(withTaskLaunchContext(
+              `/generated-documents/${result.id}`,
+              taskContext,
+            ))}
             onPreviewTemplate={handlePreviewTemplate}
             onSearchTemplates={searchTemplates}
             onSearchCompanies={searchCompanies}

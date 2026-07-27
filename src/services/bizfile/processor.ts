@@ -125,10 +125,48 @@ export async function processBizFileExtractionSelective(
   userId: string,
   tenantId: string,
   existingCompanyId: string,
-  officerActions?: OfficerAction[]
+  officerActions?: OfficerAction[],
+  taskIntegrationContext?: TaskLaunchContext,
 ): Promise<SelectiveProcessingResult> {
   // Normalize all text fields before processing
   const normalizedData = normalizeExtractedData(extractedData);
+  const durableTaskContext = taskIntegrationContext
+    ? {
+      taskId: taskIntegrationContext.taskId,
+      taskStageId: taskIntegrationContext.taskStageId,
+      ...(taskIntegrationContext.returnTo
+        ? { returnTo: taskIntegrationContext.returnTo }
+        : {}),
+    }
+    : undefined;
+  const persistTaskRecoveryContext = async (tx: PrismaTransactionClient) => {
+    if (!taskIntegrationContext) return;
+
+    await tx.company.update({
+      where: { id: existingCompanyId },
+      data: { taskIntegrationContext: durableTaskContext },
+    });
+    await tx.taskCompanyRecoveryContext.upsert({
+      where: {
+        tenantId_taskStageId: {
+          tenantId,
+          taskStageId: taskIntegrationContext.taskStageId,
+        },
+      },
+      create: {
+        tenantId,
+        companyId: existingCompanyId,
+        taskId: taskIntegrationContext.taskId,
+        taskStageId: taskIntegrationContext.taskStageId,
+        returnTo: taskIntegrationContext.returnTo,
+      },
+      update: {
+        companyId: existingCompanyId,
+        taskId: taskIntegrationContext.taskId,
+        returnTo: taskIntegrationContext.returnTo,
+      },
+    });
+  };
 
   // Generate diff to determine what needs updating
   const diffResult = await generateBizFileDiff(existingCompanyId, normalizedData, tenantId);
@@ -141,6 +179,7 @@ export async function processBizFileExtractionSelective(
   if (!diffResult.hasDifferences) {
     // No changes needed, just update document reference and create ProcessingDocument/Revision
     await prisma.$transaction(async (tx) => {
+      await persistTaskRecoveryContext(tx as PrismaTransactionClient);
       await tx.document.update({
         where: { id: documentId },
         data: {
@@ -302,6 +341,7 @@ export async function processBizFileExtractionSelective(
   // Perform the update in a transaction
   await prisma.$transaction(async (tx) => {
     const autoCreatedContactIds = new Set<string>();
+    await persistTaskRecoveryContext(tx as PrismaTransactionClient);
     // Update company with only changed fields
     if (Object.keys(updateData).length > 0) {
       await tx.company.update({

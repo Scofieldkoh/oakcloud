@@ -80,7 +80,7 @@ const stageDetail: TaskStageDetail = {
   outcome: null,
   blockers: [{ code: 'SIGNER_REQUIRED', message: 'Add a signing contact to continue' }],
   launch: {
-    href: '/document-generation',
+    href: '/generated-documents/generate',
     context: { taskId: task.id, taskStageId: 'stage-2' },
   },
   outcomeSummary: 'Draft engagement contract (IN_PROGRESS)',
@@ -265,18 +265,18 @@ describe('TaskStageModal', () => {
 
     expect(screen.getByTestId('stage-primary-action')).toHaveAttribute(
       'href',
-      '/document-generation?taskId=task-1&taskStageId=stage-2&returnTo=%2Ftasks',
+      '/generated-documents/generate?taskId=task-1&taskStageId=stage-2&returnTo=%2Ftasks',
     );
   });
 
-  it.each(['COMPLETED', 'SKIPPED'] as const)(
-    'keeps the authoritative integrated workspace action for a %s stage',
-    (status) => {
+  it(
+    'keeps the authoritative integrated workspace action for a completed stage',
+    () => {
       const onTransition = vi.fn();
       render(
         <TaskStageModal
           isOpen
-          stage={{ ...stageDetail, status, blockers: [] }}
+          stage={{ ...stageDetail, status: 'COMPLETED', blockers: [] }}
           onClose={vi.fn()}
           onUpdateMetadata={vi.fn()}
           onTransition={onTransition}
@@ -288,12 +288,29 @@ describe('TaskStageModal', () => {
       expect(primaryActions[0]).toHaveTextContent('Open document generator');
       expect(primaryActions[0]).toHaveAttribute(
         'href',
-        '/document-generation?taskId=task-1&taskStageId=stage-2&returnTo=%2Ftasks',
+        '/generated-documents/generate?taskId=task-1&taskStageId=stage-2&returnTo=%2Ftasks',
       );
       expect(screen.queryByRole('button', { name: 'Reopen stage' })).not.toBeInTheDocument();
       expect(onTransition).not.toHaveBeenCalled();
     },
   );
+
+  it('reopens a skipped integrated stage before reconciliation resumes', () => {
+    const onTransition = vi.fn();
+    render(
+      <TaskStageModal
+        isOpen
+        stage={{ ...stageDetail, status: 'SKIPPED', blockers: [] }}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={onTransition}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen stage' }));
+    expect(onTransition).toHaveBeenCalledWith({ action: 'reopen' });
+    expect(screen.getAllByTestId('stage-primary-action')).toHaveLength(1);
+  });
 
   it('keeps a blocked integrated terminal stage inspectable with one disabled workspace action', () => {
     render(
