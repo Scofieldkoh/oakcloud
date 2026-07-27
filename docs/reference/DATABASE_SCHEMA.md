@@ -2471,6 +2471,46 @@ MAS_API_KEY_EXPIRY=2026-12-26  # For expiry warnings
 
 ---
 
+## Tasks And Pipelines Module Tables
+
+All rows are tenant-scoped. Published pipeline versions and locked task snapshots are structurally immutable at both the service and PostgreSQL trigger layers.
+
+| Table | Purpose | Key rules |
+|-------|---------|-----------|
+| `task_pipelines` | Reusable template identity and soft-delete metadata | Tenant/name indexes; archive instead of hard delete |
+| `task_pipeline_versions` | Monotonic immutable versions | Unique `(pipeline_id, version)`; one-way `published_at` |
+| `task_pipeline_stages` | Ordered definitions for one version | Unique `(version_id, position)`; action type, curated icon, required flag, JSON adapter config |
+| `tasks` | Live work linked to one fixed version | Company, owner, and due date are nullable; one-way `snapshot_locked_at`; soft delete |
+| `task_stages` | Ordered live snapshot copied at task creation | Structure is immutable after lock; assignee, notes, checklist progress, status, and timestamps remain operational |
+| `task_stage_checklist_items` | Snapshotted checklist rows | Unique position within a stage; completion metadata is mutable |
+| `task_stage_outcomes` | Link to an authoritative module record | Exactly one type-matching Company, Generated Document, or E-signing Envelope link; FKs use `SET NULL` |
+| `task_company_recovery_contexts` | Durable per-stage Company/BizFile recovery context | Tenant/stage uniqueness prevents duplicate callback associations |
+
+### Versions And Snapshots
+
+A pipeline create/update transaction inserts an unpublished `task_pipeline_versions` row, writes every ordered `task_pipeline_stages` row, then publishes it. A task create transaction copies the selected published version and checklist definitions into `task_stages` and `task_stage_checklist_items`, then locks the snapshot. Pipeline edits publish another version and never rewrite existing tasks.
+
+### Status And Lifecycle Rules
+
+- Derived task lifecycle: `NOT_STARTED → IN_PROGRESS → COMPLETED`.
+- `PAUSED` and `CANCELLED` are explicit task overrides. A cancelled task cannot resume.
+- Stage lifecycle uses `NOT_STARTED`, `IN_PROGRESS`, `WAITING`, `COMPLETED`, `SKIPPED`, and `FAILED`.
+- Required stages cannot be skipped. Optional stages require a skip reason.
+- Company stages complete when a Company is linked.
+- Document Generation stages are in progress for a linked draft and complete when the generated document is `FINALIZED`.
+- E-signing stages complete after all required signatures; declined, expired, voided, and cancelled envelopes fail the stage.
+- Status colours are UI-owned semantic treatments. No pipeline or stage colour column is persisted.
+
+### Default Client Onboarding Seed
+
+The idempotent seed creates version 1 for every non-deleted tenant with required Company Profile (`Building2`), Generate Contract (`FileText`), and E-signing (`PenLine`) stages. Adapter configuration matches the stage-action registry and no user-defined colours are stored.
+
+### Legacy Workflow/Projects Reset
+
+Migration `20260724090000_modular_tasks_reset` deliberately drops all retired `workflow_*` tables before creating the Task/Pipeline enums, tables, constraints, indexes, and immutability triggers. This is a complete reset: there is no compatibility data copy, redirect, or legacy API. Company, Generated Document, E-signing, Contact, and other module data remain intact.
+
+---
+
 ## Migration Notes
 
 ### Multi-Tenancy

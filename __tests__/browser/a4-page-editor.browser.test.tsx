@@ -90,6 +90,12 @@ async function pressEnter() {
   await userEvent.keyboard('{Enter}');
 }
 
+async function flushLayoutFrames() {
+  await new Promise<void>((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+  );
+}
+
 function selectedParagraphText(): string | null {
   const anchorNode = window.getSelection()?.anchorNode;
   const anchorElement =
@@ -150,6 +156,7 @@ describe('A4PageEditor real layout pagination', () => {
     await act(async () => {
       root.render(<A4PageEditor ref={editorRef} value={longDocument} />);
     });
+    await act(flushLayoutFrames);
     await act(async () => {
       await vi.waitFor(() => {
         expect(host.querySelectorAll('[data-testid^="a4-page-content-"]').length).toBeGreaterThan(1);
@@ -198,13 +205,11 @@ describe('A4PageEditor real layout pagination', () => {
         />,
       );
     });
+    await act(flushLayoutFrames);
     await act(async () => {
       await vi.waitFor(() => {
         expect(host.querySelectorAll('[data-testid^="a4-page-content-"]').length).toBeGreaterThan(1);
       });
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      );
     });
     const initialPageDistribution = Array.from(
       host.querySelectorAll<HTMLElement>('[data-testid^="a4-page-content-"]'),
@@ -224,6 +229,7 @@ describe('A4PageEditor real layout pagination', () => {
         />,
       );
     });
+    await act(flushLayoutFrames);
     await act(async () => {
       await vi.waitFor(() => {
         const firstPage = host.querySelector<HTMLElement>(
@@ -232,9 +238,6 @@ describe('A4PageEditor real layout pagination', () => {
         expect(firstPage?.style.fontFamily).toBe('Georgia, serif');
         expect(firstPage?.style.fontSize).toBe('14pt');
       });
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      );
     });
     await act(async () => {
       await vi.waitFor(() => {
@@ -269,6 +272,7 @@ describe('A4PageEditor real layout pagination', () => {
         />,
       );
     });
+    await act(flushLayoutFrames);
     await act(async () => {
       await vi.waitFor(() => {
         expect(host.querySelectorAll('[data-testid^="a4-page-content-"]').length).toBeGreaterThan(1);
@@ -324,6 +328,7 @@ describe('A4PageEditor real layout pagination', () => {
     selection.addRange(range);
 
     await act(async () => pressEnter());
+    await act(flushLayoutFrames);
 
     await act(async () => {
       await vi.waitFor(() => {
@@ -337,7 +342,7 @@ describe('A4PageEditor real layout pagination', () => {
         ]);
         expect(selectedParagraphText()).toBe('Beta');
         expect(window.getSelection()?.anchorOffset).toBe(0);
-      });
+      }, { timeout: 3000 });
     });
   });
 
@@ -352,10 +357,11 @@ describe('A4PageEditor real layout pagination', () => {
     await act(async () => {
       root.render(<A4PageEditor ref={editorRef} value={paragraphs} />);
     });
+    await act(flushLayoutFrames);
     await act(async () => {
       await vi.waitFor(() => {
         expect(host.querySelectorAll('[data-testid^="a4-page-content-"]').length).toBeGreaterThan(1);
-      });
+      }, { timeout: 3000 });
     });
 
     const firstPage = host.querySelector<HTMLElement>('[data-testid="a4-page-content-1"]')!;

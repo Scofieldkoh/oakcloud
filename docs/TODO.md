@@ -75,7 +75,7 @@ Key principles:
 |---------|----------|--------|-------------|
 | Deadline Management | P1 | Planned | Company deadline tracking and alerts |
 | KYC/CDD Module | P1 | Planned | Know Your Customer / Customer Due Diligence compliance |
-| Workflow Module | P1 | In Progress | Navigation scaffold plus live project and task workspace |
+| Tasks And Pipelines | P1 | Complete | Tenant-scoped versioned pipelines, immutable task snapshots, stage adapters, and responsive workspaces |
 
 ### Phase 2 - Medium Term
 
@@ -96,22 +96,8 @@ Key principles:
 
 | ID | Completed | Description |
 |----|-----------|-------------|
+| TASKS-001 | 2026-07-27 | Replaced the retired Workflow/Projects module with Tasks and Pipelines, including a complete legacy data reset and tenant-aware Client Onboarding seed |
 | FORMS-001 | 2026-03-10 | Implemented the Forms module with builder, public links, draft save/resume/email, uploads, response review, response PDF export, and queued AI review |
-| WF-001 | 2026-02-21 | Added Workflow navigation group (`Projects`, `Tasks`, `Templates`) and implemented the first iteration of `/workflow/projects` with inline filters and table patterns |
-| WF-002 | 2026-02-21 | Implemented `/workflow/projects/[id]` detail workspace with grouped team/client tasks, right-click task actions, inline rename, and task detail side panel |
-| WF-003 | 2026-02-21 | Enhanced workflow project detail with editable task groupings, quick-add rows, automation rules, rich-text task descriptions, task document attachments, and company contact panel |
-| WF-004 | 2026-02-21 | Refined workflow project detail header and task actions, added `+ tags`, and replaced cycle-based action icons with explicit dropdown actions |
-| WF-005 | 2026-02-24 | Wired `/workflow/projects` and `/workflow/projects/[id]` to live API endpoints backed by persisted company, processing document, client request, and assignment data |
-| WF-006 | 2026-02-25 | Implemented Workflow Project Billing tab with persisted fixed and tiered pricing plus live document billing data |
-| WF-007 | 2026-02-25 | Implemented Workflow Project Files tab with document-processing linking modal, upload shortcut, and linked-documents table |
-| WF-008 | 2026-02-25 | Updated workflow project list billing cards and added project-level Save for task workspace, linked files, and billing quantity |
-| WF-009 | 2026-02-25 | Added billing status rules and persistence across billing and project list views |
-| WF-010 | 2026-02-25 | Updated workflow status behavior to auto-track outstanding task counts while preserving manual override states |
-| WF-011 | 2026-02-25 | Improved workflow list ergonomics with bottom-placed `Add grouping` and drag-and-drop reordering |
-| WF-012 | 2026-02-25 | Aligned Workflow Project Files filters and columns with Document Processing patterns |
-| WF-013 | 2026-02-25 | Implemented Workflow Project Notes tab with persisted rich-text notes |
-| WF-014 | 2026-02-25 | Extended Notes tab with collapsed per-task note panels and reset behavior |
-| WF-015 | 2026-02-26 | Removed remaining workflow placeholder fallback content so project pages use only live implemented flows |
 
 ## Notes
 

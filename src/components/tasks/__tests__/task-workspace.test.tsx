@@ -156,6 +156,31 @@ describe('TaskWorkspace', () => {
     await waitFor(() => expect(hookMocks.useTasks).toHaveBeenLastCalledWith(expect.objectContaining({ dueBucket: 'overdue' })));
   });
 
+  it('explains pipeline, company, and owner option query failures', () => {
+    hookMocks.useTaskPipelines.mockReturnValue({
+      data: undefined,
+      error: new Error('Pipeline options failed'),
+      isLoading: false,
+    });
+    hookMocks.useCompanies.mockReturnValue({
+      data: undefined,
+      error: new Error('Company options failed'),
+      isLoading: false,
+    });
+    hookMocks.useCurrentWorkspaceUsers.mockReturnValue({
+      data: undefined,
+      error: new Error('Owner options failed'),
+      isLoading: false,
+    });
+
+    render(<TaskWorkspace />);
+
+    const alert = screen.getByRole('alert', { name: 'Task options unavailable' });
+    expect(alert).toHaveTextContent('Pipelines: Pipeline options failed');
+    expect(alert).toHaveTextContent('Companies: Company options failed');
+    expect(alert).toHaveTextContent('Owners: Owner options failed');
+  });
+
   it('creates a task with title and pipeline only', async () => {
     render(<TaskWorkspace />);
     fireEvent.click(screen.getByRole('button', { name: 'Create task' }));

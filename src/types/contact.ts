@@ -199,8 +199,6 @@ export interface ContactDuplicatePreview {
     chargeHoldings: number;
     contactDetails: number;
     noteTabs: number;
-    workflowCommunicationLogEntries: number;
-    workflowMilestones: number;
     documentRevisions: number;
     aliases: number;
   };

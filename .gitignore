@@ -5,6 +5,7 @@ node_modules
 
 # Testing
 coverage
+__tests__/browser/__screenshots__/
 
 # Next.js
 .next/
@@ -61,3 +62,6 @@ docker-data/
 ralph-claude
 .worktrees/
 .claude/worktrees/
+
+# Local implementation-plan working reports
+.superpowers/sdd/

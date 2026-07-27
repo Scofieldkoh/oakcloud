@@ -3,6 +3,7 @@ import { PrismaClient } from '@/generated/prisma';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
+import { v5 as uuidv5 } from 'uuid';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -12,6 +13,39 @@ if (!connectionString) {
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
+
+const CLIENT_ONBOARDING_STAGES = [
+  {
+    name: 'Company Profile',
+    description: 'Link or create the authoritative Company profile for this client.',
+    position: 0,
+    actionType: 'COMPANY_PROFILE',
+    icon: 'Building2',
+    isRequired: true,
+    actionConfig: { allowCreate: true },
+  },
+  {
+    name: 'Generate Contract',
+    description: 'Create and finalize the client contract in Document Generation.',
+    position: 1,
+    actionType: 'DOCUMENT_GENERATION',
+    icon: 'FileText',
+    isRequired: true,
+    actionConfig: {},
+  },
+  {
+    name: 'E-signing',
+    description: 'Send the finalized contract and collect every required signature.',
+    position: 2,
+    actionType: 'ESIGNING',
+    icon: 'PenLine',
+    isRequired: true,
+    actionConfig: {
+      signingOrder: 'PARALLEL',
+      expiresInDays: 30,
+    },
+  },
+] as const;
 
 /**
  * Database seed script for Oakcloud (Minimal Setup)
@@ -543,6 +577,80 @@ async function main() {
   }
 
   console.log(`  Created/updated ${CHART_OF_ACCOUNTS_SEED.length} chart of accounts entries\n`);
+
+  // =========================================================================
+  // STEP 6: Seed the default tenant-aware Client Onboarding pipeline
+  // =========================================================================
+  console.log('Step 6: Seeding Client Onboarding pipelines...');
+
+  const workspaces = await prisma.workspace.findMany({
+    where: { deletedAt: null },
+    select: { id: true },
+  });
+
+  for (const workspace of workspaces) {
+    const pipelineId = uuidv5(`oakcloud:client-onboarding:${workspace.id}:pipeline`, uuidv5.URL);
+    const versionId = uuidv5(`oakcloud:client-onboarding:${workspace.id}:version:1`, uuidv5.URL);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.taskPipeline.upsert({
+        where: { id: pipelineId },
+        update: {
+          name: 'Client Onboarding',
+          description: 'Create the company profile, generate the contract, and complete E-signing.',
+          deletedAt: null,
+          deletedReason: null,
+        },
+        create: {
+          id: pipelineId,
+          tenantId: workspace.id,
+          name: 'Client Onboarding',
+          description: 'Create the company profile, generate the contract, and complete E-signing.',
+        },
+      });
+
+      const existingVersion = await tx.taskPipelineVersion.findUnique({
+        where: {
+          pipelineId_version: {
+            pipelineId,
+            version: 1,
+          },
+        },
+        select: { id: true },
+      });
+
+      if (existingVersion) return;
+
+      await tx.taskPipelineVersion.create({
+        data: {
+          id: versionId,
+          tenantId: workspace.id,
+          pipelineId,
+          version: 1,
+          publishedAt: null,
+        },
+      });
+
+      await tx.taskPipelineStage.createMany({
+        data: CLIENT_ONBOARDING_STAGES.map((stage) => ({
+          id: uuidv5(
+            `oakcloud:client-onboarding:${workspace.id}:version:1:stage:${stage.position}`,
+            uuidv5.URL,
+          ),
+          tenantId: workspace.id,
+          versionId,
+          ...stage,
+        })),
+      });
+
+      await tx.taskPipelineVersion.update({
+        where: { id: versionId },
+        data: { publishedAt: new Date() },
+      });
+    });
+  }
+
+  console.log(`  Created/verified Client Onboarding pipelines for ${workspaces.length} tenants\n`);
 
   // =========================================================================
   // Summary

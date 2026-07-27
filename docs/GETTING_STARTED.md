@@ -165,4 +165,6 @@ npm run db:push
 1. Create or select a tenant.
 2. Create users and companies.
 3. Explore the Forms module at `/forms`.
-4. Explore document generation, document processing, workflow, and exchange rates.
+4. Review the seeded Client Onboarding template or create a versioned template at `/pipelines`.
+5. Create and run tenant-scoped work at `/tasks`; Company, owner, due date, and stage assignee are optional.
+6. Explore document generation, document processing, E-signing, Forms, and exchange rates.

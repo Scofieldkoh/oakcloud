@@ -62,7 +62,6 @@ function referenceSummary(contact: ContactDuplicatePreview) {
     `Notes ${counts.noteTabs}`,
     `Documents ${counts.documentRevisions}`,
     `Aliases ${counts.aliases}`,
-    `Workflow ${counts.workflowCommunicationLogEntries + counts.workflowMilestones}`,
   ].join(' · ');
 }
 

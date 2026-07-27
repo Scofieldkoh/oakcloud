@@ -1,6 +1,6 @@
 # Oakcloud Documentation
 
-> **Last Updated**: 2026-03-11
+> **Last Updated**: 2026-07-27
 > Central navigation for the current Oakcloud documentation set.
 
 ## Quick Start
@@ -10,6 +10,14 @@
 | [Getting Started](./GETTING_STARTED.md) | Local setup, data services, and first run |
 | [Architecture](./ARCHITECTURE.md) | Runtime design, modules, and service layout |
 | [README](./README.md) | Project overview and implemented modules |
+
+## Tasks And Pipelines
+
+| Document | Description |
+|----------|-------------|
+| [Architecture](./ARCHITECTURE.md#tasks-and-pipelines-architecture) | Versioned pipeline snapshots, lifecycle, stage-action adapters, and module integrations |
+| [API Reference](./reference/API_REFERENCE.md#tasks-and-pipelines-endpoints) | Tenant-scoped pipeline, task, stage, and transition routes |
+| [Database Schema](./reference/DATABASE_SCHEMA.md#tasks-and-pipelines-module-tables) | Task tables, enums, status rules, immutable snapshots, and legacy reset |
 
 ## Guides
 
@@ -26,8 +34,8 @@
 
 | Reference | Description |
 |-----------|-------------|
-| [Database Schema](./reference/DATABASE_SCHEMA.md) | Tables, relationships, indexes, enums, and [contact identity operations](./reference/DATABASE_SCHEMA.md#contact-identity-and-merge-controls) |
-| [API Reference](./reference/API_REFERENCE.md) | Authenticated and public API routes, including [contact matching and merge](./reference/API_REFERENCE.md#contact-identity-and-duplicate-controls) |
+| [Database Schema](./reference/DATABASE_SCHEMA.md) | Tables, relationships, indexes, enums, [Tasks and Pipelines](./reference/DATABASE_SCHEMA.md#tasks-and-pipelines-module-tables), and contact identity operations |
+| [API Reference](./reference/API_REFERENCE.md) | Authenticated and public API routes, including [Tasks and Pipelines](./reference/API_REFERENCE.md#tasks-and-pipelines-endpoints) and contact matching |
 | [Environment Variables](./reference/ENVIRONMENT_VARIABLES.md) | Runtime and deployment configuration |
 
 ## Feature Specifications

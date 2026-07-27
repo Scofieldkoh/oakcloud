@@ -32,7 +32,7 @@ Most endpoints require authentication via JWT token stored in an `auth-token` ht
 2. [Tenants](#tenant-endpoints)
 3. [Companies](#company-endpoints)
 4. [Forms](#forms-endpoints)
-5. [Workflow](#workflow-endpoints)
+5. [Tasks and Pipelines](#tasks-and-pipelines-endpoints)
 6. [Contacts](#contact-endpoints)
 7. [Documents (Uploaded)](#uploaded-document-endpoints)
 8. [Processing Documents](#processing-document-endpoints)
@@ -974,23 +974,61 @@ Email a tokenized public response PDF link.
 
 ---
 
-## Workflow Endpoints
+## Tasks And Pipelines Endpoints
 
-### GET /api/workflow/projects
-List workflow projects with live data derived from companies, processing documents, client requests, and user assignments.
+All routes require authentication and derive tenant scope from the current workspace session. A caller-supplied `tenantId` is ignored.
+
+### GET /api/task-pipelines
+List active pipeline templates. `includeArchived=true` includes archived templates.
+
+### POST /api/task-pipelines
+Create and publish pipeline version 1. The body contains `name`, optional `description`, and ordered `stages`. Each stage contains `name`, optional `description`, `actionType`, curated `icon`, `isRequired`, adapter-specific `actionConfig`, and optional checklist definitions.
+
+### GET /api/task-pipelines/[id]
+Get a tenant-owned pipeline and its versions/stages.
+
+### PATCH /api/task-pipelines/[id]
+Update pipeline metadata and publish a new immutable version for future tasks.
+
+### DELETE /api/task-pipelines/[id]
+Archive a pipeline with `{ "reason": "..." }`.
+
+### POST /api/task-pipelines/[id]/duplicate
+Duplicate the current published structure. The optional body field `name` overrides the generated copy name.
+
+### GET /api/tasks
+Search active tasks.
 
 **Query Parameters:**
-- `q` (string, optional) - Search by project/client/template/assignee
-- `page` (number, default: 1)
-- `limit` (number, default: 20)
-- `sortBy` (string, optional) - One of: `projectName`, `clientName`, `templateName`, `status`, `progress`, `teamTaskCount`, `clientTaskCount`, `startDate`, `nextTaskDueDate`, `dueDate`
-- `sortOrder` (`asc` | `desc`, default: `asc`)
-- `status` (string, optional) - One of: `NOT_STARTED`, `IN_PROGRESS`, `AT_RISK`, `ON_HOLD`, `COMPLETED`
-- `dueBucket` (string, optional) - One of: `today`, `thisWeek`, `nextWeek`, `overdue`
-- `tenantId` (string, optional) - SUPER_ADMIN tenant scoping
+- `q` - title/description search
+- `pipeline`, `company`, `owner` - relation UUID filters
+- `status` - `NOT_STARTED`, `IN_PROGRESS`, `PAUSED`, `COMPLETED`, or `CANCELLED`
+- `dueBucket` - `overdue`, `today`, `thisWeek`, or `nextWeek`; tasks without due dates never match
+- `page`, `limit`, `sortBy`, `sortOrder` - validated pagination and sorting
 
-### GET /api/workflow/projects/[id]
-Get a workflow project detail payload for a specific company-backed project.
+### POST /api/tasks
+Create a task from a published immutable pipeline version. Only `title` and `pipelineVersionId` are required; `description`, `companyId`, `ownerId`, and `dueDate` are optional.
+
+### GET /api/tasks/[taskId]
+Get task detail after authoritative stage reconciliation.
+
+### PATCH /api/tasks/[taskId]
+Update task metadata without altering its snapshotted stage structure.
+
+### DELETE /api/tasks/[taskId]
+Soft-delete a task with `{ "reason": "..." }`.
+
+### POST /api/tasks/[taskId]/status
+Apply `{ "action": "pause" | "resume" | "cancel" }`.
+
+### GET /api/tasks/[taskId]/stages/[stageId]
+Get stage detail, checklist, blockers, launch context, linked outcome summary, and reconciled status.
+
+### PATCH /api/tasks/[taskId]/stages/[stageId]
+Update optional assignee, notes, and other stage metadata.
+
+### POST /api/tasks/[taskId]/stages/[stageId]/transition
+Apply a validated `complete`, `reopen`, `skip`, `checklist`, `linkOutcome`, or `reconcile` transition. Manual completion/reopen is restricted to manual stages; required stages cannot be skipped.
 
 ---
 

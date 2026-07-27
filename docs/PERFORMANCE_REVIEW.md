@@ -605,12 +605,12 @@ Performance work should leave the codebase cleaner, not just faster. These stand
 - Keep document navigation lightweight: IDs and labels only.
 - Prefer optimistic UI for tag/link edits instead of invalidating full document detail.
 
-### Workflow Module
+### Tasks And Pipelines
 
-- Split project list from project detail data.
-- Avoid loading files, billing, tasks, communication, and dependencies all at once if the detail page has tabs/sections.
-- Denormalize project status, overdue counts, next milestone, and billing summary for list views.
-- Lazy-load document attachment search results only when the attach/link modal opens.
+- Keep the Tasks list response limited to task metadata, its immutable pipeline snapshot summary, and ordered stage status/icons.
+- Fetch full stage detail, blockers, launch context, checklist, and authoritative outcome only when the centered stage modal opens.
+- Keep pipeline list payloads compact and load the current version detail only in the builder.
+- Preserve narrow TanStack Query invalidation so metadata, status, and stage mutations do not reload unrelated workspaces.
 
 ### Admin and Maintenance
 

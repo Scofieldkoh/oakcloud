@@ -8,57 +8,57 @@ datasource db {
 }
 
 model Workspace {
-  id                      String                     @id @default(uuid())
-  name                    String
-  slug                    String                     @unique
-  status                  WorkspaceStatus            @default(PENDING_SETUP)
-  contactEmail            String?
-  contactPhone            String?
-  settings                Json?
-  maxUsers                Int                        @default(50)
-  maxCompanies            Int                        @default(100)
-  maxStorageMb            Int                        @default(10240)
-  logoUrl                 String?
-  primaryColor            String?                    @default("#294d44")
-  createdAt               DateTime                   @default(now())
-  updatedAt               DateTime                   @updatedAt
-  deletedAt               DateTime?
-  deletedReason           String?
-  activatedAt             DateTime?
-  suspendedAt             DateTime?
-  suspendReason           String?
-  aiConversations         AiConversation[]
-  auditLogs               AuditLog[]
-  backupSchedule          BackupSchedule?
-  chartOfAccounts         ChartOfAccount[]
-  companies               Company[]
-  connectorUsageLogs      ConnectorUsageLog[]
-  connectors              Connector[]
-  contactDetails          ContactDetail[]
-  contacts                Contact[]
-  documentTemplates       DocumentTemplate[]
-  documents               Document[]
-  exchangeRates           ExchangeRate[]
-  formFields              FormField[]
-  formDrafts              FormDraft[]
-  formSubmissions         FormSubmission[]
-  formUploads             FormUpload[]
-  forms                   Form[]
-  generatedDocuments      GeneratedDocument[]
-  esigningEnvelopes       EsigningEnvelope[]
-  roles                   Role[]
-  templatePartials        TemplatePartial[]
-  backups                 WorkspaceBackup[]
-  connectorAccess         WorkspaceConnectorAccess[]
-  letterhead              WorkspaceLetterhead?
-  users                   User[]
-  taskPipelines           TaskPipeline[]
-  taskPipelineVersions    TaskPipelineVersion[]
-  taskPipelineStages      TaskPipelineStage[]
-  tasks                   Task[]
-  taskStages              TaskStage[]
-  taskStageChecklistItems TaskStageChecklistItem[]
-  taskStageOutcomes       TaskStageOutcome[]
+  id                          String                       @id @default(uuid())
+  name                        String
+  slug                        String                       @unique
+  status                      WorkspaceStatus              @default(PENDING_SETUP)
+  contactEmail                String?
+  contactPhone                String?
+  settings                    Json?
+  maxUsers                    Int                          @default(50)
+  maxCompanies                Int                          @default(100)
+  maxStorageMb                Int                          @default(10240)
+  logoUrl                     String?
+  primaryColor                String?                      @default("#294d44")
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  deletedAt                   DateTime?
+  deletedReason               String?
+  activatedAt                 DateTime?
+  suspendedAt                 DateTime?
+  suspendReason               String?
+  aiConversations             AiConversation[]
+  auditLogs                   AuditLog[]
+  backupSchedule              BackupSchedule?
+  chartOfAccounts             ChartOfAccount[]
+  companies                   Company[]
+  connectorUsageLogs          ConnectorUsageLog[]
+  connectors                  Connector[]
+  contactDetails              ContactDetail[]
+  contacts                    Contact[]
+  documentTemplates           DocumentTemplate[]
+  documents                   Document[]
+  exchangeRates               ExchangeRate[]
+  formFields                  FormField[]
+  formDrafts                  FormDraft[]
+  formSubmissions             FormSubmission[]
+  formUploads                 FormUpload[]
+  forms                       Form[]
+  generatedDocuments          GeneratedDocument[]
+  esigningEnvelopes           EsigningEnvelope[]
+  roles                       Role[]
+  templatePartials            TemplatePartial[]
+  backups                     WorkspaceBackup[]
+  connectorAccess             WorkspaceConnectorAccess[]
+  letterhead                  WorkspaceLetterhead?
+  users                       User[]
+  taskPipelines               TaskPipeline[]
+  taskPipelineVersions        TaskPipelineVersion[]
+  taskPipelineStages          TaskPipelineStage[]
+  tasks                       Task[]
+  taskStages                  TaskStage[]
+  taskStageChecklistItems     TaskStageChecklistItem[]
+  taskStageOutcomes           TaskStageOutcome[]
   taskCompanyRecoveryContexts TaskCompanyRecoveryContext[]
 
   @@index([slug])
@@ -220,14 +220,14 @@ model UserCompanyAssignment {
 }
 
 model Company {
-  id                          String                   @id @default(uuid())
+  id                          String                       @id @default(uuid())
   tenantId                    String
   uen                         String
   name                        String
   formerName                  String?
   dateOfNameChange            DateTime?
-  entityType                  EntityType               @default(PRIVATE_LIMITED)
-  status                      CompanyStatus            @default(LIVE)
+  entityType                  EntityType                   @default(PRIVATE_LIMITED)
+  status                      CompanyStatus                @default(LIVE)
   statusDate                  DateTime?
   incorporationDate           DateTime?
   registrationDate            DateTime?
@@ -239,41 +239,41 @@ model Company {
   financialYearEndDay         Int?
   financialYearEndMonth       Int?
   fyeAsAtLastAr               DateTime?
-  homeCurrency                String?                  @default("SGD")
+  homeCurrency                String?                      @default("SGD")
   lastAgmDate                 DateTime?
   lastArFiledDate             DateTime?
   nextAgmDueDate              DateTime?
   nextArDueDate               DateTime?
   accountsDueDate             DateTime?
-  paidUpCapitalCurrency       String?                  @default("SGD")
-  paidUpCapitalAmount         Decimal?                 @db.Decimal(18, 2)
-  issuedCapitalCurrency       String?                  @default("SGD")
-  issuedCapitalAmount         Decimal?                 @db.Decimal(18, 2)
-  hasCharges                  Boolean                  @default(false)
-  currentOfficerCount         Int                      @default(0) @map("current_officer_count")
-  currentShareholderCount     Int                      @default(0) @map("current_shareholder_count")
-  activeChargeCount           Int                      @default(0) @map("active_charge_count")
-  documentCount               Int                      @default(0) @map("document_count")
-  hasPoc                      Boolean                  @default(false) @map("has_poc")
-  isGstRegistered             Boolean                  @default(false)
+  paidUpCapitalCurrency       String?                      @default("SGD")
+  paidUpCapitalAmount         Decimal?                     @db.Decimal(18, 2)
+  issuedCapitalCurrency       String?                      @default("SGD")
+  issuedCapitalAmount         Decimal?                     @db.Decimal(18, 2)
+  hasCharges                  Boolean                      @default(false)
+  currentOfficerCount         Int                          @default(0) @map("current_officer_count")
+  currentShareholderCount     Int                          @default(0) @map("current_shareholder_count")
+  activeChargeCount           Int                          @default(0) @map("active_charge_count")
+  documentCount               Int                          @default(0) @map("document_count")
+  hasPoc                      Boolean                      @default(false) @map("has_poc")
+  isGstRegistered             Boolean                      @default(false)
   gstRegistrationNumber       String?
   gstRegistrationDate         DateTime?
-  isRegisteredCharity         Boolean                  @default(false)
+  isRegisteredCharity         Boolean                      @default(false)
   charityRegistrationDate     DateTime?
   charityUEN                  String?
-  isIPC                       Boolean                  @default(false)
+  isIPC                       Boolean                      @default(false)
   ipcEffectiveDate            DateTime?
   ipcExpiryDate               DateTime?
-  annualReceiptsOrExpenditure Decimal?                 @db.Decimal(18, 2)
-  createdAt                   DateTime                 @default(now())
-  updatedAt                   DateTime                 @updatedAt
+  annualReceiptsOrExpenditure Decimal?                     @db.Decimal(18, 2)
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
   deletedAt                   DateTime?
   deletedReason               String?
-  taskIntegrationContext      Json?                    @map("task_integration_context")
+  taskIntegrationContext      Json?                        @map("task_integration_context")
   auditLogs                   AuditLog[]
   chartOfAccounts             ChartOfAccount[]
   accountMappings             ChartOfAccountsMapping[]
-  tenant                      Workspace                @relation(fields: [tenantId], references: [id])
+  tenant                      Workspace                    @relation(fields: [tenantId], references: [id])
   addresses                   CompanyAddress[]
   charges                     CompanyCharge[]
   contacts                    CompanyContact[]
@@ -2138,16 +2138,16 @@ model TaskPipeline {
 }
 
 model TaskPipelineVersion {
-  id         String              @id @default(uuid())
-  tenantId   String              @map("tenant_id")
-  pipelineId String              @map("pipeline_id")
-  version    Int
-  publishedAt DateTime?          @map("published_at")
-  createdAt  DateTime            @default(now()) @map("created_at")
-  tenant     Workspace           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  pipeline   TaskPipeline        @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
-  stages     TaskPipelineStage[]
-  tasks      Task[]
+  id          String              @id @default(uuid())
+  tenantId    String              @map("tenant_id")
+  pipelineId  String              @map("pipeline_id")
+  version     Int
+  publishedAt DateTime?           @map("published_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  tenant      Workspace           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pipeline    TaskPipeline        @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  stages      TaskPipelineStage[]
+  tasks       Task[]
 
   @@unique([pipelineId, version])
   @@index([tenantId, pipelineId, version])
@@ -2175,25 +2175,25 @@ model TaskPipelineStage {
 }
 
 model Task {
-  id                String              @id @default(uuid())
-  tenantId          String              @map("tenant_id")
-  pipelineVersionId String              @map("pipeline_version_id")
-  companyId         String?             @map("company_id")
-  ownerId           String?             @map("owner_id")
-  title             String              @db.VarChar(300)
-  description       String?
-  status            TaskStatus          @default(NOT_STARTED)
-  dueDate           DateTime?           @map("due_date") @db.Date
-  snapshotLockedAt  DateTime?           @map("snapshot_locked_at")
-  createdAt         DateTime            @default(now()) @map("created_at")
-  updatedAt         DateTime            @updatedAt @map("updated_at")
-  deletedAt         DateTime?           @map("deleted_at")
-  deletedReason     String?             @map("deleted_reason")
-  tenant            Workspace           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  pipelineVersion   TaskPipelineVersion @relation(fields: [pipelineVersionId], references: [id])
-  company           Company?            @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  owner             User?               @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  stages            TaskStage[]
+  id                      String                       @id @default(uuid())
+  tenantId                String                       @map("tenant_id")
+  pipelineVersionId       String                       @map("pipeline_version_id")
+  companyId               String?                      @map("company_id")
+  ownerId                 String?                      @map("owner_id")
+  title                   String                       @db.VarChar(300)
+  description             String?
+  status                  TaskStatus                   @default(NOT_STARTED)
+  dueDate                 DateTime?                    @map("due_date") @db.Date
+  snapshotLockedAt        DateTime?                    @map("snapshot_locked_at")
+  createdAt               DateTime                     @default(now()) @map("created_at")
+  updatedAt               DateTime                     @updatedAt @map("updated_at")
+  deletedAt               DateTime?                    @map("deleted_at")
+  deletedReason           String?                      @map("deleted_reason")
+  tenant                  Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pipelineVersion         TaskPipelineVersion          @relation(fields: [pipelineVersionId], references: [id])
+  company                 Company?                     @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  owner                   User?                        @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  stages                  TaskStage[]
   companyRecoveryContexts TaskCompanyRecoveryContext[]
 
   @@index([tenantId, status, deletedAt])
@@ -2205,29 +2205,29 @@ model Task {
 }
 
 model TaskStage {
-  id             String                   @id @default(uuid())
-  tenantId       String                   @map("tenant_id")
-  taskId         String                   @map("task_id")
-  name           String                   @db.VarChar(200)
-  description    String?
-  position       Int
-  actionType     TaskStageActionType      @map("action_type")
-  icon           String                   @db.VarChar(100)
-  isRequired     Boolean                  @default(true) @map("is_required")
-  actionConfig   Json?                    @map("action_config")
-  status         TaskStageStatus          @default(NOT_STARTED)
-  assigneeId     String?                  @map("assignee_id")
-  notes          String?
-  skipReason     String?                  @map("skip_reason")
-  startedAt      DateTime?                @map("started_at")
-  completedAt    DateTime?                @map("completed_at")
-  createdAt      DateTime                 @default(now()) @map("created_at")
-  updatedAt      DateTime                 @updatedAt @map("updated_at")
-  tenant         Workspace                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  task           Task                     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  assignee       User?                    @relation("TaskStageAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  checklistItems TaskStageChecklistItem[]
-  outcome        TaskStageOutcome?
+  id                      String                       @id @default(uuid())
+  tenantId                String                       @map("tenant_id")
+  taskId                  String                       @map("task_id")
+  name                    String                       @db.VarChar(200)
+  description             String?
+  position                Int
+  actionType              TaskStageActionType          @map("action_type")
+  icon                    String                       @db.VarChar(100)
+  isRequired              Boolean                      @default(true) @map("is_required")
+  actionConfig            Json?                        @map("action_config")
+  status                  TaskStageStatus              @default(NOT_STARTED)
+  assigneeId              String?                      @map("assignee_id")
+  notes                   String?
+  skipReason              String?                      @map("skip_reason")
+  startedAt               DateTime?                    @map("started_at")
+  completedAt             DateTime?                    @map("completed_at")
+  createdAt               DateTime                     @default(now()) @map("created_at")
+  updatedAt               DateTime                     @updatedAt @map("updated_at")
+  tenant                  Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  task                    Task                         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  assignee                User?                        @relation("TaskStageAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  checklistItems          TaskStageChecklistItem[]
+  outcome                 TaskStageOutcome?
   companyRecoveryContexts TaskCompanyRecoveryContext[]
 
   @@unique([taskId, position])

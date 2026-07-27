@@ -191,7 +191,7 @@ Each group shows:
 - Confidence and the reasons for the recommendation.
 - Names, aliases, identifiers, addresses, nationality, and birth date.
 - Contact details and linked companies.
-- Counts of officer, shareholder, charge, note, document, alias, and workflow references.
+- Counts of officer, shareholder, charge, note, document, and alias references.
 - Identifier conflicts that block approval.
 - The recommended master and controls to choose another master.
 
@@ -210,12 +210,11 @@ One database transaction:
 3. Reassigns `CompanyOfficer`, `CompanyShareholder`, and `CompanyCharge` references. Their denormalized name fields remain unchanged as historical snapshots.
 4. Consolidates contact details by tenant, company scope, detail type, and normalized value. Purposes are unioned, `isPoc` is OR-combined, and an existing master primary wins; otherwise the oldest primary wins. Distinct values are retained.
 5. Reassigns note tabs without merging content, preserving each note and ordering master notes before source notes.
-6. Reassigns workflow communication entries and workflow milestone approval contacts.
-7. Updates every non-foreign-key pointer, including document revision `vendorId` and `customerId`, and vendor/customer alias `normalizedContactId`. Document revision display names remain historical snapshots.
-8. Consolidates aliases by tenant, company scope, and canonical raw name; the highest confidence survives and points to the master.
-9. Asserts that no known foreign-key or non-foreign-key reference still points to a source contact.
-10. Writes the immutable `ContactMergeOperation` ledger and an audit event using a new `MERGE` audit action inside the same transaction.
-11. Hard-deletes all approved source contacts. Existing audit records remain because they store entity IDs as values rather than contact foreign keys.
+6. Updates every non-foreign-key pointer, including document revision `vendorId` and `customerId`, and vendor/customer alias `normalizedContactId`. Document revision display names remain historical snapshots.
+7. Consolidates aliases by tenant, company scope, and canonical raw name; the highest confidence survives and points to the master.
+8. Asserts that no known foreign-key or non-foreign-key reference still points to a source contact.
+9. Writes the immutable `ContactMergeOperation` ledger and an audit event using a new `MERGE` audit action inside the same transaction.
+10. Hard-deletes all approved source contacts. Existing audit records remain because they store entity IDs as values rather than contact foreign keys.
 
 The merge ledger preserves traceability after hard deletion. Hard deletion is irreversible through the normal restore-contact function, so the confirmation explicitly states that only the selected master will remain.
 

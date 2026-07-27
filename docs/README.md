@@ -1,8 +1,8 @@
 # Oakcloud - Practice Management System
 
-> **Last Updated**: 2026-03-11
+> **Last Updated**: 2026-07-27
 
-Oakcloud is a modular practice management system for accounting firms. It is local-first, multi-tenant, and now includes a full Forms module for internal builders and public submissions.
+Oakcloud is a modular practice management system for accounting firms. It is local-first, multi-tenant, and includes versioned Tasks and Pipelines alongside the Company, Document Generation, E-signing, and Forms modules.
 
 ## Documentation
 
@@ -66,7 +66,11 @@ Oakcloud is built around a few core principles:
 | Forms | Builder, public links, drafts, uploads, PDF export, response review, AI review |
 | Exchange Rates | MAS API integration and manual overrides |
 | Chart Of Accounts | Hierarchical accounts and external mapping |
-| Workflow (Preview) | Project list and project detail workspace with live API-backed data |
+| Tasks | Tenant-scoped work tracked through Company-first desktop tables, responsive mobile cards, and stage detail modals |
+| Pipelines | Reusable, versioned stage templates; published versions are immutable and edits affect future tasks only |
+| E-signing | Envelope preparation, delivery, signer lifecycle, and certificate-backed completion |
+
+The seed creates a **Client Onboarding** pipeline for every non-deleted tenant. Its required stages are Company Profile, Generate Contract, and E-signing. Stage icons are curated Lucide outlines, while status surfaces are system-controlled rather than saved as user-defined colours.
 
 ## Planned Modules
 

@@ -20,6 +20,7 @@ export function Alert({ variant = 'info', title, children, onClose, className, c
   return (
     <div
       role="alert"
+      aria-label={title}
       className={cn(
         'flex gap-2.5 rounded-md border',
         compact ? 'p-2.5' : 'p-3',

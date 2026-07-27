@@ -24,7 +24,7 @@ const contacts = [
     corporateUen: null, nationality: 'Singaporean', dateOfBirth: '1990-01-01', fullAddress: '1 Oak Street',
     contactDetails: [{ detailType: 'EMAIL', value: 'alex@example.com', companyId: null }],
     companies: [{ id: 'company-1', name: 'Oak Pte Ltd', uen: '202000001A' }],
-    referenceCounts: { companyRelations: 1, officerPositions: 1, shareholdings: 0, chargeHoldings: 0, contactDetails: 1, noteTabs: 1, documentRevisions: 2, aliases: 1, workflowCommunicationLogEntries: 0, workflowMilestones: 0 },
+    referenceCounts: { companyRelations: 1, officerPositions: 1, shareholdings: 0, chargeHoldings: 0, contactDetails: 1, noteTabs: 1, documentRevisions: 2, aliases: 1 },
     createdAt: '2025-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
   },
   {
@@ -32,7 +32,7 @@ const contacts = [
     corporateName: null, alias: null, identificationType: 'NRIC', identificationNumber: 'S7654321B',
     corporateUen: null, nationality: 'Singaporean', dateOfBirth: '1990-01-01', fullAddress: '1 Oak Street',
     contactDetails: [{ detailType: 'PHONE', value: '+65 6123 4567', companyId: null }], companies: [],
-    referenceCounts: { companyRelations: 0, officerPositions: 0, shareholdings: 1, chargeHoldings: 0, contactDetails: 1, noteTabs: 0, documentRevisions: 0, aliases: 0, workflowCommunicationLogEntries: 1, workflowMilestones: 0 },
+    referenceCounts: { companyRelations: 0, officerPositions: 0, shareholdings: 1, chargeHoldings: 0, contactDetails: 1, noteTabs: 0, documentRevisions: 0, aliases: 0 },
     createdAt: '2025-02-01T00:00:00.000Z', updatedAt: '2026-01-02T00:00:00.000Z',
   },
   {
@@ -40,7 +40,7 @@ const contacts = [
     corporateName: null, alias: null, identificationType: 'PASSPORT', identificationNumber: 'P9999999',
     corporateUen: null, nationality: null, dateOfBirth: null, fullAddress: null,
     contactDetails: [], companies: [],
-    referenceCounts: { companyRelations: 0, officerPositions: 0, shareholdings: 0, chargeHoldings: 1, contactDetails: 0, noteTabs: 0, documentRevisions: 0, aliases: 0, workflowCommunicationLogEntries: 0, workflowMilestones: 1 },
+    referenceCounts: { companyRelations: 0, officerPositions: 0, shareholdings: 0, chargeHoldings: 1, contactDetails: 0, noteTabs: 0, documentRevisions: 0, aliases: 0 },
     createdAt: '2025-03-01T00:00:00.000Z', updatedAt: '2026-01-03T00:00:00.000Z',
   },
 ];
@@ -97,7 +97,7 @@ describe('ContactDuplicateReviewModal', () => {
     expect(within(firstCard).getByText(/Notes 1/)).toBeVisible();
     expect(within(firstCard).getByText(/Documents 2/)).toBeVisible();
     expect(within(firstCard).getByText(/Aliases 1/)).toBeVisible();
-    expect(within(firstCard).getByText(/Workflow 0/)).toBeVisible();
+    expect(within(firstCard).queryByText(/Workflow/)).not.toBeInTheDocument();
   });
 
   it('offers every unique conflicting value in a multi-source group', async () => {

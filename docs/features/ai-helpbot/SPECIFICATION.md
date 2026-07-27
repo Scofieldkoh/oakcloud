@@ -292,7 +292,6 @@ export interface AIContextSnapshot {
   scope: {
     companyId?: string;
     documentId?: string;
-    workflowProjectId?: string;
     deadlineId?: string;
   };
   selection: {
@@ -738,7 +737,7 @@ Current schema already references `ai_conversations`. This spec proposes normali
 | tenant_id | UUID | Indexed |
 | user_id | UUID | Indexed |
 | title | VARCHAR(200) | Session label |
-| context_type | VARCHAR(50) | `global`, `company`, `document`, `workflow` |
+| context_type | VARCHAR(50) | `global`, `company`, `document` |
 | context_id | UUID | Optional |
 | status | VARCHAR(20) | `ACTIVE`, `ARCHIVED` |
 | archived_at | TIMESTAMP | Optional |

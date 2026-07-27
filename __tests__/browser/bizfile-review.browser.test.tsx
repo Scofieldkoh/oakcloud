@@ -38,12 +38,17 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
     host.style.width = '100%';
     document.body.replaceChildren(host);
     root = createRoot(host);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ matches: {} }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    )));
   });
 
   afterEach(async () => {
     await act(async () => root.unmount());
     host.remove();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   async function mount(onConfirm = vi.fn()) {
@@ -115,7 +120,7 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
     await fill(returnedName, '');
     await click(screen.getByRole('button', { name: 'Confirm & Save' }));
     await expect.element(screen.getByText('Company name is required')).toBeVisible();
-    expect(returnedName).toHaveFocus();
+    await expect.element(returnedName).toHaveFocus();
     await fill(returnedName, '  Corrected Pte. Ltd.  ');
     await click(screen.getByRole('button', { name: 'Confirm & Save' }));
 

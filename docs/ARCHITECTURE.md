@@ -1,6 +1,6 @@
 # Architecture
 
-> **Last Updated**: 2026-03-11
+> **Last Updated**: 2026-07-27
 > **Audience**: Developers
 
 System architecture and runtime design overview for Oakcloud.
@@ -74,11 +74,16 @@ src/
 |-- app/
 |   |-- (dashboard)/           # Authenticated UI routes
 |   |   |-- forms/             # Forms list, builder, responses, draft detail
+|   |   |-- tasks/             # Tenant task workspace
+|   |   |-- pipelines/         # Versioned pipeline list and builder
 |   |-- api/                   # Authenticated and public API routes
 |   |   |-- forms/             # Forms admin + public endpoints
+|   |   |-- tasks/             # Task, status, stage, and transition endpoints
+|   |   |-- task-pipelines/    # Pipeline CRUD, versioning, duplicate, archive
 |   |-- forms/f/[slug]/        # Public form runtime
 |-- components/
 |   |-- forms/                 # Builder and form-specific UI pieces
+|   |-- tasks/                 # Task list/cards, stage modal, pipeline builder
 |   |-- ui/                    # Reusable shared components
 |-- hooks/                     # Query and auth hooks
 |-- lib/
@@ -89,6 +94,7 @@ src/
 |   |-- storage/               # Object storage abstraction
 |   |-- validations/           # Zod schemas
 |-- services/
+|   |-- tasks/                 # Pipeline, task, stage, registry, integrations
 |   |-- form-crud.service.ts
 |   |-- form-submission.service.ts
 |   |-- form-draft.service.ts
@@ -207,6 +213,29 @@ Document-generation work can be paused as explicit, server-backed sessions. Each
 
 Editable experiences can use the shared `useUnsavedNavigationGuard` hook for native `beforeunload`, same-origin link, and browser-back protection. Its default copy is page-neutral, and document generation, forms, e-signing, or other editors can supply experience-specific dialog text.
 
+## Tasks And Pipelines Architecture
+
+`/pipelines` manages tenant-scoped templates and `/tasks` runs work from them. Creating or editing a pipeline publishes a new immutable pipeline version. Creating a task copies that version's ordered stage definitions and checklist items into a locked live-task snapshot. Later template edits therefore affect future tasks only; an existing task never changes its stage structure or pipeline version.
+
+The `src/services/tasks/` stage-action registry owns action configuration parsing, blockers, launch context, outcome summaries, and derived stage status:
+
+| Adapter | Curated default icon | Authoritative module | Completion rule |
+|---------|----------------------|----------------------|-----------------|
+| `MANUAL` | `CircleCheckBig` | Tasks | Explicit manual completion |
+| `COMPANY_PROFILE` | `Building2` | Company | A tenant-owned Company is linked |
+| `DOCUMENT_GENERATION` | `FileText` | Document Generation | The linked `GeneratedDocument` is `FINALIZED` |
+| `ESIGNING` | `PenLine` | E-signing | All required signatures are complete |
+
+Tasks retain only links and immutable stage snapshots. Company, Generated Document, and E-signing Envelope records remain authoritative in their own modules. Optional `TaskLaunchContext` (`taskId`, `taskStageId`, `returnTo`) follows the user into those workspaces; creation/status callbacks link or reconcile the stage outcome. Detail reads also reconcile so missed callbacks self-heal. Declined, expired, voided, or cancelled envelopes derive a failed stage.
+
+Task status is derived from required live stages as `NOT_STARTED`, `IN_PROGRESS`, or `COMPLETED`. `PAUSED` and `CANCELLED` are explicit task overrides. Optional stages may be skipped with a reason; required stages cannot be skipped. Stage status includes `NOT_STARTED`, `IN_PROGRESS`, `WAITING`, `COMPLETED`, `SKIPPED`, and `FAILED`. The UI assigns fixed semantic surfaces and non-colour markers; pipelines store curated Lucide icon names but no user-defined colours.
+
+The default tenant-aware seed publishes Client Onboarding v1 with three required stages: Company Profile, Generate Contract, and E-signing. Deterministic IDs and a transaction make the seed repeatable without creating extra versions.
+
+### Legacy Module Reset
+
+The 2026-07-24 migration is a complete reset of the retired Workflow/Projects data model: all `workflow_*` tables are dropped and the Task/Pipeline tables are created. There are no compatibility routes, redirects, or data migration. Company, Document Generation, E-signing, Contact, and other non-retired module records are preserved.
+
 ## Implemented Modules
 
 | Module | Notes |
@@ -216,7 +245,8 @@ Editable experiences can use the shared `useUnsavedNavigationGuard` hook for nat
 | Document Generation | Templates, sharing, comments, exports |
 | Document Vault | Extraction, revisions, duplicate detection; workspace-managed extraction prompts and quick context buttons |
 | Forms | Builder, public forms, drafts, attachments, PDF export, AI review |
-| Workflow (Preview) | Project and task workspace |
+| Tasks | Versioned pipeline execution with responsive list and stage modal |
+| Pipelines | Tenant-scoped reusable stage templates and immutable published versions |
 | Exchange Rates | MAS sync and overrides |
 | Chart Of Accounts | Hierarchical accounts and external code mapping |
 

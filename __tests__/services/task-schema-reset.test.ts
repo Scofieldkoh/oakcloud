@@ -8,6 +8,10 @@ const migration = readFileSync(
   join(root, "prisma", "migrations", "20260724090000_modular_tasks_reset", "migration.sql"),
   "utf8",
 );
+const sharedDocumentsCleanupMigration = readFileSync(
+  join(root, "prisma", "migrations", "20260627231500_remove_shared_documents", "migration.sql"),
+  "utf8",
+);
 const generatedEnums = readFileSync(join(root, "src", "generated", "prisma", "enums.ts"), "utf8");
 const contactMergeService = readFileSync(
   join(root, "src", "services", "contact-merge.service.ts"),
@@ -121,6 +125,15 @@ describe("modular task schema reset", () => {
     expect(migration).toContain('CREATE UNIQUE INDEX "task_stage_checklist_items_task_stage_id_position_key"');
     expect(migration).toContain('CREATE INDEX "task_pipeline_stages_tenant_id_version_id_position_idx"');
     expect(migration).toContain('CREATE INDEX "task_stage_checklist_items_tenant_id_task_stage_id_position_idx"');
+  });
+
+  it("lets pristine databases pass the legacy shared-documents cleanup before the reset", () => {
+    expect(sharedDocumentsCleanupMigration).toContain(
+      "IF to_regclass('public.workflow_artifacts') IS NOT NULL THEN",
+    );
+    expect(sharedDocumentsCleanupMigration).toMatch(
+      /IF to_regclass\('public\.workflow_artifacts'\) IS NOT NULL THEN[\s\S]*?ALTER TABLE "workflow_artifacts"[\s\S]*?END IF;/,
+    );
   });
 
   it("locks published pipeline snapshots against every structural mutation in the migration", () => {

@@ -5,6 +5,9 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    'process.env': '{}',
+  },
   test: {
     include: ['__tests__/browser/**/*.browser.test.tsx'],
     browser: {

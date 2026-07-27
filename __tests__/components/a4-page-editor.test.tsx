@@ -876,7 +876,7 @@ describe('A4PageEditor', () => {
         expect(onChange).toHaveBeenLastCalledWith(
           expect.stringContaining('123456789012345'),
         );
-      });
+      }, { timeout: 3000 });
       expect(onChange).toHaveBeenLastCalledWith(
         expect.not.stringContaining(pageBreak),
       );

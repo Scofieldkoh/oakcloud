@@ -68,6 +68,11 @@ export function TaskWorkspace() {
   const companies = companyQuery.data?.companies ?? [];
   const owners = ownerQuery.data?.users ?? [];
   const tasks = taskQuery.data?.tasks ?? [];
+  const optionQueryErrors = [
+    pipelineQuery.error ? `Pipelines: ${pipelineQuery.error.message}` : null,
+    companyQuery.error ? `Companies: ${companyQuery.error.message}` : null,
+    ownerQuery.error ? `Owners: ${ownerQuery.error.message}` : null,
+  ].filter((message): message is string => Boolean(message));
   const mutationError = (
     createTask.error
     || updateTask.error
@@ -138,6 +143,14 @@ export function TaskWorkspace() {
         owners={owners}
         onChange={setFilters}
       />
+
+      {optionQueryErrors.length > 0 ? (
+        <Alert variant="error" title="Task options unavailable">
+          <ul className="list-disc space-y-1 pl-4">
+            {optionQueryErrors.map((message) => <li key={message}>{message}</li>)}
+          </ul>
+        </Alert>
+      ) : null}
 
       {mutationError && !formMode ? (
         <Alert
