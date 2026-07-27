@@ -31,7 +31,6 @@ export const aiContextSnapshotSchema = z.object({
     .object({
       companyId: z.string().uuid().optional(),
       documentId: z.string().uuid().optional(),
-      workflowProjectId: z.string().uuid().optional(),
       deadlineId: z.string().uuid().optional(),
     })
     .default({}),

@@ -28,3 +28,10 @@
 - Sidebar entries are ungrouped, use existing compact navigation styling, and preserve all new Tasks/Pipelines behavior.
 - The absence test excludes itself so its explicit legacy patterns do not create a false positive.
 - Only Task 6B tracked files and this report are staged; shared SDD scratch artifacts remain untouched.
+
+## Fix round 1: orphaned AI helpbot Workflow Project scope
+
+- Reviewer finding: `aiContextSnapshotSchema.scope` still exposed the legacy `workflowProjectId` field.
+- RED: extended the legacy-surface source-reference contract with the case-sensitive word-boundary match `\bworkflowProjectId\b`; `npx.cmd vitest run __tests__/services/legacy-workflow-surface-removed.test.ts` failed only on `src/lib/validations/ai-helpbot.ts`.
+- GREEN: removed the field from `aiContextSnapshotSchema.scope`; the directly covering test passed (2 tests).
+- A focused repository search found no directly coupled source or test expectation to update.

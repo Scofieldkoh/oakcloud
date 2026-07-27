@@ -27,7 +27,7 @@ describe('legacy workflow application surface', () => {
   });
 
   it('does not retain source or test imports and route targets for the retired workflow application', () => {
-    const legacyReference = /@\/components\/workflow|@\/hooks\/use-workflow-project|@\/services\/workflow-project|\/api\/workflow|["'`]\/workflow\//;
+    const legacyReference = /@\/components\/workflow|@\/hooks\/use-workflow-project|@\/services\/workflow-project|\/api\/workflow|["'`]\/workflow\/|\bworkflowProjectId\b/;
     const files = [...sourceFiles(join(root, 'src')), ...sourceFiles(join(root, '__tests__'))]
       .filter((path) => !path.endsWith('legacy-workflow-surface-removed.test.ts'));
 
