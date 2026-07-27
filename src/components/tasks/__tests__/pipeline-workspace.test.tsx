@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PipelineBuilder, pipelineToDraft } from '@/components/tasks/pipelines/pipeline-builder';
 import { PipelineList } from '@/components/tasks/pipelines/pipeline-list';
@@ -317,11 +317,17 @@ describe('PipelinesListWorkspace', () => {
     hookMocks.archive.mockRejectedValueOnce(new Error('Archive failed'));
     render(<PipelinesListWorkspace onCreate={vi.fn()} onEdit={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Archive Annual review' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Reason' }), { target: { value: 'No longer used' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Archive pipeline' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Archive failed');
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Archive pipeline' })).toBeEnabled();
+    const dialog = screen.getByRole('dialog');
+    const reason = within(dialog).getByRole('textbox', { name: 'Reason' });
+    fireEvent.change(reason, { target: { value: 'No longer used' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Archive pipeline' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Archive failed');
+    expect(reason).toHaveValue('No longer used');
+    expect(within(dialog).getByRole('button', { name: 'Archive pipeline' })).toBeEnabled();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Archive pipeline' }));
+    await waitFor(() => expect(hookMocks.archive).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 });
 

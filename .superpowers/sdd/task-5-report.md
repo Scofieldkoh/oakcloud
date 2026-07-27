@@ -106,3 +106,16 @@ follow-up fixes are in the commit containing this report update.
   resolution.
 - No Task 6 files, routes, or behavior were changed. Rendered browser QA was not
   added because this follow-up was scoped to focused component/static checks.
+
+## P1 archive-dialog accessibility follow-up
+
+- RED: the focused archive recovery test failed because `role="alert"` was not
+  found within `role="dialog"`; the error was a workspace sibling behind the
+  modal overlay.
+- GREEN: archive mutation errors now render through `ConfirmDialog.children`
+  inside the active modal. The reason remains populated, retry stays enabled,
+  and a successful retry closes the dialog without an unhandled rejection.
+- Duplicate errors intentionally remain at workspace level because no modal is
+  active for that operation.
+- The follow-up commit contains this report update, the workspace placement
+  fix, and the focused accessibility regression assertion.

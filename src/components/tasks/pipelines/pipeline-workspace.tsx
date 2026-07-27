@@ -22,7 +22,6 @@ export function PipelinesListWorkspace({ onCreate, onEdit }: { onCreate: () => v
   const selected = pipelines.find((pipeline) => pipeline.id === archiveId);
   return <div className="space-y-4">
     {duplicate.error && <Alert variant="error" title="Could not duplicate pipeline" onClose={duplicate.reset}>{duplicate.error.message}</Alert>}
-    {archive.error && <Alert variant="error" title="Could not archive pipeline" onClose={archive.reset}>{archive.error.message}</Alert>}
     <PipelineList
       pipelines={pipelines}
       onCreate={onCreate}
@@ -46,7 +45,9 @@ export function PipelinesListWorkspace({ onCreate, onEdit }: { onCreate: () => v
       requireReason
       reasonMinLength={1}
       isLoading={archive.isPending}
-    />
+    >
+      {archive.error && <Alert variant="error" title="Could not archive pipeline" onClose={archive.reset} compact>{archive.error.message}</Alert>}
+    </ConfirmDialog>
   </div>;
 }
 
