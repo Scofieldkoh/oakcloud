@@ -27,9 +27,8 @@ import {
   BookOpen,
   Lock,
   Calculator,
-  FolderKanban,
   ListTodo,
-  LayoutTemplate,
+  GitBranch,
   Mail,
   ClipboardList,
   PenSquare,
@@ -63,18 +62,9 @@ interface NavGroup {
 const primaryNavigation: NavItem[] = [
   { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Users },
+  { name: 'Tasks', href: '/tasks', icon: ListTodo },
+  { name: 'Pipelines', href: '/pipelines', icon: GitBranch },
 ];
-
-const workflowNavGroup: NavGroup = {
-  id: 'workflow',
-  name: 'Workflow',
-  icon: FolderKanban,
-  items: [
-    { name: 'Projects', href: '/workflow/projects', icon: FolderKanban },
-    { name: 'Tasks', href: '/workflow/tasks', icon: ListTodo },
-    { name: 'Templates', href: '/workflow/templates', icon: LayoutTemplate },
-  ],
-};
 
 const secondaryNavigation: NavItem[] = [
   { name: 'Document Vault', href: '/processing', icon: ScanText },
@@ -346,7 +336,7 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
 
   // Collapse state - all groups collapsed by default
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    () => new Set([workflowNavGroup.id, ...adminNavGroups.map((g) => g.id)])
+    () => new Set(adminNavGroups.map((g) => g.id))
   );
 
   const toggleGroup = useCallback((groupId: string) => {
@@ -417,33 +407,6 @@ function NavigationContent({ collapsed, onNavigate }: { collapsed: boolean; onNa
           />
         );
       })}
-
-      {/* Workflow Group */}
-      {collapsed ? (
-        <CollapsedNavPopover
-          group={workflowNavGroup}
-          items={workflowNavGroup.items}
-          isActive={isGroupActive(workflowNavGroup)}
-          onNavigate={onNavigate}
-          pathname={pathname}
-        />
-      ) : (
-        <div>
-          <NavGroupHeader
-            group={workflowNavGroup}
-            isCollapsed={collapsedGroups.has(workflowNavGroup.id)}
-            onToggle={() => toggleGroup(workflowNavGroup.id)}
-            sidebarCollapsed={collapsed}
-            isActive={isGroupActive(workflowNavGroup)}
-          />
-          <NavGroupItems
-            items={workflowNavGroup.items}
-            collapsed={collapsedGroups.has(workflowNavGroup.id)}
-            onNavigate={onNavigate}
-            pathname={pathname}
-          />
-        </div>
-      )}
 
       {visibleSecondaryNavigation.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
