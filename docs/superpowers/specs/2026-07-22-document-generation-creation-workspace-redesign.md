@@ -49,6 +49,16 @@ On wide screens the two sections may sit beside each other, but each list keeps 
 readable width and independent vertical rhythm. The current selection is echoed
 in a contextual summary so it remains visible when the list is searched.
 
+Each task section places that contextual summary directly below its heading as a
+compact selected-value strip. The template strip shows the selected template
+name and category. The company strip shows the selected company name and UEN,
+or clearly states `No company selected` when company context is intentionally
+omitted. Both strips update immediately when the user changes a selection.
+
+The task header contains only the back link and `Create document` title; it does
+not repeat workflow instructions or draft-saving guidance. The three-stage
+indicator keeps `Review & Generate` on one line at supported viewport widths.
+
 ### Stage 2: Details
 
 Details contains:
