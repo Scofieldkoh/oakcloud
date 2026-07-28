@@ -9,6 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { NextRequest } from 'next/server';
 
 // Mock storage
 const mockStorageUpload = vi.fn();
@@ -356,6 +357,52 @@ describe('Document Download', () => {
 
       expect(doc.tenantId).toBe('tenant-abc');
       expect(doc.companyId).toBe('company-456');
+    });
+  });
+
+  describe('Pending document review route', () => {
+    it('streams an uploaded pending document to its uploader', async () => {
+      mockPrismaFindUnique.mockResolvedValue({
+        id: 'doc-123',
+        tenantId: 'tenant-abc',
+        uploadedById: 'user-123',
+        storageKey: 'tenant-abc/pending/doc-123/original.pdf',
+        extractionStatus: 'PENDING',
+        mimeType: 'application/pdf',
+        originalFileName: 'bizfile.pdf',
+        fileName: 'doc-123.pdf',
+      });
+      mockStorageDownload.mockResolvedValue(Buffer.from('PDF content'));
+      const { GET } = await import('@/app/api/documents/[documentId]/route');
+
+      const response = await GET(
+        new NextRequest('http://localhost/api/documents/doc-123'),
+        { params: Promise.resolve({ documentId: 'doc-123' }) },
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toBe('application/pdf');
+      expect(response.headers.get('content-disposition')).toContain('bizfile.pdf');
+      expect(await response.text()).toBe('PDF content');
+    });
+
+    it('does not expose a pending document from another tenant', async () => {
+      mockPrismaFindUnique.mockResolvedValue({
+        id: 'doc-123',
+        tenantId: 'tenant-other',
+        uploadedById: 'user-123',
+        storageKey: 'tenant-other/pending/doc-123/original.pdf',
+        extractionStatus: 'PENDING',
+      });
+      const { GET } = await import('@/app/api/documents/[documentId]/route');
+
+      const response = await GET(
+        new NextRequest('http://localhost/api/documents/doc-123'),
+        { params: Promise.resolve({ documentId: 'doc-123' }) },
+      );
+
+      expect(response.status).toBe(403);
+      expect(mockStorageDownload).not.toHaveBeenCalled();
     });
   });
 });

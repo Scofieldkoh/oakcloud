@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DocumentGenerationWizard,
@@ -126,6 +126,55 @@ describe('DocumentGenerationWizard', () => {
 
     expect(screen.queryByText('Old local draft')).not.toBeInTheDocument();
     expect(window.localStorage.getItem('oakcloud:document-generation-wizard-draft')).toBeNull();
+  });
+
+  it('shows the current template and company in the Setup selection summaries', () => {
+    render(
+      <DocumentGenerationWizard
+        templates={[template]}
+        companies={[company]}
+        onGenerate={vi.fn()}
+      />,
+    );
+
+    const templateSummary = screen.getByRole('status', { name: 'Selected template' });
+    const companySummary = screen.getByRole('status', { name: 'Selected company' });
+
+    expect(within(templateSummary).getByText('No template selected')).toBeVisible();
+    expect(within(companySummary).getByText('No company selected')).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: /Resolution Board resolution/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Sample Company 202600001A/ }));
+
+    expect(within(templateSummary).getByText(template.name)).toBeVisible();
+    expect(within(templateSummary).getByText(template.category)).toBeVisible();
+    expect(within(companySummary).getByText(company.name)).toBeVisible();
+    expect(within(companySummary).getByText(company.uen)).toBeVisible();
+  });
+
+  it('defaults a task-linked company for a new generation session', async () => {
+    const onSaveDraft = vi.fn(async (_draftId, state) => ({
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      savedAt: '2026-07-18T02:00:00.000Z',
+      state,
+    }));
+
+    render(
+      <DocumentGenerationWizard
+        templates={[template]}
+        companies={[company]}
+        initialCompanyId={company.id}
+        onGenerate={vi.fn()}
+        onSaveDraft={onSaveDraft}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Draft' }));
+
+    await waitFor(() => expect(onSaveDraft).toHaveBeenCalledWith(
+      null,
+      expect.objectContaining({ companyId: company.id }),
+    ));
   });
 
   it('saves at the initial step and reuses the returned draft id', async () => {
@@ -268,7 +317,7 @@ describe('DocumentGenerationWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue to Details' }));
 
     expect(screen.getByRole('alert')).toHaveTextContent('Select a company for this template.');
-    expect(screen.getByText('No company selected')).toBeVisible();
+    expect(screen.getByRole('button', { name: /No company selected/ })).toBeVisible();
     expect(screen.queryByRole('radio', { name: /Director/ })).not.toBeInTheDocument();
   });
 
@@ -409,7 +458,7 @@ describe('DocumentGenerationWizard', () => {
       onGenerate={vi.fn()}
     />);
 
-    expect(await screen.findByText('No company selected')).toBeVisible();
+    expect(await screen.findByRole('button', { name: /No company selected/ })).toBeVisible();
     expect(screen.queryByLabelText('Document content')).not.toBeInTheDocument();
     expect(screen.queryByText('Generate Document')).not.toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();

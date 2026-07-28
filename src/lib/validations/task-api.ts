@@ -28,6 +28,8 @@ export const taskStageRouteParamsSchema = z.object({
 
 export const taskListQuerySchema = z.object({
   query: z.string().trim().min(1).max(300).optional(),
+  title: z.string().trim().min(1).max(300).optional(),
+  ownerQuery: z.string().trim().min(1).max(300).optional(),
   pipelineId: z.string().uuid().optional(),
   companyId: z.string().uuid().optional(),
   ownerId: z.string().uuid().optional(),
@@ -39,6 +41,8 @@ export const taskListQuerySchema = z.object({
     'CANCELLED',
   ]).optional(),
   dueBucket: z.enum(['today', 'thisWeek', 'nextWeek', 'overdue']).optional(),
+  dueDateFrom: z.string().date().optional(),
+  dueDateTo: z.string().date().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(200).default(20),
   sortBy: z.enum([

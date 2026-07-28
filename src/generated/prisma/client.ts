@@ -480,6 +480,11 @@ export type TaskStageChecklistItem = Prisma.TaskStageChecklistItemModel
  */
 export type TaskStageOutcome = Prisma.TaskStageOutcomeModel
 /**
+ * Model TaskEsigningPreparation
+ *
+ */
+export type TaskEsigningPreparation = Prisma.TaskEsigningPreparationModel
+/**
  * Model TaskCompanyRecoveryContext
  *
  */

@@ -99,6 +99,36 @@ describe('companies upload BizFile review integration', () => {
     Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
   });
 
+  it('resumes an uploaded task BizFile and opens the review workspace without uploading twice', async () => {
+    mocks.searchParams = new URLSearchParams(
+      'documentId=doc-1&fileName=task-bizfile.pdf&taskId=00000000-0000-4000-8000-000000000001&taskStageId=00000000-0000-4000-8000-000000000002&returnTo=%2Ftasks',
+    );
+    mocks.fetch
+      .mockResolvedValueOnce(new Response(new Blob(['pdf'], { type: 'application/pdf' }), {
+        headers: { 'Content-Type': 'application/pdf' },
+      }))
+      .mockResolvedValueOnce(jsonResponse({ extractedData }));
+
+    render(<UploadBizFilePage />);
+
+    expect(await screen.findByText('Review extracted information')).toBeVisible();
+    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.fetch).toHaveBeenNthCalledWith(1, '/api/documents/doc-1');
+    expect(mocks.fetch).toHaveBeenNthCalledWith(
+      2,
+      '/api/documents/doc-1/extract',
+      expect.objectContaining({ method: 'POST' }),
+    );
+
+    mocks.fetch.mockResolvedValueOnce(jsonResponse({ companyId: 'company-new' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Save' }));
+
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith(
+      '/tasks?taskId=00000000-0000-4000-8000-000000000001&taskStageId=00000000-0000-4000-8000-000000000002&returnTo=%2Ftasks',
+    ));
+    expect(screen.queryByText('Company Created Successfully!')).not.toBeInTheDocument();
+  });
+
   it('submits the corrected workspace draft once and completes successfully', async () => {
     await reachPreview();
     const sectionSelect = screen.getByRole('combobox', { name: 'Review section' });

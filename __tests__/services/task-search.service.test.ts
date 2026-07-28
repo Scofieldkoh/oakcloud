@@ -92,14 +92,18 @@ describe('searchTasks query construction', () => {
         ownerId: 'owner-1',
         status: 'IN_PROGRESS',
         pipelineVersion: { pipelineId: 'pipeline-1' },
-        OR: expect.arrayContaining([
-          { title: { contains: 'annual', mode: 'insensitive' } },
-          { company: { name: { contains: 'annual', mode: 'insensitive' } } },
-          {
-            pipelineVersion: {
-              pipeline: { name: { contains: 'annual', mode: 'insensitive' } },
-            },
-          },
+        AND: expect.arrayContaining([
+          expect.objectContaining({
+            OR: expect.arrayContaining([
+              { title: { contains: 'annual', mode: 'insensitive' } },
+              { company: { name: { contains: 'annual', mode: 'insensitive' } } },
+              {
+                pipelineVersion: {
+                  pipeline: { name: { contains: 'annual', mode: 'insensitive' } },
+                },
+              },
+            ]),
+          }),
         ]),
       }),
     }));

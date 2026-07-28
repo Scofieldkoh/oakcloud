@@ -104,7 +104,10 @@ export function SearchableSelect({
   // Detect touch-first devices to avoid force-focusing inputs on open (iOS Safari zoom/jump).
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    setIsTouchDevice(window.matchMedia('(hover: none) and (pointer: coarse)').matches);
+    setIsTouchDevice(
+      typeof window.matchMedia === 'function'
+      && window.matchMedia('(hover: none) and (pointer: coarse)').matches,
+    );
   }, []);
 
   // Filter options based on search

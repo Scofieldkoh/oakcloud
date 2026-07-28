@@ -17,10 +17,10 @@ function useTemplateOptions() {
 export function PipelinesListWorkspace({ onCreate, onEdit }: { onCreate: () => void; onEdit: (id: string) => void }) {
   const { data: pipelines = [], isLoading, error } = useTaskPipelines(); const duplicate = useDuplicateTaskPipeline(); const archive = useArchiveTaskPipeline();
   const [archiveId, setArchiveId] = useState<string | null>(null);
-  if (isLoading) return <div className="card p-6 text-sm text-text-secondary" role="status">Loading pipelines…</div>;
-  if (error) return <Alert variant="error">{error.message}</Alert>;
+  if (isLoading) return <div className="p-4 sm:p-6"><div className="card flex min-h-32 items-center justify-center p-6 text-sm text-text-secondary" role="status">Loading pipelines…</div></div>;
+  if (error) return <div className="p-4 sm:p-6"><Alert variant="error">{error.message}</Alert></div>;
   const selected = pipelines.find((pipeline) => pipeline.id === archiveId);
-  return <div className="space-y-4">
+  return <div className="space-y-6 p-4 sm:p-6">
     {duplicate.error && <Alert variant="error" title="Could not duplicate pipeline" onClose={duplicate.reset}>{duplicate.error.message}</Alert>}
     <PipelineList
       pipelines={pipelines}
@@ -53,12 +53,12 @@ export function PipelinesListWorkspace({ onCreate, onEdit }: { onCreate: () => v
 
 export function NewPipelineWorkspace({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }) {
   const create = useCreateTaskPipeline(); const templates = useTemplateOptions();
-  return <>{create.error && <Alert variant="error" title="Could not create pipeline" className="mb-4" onClose={create.reset}>{create.error.message}</Alert>}<PipelineBuilder initialDraft={{ name: '', description: '', stages: [] }} templates={templates} onCancel={onCancel} isSaving={create.isPending} onSave={async (payload) => { await create.mutateAsync(payload); onSaved(); }} /></>;
+  return <div className="p-4 sm:p-6">{create.error && <Alert variant="error" title="Could not create pipeline" className="mx-auto mb-6 max-w-5xl" onClose={create.reset}>{create.error.message}</Alert>}<PipelineBuilder initialDraft={{ name: '', description: '', stages: [] }} templates={templates} onCancel={onCancel} isSaving={create.isPending} onSave={async (payload) => { await create.mutateAsync(payload); onSaved(); }} /></div>;
 }
 
 export function EditPipelineWorkspace({ pipelineId, onSaved, onCancel }: { pipelineId: string; onSaved: () => void; onCancel: () => void }) {
   const { data: pipeline, isLoading, error } = useTaskPipeline(pipelineId); const update = useUpdateTaskPipeline(); const templates = useTemplateOptions();
-  if (isLoading) return <div className="card p-6 text-sm text-text-secondary" role="status">Loading pipeline…</div>;
-  if (error || !pipeline) return <Alert variant="error">{error?.message ?? 'Pipeline not found'}</Alert>;
-  return <>{update.error && <Alert variant="error" title="Could not update pipeline" className="mb-4" onClose={update.reset}>{update.error.message}</Alert>}<PipelineBuilder key={pipeline.id} initialDraft={pipelineToDraft(pipeline)} templates={templates} onCancel={onCancel} isSaving={update.isPending} onSave={async (payload: TaskPipelineCreatePayload) => { await update.mutateAsync({ id: pipeline.id, payload }); onSaved(); }} /></>;
+  if (isLoading) return <div className="p-4 sm:p-6"><div className="card flex min-h-32 items-center justify-center p-6 text-sm text-text-secondary" role="status">Loading pipeline…</div></div>;
+  if (error || !pipeline) return <div className="p-4 sm:p-6"><Alert variant="error">{error?.message ?? 'Pipeline not found'}</Alert></div>;
+  return <div className="p-4 sm:p-6">{update.error && <Alert variant="error" title="Could not update pipeline" className="mx-auto mb-6 max-w-5xl" onClose={update.reset}>{update.error.message}</Alert>}<PipelineBuilder key={pipeline.id} initialDraft={pipelineToDraft(pipeline)} templates={templates} onCancel={onCancel} isSaving={update.isPending} onSave={async (payload: TaskPipelineCreatePayload) => { await update.mutateAsync({ id: pipeline.id, payload }); onSaved(); }} /></div>;
 }

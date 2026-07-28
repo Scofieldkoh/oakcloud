@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -12,6 +12,16 @@ const snapshotGuardsMigration = readFileSync(
   join(root, "prisma", "migrations", "20260727030000_task_snapshot_guards", "migration.sql"),
   "utf8",
 );
+const esigningPreparationMigrationPath = join(
+  root,
+  "prisma",
+  "migrations",
+  "20260728010000_background_esigning_preparation",
+  "migration.sql",
+);
+const esigningPreparationMigration = existsSync(esigningPreparationMigrationPath)
+  ? readFileSync(esigningPreparationMigrationPath, "utf8")
+  : "";
 const sharedDocumentsCleanupMigration = readFileSync(
   join(root, "prisma", "migrations", "20260627231500_remove_shared_documents", "migration.sql"),
   "utf8",
@@ -57,6 +67,7 @@ describe("modular task schema reset", () => {
     "TaskStage",
     "TaskStageChecklistItem",
     "TaskStageOutcome",
+    "TaskEsigningPreparation",
   ])("defines the %s model", (modelName) => {
     expect(schemaBlock("model", modelName)).not.toBe("");
   });
@@ -66,8 +77,64 @@ describe("modular task schema reset", () => {
     "TaskStageStatus",
     "TaskStageActionType",
     "TaskStageOutcomeType",
+    "TaskEsigningPreparationStatus",
   ])("defines the %s enum", (enumName) => {
     expect(schemaBlock("enum", enumName)).not.toBe("");
+  });
+
+  it("defines durable background E-signing preparation ownership and leasing", () => {
+    const preparation = schemaBlock("model", "TaskEsigningPreparation");
+    const envelopeDocument = schemaBlock("model", "EsigningEnvelopeDocument");
+    const status = schemaBlock("enum", "TaskEsigningPreparationStatus");
+
+    expect(preparation).toMatch(/taskStageId\s+String\s+@unique/);
+    expect(preparation).toMatch(/generatedDocumentId\s+String\?/);
+    expect(preparation).toMatch(/leaseExpiresAt\s+DateTime\?/);
+    expect(preparation).toMatch(/status\s+TaskEsigningPreparationStatus/);
+    expect(envelopeDocument).toMatch(/generatedDocumentId\s+String\?/);
+    expect(envelopeDocument).toMatch(/@@unique\(\[envelopeId,\s*generatedDocumentId\]\)/);
+    expect(status).toMatch(/\bWAITING\b/);
+    expect(status).toMatch(/\bQUEUED\b/);
+    expect(status).toMatch(/\bPROCESSING\b/);
+    expect(status).toMatch(/\bREADY\b/);
+    expect(status).toMatch(/\bFAILED_RETRYABLE\b/);
+    expect(status).toMatch(/\bFAILED_PERMANENT\b/);
+  });
+
+  it("migrates the E-signing preparation queue with tenant and lease indexes", () => {
+    expect(esigningPreparationMigration).toContain(
+      'CREATE TYPE "TaskEsigningPreparationStatus"',
+    );
+    expect(esigningPreparationMigration).toContain(
+      'CREATE TABLE "task_esigning_preparations"',
+    );
+    expect(esigningPreparationMigration).toContain(
+      'ADD COLUMN "generated_document_id" TEXT',
+    );
+    expect(esigningPreparationMigration).toContain(
+      'ON "esigning_envelope_documents"("envelopeId", "generated_document_id")',
+    );
+    expect(esigningPreparationMigration).toContain(
+      'esigning_envelope_documents_envelopeId_generated_document_id_key',
+    );
+    expect(esigningPreparationMigration).not.toContain(
+      'ON "esigning_envelope_documents"("envelope_id", "generated_document_id")',
+    );
+    expect(esigningPreparationMigration).toContain(
+      'FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id")',
+    );
+    expect(esigningPreparationMigration).not.toContain(
+      'FOREIGN KEY ("tenant_id") REFERENCES "workspaces"("id")',
+    );
+    expect(esigningPreparationMigration).toContain(
+      'task_esigning_preparations_task_stage_id_key',
+    );
+    expect(esigningPreparationMigration).toContain(
+      'task_esigning_preparations_tenant_id_status_available_at_idx',
+    );
+    expect(esigningPreparationMigration).toContain(
+      'task_esigning_preparations_status_lease_expires_at_idx',
+    );
   });
 
   it("declares the required task schema invariants", () => {

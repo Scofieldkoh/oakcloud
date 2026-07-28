@@ -44,6 +44,7 @@ export default function GenerateDocumentPage() {
   const { success } = useToast();
   const requestedDraftId = searchParams.get('draft');
   const requestedTemplateId = searchParams.get('templateId') ?? undefined;
+  const requestedCompanyId = searchParams.get('companyId') ?? undefined;
   const taskContext = useMemo(
     () => readTaskLaunchContext(searchParams),
     [searchParams],
@@ -133,12 +134,23 @@ export default function GenerateDocumentPage() {
         const sessionRequest = requestedDraftId
           ? fetch(`/api/generated-documents/generation-sessions/${encodeURIComponent(requestedDraftId)}`)
           : Promise.resolve(null);
-        const [templatesRes, companiesRes, contactsRes, partialsRes, sessionRes] = await Promise.all([
+        const requestedCompanyRequest = requestedCompanyId
+          ? fetch(`/api/companies/${encodeURIComponent(requestedCompanyId)}`)
+          : Promise.resolve(null);
+        const [
+          templatesRes,
+          companiesRes,
+          contactsRes,
+          partialsRes,
+          sessionRes,
+          requestedCompanyRes,
+        ] = await Promise.all([
           fetch(`/api/document-templates?${templatesParams}`),
           fetch(`/api/companies/options?${companiesParams}`),
           fetch(`/api/contacts/options?${contactsParams}`),
           fetch(`/api/template-partials?${partialsParams}`),
           sessionRequest,
+          requestedCompanyRequest,
         ]);
 
         if (!templatesRes.ok) {
@@ -153,15 +165,28 @@ export default function GenerateDocumentPage() {
         if (sessionRes && !sessionRes.ok) {
           throw new Error('The saved draft is unavailable or you no longer have access to it.');
         }
+        if (requestedCompanyRes && !requestedCompanyRes.ok) {
+          throw new Error('The linked company is unavailable or you no longer have access to it.');
+        }
 
         const templatesData = await templatesRes.json();
         const companiesData = await companiesRes.json();
         const contactsData = await contactsRes.json();
         const partialsData = partialsRes.ok ? await partialsRes.json() : { partials: [] };
         const sessionData = sessionRes ? await sessionRes.json() : null;
+        const requestedCompanyData = requestedCompanyRes
+          ? mapCompanyOption(await requestedCompanyRes.json())
+          : null;
+        const companyOptions = (companiesData.options || []).map(mapCompanyOption);
+        if (
+          requestedCompanyData
+          && !companyOptions.some((company: Company) => company.id === requestedCompanyData.id)
+        ) {
+          companyOptions.unshift(requestedCompanyData);
+        }
 
         setTemplates(templatesData.templates || []);
-        setCompanies((companiesData.options || []).map(mapCompanyOption));
+        setCompanies(companyOptions);
         setContacts((contactsData.options || []).map(mapContactOption));
         setPartials(partialsData.partials || []);
         setInitialSession(sessionData);
@@ -174,7 +199,7 @@ export default function GenerateDocumentPage() {
     };
 
     fetchData();
-  }, [requestedDraftId]);
+  }, [requestedCompanyId, requestedDraftId]);
 
   const handleSaveDraft = useCallback(async (
     draftId: string | null,
@@ -311,15 +336,8 @@ export default function GenerateDocumentPage() {
                 <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">
                   Create document
                 </h1>
-                <p className="mt-0.5 text-sm text-text-secondary">
-                  Choose the source data, complete the details, then review the final document.
-                </p>
               </div>
             </div>
-          </div>
-          <div className="hidden text-right text-xs text-text-muted lg:block">
-            <p>Three focused stages</p>
-            <p className="mt-0.5">Drafts can be saved at any time</p>
           </div>
         </div>
       </header>
@@ -384,6 +402,7 @@ export default function GenerateDocumentPage() {
             partials={partials}
             initialSession={initialSession}
             initialTemplateId={requestedTemplateId}
+            initialCompanyId={requestedCompanyId}
             onSaveDraft={handleSaveDraft}
             onGenerate={handleGenerate}
             onGenerationComplete={(result) => router.push(withTaskLaunchContext(

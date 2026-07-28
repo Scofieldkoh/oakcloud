@@ -273,6 +273,7 @@ export type UserWhereInput = {
   uploadedDocuments?: Prisma.DocumentListRelationFilter
   createdDocuments?: Prisma.GeneratedDocumentListRelationFilter
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeListRelationFilter
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationListRelationFilter
   finalizedDocuments?: Prisma.GeneratedDocumentListRelationFilter
   createdPartials?: Prisma.TemplatePartialListRelationFilter
   companyAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
@@ -310,6 +311,7 @@ export type UserOrderByWithRelationInput = {
   uploadedDocuments?: Prisma.DocumentOrderByRelationAggregateInput
   createdDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeOrderByRelationAggregateInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationOrderByRelationAggregateInput
   finalizedDocuments?: Prisma.GeneratedDocumentOrderByRelationAggregateInput
   createdPartials?: Prisma.TemplatePartialOrderByRelationAggregateInput
   companyAssignments?: Prisma.UserCompanyAssignmentOrderByRelationAggregateInput
@@ -350,6 +352,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   uploadedDocuments?: Prisma.DocumentListRelationFilter
   createdDocuments?: Prisma.GeneratedDocumentListRelationFilter
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeListRelationFilter
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationListRelationFilter
   finalizedDocuments?: Prisma.GeneratedDocumentListRelationFilter
   createdPartials?: Prisma.TemplatePartialListRelationFilter
   companyAssignments?: Prisma.UserCompanyAssignmentListRelationFilter
@@ -428,6 +431,7 @@ export type UserCreateInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -465,6 +469,7 @@ export type UserUncheckedCreateInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -500,6 +505,7 @@ export type UserUpdateInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -537,6 +543,7 @@ export type UserUncheckedUpdateInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -983,6 +990,22 @@ export type UserUpdateOneWithoutAssignedTaskStagesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAssignedTaskStagesInput, Prisma.UserUpdateWithoutAssignedTaskStagesInput>, Prisma.UserUncheckedUpdateWithoutAssignedTaskStagesInput>
 }
 
+export type UserCreateNestedOneWithoutInitiatedTaskEsigningPreparationsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutInitiatedTaskEsigningPreparationsInput, Prisma.UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutInitiatedTaskEsigningPreparationsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutInitiatedTaskEsigningPreparationsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutInitiatedTaskEsigningPreparationsInput, Prisma.UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutInitiatedTaskEsigningPreparationsInput
+  upsert?: Prisma.UserUpsertWithoutInitiatedTaskEsigningPreparationsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutInitiatedTaskEsigningPreparationsInput, Prisma.UserUpdateWithoutInitiatedTaskEsigningPreparationsInput>, Prisma.UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput>
+}
+
 export type UserCreateWithoutTenantInput = {
   id?: string
   email: string
@@ -1009,6 +1032,7 @@ export type UserCreateWithoutTenantInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -1044,6 +1068,7 @@ export type UserUncheckedCreateWithoutTenantInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -1126,6 +1151,7 @@ export type UserCreateWithoutRoleAssignmentsInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -1162,6 +1188,7 @@ export type UserUncheckedCreateWithoutRoleAssignmentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -1212,6 +1239,7 @@ export type UserUpdateWithoutRoleAssignmentsInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -1248,6 +1276,7 @@ export type UserUncheckedUpdateWithoutRoleAssignmentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -1282,6 +1311,7 @@ export type UserCreateWithoutPreferencesInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -1318,6 +1348,7 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -1368,6 +1399,7 @@ export type UserUpdateWithoutPreferencesInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -1404,6 +1436,7 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -1438,6 +1471,7 @@ export type UserCreateWithoutCompanyAssignmentsInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
@@ -1474,6 +1508,7 @@ export type UserUncheckedCreateWithoutCompanyAssignmentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
@@ -1524,6 +1559,7 @@ export type UserUpdateWithoutCompanyAssignmentsInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
@@ -1560,6 +1596,7 @@ export type UserUncheckedUpdateWithoutCompanyAssignmentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
@@ -1593,6 +1630,7 @@ export type UserCreateWithoutUploadedDocumentsInput = {
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -1629,6 +1667,7 @@ export type UserUncheckedCreateWithoutUploadedDocumentsInput = {
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -1679,6 +1718,7 @@ export type UserUpdateWithoutUploadedDocumentsInput = {
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -1715,6 +1755,7 @@ export type UserUncheckedUpdateWithoutUploadedDocumentsInput = {
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -1749,6 +1790,7 @@ export type UserCreateWithoutAuditLogsInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -1785,6 +1827,7 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -1835,6 +1878,7 @@ export type UserUpdateWithoutAuditLogsInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -1871,6 +1915,7 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -1905,6 +1950,7 @@ export type UserCreateWithoutConnectorUsageLogsInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -1941,6 +1987,7 @@ export type UserUncheckedCreateWithoutConnectorUsageLogsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -1991,6 +2038,7 @@ export type UserUpdateWithoutConnectorUsageLogsInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -2027,6 +2075,7 @@ export type UserUncheckedUpdateWithoutConnectorUsageLogsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -2061,6 +2110,7 @@ export type UserCreateWithoutCreatedTemplatesInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -2097,6 +2147,7 @@ export type UserUncheckedCreateWithoutCreatedTemplatesInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -2147,6 +2198,7 @@ export type UserUpdateWithoutCreatedTemplatesInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -2183,6 +2235,7 @@ export type UserUncheckedUpdateWithoutCreatedTemplatesInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -2217,6 +2270,7 @@ export type UserCreateWithoutCreatedDocumentsInput = {
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -2253,6 +2307,7 @@ export type UserUncheckedCreateWithoutCreatedDocumentsInput = {
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -2293,6 +2348,7 @@ export type UserCreateWithoutFinalizedDocumentsInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
@@ -2329,6 +2385,7 @@ export type UserUncheckedCreateWithoutFinalizedDocumentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
@@ -2378,6 +2435,7 @@ export type UserUpdateWithoutCreatedDocumentsInput = {
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -2414,6 +2472,7 @@ export type UserUncheckedUpdateWithoutCreatedDocumentsInput = {
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -2460,6 +2519,7 @@ export type UserUpdateWithoutFinalizedDocumentsInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
@@ -2496,6 +2556,7 @@ export type UserUncheckedUpdateWithoutFinalizedDocumentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
@@ -2529,6 +2590,7 @@ export type UserCreateWithoutHiddenCommentsInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -2565,6 +2627,7 @@ export type UserUncheckedCreateWithoutHiddenCommentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -2604,6 +2667,7 @@ export type UserCreateWithoutResolvedCommentsInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -2640,6 +2704,7 @@ export type UserUncheckedCreateWithoutResolvedCommentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -2679,6 +2744,7 @@ export type UserCreateWithoutAuthoredCommentsInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -2715,6 +2781,7 @@ export type UserUncheckedCreateWithoutAuthoredCommentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -2765,6 +2832,7 @@ export type UserUpdateWithoutHiddenCommentsInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -2801,6 +2869,7 @@ export type UserUncheckedUpdateWithoutHiddenCommentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -2846,6 +2915,7 @@ export type UserUpdateWithoutResolvedCommentsInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -2882,6 +2952,7 @@ export type UserUncheckedUpdateWithoutResolvedCommentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -2927,6 +2998,7 @@ export type UserUpdateWithoutAuthoredCommentsInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -2963,6 +3035,7 @@ export type UserUncheckedUpdateWithoutAuthoredCommentsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -2997,6 +3070,7 @@ export type UserCreateWithoutDocumentDraftsInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -3033,6 +3107,7 @@ export type UserUncheckedCreateWithoutDocumentDraftsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -3083,6 +3158,7 @@ export type UserUpdateWithoutDocumentDraftsInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -3119,6 +3195,7 @@ export type UserUncheckedUpdateWithoutDocumentDraftsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -3154,6 +3231,7 @@ export type UserCreateWithoutCreatedPartialsInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
@@ -3190,6 +3268,7 @@ export type UserUncheckedCreateWithoutCreatedPartialsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
@@ -3240,6 +3319,7 @@ export type UserUpdateWithoutCreatedPartialsInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
@@ -3276,6 +3356,7 @@ export type UserUncheckedUpdateWithoutCreatedPartialsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
@@ -3309,6 +3390,7 @@ export type UserCreateWithoutAiConversationsInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -3345,6 +3427,7 @@ export type UserUncheckedCreateWithoutAiConversationsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -3395,6 +3478,7 @@ export type UserUpdateWithoutAiConversationsInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -3431,6 +3515,7 @@ export type UserUncheckedUpdateWithoutAiConversationsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -3465,6 +3550,7 @@ export type UserCreateWithoutCreatedEsigningEnvelopesInput = {
   createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -3501,6 +3587,7 @@ export type UserUncheckedCreateWithoutCreatedEsigningEnvelopesInput = {
   createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -3551,6 +3638,7 @@ export type UserUpdateWithoutCreatedEsigningEnvelopesInput = {
   createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -3587,6 +3675,7 @@ export type UserUncheckedUpdateWithoutCreatedEsigningEnvelopesInput = {
   createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -3622,6 +3711,7 @@ export type UserCreateWithoutOwnedTasksInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -3658,6 +3748,7 @@ export type UserUncheckedCreateWithoutOwnedTasksInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -3708,6 +3799,7 @@ export type UserUpdateWithoutOwnedTasksInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -3744,6 +3836,7 @@ export type UserUncheckedUpdateWithoutOwnedTasksInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -3778,6 +3871,7 @@ export type UserCreateWithoutAssignedTaskStagesInput = {
   uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
@@ -3814,6 +3908,7 @@ export type UserUncheckedCreateWithoutAssignedTaskStagesInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
   createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
@@ -3864,6 +3959,7 @@ export type UserUpdateWithoutAssignedTaskStagesInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -3900,12 +3996,173 @@ export type UserUncheckedUpdateWithoutAssignedTaskStagesInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+}
+
+export type UserCreateWithoutInitiatedTaskEsigningPreparationsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+}
+
+export type UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+}
+
+export type UserCreateOrConnectWithoutInitiatedTaskEsigningPreparationsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutInitiatedTaskEsigningPreparationsInput, Prisma.UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput>
+}
+
+export type UserUpsertWithoutInitiatedTaskEsigningPreparationsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutInitiatedTaskEsigningPreparationsInput, Prisma.UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutInitiatedTaskEsigningPreparationsInput, Prisma.UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutInitiatedTaskEsigningPreparationsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutInitiatedTaskEsigningPreparationsInput, Prisma.UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput>
+}
+
+export type UserUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+}
+
+export type UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
 }
 
 export type UserCreateManyTenantInput = {
@@ -3951,6 +4208,7 @@ export type UserUpdateWithoutTenantInput = {
   uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
@@ -3986,6 +4244,7 @@ export type UserUncheckedUpdateWithoutTenantInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -4029,6 +4288,7 @@ export type UserCountOutputType = {
   uploadedDocuments: number
   createdDocuments: number
   createdEsigningEnvelopes: number
+  initiatedTaskEsigningPreparations: number
   finalizedDocuments: number
   createdPartials: number
   companyAssignments: number
@@ -4050,6 +4310,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   uploadedDocuments?: boolean | UserCountOutputTypeCountUploadedDocumentsArgs
   createdDocuments?: boolean | UserCountOutputTypeCountCreatedDocumentsArgs
   createdEsigningEnvelopes?: boolean | UserCountOutputTypeCountCreatedEsigningEnvelopesArgs
+  initiatedTaskEsigningPreparations?: boolean | UserCountOutputTypeCountInitiatedTaskEsigningPreparationsArgs
   finalizedDocuments?: boolean | UserCountOutputTypeCountFinalizedDocumentsArgs
   createdPartials?: boolean | UserCountOutputTypeCountCreatedPartialsArgs
   companyAssignments?: boolean | UserCountOutputTypeCountCompanyAssignmentsArgs
@@ -4149,6 +4410,13 @@ export type UserCountOutputTypeCountCreatedEsigningEnvelopesArgs<ExtArgs extends
 /**
  * UserCountOutputType without action
  */
+export type UserCountOutputTypeCountInitiatedTaskEsigningPreparationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TaskEsigningPreparationWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
 export type UserCountOutputTypeCountFinalizedDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.GeneratedDocumentWhereInput
 }
@@ -4223,6 +4491,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   uploadedDocuments?: boolean | Prisma.User$uploadedDocumentsArgs<ExtArgs>
   createdDocuments?: boolean | Prisma.User$createdDocumentsArgs<ExtArgs>
   createdEsigningEnvelopes?: boolean | Prisma.User$createdEsigningEnvelopesArgs<ExtArgs>
+  initiatedTaskEsigningPreparations?: boolean | Prisma.User$initiatedTaskEsigningPreparationsArgs<ExtArgs>
   finalizedDocuments?: boolean | Prisma.User$finalizedDocumentsArgs<ExtArgs>
   createdPartials?: boolean | Prisma.User$createdPartialsArgs<ExtArgs>
   companyAssignments?: boolean | Prisma.User$companyAssignmentsArgs<ExtArgs>
@@ -4303,6 +4572,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   uploadedDocuments?: boolean | Prisma.User$uploadedDocumentsArgs<ExtArgs>
   createdDocuments?: boolean | Prisma.User$createdDocumentsArgs<ExtArgs>
   createdEsigningEnvelopes?: boolean | Prisma.User$createdEsigningEnvelopesArgs<ExtArgs>
+  initiatedTaskEsigningPreparations?: boolean | Prisma.User$initiatedTaskEsigningPreparationsArgs<ExtArgs>
   finalizedDocuments?: boolean | Prisma.User$finalizedDocumentsArgs<ExtArgs>
   createdPartials?: boolean | Prisma.User$createdPartialsArgs<ExtArgs>
   companyAssignments?: boolean | Prisma.User$companyAssignmentsArgs<ExtArgs>
@@ -4334,6 +4604,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     uploadedDocuments: Prisma.$DocumentPayload<ExtArgs>[]
     createdDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
     createdEsigningEnvelopes: Prisma.$EsigningEnvelopePayload<ExtArgs>[]
+    initiatedTaskEsigningPreparations: Prisma.$TaskEsigningPreparationPayload<ExtArgs>[]
     finalizedDocuments: Prisma.$GeneratedDocumentPayload<ExtArgs>[]
     createdPartials: Prisma.$TemplatePartialPayload<ExtArgs>[]
     companyAssignments: Prisma.$UserCompanyAssignmentPayload<ExtArgs>[]
@@ -4764,6 +5035,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   uploadedDocuments<T extends Prisma.User$uploadedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$uploadedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   createdDocuments<T extends Prisma.User$createdDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   createdEsigningEnvelopes<T extends Prisma.User$createdEsigningEnvelopesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdEsigningEnvelopesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningEnvelopePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  initiatedTaskEsigningPreparations<T extends Prisma.User$initiatedTaskEsigningPreparationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$initiatedTaskEsigningPreparationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskEsigningPreparationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   finalizedDocuments<T extends Prisma.User$finalizedDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$finalizedDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   createdPartials<T extends Prisma.User$createdPartialsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdPartialsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TemplatePartialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   companyAssignments<T extends Prisma.User$companyAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$companyAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserCompanyAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -5473,6 +5745,30 @@ export type User$createdEsigningEnvelopesArgs<ExtArgs extends runtime.Types.Exte
   take?: number
   skip?: number
   distinct?: Prisma.EsigningEnvelopeScalarFieldEnum | Prisma.EsigningEnvelopeScalarFieldEnum[]
+}
+
+/**
+ * User.initiatedTaskEsigningPreparations
+ */
+export type User$initiatedTaskEsigningPreparationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TaskEsigningPreparation
+   */
+  select?: Prisma.TaskEsigningPreparationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TaskEsigningPreparation
+   */
+  omit?: Prisma.TaskEsigningPreparationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TaskEsigningPreparationInclude<ExtArgs> | null
+  where?: Prisma.TaskEsigningPreparationWhereInput
+  orderBy?: Prisma.TaskEsigningPreparationOrderByWithRelationInput | Prisma.TaskEsigningPreparationOrderByWithRelationInput[]
+  cursor?: Prisma.TaskEsigningPreparationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TaskEsigningPreparationScalarFieldEnum | Prisma.TaskEsigningPreparationScalarFieldEnum[]
 }
 
 /**

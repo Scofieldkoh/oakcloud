@@ -1,4 +1,5 @@
 export * from './action-registry';
+export * from './esigning-preparation.service';
 export * from './integration.service';
 export * from './pipeline.service';
 export * from './stage.service';

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CheckSquare, FileText, GripVertical, Mail, PenLine, Plus, Trash2, Building2, CircleCheckBig } from 'lucide-react';
+import { Building2, CheckSquare, ChevronDown, ChevronUp, CircleCheckBig, FileText, GripVertical, Mail, PenLine, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Toggle } from '@/components/ui/toggle';
@@ -25,6 +25,7 @@ export type TemplateOption = { id: string; name: string };
 
 const ACTION_DEFAULTS: Record<ActionType, string> = DEFAULT_STAGE_ICONS;
 const ICONS = [{ name: 'CircleCheckBig', Icon: CircleCheckBig }, { name: 'Building2', Icon: Building2 }, { name: 'FileText', Icon: FileText }, { name: 'PenLine', Icon: PenLine }, { name: 'Mail', Icon: Mail }, { name: 'CheckSquare', Icon: CheckSquare }];
+const fieldControlClass = 'mt-2 h-9 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary transition-colors hover:border-oak-primary/50 focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30';
 
 function id() { return `stage-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
 function blankStage(index: number): StageDraft { return { id: id(), name: `Stage ${index + 1}`, description: '', actionType: 'MANUAL', icon: 'CircleCheckBig', isRequired: true, actionConfig: {}, actionConfigs: { MANUAL: {} }, checklistItems: [] }; }
@@ -80,15 +81,15 @@ function SortableStage({ stage, index, templates, onChange, onRemove, onMove }: 
   const config = activeConfig(stage);
   const iconOptions = useMemo(() => ICONS.filter(({ name }) => name.toLowerCase().includes(iconSearch.toLowerCase())), [iconSearch]);
   const updateConfig = (patch: Record<string, unknown>) => onChange(updateActionConfig(stage, patch));
-  return <article ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className="rounded-lg border border-border-primary bg-background-elevated p-3">
-    <div className="mb-3 flex items-center gap-2"><button ref={setActivatorNodeRef} type="button" aria-label="Drag stage" className="cursor-grab rounded p-1 text-text-muted focus-visible:ring-2 focus-visible:ring-oak-primary" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button><span data-testid="pipeline-stage-name" className="flex-1 text-sm font-semibold text-text-primary">{stage.name}</span><Button variant="ghost" size="xs" iconOnly aria-label="Move stage up" disabled={index === 0} onClick={() => onMove(-1)}>↑</Button><Button variant="ghost" size="xs" iconOnly aria-label="Move stage down" onClick={() => onMove(1)}>↓</Button><Button variant="ghost" size="xs" iconOnly aria-label="Remove stage" className="text-status-error" onClick={onRemove}><Trash2 /></Button></div>
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><FormInput label="Stage name" value={stage.name} onChange={(event) => onChange({ ...stage, name: event.target.value })} /><FormInput label="Description" value={stage.description} onChange={(event) => onChange({ ...stage, description: event.target.value })} /></div>
-    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2"><label className="text-xs font-medium text-text-secondary">Action type<select aria-label="Action type" value={stage.actionType} onChange={(event) => onChange(changeActionType(stage, event.target.value as ActionType))} className="mt-2 h-8 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"><option value="MANUAL">Manual</option><option value="COMPANY_PROFILE">Company profile</option><option value="DOCUMENT_GENERATION">Document generation</option><option value="ESIGNING">E-signing</option></select></label><Toggle size="sm" label={stage.isRequired ? 'Required stage' : 'Optional stage'} checked={stage.isRequired} onChange={(isRequired) => onChange({ ...stage, isRequired })} /></div>
-    <div className="mt-3"><FormInput label="Search icons" value={iconSearch} onChange={(event) => setIconSearch(event.target.value)} placeholder="Search curated icons" /><div className="mt-2 flex flex-wrap gap-2">{iconOptions.map(({ name, Icon }) => <button key={name} type="button" aria-label={name} onClick={() => onChange({ ...stage, icon: name })} className={`inline-flex h-8 w-8 items-center justify-center rounded border ${stage.icon === name ? 'border-oak-primary bg-oak-primary/10' : 'border-border-primary'} text-text-secondary focus-visible:ring-2 focus-visible:ring-oak-primary`}><Icon className="h-4 w-4" /></button>)}</div></div>
-    {stage.actionType === 'COMPANY_PROFILE' && <div className="mt-3"><Toggle size="sm" label="Allow creating a company" checked={config.allowCreate === true} onChange={(allowCreate) => updateConfig({ allowCreate })} /></div>}
-    {stage.actionType === 'DOCUMENT_GENERATION' && <label className="mt-3 block text-xs font-medium text-text-secondary">Default document template <span className="font-normal text-text-muted">(optional)</span><select aria-label="Default document template" value={typeof config.templateId === 'string' ? config.templateId : ''} onChange={(event) => updateConfig({ templateId: event.target.value || undefined })} className="mt-2 h-8 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"><option value="">Let task users choose</option>{templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></label>}
-    {stage.actionType === 'ESIGNING' && <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2"><label className="text-xs font-medium text-text-secondary">Signing order<select aria-label="Signing order" value={typeof config.signingOrder === 'string' ? config.signingOrder : 'PARALLEL'} onChange={(event) => updateConfig({ signingOrder: event.target.value })} className="mt-2 h-8 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"><option value="PARALLEL">Parallel</option><option value="SEQUENTIAL">Sequential</option><option value="MIXED">Mixed</option></select></label><label className="text-xs font-medium text-text-secondary">Expires in days<input aria-label="Expires in days" type="number" min={1} step={1} value={typeof config.expiresInDays === 'number' ? config.expiresInDays : ''} onChange={(event) => updateConfig({ expiresInDays: event.target.value === '' ? undefined : Number(event.target.value) })} className="mt-2 h-8 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary" /></label></div>}
-    <div className="mt-3 border-t border-border-primary pt-3"><div className="flex items-center justify-between"><span className="text-xs font-medium text-text-secondary">Checklist</span><Button variant="ghost" size="xs" leftIcon={<Plus />} onClick={() => onChange({ ...stage, checklistItems: [...stage.checklistItems, { label: '' }] })} aria-label="Add checklist item">Add item</Button></div><div className="mt-2 space-y-2">{stage.checklistItems.map((item, itemIndex) => <div key={`${stage.id}-${itemIndex}`} className="flex gap-2"><input aria-label={`Checklist item ${itemIndex + 1}`} value={item.label} onChange={(event) => onChange({ ...stage, checklistItems: stage.checklistItems.map((entry, entryIndex) => entryIndex === itemIndex ? { ...entry, label: event.target.value } : entry) })} className="h-8 min-w-0 flex-1 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary" /><Button variant="ghost" size="xs" iconOnly aria-label="Remove checklist item" onClick={() => onChange({ ...stage, checklistItems: stage.checklistItems.filter((_, entryIndex) => entryIndex !== itemIndex) })}><Trash2 /></Button></div>)}</div></div>
+  return <article ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className="overflow-hidden rounded-xl border border-border-primary bg-background-elevated shadow-elevation-1 dark:bg-background-secondary dark:shadow-none">
+    <div className="flex items-center gap-2 px-3 py-3 sm:px-4"><button ref={setActivatorNodeRef} type="button" aria-label="Drag stage" className="flex min-h-10 min-w-10 cursor-grab items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-background-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-8 sm:min-w-8" {...attributes} {...listeners}><GripVertical className="h-4 w-4" /></button><div className="min-w-0 flex-1"><span className="block text-2xs font-medium uppercase tracking-wide text-text-muted">Stage {index + 1}</span><span data-testid="pipeline-stage-name" className="block truncate text-sm font-semibold text-text-primary">{stage.name}</span></div><div className="flex items-center gap-1"><Button variant="ghost" size="xs" iconOnly leftIcon={<ChevronUp />} aria-label="Move stage up" disabled={index === 0} onClick={() => onMove(-1)} /><Button variant="ghost" size="xs" iconOnly leftIcon={<ChevronDown />} aria-label="Move stage down" onClick={() => onMove(1)} /><Button variant="ghost" size="xs" iconOnly leftIcon={<Trash2 />} aria-label="Remove stage" className="text-status-error hover:text-status-error" onClick={onRemove} /></div></div>
+    <section className="border-t border-border-primary px-4 py-4 sm:px-5"><h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">Stage details</h3><div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><FormInput label="Stage name" value={stage.name} onChange={(event) => onChange({ ...stage, name: event.target.value })} /><FormInput label="Description" value={stage.description} onChange={(event) => onChange({ ...stage, description: event.target.value })} /></div></section>
+    <section className="border-t border-border-primary px-4 py-4 sm:px-5"><h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">Behavior</h3><div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-end"><label className="text-xs font-medium text-text-secondary">Action type<select aria-label="Action type" value={stage.actionType} onChange={(event) => onChange(changeActionType(stage, event.target.value as ActionType))} className={fieldControlClass}><option value="MANUAL">Manual</option><option value="COMPANY_PROFILE">Company profile</option><option value="DOCUMENT_GENERATION">Document generation</option><option value="ESIGNING">E-signing</option></select></label><div className="flex min-h-9 items-center"><Toggle size="sm" label={stage.isRequired ? 'Required stage' : 'Optional stage'} checked={stage.isRequired} onChange={(isRequired) => onChange({ ...stage, isRequired })} /></div></div></section>
+    <section className="border-t border-border-primary px-4 py-4 sm:px-5"><h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">Appearance</h3><div className="grid gap-3 sm:grid-cols-[minmax(220px,1fr)_auto] sm:items-end"><FormInput label="Search icons" value={iconSearch} onChange={(event) => setIconSearch(event.target.value)} placeholder="Search curated icons" /><div className="flex flex-wrap gap-2">{iconOptions.map(({ name, Icon }) => <button key={name} type="button" aria-label={name} aria-pressed={stage.icon === name} onClick={() => onChange({ ...stage, icon: name })} className={`inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 sm:min-h-9 sm:min-w-9 ${stage.icon === name ? 'border-oak-primary bg-oak-primary/10 text-oak-primary' : 'border-border-primary text-text-secondary hover:bg-background-tertiary'}`}><Icon className="h-4 w-4" /></button>)}</div></div></section>
+    {stage.actionType === 'COMPANY_PROFILE' && <section className="border-t border-border-primary px-4 py-4 sm:px-5"><h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">Action settings</h3><Toggle size="sm" label="Allow creating a company" checked={config.allowCreate === true} onChange={(allowCreate) => updateConfig({ allowCreate })} /></section>}
+    {stage.actionType === 'DOCUMENT_GENERATION' && <section className="border-t border-border-primary px-4 py-4 sm:px-5"><h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">Action settings</h3><label className="block text-xs font-medium text-text-secondary">Default document template <span className="font-normal text-text-muted">(optional)</span><select aria-label="Default document template" value={typeof config.templateId === 'string' ? config.templateId : ''} onChange={(event) => updateConfig({ templateId: event.target.value || undefined })} className={fieldControlClass}><option value="">Let task users choose</option>{templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></label></section>}
+    {stage.actionType === 'ESIGNING' && <section className="border-t border-border-primary px-4 py-4 sm:px-5"><h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">Action settings</h3><div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><label className="text-xs font-medium text-text-secondary">Signing order<select aria-label="Signing order" value={typeof config.signingOrder === 'string' ? config.signingOrder : 'PARALLEL'} onChange={(event) => updateConfig({ signingOrder: event.target.value })} className={fieldControlClass}><option value="PARALLEL">Parallel</option><option value="SEQUENTIAL">Sequential</option><option value="MIXED">Mixed</option></select></label><label className="text-xs font-medium text-text-secondary">Expires in days<input aria-label="Expires in days" type="number" min={1} step={1} value={typeof config.expiresInDays === 'number' ? config.expiresInDays : ''} onChange={(event) => updateConfig({ expiresInDays: event.target.value === '' ? undefined : Number(event.target.value) })} className={fieldControlClass} /></label></div></section>}
+    <section className="border-t border-border-primary px-4 py-4 sm:px-5"><div className="flex items-center justify-between gap-3"><div><h3 className="text-xs font-semibold uppercase tracking-wide text-text-muted">Checklist</h3><p className="mt-1 text-xs text-text-muted">{stage.checklistItems.length === 0 ? 'No checklist items' : `${stage.checklistItems.length} ${stage.checklistItems.length === 1 ? 'item' : 'items'}`}</p></div><Button variant="ghost" size="xs" leftIcon={<Plus />} onClick={() => onChange({ ...stage, checklistItems: [...stage.checklistItems, { label: '' }] })} aria-label="Add checklist item">Add item</Button></div><div className="mt-3 space-y-2">{stage.checklistItems.map((item, itemIndex) => <div key={`${stage.id}-${itemIndex}`} className="flex items-center gap-2"><input aria-label={`Checklist item ${itemIndex + 1}`} value={item.label} onChange={(event) => onChange({ ...stage, checklistItems: stage.checklistItems.map((entry, entryIndex) => entryIndex === itemIndex ? { ...entry, label: event.target.value } : entry) })} className="h-9 min-w-0 flex-1 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30" /><Button variant="ghost" size="xs" iconOnly leftIcon={<Trash2 />} aria-label="Remove checklist item" onClick={() => onChange({ ...stage, checklistItems: stage.checklistItems.filter((_, entryIndex) => entryIndex !== itemIndex) })} /></div>)}</div></section>
   </article>;
 }
 
@@ -104,5 +105,77 @@ export function PipelineBuilder({ initialDraft, templates, onCancel, onSave, isS
     if (stage.actionType === 'ESIGNING' && config.expiresInDays !== undefined && (!Number.isInteger(config.expiresInDays) || Number(config.expiresInDays) <= 0)) stageErrors.push(`${prefix} expiry must be a whole number of days`);
     return stageErrors;
   })].filter(Boolean) as string[])); setErrors(nextErrors); if (nextErrors.length || !schemaResult.success) return; void Promise.resolve(onSave(schemaResult.data)).catch(() => undefined); };
-  return <form noValidate onSubmit={(event) => { event.preventDefault(); save(); }} className="mx-auto max-w-4xl space-y-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h1 className="text-xl font-semibold text-text-primary">{initialDraft.name ? 'Edit pipeline' : 'New pipeline'}</h1><p className="mt-1 text-sm text-text-secondary">Saving publishes a new version for future tasks.</p></div><div className="flex gap-2"><Button variant="secondary" onClick={onCancel}>Cancel</Button><Button type="submit" isLoading={isSaving} aria-label="Save pipeline">Save pipeline</Button></div></div>{errors.length > 0 && <div role="alert" className="rounded-lg border border-status-error/30 bg-status-error/10 p-3 text-sm text-status-error">{errors.map((error) => <p key={error}>{error}</p>)}</div>}<div className="card space-y-3 p-4"><FormInput label="Pipeline name" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /><label className="block text-xs font-medium text-text-secondary">Description<textarea aria-label="Pipeline description" value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} rows={3} className="mt-2 w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary" /></label></div><section aria-label="Pipeline stages" className="space-y-3"><div className="flex items-center justify-between"><h2 className="text-lg font-semibold text-text-primary">Stages</h2><Button variant="secondary" size="sm" leftIcon={<Plus />} onClick={() => setDraft({ ...draft, stages: [...draft.stages, blankStage(draft.stages.length)] })} aria-label="Add stage">Add stage</Button></div><DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event: DragEndEvent) => { const oldIndex = draft.stages.findIndex((stage) => stage.id === event.active.id); const newIndex = draft.stages.findIndex((stage) => stage.id === event.over?.id); if (oldIndex >= 0 && newIndex >= 0) move(oldIndex, newIndex); }}><SortableContext items={draft.stages.map((stage) => stage.id)} strategy={verticalListSortingStrategy}>{draft.stages.map((stage, index) => <SortableStage key={stage.id} stage={stage} index={index} templates={templates} onChange={(next) => setDraft({ ...draft, stages: draft.stages.map((entry) => entry.id === next.id ? next : entry) })} onRemove={() => setDraft({ ...draft, stages: draft.stages.filter((entry) => entry.id !== stage.id) })} onMove={(direction) => move(index, index + direction)} />)}</SortableContext></DndContext></section></form>;
+  return (
+    <form noValidate onSubmit={(event) => { event.preventDefault(); save(); }} className="mx-auto max-w-5xl space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">{initialDraft.name ? 'Edit pipeline' : 'New pipeline'}</h1>
+          <p className="mt-1 text-sm text-text-secondary">Saving publishes a new version for future tasks.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" isLoading={isSaving} aria-label="Save pipeline">Save pipeline</Button>
+        </div>
+      </div>
+
+      {errors.length > 0 ? (
+        <div role="alert" className="rounded-xl border border-status-error/30 bg-status-error/10 p-4 text-sm text-status-error">
+          {errors.map((error) => <p key={error}>{error}</p>)}
+        </div>
+      ) : null}
+
+      <section className="card space-y-4 p-4 sm:p-5" aria-labelledby="pipeline-details-heading">
+        <div>
+          <h2 id="pipeline-details-heading" className="text-base font-semibold text-text-primary">Pipeline details</h2>
+          <p className="mt-1 text-xs text-text-muted">Name and describe the reusable workflow.</p>
+        </div>
+        <FormInput label="Pipeline name" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
+        <label className="block text-xs font-medium text-text-secondary">
+          Description
+          <textarea
+            aria-label="Pipeline description"
+            value={draft.description}
+            onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+            rows={3}
+            className="mt-2 w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
+          />
+        </label>
+      </section>
+
+      <section aria-label="Pipeline stages" className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary">Stages</h2>
+            <p className="mt-1 text-xs text-text-muted">Arrange the steps tasks will follow.</p>
+          </div>
+          <Button variant="secondary" size="sm" leftIcon={<Plus />} onClick={() => setDraft({ ...draft, stages: [...draft.stages, blankStage(draft.stages.length)] })} aria-label="Add stage">Add stage</Button>
+        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={(event: DragEndEvent) => {
+            const oldIndex = draft.stages.findIndex((stage) => stage.id === event.active.id);
+            const newIndex = draft.stages.findIndex((stage) => stage.id === event.over?.id);
+            if (oldIndex >= 0 && newIndex >= 0) move(oldIndex, newIndex);
+          }}
+        >
+          <SortableContext items={draft.stages.map((stage) => stage.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-4">
+              {draft.stages.map((stage, index) => (
+                <SortableStage
+                  key={stage.id}
+                  stage={stage}
+                  index={index}
+                  templates={templates}
+                  onChange={(next) => setDraft({ ...draft, stages: draft.stages.map((entry) => entry.id === next.id ? next : entry) })}
+                  onRemove={() => setDraft({ ...draft, stages: draft.stages.filter((entry) => entry.id !== stage.id) })}
+                  onMove={(direction) => move(index, index + direction)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </section>
+    </form>
+  );
 }

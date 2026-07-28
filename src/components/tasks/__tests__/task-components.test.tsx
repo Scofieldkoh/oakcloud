@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskFilters } from '@/components/tasks/task-filters';
 import { TaskFormModal } from '@/components/tasks/task-form-modal';
 import { TaskList } from '@/components/tasks/task-list';
@@ -13,6 +13,23 @@ import type {
   TaskStageDetail,
   TaskStageSummary,
 } from '@/services/tasks/types';
+
+const preferenceMocks = vi.hoisted(() => ({
+  save: vi.fn(),
+}));
+
+vi.mock('@/hooks/use-user-preferences', () => ({
+  useUserPreferences: () => ({
+    data: {
+      'tasks:list:columns:v1': {
+        key: 'tasks:list:columns:v1',
+        value: {},
+        updatedAt: null,
+      },
+    },
+  }),
+  useUpsertUserPreference: () => ({ mutate: preferenceMocks.save }),
+}));
 
 const stages: TaskStageSummary[] = [
   { id: 'stage-1', name: 'Profile', position: 0, actionType: 'COMPANY_PROFILE', icon: 'Building2', isRequired: true, status: 'NOT_STARTED' },
@@ -88,11 +105,27 @@ const stageDetail: TaskStageDetail = {
   outcomeSummary: 'Draft engagement contract (IN_PROGRESS)',
 };
 
+const taskListFilterProps = {
+  filters: {},
+  pipelines: [pipeline],
+  companies: [task.company!],
+  owners: [task.owner!],
+  onFiltersChange: vi.fn(),
+  onUpdateMetadata: vi.fn().mockResolvedValue(undefined),
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe('TaskList', () => {
-  it('renders the exact desktop column order with one whole-table scroll container and every stage icon', () => {
+  it('renders Vault-style inline filters above their matching columns', () => {
+    const onFiltersChange = vi.fn();
     render(
       <TaskList
         tasks={[task]}
+        {...taskListFilterProps}
+        onFiltersChange={onFiltersChange}
         onSelectStage={vi.fn()}
         onEdit={vi.fn()}
         onStatusAction={vi.fn()}
@@ -100,17 +133,372 @@ describe('TaskList', () => {
       />,
     );
 
-    expect(within(screen.getByRole('table')).getAllByRole('columnheader').map((header) => header.textContent))
-      .toEqual(['Company', 'Task', 'Stages', 'Owner', 'Due', 'Actions']);
+    const table = screen.getByRole('table');
+    const rows = within(table).getAllByRole('row');
+    expect(rows[0]).toHaveAttribute('data-filter-row');
+    expect(rows[1]).toHaveAttribute('data-column-header-row');
+    expect(within(rows[1]).getAllByRole('columnheader').map((header) => header.textContent))
+      .toEqual(['Company', 'Task', 'Status', 'Pipeline', 'Stages', 'Owner', 'Due', 'Actions']);
+    const filterCells = rows[0].querySelectorAll('th');
+    expect(filterCells[1]).not.toContainElement(
+      within(rows[0]).getByRole('combobox', { name: 'All statuses' }),
+    );
+    expect(filterCells[2]).toContainElement(
+      within(rows[0]).getByRole('combobox', { name: 'All statuses' }),
+    );
+    const searchableSelects = [
+      within(rows[0]).getByRole('combobox', { name: 'All companies' }),
+      within(rows[0]).getByRole('combobox', { name: 'All statuses' }),
+      within(rows[0]).getByRole('combobox', { name: 'All pipelines' }),
+    ];
+    searchableSelects.forEach((filter) => {
+      expect(filter.tagName).toBe('INPUT');
+      expect(filter).toHaveAttribute('aria-autocomplete', 'list');
+    });
+    const titleFilter = within(rows[0]).getByRole('textbox', { name: 'Filter tasks by title' });
+    const ownerFilter = within(rows[0]).getByRole('textbox', { name: 'Filter tasks by owner' });
+    expect(filterCells[1]).toContainElement(titleFilter);
+    expect(filterCells[5]).toContainElement(ownerFilter);
+    expect(within(filterCells[6]).getByText('All dates')).toBeVisible();
+    fireEvent.change(titleFilter, { target: { value: 'annual' } });
+    expect(onFiltersChange).toHaveBeenCalledWith({ page: 1, title: 'annual' });
+    fireEvent.change(ownerFilter, { target: { value: 'sam' } });
+    expect(onFiltersChange).toHaveBeenLastCalledWith({ page: 1, ownerQuery: 'sam' });
     expect(screen.getByTestId('task-table-scroll')).toHaveClass('overflow-x-auto');
     expect(screen.getByTestId('task-stage-cell')).not.toHaveClass('overflow-x-auto');
     expect(within(screen.getByTestId('task-stage-cell')).getAllByRole('button')).toHaveLength(stages.length);
+    expect(within(screen.getByTestId('task-pipeline-cell')).getByText('Annual review')).toBeVisible();
+    expect(within(screen.getByTestId('task-status-cell')).getByText('In progress')).toBeVisible();
+    const dataCells = within(rows[2]).getAllByRole('cell');
+    expect(dataCells[1]).toHaveTextContent(task.title);
+    expect(dataCells[1]).not.toHaveTextContent('In progress');
+  });
+
+  it('uses the Document Vault alternate-row surface', () => {
+    render(
+      <TaskList
+        tasks={[task, { ...task, id: 'task-2', title: 'Second task' }]}
+        {...taskListFilterProps}
+        onSelectStage={vi.fn()}
+        onEdit={vi.fn()}
+        onStatusAction={vi.fn()}
+        onArchive={vi.fn()}
+      />,
+    );
+
+    const bodyRows = screen.getAllByRole('row').slice(2);
+    expect(bodyRows[0]).not.toHaveClass('bg-oak-row-alt');
+    expect(bodyRows[1]).toHaveClass('bg-oak-row-alt', 'hover:bg-oak-row-alt-hover');
+  });
+
+  it('opens the lowest-position incomplete stage from a desktop row click', () => {
+    vi.useFakeTimers();
+    const onSelectStage = vi.fn();
+    const waitingStage = { ...stages[2], position: 1, status: 'WAITING' as const };
+    const unorderedStages: TaskStageSummary[] = [
+      { ...stages[0], position: 2, status: 'NOT_STARTED' },
+      { ...stages[1], position: 0, status: 'COMPLETED' },
+      waitingStage,
+    ];
+
+    try {
+      render(
+        <TaskList
+          tasks={[{ ...task, stages: unorderedStages }]}
+          {...taskListFilterProps}
+          onSelectStage={onSelectStage}
+          onEdit={vi.fn()}
+          onStatusAction={vi.fn()}
+          onArchive={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(screen.getAllByRole('row')[2]);
+      expect(onSelectStage).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(300);
+      expect(onSelectStage).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(250);
+      expect(onSelectStage).toHaveBeenCalledWith(
+        expect.objectContaining({ id: task.id }),
+        waitingStage,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps a slower double-click in the metadata cell from opening a stage', () => {
+    vi.useFakeTimers();
+    const onSelectStage = vi.fn();
+
+    try {
+      render(
+        <TaskList
+          tasks={[task]}
+          {...taskListFilterProps}
+          onSelectStage={onSelectStage}
+          onEdit={vi.fn()}
+          onStatusAction={vi.fn()}
+          onArchive={vi.fn()}
+        />,
+      );
+      const taskCell = within(screen.getAllByRole('row')[2]).getAllByRole('cell')[1];
+
+      fireEvent.click(taskCell);
+      vi.advanceTimersByTime(300);
+      fireEvent.doubleClick(taskCell);
+      vi.advanceTimersByTime(300);
+
+      expect(onSelectStage).not.toHaveBeenCalled();
+      expect(screen.getByRole('textbox', { name: 'Edit task title' })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not navigate completed rows or duplicate interactive-child actions', () => {
+    vi.useFakeTimers();
+    const onSelectStage = vi.fn();
+    const completeStages: TaskStageSummary[] = [
+      { ...stages[0], status: 'COMPLETED' },
+      { ...stages[1], status: 'SKIPPED' },
+    ];
+
+    try {
+      const { rerender } = render(
+        <TaskList
+          tasks={[{ ...task, stages: completeStages }]}
+          {...taskListFilterProps}
+          onSelectStage={onSelectStage}
+          onEdit={vi.fn()}
+          onStatusAction={vi.fn()}
+          onArchive={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(screen.getAllByRole('row')[2]);
+      vi.advanceTimersByTime(250);
+      expect(onSelectStage).not.toHaveBeenCalled();
+
+      rerender(
+        <TaskList
+          tasks={[task]}
+          {...taskListFilterProps}
+          onSelectStage={onSelectStage}
+          onEdit={vi.fn()}
+          onStatusAction={vi.fn()}
+          onArchive={vi.fn()}
+        />,
+      );
+      const stageButton = screen.getAllByRole('button', { name: /Profile stage/i })[1];
+      fireEvent.click(stageButton);
+      vi.advanceTimersByTime(250);
+      expect(onSelectStage).toHaveBeenCalledTimes(1);
+      expect(onSelectStage).toHaveBeenCalledWith(task, stages[0]);
+
+      onSelectStage.mockClear();
+      fireEvent.click(screen.getAllByRole('button', { name: `Actions for ${task.title}` })[1]);
+      vi.advanceTimersByTime(250);
+      expect(onSelectStage).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('edits a task title on blur without opening its stage', async () => {
+    vi.useFakeTimers();
+    const onSelectStage = vi.fn();
+    const onUpdateMetadata = vi.fn().mockResolvedValue(undefined);
+
+    const { unmount } = render(
+      <TaskList
+        tasks={[task]}
+        {...taskListFilterProps}
+        onUpdateMetadata={onUpdateMetadata}
+        onSelectStage={onSelectStage}
+        onEdit={vi.fn()}
+        onStatusAction={vi.fn()}
+        onArchive={vi.fn()}
+      />,
+    );
+    const taskCell = within(screen.getAllByRole('row')[2]).getAllByRole('cell')[1];
+
+    try {
+      fireEvent.click(taskCell);
+      fireEvent.doubleClick(taskCell);
+      vi.advanceTimersByTime(250);
+      expect(onSelectStage).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
+      const input = screen.getByRole('textbox', { name: 'Edit task title' });
+      fireEvent.change(input, { target: { value: 'Updated annual review' } });
+      fireEvent.blur(input);
+
+      await waitFor(() => expect(onUpdateMetadata).toHaveBeenCalledTimes(1));
+      expect(onUpdateMetadata).toHaveBeenCalledWith(task, { title: 'Updated annual review' });
+    } finally {
+      vi.useRealTimers();
+      unmount();
+    }
+  });
+
+  it('cancels a title edit on Escape and retains failed saves', async () => {
+    const onUpdateMetadata = vi.fn().mockRejectedValue(new Error('Update failed'));
+    render(
+      <TaskList
+        tasks={[task]}
+        {...taskListFilterProps}
+        onUpdateMetadata={onUpdateMetadata}
+        onSelectStage={vi.fn()}
+        onEdit={vi.fn()}
+        onStatusAction={vi.fn()}
+        onArchive={vi.fn()}
+      />,
+    );
+    const taskCell = within(screen.getAllByRole('row')[2]).getAllByRole('cell')[1];
+
+    fireEvent.doubleClick(taskCell);
+    let input = screen.getByRole('textbox', { name: 'Edit task title' });
+    fireEvent.change(input, { target: { value: 'Discard this' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(onUpdateMetadata).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox', { name: 'Edit task title' })).not.toBeInTheDocument();
+
+    fireEvent.doubleClick(taskCell);
+    input = screen.getByRole('textbox', { name: 'Edit task title' });
+    fireEvent.change(input, { target: { value: 'Keep this value' } });
+    fireEvent.blur(input);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not save task');
+    expect(screen.getByRole('textbox', { name: 'Edit task title' })).toHaveValue('Keep this value');
+  });
+
+  it('dismisses non-text inline editors on outside click or Escape', () => {
+    render(
+      <TaskList
+        tasks={[task]}
+        {...taskListFilterProps}
+        onSelectStage={vi.fn()}
+        onEdit={vi.fn()}
+        onStatusAction={vi.fn()}
+        onArchive={vi.fn()}
+      />,
+    );
+    const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell');
+
+    fireEvent.doubleClick(cells[0]);
+    expect(screen.getByRole('combobox', { name: 'Edit company' })).toBeInTheDocument();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('combobox', { name: 'Edit company' })).not.toBeInTheDocument();
+
+    fireEvent.doubleClick(cells[5]);
+    expect(screen.getByRole('combobox', { name: 'Edit owner' })).toBeInTheDocument();
+    fireEvent.focusIn(document.body);
+    expect(screen.queryByRole('combobox', { name: 'Edit owner' })).not.toBeInTheDocument();
+
+    fireEvent.doubleClick(cells[2]);
+    expect(screen.getByRole('button', { name: 'Pause task' })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: 'Pause task' })).not.toBeInTheDocument();
+
+    fireEvent.doubleClick(cells[6]);
+    expect(within(cells[6]).getByTestId('task-due-inline-editor')).toBeInTheDocument();
+    fireEvent.click(within(cells[6]).getByText('30 Jul 2026'));
+    const datePickerPopover = document.querySelector('[data-datepicker-popover]');
+    expect(datePickerPopover).not.toBeNull();
+    fireEvent.mouseDown(within(datePickerPopover as HTMLElement).getByRole('button', { name: 'Single Date' }));
+    expect(within(cells[6]).getByTestId('task-due-inline-editor')).toBeInTheDocument();
+    fireEvent.mouseDown(document.body);
+    expect(within(cells[6]).queryByTestId('task-due-inline-editor')).not.toBeInTheDocument();
+  });
+
+  it('clears Company, Owner, and Due through their inline editors', async () => {
+    const onUpdateMetadata = vi.fn().mockResolvedValue(undefined);
+    render(
+      <TaskList
+        tasks={[task]}
+        {...taskListFilterProps}
+        onUpdateMetadata={onUpdateMetadata}
+        onSelectStage={vi.fn()}
+        onEdit={vi.fn()}
+        onStatusAction={vi.fn()}
+        onArchive={vi.fn()}
+      />,
+    );
+    const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell');
+
+    fireEvent.doubleClick(cells[0]);
+    expect(screen.getByRole('combobox', { name: 'Edit company' })).toBeInTheDocument();
+    fireEvent.click(within(cells[0]).getByRole('button', { name: 'Clear selection' }));
+    await waitFor(() => expect(onUpdateMetadata).toHaveBeenCalledWith(task, { companyId: null }));
+
+    fireEvent.doubleClick(cells[5]);
+    expect(screen.getByRole('combobox', { name: 'Edit owner' })).toBeInTheDocument();
+    fireEvent.click(within(cells[5]).getByRole('button', { name: 'Clear selection' }));
+    await waitFor(() => expect(onUpdateMetadata).toHaveBeenCalledWith(task, { ownerId: null }));
+
+    fireEvent.doubleClick(cells[6]);
+    expect(within(cells[6]).getByTestId('task-due-inline-editor')).toBeInTheDocument();
+    fireEvent.click(within(cells[6]).getByRole('button', { name: 'Clear selection' }));
+    await waitFor(() => expect(onUpdateMetadata).toHaveBeenCalledWith(task, { dueDate: null }));
+  });
+
+  it('offers only valid status actions from the inline status editor', () => {
+    const onStatusAction = vi.fn();
+    const { rerender } = render(
+      <TaskList
+        tasks={[task]}
+        {...taskListFilterProps}
+        onSelectStage={vi.fn()}
+        onEdit={vi.fn()}
+        onStatusAction={onStatusAction}
+        onArchive={vi.fn()}
+      />,
+    );
+
+    fireEvent.doubleClick(within(screen.getAllByRole('row')[2]).getAllByRole('cell')[2]);
+    expect(screen.getByRole('button', { name: 'Pause task' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel task' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Complete task/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Pause task' }));
+    expect(onStatusAction).toHaveBeenCalledWith(task, 'pause');
+
+    rerender(
+      <TaskList
+        tasks={[{ ...task, status: 'PAUSED' }]}
+        {...taskListFilterProps}
+        onSelectStage={vi.fn()}
+        onEdit={vi.fn()}
+        onStatusAction={onStatusAction}
+        onArchive={vi.fn()}
+      />,
+    );
+    fireEvent.doubleClick(within(screen.getAllByRole('row')[2]).getAllByRole('cell')[2]);
+    expect(screen.getByRole('button', { name: 'Resume task' })).toBeInTheDocument();
+  });
+
+  it('does not show redundant Unscheduled subtext for an undated task', () => {
+    render(
+      <TaskList
+        tasks={[{ ...task, dueDate: null }]}
+        {...taskListFilterProps}
+        onSelectStage={vi.fn()}
+        onEdit={vi.fn()}
+        onStatusAction={vi.fn()}
+        onArchive={vi.fn()}
+      />,
+    );
+
+    const table = screen.getByRole('table');
+    expect(within(table).getByText('No due date')).toBeVisible();
+    expect(within(table).queryByText('Unscheduled')).not.toBeInTheDocument();
   });
 
   it('renders mobile cards with the full stage pipeline below the task summary', () => {
     render(
       <TaskList
         tasks={[task]}
+        {...taskListFilterProps}
         onSelectStage={vi.fn()}
         onEdit={vi.fn()}
         onStatusAction={vi.fn()}
@@ -124,13 +512,14 @@ describe('TaskList', () => {
     expect(within(card).getAllByRole('button', { name: /stage/i })).toHaveLength(stages.length);
   });
 
-  it('offers metadata, pause or resume, cancel, and archive actions', () => {
+  it('offers metadata, pause or resume, cancel, and archive actions from one ellipsis menu', () => {
     const onEdit = vi.fn();
     const onStatusAction = vi.fn();
     const onArchive = vi.fn();
     render(
       <TaskList
         tasks={[task]}
+        {...taskListFilterProps}
         onSelectStage={vi.fn()}
         onEdit={onEdit}
         onStatusAction={onStatusAction}
@@ -138,14 +527,48 @@ describe('TaskList', () => {
       />,
     );
 
-    fireEvent.click(screen.getAllByRole('button', { name: `Edit ${task.title}` })[0]);
-    fireEvent.click(screen.getAllByRole('button', { name: `Pause ${task.title}` })[0]);
-    fireEvent.click(screen.getAllByRole('button', { name: `Cancel ${task.title}` })[0]);
-    fireEvent.click(screen.getAllByRole('button', { name: `Delete ${task.title}` })[0]);
+    const actionTriggers = screen.getAllByRole('button', { name: `Actions for ${task.title}` });
+    expect(actionTriggers).toHaveLength(2);
+    fireEvent.click(actionTriggers[0]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit metadata' }));
+    fireEvent.click(actionTriggers[0]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Pause' }));
+    fireEvent.click(actionTriggers[0]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Cancel' }));
+    fireEvent.click(actionTriggers[0]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
     expect(onEdit).toHaveBeenCalledWith(task);
     expect(onStatusAction).toHaveBeenNthCalledWith(1, task, 'pause');
     expect(onStatusAction).toHaveBeenNthCalledWith(2, task, 'cancel');
     expect(onArchive).toHaveBeenCalledWith(task);
+  });
+
+  it('persists the final width after a desktop column is resized', () => {
+    render(
+      <TaskList
+        tasks={[task]}
+        {...taskListFilterProps}
+        onSelectStage={vi.fn()}
+        onEdit={vi.fn()}
+        onStatusAction={vi.fn()}
+        onArchive={vi.fn()}
+      />,
+    );
+
+    const table = screen.getByRole('table');
+    expect(table).not.toHaveClass('w-full');
+    expect(table).toHaveStyle({ width: '1422px', minWidth: '1422px' });
+
+    const handle = screen.getByRole('separator', { name: 'Resize Company column' });
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 100 });
+    fireEvent.pointerMove(window, { pointerId: 1, clientX: 160 });
+    fireEvent.pointerUp(window, { pointerId: 1, clientX: 160 });
+
+    expect(table).toHaveStyle({ width: '1482px', minWidth: '1482px' });
+    expect(preferenceMocks.save).toHaveBeenCalledWith({
+      key: 'tasks:list:columns:v1',
+      value: expect.objectContaining({ company: 240 }),
+    });
   });
 });
 
@@ -170,31 +593,32 @@ describe('TaskStagePipeline', () => {
 });
 
 describe('TaskFilters', () => {
-  it('emits search, pipeline, company, owner, status, and due-bucket filters', () => {
+  it('uses the Vault toolbar with task quick filters', () => {
     const onChange = vi.fn();
     render(
       <TaskFilters
-        value={{}}
-        pipelines={[pipeline]}
-        companies={[task.company!]}
-        owners={[task.owner!]}
+        value={{ limit: 50 }}
         onChange={onChange}
+        currentUserId="user-1"
       />,
     );
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search tasks' }), { target: { value: 'annual' } });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Pipeline' }), { target: { value: 'pipeline-1' } });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Company' }), { target: { value: 'company-1' } });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Owner' }), { target: { value: 'owner-1' } });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Task status' }), { target: { value: 'PAUSED' } });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Due' }), { target: { value: 'overdue' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Owned by me' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Due this week' }));
+    fireEvent.click(screen.getByRole('button', { name: 'In Progress' }));
 
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ query: 'annual' }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ pipelineId: 'pipeline-1' }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ companyId: 'company-1' }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ ownerId: 'owner-1' }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ status: 'PAUSED' }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ dueBucket: 'overdue' }));
+    expect(screen.queryAllByRole('combobox')).toHaveLength(0);
+    expect(onChange).toHaveBeenCalledWith({ limit: 50, page: 1, query: 'annual' });
+    expect(onChange).toHaveBeenCalledWith({ limit: 50, page: 1, ownerId: 'user-1' });
+    expect(onChange).toHaveBeenCalledWith({
+      limit: 50,
+      page: 1,
+      dueBucket: 'thisWeek',
+      dueDateFrom: undefined,
+      dueDateTo: undefined,
+    });
+    expect(onChange).toHaveBeenCalledWith({ limit: 50, page: 1, status: 'IN_PROGRESS' });
   });
 });
 
@@ -228,6 +652,345 @@ describe('TaskFormModal', () => {
 });
 
 describe('TaskStageModal', () => {
+  it('uses the same pipeline modal shell for document, e-signing, and manual stages', () => {
+    const stageVariants: Array<{
+      stage: TaskStageDetail;
+      outcomeLabel: string;
+    }> = [
+      {
+        stage: stageDetail,
+        outcomeLabel: 'Linked document',
+      },
+      {
+        stage: {
+          ...stageDetail,
+          id: 'stage-esigning',
+          name: 'E-Signing',
+          description: 'Send the approved contract for signatures.',
+          actionType: 'ESIGNING',
+          outcomeSummary: 'Signature request for engagement contract',
+        },
+        outcomeLabel: 'Linked signing request',
+      },
+      {
+        stage: {
+          ...stageDetail,
+          id: 'stage-manual',
+          name: 'Client review',
+          description: 'Confirm the client has reviewed the engagement.',
+          actionType: 'MANUAL',
+          outcomeSummary: 'Client review recorded',
+          launch: { href: null, context: stageDetail.launch.context },
+        },
+        outcomeLabel: 'Linked outcome',
+      },
+    ];
+
+    stageVariants.forEach(({ stage, outcomeLabel }) => {
+      const { unmount } = render(
+        <TaskStageModal
+          isOpen
+          stage={stage}
+          taskDueDate={task.dueDate}
+          onClose={vi.fn()}
+          onUpdateMetadata={vi.fn()}
+          onTransition={vi.fn()}
+        />,
+      );
+
+      const dialog = screen.getByRole('dialog');
+      expect(dialog.firstElementChild).toHaveClass('lg:max-w-6xl', 'border-l-4');
+      expect(dialog).toHaveAccessibleDescription(stage.description!);
+      expect(screen.queryByRole('heading', { name: 'Overview' })).not.toBeInTheDocument();
+      expect(screen.getByTestId('pipeline-stage-modal-body')).toHaveClass('p-5', 'sm:p-6');
+      expect(screen.getByTestId('pipeline-stage-modal-footer')).toHaveClass('px-6', 'py-4');
+      expect(within(screen.getByTestId('stage-linked-outcome-card')).getByText(outcomeLabel)).toBeVisible();
+      expect(within(screen.getByTestId('stage-secondary-details')).getByText('Due Date')).toBeVisible();
+      expect(screen.getByRole('status')).toHaveClass('min-h-4');
+      unmount();
+    });
+  });
+
+  it('places prominent stage details before a two-to-one Company Profile action row', async () => {
+    const companyAdapter = getStageActionAdapter(TaskStageActionType.COMPANY_PROFILE);
+    const linkedCompany = { id: 'company-linked', name: 'DAP Atelier (S) Pte. Ltd.', uen: '202400002B' };
+    const companyStage: TaskStageDetail = {
+      ...stageDetail,
+      id: 'stage-company',
+      name: 'Company Profile',
+      actionType: 'COMPANY_PROFILE',
+      status: 'COMPLETED',
+      blockers: [],
+      outcomeSummary: 'Linked company: DAP Atelier (S) Pte. Ltd.',
+      startedAt: '2026-07-28T10:10:00+08:00',
+      completedAt: '2026-07-28T10:10:00+08:00',
+      launch: companyAdapter.launch({
+        tenantId: 'tenant-1',
+        stage: {
+          id: 'stage-company',
+          tenantId: 'tenant-1',
+          taskId: task.id,
+          actionType: TaskStageActionType.COMPANY_PROFILE,
+          actionConfig: { allowCreate: true },
+          status: 'NOT_STARTED',
+          task: { companyId: null },
+        },
+      }),
+    };
+    const onStartBizFileReview = vi.fn().mockResolvedValue(undefined);
+    render(
+      <TaskStageModal
+        isOpen
+        stage={companyStage}
+        companies={[linkedCompany, { ...task.company!, uen: '202400001A' }]}
+        taskCompanyId={linkedCompany.id}
+        taskDueDate={task.dueDate}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={vi.fn()}
+        onStartBizFileReview={onStartBizFileReview}
+      />,
+    );
+
+    const dialogPanel = screen.getByRole('dialog').firstElementChild;
+    expect(dialogPanel).toHaveClass('lg:max-w-6xl');
+    expect(dialogPanel).toHaveClass('border-l-4', 'border-l-emerald-500');
+    expect(dialogPanel).not.toHaveClass('border-t-4');
+
+    const modalTitle = screen.getByRole('heading', { name: 'Company Profile' });
+    const statusBadge = screen.getByTestId('stage-status-badge');
+    expect(modalTitle.parentElement).toContainElement(statusBadge);
+    expect(statusBadge).toHaveTextContent('Complete');
+    expect(screen.getByText('Link or create Company profile for the task')).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Overview' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Link or create the authoritative Company profile for this client.')).not.toBeInTheDocument();
+
+    const linkedOutcomeCard = screen.getByTestId('stage-linked-outcome-card');
+    const secondaryDetails = screen.getByTestId('stage-secondary-details');
+    const createOptionHeading = screen.getByRole('heading', { name: '1. Create a new company profile' });
+    const existingOptionHeading = screen.getByRole('heading', { name: '2. Or link an existing company' });
+    expect(screen.queryByRole('heading', { name: 'Link Company details' })).not.toBeInTheDocument();
+    expect(createOptionHeading).toHaveClass('text-base');
+    expect(existingOptionHeading).toHaveClass('text-base');
+    expect(screen.getByText('BizFile or manual entry')).toHaveClass('text-text-muted');
+    const uploadHeading = screen.getByRole('heading', { name: 'Upload BizFile' });
+    const uploadButton = screen.getByRole('button', { name: 'Upload and review BizFile' });
+    const createLink = screen.getByRole('link', { name: 'Enter company manually' });
+    const notes = screen.getByRole('textbox', { name: 'Notes' });
+    expect(modalTitle.compareDocumentPosition(linkedOutcomeCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(linkedOutcomeCard.compareDocumentPosition(secondaryDetails) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(linkedOutcomeCard).not.toContainElement(secondaryDetails);
+    expect(secondaryDetails.compareDocumentPosition(createOptionHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(createOptionHeading.compareDocumentPosition(uploadHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(uploadHeading.compareDocumentPosition(createLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(createLink.compareDocumentPosition(existingOptionHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(existingOptionHeading.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByTestId('company-profile-create-panel')).toHaveLength(1);
+    expect(screen.getByTestId('company-profile-create-option')).not.toHaveClass('ml-4', 'pl-4', 'border-l');
+    expect(screen.getByTestId('company-profile-existing-option')).not.toHaveClass('ml-4', 'pl-4', 'border-l');
+    expect(screen.getByTestId('company-profile-action-row')).toHaveClass('sm:grid-cols-3');
+    expect(uploadButton).toHaveClass('sm:col-span-2');
+    expect(uploadButton).toHaveClass('disabled:opacity-70');
+    expect(createLink).toHaveClass('sm:col-span-1');
+    expect(notes).toHaveAttribute('rows', '4');
+    expect(linkedOutcomeCard).toHaveClass('bg-oak-primary/5');
+    expect(within(linkedOutcomeCard).getByText('Linked company')).toBeVisible();
+    expect(within(linkedOutcomeCard).getByText('DAP Atelier (S) Pte. Ltd.')).toHaveClass('font-medium');
+    expect(within(linkedOutcomeCard).queryByText(/Linked company:/)).not.toBeInTheDocument();
+    expect(screen.getByTestId('company-profile-dropzone')).toHaveClass('min-h-44');
+    expect(screen.getByTestId('company-profile-create-panel')).toHaveClass('p-4');
+    expect(screen.queryByText(/Search for an existing company and link it/)).not.toBeInTheDocument();
+    expect(screen.getByText('Existing company')).toBeVisible();
+    expect(screen.getByText('Search by company name or UEN')).toBeVisible();
+    expect(screen.getByTestId('company-profile-existing-option')).toHaveAttribute('data-selection-state', 'unchanged');
+
+    const companySelect = screen.getByRole('combobox', { name: 'Existing company' });
+    fireEvent.focus(companySelect);
+    fireEvent.change(companySelect, { target: { value: 'Acme' } });
+    fireEvent.keyDown(companySelect, { key: 'ArrowDown' });
+    fireEvent.keyDown(companySelect, { key: 'Enter' });
+    expect(companySelect).toHaveValue('Acme Pte Ltd');
+
+    const fileInput = screen.getByLabelText('Upload BizFile file');
+    const firstFile = new File(['pdf'], 'first-bizfile.pdf', { type: 'application/pdf' });
+    fireEvent.change(fileInput, { target: { files: [firstFile] } });
+    expect(await screen.findByText('first-bizfile.pdf')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove first-bizfile.pdf' }));
+    expect(screen.queryByText('first-bizfile.pdf')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Upload and review BizFile' })).toBeDisabled();
+
+    const replacementFile = new File(['replacement'], 'replacement-bizfile.pdf', { type: 'application/pdf' });
+    fireEvent.change(fileInput, { target: { files: [replacementFile] } });
+    expect(await screen.findByText('replacement-bizfile.pdf')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Upload and review BizFile' }));
+    await waitFor(() => expect(onStartBizFileReview).toHaveBeenCalledWith(replacementFile));
+
+    expect(within(linkedOutcomeCard).getByText('Linked company')).toBeVisible();
+    expect(within(secondaryDetails).getByText('Assignee')).toBeVisible();
+    expect(within(secondaryDetails).getByText('Due Date')).toBeVisible();
+    expect(within(secondaryDetails).getByText('Started')).toBeVisible();
+    expect(within(secondaryDetails).getByText('Completed')).toBeVisible();
+    expect(within(secondaryDetails).getAllByText('28 Jul 2026, 10:10')).toHaveLength(2);
+    expect(within(secondaryDetails).getByText('Assignee')).toHaveClass('text-text-secondary');
+    expect(within(linkedOutcomeCard).queryByText('Assignee')).not.toBeInTheDocument();
+    expect(within(screen.getByTestId('stage-secondary-timeline')).getByText('Assignee')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Previous stage' })).toHaveClass('text-text-secondary');
+    expect(screen.getByRole('button', { name: 'Next stage' })).toHaveClass('text-text-secondary');
+    expect(screen.getByRole('button', { name: 'Close modal' })).toHaveClass('min-h-12', 'min-w-12');
+  });
+
+  it('distinguishes an unchanged company from a replacement and a first-time link', () => {
+    const linkedCompany = { id: 'company-linked', name: 'DAP Atelier (S) Pte. Ltd.' };
+    const replacementCompany = { id: 'company-replacement', name: 'New Company Pte. Ltd.' };
+    const companyStage: TaskStageDetail = {
+      ...stageDetail,
+      id: 'stage-company',
+      name: 'Company Profile',
+      actionType: 'COMPANY_PROFILE',
+      status: 'COMPLETED',
+      blockers: [],
+      launch: {
+        href: `/companies/${linkedCompany.id}`,
+        context: { taskId: task.id, taskStageId: 'stage-company' },
+      },
+      outcomeSummary: `Linked company: ${linkedCompany.name}`,
+    };
+    const onTransition = vi.fn();
+    const selectCompany = (name: string) => {
+      const select = screen.getByRole('combobox', { name: 'Existing company' });
+      fireEvent.focus(select);
+      fireEvent.change(select, { target: { value: name } });
+      fireEvent.keyDown(select, { key: 'ArrowDown' });
+      fireEvent.keyDown(select, { key: 'Enter' });
+    };
+
+    const { unmount } = render(
+      <TaskStageModal
+        isOpen
+        stage={companyStage}
+        companies={[linkedCompany, replacementCompany]}
+        taskCompanyId={linkedCompany.id}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={onTransition}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Company already linked' })).toBeDisabled();
+    expect(screen.getByTestId('company-profile-existing-option')).toHaveAttribute('data-selection-state', 'unchanged');
+
+    selectCompany(replacementCompany.name);
+    expect(screen.getByTestId('company-profile-existing-option')).toHaveAttribute('data-selection-state', 'replacement');
+    fireEvent.click(screen.getByRole('button', { name: 'Replace linked company' }));
+    expect(onTransition).toHaveBeenCalledWith({
+      action: 'linkOutcome',
+      outcome: { type: 'COMPANY', companyId: replacementCompany.id },
+    });
+
+    unmount();
+    render(
+      <TaskStageModal
+        isOpen
+        stage={{ ...companyStage, outcomeSummary: null }}
+        companies={[linkedCompany, replacementCompany]}
+        taskCompanyId={null}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={onTransition}
+      />,
+    );
+
+    selectCompany(linkedCompany.name);
+    expect(screen.getByTestId('company-profile-existing-option')).toHaveAttribute('data-selection-state', 'new');
+    expect(screen.getByRole('button', { name: 'Link selected company' })).toBeEnabled();
+  });
+
+  it('autosaves notes after typing without a manual save action', async () => {
+    let resolveSave!: () => void;
+    const onUpdateMetadata = vi.fn(() => new Promise<void>((resolve) => {
+      resolveSave = resolve;
+    }));
+    render(
+      <TaskStageModal
+        isOpen
+        stage={stageDetail}
+        onClose={vi.fn()}
+        onUpdateMetadata={onUpdateMetadata}
+        onTransition={vi.fn()}
+      />,
+    );
+
+    const notes = screen.getByRole('textbox', { name: 'Notes' });
+    const saveStatus = screen.getByRole('status');
+    expect(saveStatus).toBeEmptyDOMElement();
+    expect(saveStatus).toHaveClass('min-h-4');
+
+    fireEvent.change(notes, { target: { value: 'Autosaved stage note' } });
+
+    expect(screen.queryByRole('button', { name: 'Save notes' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Changes save automatically')).not.toBeInTheDocument();
+    expect(await screen.findByText('Saving…', {}, { timeout: 1500 })).toBeVisible();
+    expect(onUpdateMetadata).toHaveBeenCalledWith({ notes: 'Autosaved stage note' });
+    resolveSave();
+    expect(await screen.findByText('Saved')).toBeVisible();
+  });
+
+  it('shows concise notes feedback when autosave fails', async () => {
+    render(
+      <TaskStageModal
+        isOpen
+        stage={stageDetail}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn().mockRejectedValue(new Error('Stage update failed'))}
+        onTransition={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Notes' }), {
+      target: { value: 'Unsaved stage note' },
+    });
+
+    expect(await screen.findByText('Couldn’t save', {}, { timeout: 1500 })).toBeVisible();
+  });
+
+  it('keeps company creation available after completion and navigates to the next stage', () => {
+    const onNavigateStage = vi.fn();
+    render(
+      <TaskStageModal
+        isOpen
+        stage={{
+          ...stageDetail,
+          id: 'stage-company',
+          name: 'Company Profile',
+          actionType: 'COMPANY_PROFILE',
+          status: 'COMPLETED',
+          blockers: [],
+          launch: {
+            href: '/companies/company-1',
+            context: { taskId: task.id, taskStageId: 'stage-company' },
+          },
+          outcomeSummary: 'Linked company: Acme Pte Ltd',
+        }}
+        companies={[task.company!]}
+        taskCompanyId={task.company!.id}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={vi.fn()}
+        onStartBizFileReview={vi.fn()}
+        onNavigateStage={onNavigateStage}
+        hasNextStage
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Upload BizFile' })).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Enter company manually' })).toHaveAttribute(
+      'href',
+      '/companies/new?taskId=task-1&taskStageId=stage-company&returnTo=%2Ftasks',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Next stage' }));
+    expect(onNavigateStage).toHaveBeenCalledWith('next');
+  });
+
   it('honors the Company stage create policy while keeping existing-company linking available', () => {
     const companyAdapter = getStageActionAdapter(TaskStageActionType.COMPANY_PROFILE);
     const makeCompanyStage = (allowCreate: boolean): TaskStageDetail => ({
@@ -262,9 +1025,12 @@ describe('TaskStageModal', () => {
 
     expect(screen.queryByRole('link', { name: 'Create company' })).not.toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Create a new company' })).not.toBeInTheDocument();
+    fireEvent.focus(screen.getByRole('combobox', { name: 'Existing company' }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Existing company' }), {
-      target: { value: task.company!.id },
+      target: { value: task.company!.name },
     });
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Existing company' }), { key: 'ArrowDown' });
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Existing company' }), { key: 'Enter' });
     fireEvent.click(screen.getByRole('button', { name: 'Link selected company' }));
     expect(onTransition).toHaveBeenCalledWith({
       action: 'linkOutcome',
@@ -281,14 +1047,11 @@ describe('TaskStageModal', () => {
         onTransition={onTransition}
       />,
     );
-    fireEvent.change(screen.getByRole('combobox', { name: 'Existing company' }), {
-      target: { value: '' },
-    });
-    expect(screen.getByRole('link', { name: 'Create company' })).toHaveAttribute(
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
+    expect(screen.getByRole('link', { name: 'Enter company manually' })).toHaveAttribute(
       'href',
       '/companies/new?taskId=task-1&taskStageId=stage-company&returnTo=%2Ftasks',
     );
-    expect(screen.getByRole('option', { name: 'Create a new company' })).toBeInTheDocument();
   });
 
   it('keeps inspection available, shows all detail, and exposes exactly one blocked primary action', () => {

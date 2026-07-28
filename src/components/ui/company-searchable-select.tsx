@@ -14,6 +14,7 @@ interface CompanySearchableSelectProps {
   value: string;
   onChange: (companyId: string) => void;
   placeholder?: string;
+  label?: string;
   disabled?: boolean;
   loading?: boolean;
   className?: string;
@@ -30,6 +31,7 @@ export function CompanySearchableSelect({
   value,
   onChange,
   placeholder = 'Search company...',
+  label,
   disabled = false,
   loading = false,
   className,
@@ -52,6 +54,7 @@ export function CompanySearchableSelect({
       value={value}
       onChange={onChange}
       placeholder={placeholder}
+      label={label}
       disabled={disabled}
       loading={loading}
       className={className}

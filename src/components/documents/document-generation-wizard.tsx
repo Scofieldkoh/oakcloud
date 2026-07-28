@@ -78,6 +78,7 @@ export interface GenerationWizardProps {
   onGenerate: (data: GenerateDocumentData) => Promise<GeneratedDocumentResult>;
   initialSession?: GenerationSessionEnvelope | null;
   initialTemplateId?: string;
+  initialCompanyId?: string;
   onSaveDraft?: (
     draftId: string | null,
     state: GenerationSessionState,
@@ -782,6 +783,7 @@ export function DocumentGenerationWizard({
   onGenerate,
   initialSession = null,
   initialTemplateId,
+  initialCompanyId,
   onSaveDraft,
   onGenerationComplete,
   onPreviewTemplate,
@@ -870,6 +872,14 @@ export function DocumentGenerationWizard({
       setState((previous) => ({ ...previous, selectedTemplate }));
     }
   }, [initialSession, initialTemplateId, state.selectedTemplate, templates]);
+
+  useEffect(() => {
+    if (initialSession || !initialCompanyId || state.selectedCompany) return;
+    const selectedCompany = companies.find((company) => company.id === initialCompanyId);
+    if (selectedCompany) {
+      setState((previous) => ({ ...previous, selectedCompany }));
+    }
+  }, [companies, initialCompanyId, initialSession, state.selectedCompany]);
 
   useEffect(() => {
     if (hasHydratedSessionRef.current || !initialSession || templates.length === 0) return;
@@ -1299,6 +1309,26 @@ export function DocumentGenerationWizard({
                 <div className="mb-4">
                   <h2 className="text-lg font-semibold text-text-primary">Choose a template</h2>
                   <p className="mt-1 text-sm text-text-muted">Start with the document structure you need.</p>
+                  <div
+                    role="status"
+                    aria-label="Selected template"
+                    className="mt-4 flex min-w-0 items-center gap-3 rounded-xl border border-border-primary bg-background-secondary/70 px-3 py-3"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-oak-primary/10 text-oak-primary">
+                      <FileText className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-2xs font-medium uppercase tracking-wide text-text-muted">
+                        Selected template
+                      </p>
+                      <p className="truncate text-sm font-medium text-text-primary">
+                        {state.selectedTemplate?.name || 'No template selected'}
+                      </p>
+                      <p className="truncate text-xs text-text-muted">
+                        {state.selectedTemplate?.category || 'Choose a template below'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 <TemplateSelector
                   templates={templates}
@@ -1322,6 +1352,26 @@ export function DocumentGenerationWizard({
                   <p className="mt-1 text-sm text-text-muted">
                     Add company context when the template needs it.
                   </p>
+                  <div
+                    role="status"
+                    aria-label="Selected company"
+                    className="mt-4 flex min-w-0 items-center gap-3 rounded-xl border border-border-primary bg-background-secondary/70 px-3 py-3"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
+                      <Building2 className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-2xs font-medium uppercase tracking-wide text-text-muted">
+                        Selected company
+                      </p>
+                      <p className="truncate text-sm font-medium text-text-primary">
+                        {state.selectedCompany?.name || 'No company selected'}
+                      </p>
+                      <p className="truncate text-xs text-text-muted">
+                        {state.selectedCompany?.uen || 'Generate without company context'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 <CompanySelector
                   companies={companies}

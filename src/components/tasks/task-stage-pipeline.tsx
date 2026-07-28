@@ -84,7 +84,7 @@ export function TaskStagePipeline({
 
   return (
     <div
-      className={cn('flex min-w-max items-center', className)}
+      className={cn('flex min-w-max items-center py-0.5', className)}
       data-testid="task-stage-pipeline"
       aria-label="Task stages"
     >
@@ -99,7 +99,7 @@ export function TaskStagePipeline({
               type="button"
               onClick={() => onSelectStage(stage)}
               className={cn(
-                'relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border transition-colors',
+                'relative inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border transition-colors',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary focus-visible:ring-offset-2',
                 'md:min-h-8 md:min-w-8',
                 presentation.className,
@@ -119,7 +119,7 @@ export function TaskStagePipeline({
             </button>
             {index < orderedStages.length - 1 ? (
               <span
-                className={cn('h-px w-3 sm:w-4', presentation.connector)}
+                className={cn('h-px w-4 sm:w-5', presentation.connector)}
                 aria-hidden="true"
               />
             ) : null}

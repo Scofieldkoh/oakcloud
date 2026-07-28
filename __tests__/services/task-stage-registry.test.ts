@@ -18,14 +18,18 @@ const mocks = vi.hoisted(() => ({
   stageUpdate: vi.fn(),
   checklistCreateMany: vi.fn(),
   outcomeUpsert: vi.fn(),
+  outcomeDeleteMany: vi.fn(),
   companyFindFirst: vi.fn(),
   documentFindFirst: vi.fn(),
   envelopeFindFirst: vi.fn(),
   recoveryFindFirst: vi.fn(),
+  recoveryUpsert: vi.fn(),
+  recoveryDeleteMany: vi.fn(),
   userFindFirst: vi.fn(),
   checklistFindFirst: vi.fn(),
   checklistUpdate: vi.fn(),
   rawQuery: vi.fn(),
+  queueEsigningPreparations: vi.fn(),
 }));
 
 const tx = {
@@ -41,7 +45,14 @@ const tx = {
     findMany: mocks.stageFindMany,
     update: mocks.stageUpdate,
   },
-  taskStageOutcome: { upsert: mocks.outcomeUpsert },
+  taskStageOutcome: {
+    upsert: mocks.outcomeUpsert,
+    deleteMany: mocks.outcomeDeleteMany,
+  },
+  taskCompanyRecoveryContext: {
+    upsert: mocks.recoveryUpsert,
+    deleteMany: mocks.recoveryDeleteMany,
+  },
   company: { findFirst: mocks.companyFindFirst },
   generatedDocument: { findFirst: mocks.documentFindFirst },
   esigningEnvelope: { findFirst: mocks.envelopeFindFirst },
@@ -99,6 +110,10 @@ vi.mock('@/lib/prisma', () => ({
 
 vi.mock('@/lib/audit', () => ({
   createAuditLog: mocks.audit,
+}));
+
+vi.mock('@/services/tasks/esigning-preparation.service', () => ({
+  queueTaskEsigningPreparationsForTask: mocks.queueEsigningPreparations,
 }));
 
 import {
@@ -185,6 +200,115 @@ describe('stage action registry', () => {
     expect(adapter.launch(context)).toEqual({
       href: '/companies/new',
       context: { taskId: 'task-1', taskStageId: 'stage-1' },
+    });
+  });
+
+  it('passes the linked task company into the document generation workspace', () => {
+    const adapter = getStageActionAdapter(TaskStageActionType.DOCUMENT_GENERATION);
+
+    expect(adapter.launch({
+      tenantId: 'tenant-a',
+      stage: {
+        id: 'stage-2',
+        tenantId: 'tenant-a',
+        taskId: 'task-1',
+        actionType: TaskStageActionType.DOCUMENT_GENERATION,
+        actionConfig: {
+          templateId: '11111111-1111-4111-8111-111111111111',
+        },
+        status: TaskStageStatus.NOT_STARTED,
+        task: {
+          companyId: '22222222-2222-4222-8222-222222222222',
+        },
+      },
+    })).toEqual({
+      href: '/generated-documents/generate?templateId=11111111-1111-4111-8111-111111111111&companyId=22222222-2222-4222-8222-222222222222',
+      context: { taskId: 'task-1', taskStageId: 'stage-2' },
+    });
+  });
+
+  it.each([
+    {
+      status: TaskStageStatus.IN_PROGRESS,
+      expectedHref:
+        '/generated-documents/generate?draft=33333333-3333-4333-8333-333333333333',
+    },
+    {
+      status: TaskStageStatus.COMPLETED,
+      expectedHref:
+        '/generated-documents/33333333-3333-4333-8333-333333333333',
+    },
+  ])('opens the linked document when a generation stage is $status', ({
+    status,
+    expectedHref,
+  }) => {
+    const adapter = getStageActionAdapter(TaskStageActionType.DOCUMENT_GENERATION);
+
+    expect(adapter.launch({
+      tenantId: 'tenant-a',
+      stage: {
+        id: 'stage-2',
+        tenantId: 'tenant-a',
+        taskId: 'task-1',
+        actionType: TaskStageActionType.DOCUMENT_GENERATION,
+        actionConfig: {},
+        status,
+        outcome: {
+          type: 'GENERATED_DOCUMENT',
+          generatedDocumentId: '33333333-3333-4333-8333-333333333333',
+        },
+      },
+    })).toEqual({
+      href: expectedHref,
+      context: { taskId: 'task-1', taskStageId: 'stage-2' },
+    });
+  });
+
+  it('falls back to a fresh generator when an active stage has no linked document', () => {
+    const adapter = getStageActionAdapter(TaskStageActionType.DOCUMENT_GENERATION);
+
+    expect(adapter.launch({
+      tenantId: 'tenant-a',
+      stage: {
+        id: 'stage-2',
+        tenantId: 'tenant-a',
+        taskId: 'task-1',
+        actionType: TaskStageActionType.DOCUMENT_GENERATION,
+        actionConfig: {
+          templateId: '11111111-1111-4111-8111-111111111111',
+        },
+        status: TaskStageStatus.IN_PROGRESS,
+        task: {
+          companyId: '22222222-2222-4222-8222-222222222222',
+        },
+        outcome: null,
+      },
+    })).toEqual({
+      href: '/generated-documents/generate?templateId=11111111-1111-4111-8111-111111111111&companyId=22222222-2222-4222-8222-222222222222',
+      context: { taskId: 'task-1', taskStageId: 'stage-2' },
+    });
+  });
+
+  it('reopens an existing e-signing task outcome instead of creating another envelope', () => {
+    const adapter = getStageActionAdapter(TaskStageActionType.ESIGNING);
+
+    expect(adapter.launch({
+      tenantId: 'tenant-a',
+      stage: {
+        id: 'stage-3',
+        tenantId: 'tenant-a',
+        taskId: 'task-1',
+        actionType: TaskStageActionType.ESIGNING,
+        actionConfig: {},
+        status: TaskStageStatus.IN_PROGRESS,
+        outcome: {
+          type: 'ESIGNING_ENVELOPE',
+          esigningEnvelopeId: '33333333-3333-4333-8333-333333333333',
+        },
+      },
+    })).toEqual({
+      href: '/esigning/33333333-3333-4333-8333-333333333333',
+      context: { taskId: 'task-1', taskStageId: 'stage-3' },
     });
   });
 
@@ -283,8 +407,15 @@ describe('task snapshots and stage mutations', () => {
         where: { id: string };
       }) => Promise.resolve({ id: where.id, name: `Company ${where.id}` }));
       mocks.outcomeUpsert.mockResolvedValue({ id: 'outcome-1' });
+      mocks.recoveryUpsert.mockResolvedValue({ id: 'recovery-1' });
       mocks.stageUpdate.mockResolvedValue({ id: 'stage-1' });
-      mocks.stageFindMany.mockResolvedValue([{ status: TaskStageStatus.COMPLETED }]);
+      mocks.stageFindMany.mockResolvedValue([{
+        id: 'stage-1',
+        status: TaskStageStatus.COMPLETED,
+        startedAt: null,
+        completedAt: null,
+        outcome: null,
+      }]);
       mocks.taskUpdate.mockResolvedValue({ id: 'task-1' });
     });
 
@@ -345,6 +476,71 @@ describe('task snapshots and stage mutations', () => {
       expect(mocks.outcomeUpsert).toHaveBeenCalledTimes(2);
       expect(mocks.outcomeUpsert).toHaveBeenLastCalledWith(expect.objectContaining({
         update: expect.objectContaining({ companyId: companyB }),
+      }));
+    });
+
+    it('aligns every non-skipped Company Profile stage after an authoritative stage link', async () => {
+      recoveryCompanyId = companyB;
+      mocks.stageFindMany
+        .mockReset()
+        .mockResolvedValueOnce([
+          {
+            id: 'stage-1',
+            status: TaskStageStatus.NOT_STARTED,
+            startedAt: null,
+            completedAt: null,
+            outcome: null,
+          },
+          {
+            id: 'stage-2',
+            status: TaskStageStatus.COMPLETED,
+            startedAt: new Date('2026-07-01T00:00:00.000Z'),
+            completedAt: new Date('2026-07-01T00:00:00.000Z'),
+            outcome: { companyId: companyA },
+          },
+        ])
+        .mockResolvedValueOnce([
+          { status: TaskStageStatus.COMPLETED },
+          { status: TaskStageStatus.COMPLETED },
+        ]);
+      mocks.recoveryUpsert.mockResolvedValue({ id: 'recovery-1' });
+      mocks.outcomeUpsert
+        .mockResolvedValueOnce({
+          id: 'outcome-1',
+          tenantId: 'tenant-a',
+          taskStageId: 'stage-1',
+          type: 'COMPANY',
+          companyId: companyB,
+          generatedDocumentId: null,
+          esigningEnvelopeId: null,
+        })
+        .mockResolvedValueOnce({
+          id: 'outcome-2',
+          tenantId: 'tenant-a',
+          taskStageId: 'stage-2',
+          type: 'COMPANY',
+          companyId: companyB,
+          generatedDocumentId: null,
+          esigningEnvelopeId: null,
+        });
+
+      const result = await linkTaskStageOutcome('tenant-a', 'stage-1', {
+        type: 'COMPANY',
+        companyId: companyB,
+      }, 'user-1');
+
+      expect(mocks.outcomeUpsert).toHaveBeenCalledTimes(2);
+      expect(mocks.outcomeUpsert).toHaveBeenNthCalledWith(2, expect.objectContaining({
+        where: { taskStageId: 'stage-2' },
+        update: expect.objectContaining({ companyId: companyB }),
+      }));
+      expect(result).toEqual(expect.objectContaining({
+        outcome: expect.objectContaining({
+          id: 'outcome-1',
+          companyId: companyB,
+        }),
+        status: TaskStageStatus.COMPLETED,
+        taskStatus: TaskStatus.COMPLETED,
       }));
     });
   });
@@ -699,6 +895,8 @@ describe('task snapshots and stage mutations', () => {
       generatedDocumentId: '25e3bf9a-25b3-469b-a797-0c754303f7bd',
     }, 'user-1');
 
+    expect(mocks.queueEsigningPreparations)
+      .toHaveBeenCalledWith('tenant-a', 'task-1', 'user-1');
     expect(mocks.documentFindFirst).toHaveBeenCalledWith({
       where: { id: '25e3bf9a-25b3-469b-a797-0c754303f7bd', tenantId: 'tenant-a', deletedAt: null },
       select: { id: true, title: true, status: true },
@@ -725,8 +923,15 @@ describe('task snapshots and stage mutations', () => {
     });
     mocks.companyFindFirst.mockResolvedValue({ id: '33333333-3333-4333-8333-333333333333', name: 'Acme' });
     mocks.outcomeUpsert.mockResolvedValue({ id: 'outcome-1' });
+    mocks.recoveryUpsert.mockResolvedValue({ id: 'recovery-1' });
     mocks.stageUpdate.mockResolvedValue({ id: 'stage-1', status: 'COMPLETED' });
-    mocks.stageFindMany.mockResolvedValue([{ status: 'COMPLETED' }]);
+    mocks.stageFindMany.mockResolvedValue([{
+      id: 'stage-1',
+      status: 'COMPLETED',
+      startedAt: null,
+      completedAt: null,
+      outcome: null,
+    }]);
     mocks.taskUpdate.mockResolvedValue({ id: 'task-1', status: 'COMPLETED' });
 
     await linkTaskStageOutcome('tenant-a', 'stage-1', {
@@ -875,6 +1080,8 @@ describe('task snapshots and stage mutations', () => {
       entityType: 'TaskStage',
       entityId: 'stage-1',
     }), tx);
+    expect(mocks.queueEsigningPreparations)
+      .toHaveBeenCalledWith('tenant-a', 'task-1', 'user-1');
   });
 
   it('rejects required-stage skipping and persists a reason for optional stages', async () => {
@@ -948,6 +1155,93 @@ describe('task snapshots and stage mutations', () => {
       .toBeLessThan(mocks.stageUpdate.mock.invocationCallOrder[0]);
   });
 
+  it('completes Company Profile stages when a task is created with a linked company', async () => {
+    const companyId = '11111111-1111-4111-8111-111111111111';
+    mocks.versionFindFirst.mockResolvedValue({
+      id: 'version-1',
+      tenantId: 'tenant-a',
+      publishedAt: new Date(),
+      stages: [{
+        id: 'pipeline-stage-1',
+        name: 'Company Profile',
+        description: 'Link or create the company',
+        position: 0,
+        actionType: TaskStageActionType.COMPANY_PROFILE,
+        icon: 'Building2',
+        isRequired: true,
+        actionConfig: null,
+      }],
+    });
+    mocks.companyFindFirst.mockResolvedValue({ id: companyId });
+    mocks.taskCreate.mockResolvedValue({
+      id: 'task-1',
+      title: 'Onboarding',
+      companyId,
+      status: TaskStatus.NOT_STARTED,
+    });
+    mocks.stageCreate.mockResolvedValue({ id: 'stage-1' });
+    mocks.stageFindMany
+      .mockResolvedValueOnce([{
+        id: 'stage-1',
+        status: TaskStageStatus.NOT_STARTED,
+        startedAt: null,
+        completedAt: null,
+        outcome: null,
+      }])
+      .mockResolvedValueOnce([{ status: TaskStageStatus.COMPLETED }]);
+    mocks.outcomeUpsert.mockResolvedValue({
+      id: 'outcome-1',
+      tenantId: 'tenant-a',
+      taskStageId: 'stage-1',
+      type: 'COMPANY',
+      companyId,
+      generatedDocumentId: null,
+      esigningEnvelopeId: null,
+    });
+    mocks.recoveryUpsert.mockResolvedValue({ id: 'recovery-1' });
+    mocks.stageUpdate.mockResolvedValue({
+      id: 'stage-1',
+      status: TaskStageStatus.COMPLETED,
+    });
+    mocks.taskUpdate.mockResolvedValue(publicTaskRecord({
+      title: 'Onboarding',
+      status: TaskStatus.COMPLETED,
+      company: { id: companyId, name: 'DAP Atelier (S) Pte. Ltd.' },
+      stages: [{
+        id: 'stage-1',
+        name: 'Company Profile',
+        position: 0,
+        actionType: TaskStageActionType.COMPANY_PROFILE,
+        icon: 'Building2',
+        isRequired: true,
+        status: TaskStageStatus.COMPLETED,
+      }],
+    }));
+
+    const result = await createTask('tenant-a', {
+      title: 'Onboarding',
+      pipelineVersionId: '7ff3c11a-4a8e-45c7-a201-56df360db96c',
+      companyId,
+    }, 'user-1');
+
+    expect(mocks.outcomeUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { taskStageId: 'stage-1' },
+      update: expect.objectContaining({ companyId }),
+    }));
+    expect(mocks.stageUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'stage-1' },
+      data: expect.objectContaining({
+        status: TaskStageStatus.COMPLETED,
+        completedAt: expect.any(Date),
+      }),
+    }));
+    expect(result).toMatchObject({
+      status: TaskStatus.COMPLETED,
+      company: { id: companyId },
+      stages: [{ id: 'stage-1', status: TaskStageStatus.COMPLETED }],
+    });
+  });
+
   it('validates and stores optional task company, owner, due date, and stage assignee', async () => {
     const dueDateInput = '2026-09-30';
     const dueDate = new Date('2026-09-30T00:00:00.000Z');
@@ -966,6 +1260,7 @@ describe('task snapshots and stage mutations', () => {
       ownerId: '22222222-2222-4222-8222-222222222222',
       dueDate: '2026-09-30',
     });
+    mocks.stageFindMany.mockResolvedValue([]);
     mocks.taskUpdate.mockResolvedValue(publicTaskRecord({
       dueDate,
     }));
@@ -1094,6 +1389,11 @@ describe('task snapshots and stage mutations', () => {
     }));
 
     await updateTaskMetadata('tenant-a', 'task-1', { title: 'New title' }, 'user-1');
+    expect(mocks.queueEsigningPreparations).toHaveBeenCalledWith(
+      'tenant-a',
+      'task-1',
+      'user-1',
+    );
     await archiveTask('tenant-a', 'task-1', 'Duplicate task', 'user-1');
 
     mocks.checklistFindFirst.mockResolvedValue({
@@ -1120,6 +1420,173 @@ describe('task snapshots and stage mutations', () => {
     });
     expect(mocks.audit).toHaveBeenCalledTimes(3);
     expect(mocks.rawQuery).toHaveBeenCalled();
+  });
+
+  describe('Company Profile metadata synchronization', () => {
+    const companyA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const companyB = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+    beforeEach(() => {
+      mocks.taskFindFirst.mockResolvedValue({
+        id: 'task-1',
+        tenantId: 'tenant-a',
+        title: 'Company Profile',
+        companyId: null,
+        status: TaskStatus.NOT_STARTED,
+        stages: [
+          { status: TaskStageStatus.NOT_STARTED },
+          { status: TaskStageStatus.SKIPPED },
+        ],
+      });
+      mocks.rawQuery.mockResolvedValue([{
+        id: 'task-1',
+        tenantId: 'tenant-a',
+        title: 'Company Profile',
+        companyId: null,
+        status: TaskStatus.NOT_STARTED,
+      }]);
+      mocks.companyFindFirst.mockResolvedValue({ id: companyA });
+      mocks.recoveryUpsert.mockResolvedValue({ id: 'recovery-1' });
+      mocks.outcomeUpsert.mockImplementation(({ where, update }: {
+        where: { taskStageId: string };
+        update: { companyId: string };
+      }) => Promise.resolve({
+        id: `outcome-${where.taskStageId}`,
+        tenantId: 'tenant-a',
+        taskStageId: where.taskStageId,
+        type: 'COMPANY',
+        companyId: update.companyId,
+        generatedDocumentId: null,
+        esigningEnvelopeId: null,
+      }));
+      mocks.taskUpdate.mockResolvedValue(publicTaskRecord({
+        status: TaskStatus.COMPLETED,
+        company: { id: companyA, name: 'Company A' },
+        stages: [{
+          id: 'profile-1',
+          name: 'Company Profile',
+          position: 0,
+          actionType: 'COMPANY_PROFILE',
+          icon: 'Building2',
+          isRequired: true,
+          status: TaskStageStatus.COMPLETED,
+        }],
+      }));
+    });
+
+    it('completes and aligns every non-skipped Company Profile stage with metadata companyId', async () => {
+      mocks.stageFindMany
+        .mockResolvedValueOnce([
+          {
+            id: 'profile-1',
+            status: TaskStageStatus.NOT_STARTED,
+            startedAt: null,
+            completedAt: null,
+            outcome: null,
+          },
+          {
+            id: 'profile-2',
+            status: TaskStageStatus.COMPLETED,
+            startedAt: new Date('2026-07-01T00:00:00.000Z'),
+            completedAt: new Date('2026-07-01T00:00:00.000Z'),
+            outcome: { companyId: companyB },
+          },
+        ])
+        .mockResolvedValueOnce([
+          { status: TaskStageStatus.COMPLETED },
+          { status: TaskStageStatus.COMPLETED },
+          { status: TaskStageStatus.SKIPPED },
+        ]);
+
+      const result = await updateTaskMetadata(
+        'tenant-a',
+        'task-1',
+        { companyId: companyA },
+        'user-1',
+      );
+
+      expect(mocks.stageFindMany).toHaveBeenNthCalledWith(1, {
+        where: {
+          tenantId: 'tenant-a',
+          taskId: 'task-1',
+          actionType: TaskStageActionType.COMPANY_PROFILE,
+          status: { not: TaskStageStatus.SKIPPED },
+        },
+        select: {
+          id: true,
+          status: true,
+          startedAt: true,
+          completedAt: true,
+          outcome: { select: { companyId: true } },
+        },
+      });
+      expect(mocks.outcomeUpsert).toHaveBeenCalledTimes(2);
+      expect(mocks.outcomeUpsert).toHaveBeenNthCalledWith(2, expect.objectContaining({
+        where: { taskStageId: 'profile-2' },
+        update: expect.objectContaining({ companyId: companyA }),
+      }));
+      expect(mocks.recoveryUpsert).toHaveBeenCalledTimes(2);
+      expect(mocks.stageUpdate).toHaveBeenCalledTimes(2);
+      expect(result.status).toBe(TaskStatus.COMPLETED);
+    });
+
+    it('clears outcomes and reopens non-skipped Company Profile stages when companyId is cleared', async () => {
+      mocks.stageFindMany
+        .mockResolvedValueOnce([{
+          id: 'profile-1',
+          status: TaskStageStatus.COMPLETED,
+          startedAt: new Date('2026-07-01T00:00:00.000Z'),
+          completedAt: new Date('2026-07-01T00:00:00.000Z'),
+          outcome: { companyId: companyA },
+        }])
+        .mockResolvedValueOnce([{ status: TaskStageStatus.NOT_STARTED }]);
+      mocks.taskUpdate.mockResolvedValue(publicTaskRecord());
+
+      const result = await updateTaskMetadata(
+        'tenant-a',
+        'task-1',
+        { companyId: null },
+        'user-1',
+      );
+
+      expect(mocks.outcomeDeleteMany).toHaveBeenCalledWith({
+        where: { tenantId: 'tenant-a', taskStageId: 'profile-1' },
+      });
+      expect(mocks.recoveryDeleteMany).toHaveBeenCalledWith({
+        where: {
+          tenantId: 'tenant-a',
+          taskId: 'task-1',
+          taskStageId: 'profile-1',
+        },
+      });
+      expect(mocks.stageUpdate).toHaveBeenCalledWith({
+        where: { id: 'profile-1' },
+        data: {
+          status: TaskStageStatus.NOT_STARTED,
+          startedAt: null,
+          completedAt: null,
+          skipReason: null,
+        },
+      });
+      expect(result.status).toBe(TaskStatus.NOT_STARTED);
+    });
+
+    it('leaves Company Profile stages untouched when companyId is omitted', async () => {
+      mocks.taskUpdate.mockResolvedValue(publicTaskRecord({ title: 'Renamed task' }));
+
+      await updateTaskMetadata(
+        'tenant-a',
+        'task-1',
+        { title: 'Renamed task' },
+        'user-1',
+      );
+
+      expect(mocks.stageFindMany).not.toHaveBeenCalled();
+      expect(mocks.outcomeUpsert).not.toHaveBeenCalled();
+      expect(mocks.outcomeDeleteMany).not.toHaveBeenCalled();
+      expect(mocks.recoveryUpsert).not.toHaveBeenCalled();
+      expect(mocks.stageUpdate).not.toHaveBeenCalled();
+    });
   });
 
   it('reconciles authoritative outcomes under lock without overwriting pause', async () => {
@@ -1159,6 +1626,11 @@ describe('task snapshots and stage mutations', () => {
     const result = await reconcileTaskStageOutcome('tenant-a', 'stage-1', 'user-1');
 
     expect(result.taskStatus).toBe('PAUSED');
+    expect(mocks.queueEsigningPreparations).toHaveBeenCalledWith(
+      'tenant-a',
+      'task-1',
+      'user-1',
+    );
     expect(mocks.taskUpdate).not.toHaveBeenCalled();
     expect(mocks.rawQuery.mock.invocationCallOrder[0])
       .toBeLessThan(mocks.stageUpdate.mock.invocationCallOrder[0]);

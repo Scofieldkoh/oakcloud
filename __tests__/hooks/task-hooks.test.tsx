@@ -10,6 +10,7 @@ import {
 } from '@/hooks/use-task-pipelines';
 import {
   taskKeys,
+  useEnsureTaskEsigningPreparation,
   useArchiveTask,
   useUpdateTask,
   useUpdateTaskStage,
@@ -223,5 +224,33 @@ describe('task query hooks', () => {
     expect(archiveResult).toEqual({ id: 'task-1', archived: true });
     expect(setQueryData).not.toHaveBeenCalled();
     expect(queryClient.getQueryData(taskKeys.detail('task-1'))).toBe(existing);
+  });
+
+  it('ensures E-signing preparation and caches the returned status', async () => {
+    const preparation = {
+      id: 'preparation-1',
+      taskId: 'task-1',
+      taskStageId: 'stage-1',
+      status: 'QUEUED',
+      blockingStage: null,
+      generatedDocumentId: 'document-1',
+      esigningEnvelopeId: null,
+      lastError: null,
+    };
+    vi.mocked(fetch).mockResolvedValue(jsonResponse(preparation));
+    const { queryClient, wrapper } = createHarness();
+    const { result } = renderHook(() => useEnsureTaskEsigningPreparation(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({ taskId: 'task-1', stageId: 'stage-1' });
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/tasks/task-1/stages/stage-1/esigning-preparation',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(queryClient.getQueryData(
+      taskKeys.esigningPreparation('task-1', 'stage-1'),
+    )).toEqual(preparation);
   });
 });

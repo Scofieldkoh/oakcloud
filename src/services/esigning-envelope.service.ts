@@ -543,6 +543,63 @@ export async function createEsigningEnvelope(
   return getEsigningEnvelopeDetail(session, tenantId, envelope.id);
 }
 
+export async function createTaskPreparedEsigningEnvelope(input: {
+  tenantId: string;
+  taskContext: TaskLaunchContext;
+  createdById: string;
+  title: string;
+  companyId?: string | null;
+  signingOrder?: 'PARALLEL' | 'SEQUENTIAL' | 'MIXED';
+  expiresAt?: Date | null;
+}): Promise<{ id: string }> {
+  const existing = await prisma.esigningEnvelope.findFirst({
+    where: {
+      tenantId: input.tenantId,
+      deletedAt: null,
+      metadata: {
+        path: ['taskIntegrationContext', 'taskStageId'],
+        equals: input.taskContext.taskStageId,
+      },
+    },
+    select: { id: true },
+  });
+  if (existing) return existing;
+
+  const certificateId = await generateUniqueEsigningCertificateId();
+  const envelope = await prisma.esigningEnvelope.create({
+    data: {
+      tenantId: input.tenantId,
+      createdById: input.createdById,
+      title: input.title,
+      status: 'DRAFT',
+      signingOrder: input.signingOrder ?? 'PARALLEL',
+      expiresAt: input.expiresAt ?? null,
+      companyId: input.companyId ?? null,
+      certificateId,
+      metadata: {
+        taskIntegrationContext: {
+          taskId: input.taskContext.taskId,
+          taskStageId: input.taskContext.taskStageId,
+          ...(input.taskContext.returnTo
+            ? { returnTo: input.taskContext.returnTo }
+            : {}),
+        },
+      },
+    },
+    select: { id: true, title: true },
+  });
+  await createEnvelopeEvent({
+    envelopeId: envelope.id,
+    tenantId: input.tenantId,
+    action: 'CREATED',
+    metadata: {
+      title: envelope.title,
+      source: 'TASK_PREPARATION',
+    },
+  });
+  return { id: envelope.id };
+}
+
 export async function updateDraftEsigningEnvelope(
   session: SessionUser,
   tenantId: string,
@@ -1430,6 +1487,249 @@ export async function uploadGeneratedDocumentToEsigningEnvelope(
     envelopeId,
     file,
   );
+}
+
+export async function attachGeneratedDocumentToDraftEnvelope(input: {
+  tenantId: string;
+  envelopeId: string;
+  generatedDocumentId: string;
+  actorUserId: string;
+}): Promise<{ envelopeDocumentId: string }> {
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: {
+      id: input.envelopeId,
+      tenantId: input.tenantId,
+      deletedAt: null,
+    },
+    include: {
+      documents: {
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          generatedDocumentId: true,
+          storagePath: true,
+          signedStoragePath: true,
+          sortOrder: true,
+          pageCount: true,
+          fileSize: true,
+        },
+      },
+    },
+  });
+  if (!envelope) throw new Error('Envelope not found');
+  if (envelope.status !== 'DRAFT') {
+    throw new Error('Generated documents can only be attached while the envelope is a draft');
+  }
+
+  const current = envelope.documents.find(
+    (document) => document.generatedDocumentId === input.generatedDocumentId,
+  );
+  if (current) return { envelopeDocumentId: current.id };
+
+  const generatedDocument = await prisma.generatedDocument.findFirst({
+    where: {
+      id: input.generatedDocumentId,
+      tenantId: input.tenantId,
+      status: 'FINALIZED',
+      deletedAt: null,
+    },
+    select: { id: true, title: true },
+  });
+  if (!generatedDocument) {
+    throw new Error('Selected generated document must be finalized and eligible');
+  }
+
+  const exported = await exportToPDF({
+    documentId: generatedDocument.id,
+    tenantId: input.tenantId,
+    userId: input.actorUserId,
+    includeLetterhead: true,
+  });
+  const exportedBytes = new Uint8Array(exported.buffer);
+  const pdf = await PDFDocument.load(exportedBytes);
+  const pdfBuffer = Buffer.from(exportedBytes);
+  const pageCount = pdf.getPageCount();
+  if (pageCount > ESIGNING_LIMITS.MAX_PAGES_PER_DOCUMENT) {
+    throw new Error(
+      `A single document cannot exceed ${ESIGNING_LIMITS.MAX_PAGES_PER_DOCUMENT} pages`,
+    );
+  }
+
+  const managedDocument = envelope.documents.find(
+    (document) => document.generatedDocumentId !== null,
+  );
+  const otherDocuments = envelope.documents.filter(
+    (document) => document.id !== managedDocument?.id,
+  );
+  const totalPages = otherDocuments.reduce(
+    (sum, document) => sum + document.pageCount,
+    0,
+  ) + pageCount;
+  if (totalPages > ESIGNING_LIMITS.MAX_TOTAL_PAGES) {
+    throw new Error(`An envelope cannot exceed ${ESIGNING_LIMITS.MAX_TOTAL_PAGES} pages in total`);
+  }
+  const totalSize = otherDocuments.reduce(
+    (sum, document) => sum + document.fileSize,
+    0,
+  ) + pdfBuffer.length;
+  if (totalSize > ESIGNING_LIMITS.MAX_TOTAL_FILE_SIZE_BYTES) {
+    throw new Error('Envelope documents exceed the maximum total file size');
+  }
+
+  const envelopeDocumentId = randomUUID();
+  const storagePath = StorageKeys.esigningOriginalDocument(
+    input.tenantId,
+    input.envelopeId,
+    envelopeDocumentId,
+    '.pdf',
+  );
+  const sortOrder = managedDocument?.sortOrder ?? envelope.documents.length;
+  await storage.upload(storagePath, pdfBuffer, {
+    contentType: 'application/pdf',
+    metadata: {
+      tenantId: input.tenantId,
+      envelopeId: input.envelopeId,
+      documentId: envelopeDocumentId,
+      generatedDocumentId: generatedDocument.id,
+      sourceFormat: 'generated-document',
+    },
+  });
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.esigningEnvelopeDocument.create({
+        data: {
+          id: envelopeDocumentId,
+          tenantId: input.tenantId,
+          envelopeId: input.envelopeId,
+          generatedDocumentId: generatedDocument.id,
+          fileName: exported.filename || `${generatedDocument.title}.pdf`,
+          storagePath,
+          originalHash: hashBlake3(pdfBuffer),
+          pageCount,
+          sortOrder,
+          fileSize: pdfBuffer.length,
+        },
+      });
+      if (managedDocument) {
+        await tx.esigningEnvelopeDocument.delete({
+          where: { id: managedDocument.id },
+        });
+      }
+    });
+  } catch (error) {
+    await storage.delete(storagePath).catch(() => undefined);
+    throw error;
+  }
+
+  if (managedDocument) {
+    await storage.delete(managedDocument.storagePath).catch((error) => {
+      log.warn('Failed to delete replaced generated E-signing document', {
+        envelopeId: input.envelopeId,
+        documentId: managedDocument.id,
+        error,
+      });
+    });
+    if (managedDocument.signedStoragePath) {
+      await storage.delete(managedDocument.signedStoragePath).catch(() => undefined);
+    }
+  }
+
+  await createAuditLog({
+    tenantId: input.tenantId,
+    userId: input.actorUserId,
+    companyId: envelope.companyId ?? undefined,
+    action: 'UPLOAD',
+    entityType: 'EsigningEnvelope',
+    entityId: input.envelopeId,
+    entityName: envelope.title,
+    summary: `Prepared generated document "${generatedDocument.title}" for E-signing`,
+    changeSource: 'SYSTEM',
+    metadata: {
+      envelopeDocumentId,
+      generatedDocumentId: generatedDocument.id,
+      pageCount,
+      fileSize: pdfBuffer.length,
+    },
+  });
+  return { envelopeDocumentId };
+}
+
+export async function detachGeneratedDocumentFromDraftEnvelope(input: {
+  tenantId: string;
+  envelopeId: string;
+  generatedDocumentId: string;
+  actorUserId: string;
+}): Promise<void> {
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: {
+      id: input.envelopeId,
+      tenantId: input.tenantId,
+      deletedAt: null,
+    },
+    include: {
+      documents: {
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          generatedDocumentId: true,
+          storagePath: true,
+          signedStoragePath: true,
+          sortOrder: true,
+        },
+      },
+    },
+  });
+  if (!envelope) throw new Error('Envelope not found');
+  if (envelope.status !== 'DRAFT') {
+    throw new Error('Generated documents can only be detached while the envelope is a draft');
+  }
+  const managedDocument = envelope.documents.find(
+    (document) => document.generatedDocumentId === input.generatedDocumentId,
+  );
+  if (!managedDocument) return;
+
+  const remaining = envelope.documents.filter(
+    (document) => document.id !== managedDocument.id,
+  );
+  await prisma.$transaction(async (tx) => {
+    await tx.esigningEnvelopeDocument.delete({
+      where: { id: managedDocument.id },
+    });
+    for (const [sortOrder, document] of remaining.entries()) {
+      if (document.sortOrder === sortOrder) continue;
+      await tx.esigningEnvelopeDocument.update({
+        where: { id: document.id },
+        data: { sortOrder },
+      });
+    }
+  });
+
+  await storage.delete(managedDocument.storagePath).catch((error) => {
+    log.warn('Failed to delete detached generated E-signing document', {
+      envelopeId: input.envelopeId,
+      documentId: managedDocument.id,
+      error,
+    });
+  });
+  if (managedDocument.signedStoragePath) {
+    await storage.delete(managedDocument.signedStoragePath).catch(() => undefined);
+  }
+  await createAuditLog({
+    tenantId: input.tenantId,
+    userId: input.actorUserId,
+    companyId: envelope.companyId ?? undefined,
+    action: 'DELETE',
+    entityType: 'EsigningEnvelope',
+    entityId: input.envelopeId,
+    entityName: envelope.title,
+    summary: 'Detached an unfinalized generated document from E-signing',
+    changeSource: 'SYSTEM',
+    metadata: {
+      envelopeDocumentId: managedDocument.id,
+      generatedDocumentId: input.generatedDocumentId,
+    },
+  });
 }
 
 export async function deleteEsigningEnvelopeDocument(

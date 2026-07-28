@@ -1,103 +1,100 @@
 'use client';
 
-import { Search, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { CalendarDays, CircleDot, Search, UserRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { TaskPipeline } from '@/hooks/use-task-pipelines';
 import type { TaskListParams } from '@/hooks/use-tasks';
-
-interface CompanyOption {
-  id: string;
-  name: string;
-}
-
-interface OwnerOption {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-}
 
 interface TaskFiltersProps {
   value: TaskListParams;
-  pipelines: TaskPipeline[];
-  companies: CompanyOption[];
-  owners: OwnerOption[];
   onChange: (value: TaskListParams) => void;
+  currentUserId?: string;
   className?: string;
 }
 
-const selectClassName = 'h-9 min-w-[140px] rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30';
-
 export function TaskFilters({
   value,
-  pipelines,
-  companies,
-  owners,
   onChange,
+  currentUserId,
   className,
 }: TaskFiltersProps) {
-  const update = (patch: Partial<TaskListParams>) => onChange({ ...value, ...patch, page: 1 });
-  const hasFilters = Boolean(
-    value.query
-    || value.pipelineId
-    || value.companyId
-    || value.ownerId
-    || value.status
-    || value.dueBucket,
+  const toggle = (patch: Partial<TaskListParams>) => {
+    onChange({ ...value, ...patch, page: 1 });
+  };
+  const quickFilterClassName = (
+    active: boolean,
+    disabled = false,
+  ) => cn(
+    'inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30',
+    active
+      ? 'bg-oak-primary text-white hover:bg-oak-dark'
+      : 'text-text-secondary hover:bg-background-tertiary hover:text-text-primary',
+    disabled && 'cursor-not-allowed opacity-50',
   );
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-2', className)} data-testid="task-filters">
-      <label className="relative min-w-[220px] flex-1 sm:max-w-xs">
+    <div
+      className={cn(
+        'flex flex-col gap-3 rounded-lg border border-border-primary bg-background-secondary p-4 lg:flex-row lg:items-center',
+        className,
+      )}
+      data-testid="task-filters"
+    >
+      <label className="relative block flex-1">
         <span className="sr-only">Search tasks</span>
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" aria-hidden="true" />
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+          aria-hidden="true"
+        />
         <input
           type="search"
           aria-label="Search tasks"
           value={value.query ?? ''}
-          onChange={(event) => update({ query: event.target.value || undefined })}
+          onChange={(event) => toggle({ query: event.target.value || undefined })}
           placeholder="Search tasks"
-          className="h-9 w-full rounded-lg border border-border-primary bg-background-secondary pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
+          className="h-10 w-full rounded-lg border border-border-primary bg-background-primary pl-10 pr-3 text-sm text-text-primary transition-colors placeholder:text-text-muted hover:border-oak-primary/50 focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
         />
       </label>
-      <select aria-label="Pipeline" value={value.pipelineId ?? ''} onChange={(event) => update({ pipelineId: event.target.value || undefined })} className={selectClassName}>
-        <option value="">All pipelines</option>
-        {pipelines.map((pipeline) => <option key={pipeline.id} value={pipeline.id}>{pipeline.name}</option>)}
-      </select>
-      <select aria-label="Company" value={value.companyId ?? ''} onChange={(event) => update({ companyId: event.target.value || undefined })} className={selectClassName}>
-        <option value="">All companies</option>
-        {companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
-      </select>
-      <select aria-label="Owner" value={value.ownerId ?? ''} onChange={(event) => update({ ownerId: event.target.value || undefined })} className={selectClassName}>
-        <option value="">All owners</option>
-        {owners.map((owner) => <option key={owner.id} value={owner.id}>{`${owner.firstName} ${owner.lastName}`.trim() || owner.email}</option>)}
-      </select>
-      <select aria-label="Task status" value={value.status ?? ''} onChange={(event) => update({ status: event.target.value as TaskListParams['status'] || undefined })} className={selectClassName}>
-        <option value="">All statuses</option>
-        <option value="NOT_STARTED">Not started</option>
-        <option value="IN_PROGRESS">In progress</option>
-        <option value="PAUSED">Paused</option>
-        <option value="COMPLETED">Completed</option>
-        <option value="CANCELLED">Cancelled</option>
-      </select>
-      <select aria-label="Due" value={value.dueBucket ?? ''} onChange={(event) => update({ dueBucket: event.target.value as TaskListParams['dueBucket'] || undefined })} className={selectClassName}>
-        <option value="">Any due date</option>
-        <option value="overdue">Overdue</option>
-        <option value="today">Today</option>
-        <option value="thisWeek">This week</option>
-        <option value="nextWeek">Next week</option>
-      </select>
-      {hasFilters ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          leftIcon={<X />}
-          onClick={() => onChange({})}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          aria-pressed={Boolean(currentUserId && value.ownerId === currentUserId)}
+          disabled={!currentUserId}
+          onClick={() => toggle({
+            ownerId: value.ownerId === currentUserId ? undefined : currentUserId,
+          })}
+          className={quickFilterClassName(
+            Boolean(currentUserId && value.ownerId === currentUserId),
+            !currentUserId,
+          )}
         >
-          Clear
-        </Button>
-      ) : null}
+          <UserRound className="h-4 w-4" aria-hidden="true" />
+          Owned by me
+        </button>
+        <button
+          type="button"
+          aria-pressed={value.dueBucket === 'thisWeek'}
+          onClick={() => toggle({
+            dueBucket: value.dueBucket === 'thisWeek' ? undefined : 'thisWeek',
+            dueDateFrom: undefined,
+            dueDateTo: undefined,
+          })}
+          className={quickFilterClassName(value.dueBucket === 'thisWeek')}
+        >
+          <CalendarDays className="h-4 w-4" aria-hidden="true" />
+          Due this week
+        </button>
+        <button
+          type="button"
+          aria-pressed={value.status === 'IN_PROGRESS'}
+          onClick={() => toggle({
+            status: value.status === 'IN_PROGRESS' ? undefined : 'IN_PROGRESS',
+          })}
+          className={quickFilterClassName(value.status === 'IN_PROGRESS')}
+        >
+          <CircleDot className="h-4 w-4" aria-hidden="true" />
+          In Progress
+        </button>
+      </div>
     </div>
   );
 }

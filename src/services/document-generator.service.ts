@@ -45,8 +45,15 @@ import type {
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
 import { NotFoundError } from '@/lib/errors';
+import { createLogger } from '@/lib/logger';
 import { readActiveGenerationSession } from '@/lib/document-generation-session';
 import { safelyReconcileGeneratedDocumentTaskOutcomes } from '@/services/tasks/integration.service';
+import {
+  assertGeneratedDocumentCanBeUnfinalized,
+  queueTaskEsigningPreparationsForGeneratedDocument,
+} from '@/services/tasks/esigning-preparation.service';
+
+const log = createLogger('document-generator');
 
 // ============================================================================
 // Types
@@ -819,6 +826,18 @@ export async function finalizeDocument(
     changeSource: 'MANUAL',
   });
   await safelyReconcileGeneratedDocumentTaskOutcomes(tenantId, document.id, userId);
+  try {
+    await queueTaskEsigningPreparationsForGeneratedDocument(
+      tenantId,
+      document.id,
+      userId,
+    );
+  } catch (error) {
+    log.warn('Failed to queue E-signing preparation after document finalization', {
+      documentId: document.id,
+      error,
+    });
+  }
 
   return document;
 }
@@ -846,6 +865,8 @@ export async function unfinalizeDocument(
     throw new Error('Document is not finalized');
   }
 
+  await assertGeneratedDocumentCanBeUnfinalized(tenantId, existing.id);
+
   const document = await prisma.generatedDocument.update({
     where: { id },
     data: {
@@ -867,6 +888,18 @@ export async function unfinalizeDocument(
     reason,
   });
   await safelyReconcileGeneratedDocumentTaskOutcomes(tenantId, document.id, userId);
+  try {
+    await queueTaskEsigningPreparationsForGeneratedDocument(
+      tenantId,
+      document.id,
+      userId,
+    );
+  } catch (error) {
+    log.warn('Failed to queue E-signing detach after document unfinalization', {
+      documentId: document.id,
+      error,
+    });
+  }
 
   return document;
 }

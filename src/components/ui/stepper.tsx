@@ -53,10 +53,10 @@ export function Stepper({ steps, currentStep, onStepClick, className }: StepperP
                 </button>
 
                 {/* Step label - centered below indicator */}
-                <div className="mt-2 text-center w-16 sm:w-20">
+                <div className="mt-2 min-w-16 px-1 text-center sm:min-w-20">
                   <span
                     className={cn(
-                      'text-2xs sm:text-xs font-medium leading-tight block',
+                      'block whitespace-nowrap text-2xs font-medium leading-tight sm:text-xs',
                       isCurrent && 'text-oak-primary',
                       isCompleted && 'text-text-primary',
                       !isCompleted && !isCurrent && 'text-text-muted'

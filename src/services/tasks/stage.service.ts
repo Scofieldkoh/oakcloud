@@ -3,10 +3,13 @@ import {
   TaskStageActionType,
   TaskStageOutcomeType,
   TaskStageStatus,
+  type TaskStageOutcome,
   type TaskStageStatus as TaskStageStatusValue,
+  type TaskStatus as TaskStatusValue,
 } from '@/generated/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
+import { createLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import {
   taskStageChecklistUpdateSchema,
@@ -22,7 +25,25 @@ import {
 } from './action-registry';
 import { deriveTaskStatus } from './status';
 import { lockTaskForUpdate } from './locking';
+import { queueTaskEsigningPreparationsForTask } from './esigning-preparation.service';
 import type { ResolvedStageOutcome } from './types';
+
+const log = createLogger('tasks:stage');
+
+async function safelyQueueTaskEsigningPreparation(
+  tenantId: string,
+  taskId: string,
+  userId?: string,
+) {
+  try {
+    await queueTaskEsigningPreparationsForTask(tenantId, taskId, userId);
+  } catch (error) {
+    log.warn('Failed to queue E-signing preparation after task-stage change', {
+      taskId,
+      error,
+    });
+  }
+}
 
 const stageDetailInclude = {
   task: {
@@ -451,6 +472,151 @@ async function auditStageMutation(
   }, tx);
 }
 
+export interface SynchronizeCompanyProfileStagesInput {
+  tenantId: string;
+  taskId: string;
+  companyId: string | null;
+  currentTaskStatus: TaskStatusValue;
+  userId?: string;
+}
+
+export interface SynchronizeCompanyProfileStagesResult {
+  taskStatus: TaskStatusValue;
+  outcomesByStageId: Map<string, TaskStageOutcome>;
+}
+
+export async function synchronizeCompanyProfileStages(
+  tx: Prisma.TransactionClient,
+  input: SynchronizeCompanyProfileStagesInput,
+): Promise<SynchronizeCompanyProfileStagesResult> {
+  const stages = await tx.taskStage.findMany({
+    where: {
+      tenantId: input.tenantId,
+      taskId: input.taskId,
+      actionType: TaskStageActionType.COMPANY_PROFILE,
+      status: { not: TaskStageStatus.SKIPPED },
+    },
+    select: {
+      id: true,
+      status: true,
+      startedAt: true,
+      completedAt: true,
+      outcome: { select: { companyId: true } },
+    },
+  });
+  const outcomesByStageId = new Map<string, TaskStageOutcome>();
+  const now = new Date();
+
+  for (const stage of stages) {
+    if (input.companyId) {
+      const changedCompany = stage.outcome?.companyId !== input.companyId;
+      const newlyCompleted = stage.status !== TaskStageStatus.COMPLETED;
+      const outcome = await tx.taskStageOutcome.upsert({
+        where: { taskStageId: stage.id },
+        create: {
+          tenantId: input.tenantId,
+          taskStageId: stage.id,
+          type: TaskStageOutcomeType.COMPANY,
+          companyId: input.companyId,
+        },
+        update: {
+          type: TaskStageOutcomeType.COMPANY,
+          companyId: input.companyId,
+          generatedDocumentId: null,
+          esigningEnvelopeId: null,
+        },
+      });
+      outcomesByStageId.set(stage.id, outcome);
+      await tx.taskCompanyRecoveryContext.upsert({
+        where: {
+          tenantId_taskStageId: {
+            tenantId: input.tenantId,
+            taskStageId: stage.id,
+          },
+        },
+        create: {
+          tenantId: input.tenantId,
+          taskId: input.taskId,
+          taskStageId: stage.id,
+          companyId: input.companyId,
+        },
+        update: { companyId: input.companyId },
+      });
+      await tx.taskStage.update({
+        where: { id: stage.id },
+        data: {
+          status: TaskStageStatus.COMPLETED,
+          startedAt: stage.startedAt ?? now,
+          completedAt: changedCompany || newlyCompleted
+            ? now
+            : stage.completedAt ?? now,
+        },
+      });
+      if (changedCompany || newlyCompleted) {
+        await auditStageMutation(tx, {
+          tenantId: input.tenantId,
+          userId: input.userId,
+          stageId: stage.id,
+          companyId: input.companyId,
+          summary: 'Synchronized Company Profile outcome with task company',
+          metadata: {
+            previousCompanyId: stage.outcome?.companyId ?? null,
+            companyId: input.companyId,
+            status: TaskStageStatus.COMPLETED,
+          },
+        });
+      }
+      continue;
+    }
+
+    await tx.taskStageOutcome.deleteMany({
+      where: { tenantId: input.tenantId, taskStageId: stage.id },
+    });
+    await tx.taskCompanyRecoveryContext.deleteMany({
+      where: {
+        tenantId: input.tenantId,
+        taskId: input.taskId,
+        taskStageId: stage.id,
+      },
+    });
+    await tx.taskStage.update({
+      where: { id: stage.id },
+      data: {
+        status: TaskStageStatus.NOT_STARTED,
+        startedAt: null,
+        completedAt: null,
+        skipReason: null,
+      },
+    });
+    if (stage.outcome || stage.status !== TaskStageStatus.NOT_STARTED) {
+      await auditStageMutation(tx, {
+        tenantId: input.tenantId,
+        userId: input.userId,
+        stageId: stage.id,
+        companyId: null,
+        summary: 'Cleared Company Profile outcome with task company',
+        metadata: {
+          previousCompanyId: stage.outcome?.companyId ?? null,
+          companyId: null,
+          status: TaskStageStatus.NOT_STARTED,
+        },
+      });
+    }
+  }
+
+  await tx.task.update({
+    where: { id: input.taskId },
+    data: { companyId: input.companyId },
+  });
+  const taskStatus = await updateParentTaskStatus(
+    tx,
+    input.tenantId,
+    input.taskId,
+    input.currentTaskStatus,
+  );
+  return { taskStatus, outcomesByStageId };
+}
+
 export async function updateTaskStageMetadata(
   tenantId: string,
   stageId: string,
@@ -539,8 +705,10 @@ async function setStageStatus(
   reason?: string,
   manualOnly = false,
 ) {
-  return prisma.$transaction(async (tx) => {
+  let taskId: string | null = null;
+  const result = await prisma.$transaction(async (tx) => {
     const stage = await requireStage(tx, tenantId, stageId);
+    taskId = stage.taskId;
     const lockedTask = await lockTaskForUpdate(tx, tenantId, stage.taskId);
     if (
       manualOnly
@@ -583,6 +751,10 @@ async function setStageStatus(
     });
     return updated;
   });
+  if (taskId) {
+    await safelyQueueTaskEsigningPreparation(tenantId, taskId, userId);
+  }
+  return result;
 }
 
 export const completeTaskStage = (
@@ -702,8 +874,10 @@ export async function linkTaskStageOutcome(
   userId?: string,
 ) {
   const parsed = taskStageOutcomeSchema.parse(input);
-  return prisma.$transaction(async (tx) => {
+  let taskId: string | null = null;
+  const result = await prisma.$transaction(async (tx) => {
     const stage = await requireStage(tx, tenantId, stageId);
+    taskId = stage.taskId;
     const lockedTask = await lockTaskForUpdate(tx, tenantId, stage.taskId);
     assertOutcomeMatchesAction(stage.actionType, parsed.type);
     if (
@@ -731,6 +905,30 @@ export async function linkTaskStageOutcome(
     }
     const authoritative = await resolveAuthoritativeOutcome(tx, tenantId, parsed);
     const resolution = resolveStageActionOutcome(stage.actionType, authoritative);
+    if (
+      parsed.type === TaskStageOutcomeType.COMPANY
+      && parsed.companyId
+    ) {
+      const synchronized = await synchronizeCompanyProfileStages(tx, {
+        tenantId,
+        taskId: stage.taskId,
+        companyId: parsed.companyId,
+        currentTaskStatus: lockedTask.status,
+        userId,
+      });
+      const outcome = synchronized.outcomesByStageId.get(stage.id) ?? stage.outcome;
+      if (stage.status !== TaskStageStatus.SKIPPED && !outcome) {
+        throw new ValidationError('Company Profile stage was not synchronized');
+      }
+      return {
+        outcome,
+        status: stage.status === TaskStageStatus.SKIPPED
+          ? TaskStageStatus.SKIPPED
+          : TaskStageStatus.COMPLETED,
+        summary: resolution.summary,
+        taskStatus: synchronized.taskStatus,
+      };
+    }
     const effectiveStatus = stage.status === TaskStageStatus.SKIPPED
       ? TaskStageStatus.SKIPPED
       : resolution.status;
@@ -748,16 +946,6 @@ export async function linkTaskStageOutcome(
         ...ids,
       },
     });
-    if (
-      parsed.type === TaskStageOutcomeType.COMPANY
-      && parsed.companyId
-      && stage.task.companyId !== parsed.companyId
-    ) {
-      await tx.task.update({
-        where: { id: stage.taskId },
-        data: { companyId: parsed.companyId },
-      });
-    }
     const now = new Date();
     await tx.taskStage.update({
       where: { id: stage.id },
@@ -787,6 +975,10 @@ export async function linkTaskStageOutcome(
     });
     return { outcome, status: effectiveStatus, summary: resolution.summary, taskStatus };
   });
+  if (taskId && parsed.type !== TaskStageOutcomeType.ESIGNING_ENVELOPE) {
+    await safelyQueueTaskEsigningPreparation(tenantId, taskId, userId);
+  }
+  return result;
 }
 
 export async function reconcileTaskStageOutcome(
@@ -794,8 +986,10 @@ export async function reconcileTaskStageOutcome(
   stageId: string,
   userId?: string,
 ) {
-  return prisma.$transaction(async (tx) => {
+  let taskIdForQueue: string | null = null;
+  const result = await prisma.$transaction(async (tx) => {
     const taskId = await requireStageTaskId(tx, tenantId, stageId);
+    taskIdForQueue = taskId;
     const lockedTask = await lockTaskForUpdate(tx, tenantId, taskId);
     const stage = await requireStage(tx, tenantId, stageId);
     if (stage.taskId !== taskId) {
@@ -941,4 +1135,8 @@ export async function reconcileTaskStageOutcome(
     });
     return { ...resolution, taskStatus };
   });
+  if (taskIdForQueue) {
+    await safelyQueueTaskEsigningPreparation(tenantId, taskIdForQueue, userId);
+  }
+  return result;
 }

@@ -46,6 +46,7 @@ model Workspace {
   forms                       Form[]
   generatedDocuments          GeneratedDocument[]
   esigningEnvelopes           EsigningEnvelope[]
+  taskEsigningPreparations    TaskEsigningPreparation[]
   roles                       Role[]
   templatePartials            TemplatePartial[]
   backups                     WorkspaceBackup[]
@@ -131,40 +132,41 @@ model UserRoleAssignment {
 }
 
 model User {
-  id                       String                  @id @default(uuid())
-  email                    String                  @unique
-  passwordHash             String
-  firstName                String
-  lastName                 String
-  isActive                 Boolean                 @default(true)
-  lastLoginAt              DateTime?
-  createdAt                DateTime                @default(now())
-  updatedAt                DateTime                @updatedAt
-  deletedAt                DateTime?
-  mustChangePassword       Boolean                 @default(false)
-  passwordResetToken       String?                 @unique
-  passwordResetExpires     DateTime?
-  passwordChangedAt        DateTime?
-  tenantId                 String?
-  aiConversations          AiConversation[]        @relation("ConversationOwner")
-  auditLogs                AuditLog[]
-  connectorUsageLogs       ConnectorUsageLog[]
-  hiddenComments           DocumentComment[]       @relation("CommentHider")
-  resolvedComments         DocumentComment[]       @relation("CommentResolver")
-  authoredComments         DocumentComment[]       @relation("CommentAuthor")
-  documentDrafts           DocumentDraft[]         @relation("DraftAuthor")
-  createdTemplates         DocumentTemplate[]      @relation("TemplateCreator")
-  uploadedDocuments        Document[]
-  createdDocuments         GeneratedDocument[]     @relation("DocumentCreator")
-  createdEsigningEnvelopes EsigningEnvelope[]      @relation("EsigningEnvelopeCreatedBy")
-  finalizedDocuments       GeneratedDocument[]     @relation("DocumentFinalizer")
-  createdPartials          TemplatePartial[]       @relation("PartialCreator")
-  companyAssignments       UserCompanyAssignment[]
-  preferences              UserPreference[]
-  roleAssignments          UserRoleAssignment[]
-  tenant                   Workspace?              @relation(fields: [tenantId], references: [id])
-  ownedTasks               Task[]                  @relation("TaskOwner")
-  assignedTaskStages       TaskStage[]             @relation("TaskStageAssignee")
+  id                                String                    @id @default(uuid())
+  email                             String                    @unique
+  passwordHash                      String
+  firstName                         String
+  lastName                          String
+  isActive                          Boolean                   @default(true)
+  lastLoginAt                       DateTime?
+  createdAt                         DateTime                  @default(now())
+  updatedAt                         DateTime                  @updatedAt
+  deletedAt                         DateTime?
+  mustChangePassword                Boolean                   @default(false)
+  passwordResetToken                String?                   @unique
+  passwordResetExpires              DateTime?
+  passwordChangedAt                 DateTime?
+  tenantId                          String?
+  aiConversations                   AiConversation[]          @relation("ConversationOwner")
+  auditLogs                         AuditLog[]
+  connectorUsageLogs                ConnectorUsageLog[]
+  hiddenComments                    DocumentComment[]         @relation("CommentHider")
+  resolvedComments                  DocumentComment[]         @relation("CommentResolver")
+  authoredComments                  DocumentComment[]         @relation("CommentAuthor")
+  documentDrafts                    DocumentDraft[]           @relation("DraftAuthor")
+  createdTemplates                  DocumentTemplate[]        @relation("TemplateCreator")
+  uploadedDocuments                 Document[]
+  createdDocuments                  GeneratedDocument[]       @relation("DocumentCreator")
+  createdEsigningEnvelopes          EsigningEnvelope[]        @relation("EsigningEnvelopeCreatedBy")
+  initiatedTaskEsigningPreparations TaskEsigningPreparation[] @relation("TaskEsigningPreparationInitiator")
+  finalizedDocuments                GeneratedDocument[]       @relation("DocumentFinalizer")
+  createdPartials                   TemplatePartial[]         @relation("PartialCreator")
+  companyAssignments                UserCompanyAssignment[]
+  preferences                       UserPreference[]
+  roleAssignments                   UserRoleAssignment[]
+  tenant                            Workspace?                @relation(fields: [tenantId], references: [id])
+  ownedTasks                        Task[]                    @relation("TaskOwner")
+  assignedTaskStages                TaskStage[]               @relation("TaskStageAssignee")
 
   @@index([email])
   @@index([tenantId])
@@ -780,34 +782,36 @@ model DocumentTemplate {
 }
 
 model GeneratedDocument {
-  id                String                  @id @default(uuid())
-  tenantId          String                  @map("tenant_id")
-  templateId        String?                 @map("template_id")
-  templateVersion   Int?                    @map("template_version")
-  companyId         String?                 @map("company_id")
-  title             String                  @db.VarChar(300)
-  content           String
-  contentJson       Json?                   @map("content_json")
-  status            GeneratedDocumentStatus @default(DRAFT)
-  finalizedAt       DateTime?               @map("finalized_at")
-  finalizedById     String?                 @map("finalized_by_id")
-  unfinalizedAt     DateTime?               @map("unfinalized_at")
-  useLetterhead     Boolean                 @default(true) @map("use_letterhead")
-  placeholderData   Json?                   @map("placeholder_data")
-  metadata          Json?
-  createdById       String                  @map("created_by_id")
-  createdAt         DateTime                @default(now()) @map("created_at")
-  updatedAt         DateTime                @updatedAt @map("updated_at")
-  deletedAt         DateTime?               @map("deleted_at")
-  comments          DocumentComment[]
-  drafts            DocumentDraft[]
-  sections          DocumentSection[]
-  company           Company?                @relation(fields: [companyId], references: [id])
-  createdBy         User                    @relation("DocumentCreator", fields: [createdById], references: [id])
-  finalizedBy       User?                   @relation("DocumentFinalizer", fields: [finalizedById], references: [id])
-  template          DocumentTemplate?       @relation(fields: [templateId], references: [id])
-  tenant            Workspace               @relation(fields: [tenantId], references: [id])
-  taskStageOutcomes TaskStageOutcome[]
+  id                        String                     @id @default(uuid())
+  tenantId                  String                     @map("tenant_id")
+  templateId                String?                    @map("template_id")
+  templateVersion           Int?                       @map("template_version")
+  companyId                 String?                    @map("company_id")
+  title                     String                     @db.VarChar(300)
+  content                   String
+  contentJson               Json?                      @map("content_json")
+  status                    GeneratedDocumentStatus    @default(DRAFT)
+  finalizedAt               DateTime?                  @map("finalized_at")
+  finalizedById             String?                    @map("finalized_by_id")
+  unfinalizedAt             DateTime?                  @map("unfinalized_at")
+  useLetterhead             Boolean                    @default(true) @map("use_letterhead")
+  placeholderData           Json?                      @map("placeholder_data")
+  metadata                  Json?
+  createdById               String                     @map("created_by_id")
+  createdAt                 DateTime                   @default(now()) @map("created_at")
+  updatedAt                 DateTime                   @updatedAt @map("updated_at")
+  deletedAt                 DateTime?                  @map("deleted_at")
+  comments                  DocumentComment[]
+  drafts                    DocumentDraft[]
+  sections                  DocumentSection[]
+  company                   Company?                   @relation(fields: [companyId], references: [id])
+  createdBy                 User                       @relation("DocumentCreator", fields: [createdById], references: [id])
+  finalizedBy               User?                      @relation("DocumentFinalizer", fields: [finalizedById], references: [id])
+  template                  DocumentTemplate?          @relation(fields: [templateId], references: [id])
+  tenant                    Workspace                  @relation(fields: [tenantId], references: [id])
+  taskStageOutcomes         TaskStageOutcome[]
+  esigningEnvelopeDocuments EsigningEnvelopeDocument[]
+  taskEsigningPreparations  TaskEsigningPreparation[]
 
   @@index([tenantId])
   @@index([templateId])
@@ -978,6 +982,7 @@ model EsigningEnvelope {
   fieldDefinitions          EsigningDocumentFieldDefinition[]
   recipients                EsigningEnvelopeRecipient[]
   taskStageOutcomes         TaskStageOutcome[]
+  taskEsigningPreparations  TaskEsigningPreparation[]
 
   @@index([tenantId, status, createdAt])
   @@index([createdById, status, createdAt])
@@ -991,22 +996,26 @@ model EsigningEnvelope {
 }
 
 model EsigningEnvelopeDocument {
-  id                String                            @id @default(uuid())
-  tenantId          String
-  envelopeId        String
-  fileName          String
-  storagePath       String
-  signedStoragePath String?
-  originalHash      String
-  signedHash        String?
-  pageCount         Int
-  sortOrder         Int
-  fileSize          Int
-  createdAt         DateTime                          @default(now())
-  updatedAt         DateTime                          @updatedAt
-  envelope          EsigningEnvelope                  @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
-  fieldDefinitions  EsigningDocumentFieldDefinition[]
+  id                       String                            @id @default(uuid())
+  tenantId                 String
+  envelopeId               String
+  fileName                 String
+  storagePath              String
+  signedStoragePath        String?
+  originalHash             String
+  signedHash               String?
+  pageCount                Int
+  sortOrder                Int
+  fileSize                 Int
+  createdAt                DateTime                          @default(now())
+  updatedAt                DateTime                          @updatedAt
+  envelope                 EsigningEnvelope                  @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  fieldDefinitions         EsigningDocumentFieldDefinition[]
+  generatedDocumentId      String?                           @map("generated_document_id")
+  generatedDocument        GeneratedDocument?                @relation(fields: [generatedDocumentId], references: [id], onDelete: SetNull)
+  taskEsigningPreparations TaskEsigningPreparation[]
 
+  @@unique([envelopeId, generatedDocumentId])
   @@index([envelopeId, sortOrder])
   @@index([tenantId, envelopeId])
   @@map("esigning_envelope_documents")
@@ -2195,6 +2204,7 @@ model Task {
   owner                   User?                        @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   stages                  TaskStage[]
   companyRecoveryContexts TaskCompanyRecoveryContext[]
+  esigningPreparations    TaskEsigningPreparation[]
 
   @@index([tenantId, status, deletedAt])
   @@index([tenantId, pipelineVersionId])
@@ -2205,30 +2215,32 @@ model Task {
 }
 
 model TaskStage {
-  id                      String                       @id @default(uuid())
-  tenantId                String                       @map("tenant_id")
-  taskId                  String                       @map("task_id")
-  name                    String                       @db.VarChar(200)
-  description             String?
-  position                Int
-  actionType              TaskStageActionType          @map("action_type")
-  icon                    String                       @db.VarChar(100)
-  isRequired              Boolean                      @default(true) @map("is_required")
-  actionConfig            Json?                        @map("action_config")
-  status                  TaskStageStatus              @default(NOT_STARTED)
-  assigneeId              String?                      @map("assignee_id")
-  notes                   String?
-  skipReason              String?                      @map("skip_reason")
-  startedAt               DateTime?                    @map("started_at")
-  completedAt             DateTime?                    @map("completed_at")
-  createdAt               DateTime                     @default(now()) @map("created_at")
-  updatedAt               DateTime                     @updatedAt @map("updated_at")
-  tenant                  Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  task                    Task                         @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  assignee                User?                        @relation("TaskStageAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  checklistItems          TaskStageChecklistItem[]
-  outcome                 TaskStageOutcome?
-  companyRecoveryContexts TaskCompanyRecoveryContext[]
+  id                         String                       @id @default(uuid())
+  tenantId                   String                       @map("tenant_id")
+  taskId                     String                       @map("task_id")
+  name                       String                       @db.VarChar(200)
+  description                String?
+  position                   Int
+  actionType                 TaskStageActionType          @map("action_type")
+  icon                       String                       @db.VarChar(100)
+  isRequired                 Boolean                      @default(true) @map("is_required")
+  actionConfig               Json?                        @map("action_config")
+  status                     TaskStageStatus              @default(NOT_STARTED)
+  assigneeId                 String?                      @map("assignee_id")
+  notes                      String?
+  skipReason                 String?                      @map("skip_reason")
+  startedAt                  DateTime?                    @map("started_at")
+  completedAt                DateTime?                    @map("completed_at")
+  createdAt                  DateTime                     @default(now()) @map("created_at")
+  updatedAt                  DateTime                     @updatedAt @map("updated_at")
+  tenant                     Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  task                       Task                         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  assignee                   User?                        @relation("TaskStageAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  checklistItems             TaskStageChecklistItem[]
+  outcome                    TaskStageOutcome?
+  companyRecoveryContexts    TaskCompanyRecoveryContext[]
+  esigningPreparation        TaskEsigningPreparation?     @relation("TaskEsigningPreparationTarget")
+  sourceEsigningPreparations TaskEsigningPreparation[]    @relation("TaskEsigningPreparationSource")
 
   @@unique([taskId, position])
   @@index([tenantId, taskId, status])
@@ -2275,6 +2287,41 @@ model TaskStageOutcome {
   @@index([tenantId, generatedDocumentId])
   @@index([tenantId, esigningEnvelopeId])
   @@map("task_stage_outcomes")
+}
+
+model TaskEsigningPreparation {
+  id                  String                        @id @default(uuid())
+  tenantId            String                        @map("tenant_id")
+  taskId              String                        @map("task_id")
+  taskStageId         String                        @unique @map("task_stage_id")
+  sourceTaskStageId   String?                       @map("source_task_stage_id")
+  generatedDocumentId String?                       @map("generated_document_id")
+  esigningEnvelopeId  String?                       @map("esigning_envelope_id")
+  envelopeDocumentId  String?                       @unique @map("envelope_document_id")
+  initiatedById       String?                       @map("initiated_by_id")
+  status              TaskEsigningPreparationStatus @default(WAITING)
+  attemptCount        Int                           @default(0) @map("attempt_count")
+  availableAt         DateTime                      @default(now()) @map("available_at")
+  claimedAt           DateTime?                     @map("claimed_at")
+  leaseExpiresAt      DateTime?                     @map("lease_expires_at")
+  lastError           String?                       @map("last_error")
+  createdAt           DateTime                      @default(now()) @map("created_at")
+  updatedAt           DateTime                      @updatedAt @map("updated_at")
+  tenant              Workspace                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  task                Task                          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskStage           TaskStage                     @relation("TaskEsigningPreparationTarget", fields: [taskStageId], references: [id], onDelete: Cascade)
+  sourceTaskStage     TaskStage?                    @relation("TaskEsigningPreparationSource", fields: [sourceTaskStageId], references: [id], onDelete: SetNull)
+  generatedDocument   GeneratedDocument?            @relation(fields: [generatedDocumentId], references: [id], onDelete: SetNull)
+  esigningEnvelope    EsigningEnvelope?             @relation(fields: [esigningEnvelopeId], references: [id], onDelete: SetNull)
+  envelopeDocument    EsigningEnvelopeDocument?     @relation(fields: [envelopeDocumentId], references: [id], onDelete: SetNull)
+  initiatedBy         User?                         @relation("TaskEsigningPreparationInitiator", fields: [initiatedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status, availableAt])
+  @@index([status, leaseExpiresAt])
+  @@index([tenantId, taskId])
+  @@index([tenantId, generatedDocumentId])
+  @@index([tenantId, esigningEnvelopeId])
+  @@map("task_esigning_preparations")
 }
 
 model TaskCompanyRecoveryContext {
@@ -2325,6 +2372,15 @@ enum TaskStageOutcomeType {
   COMPANY
   GENERATED_DOCUMENT
   ESIGNING_ENVELOPE
+}
+
+enum TaskEsigningPreparationStatus {
+  WAITING
+  QUEUED
+  PROCESSING
+  READY
+  FAILED_RETRYABLE
+  FAILED_PERMANENT
 }
 
 enum WorkspaceStatus {

@@ -63,7 +63,7 @@ Core design principles:
 
 | Service | Purpose |
 |---------|---------|
-| In-process scheduler | Backup, cleanup, exchange-rate sync, form AI review, form count reconciliation |
+| In-process scheduler | Backup, cleanup, exchange-rate sync, form AI review, form count reconciliation, E-signing preparation |
 | In-memory rate limiter | Public endpoint throttling |
 | In-memory view counter buffer | Batches form view count writes every 30 seconds |
 
@@ -227,6 +227,12 @@ The `src/services/tasks/` stage-action registry owns action configuration parsin
 | `ESIGNING` | `PenLine` | E-signing | All required signatures are complete |
 
 Tasks retain only links and immutable stage snapshots. Company, Generated Document, and E-signing Envelope records remain authoritative in their own modules. Optional `TaskLaunchContext` (`taskId`, `taskStageId`, `returnTo`) follows the user into those workspaces; creation/status callbacks link or reconcile the stage outcome. Detail reads also reconcile so missed callbacks self-heal. Declined, expired, voided, or cancelled envelopes derive a failed stage.
+
+E-signing task stages use a durable preparation record rather than creating an envelope during navigation. Preparation selects the nearest preceding Document Generation stage and becomes eligible only after its generated document is finalized and every intervening stage, such as Review, is `COMPLETED` or `SKIPPED`. The worker creates or reuses one draft envelope, links it to the E-signing stage, and attaches one managed PDF without adding recipients, fields, or sending the envelope. Opening the task stage ensures legacy preparation state, polls `QUEUED` or `PROCESSING` work, and opens the prepared envelope when it reaches `READY`.
+
+Unfinalizing the generated document queues removal of only its managed envelope document; document-bound fields cascade away while recipients, manual documents, and envelope settings remain. Refinalizing queues a fresh PDF attachment to the same draft. Unfinalization is rejected after the related envelope leaves `DRAFT` unless it has been voided.
+
+Preparation jobs are claimed in bounded batches with PostgreSQL `FOR UPDATE SKIP LOCKED`, so one worker can process unrelated tenants and pipelines concurrently and multiple application instances claim disjoint jobs. Claim leases recover abandoned `PROCESSING` work. Lifecycle callbacks request immediate processing after authoritative mutations commit, while the one-minute scheduler is the durable fallback. States are `WAITING`, `QUEUED`, `PROCESSING`, `READY`, `FAILED_RETRYABLE`, and `FAILED_PERMANENT`.
 
 Task status is derived from all live stages as `NOT_STARTED`, `IN_PROGRESS`, or `COMPLETED`: every required stage must be completed, and every optional stage must be completed or explicitly skipped. `PAUSED` and `CANCELLED` are explicit task overrides. Optional stages may be skipped with a reason; required stages cannot be skipped. A skipped integrated stage remains a durable user override until it is reopened. Stage status includes `NOT_STARTED`, `IN_PROGRESS`, `WAITING`, `COMPLETED`, `SKIPPED`, and `FAILED`. The UI assigns fixed semantic surfaces and non-colour markers; pipelines store curated Lucide icon names but no user-defined colours.
 

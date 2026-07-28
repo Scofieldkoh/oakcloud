@@ -8,7 +8,7 @@ Keep a task's linked company and its Company Profile stage outcomes consistent, 
 
 `Task.companyId` is the authoritative linked company for the task. Every non-skipped `COMPANY_PROFILE` stage must have the same company as its linked outcome.
 
-- Setting or replacing `Task.companyId` links the selected company to every non-skipped Company Profile stage.
+- Creating a task with `companyId`, or later setting or replacing it, links the selected company to every non-skipped Company Profile stage.
 - A linked Company Profile stage is completed.
 - Clearing `Task.companyId` clears every non-skipped Company Profile outcome and returns those stages to `NOT_STARTED`.
 - A skipped Company Profile stage remains skipped and is not given, replaced, or stripped of an outcome by metadata synchronization.
@@ -16,7 +16,7 @@ Keep a task's linked company and its Company Profile stage outcomes consistent, 
 
 ## Server Design
 
-One transaction-aware synchronization helper will enforce the invariant. Both task metadata updates and Company Profile stage linking will call it, so neither entry point can leave other Company Profile stages stale. The helper will use the existing task-stage status and parent-task status rules rather than duplicating status derivation in the UI.
+One transaction-aware synchronization helper will enforce the invariant. Task creation, task metadata updates, and Company Profile stage linking will call it, so no entry point can leave Company Profile stages stale. The helper will use the existing task-stage status and parent-task status rules rather than duplicating status derivation in the UI.
 
 When `companyId` is present in the metadata update payload:
 
@@ -50,6 +50,7 @@ Existing authorization remains at the API boundary: the user must be able to upd
 Regression tests will prove that:
 
 - Selecting a company through metadata completes all non-skipped Company Profile stages and can complete the parent task.
+- Creating a task with a selected company initializes all non-skipped Company Profile outcomes and statuses before returning the task.
 - Replacing the metadata company replaces every applicable Company Profile outcome.
 - Skipped Company Profile stages remain skipped.
 - Clearing the metadata company clears applicable outcomes and returns their stages to `NOT_STARTED`.

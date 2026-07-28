@@ -814,7 +814,13 @@ function PageChrome({
         Page {pageNumber} of {totalPages}
       </div>
       {canDelete && !isPreviewMode ? (
-        <button type="button" onClick={() => onDelete(page.id)} className="pointer-events-auto absolute -right-10 top-4 z-10 rounded bg-red-100 p-1.5 text-red-600 opacity-0 transition-opacity hover:bg-red-200 group-hover:opacity-100" title="Delete page">
+        <button
+          type="button"
+          onClick={() => onDelete(page.id)}
+          className="pointer-events-auto absolute right-4 top-4 z-10 rounded bg-red-100 p-1.5 text-red-600 transition-colors hover:bg-red-200"
+          title="Delete page"
+          aria-label={`Delete page ${pageNumber}`}
+        >
           <Trash2 className="h-4 w-4" />
         </button>
       ) : null}

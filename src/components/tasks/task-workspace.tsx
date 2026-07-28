@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ListChecks, Plus } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { FilterChip } from '@/components/ui/filter-chip';
+import { Pagination } from '@/components/ui/pagination';
 import { useCurrentWorkspaceUsers } from '@/hooks/use-admin';
+import { useSession } from '@/hooks/use-auth';
 import { useCompanies } from '@/hooks/use-companies';
 import { useTaskPipelines } from '@/hooks/use-task-pipelines';
 import {
@@ -27,6 +31,9 @@ import type {
   TaskStageSummary,
   TaskUpdatePayload,
 } from '@/services/tasks/types';
+import { postFormDataWithFallback } from '@/lib/browser-upload';
+import { withTaskLaunchContext } from '@/lib/task-launch-context';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { TaskFilters } from './task-filters';
 import { TaskFormModal } from './task-form-modal';
 import { TaskList } from './task-list';
@@ -43,11 +50,16 @@ interface PendingConfirmation {
 }
 
 export function TaskWorkspace() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [filters, setFilters] = useState<TaskListParams>({ page: 1, limit: 20 });
   const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null);
   const [editingTask, setEditingTask] = useState<TaskListItem | null>(null);
   const [selectedStage, setSelectedStage] = useState<SelectedStage | null>(null);
   const [confirmation, setConfirmation] = useState<PendingConfirmation | null>(null);
+  const restoredStageKeyRef = useRef<string | null>(null);
+  const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   const taskQuery = useTasks(filters);
   const pipelineQuery = useTaskPipelines();
@@ -64,10 +76,21 @@ export function TaskWorkspace() {
   const updateStage = useUpdateTaskStage();
   const transitionStage = useTaskStageTransition();
 
-  const pipelines = pipelineQuery.data ?? [];
-  const companies = companyQuery.data?.companies ?? [];
-  const owners = ownerQuery.data?.users ?? [];
-  const tasks = taskQuery.data?.tasks ?? [];
+  const pipelines = useMemo(() => pipelineQuery.data ?? [], [pipelineQuery.data]);
+  const companies = useMemo(
+    () => companyQuery.data?.companies ?? [],
+    [companyQuery.data?.companies],
+  );
+  const owners = useMemo(
+    () => ownerQuery.data?.users ?? [],
+    [ownerQuery.data?.users],
+  );
+  const tasks = useMemo(() => taskQuery.data?.tasks ?? [], [taskQuery.data?.tasks]);
+  const returnedTaskId = searchParams.get('taskId');
+  const returnedStageId = searchParams.get('taskStageId');
+  const selectedStageIndex = selectedStage
+    ? selectedStage.task.stages.findIndex((candidate) => candidate.id === selectedStage.stage.id)
+    : -1;
   const optionQueryErrors = [
     pipelineQuery.error ? `Pipelines: ${pipelineQuery.error.message}` : null,
     companyQuery.error ? `Companies: ${companyQuery.error.message}` : null,
@@ -81,6 +104,128 @@ export function TaskWorkspace() {
     || updateStage.error
     || transitionStage.error
   );
+  const activeFilterChips = useMemo(() => {
+    const chips: Array<{
+      key: string;
+      label: string;
+      value: string;
+      onRemove: () => void;
+    }> = [];
+    const statusLabels: Record<NonNullable<TaskListParams['status']>, string> = {
+      NOT_STARTED: 'Not started',
+      IN_PROGRESS: 'In progress',
+      PAUSED: 'Paused',
+      COMPLETED: 'Completed',
+      CANCELLED: 'Cancelled',
+    };
+    const dueLabels: Record<NonNullable<TaskListParams['dueBucket']>, string> = {
+      overdue: 'Overdue',
+      today: 'Today',
+      thisWeek: 'This week',
+      nextWeek: 'Next week',
+    };
+
+    if (filters.query) {
+      chips.push({
+        key: 'query',
+        label: 'Search',
+        value: filters.query,
+        onRemove: () => setFilters((current) => ({ ...current, page: 1, query: undefined })),
+      });
+    }
+    if (filters.title) {
+      chips.push({
+        key: 'title',
+        label: 'Task',
+        value: filters.title,
+        onRemove: () => setFilters((current) => ({ ...current, page: 1, title: undefined })),
+      });
+    }
+    if (filters.companyId) {
+      chips.push({
+        key: 'companyId',
+        label: 'Company',
+        value: companies.find((company) => company.id === filters.companyId)?.name ?? filters.companyId,
+        onRemove: () => setFilters((current) => ({ ...current, page: 1, companyId: undefined })),
+      });
+    }
+    if (filters.status) {
+      chips.push({
+        key: 'status',
+        label: 'Status',
+        value: statusLabels[filters.status],
+        onRemove: () => setFilters((current) => ({ ...current, page: 1, status: undefined })),
+      });
+    }
+    if (filters.pipelineId) {
+      chips.push({
+        key: 'pipelineId',
+        label: 'Pipeline',
+        value: pipelines.find((pipeline) => pipeline.id === filters.pipelineId)?.name ?? filters.pipelineId,
+        onRemove: () => setFilters((current) => ({ ...current, page: 1, pipelineId: undefined })),
+      });
+    }
+    if (filters.ownerId) {
+      const owner = owners.find((candidate) => candidate.id === filters.ownerId);
+      chips.push({
+        key: 'ownerId',
+        label: 'Owner',
+        value: owner
+          ? `${owner.firstName} ${owner.lastName}`.trim() || owner.email
+          : filters.ownerId,
+        onRemove: () => setFilters((current) => ({ ...current, page: 1, ownerId: undefined })),
+      });
+    }
+    if (filters.ownerQuery) {
+      chips.push({
+        key: 'ownerQuery',
+        label: 'Owner text',
+        value: filters.ownerQuery,
+        onRemove: () => setFilters((current) => ({
+          ...current,
+          page: 1,
+          ownerQuery: undefined,
+        })),
+      });
+    }
+    if (filters.dueBucket) {
+      chips.push({
+        key: 'dueBucket',
+        label: 'Due',
+        value: dueLabels[filters.dueBucket],
+        onRemove: () => setFilters((current) => ({ ...current, page: 1, dueBucket: undefined })),
+      });
+    }
+    if (filters.dueDateFrom || filters.dueDateTo) {
+      chips.push({
+        key: 'dueDateRange',
+        label: 'Due dates',
+        value: `${filters.dueDateFrom ?? 'Any'} – ${filters.dueDateTo ?? 'Any'}`,
+        onRemove: () => setFilters((current) => ({
+          ...current,
+          page: 1,
+          dueDateFrom: undefined,
+          dueDateTo: undefined,
+        })),
+      });
+    }
+
+    return chips;
+  }, [companies, filters, owners, pipelines]);
+
+  useEffect(() => {
+    if (!returnedTaskId || !returnedStageId) return;
+    const restoredStageKey = `${returnedTaskId}:${returnedStageId}`;
+    if (restoredStageKeyRef.current === restoredStageKey) return;
+
+    const returnedTask = tasks.find((task) => task.id === returnedTaskId);
+    const returnedStage = returnedTask?.stages.find((stage) => stage.id === returnedStageId);
+    if (!returnedTask || !returnedStage) return;
+
+    restoredStageKeyRef.current = restoredStageKey;
+    setSelectedStage({ task: returnedTask, stage: returnedStage });
+    router.replace('/tasks', { scroll: false });
+  }, [returnedStageId, returnedTaskId, router, tasks]);
 
   const closeForm = () => {
     if (createTask.isPending || updateTask.isPending) return;
@@ -109,16 +254,16 @@ export function TaskWorkspace() {
   };
 
   return (
-    <div className="space-y-4" data-testid="task-workspace">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6 p-4 sm:p-6" data-testid="task-workspace">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">Tasks</h1>
           <p className="mt-1 text-sm text-text-secondary">Track work through reusable pipelines and open each stage in context.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/pipelines"
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border-primary bg-background-elevated px-4 text-sm font-medium text-text-primary transition-colors hover:bg-background-tertiary sm:min-h-8"
+            className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-border-primary bg-background-elevated px-4 text-sm font-medium text-text-primary transition-colors hover:bg-background-tertiary sm:min-h-8"
           >
             <ListChecks className="h-4 w-4" aria-hidden="true" />
             Manage pipelines
@@ -138,11 +283,30 @@ export function TaskWorkspace() {
 
       <TaskFilters
         value={filters}
-        pipelines={pipelines}
-        companies={companies}
-        owners={owners}
         onChange={setFilters}
+        currentUserId={session?.id}
       />
+
+      {activeFilterChips.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-text-secondary">Active filters:</span>
+          {activeFilterChips.map((chip) => (
+            <FilterChip
+              key={chip.key}
+              label={chip.label}
+              value={chip.value}
+              onRemove={chip.onRemove}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={() => setFilters({ page: 1, limit: filters.limit ?? 20 })}
+            className="ml-2 text-sm font-medium text-oak-primary transition-colors hover:text-oak-primary/80"
+          >
+            Clear all
+          </button>
+        </div>
+      ) : null}
 
       {optionQueryErrors.length > 0 ? (
         <Alert variant="error" title="Task options unavailable">
@@ -173,15 +337,20 @@ export function TaskWorkspace() {
         <div className="card p-6 text-sm text-text-secondary" role="status">Loading tasks…</div>
       ) : taskQuery.error ? (
         <Alert variant="error">{taskQuery.error.message}</Alert>
-      ) : tasks.length === 0 ? (
-        <div className="card p-6 text-center sm:p-12">
-          <ListChecks className="mx-auto mb-3 h-10 w-10 text-text-muted" aria-hidden="true" />
-          <h2 className="text-lg font-semibold text-text-primary">No tasks found</h2>
-          <p className="mt-1 text-sm text-text-secondary">Create a task or adjust the filters.</p>
-        </div>
       ) : (
         <TaskList
           tasks={tasks}
+          filters={filters}
+          pipelines={pipelines}
+          companies={companies}
+          owners={owners}
+          onFiltersChange={setFilters}
+          onUpdateMetadata={async (task, payload) => {
+            await updateTask.mutateAsync({
+              id: task.id,
+              payload,
+            });
+          }}
           onSelectStage={(task, stage) => {
             updateStage.reset();
             transitionStage.reset();
@@ -201,13 +370,17 @@ export function TaskWorkspace() {
         />
       )}
 
-      {taskQuery.data && taskQuery.data.totalPages > 1 ? (
-        <div className="flex items-center justify-between text-xs text-text-secondary">
-          <span>Page {taskQuery.data.page} of {taskQuery.data.totalPages}</span>
-          <div className="flex gap-2">
-            <Button variant="secondary" size="xs" disabled={taskQuery.data.page <= 1} onClick={() => setFilters((current) => ({ ...current, page: Math.max(1, (current.page ?? 1) - 1) }))}>Previous</Button>
-            <Button variant="secondary" size="xs" disabled={taskQuery.data.page >= taskQuery.data.totalPages} onClick={() => setFilters((current) => ({ ...current, page: (current.page ?? 1) + 1 }))}>Next</Button>
-          </div>
+      {taskQuery.data && taskQuery.data.total > 0 ? (
+        <div className="overflow-hidden rounded-xl border border-border-primary bg-background-elevated shadow-elevation-1 dark:bg-background-secondary dark:shadow-none">
+          <Pagination
+            page={taskQuery.data.page}
+            totalPages={taskQuery.data.totalPages}
+            total={taskQuery.data.total}
+            limit={taskQuery.data.limit}
+            onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+            onLimitChange={(limit) => setFilters((current) => ({ ...current, page: 1, limit }))}
+            showJumpToPage={taskQuery.data.totalPages > 1}
+          />
         </div>
       ) : null}
 
@@ -250,9 +423,66 @@ export function TaskWorkspace() {
             transition,
           });
         }}
+        onNavigateStage={(direction) => {
+          if (!selectedStage || selectedStageIndex < 0) return;
+          const nextIndex = direction === 'previous'
+            ? selectedStageIndex - 1
+            : selectedStageIndex + 1;
+          const nextStage = selectedStage.task.stages[nextIndex];
+          if (!nextStage) return;
+          updateStage.reset();
+          transitionStage.reset();
+          setSelectedStage({ task: selectedStage.task, stage: nextStage });
+        }}
+        hasPreviousStage={selectedStageIndex > 0}
+        hasNextStage={Boolean(
+          selectedStage
+          && selectedStageIndex >= 0
+          && selectedStageIndex < selectedStage.task.stages.length - 1
+        )}
+        onStartBizFileReview={async (file) => {
+          if (!selectedStage || !stageQuery.data) return;
+          if (session?.isSuperAdmin && !activeTenantId) {
+            throw new Error('Select a workspace before uploading a BizFile.');
+          }
+
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('documentType', 'BIZFILE');
+          if (session?.isSuperAdmin && activeTenantId) {
+            formData.append('tenantId', activeTenantId);
+          }
+
+          const response = await postFormDataWithFallback('/api/documents/upload', formData);
+          if (!response.ok) {
+            let message = 'Failed to upload the BizFile.';
+            try {
+              const body = await response.json();
+              if (typeof body?.error === 'string') message = body.error;
+            } catch {
+              message = `Failed to upload the BizFile (HTTP ${response.status}).`;
+            }
+            throw new Error(message);
+          }
+
+          const body = await response.json();
+          if (typeof body?.documentId !== 'string') {
+            throw new Error('The BizFile upload did not return a document ID.');
+          }
+
+          const reviewHref = withTaskLaunchContext(
+            `/companies/upload?documentId=${encodeURIComponent(body.documentId)}&fileName=${encodeURIComponent(file.name)}`,
+            {
+              ...stageQuery.data.launch.context,
+              returnTo: stageQuery.data.launch.context.returnTo ?? '/tasks',
+            },
+          );
+          router.push(reviewHref);
+        }}
         isMutating={updateStage.isPending || transitionStage.isPending}
         companies={companies}
         taskCompanyId={selectedStage?.task.company?.id ?? null}
+        taskDueDate={selectedStage?.task.dueDate ?? null}
       />
 
       <ConfirmDialog

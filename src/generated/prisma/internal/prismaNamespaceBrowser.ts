@@ -139,6 +139,7 @@ export const ModelName = {
   TaskStage: 'TaskStage',
   TaskStageChecklistItem: 'TaskStageChecklistItem',
   TaskStageOutcome: 'TaskStageOutcome',
+  TaskEsigningPreparation: 'TaskEsigningPreparation',
   TaskCompanyRecoveryContext: 'TaskCompanyRecoveryContext'
 } as const
 
@@ -853,7 +854,8 @@ export const EsigningEnvelopeDocumentScalarFieldEnum = {
   sortOrder: 'sortOrder',
   fileSize: 'fileSize',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  generatedDocumentId: 'generatedDocumentId'
 } as const
 
 export type EsigningEnvelopeDocumentScalarFieldEnum = (typeof EsigningEnvelopeDocumentScalarFieldEnum)[keyof typeof EsigningEnvelopeDocumentScalarFieldEnum]
@@ -1882,6 +1884,29 @@ export const TaskStageOutcomeScalarFieldEnum = {
 } as const
 
 export type TaskStageOutcomeScalarFieldEnum = (typeof TaskStageOutcomeScalarFieldEnum)[keyof typeof TaskStageOutcomeScalarFieldEnum]
+
+
+export const TaskEsigningPreparationScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  taskId: 'taskId',
+  taskStageId: 'taskStageId',
+  sourceTaskStageId: 'sourceTaskStageId',
+  generatedDocumentId: 'generatedDocumentId',
+  esigningEnvelopeId: 'esigningEnvelopeId',
+  envelopeDocumentId: 'envelopeDocumentId',
+  initiatedById: 'initiatedById',
+  status: 'status',
+  attemptCount: 'attemptCount',
+  availableAt: 'availableAt',
+  claimedAt: 'claimedAt',
+  leaseExpiresAt: 'leaseExpiresAt',
+  lastError: 'lastError',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TaskEsigningPreparationScalarFieldEnum = (typeof TaskEsigningPreparationScalarFieldEnum)[keyof typeof TaskEsigningPreparationScalarFieldEnum]
 
 
 export const TaskCompanyRecoveryContextScalarFieldEnum = {

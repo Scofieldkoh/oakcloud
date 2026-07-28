@@ -116,9 +116,23 @@ const documentAdapter: StageActionAdapter = {
   parseConfig: (value) => parseWith(documentConfigSchema, value),
   blockers: noBlockers,
   launch: (context) => {
+    const generatedDocumentId = (
+      context.stage.outcome?.type === TaskStageOutcomeType.GENERATED_DOCUMENT
+        ? context.stage.outcome.generatedDocumentId
+        : null
+    );
+    if (generatedDocumentId && context.stage.status === TaskStageStatus.COMPLETED) {
+      return launch(`/generated-documents/${generatedDocumentId}`, context);
+    }
+    if (generatedDocumentId && context.stage.status === TaskStageStatus.IN_PROGRESS) {
+      return launch(configQuery('/generated-documents/generate', {
+        draft: generatedDocumentId,
+      }), context);
+    }
     const config = documentConfigSchema.parse(context.stage.actionConfig ?? {});
     return launch(configQuery('/generated-documents/generate', {
       templateId: config.templateId,
+      companyId: context.stage.task?.companyId ?? undefined,
     }), context);
   },
   outcomeSummary: (outcome) => (
@@ -142,6 +156,15 @@ const esigningAdapter: StageActionAdapter = {
   parseConfig: (value) => parseWith(esigningConfigSchema, value),
   blockers: noBlockers,
   launch: (context) => {
+    if (
+      context.stage.outcome?.type === TaskStageOutcomeType.ESIGNING_ENVELOPE
+      && context.stage.outcome.esigningEnvelopeId
+    ) {
+      return launch(
+        `/esigning/${context.stage.outcome.esigningEnvelopeId}`,
+        context,
+      );
+    }
     const config = esigningConfigSchema.parse(context.stage.actionConfig ?? {});
     return launch(configQuery('/esigning', {
       signingOrder: config.signingOrder,

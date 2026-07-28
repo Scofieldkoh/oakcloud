@@ -17,11 +17,15 @@ export async function GET(request: NextRequest) {
     const searchParams = new URL(request.url).searchParams;
     const parsed = taskListQuerySchema.parse({
       query: searchParams.get('q') || undefined,
+      title: searchParams.get('title') || undefined,
+      ownerQuery: searchParams.get('ownerQuery') || undefined,
       pipelineId: searchParams.get('pipeline') || undefined,
       companyId: searchParams.get('company') || undefined,
       ownerId: searchParams.get('owner') || undefined,
       status: searchParams.get('status') || undefined,
       dueBucket: searchParams.get('dueBucket') || undefined,
+      dueDateFrom: searchParams.get('dueDateFrom') || undefined,
+      dueDateTo: searchParams.get('dueDateTo') || undefined,
       page: searchParams.get('page') || undefined,
       limit: searchParams.get('limit') || undefined,
       sortBy: searchParams.get('sortBy') || undefined,

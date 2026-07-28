@@ -7,6 +7,7 @@ import type {
   TaskCreatePayload,
   TaskListItem,
   TaskListResponse,
+  TaskEsigningPreparationSnapshot,
   TaskStageDetail,
   TaskStageOutcomePayload,
   TaskUpdatePayload,
@@ -18,6 +19,8 @@ export type {
   TaskCreatePayload,
   TaskListItem,
   TaskListResponse,
+  TaskEsigningPreparationSnapshot,
+  TaskEsigningPreparationStatus,
   TaskStageActionType,
   TaskStageDetail,
   TaskStageOutcomePayload,
@@ -39,11 +42,15 @@ export type TaskSortField =
 
 export interface TaskListParams {
   query?: string;
+  title?: string;
+  ownerQuery?: string;
   pipelineId?: string;
   companyId?: string;
   ownerId?: string;
   status?: 'NOT_STARTED' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
   dueBucket?: TaskDueBucket;
+  dueDateFrom?: string;
+  dueDateTo?: string;
   page?: number;
   limit?: number;
   sortBy?: TaskSortField;
@@ -73,6 +80,9 @@ export const taskKeys = {
   stage: (taskId: string, stageId: string) => (
     [...taskKeys.stages(taskId), stageId] as const
   ),
+  esigningPreparation: (taskId: string, stageId: string) => (
+    [...taskKeys.stage(taskId, stageId), 'esigning-preparation'] as const
+  ),
 };
 
 async function apiRequest<T>(url: string, init?: RequestInit): Promise<T> {
@@ -92,15 +102,19 @@ function jsonInit(method: string, body: unknown): RequestInit {
   };
 }
 
-function taskListUrl(params: TaskListParams) {
+export function taskListUrl(params: TaskListParams) {
   const search = new URLSearchParams();
   const ordered: Array<[string, unknown]> = [
     ['q', params.query],
+    ['title', params.title],
+    ['ownerQuery', params.ownerQuery],
     ['pipeline', params.pipelineId],
     ['company', params.companyId],
     ['owner', params.ownerId],
     ['status', params.status],
     ['dueBucket', params.dueBucket],
+    ['dueDateFrom', params.dueDateFrom],
+    ['dueDateTo', params.dueDateTo],
     ['page', params.page],
     ['limit', params.limit],
     ['sortBy', params.sortBy],
@@ -250,6 +264,56 @@ export function useTaskStageTransition() {
           queryKey: taskKeys.lists(),
         }),
       ]);
+    },
+  });
+}
+
+export function useTaskEsigningPreparation(taskId: string, stageId: string) {
+  return useQuery({
+    queryKey: taskKeys.esigningPreparation(taskId, stageId),
+    queryFn: () => apiRequest<TaskEsigningPreparationSnapshot | null>(
+      `/api/tasks/${taskId}/stages/${stageId}/esigning-preparation`,
+    ),
+    enabled: Boolean(taskId && stageId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === 'QUEUED' || status === 'PROCESSING' ? 1_000 : false;
+    },
+  });
+}
+
+export function useEnsureTaskEsigningPreparation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, stageId }: { taskId: string; stageId: string }) => (
+      apiRequest<TaskEsigningPreparationSnapshot>(
+        `/api/tasks/${taskId}/stages/${stageId}/esigning-preparation`,
+        jsonInit('POST', {}),
+      )
+    ),
+    onSuccess: (preparation, { taskId, stageId }) => {
+      queryClient.setQueryData(
+        taskKeys.esigningPreparation(taskId, stageId),
+        preparation,
+      );
+    },
+  });
+}
+
+export function useRetryTaskEsigningPreparation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, stageId }: { taskId: string; stageId: string }) => (
+      apiRequest<TaskEsigningPreparationSnapshot>(
+        `/api/tasks/${taskId}/stages/${stageId}/esigning-preparation/retry`,
+        jsonInit('POST', {}),
+      )
+    ),
+    onSuccess: (preparation, { taskId, stageId }) => {
+      queryClient.setQueryData(
+        taskKeys.esigningPreparation(taskId, stageId),
+        preparation,
+      );
     },
   });
 }

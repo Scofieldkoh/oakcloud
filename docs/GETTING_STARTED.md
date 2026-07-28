@@ -102,6 +102,9 @@ npm run docker:down
 - `S3_ENDPOINT` should point at `http://localhost:9000` when you use the bundled MinIO container.
 - `MAX_FILE_SIZE` applies to document uploads and public form uploads.
 - Email configuration is optional in development, but required for password reset emails, form draft emails, and public form PDF email delivery.
+- Background E-signing preparation requires `SCHEDULER_ENABLED=true` and `SCHEDULER_ESIGNING_PREPARATION_ENABLED=true` for lease recovery and durable fallback processing. Immediate lifecycle triggers still reduce normal wait time.
+- `SCHEDULER_ESIGNING_PREPARATION_CRON` overrides the default one-minute schedule.
+- `ESIGNING_PREPARATION_BATCH_SIZE` (default `10`, maximum `100`) and `ESIGNING_PREPARATION_CONCURRENCY` (default `2`, maximum `20`) bound each worker run. `ESIGNING_PREPARATION_LEASE_MS` controls abandoned-claim recovery (default `300000`, maximum `3600000`).
 
 ## Database Commands
 

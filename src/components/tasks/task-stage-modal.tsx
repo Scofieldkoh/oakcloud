@@ -1,15 +1,31 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, ArrowUpRight, CheckCircle2, Circle, Clock3, Link2, UserRound } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ArrowUpRight,
+  Building2,
+  CheckCircle2,
+  Circle,
+  FileUp,
+  Link2,
+  X,
+} from 'lucide-react';
+import { useDropzone } from 'react-dropzone';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
 import { cn } from '@/lib/utils';
 import { withTaskLaunchContext } from '@/lib/task-launch-context';
 import type { TaskStageTransition } from '@/hooks/use-tasks';
 import type { TaskStageDetail } from '@/services/tasks/types';
-import { formatTaskStageStatus } from './task-stage-pipeline';
+import {
+  PipelineStageLinkedOutcome,
+  PipelineStageMetadata,
+  PipelineStageModalFooter,
+  PipelineStageModalFrame,
+  PipelineStageNotes,
+  type StageNotesSaveStatus,
+} from './task-stage-modal-layout';
 
 interface TaskStageModalProps {
   isOpen: boolean;
@@ -19,21 +35,14 @@ interface TaskStageModalProps {
   onClose: () => void;
   onUpdateMetadata: (payload: { notes?: string | null; assigneeId?: string | null }) => void | Promise<void>;
   onTransition: (transition: TaskStageTransition) => void | Promise<void>;
+  onStartBizFileReview?: (file: File) => void | Promise<void>;
   isMutating?: boolean;
-  companies?: Array<{ id: string; name: string }>;
+  companies?: Array<{ id: string; name: string; uen?: string | null }>;
   taskCompanyId?: string | null;
-}
-
-function dateTimeLabel(value: string | null) {
-  if (!value) return 'Not recorded';
-  return new Intl.DateTimeFormat('en-SG', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(new Date(value));
+  taskDueDate?: string | null;
+  onNavigateStage?: (direction: 'previous' | 'next') => void;
+  hasPreviousStage?: boolean;
+  hasNextStage?: boolean;
 }
 
 function launchHref(stage: TaskStageDetail) {
@@ -65,27 +74,113 @@ export function TaskStageModal({
   onClose,
   onUpdateMetadata,
   onTransition,
+  onStartBizFileReview,
   isMutating = false,
   companies = [],
   taskCompanyId,
+  taskDueDate,
+  onNavigateStage,
+  hasPreviousStage = false,
+  hasNextStage = false,
 }: TaskStageModalProps) {
   const [notes, setNotes] = useState('');
+  const [notesSaveStatus, setNotesSaveStatus] = useState<StageNotesSaveStatus>('idle');
+  const onUpdateMetadataRef = useRef(onUpdateMetadata);
   const [showSkip, setShowSkip] = useState(false);
   const [skipReason, setSkipReason] = useState('');
   const [skipError, setSkipError] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
+  const [bizFile, setBizFile] = useState<File | null>(null);
+  const [bizFileError, setBizFileError] = useState('');
+  const [isUploadingBizFile, setIsUploadingBizFile] = useState(false);
+  const persistedStageId = stage?.id;
+  const persistedStageNotes = stage?.notes ?? '';
+  const isLinkedCompanySelected = Boolean(
+    taskCompanyId
+    && selectedCompanyId
+    && selectedCompanyId === taskCompanyId,
+  );
+  const isReplacementCompanySelected = Boolean(
+    taskCompanyId
+    && selectedCompanyId
+    && selectedCompanyId !== taskCompanyId,
+  );
+  const companySelectionState = isLinkedCompanySelected
+    ? 'unchanged'
+    : isReplacementCompanySelected
+      ? 'replacement'
+      : selectedCompanyId
+        ? 'new'
+        : 'empty';
+
+  useEffect(() => {
+    onUpdateMetadataRef.current = onUpdateMetadata;
+  }, [onUpdateMetadata]);
 
   useEffect(() => {
     setNotes(stage?.notes ?? '');
+    setNotesSaveStatus('idle');
     setShowSkip(false);
     setSkipReason('');
     setSkipError('');
     setSelectedCompanyId(taskCompanyId ?? '');
+    setBizFile(null);
+    setBizFileError('');
+    setIsUploadingBizFile(false);
   }, [stage?.id, stage?.isRequired, stage?.notes, taskCompanyId]);
+
+  useEffect(() => {
+    if (!persistedStageId || notes === persistedStageNotes) return;
+    let isCurrent = true;
+    const timeoutId = window.setTimeout(() => {
+      setNotesSaveStatus('saving');
+      void Promise.resolve(onUpdateMetadataRef.current({ notes: notes.trim() || null }))
+        .then(() => {
+          if (isCurrent) setNotesSaveStatus('saved');
+        })
+        .catch(() => {
+          if (isCurrent) setNotesSaveStatus('error');
+        });
+    }, 600);
+
+    return () => {
+      isCurrent = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [notes, persistedStageId, persistedStageNotes]);
 
   const resolvedLaunchHref = useMemo(() => stage ? launchHref(stage) : null, [stage]);
   const canCreateCompany = stage?.actionType === 'COMPANY_PROFILE'
-    && resolvedLaunchHref?.startsWith('/companies/new');
+    && Boolean(resolvedLaunchHref);
+  const createCompanyHref = useMemo(() => {
+    if (!stage || !canCreateCompany) return null;
+    return withTaskLaunchContext('/companies/new', {
+      ...stage.launch.context,
+      returnTo: stage.launch.context.returnTo ?? '/tasks',
+    });
+  }, [canCreateCompany, stage]);
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: (acceptedFiles) => {
+      setBizFile(acceptedFiles[0] ?? null);
+      setBizFileError('');
+    },
+    onDropRejected: (rejections) => {
+      setBizFile(null);
+      const code = rejections[0]?.errors[0]?.code;
+      setBizFileError(code === 'file-too-large'
+        ? 'The BizFile must be 10MB or smaller.'
+        : 'Choose a PDF, PNG, JPG, or WebP file.');
+    },
+    accept: {
+      'application/pdf': ['.pdf'],
+      'image/png': ['.png'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/webp': ['.webp'],
+    },
+    maxSize: 10 * 1024 * 1024,
+    multiple: false,
+    disabled: isMutating || isUploadingBizFile,
+  });
 
   if (!isOpen) return null;
 
@@ -130,6 +225,17 @@ export function TaskStageModal({
       );
     }
     if (stage.actionType === 'COMPANY_PROFILE' && selectedCompanyId) {
+      if (isLinkedCompanySelected) {
+        return (
+          <Button
+            data-testid="stage-primary-action"
+            disabled
+            leftIcon={<Link2 />}
+          >
+            Company already linked
+          </Button>
+        );
+      }
       return (
         <Button
           data-testid="stage-primary-action"
@@ -140,11 +246,22 @@ export function TaskStageModal({
           isLoading={isMutating}
           leftIcon={<Link2 />}
         >
-          Link selected company
+          {taskCompanyId ? 'Replace linked company' : 'Link selected company'}
         </Button>
       );
     }
     if (stage.actionType === 'COMPANY_PROFILE' && !canCreateCompany) {
+      return (
+        <Button
+          data-testid="stage-primary-action"
+          disabled
+          leftIcon={<Link2 />}
+        >
+          Select an existing company
+        </Button>
+      );
+    }
+    if (stage.actionType === 'COMPANY_PROFILE') {
       return (
         <Button
           data-testid="stage-primary-action"
@@ -179,74 +296,153 @@ export function TaskStageModal({
   };
 
   return (
-    <Modal
+    <PipelineStageModalFrame
       isOpen={isOpen}
+      stage={stage}
       onClose={onClose}
-      title={stage?.name ?? 'Stage details'}
-      description={stage ? formatTaskStageStatus(stage.status) : undefined}
-      size="xl"
-      className="max-h-[calc(100vh-2rem)] overflow-y-auto"
-      closeOnOverlayClick={!isMutating}
-      closeOnEscape={!isMutating}
+      isMutating={isMutating}
+      footer={stage ? (
+        <PipelineStageModalFooter
+          isRequired={stage.isRequired}
+          isMutating={isMutating}
+          hasPreviousStage={hasPreviousStage}
+          hasNextStage={hasNextStage}
+          onNavigateStage={onNavigateStage}
+          primaryAction={renderPrimaryAction()}
+        />
+      ) : undefined}
     >
-      <ModalBody className="space-y-5">
-        {isLoading ? <div role="status" className="py-8 text-center text-sm text-text-secondary">Loading stage…</div> : null}
-        {error ? <Alert variant="error">{error.message}</Alert> : null}
-        {stage ? (
-          <>
-            <section>
-              <h3 className="mb-2 text-sm font-semibold text-text-primary">Overview</h3>
-              <p className="text-sm text-text-secondary">{stage.description || 'No description provided.'}</p>
-              <div className="mt-3 grid grid-cols-1 gap-3 rounded-lg border border-border-primary bg-background-primary p-3 text-sm sm:grid-cols-2">
-                <div className="flex items-start gap-2">
-                  <UserRound className="mt-0.5 h-4 w-4 text-text-muted" aria-hidden="true" />
-                  <div><span className="block text-xs text-text-muted">Assignee</span><span className="text-text-primary">{stage.assignee ? `${stage.assignee.firstName} ${stage.assignee.lastName}`.trim() || stage.assignee.email : 'Unassigned'}</span></div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Clock3 className="mt-0.5 h-4 w-4 text-text-muted" aria-hidden="true" />
-                  <div><span className="block text-xs text-text-muted">Started</span><span className="text-text-primary">{dateTimeLabel(stage.startedAt)}</span></div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-text-muted" aria-hidden="true" />
-                  <div><span className="block text-xs text-text-muted">Completed</span><span className="text-text-primary">{dateTimeLabel(stage.completedAt)}</span></div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Link2 className="mt-0.5 h-4 w-4 text-text-muted" aria-hidden="true" />
-                  <div><span className="block text-xs text-text-muted">Outcome</span><span className="text-text-primary">{stage.outcomeSummary || 'No linked outcome yet.'}</span></div>
-                </div>
-              </div>
-            </section>
+      {isLoading ? <div role="status" className="py-8 text-center text-sm text-text-secondary">Loading stage…</div> : null}
+      {error ? <Alert variant="error">{error.message}</Alert> : null}
+      {stage ? (
+        <>
+          <PipelineStageLinkedOutcome stage={stage} />
+          <PipelineStageMetadata stage={stage} taskDueDate={taskDueDate} />
 
-            {stage.actionType === 'COMPANY_PROFILE' && stage.status !== 'SKIPPED' ? (
-              <section>
-                <label
-                  htmlFor="task-stage-company"
-                  className="mb-2 block text-sm font-semibold text-text-primary"
-                >
-                  Existing company
-                </label>
-                <select
-                  id="task-stage-company"
-                  value={selectedCompanyId}
-                  onChange={(event) => setSelectedCompanyId(event.target.value)}
-                  disabled={isMutating}
-                  className="input input-sm w-full"
-                >
-                  <option value="">
-                    {canCreateCompany
-                      ? 'Create a new company'
-                      : 'Select a company'}
-                  </option>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>{company.name}</option>
-                  ))}
-                </select>
-                <p className="mt-1 text-xs text-text-muted">
-                  {canCreateCompany
-                    ? 'Select an existing company to link it, or continue to create a new one.'
-                    : 'Select an existing company to link it to this task.'}
-                </p>
-              </section>
+          {stage.actionType === 'COMPANY_PROFILE' && stage.status !== 'SKIPPED' ? (
+              <>
+                {canCreateCompany ? (
+                  <div className="space-y-2">
+                    <div>
+                      <h4 className="text-base font-semibold text-text-primary">
+                        1. Create a new company profile
+                      </h4>
+                      <p className="mt-0.5 text-sm text-text-muted">BizFile or manual entry</p>
+                    </div>
+                    <div
+                      data-testid="company-profile-create-option"
+                    >
+                      <section
+                        data-testid="company-profile-create-panel"
+                        className="rounded-lg border border-border-primary bg-background-primary p-4"
+                      >
+                      <div className="flex items-start gap-2">
+                        <FileUp className="mt-0.5 h-4 w-4 text-oak-primary" aria-hidden="true" />
+                        <div>
+                          <h3 className="text-sm font-semibold text-text-primary">Upload BizFile</h3>
+                          <p className="mt-0.5 text-xs text-text-muted">Extract and review company details before creating the profile.</p>
+                        </div>
+                      </div>
+                      <div
+                        {...getRootProps()}
+                        data-testid="company-profile-dropzone"
+                        className={cn(
+                          'mt-3 flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-4 text-center transition-colors',
+                          isDragActive
+                            ? 'border-oak-primary bg-oak-primary/5'
+                            : 'border-border-secondary hover:border-oak-primary/60 hover:bg-background-elevated',
+                        )}
+                      >
+                        <input {...getInputProps({ 'aria-label': 'Upload BizFile file' })} />
+                        <FileUp className="h-6 w-6 text-text-muted" aria-hidden="true" />
+                        <p className="mt-1.5 text-sm font-medium text-text-primary">
+                          {isDragActive ? 'Drop the file here' : 'Drop a file or click to browse'}
+                        </p>
+                        <p className="mt-1 text-xs text-text-muted">PDF, PNG, JPG, or WebP · max 10MB</p>
+                      </div>
+                      {bizFile ? (
+                        <div className="mt-2 flex items-center gap-3 rounded-lg border border-border-primary bg-background-secondary px-3 py-2">
+                          <FileUp className="h-4 w-4 shrink-0 text-oak-primary" aria-hidden="true" />
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-primary">{bizFile.name}</span>
+                          <button
+                            type="button"
+                            aria-label={`Remove ${bizFile.name}`}
+                            onClick={() => setBizFile(null)}
+                            disabled={isUploadingBizFile}
+                            className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-background-elevated hover:text-text-primary"
+                          >
+                            <X className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        </div>
+                      ) : null}
+                      {bizFileError ? <Alert variant="error" className="mt-3">{bizFileError}</Alert> : null}
+                      <div
+                        data-testid="company-profile-action-row"
+                        className="mt-3 grid gap-2 sm:grid-cols-3"
+                      >
+                        <Button
+                          className="w-full disabled:text-white/90 disabled:opacity-70 sm:col-span-2"
+                          onClick={() => {
+                            if (!bizFile || !onStartBizFileReview) return;
+                            setBizFileError('');
+                            setIsUploadingBizFile(true);
+                            try {
+                              void Promise.resolve(onStartBizFileReview(bizFile))
+                                .catch((uploadError) => {
+                                  setBizFileError(uploadError instanceof Error ? uploadError.message : 'Failed to upload the BizFile.');
+                                })
+                                .finally(() => setIsUploadingBizFile(false));
+                            } catch (uploadError) {
+                              setBizFileError(uploadError instanceof Error ? uploadError.message : 'Failed to upload the BizFile.');
+                              setIsUploadingBizFile(false);
+                            }
+                          }}
+                          disabled={!bizFile || !onStartBizFileReview}
+                          isLoading={isUploadingBizFile}
+                          leftIcon={<FileUp />}
+                        >
+                          Upload and review BizFile
+                        </Button>
+                        <a
+                          href={createCompanyHref ?? undefined}
+                          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-border-primary bg-background-secondary px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-background-elevated focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 sm:col-span-1"
+                        >
+                          <Building2 className="h-4 w-4" aria-hidden="true" />
+                          Enter company manually
+                        </a>
+                      </div>
+                      </section>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="space-y-2">
+                  <h4 className="text-base font-semibold text-text-primary">
+                    2. Or link an existing company
+                  </h4>
+                  <div
+                    data-testid="company-profile-existing-option"
+                    data-selection-state={companySelectionState}
+                  >
+                    <CompanySearchableSelect
+                      companies={companies}
+                      value={selectedCompanyId}
+                      onChange={setSelectedCompanyId}
+                      label="Existing company"
+                      placeholder="Search by company name or UEN"
+                      disabled={isMutating}
+                      size="md"
+                      className={cn(
+                        isLinkedCompanySelected
+                          && '[&>div]:border-emerald-300 [&>div]:bg-emerald-50/60 dark:[&>div]:border-emerald-800 dark:[&>div]:bg-emerald-950/30',
+                        isReplacementCompanySelected
+                          && '[&>div]:border-amber-300 [&>div]:bg-amber-50/60 dark:[&>div]:border-amber-800 dark:[&>div]:bg-amber-950/30',
+                      )}
+                    />
+                    <p className="mt-1 text-xs text-text-muted">Search by company name or UEN</p>
+                  </div>
+                </div>
+              </>
             ) : null}
 
             {stage.checklistItems.length > 0 ? (
@@ -270,28 +466,11 @@ export function TaskStageModal({
               </section>
             ) : null}
 
-            <section>
-              <label htmlFor="task-stage-notes" className="mb-2 block text-sm font-semibold text-text-primary">Notes</label>
-              <textarea
-                id="task-stage-notes"
-                aria-label="Notes"
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                rows={3}
-                maxLength={5000}
-                className="input w-full resize-y px-3 py-2 text-sm"
-              />
-              <div className="mt-2 flex justify-end">
-                <Button
-                  variant="secondary"
-                  size="xs"
-                  onClick={() => runAction(() => onUpdateMetadata({ notes: notes.trim() || null }))}
-                  disabled={isMutating || notes === (stage.notes ?? '')}
-                >
-                  Save notes
-                </Button>
-              </div>
-            </section>
+            <PipelineStageNotes
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              saveStatus={notesSaveStatus}
+            />
 
             {stage.blockers.length > 0 ? (
               <Alert variant="warning" title="Action blocked">
@@ -343,18 +522,8 @@ export function TaskStageModal({
                 )}
               </section>
             ) : null}
-          </>
-        ) : null}
-      </ModalBody>
-      {stage ? (
-        <ModalFooter>
-          <span className="mr-auto flex items-center gap-1.5 text-xs text-text-muted">
-            {stage.isRequired ? <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" /> : null}
-            {stage.isRequired ? 'Required stage' : 'Optional stage'}
-          </span>
-          {renderPrimaryAction()}
-        </ModalFooter>
+        </>
       ) : null}
-    </Modal>
+    </PipelineStageModalFrame>
   );
 }

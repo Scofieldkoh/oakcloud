@@ -472,6 +472,7 @@ export const ModelName = {
   TaskStage: 'TaskStage',
   TaskStageChecklistItem: 'TaskStageChecklistItem',
   TaskStageOutcome: 'TaskStageOutcome',
+  TaskEsigningPreparation: 'TaskEsigningPreparation',
   TaskCompanyRecoveryContext: 'TaskCompanyRecoveryContext'
 } as const
 
@@ -488,7 +489,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskCompanyRecoveryContext"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -7004,6 +7005,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    TaskEsigningPreparation: {
+      payload: Prisma.$TaskEsigningPreparationPayload<ExtArgs>
+      fields: Prisma.TaskEsigningPreparationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TaskEsigningPreparationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskEsigningPreparationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TaskEsigningPreparationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskEsigningPreparationPayload>
+        }
+        findFirst: {
+          args: Prisma.TaskEsigningPreparationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskEsigningPreparationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TaskEsigningPreparationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskEsigningPreparationPayload>
+        }
+        findMany: {
+          args: Prisma.TaskEsigningPreparationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskEsigningPreparationPayload>[]
+        }
+        create: {
+          args: Prisma.TaskEsigningPreparationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskEsigningPreparationPayload>
+        }
+        createMany: {
+          args: Prisma.TaskEsigningPreparationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TaskEsigningPreparationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskEsigningPreparationPayload>[]
+        }
+        delete: {
+          args: Prisma.TaskEsigningPreparationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskEsigningPreparationPayload>
+        }
+        update: {
+          args: Prisma.TaskEsigningPreparationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskEsigningPreparationPayload>
+        }
+        deleteMany: {
+          args: Prisma.TaskEsigningPreparationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TaskEsigningPreparationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TaskEsigningPreparationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskEsigningPreparationPayload>[]
+        }
+        upsert: {
+          args: Prisma.TaskEsigningPreparationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TaskEsigningPreparationPayload>
+        }
+        aggregate: {
+          args: Prisma.TaskEsigningPreparationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTaskEsigningPreparation>
+        }
+        groupBy: {
+          args: Prisma.TaskEsigningPreparationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TaskEsigningPreparationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TaskEsigningPreparationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TaskEsigningPreparationCountAggregateOutputType> | number
+        }
+      }
+    }
     TaskCompanyRecoveryContext: {
       payload: Prisma.$TaskCompanyRecoveryContextPayload<ExtArgs>
       fields: Prisma.TaskCompanyRecoveryContextFieldRefs
@@ -7812,7 +7887,8 @@ export const EsigningEnvelopeDocumentScalarFieldEnum = {
   sortOrder: 'sortOrder',
   fileSize: 'fileSize',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  generatedDocumentId: 'generatedDocumentId'
 } as const
 
 export type EsigningEnvelopeDocumentScalarFieldEnum = (typeof EsigningEnvelopeDocumentScalarFieldEnum)[keyof typeof EsigningEnvelopeDocumentScalarFieldEnum]
@@ -8843,6 +8919,29 @@ export const TaskStageOutcomeScalarFieldEnum = {
 export type TaskStageOutcomeScalarFieldEnum = (typeof TaskStageOutcomeScalarFieldEnum)[keyof typeof TaskStageOutcomeScalarFieldEnum]
 
 
+export const TaskEsigningPreparationScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  taskId: 'taskId',
+  taskStageId: 'taskStageId',
+  sourceTaskStageId: 'sourceTaskStageId',
+  generatedDocumentId: 'generatedDocumentId',
+  esigningEnvelopeId: 'esigningEnvelopeId',
+  envelopeDocumentId: 'envelopeDocumentId',
+  initiatedById: 'initiatedById',
+  status: 'status',
+  attemptCount: 'attemptCount',
+  availableAt: 'availableAt',
+  claimedAt: 'claimedAt',
+  leaseExpiresAt: 'leaseExpiresAt',
+  lastError: 'lastError',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TaskEsigningPreparationScalarFieldEnum = (typeof TaskEsigningPreparationScalarFieldEnum)[keyof typeof TaskEsigningPreparationScalarFieldEnum]
+
+
 export const TaskCompanyRecoveryContextScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -8915,14 +9014,14 @@ export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
  * Reference to a field of type 'String'
  */
 export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String'>
-    
+
 
 
 /**
  * Reference to a field of type 'String[]'
  */
 export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
-    
+
 
 
 /**
@@ -9995,6 +10094,20 @@ export type EnumTaskStageOutcomeTypeFieldRefInput<$PrismaModel> = FieldRefInputT
 export type ListEnumTaskStageOutcomeTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskStageOutcomeType[]'>
     
 
+
+/**
+ * Reference to a field of type 'TaskEsigningPreparationStatus'
+ */
+export type EnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskEsigningPreparationStatus'>
+
+
+
+/**
+ * Reference to a field of type 'TaskEsigningPreparationStatus[]'
+ */
+export type ListEnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskEsigningPreparationStatus[]'>
+
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -10178,6 +10291,7 @@ export type GlobalOmitConfig = {
   taskStage?: Prisma.TaskStageOmit
   taskStageChecklistItem?: Prisma.TaskStageChecklistItemOmit
   taskStageOutcome?: Prisma.TaskStageOutcomeOmit
+  taskEsigningPreparation?: Prisma.TaskEsigningPreparationOmit
   taskCompanyRecoveryContext?: Prisma.TaskCompanyRecoveryContextOmit
 }
 
@@ -10241,4 +10355,3 @@ export type PrismaAction =
  * `PrismaClient` proxy available in interactive transactions.
  */
 export type TransactionClient = Omit<DefaultPrismaClient, runtime.ITXClientDenyList>
-

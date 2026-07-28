@@ -2,8 +2,65 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
+import { buildContentDispositionHeader } from '@/lib/api-helpers';
 
 const CANCELLABLE_STATUSES = ['PENDING', 'PROCESSING', 'EXTRACTED', 'FAILED'];
+
+/**
+ * GET /api/documents/:documentId
+ *
+ * Streams a pending document back to its uploader so an upload started from
+ * another screen can continue in the BizFile review workspace.
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ documentId: string }> },
+) {
+  try {
+    const session = await requireAuth();
+    const { documentId } = await params;
+    const document = await prisma.document.findUnique({ where: { id: documentId } });
+
+    if (!document || !document.storageKey) {
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+    if (!session.isSuperAdmin && document.tenantId !== session.tenantId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    if (
+      document.uploadedById !== session.id
+      && !session.isSuperAdmin
+      && !session.isWorkspaceAdmin
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    if (!CANCELLABLE_STATUSES.includes(document.extractionStatus || '')) {
+      return NextResponse.json(
+        { error: 'Document is no longer available for review' },
+        { status: 409 },
+      );
+    }
+
+    const file = await storage.download(document.storageKey);
+    return new NextResponse(new Uint8Array(file), {
+      headers: {
+        'Content-Type': document.mimeType || 'application/octet-stream',
+        'Content-Length': String(file.length),
+        'Content-Disposition': buildContentDispositionHeader(
+          'inline',
+          document.originalFileName || document.fileName,
+        ),
+        'Cache-Control': 'private, no-store',
+      },
+    });
+  } catch (error) {
+    console.error('Document read error:', error);
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
 
 /**
  * DELETE /api/documents/:documentId

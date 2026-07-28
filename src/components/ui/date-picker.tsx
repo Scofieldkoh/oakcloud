@@ -551,6 +551,7 @@ export function DatePicker({
         {displayValue && !disabled && (
           <button
             type="button"
+            aria-label="Clear selection"
             onClick={(e) => {
               e.stopPropagation();
               onChange(undefined);

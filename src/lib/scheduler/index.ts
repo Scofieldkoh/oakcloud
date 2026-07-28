@@ -58,6 +58,7 @@ import {
   cleanupTask,
   esigningExpiryCheckTask,
   esigningPdfGenerationTask,
+  esigningPreparationTask,
   esigningRemindersTask,
   exchangeRateSyncTask,
   formAiReviewTask,
@@ -78,6 +79,7 @@ export async function initializeScheduler(): Promise<void> {
   scheduler.registerTask(cleanupTask);
   scheduler.registerTask(esigningExpiryCheckTask);
   scheduler.registerTask(esigningPdfGenerationTask);
+  scheduler.registerTask(esigningPreparationTask);
   scheduler.registerTask(esigningRemindersTask);
   scheduler.registerTask(exchangeRateSyncTask);
   scheduler.registerTask(formAiReviewTask);

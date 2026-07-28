@@ -6,6 +6,7 @@ import {
 } from '@/generated/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
+import { createLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import {
   archiveTaskSchema,
@@ -16,8 +17,29 @@ import {
 } from '@/lib/validations/task';
 import { deriveTaskStatus } from './status';
 import { lockTaskForUpdate } from './locking';
-import { getTaskStageDetail } from './stage.service';
+import { queueTaskEsigningPreparationsForTask } from './esigning-preparation.service';
+import {
+  getTaskStageDetail,
+  synchronizeCompanyProfileStages,
+} from './stage.service';
 import type { ChecklistDefinition, TaskListItem } from './types';
+
+const log = createLogger('tasks:task');
+
+async function safelyQueueTaskEsigningPreparation(
+  tenantId: string,
+  taskId: string,
+  userId?: string,
+) {
+  try {
+    await queueTaskEsigningPreparationsForTask(tenantId, taskId, userId);
+  } catch (error) {
+    log.warn('Failed to queue E-signing preparation after task metadata change', {
+      taskId,
+      error,
+    });
+  }
+}
 
 const taskPublicSelect = {
   id: true,
@@ -118,11 +140,15 @@ export type TaskSortField =
 
 export interface SearchTasksOptions {
   query?: string;
+  title?: string;
+  ownerQuery?: string;
   pipelineId?: string;
   companyId?: string;
   ownerId?: string;
   status?: TaskStatusValue;
   dueBucket?: TaskDueBucket;
+  dueDateFrom?: string;
+  dueDateTo?: string;
   page?: number;
   limit?: number;
   sortBy?: TaskSortField;
@@ -181,6 +207,22 @@ function dueDateFilter(bucket: TaskDueBucket, now = new Date()): Prisma.DateTime
   return { gte: addUtcDays(today, 8), lt: addUtcDays(today, 15) };
 }
 
+function dueDateRangeFilter(
+  dueDateFrom?: string,
+  dueDateTo?: string,
+): Prisma.DateTimeNullableFilter | undefined {
+  if (!dueDateFrom && !dueDateTo) return undefined;
+
+  return {
+    ...(dueDateFrom
+      ? { gte: new Date(`${dueDateFrom}T00:00:00.000Z`) }
+      : {}),
+    ...(dueDateTo
+      ? { lt: addUtcDays(new Date(`${dueDateTo}T00:00:00.000Z`), 1) }
+      : {}),
+  };
+}
+
 function taskOrderBy(
   sortBy: TaskSortField,
   sortOrder: Prisma.SortOrder,
@@ -209,48 +251,74 @@ function taskOrderBy(
   }
 }
 
+export function buildTaskWhere(
+  tenantId: string,
+  options: SearchTasksOptions = {},
+): Prisma.TaskWhereInput {
+  const query = options.query?.trim();
+  const title = options.title?.trim();
+  const ownerQuery = options.ownerQuery?.trim();
+  const dueRange = dueDateRangeFilter(options.dueDateFrom, options.dueDateTo);
+  const additionalFilters: Prisma.TaskWhereInput[] = [];
+
+  if (options.accessibleCompanyIds) {
+    additionalFilters.push({
+      companyId: { in: options.accessibleCompanyIds },
+    });
+  }
+  if (ownerQuery) {
+    additionalFilters.push({
+      OR: [
+        { owner: { firstName: { contains: ownerQuery, mode: 'insensitive' } } },
+        { owner: { lastName: { contains: ownerQuery, mode: 'insensitive' } } },
+        { owner: { email: { contains: ownerQuery, mode: 'insensitive' } } },
+      ],
+    });
+  }
+  if (query) {
+    additionalFilters.push({
+      OR: [
+        { title: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+        { company: { name: { contains: query, mode: 'insensitive' } } },
+        {
+          pipelineVersion: {
+            pipeline: { name: { contains: query, mode: 'insensitive' } },
+          },
+        },
+        { owner: { firstName: { contains: query, mode: 'insensitive' } } },
+        { owner: { lastName: { contains: query, mode: 'insensitive' } } },
+        { owner: { email: { contains: query, mode: 'insensitive' } } },
+      ],
+    });
+  }
+
+  return {
+    tenantId,
+    deletedAt: null,
+    ...(title ? { title: { contains: title, mode: 'insensitive' } } : {}),
+    ...(options.status ? { status: options.status } : {}),
+    ...(options.companyId ? { companyId: options.companyId } : {}),
+    ...(options.ownerId ? { ownerId: options.ownerId } : {}),
+    ...(options.pipelineId
+      ? { pipelineVersion: { pipelineId: options.pipelineId } }
+      : {}),
+    ...(options.dueBucket
+      ? { dueDate: dueDateFilter(options.dueBucket) }
+      : dueRange
+        ? { dueDate: dueRange }
+        : {}),
+    ...(additionalFilters.length > 0 ? { AND: additionalFilters } : {}),
+  };
+}
+
 export async function searchTasks(
   tenantId: string,
   options: SearchTasksOptions = {},
 ) {
   const page = options.page ?? 1;
   const limit = options.limit ?? 20;
-  const query = options.query?.trim();
-  const where: Prisma.TaskWhereInput = {
-    tenantId,
-    deletedAt: null,
-    ...(options.status ? { status: options.status } : {}),
-    ...(options.companyId ? { companyId: options.companyId } : {}),
-    ...(options.ownerId ? { ownerId: options.ownerId } : {}),
-    ...(options.accessibleCompanyIds
-      ? {
-        AND: [{
-          companyId: { in: options.accessibleCompanyIds },
-        }],
-      }
-      : {}),
-    ...(options.pipelineId
-      ? { pipelineVersion: { pipelineId: options.pipelineId } }
-      : {}),
-    ...(options.dueBucket ? { dueDate: dueDateFilter(options.dueBucket) } : {}),
-    ...(query
-      ? {
-        OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { description: { contains: query, mode: 'insensitive' } },
-          { company: { name: { contains: query, mode: 'insensitive' } } },
-          {
-            pipelineVersion: {
-              pipeline: { name: { contains: query, mode: 'insensitive' } },
-            },
-          },
-          { owner: { firstName: { contains: query, mode: 'insensitive' } } },
-          { owner: { lastName: { contains: query, mode: 'insensitive' } } },
-          { owner: { email: { contains: query, mode: 'insensitive' } } },
-        ],
-      }
-      : {}),
-  };
+  const where = buildTaskWhere(tenantId, options);
 
   const [tasks, total] = await prisma.$transaction([
     prisma.task.findMany({
@@ -407,6 +475,16 @@ export async function createTask(
       }
     }
 
+    if (parsed.companyId) {
+      await synchronizeCompanyProfileStages(tx, {
+        tenantId,
+        taskId: task.id,
+        companyId: parsed.companyId,
+        currentTaskStatus: TaskStatus.NOT_STARTED,
+        userId,
+      });
+    }
+
     const lockedTask = await tx.task.update({
       where: { id: task.id },
       data: { snapshotLockedAt: new Date() },
@@ -452,9 +530,19 @@ export async function updateTaskMetadata(
   userId?: string,
 ) {
   const parsed = updateTaskMetadataSchema.parse(input);
-  return prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
+    const lockedTask = await lockTaskForUpdate(tx, tenantId, taskId);
     const existing = await requireTask(tx, tenantId, taskId);
     await validateTaskRelations(tx, tenantId, parsed.companyId, parsed.ownerId);
+    if (parsed.companyId !== undefined) {
+      await synchronizeCompanyProfileStages(tx, {
+        tenantId,
+        taskId: existing.id,
+        companyId: parsed.companyId ?? null,
+        currentTaskStatus: lockedTask.status,
+        userId,
+      });
+    }
     const updated = await tx.task.update({
       where: { id: existing.id },
       data: parsed,
@@ -472,6 +560,8 @@ export async function updateTaskMetadata(
     }, tx);
     return toPublicTaskDto(updated);
   });
+  await safelyQueueTaskEsigningPreparation(tenantId, taskId, userId);
+  return updated;
 }
 
 export async function archiveTask(

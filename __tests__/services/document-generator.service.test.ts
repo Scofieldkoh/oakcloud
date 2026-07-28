@@ -50,12 +50,22 @@ vi.mock('@/lib/encryption', () => ({
   verifyPassword: vi.fn(),
 }));
 
+vi.mock('@/services/tasks/integration.service', () => ({
+  safelyReconcileGeneratedDocumentTaskOutcomes: vi.fn(),
+}));
+
+vi.mock('@/services/tasks/esigning-preparation.service', () => ({
+  assertGeneratedDocumentCanBeUnfinalized: vi.fn(),
+  queueTaskEsigningPreparationsForGeneratedDocument: vi.fn(),
+}));
+
 import { prisma } from '@/lib/prisma';
 import {
   createDocumentFromTemplate,
   finalizeDocument,
   renderTemplateForGeneration,
   searchGeneratedDocuments,
+  unfinalizeDocument,
 } from '@/services/document-generator.service';
 import { extractPartialReferences, resolvePlaceholders } from '@/lib/placeholder-resolver';
 import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
@@ -66,6 +76,10 @@ import {
   getDocumentPartyOptions,
   resolveDocumentPartySelections,
 } from '@/services/document-party.service';
+import {
+  assertGeneratedDocumentCanBeUnfinalized,
+  queueTaskEsigningPreparationsForGeneratedDocument,
+} from '@/services/tasks/esigning-preparation.service';
 
 describe('Document generator service', () => {
   beforeEach(() => {
@@ -391,6 +405,68 @@ describe('Document generator service', () => {
     ).rejects.toThrow('Cannot finalize document with unresolved placeholders or partials');
 
     expect(prisma.generatedDocument.update).not.toHaveBeenCalled();
+  });
+
+  it('queues background E-signing preparation after finalization', async () => {
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
+      id: 'doc-1',
+      tenantId: 'workspace-1',
+      title: 'Final contract',
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: null,
+    } as never);
+    vi.mocked(prisma.generatedDocument.update).mockResolvedValue({
+      id: 'doc-1',
+      title: 'Final contract',
+      companyId: null,
+      status: 'FINALIZED',
+    } as never);
+
+    await finalizeDocument('doc-1', {
+      tenantId: 'workspace-1',
+      userId: 'user-1',
+    });
+
+    expect(queueTaskEsigningPreparationsForGeneratedDocument)
+      .toHaveBeenCalledWith('workspace-1', 'doc-1', 'user-1');
+  });
+
+  it('blocks unfinalization for a non-draft prepared envelope and queues detach otherwise', async () => {
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
+      id: 'doc-1',
+      tenantId: 'workspace-1',
+      title: 'Final contract',
+      status: 'FINALIZED',
+      deletedAt: null,
+      metadata: null,
+    } as never);
+    vi.mocked(prisma.generatedDocument.update).mockResolvedValue({
+      id: 'doc-1',
+      title: 'Final contract',
+      companyId: null,
+      status: 'DRAFT',
+    } as never);
+    vi.mocked(assertGeneratedDocumentCanBeUnfinalized)
+      .mockRejectedValueOnce(new Error(
+        'Void the active E-signing envelope before unfinalizing this document',
+      ));
+
+    await expect(unfinalizeDocument(
+      'doc-1',
+      { tenantId: 'workspace-1', userId: 'user-1' },
+      'Needs changes',
+    )).rejects.toThrow('Void the active E-signing envelope');
+    expect(prisma.generatedDocument.update).not.toHaveBeenCalled();
+
+    vi.mocked(assertGeneratedDocumentCanBeUnfinalized).mockResolvedValue(undefined);
+    await unfinalizeDocument(
+      'doc-1',
+      { tenantId: 'workspace-1', userId: 'user-1' },
+      'Needs changes',
+    );
+    expect(queueTaskEsigningPreparationsForGeneratedDocument)
+      .toHaveBeenCalledWith('workspace-1', 'doc-1', 'user-1');
   });
 
   it('renders templates through one shared path with contacts, sections, and unresolved data', async () => {

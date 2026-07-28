@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -59,6 +59,11 @@ import {
   readTaskLaunchContext,
   withTaskLaunchContext,
 } from '@/lib/task-launch-context';
+import {
+  useEnsureTaskEsigningPreparation,
+  useRetryTaskEsigningPreparation,
+  useTaskEsigningPreparation,
+} from '@/hooks/use-tasks';
 
 type StatusFilter =
   | 'DRAFT'
@@ -271,6 +276,8 @@ export function EsigningListPage() {
   const [retryTargetId, setRetryTargetId] = useState<string | null>(null);
   const [manualLinks, setManualLinks] = useState<EsigningManualLinkDto[]>([]);
   const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
+  const ensuredTaskRef = useRef<string | null>(null);
+  const openedPreparedEnvelopeRef = useRef<string | null>(null);
 
   const activeStatuses = TAB_STATUSES[activeTab];
   const envelopesQuery = useEsigningEnvelopes({
@@ -285,6 +292,13 @@ export function EsigningListPage() {
   const resendEnvelope = useResendEsigningEnvelope();
   const voidEnvelope = useVoidEsigningEnvelope(voidTarget?.id ?? '');
   const retryProcessing = useRetryEsigningEnvelopeProcessing(retryTargetId ?? '');
+  const preparationQuery = useTaskEsigningPreparation(
+    taskContext?.taskId ?? '',
+    taskContext?.taskStageId ?? '',
+  );
+  const ensurePreparation = useEnsureTaskEsigningPreparation();
+  const retryPreparation = useRetryTaskEsigningPreparation();
+  const preparation = ensurePreparation.data ?? preparationQuery.data;
 
   const envelopes = useMemo(
     () => (envelopesQuery.data?.envelopes ?? []) as EsigningEnvelopeListItem[],
@@ -339,7 +353,7 @@ export function EsigningListPage() {
   const totalResults = envelopesQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalResults / limit));
 
-  async function handleStart(file?: File) {
+  const handleStart = useCallback(async (file?: File) => {
     if (isStarting) {
       return;
     }
@@ -378,7 +392,46 @@ export function EsigningListPage() {
     } finally {
       setIsStarting(false);
     }
-  }
+  }, [
+    activeTenantId,
+    createEnvelope,
+    expiresInDays,
+    generatedDocumentId,
+    isStarting,
+    signingOrder,
+    taskContext,
+    toast,
+    wordUploadEnabled,
+  ]);
+
+  useEffect(() => {
+    if (!taskContext || !can.createEsigning) return;
+    const launchKey = `${taskContext.taskId}:${taskContext.taskStageId}`;
+    if (ensuredTaskRef.current === launchKey) return;
+    ensuredTaskRef.current = launchKey;
+    void ensurePreparation.mutateAsync({
+      taskId: taskContext.taskId,
+      stageId: taskContext.taskStageId,
+    }).catch((error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to prepare E-signing');
+    });
+  }, [can.createEsigning, ensurePreparation, taskContext, toast]);
+
+  useEffect(() => {
+    if (
+      !taskContext
+      || preparation?.status !== 'READY'
+      || !preparation.esigningEnvelopeId
+      || openedPreparedEnvelopeRef.current === preparation.esigningEnvelopeId
+    ) {
+      return;
+    }
+    openedPreparedEnvelopeRef.current = preparation.esigningEnvelopeId;
+    window.location.assign(withTaskLaunchContext(
+      `/esigning/${preparation.esigningEnvelopeId}`,
+      taskContext,
+    ));
+  }, [preparation, taskContext]);
 
   async function handleRetryPdf(envelopeId: string) {
     try {
@@ -464,7 +517,54 @@ export function EsigningListPage() {
           </div>
         </section>
 
-        {can.createEsigning ? (
+        {taskContext ? (
+          <section className="rounded-2xl border border-border-primary bg-background-secondary p-6 text-center shadow-sm sm:rounded-3xl">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-oak-primary/10 text-oak-primary">
+              <RefreshCw
+                className={cn(
+                  'h-6 w-6',
+                  (!preparation || preparation.status === 'QUEUED' || preparation.status === 'PROCESSING')
+                    && 'animate-spin',
+                )}
+              />
+            </div>
+            <h2 className="mt-4 text-lg font-semibold text-text-primary">
+              {preparation?.status === 'WAITING'
+                ? 'E-signing is waiting'
+                : preparation?.status === 'FAILED_RETRYABLE'
+                  ? 'Preparation needs attention'
+                  : preparation?.status === 'FAILED_PERMANENT'
+                    ? 'E-signing cannot be prepared'
+                    : preparation?.status === 'READY'
+                      ? 'Opening prepared envelope'
+                      : 'Preparing E-signing'}
+            </h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-text-secondary">
+              {preparation?.status === 'WAITING' && preparation.blockingStage
+                ? `Complete or skip ${preparation.blockingStage.name} before the generated document is attached.`
+                : preparation?.status === 'WAITING'
+                  ? 'Finalize the preceding generated document to continue.'
+                  : preparation?.lastError
+                    ? preparation.lastError
+                    : 'The draft envelope and generated document are being prepared in the background.'}
+            </p>
+            {preparation?.status === 'FAILED_RETRYABLE' ? (
+              <Button
+                className="mt-4"
+                variant="secondary"
+                isLoading={retryPreparation.isPending}
+                onClick={() => void retryPreparation.mutateAsync({
+                  taskId: taskContext.taskId,
+                  stageId: taskContext.taskStageId,
+                }).catch((error) => {
+                  toast.error(error instanceof Error ? error.message : 'Failed to retry preparation');
+                })}
+              >
+                Retry preparation
+              </Button>
+            ) : null}
+          </section>
+        ) : can.createEsigning ? (
           <section
             onDragOver={(event) => {
               event.preventDefault();

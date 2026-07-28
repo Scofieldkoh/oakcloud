@@ -51,6 +51,18 @@ export const TaskStageOutcomeType = {
 export type TaskStageOutcomeType = (typeof TaskStageOutcomeType)[keyof typeof TaskStageOutcomeType]
 
 
+export const TaskEsigningPreparationStatus = {
+  WAITING: 'WAITING',
+  QUEUED: 'QUEUED',
+  PROCESSING: 'PROCESSING',
+  READY: 'READY',
+  FAILED_RETRYABLE: 'FAILED_RETRYABLE',
+  FAILED_PERMANENT: 'FAILED_PERMANENT'
+} as const
+
+export type TaskEsigningPreparationStatus = (typeof TaskEsigningPreparationStatus)[keyof typeof TaskEsigningPreparationStatus]
+
+
 export const WorkspaceStatus = {
   ACTIVE: 'ACTIVE',
   SUSPENDED: 'SUSPENDED',

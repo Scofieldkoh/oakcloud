@@ -24,7 +24,19 @@ const hookMocks = vi.hoisted(() => ({
   useUpdateTask: vi.fn(),
   useUpdateTaskStage: vi.fn(),
 }));
+const navigationMocks = vi.hoisted(() => ({
+  push: vi.fn(),
+  replace: vi.fn(),
+  searchParams: new URLSearchParams(),
+}));
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: navigationMocks.push,
+    replace: navigationMocks.replace,
+  }),
+  useSearchParams: () => navigationMocks.searchParams,
+}));
 vi.mock('@/hooks/use-tasks', () => ({
   useArchiveTask: hookMocks.useArchiveTask,
   useCreateTask: hookMocks.useCreateTask,
@@ -43,6 +55,24 @@ vi.mock('@/hooks/use-companies', () => ({
 }));
 vi.mock('@/hooks/use-admin', () => ({
   useCurrentWorkspaceUsers: hookMocks.useCurrentWorkspaceUsers,
+}));
+vi.mock('@/hooks/use-auth', () => ({
+  useSession: () => ({ data: { id: 'user-1', tenantId: 'tenant-1', isSuperAdmin: false } }),
+}));
+vi.mock('@/components/ui/workspace-selector', () => ({
+  useActiveWorkspaceId: () => 'tenant-1',
+}));
+vi.mock('@/hooks/use-user-preferences', () => ({
+  useUserPreferences: () => ({
+    data: {
+      'tasks:list:columns:v1': {
+        key: 'tasks:list:columns:v1',
+        value: {},
+        updatedAt: null,
+      },
+    },
+  }),
+  useUpsertUserPreference: () => ({ mutate: vi.fn() }),
 }));
 
 const task: TaskListItem = {
@@ -122,8 +152,14 @@ function useMutationMock(mutation: (variables: unknown) => Promise<unknown>) {
   };
 }
 
+function clickTaskAction(label: 'Pause' | 'Cancel' | 'Delete') {
+  fireEvent.click(screen.getAllByRole('button', { name: `Actions for ${task.title}` })[0]);
+  fireEvent.click(screen.getByRole('menuitem', { name: label }));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  navigationMocks.searchParams = new URLSearchParams();
   hookMocks.useTasks.mockReturnValue({
     data: { tasks: [task], total: 1, page: 1, limit: 20, totalPages: 1 },
     error: null,
@@ -148,12 +184,92 @@ beforeEach(() => {
 });
 
 describe('TaskWorkspace', () => {
-  it('renders primary navigation and passes all due filters to the reviewed list hook', async () => {
+  it('keeps the table and inline filters available when no tasks match', () => {
+    hookMocks.useTasks.mockReturnValue({
+      data: { tasks: [], total: 0, page: 1, limit: 20, totalPages: 1 },
+      error: null,
+      isLoading: false,
+    });
+
+    render(<TaskWorkspace />);
+
+    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'All companies' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'All pipelines' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /Company/ })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'No tasks found' })).toHaveAttribute('colspan', '8');
+  });
+
+  it('shows removable badges for active filters and clears them together', async () => {
+    render(<TaskWorkspace />);
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search tasks' }), {
+      target: { value: 'annual' },
+    });
+    const pipelineFilter = screen.getByRole('combobox', { name: 'All pipelines' });
+    fireEvent.focus(pipelineFilter);
+    fireEvent.change(pipelineFilter, { target: { value: 'Annual' } });
+    fireEvent.keyDown(pipelineFilter, { key: 'ArrowDown' });
+    fireEvent.keyDown(pipelineFilter, { key: 'Enter' });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Filter tasks by title' }), {
+      target: { value: 'compliance' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Filter tasks by owner' }), {
+      target: { value: 'sam' },
+    });
+
+    expect(screen.getByText('Active filters:')).toBeInTheDocument();
+    expect(screen.getByText('Search:')).toBeInTheDocument();
+    expect(screen.getByText('annual')).toBeInTheDocument();
+    expect(screen.getByText('Pipeline:')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove Pipeline filter' }).parentElement)
+      .toHaveTextContent('Pipeline:Annual review');
+    expect(screen.getByRole('button', { name: 'Remove Task filter' }).parentElement)
+      .toHaveTextContent('Task:compliance');
+    expect(screen.getByRole('button', { name: 'Remove Owner text filter' }).parentElement)
+      .toHaveTextContent('Owner text:sam');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Search filter' }));
+    expect(screen.queryByText('Search:')).not.toBeInTheDocument();
+    expect(screen.getByText('Pipeline:')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+    await waitFor(() => expect(hookMocks.useTasks).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+    }));
+    expect(screen.queryByText('Active filters:')).not.toBeInTheDocument();
+  });
+
+  it('renders primary navigation and applies quick filters to the list hook', async () => {
     render(<TaskWorkspace />);
     expect(screen.getByRole('heading', { name: 'Tasks' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Manage pipelines' })).toHaveAttribute('href', '/pipelines');
-    fireEvent.change(screen.getByRole('combobox', { name: 'Due' }), { target: { value: 'overdue' } });
-    await waitFor(() => expect(hookMocks.useTasks).toHaveBeenLastCalledWith(expect.objectContaining({ dueBucket: 'overdue' })));
+    fireEvent.click(screen.getByRole('button', { name: 'Due this week' }));
+    await waitFor(() => expect(hookMocks.useTasks).toHaveBeenLastCalledWith(expect.objectContaining({
+      dueBucket: 'thisWeek',
+      dueDateFrom: undefined,
+      dueDateTo: undefined,
+    })));
+    fireEvent.click(screen.getByRole('button', { name: 'Owned by me' }));
+    await waitFor(() => expect(hookMocks.useTasks).toHaveBeenLastCalledWith(expect.objectContaining({
+      ownerId: 'user-1',
+    })));
+  });
+
+  it('saves inline task metadata through the existing update mutation', async () => {
+    render(<TaskWorkspace />);
+    const taskCell = within(screen.getAllByRole('row')[2]).getAllByRole('cell')[1];
+
+    fireEvent.doubleClick(taskCell);
+    const input = screen.getByRole('textbox', { name: 'Edit task title' });
+    fireEvent.change(input, { target: { value: 'Updated from table' } });
+    fireEvent.blur(input);
+
+    await waitFor(() => expect(hookMocks.update).toHaveBeenCalledWith({
+      id: task.id,
+      payload: { title: 'Updated from table' },
+    }));
   });
 
   it('explains pipeline, company, and owner option query failures', () => {
@@ -196,9 +312,9 @@ describe('TaskWorkspace', () => {
 
   it('runs pause and confirmed cancel status controls', async () => {
     render(<TaskWorkspace />);
-    fireEvent.click(screen.getAllByRole('button', { name: `Pause ${task.title}` })[0]);
+    clickTaskAction('Pause');
     await waitFor(() => expect(hookMocks.status).toHaveBeenCalledWith({ id: task.id, action: 'pause' }));
-    fireEvent.click(screen.getAllByRole('button', { name: `Cancel ${task.title}` })[0]);
+    clickTaskAction('Cancel');
     const dialog = screen.getByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel task' }));
     await waitFor(() => expect(hookMocks.status).toHaveBeenCalledWith({ id: task.id, action: 'cancel' }));
@@ -206,7 +322,7 @@ describe('TaskWorkspace', () => {
 
   it('requires a reason before soft-deleting a task', async () => {
     render(<TaskWorkspace />);
-    fireEvent.click(screen.getAllByRole('button', { name: `Delete ${task.title}` })[0]);
+    clickTaskAction('Delete');
     const dialog = screen.getByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete task' }));
     expect(within(dialog).getByText('Reason is required')).toBeInTheDocument();
@@ -220,6 +336,49 @@ describe('TaskWorkspace', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /Review stage/i })[0]);
     await waitFor(() => expect(hookMocks.useTaskStage).toHaveBeenLastCalledWith(task.id, 'stage-1'));
     expect(screen.getByRole('dialog')).toHaveTextContent('Review records.');
+  });
+
+  it('reopens a returned task stage and provides direct navigation to the next stage', async () => {
+    const nextStage = {
+      id: 'stage-2',
+      name: 'Prepare documents',
+      position: 1,
+      actionType: 'DOCUMENT_GENERATION' as const,
+      icon: 'FileText',
+      isRequired: true,
+      status: 'NOT_STARTED' as const,
+    };
+    const returnedTask = { ...task, stages: [task.stages[0], nextStage] };
+    navigationMocks.searchParams = new URLSearchParams(
+      'taskId=task-1&taskStageId=stage-1&returnTo=%2Ftasks',
+    );
+    hookMocks.useTasks.mockReturnValue({
+      data: { tasks: [returnedTask], total: 1, page: 1, limit: 20, totalPages: 1 },
+      error: null,
+      isLoading: false,
+    });
+    hookMocks.useTaskStage.mockImplementation((_taskId: string, stageId: string) => ({
+      data: stageId === nextStage.id
+        ? {
+            ...stage,
+            ...nextStage,
+            description: 'Prepare the engagement documents.',
+            launch: {
+              href: '/generated-documents/generate',
+              context: { taskId: task.id, taskStageId: nextStage.id },
+            },
+          }
+        : stage,
+      error: null,
+      isLoading: false,
+    }));
+
+    render(<TaskWorkspace />);
+
+    expect(await screen.findByRole('heading', { name: 'Review' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Next stage' }));
+    expect(await screen.findByRole('heading', { name: 'Prepare documents' })).toBeVisible();
+    expect(navigationMocks.replace).toHaveBeenCalledWith('/tasks', { scroll: false });
   });
 
   it('keeps a failed stage transition visible in the modal and retries it', async () => {
@@ -239,7 +398,7 @@ describe('TaskWorkspace', () => {
     await waitFor(() => expect(hookMocks.stageTransition).toHaveBeenCalledTimes(2));
   });
 
-  it('retains stage notes after an update failure and retries them from the modal', async () => {
+  it('retains stage notes after an autosave failure and retries after the next edit', async () => {
     hookMocks.stageUpdate
       .mockRejectedValueOnce(new Error('Stage update failed'))
       .mockResolvedValueOnce(task);
@@ -249,20 +408,19 @@ describe('TaskWorkspace', () => {
     const dialog = screen.getByRole('dialog');
     const notes = within(dialog).getByRole('textbox', { name: 'Notes' });
     fireEvent.change(notes, { target: { value: 'Keep this note for retry' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Save notes' }));
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('Stage update failed');
     expect(notes).toHaveValue('Keep this note for retry');
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Save notes' }));
+    fireEvent.change(notes, { target: { value: 'Keep this note for retry.' } });
     await waitFor(() => {
       expect(hookMocks.stageUpdate).toHaveBeenCalledTimes(2);
       expect(hookMocks.stageUpdate).toHaveBeenLastCalledWith({
         taskId: task.id,
         stageId: stage.id,
-        payload: { notes: 'Keep this note for retry' },
+        payload: { notes: 'Keep this note for retry.' },
       });
-    });
+    }, { timeout: 1500 });
   });
 
   it('keeps a failed cancellation visible in its confirmation dialog and retries it', async () => {
@@ -271,7 +429,7 @@ describe('TaskWorkspace', () => {
       .mockResolvedValueOnce(task);
 
     render(<TaskWorkspace />);
-    fireEvent.click(screen.getAllByRole('button', { name: `Cancel ${task.title}` })[0]);
+    clickTaskAction('Cancel');
     const dialog = screen.getByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel task' }));
 
@@ -289,7 +447,7 @@ describe('TaskWorkspace', () => {
       .mockResolvedValueOnce(task);
 
     render(<TaskWorkspace />);
-    fireEvent.click(screen.getAllByRole('button', { name: `Delete ${task.title}` })[0]);
+    clickTaskAction('Delete');
     const dialog = screen.getByRole('dialog');
     const reason = within(dialog).getByRole('textbox', { name: 'Reason' });
     fireEvent.change(reason, { target: { value: 'Created in error' } });

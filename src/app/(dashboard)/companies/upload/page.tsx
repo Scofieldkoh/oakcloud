@@ -192,6 +192,7 @@ export default function UploadBizFilePage() {
   const [isConfirming, setIsConfirming] = useState(false);
   const confirmGenerationRef = useRef(0);
   const confirmAbortRef = useRef<AbortController | null>(null);
+  const resumedDocumentRef = useRef<string | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [aiMetadata, setAiMetadata] = useState<AIMetadata | null>(null);
@@ -259,6 +260,107 @@ export default function UploadBizFilePage() {
     multiple: false,
   });
 
+  const extractUploadedDocument = useCallback(async (docId: string) => {
+    const fullContext = buildFullContext(selectedStandardContexts, aiContext);
+
+    if (isUpdateMode && existingCompanyId) {
+      const diffResponse = await fetchWithStageError(`/api/documents/${docId}/preview-diff`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyId: existingCompanyId,
+          modelId: selectedModelId || undefined,
+          additionalContext: fullContext || undefined,
+        }),
+      }, 'extracting and comparing the BizFile');
+
+      if (!diffResponse.ok) {
+        const err = await safeJsonError(diffResponse, 'Failed to extract and compare data');
+        throw new Error(err);
+      }
+
+      const {
+        extractedData: data,
+        diff,
+        aiMetadata: metadata,
+        companyUpdatedAt: updatedAt,
+      } = await diffResponse.json();
+      setExtractedData(data);
+      setDiffResult(diff);
+      setCompanyId(existingCompanyId);
+      setAiMetadata(metadata);
+      setCompanyUpdatedAt(updatedAt);
+      setStep('diff-preview');
+      return;
+    }
+
+    const extractResponse = await fetchWithStageError(`/api/documents/${docId}/extract`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        modelId: selectedModelId || undefined,
+        additionalContext: fullContext || undefined,
+      }),
+    }, 'extracting the BizFile');
+
+    if (!extractResponse.ok) {
+      const err = await safeJsonError(extractResponse, 'Failed to extract data');
+      throw new Error(err);
+    }
+
+    const {
+      extractedData: data,
+      conflict: conflictData,
+      aiMetadata: metadata,
+    } = await extractResponse.json();
+    setExtractedData(data);
+    setAiMetadata(metadata);
+    setServerIssues([]);
+
+    if (conflictData) {
+      setConflict(conflictData);
+      setConflictDialogOpen(true);
+      setStep('upload');
+    } else {
+      setStep('preview');
+    }
+  }, [
+    aiContext,
+    existingCompanyId,
+    isUpdateMode,
+    selectedModelId,
+    selectedStandardContexts,
+  ]);
+
+  useEffect(() => {
+    const resumedDocumentId = searchParams.get('documentId');
+    if (!resumedDocumentId || resumedDocumentRef.current === resumedDocumentId) return;
+    resumedDocumentRef.current = resumedDocumentId;
+    setError(null);
+    setStep('extracting');
+
+    void (async () => {
+      try {
+        const sourceResponse = await fetch(`/api/documents/${resumedDocumentId}`);
+        if (!sourceResponse.ok) {
+          throw new Error(await safeJsonError(sourceResponse, 'Failed to load the uploaded BizFile'));
+        }
+        const sourceBlob = await sourceResponse.blob();
+        const sourceFile = new globalThis.File(
+          [sourceBlob],
+          searchParams.get('fileName') || 'BizFile document',
+          { type: sourceBlob.type || 'application/octet-stream' },
+        );
+        setFile(sourceFile);
+        setDocumentId(resumedDocumentId);
+        await extractUploadedDocument(resumedDocumentId);
+      } catch (resumeError) {
+        setError(resumeError instanceof Error ? resumeError.message : 'Failed to open the uploaded BizFile.');
+        setStep('upload');
+      }
+    })();
+  }, [extractUploadedDocument, searchParams]);
+
   const handleUploadAndExtract = async () => {
     if (!file) return;
 
@@ -296,63 +398,7 @@ export default function UploadBizFilePage() {
 
       const { documentId: docId } = await uploadResponse.json();
       setDocumentId(docId);
-
-      // Build full context from standard contexts and custom text
-      const fullContext = buildFullContext(selectedStandardContexts, aiContext);
-
-      // For update mode, use the diff preview endpoint
-      if (isUpdateMode && existingCompanyId) {
-        const diffResponse = await fetchWithStageError(`/api/documents/${docId}/preview-diff`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            companyId: existingCompanyId,
-            modelId: selectedModelId || undefined,
-            additionalContext: fullContext || undefined,
-          }),
-        }, 'extracting and comparing the BizFile');
-
-        if (!diffResponse.ok) {
-          const err = await safeJsonError(diffResponse, 'Failed to extract and compare data');
-          throw new Error(err);
-        }
-
-        const { extractedData: data, diff, aiMetadata: metadata, companyUpdatedAt: updatedAt } = await diffResponse.json();
-        setExtractedData(data);
-        setDiffResult(diff);
-        setCompanyId(existingCompanyId);
-        setAiMetadata(metadata);
-        setCompanyUpdatedAt(updatedAt); // Store for concurrent update detection
-        setStep('diff-preview');
-      } else {
-        // Normal create mode - extract and save
-        const extractResponse = await fetchWithStageError(`/api/documents/${docId}/extract`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            modelId: selectedModelId || undefined,
-            additionalContext: fullContext || undefined,
-          }),
-        }, 'extracting the BizFile');
-
-        if (!extractResponse.ok) {
-          const err = await safeJsonError(extractResponse, 'Failed to extract data');
-          throw new Error(err);
-        }
-
-        const { extractedData: data, conflict: conflictData, aiMetadata: metadata } = await extractResponse.json();
-        setExtractedData(data);
-        setAiMetadata(metadata);
-        setServerIssues([]);
-
-        if (conflictData) {
-          setConflict(conflictData);
-          setConflictDialogOpen(true);
-          setStep('upload');
-        } else {
-          setStep('preview');
-        }
-      }
+      await extractUploadedDocument(docId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setStep('upload');
@@ -402,6 +448,10 @@ export default function UploadBizFilePage() {
       const { companyId: cId } = await response.json();
       if (generation !== confirmGenerationRef.current) return;
       setCompanyId(cId);
+      if (taskContext) {
+        router.push(withTaskLaunchContext(returnHref, taskContext));
+        return;
+      }
       setStep('complete');
     } catch (err) {
       if (generation !== confirmGenerationRef.current || controller.signal.aborted) return;
@@ -500,6 +550,10 @@ export default function UploadBizFilePage() {
       setOfficerChanges(result.officerChanges || null);
       setShareholderChanges(result.shareholderChanges || null);
       setConcurrentUpdateWarning(result.concurrentUpdateWarning || null);
+      if (taskContext) {
+        router.push(withTaskLaunchContext(returnHref, taskContext));
+        return;
+      }
       setStep('complete');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

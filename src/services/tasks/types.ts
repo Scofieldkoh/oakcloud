@@ -38,6 +38,29 @@ export interface TaskLaunchContext {
   taskStageId: string;
   returnTo?: string;
 }
+
+export type TaskEsigningPreparationStatus =
+  | 'WAITING'
+  | 'QUEUED'
+  | 'PROCESSING'
+  | 'READY'
+  | 'FAILED_RETRYABLE'
+  | 'FAILED_PERMANENT';
+
+export interface TaskEsigningPreparationSnapshot {
+  id: string;
+  taskId: string;
+  taskStageId: string;
+  status: TaskEsigningPreparationStatus;
+  blockingStage: {
+    id: string;
+    name: string;
+    status: TaskStageStatus;
+  } | null;
+  generatedDocumentId: string | null;
+  esigningEnvelopeId: string | null;
+  lastError: string | null;
+}
 export type StageOutcomeSummary = string | null;
 
 export interface StageActionLaunch {

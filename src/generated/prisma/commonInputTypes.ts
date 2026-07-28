@@ -1629,6 +1629,23 @@ export type EnumTaskStageOutcomeTypeWithAggregatesFilter<$PrismaModel = never> =
   _max?: Prisma.NestedEnumTaskStageOutcomeTypeFilter<$PrismaModel>
 }
 
+export type EnumTaskEsigningPreparationStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskEsigningPreparationStatus | Prisma.EnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskEsigningPreparationStatus[] | Prisma.ListEnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskEsigningPreparationStatus[] | Prisma.ListEnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskEsigningPreparationStatusFilter<$PrismaModel> | $Enums.TaskEsigningPreparationStatus
+}
+
+export type EnumTaskEsigningPreparationStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskEsigningPreparationStatus | Prisma.EnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskEsigningPreparationStatus[] | Prisma.ListEnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskEsigningPreparationStatus[] | Prisma.ListEnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskEsigningPreparationStatusWithAggregatesFilter<$PrismaModel> | $Enums.TaskEsigningPreparationStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTaskEsigningPreparationStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTaskEsigningPreparationStatusFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -3179,6 +3196,23 @@ export type NestedEnumTaskStageOutcomeTypeWithAggregatesFilter<$PrismaModel = ne
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumTaskStageOutcomeTypeFilter<$PrismaModel>
   _max?: Prisma.NestedEnumTaskStageOutcomeTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumTaskEsigningPreparationStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskEsigningPreparationStatus | Prisma.EnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskEsigningPreparationStatus[] | Prisma.ListEnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskEsigningPreparationStatus[] | Prisma.ListEnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskEsigningPreparationStatusFilter<$PrismaModel> | $Enums.TaskEsigningPreparationStatus
+}
+
+export type NestedEnumTaskEsigningPreparationStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TaskEsigningPreparationStatus | Prisma.EnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.TaskEsigningPreparationStatus[] | Prisma.ListEnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TaskEsigningPreparationStatus[] | Prisma.ListEnumTaskEsigningPreparationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTaskEsigningPreparationStatusWithAggregatesFilter<$PrismaModel> | $Enums.TaskEsigningPreparationStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTaskEsigningPreparationStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTaskEsigningPreparationStatusFilter<$PrismaModel>
 }
 
 

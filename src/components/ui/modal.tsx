@@ -9,6 +9,7 @@ export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
+  titleBadge?: React.ReactNode;
   description?: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | '5xl' | '6xl' | 'full';
@@ -47,6 +48,7 @@ export function Modal({
   isOpen,
   onClose,
   title,
+  titleBadge,
   description,
   children,
   size = 'md',
@@ -162,10 +164,15 @@ export function Modal({
         {(title || showCloseButton) && (
           <div className="flex items-start justify-between p-4 border-b border-border-primary">
             <div>
-              {title && (
-                <h2 id={titleId} className="text-lg font-semibold text-text-primary">
-                  {title}
-                </h2>
+              {(title || titleBadge) && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {title && (
+                    <h2 id={titleId} className="text-lg font-semibold text-text-primary">
+                      {title}
+                    </h2>
+                  )}
+                  {titleBadge}
+                </div>
               )}
               {description && (
                 <p id={descriptionId} className="text-sm text-text-secondary mt-1">
@@ -176,7 +183,7 @@ export function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-2 rounded hover:bg-background-elevated text-text-muted hover:text-text-primary transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="flex min-h-12 min-w-12 items-center justify-center rounded text-text-muted transition-colors hover:bg-background-elevated hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
@@ -197,13 +204,24 @@ export function Modal({
 }
 
 // Modal subcomponents for flexible composition
-export function ModalBody({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn('p-4', className)}>{children}</div>;
+export function ModalBody({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn('p-4', className)} {...props}>{children}</div>;
 }
 
-export function ModalFooter({ children, className }: { children: React.ReactNode; className?: string }) {
+export function ModalFooter({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('flex flex-wrap items-center justify-end gap-3 p-4 border-t border-border-primary', className)}>
+    <div
+      className={cn('flex flex-wrap items-center justify-end gap-3 p-4 border-t border-border-primary', className)}
+      {...props}
+    >
       {children}
     </div>
   );
