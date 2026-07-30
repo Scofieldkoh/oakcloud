@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { validateTemplateSyntax } from '@/components/documents/template-editor/template-validation';
+import {
+  SERVICE_AGREEMENT_SLOTS,
+  validateServiceAgreementSlots,
+  validateTemplate,
+  validateTemplateSyntax,
+} from '@/components/documents/template-editor/template-validation';
+import { placeholderDefinitionSchema } from '@/lib/validations/document-template';
 
 describe('template syntax validation', () => {
   it('reports unmatched and unknown constructs with actionable messages', () => {
@@ -57,5 +63,56 @@ describe('template syntax validation', () => {
       'unknown-placeholder',
     ]);
     expect(issues[0].message).toContain('{{/if}}');
+  });
+
+  it('requires each service agreement composition slot exactly once', () => {
+    expect(
+      validateTemplate({
+        compositionType: 'SERVICE_AGREEMENT',
+        content: '<p>No composition slots</p>',
+        placeholders: [],
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'missing-agreement-slot',
+          message: expect.stringMatching(/serviceSections/),
+        }),
+      ]),
+    );
+
+    const duplicate = validateServiceAgreementSlots(
+      `${SERVICE_AGREEMENT_SLOTS.serviceSections}${SERVICE_AGREEMENT_SLOTS.serviceSections}` +
+        SERVICE_AGREEMENT_SLOTS.feeTable +
+        SERVICE_AGREEMENT_SLOTS.entityAppendix,
+    );
+    expect(duplicate).toEqual([
+      expect.objectContaining({
+        code: 'duplicate-agreement-slot',
+        message: expect.stringMatching(/serviceSections/),
+      }),
+    ]);
+  });
+
+  it('does not require agreement slots for standard templates', () => {
+    expect(
+      validateTemplate({
+        compositionType: 'STANDARD',
+        content: '<p>Standard content</p>',
+        placeholders: [],
+      }),
+    ).toEqual([]);
+  });
+
+  it('accepts service textarea placeholder definitions', () => {
+    expect(
+      placeholderDefinitionSchema.parse({
+        key: 'service.fields.software',
+        label: 'Accounting software',
+        type: 'textarea',
+        source: 'service',
+        required: false,
+      }),
+    ).toMatchObject({ source: 'service', type: 'textarea' });
   });
 });

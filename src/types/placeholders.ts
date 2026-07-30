@@ -34,6 +34,7 @@ export type PlaceholderSource =
   | 'contact'
   | 'officer'
   | 'shareholder'
+  | 'service'
   | 'custom'
   | 'system';
 
@@ -63,6 +64,14 @@ export interface CustomPlaceholderDefinition {
   linkedTo?: string;
   /** Name of the partial this placeholder originated from */
   sourcePartial?: string;
+  /** Persisted source namespace. Omitted for newly authored custom fields. */
+  storageSource?: PlaceholderSource;
+  /** Persisted resolver path. */
+  storagePath?: string;
+  /** Persisted grouping category. */
+  storageCategory?: string;
+  /** Original definition retained so unknown metadata survives editor saves. */
+  storageDefinition?: Record<string, unknown>;
 }
 
 /**

@@ -14,6 +14,11 @@ export const documentTemplateCategoryEnum = z.enum([
   'OTHER',
 ]);
 
+export const documentTemplateCompositionTypeEnum = z.enum([
+  'STANDARD',
+  'SERVICE_AGREEMENT',
+]);
+
 // ============================================================================
 // Placeholder Schema
 // ============================================================================
@@ -21,8 +26,25 @@ export const documentTemplateCategoryEnum = z.enum([
 export const placeholderDefinitionSchema = z.object({
   key: z.string().min(1).max(100), // e.g., "company.name", "director[0].name"
   label: z.string().min(1).max(200),
-  type: z.enum(['text', 'date', 'number', 'currency', 'boolean', 'list', 'conditional']),
-  source: z.enum(['company', 'contact', 'officer', 'shareholder', 'custom', 'system']),
+  type: z.enum([
+    'text',
+    'textarea',
+    'date',
+    'number',
+    'currency',
+    'boolean',
+    'list',
+    'conditional',
+  ]),
+  source: z.enum([
+    'company',
+    'contact',
+    'officer',
+    'shareholder',
+    'service',
+    'custom',
+    'system',
+  ]),
   category: z.string().optional(), // Category for grouping (e.g., 'custom')
   path: z.string().optional(), // Data path for auto-resolution
   defaultValue: z.string().optional(),
@@ -78,6 +100,7 @@ export const createDocumentTemplateSchema = z.object({
   name: z.string().min(1, 'Name is required').max(200, 'Name must be 200 characters or less'),
   description: z.string().max(5000).optional().nullable(),
   category: documentTemplateCategoryEnum.default('OTHER'),
+  compositionType: documentTemplateCompositionTypeEnum.default('STANDARD'),
   content: z.string().min(1, 'Template content is required'),
   contentJson: contentJsonSchema.optional().nullable(),
   placeholders: z.array(placeholderDefinitionSchema).default([]),
@@ -95,6 +118,7 @@ export const updateDocumentTemplateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(5000).optional().nullable(),
   category: documentTemplateCategoryEnum.optional(),
+  compositionType: documentTemplateCompositionTypeEnum.optional(),
   content: z.string().min(1).optional(),
   contentJson: contentJsonSchema.optional().nullable(),
   placeholders: z.array(placeholderDefinitionSchema).optional(),

@@ -319,7 +319,10 @@ describe('A4PageEditor real layout pagination', () => {
     )!;
     const surface = host.querySelector<HTMLElement>('[data-testid="a4-document-surface"]')!;
     const text = pageContent.querySelector('p')!.firstChild!;
-    surface.focus();
+    await act(async () => {
+      surface.focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     const selection = window.getSelection()!;
     const range = document.createRange();
     range.setStart(text, 5);
@@ -371,7 +374,10 @@ describe('A4PageEditor real layout pagination', () => {
     const expectedBefore = targetText.textContent!.slice(0, splitOffset);
     const expectedAfter = targetText.textContent!.slice(splitOffset);
     const surface = host.querySelector<HTMLElement>('[data-testid="a4-document-surface"]')!;
-    surface.focus();
+    await act(async () => {
+      surface.focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     const selection = window.getSelection()!;
     const range = document.createRange();
     range.setStart(targetText, splitOffset);

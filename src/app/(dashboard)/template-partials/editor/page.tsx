@@ -15,7 +15,7 @@ import { TemplateEditorPanel } from '@/components/documents/template-editor/temp
 import { commitTemplateFormChange } from '@/components/documents/template-editor/template-editor-state';
 import { insertTemplateSnippet } from '@/components/documents/template-editor/template-insertion';
 import type { TemplateEditorPartialForm, TemplateEditorTemplateForm } from '@/components/documents/template-editor/template-details-panel';
-import { validateTemplateSyntax } from '@/components/documents/template-editor/template-validation';
+import { validateTemplate, validateTemplateSyntax } from '@/components/documents/template-editor/template-validation';
 import {
   DEFAULT_A4_DOCUMENT_LAYOUT,
   extractA4DocumentLayout,
@@ -41,6 +41,11 @@ import type {
   MergedPlaceholder,
   MockDataValues,
 } from '@/types/placeholders';
+import {
+  editorPlaceholdersToStorage,
+  storagePlaceholdersToEditor,
+  type StoredEditorPlaceholder,
+} from '@/lib/template-placeholder-storage';
 
 // ============================================================================
 // Types
@@ -887,6 +892,7 @@ function TemplateEditorContent() {
     name: '',
     description: '',
     category: 'OTHER',
+    compositionType: 'STANDARD',
     content: '',
     isActive: true,
     customPlaceholders: [],
@@ -991,19 +997,11 @@ function TemplateEditorContent() {
     name: string;
     description: string;
     category: string;
+    compositionType: 'STANDARD' | 'SERVICE_AGREEMENT';
     content: string;
     isActive: boolean;
     contentJson: Record<string, unknown>;
-    placeholders: Array<{
-      key: string;
-      label: string;
-      type: string;
-      source: string;
-      category: string;
-      path: string;
-      defaultValue?: string;
-      required: boolean;
-    }>;
+    placeholders: StoredEditorPlaceholder[];
   };
 
   // Create mutation
@@ -1115,20 +1113,9 @@ function TemplateEditorContent() {
 
   // Helper to extract custom placeholders from storage format
   const storageFormatToCustomPlaceholders = (
-    placeholders: Array<{ key: string; label: string; type: string; source?: string; category?: string; required?: boolean; defaultValue?: string; linkedTo?: string; sourcePartial?: string }>
+    placeholders: StoredEditorPlaceholder[]
   ): CustomPlaceholderDefinition[] => {
-    return (placeholders || [])
-      .filter((p) => p.source === 'custom' || p.category === 'custom' || p.key?.startsWith('custom.'))
-      .map((p) => ({
-        id: crypto.randomUUID(),
-        key: p.key.replace('custom.', ''),
-        label: p.label,
-        type: (p.type === 'list' || p.type === 'conditional' ? 'text' : p.type) as CustomPlaceholderDefinition['type'],
-        required: p.required ?? true,
-        defaultValue: p.defaultValue,
-        linkedTo: p.linkedTo,
-        sourcePartial: p.sourcePartial,
-      }));
+    return storagePlaceholdersToEditor(placeholders || []);
   };
 
   // Helper to extract partial references from content
@@ -1189,7 +1176,7 @@ function TemplateEditorContent() {
 
       // Convert to CustomPlaceholderDefinition format
       const customPlaceholders = storageFormatToCustomPlaceholders(
-        partialPlaceholders as Array<{ key: string; label: string; type: string; source?: string; category?: string; required?: boolean; defaultValue?: string }>
+        partialPlaceholders as StoredEditorPlaceholder[],
       );
 
       // Add each placeholder from this partial
@@ -1226,16 +1213,28 @@ function TemplateEditorContent() {
 
   const validationIssues = useMemo(() => {
     const content = isPartialMode ? partialFormData.content : formData.content;
+    const editorPlaceholders = isPartialMode
+      ? partialFormData.customPlaceholders
+      : formData.customPlaceholders;
     const knownKeys = new Set(STANDARD_TEMPLATE_KEYS);
-    for (const field of [...formData.customPlaceholders, ...mergedPlaceholders]) {
-      knownKeys.add(`custom.${field.key}`);
+    for (const field of [...editorPlaceholders, ...mergedPlaceholders]) {
+      knownKeys.add(
+        field.storageSource === 'service'
+          ? field.key
+          : `custom.${field.key}`,
+      );
     }
     for (const partial of (partialsData?.partials || []) as TemplatePartial[]) {
       knownKeys.add(partial.name);
       knownKeys.add(`partial.${partial.name}`);
     }
-    return validateTemplateSyntax(content, knownKeys);
-  }, [formData.content, formData.customPlaceholders, isPartialMode, mergedPlaceholders, partialFormData.content, partialsData?.partials]);
+    if (isPartialMode) return validateTemplateSyntax(content, knownKeys);
+    return validateTemplate({
+      compositionType: formData.compositionType,
+      content,
+      placeholders: Array.from(knownKeys, (key) => ({ key })),
+    });
+  }, [formData.compositionType, formData.content, formData.customPlaceholders, isPartialMode, mergedPlaceholders, partialFormData.content, partialFormData.customPlaceholders, partialsData?.partials]);
 
   // Load existing template data
   useEffect(() => {
@@ -1270,6 +1269,7 @@ function TemplateEditorContent() {
         name: existingTemplate.name || '',
         description: existingTemplate.description || '',
         category: existingTemplate.category || 'OTHER',
+        compositionType: existingTemplate.compositionType || 'STANDARD',
         content: existingTemplate.content || '',
         isActive: existingTemplate.isActive ?? true,
         customPlaceholders: templatePlaceholders,
@@ -1461,39 +1461,21 @@ function TemplateEditorContent() {
   const customPlaceholdersToStorageFormat = (
     customPlaceholders: CustomPlaceholderDefinition[]
   ) => {
-    return customPlaceholders.map((p) => ({
-      key: `custom.${p.key}`,
-      label: p.label,
-      type: p.type === 'textarea' ? 'text' : p.type,
-      source: 'custom',
-      category: 'custom',
-      path: `custom.${p.key}`,
-      defaultValue: p.defaultValue,
-      required: p.required,
-      // Include linkedTo and sourcePartial if present
-      ...(p.linkedTo && { linkedTo: p.linkedTo }),
-      ...(p.sourcePartial && { sourcePartial: p.sourcePartial }),
-    }));
+    return editorPlaceholdersToStorage(customPlaceholders);
   };
 
   // Helper to convert merged placeholders (including partial placeholders with linkings) to storage format
   const mergedPlaceholdersToStorageFormat = (
     merged: MergedPlaceholder[]
   ) => {
-    return merged
-      .filter((p) => p.source === 'partial') // Only partial placeholders (template's own are handled separately)
-      .map((p) => ({
-        key: `custom.${p.key}`,
-        label: p.label,
-        type: p.type === 'textarea' ? 'text' : p.type,
-        source: 'custom',
-        category: 'custom',
-        path: `custom.${p.key}`,
-        defaultValue: p.defaultValue,
-        required: p.required,
+    return editorPlaceholdersToStorage(
+      merged
+        .filter((p) => p.source === 'partial' && p.storageSource !== 'service')
+        .map((p) => ({
+        ...p,
         sourcePartial: p.sourcePartial || p.sourceName,
-        ...(p.linkedTo && { linkedTo: p.linkedTo }),
-      }));
+        })),
+    );
   };
 
   const handleSave = useCallback(async () => {
@@ -1501,6 +1483,12 @@ function TemplateEditorContent() {
 
     if (!activeTenantId) {
       setFormError('Please select a tenant');
+      return;
+    }
+
+    const blockingIssue = validationIssues.find((issue) => issue.severity === 'error');
+    if (blockingIssue) {
+      setFormError(blockingIssue.message);
       return;
     }
 
@@ -1559,6 +1547,7 @@ function TemplateEditorContent() {
         name: formData.name,
         description: formData.description,
         category: formData.category,
+        compositionType: formData.compositionType,
         content: formData.content,
         isActive: formData.isActive,
         placeholders,
@@ -1571,7 +1560,7 @@ function TemplateEditorContent() {
         await createMutation.mutateAsync({ tenantId: activeTenantId, ...dataToSave });
       }
     }
-  }, [formData, partialFormData, activeTenantId, isEditMode, itemId, isPartialMode, createMutation, updateMutation, createPartialMutation, updatePartialMutation, mergedPlaceholders, existingTemplate?.contentJson]);
+  }, [formData, partialFormData, activeTenantId, isEditMode, itemId, isPartialMode, createMutation, updateMutation, createPartialMutation, updatePartialMutation, mergedPlaceholders, existingTemplate?.contentJson, validationIssues]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -1637,6 +1626,7 @@ function TemplateEditorContent() {
             size="sm"
             onClick={handleSave}
             isLoading={isSaving}
+            disabled={isSaving || validationIssues.some((issue) => issue.severity === 'error')}
             leftIcon={<Save className="w-4 h-4" />}
           >
             {isPartialMode ? 'Save Partial' : 'Save Template'}

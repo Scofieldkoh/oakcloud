@@ -12,6 +12,21 @@ const hardPageBreak =
   '<div class="page-break" data-break-type="hard"></div>';
 
 describe('A4PageEditor', () => {
+  it('renders persisted document content in read-only mode', async () => {
+    render(
+      <A4PageEditor
+        value="<p>Persisted generated document content</p>"
+        readOnly
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent(
+        'Persisted generated document content',
+      );
+    });
+  });
+
   it('applies global typography while preserving explicit partial formatting', () => {
     render(
       <A4PageEditor
@@ -970,6 +985,105 @@ describe('A4PageEditor', () => {
       expect(screen.getAllByTestId(/a4-page-content-/)).toHaveLength(1),
     );
     expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent('One');
+  });
+
+  it('deletes only the clicked soft-paginated page', async () => {
+    const originalScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return (this.textContent?.length ?? 0) * 100;
+      },
+    });
+    const editorRef = createRef<A4PageEditorRef>();
+
+    try {
+      render(
+        <A4PageEditor
+          ref={editorRef}
+          value="<p>123456789012345</p>"
+        />,
+      );
+      await screen.findByTestId('a4-page-content-2');
+      expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent(
+        '123456789',
+      );
+      expect(screen.getByTestId('a4-page-content-2')).toHaveTextContent(
+        '012345',
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete page 2' }));
+
+      await waitFor(() =>
+        expect(screen.queryByTestId('a4-page-content-2')).not.toBeInTheDocument(),
+      );
+      expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent(
+        '123456789',
+      );
+      expect(editorRef.current?.getContent()).toBe('<p>123456789</p>');
+    } finally {
+      if (originalScrollHeight) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          'scrollHeight',
+          originalScrollHeight,
+        );
+      }
+    }
+  });
+
+  it('preserves a manual page boundary after deleting its first soft fragment', async () => {
+    const originalScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return (this.textContent?.length ?? 0) * 100;
+      },
+    });
+    const editorRef = createRef<A4PageEditorRef>();
+
+    try {
+      render(
+        <A4PageEditor
+          ref={editorRef}
+          value={`<p>A</p>${hardPageBreak}<p>123456789012345</p>`}
+        />,
+      );
+      await screen.findByTestId('a4-page-content-3');
+      expect(screen.getByTestId('a4-page-content-2')).toHaveTextContent(
+        '123456789',
+      );
+      expect(screen.getByTestId('a4-page-content-3')).toHaveTextContent(
+        '012345',
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete page 2' }));
+
+      await waitFor(() =>
+        expect(screen.queryByTestId('a4-page-content-3')).not.toBeInTheDocument(),
+      );
+      expect(editorRef.current?.getContent()).toContain(hardPageBreak);
+      expect(screen.getByTestId('a4-page-content-1')).toHaveTextContent(
+        'A',
+      );
+      expect(screen.getByTestId('a4-page-content-2')).toHaveTextContent(
+        '012345',
+      );
+    } finally {
+      if (originalScrollHeight) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          'scrollHeight',
+          originalScrollHeight,
+        );
+      }
+    }
   });
 
   it('deletes a selection spanning multiple pages as one document range', async () => {

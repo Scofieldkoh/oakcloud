@@ -1382,6 +1382,7 @@ Reusable document templates with placeholder support.
 | name | VARCHAR(200) | No | Template name (unique per tenant) |
 | description | TEXT | Yes | Template description |
 | category | ENUM | No | Template category (see DocumentTemplateCategory) |
+| composition_type | ENUM | No | `STANDARD` or `SERVICE_AGREEMENT` (default: `STANDARD`) |
 | content | TEXT | No | HTML content with placeholders |
 | content_json | JSONB | Yes | TipTap JSON format (for editor state) |
 | placeholders | JSONB | No | Array of placeholder definitions (default: []) |
@@ -1397,8 +1398,8 @@ Reusable document templates with placeholder support.
 {
   "key": "company.name",
   "label": "Company Name",
-  "type": "text|date|number|currency|list|conditional",
-  "source": "company|contact|officer|shareholder|custom|system",
+  "type": "text|textarea|date|number|currency|list|conditional",
+  "source": "company|contact|officer|shareholder|service|custom|system",
   "path": "name",
   "defaultValue": "",
   "format": "dd MMMM yyyy",
@@ -1854,6 +1855,7 @@ Reusable template blocks (Phase 7 feature).
 | description | TEXT | Yes | Partial description |
 | content | TEXT | No | HTML content |
 | placeholders | JSONB | No | Placeholder definitions (default: []) |
+| version | INT | No | Material version, incremented only for content or placeholder changes |
 | created_by_id | UUID | No | FK to users |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
@@ -1862,6 +1864,73 @@ Reusable template blocks (Phase 7 feature).
 **Indexes:**
 - `template_partials_tenant_id_name_key` UNIQUE on (tenant_id, name)
 - `template_partials_tenant_id_idx` on tenant_id
+
+---
+
+### service_families
+
+Tenant-owned catalog group for ordered service offerings.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants |
+| code | VARCHAR(100) | No | Normalized tenant-unique code |
+| name | VARCHAR(200) | No | Display name |
+| description | TEXT | Yes | Family description |
+| display_order | INT | No | Stable list order |
+| is_active | BOOLEAN | No | Whether the family is selectable |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft-delete timestamp |
+
+Codes are unique by `(tenant_id, code)`. Catalog reads exclude rows with a
+non-null `deleted_at`. A family is archived only after all of its variants are
+archived.
+
+### service_variants
+
+Concrete catalog offering linked to one same-tenant SOW partial.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants |
+| family_id | UUID | No | FK to service_families |
+| sow_partial_id | UUID | No | FK to template_partials |
+| code | VARCHAR(100) | No | Normalized tenant-unique code |
+| name | VARCHAR(200) | No | Offering name |
+| description | TEXT | Yes | Offering description |
+| service_cadence | ENUM | No | ServiceCadence |
+| custom_cadence_label | VARCHAR(100) | Yes | Required only for CUSTOM cadence |
+| display_order | INT | No | Order within the family |
+| version | INT | No | Material version, default 1 |
+| is_active | BOOLEAN | No | Whether the variant is selectable |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
+| deleted_at | TIMESTAMP | Yes | Soft-delete timestamp |
+
+The material version increments once when name, SOW partial link, cadence,
+custom cadence label, or any default fee template changes.
+
+### service_variant_fee_templates
+
+Entity-agnostic default fee rows owned by a service variant. Stage 2 copies
+these defaults into entity-specific agreement fee rows.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | UUID | No | Primary key |
+| tenant_id | UUID | No | FK to tenants |
+| variant_id | UUID | No | FK to service_variants |
+| description | VARCHAR(500) | No | Fee description |
+| default_amount | DECIMAL(18,2) | Yes | Optional default amount |
+| currency | VARCHAR(3) | No | ISO currency code, default SGD |
+| billing_frequency | ENUM | No | BillingFrequency |
+| custom_frequency_label | VARCHAR(100) | Yes | Required only for CUSTOM frequency |
+| display_order | INT | No | Row order |
+| created_at | TIMESTAMP | No | Record creation time |
+| updated_at | TIMESTAMP | No | Last update time |
 
 ---
 
@@ -1928,6 +1997,39 @@ MINUTES         -- Meeting minutes
 NOTICE          -- Notices (AGM, EGM, etc.)
 CERTIFICATE     -- Certificates
 OTHER           -- Other documents
+```
+
+### DocumentTemplateCompositionType
+```sql
+STANDARD             -- Existing direct template behavior
+SERVICE_AGREEMENT    -- Requires the three reserved agreement slots
+```
+
+Service Agreement templates contain exactly one each of:
+`{{@agreement.serviceSections}}`, `{{@agreement.feeTable}}`, and
+`{{@agreement.entityAppendix}}`. The editor and document-template service
+enforce the invariant; document-template updates merge omitted fields with the
+existing row before validating the persisted composition.
+
+### ServiceCadence
+```sql
+MONTHLY
+QUARTERLY
+SEMI_ANNUALLY
+ANNUALLY
+ONE_TIME
+AD_HOC
+CUSTOM
+```
+
+### BillingFrequency (service catalog)
+```sql
+MONTHLY
+QUARTERLY
+SEMI_ANNUALLY
+ANNUALLY
+ONE_TIME
+CUSTOM
 ```
 
 ### GeneratedDocumentStatus

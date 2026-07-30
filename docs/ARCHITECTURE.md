@@ -213,6 +213,44 @@ Document-generation work can be paused as explicit, server-backed sessions. Each
 
 Editable experiences can use the shared `useUnsavedNavigationGuard` hook for native `beforeunload`, same-origin link, and browser-back protection. Its default copy is page-neutral, and document generation, forms, e-signing, or other editors can supply experience-specific dialog text.
 
+## Service Catalog And Agreement Template Foundation
+
+The service catalog is tenant-scoped and managed under the Services tab of
+`/template-partials`. `ServiceFamily` groups ordered `ServiceVariant` records.
+Each variant links to one active, same-tenant `TemplatePartial` containing its
+statement-of-work wording and owns ordered, entity-agnostic
+`ServiceVariantFeeTemplate` defaults. Catalog reads and writes use
+`document:read/create/update/delete`; every service query includes `tenantId`
+and `deletedAt: null` at the family, variant, fee-template, and linked-partial
+boundaries. Archives are soft deletes. A family cannot be archived until its
+variants have been archived, and a partial cannot be deleted while a
+same-tenant, non-deleted variant references it.
+
+`DocumentTemplate.compositionType` distinguishes normal templates from
+Service Agreement composition templates:
+
+- `STANDARD` preserves the existing template-generation behavior.
+- `SERVICE_AGREEMENT` requires exactly one
+  `{{@agreement.serviceSections}}`, `{{@agreement.feeTable}}`, and
+  `{{@agreement.entityAppendix}}` slot. These reserved tokens are insertable
+  editor blocks, not editable custom placeholder definitions. The editor blocks
+  invalid saves, and document-template service writes validate the merged
+  persisted composition on create, update, and duplication.
+
+Service-specific input definitions use the `service` placeholder source, for
+example `service.fields.software`, and may use the `textarea` type. The editor
+keeps these separate from custom fields and preserves source, path, category,
+type, and forward-compatible metadata on save. Stage 2
+resolves those paths for a selected service and copies catalog fee defaults
+into entity-specific agreement fee rows before rendering the reserved slots.
+
+Material versioning provides the Stage 2 snapshot boundary.
+`TemplatePartial.version` increments only when normalized `content` or
+serialized `placeholders` changes. `ServiceVariant.version` increments once
+per update when its name, linked partial, cadence/custom cadence label, or fee
+template set changes. Labels, descriptions, display order, and active-state
+maintenance do not independently create new material versions.
+
 ## Tasks And Pipelines Architecture
 
 `/pipelines` manages tenant-scoped templates and `/tasks` runs work from them. Creating or editing a pipeline publishes a new immutable pipeline version. Creating a task copies that version's ordered stage definitions and checklist items into a locked live-task snapshot. Later template edits therefore affect future tasks only; an existing task never changes its stage structure or pipeline version.

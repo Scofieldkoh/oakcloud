@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PlaceholderPanel } from '@/components/documents/template-editor/placeholder-panel';
@@ -174,6 +174,52 @@ describe('PlaceholderPanel', () => {
         label: 'Updated reference',
       }),
     ]);
+  });
+
+  it('inserts and copies stable service agreement blocks', async () => {
+    const onInsert = vi.fn();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    render(<PlaceholderPanel {...defaultProps} onInsert={onInsert} />);
+
+    expect(screen.getByText('Agreement blocks')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Insert Service sections' }));
+    expect(onInsert).toHaveBeenCalledWith('{{@agreement.serviceSections}}');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy Fee table' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith('{{@agreement.feeTable}}');
+    });
+    expect(screen.queryByRole('button', { name: /Edit Service sections/ })).not.toBeInTheDocument();
+  });
+
+  it('keeps persisted service fields separate from editable custom fields', () => {
+    const onInsert = vi.fn();
+    render(
+      <PlaceholderPanel
+        {...defaultProps}
+        onInsert={onInsert}
+        customPlaceholders={[{
+          id: 'service-software',
+          key: 'service.fields.software',
+          label: 'Accounting software',
+          type: 'textarea',
+          required: true,
+          storageSource: 'service',
+          storagePath: 'service.fields.software',
+          storageCategory: 'service-input',
+        }]}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Service fields, 1 result' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Insert Accounting software' }));
+    expect(onInsert).toHaveBeenCalledWith('{{service.fields.software}}');
+    expect(screen.queryByRole('button', { name: 'Edit Accounting software' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete Accounting software' })).not.toBeInTheDocument();
   });
 
 });

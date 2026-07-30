@@ -110,7 +110,7 @@ npm run docker:down
 
 | Command | Description |
 |---------|-------------|
-| `npm run db:generate` | Generate Prisma client |
+| `npm run db:generate` | Generate Prisma client and deterministically normalize generated TypeScript whitespace |
 | `npm run db:push` | Push schema to the database |
 | `npm run db:migrate` | Create and run a development migration |
 | `npm run db:seed` | Seed local sample data |

@@ -1,3 +1,9 @@
+import {
+  findServiceAgreementSlotViolations,
+  SERVICE_AGREEMENT_SLOTS,
+  type ServiceAgreementSlotName,
+} from '@/lib/service-agreement-template';
+
 const LOOP_FIELD_KEYS = new Set([
   'name',
   'identificationNumber',
@@ -27,9 +33,46 @@ interface PendingIssue {
 export interface TemplateValidationIssue {
   id: string;
   severity: 'error' | 'warning';
-  code: 'unmatched-block' | 'unknown-placeholder' | 'empty-loop' | 'unresolved-partial';
+  code:
+    | 'unmatched-block'
+    | 'unknown-placeholder'
+    | 'empty-loop'
+    | 'unresolved-partial'
+    | 'missing-agreement-slot'
+    | 'duplicate-agreement-slot';
   message: string;
   flowId?: string;
+}
+
+export { SERVICE_AGREEMENT_SLOTS };
+export type { ServiceAgreementSlotName };
+
+export function validateServiceAgreementSlots(content: string): TemplateValidationIssue[] {
+  return findServiceAgreementSlotViolations(content).map((violation) => {
+    const code =
+      violation.kind === 'missing'
+        ? 'missing-agreement-slot'
+        : 'duplicate-agreement-slot';
+    return {
+      id: `agreement-${violation.slot}-${code}`,
+      severity: 'error',
+      code,
+      message: violation.message,
+    };
+  });
+}
+
+export interface ValidateTemplateInput {
+  compositionType: 'STANDARD' | 'SERVICE_AGREEMENT';
+  content: string;
+  placeholders: Array<{ key: string }>;
+}
+
+export function validateTemplate(input: ValidateTemplateInput): TemplateValidationIssue[] {
+  const knownKeys = new Set(input.placeholders.map((placeholder) => placeholder.key));
+  const syntaxIssues = validateTemplateSyntax(input.content, knownKeys);
+  if (input.compositionType !== 'SERVICE_AGREEMENT') return syntaxIssues;
+  return [...syntaxIssues, ...validateServiceAgreementSlots(input.content)];
 }
 
 /**

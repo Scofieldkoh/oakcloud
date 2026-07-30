@@ -122,4 +122,28 @@ describe('document template layout API persistence', () => {
     ).toBe(400);
     expect(updateDocumentTemplate).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['missing', '<p>{{>service-summary}}</p><p>{{>terms-and-conditions}}</p>'],
+    [
+      'duplicated',
+      '<p>{{>service-summary}}</p><p>{{>service-summary}}</p><p>{{>pricing-summary}}</p><p>{{>terms-and-conditions}}</p>',
+    ],
+  ])('returns 400 when agreement slots are %s', async (_, content) => {
+    createDocumentTemplate.mockRejectedValueOnce(
+      new Error('Service agreement template composition is invalid'),
+    );
+
+    const response = await POST(
+      request('POST', {
+        name: 'Invalid service agreement',
+        category: 'OTHER',
+        compositionType: 'SERVICE_AGREEMENT',
+        content,
+        placeholders: [],
+      }),
+    );
+
+    expect(response.status).toBe(400);
+  });
 });

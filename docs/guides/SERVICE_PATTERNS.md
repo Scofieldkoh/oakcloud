@@ -261,6 +261,52 @@ export function getDocumentExporter(): IDocumentExporter {
 - `getCommentsForDocument()`
 - `checkCommentRateLimit()`
 
+**service-catalog/service.ts** - Service offering setup:
+- `listServiceCatalog()` / `getSelectableServiceVariants()`
+- Family and variant create/update/archive operations
+- Same-tenant active SOW partial validation
+- Transactional fee-template replacement
+- `ServiceFamily` and `ServiceVariant` audit records
+
+Catalog operations reuse `document:read/create/update/delete`. Setup routes may
+resolve the SUPER_ADMIN's selected workspace, but generation-facing selectable
+reads always derive the workspace from the authenticated session and never
+accept a caller-supplied tenant ID.
+
+Catalog codes are normalized before service calls and uniqueness is enforced
+inside tenant scope. All catalog lookups include both `tenantId` and
+`deletedAt: null`, including nested variants and linked partials; fee reads are
+also tenant-filtered. Archives set `deletedAt` rather than removing records.
+Partial deletion checks both textual template use and non-deleted
+service-variant links. Partial deletion, service-variant creation, and variant
+relinking use the same retryable serializable transaction protocol. Each retry
+revalidates the partial's non-deleted state and usage predicates, so a
+concurrent operation cannot leave a non-deleted variant linked to a
+soft-deleted partial. The partial soft delete and its audit record are written
+through the same transaction client.
+
+Material version rules are deliberately narrower than normal metadata updates:
+
+- `TemplatePartial.version` increments only for normalized content or serialized
+  placeholder changes.
+- `ServiceVariant.version` increments once when name, SOW partial link,
+  cadence/custom label, or the complete fee-template set changes.
+- Audit metadata records old/new versions for material updates.
+- Catalog mutations and their audit records share one transaction. Material
+  version updates use retryable serializable transactions and record the
+  transaction's actual returned version.
+
+The public `ServiceVariantDto` serializes decimals as strings and includes the
+linked partial version/placeholders plus ordered fee defaults. Stage 2 treats
+this DTO as the catalog snapshot input, resolves `service.*` placeholders, and
+copies fee templates into entity-specific agreement rows.
+
+The PostgreSQL lifecycle concurrency suite is
+`__tests__/integration/service-partial-lifecycle.postgres.test.ts`. Set
+`TEST_DATABASE_URL` to an isolated database with the current Prisma schema
+before running it; the suite creates and removes only its own tenant-scoped
+fixtures.
+
 ### 3. AI/Extraction Services
 
 **bizfile.service.ts** - BizFile document extraction:

@@ -23,6 +23,7 @@ import {
   normalizeStoredPlaceholders,
   type StoredPlaceholderLike,
 } from '@/lib/template-analysis';
+import { assertValidTemplateComposition } from '@/lib/service-agreement-template';
 
 // ============================================================================
 // Types
@@ -47,6 +48,7 @@ const TRACKED_FIELDS: (keyof DocumentTemplate)[] = [
   'name',
   'description',
   'category',
+  'compositionType',
   'content',
   'isActive',
 ];
@@ -60,6 +62,7 @@ export async function createDocumentTemplate(
   params: TenantAwareParams
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
+  assertValidTemplateComposition(data.compositionType, data.content);
 
   // Check for duplicate name within tenant
   const existingName = await prisma.documentTemplate.findFirst({
@@ -76,6 +79,7 @@ export async function createDocumentTemplate(
       name: data.name,
       description: data.description,
       category: data.category,
+      compositionType: data.compositionType,
       content: data.content,
       contentJson: data.contentJson ?? undefined,
       placeholders: data.placeholders,
@@ -118,6 +122,11 @@ export async function updateDocumentTemplate(
     throw new Error('Template not found');
   }
 
+  assertValidTemplateComposition(
+    data.compositionType ?? existing.compositionType,
+    data.content ?? existing.content,
+  );
+
   // Check for duplicate name if being changed
   if (data.name && data.name !== existing.name) {
     const existingName = await prisma.documentTemplate.findFirst({
@@ -141,6 +150,7 @@ export async function updateDocumentTemplate(
   if (data.name !== undefined) updateData.name = data.name;
   if (data.description !== undefined) updateData.description = data.description;
   if (data.category !== undefined) updateData.category = data.category;
+  if (data.compositionType !== undefined) updateData.compositionType = data.compositionType;
   if (data.content !== undefined) updateData.content = data.content;
   if (data.contentJson !== undefined) {
     updateData.contentJson = data.contentJson === null
@@ -313,6 +323,8 @@ export async function duplicateDocumentTemplate(
     throw new Error('Template not found');
   }
 
+  assertValidTemplateComposition(existing.compositionType, existing.content);
+
   // Generate new name
   let newName = data.name || `Copy of ${existing.name}`;
 
@@ -334,6 +346,7 @@ export async function duplicateDocumentTemplate(
       name: newName,
       description: existing.description,
       category: existing.category,
+      compositionType: existing.compositionType,
       content: existing.content,
       contentJson: existing.contentJson ?? undefined,
       placeholders: existing.placeholders ?? [],

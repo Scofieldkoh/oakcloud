@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { resolveWorkspaceId } from '@/lib/api-helpers';
 import { getPartialUsage } from '@/services/template-partial.service';
 
 interface RouteParams {
@@ -17,21 +18,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     await requirePermission(session, 'document', 'read');
 
-    if (!session.tenantId) {
-      return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
-
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
 
     const usage = await getPartialUsage(id, {
-      tenantId: session.tenantId,
+      tenantId,
       userId: session.id,
     });
 
     return NextResponse.json({
       partialId: id,
-      usageCount: usage.length,
-      templates: usage,
+      usageCount: usage.templates.length,
+      serviceVariantCount: usage.serviceVariants.length,
+      templates: usage.templates,
+      serviceVariants: usage.serviceVariants,
     });
   } catch (error) {
     if (error instanceof Error) {

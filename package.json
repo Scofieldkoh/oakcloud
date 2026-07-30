@@ -11,7 +11,7 @@
     "test:run": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "test:coverage": "vitest run --coverage",
-    "db:generate": "prisma generate",
+    "db:generate": "prisma generate && node scripts/normalize-generated-prisma.mjs",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",

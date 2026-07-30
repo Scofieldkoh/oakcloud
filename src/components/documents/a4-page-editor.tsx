@@ -48,7 +48,6 @@ import {
 import {
   appendHardPage,
   applyLogicalDelete,
-  deleteHardPageSection,
   type DocumentTransactionResult,
 } from './a4-pagination/document-actions';
 import {
@@ -1307,7 +1306,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
       lastValueRef.current = canonicalValue;
 
-      if (!isPreviewMode) {
+      if (!isPreviewMode || readOnly) {
         setPages((prev) => {
           const newPages = parsePages(value, prev);
           pagesRef.current = newPages;
@@ -1321,7 +1320,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
           return newPages;
         });
       }
-    }, [value, parsePages, isPreviewMode, scheduleReflow]);
+    }, [value, parsePages, isPreviewMode, readOnly, scheduleReflow]);
 
     const historyRef = useRef<{ past: string[]; future: string[] }>({
       past: [],
@@ -1462,14 +1461,23 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
     const handleDeletePage = useCallback(
       (id: string) => {
         if (effectivePreviewMode) return;
-        const pageIndex = pagesRef.current.findIndex((page) => page.id === id);
+        const currentPages = pagesRef.current;
+        const pageIndex = currentPages.findIndex((page) => page.id === id);
         if (pageIndex < 0) return;
-        const sectionIndex = pagesRef.current
-          .slice(0, pageIndex + 1)
-          .filter((page, index) => index === 0 || page.hardBreakBefore).length - 1;
-        commitUserTransaction(
-          deleteHardPageSection(canonicalPagesHtml(pagesRef.current), sectionIndex),
-        );
+        const deletedPage = currentPages[pageIndex];
+        const remainingPages = currentPages.filter((page) => page.id !== id);
+        const nextPage = remainingPages[pageIndex];
+        if (deletedPage.hardBreakBefore && nextPage && !nextPage.hardBreakBefore) {
+          remainingPages[pageIndex] = {
+            ...nextPage,
+            hardBreakBefore: true,
+          };
+        }
+        commitUserTransaction({
+          html: canonicalPagesHtml(remainingPages),
+          selection: null,
+          changed: true,
+        });
       },
       [canonicalPagesHtml, commitUserTransaction, effectivePreviewMode],
     );

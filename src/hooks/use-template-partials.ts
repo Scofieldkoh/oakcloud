@@ -40,7 +40,13 @@ export interface PartialUsageInfo {
 export interface PartialUsageResult {
   partialId: string;
   usageCount: number;
+  serviceVariantCount: number;
   templates: PartialUsageInfo[];
+  serviceVariants: Array<{
+    id: string;
+    name: string;
+    isActive: boolean;
+  }>;
 }
 
 // ============================================================================

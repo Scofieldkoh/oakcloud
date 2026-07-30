@@ -13,6 +13,7 @@ import {
   type TemplateCollection,
   type TemplateLoopLayout,
 } from '@/components/documents/template-editor/template-builders';
+import { SERVICE_AGREEMENT_SLOTS } from '@/components/documents/template-editor/template-validation';
 import type { CustomPlaceholderDefinition, MergedPlaceholder } from '@/types/placeholders';
 
 export interface TemplatePartialOption {
@@ -52,6 +53,11 @@ interface Category {
 }
 
 const CATEGORIES: Category[] = [
+  { key: 'agreement-blocks', label: 'Agreement blocks', fields: [
+    { key: SERVICE_AGREEMENT_SLOTS.serviceSections, label: 'Service sections', example: 'Selected service scopes', category: 'Agreement blocks' },
+    { key: SERVICE_AGREEMENT_SLOTS.feeTable, label: 'Fee table', example: 'Entity-specific service fees', category: 'Agreement blocks' },
+    { key: SERVICE_AGREEMENT_SLOTS.entityAppendix, label: 'Entity appendix', example: 'Entity details and schedules', category: 'Agreement blocks' },
+  ] },
   { key: 'company', label: 'Company', fields: [
     { key: 'company.name', label: 'Company Name', example: 'Sample Company Pte Ltd', category: 'Company' },
     { key: 'company.uen', label: 'UEN', example: '202312345A', category: 'Company' },
@@ -134,7 +140,7 @@ const resultLabel = (label: string, count: number) => `${label}, ${count} ${coun
 
 export function PlaceholderPanel({ onInsert, partials, isLoadingPartials, customPlaceholders, onCustomPlaceholdersChange, mergedPlaceholders = [], templateBooleanPlaceholders = [], partialPlaceholderLinkings = {}, onPartialPlaceholderLinkingChange, isPartialMode = false }: PlaceholderPanelProps) {
   const [query, setQuery] = useState('');
-  const [expanded, setExpanded] = useState(['company', 'loops', 'conditions']);
+  const [expanded, setExpanded] = useState(['agreement-blocks', 'company', 'loops', 'conditions', 'service-fields']);
   const [recents, setRecents] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
   const [builder, setBuilder] = useState<Builder | null>(null);
@@ -142,13 +148,27 @@ export function PlaceholderPanel({ onInsert, partials, isLoadingPartials, custom
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState({ label: '', key: '', type: 'text' as CustomPlaceholderDefinition['type'], required: true, defaultValue: '' });
   const normalizedQuery = query.trim().toLowerCase();
-  const filteredCategories = useMemo(() => CATEGORIES.map((category) => ({ ...category, fields: category.fields.filter((field) => !normalizedQuery || matches(normalizedQuery, field.label, field.key, field.category, field.example, category.label)) })).filter((category) => category.fields.length > 0), [normalizedQuery]);
+  const serviceFields = customPlaceholders.filter((field) => field.storageSource === 'service');
+  const filteredCategories = useMemo(() => [
+    ...CATEGORIES,
+    {
+      key: 'service-fields',
+      label: 'Service fields',
+      fields: serviceFields.map((field) => ({
+        key: field.key,
+        label: field.label,
+        category: 'service',
+        example: field.defaultValue || field.type,
+      })),
+    },
+  ].map((category) => ({ ...category, fields: category.fields.filter((field) => !normalizedQuery || matches(normalizedQuery, field.label, field.key, field.category, field.example, category.label)) })).filter((category) => category.fields.length > 0), [normalizedQuery, serviceFields]);
   const allFields = useMemo(() => CATEGORIES.flatMap((category) => category.fields), []);
   const recentFields = recents.map((id) => allFields.find((field) => fieldId(field) === id)).filter((field): field is Field => Boolean(field));
-  const matchingCustom = customPlaceholders.filter((field) => !normalizedQuery || matches(normalizedQuery, field.label, field.key, field.defaultValue, 'Custom'));
+  const customFields = customPlaceholders.filter((field) => field.storageSource !== 'service');
+  const matchingCustom = customFields.filter((field) => !normalizedQuery || matches(normalizedQuery, field.label, field.key, field.defaultValue, 'Custom'));
   const matchingPartials = partials.filter((partial) => !normalizedQuery || matches(normalizedQuery, partial.name, partial.displayName, partial.description, 'Partials'));
   const partialLinks = useMemo(() => mergedPlaceholders.filter((field) => field.source === 'partial').reduce<Record<string, MergedPlaceholder[]>>((groups, field) => { (groups[field.sourceName || 'unknown'] ||= []).push(field); return groups; }, {}), [mergedPlaceholders]);
-  const duplicateKey = Boolean(form.key) && customPlaceholders.some((field) => field.key === normalizeKey(form.key) && field.id !== editingId);
+  const duplicateKey = Boolean(form.key) && customFields.some((field) => field.key === normalizeKey(form.key) && field.id !== editingId);
 
   const resetForm = () => { setForm({ label: '', key: '', type: 'text', required: true, defaultValue: '' }); setEditingId(null); setFormOpen(false); };
   const insert = (html: string, id: string) => { onInsert(html); setRecents((previous) => [id, ...previous.filter((item) => item !== id)].slice(0, 5)); };

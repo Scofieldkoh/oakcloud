@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
 import { DocumentGenerationTabs } from '@/components/documents/document-generation-tabs';
+import { ServiceCatalogPanel } from '@/components/documents/service-catalog/service-catalog-panel';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -37,6 +38,7 @@ import {
   Check,
   X,
   Eye,
+  BriefcaseBusiness,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -46,7 +48,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // Types
 // ============================================================================
 
-type TabType = 'templates' | 'partials';
+type TabType = 'templates' | 'partials' | 'services';
 
 interface DocumentTemplate {
   id: string;
@@ -72,8 +74,8 @@ interface DocumentTemplate {
 interface PlaceholderDefinition {
   key: string;
   label: string;
-  type: 'text' | 'date' | 'number' | 'currency' | 'boolean' | 'list' | 'conditional';
-  source: 'company' | 'contact' | 'officer' | 'shareholder' | 'custom' | 'system';
+  type: 'text' | 'textarea' | 'date' | 'number' | 'currency' | 'boolean' | 'list' | 'conditional';
+  source: 'company' | 'contact' | 'officer' | 'shareholder' | 'service' | 'custom' | 'system';
   path?: string;
   defaultValue?: string;
   format?: string;
@@ -1004,16 +1006,17 @@ function TemplatePartialsTab({
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
             </div>
-          ) : usageData?.templates.length === 0 ? (
+          ) : usageData?.templates.length === 0 && usageData.serviceVariants.length === 0 ? (
             <p className="text-sm text-text-muted text-center py-8">
-              This partial is not used in any templates yet.
+              This partial is not used in any templates or service variants yet.
             </p>
           ) : (
-            <div className="space-y-2">
-              <p className="text-sm text-text-secondary mb-4">
-                Used in {usageData?.usageCount} template{usageData?.usageCount !== 1 ? 's' : ''}:
-              </p>
-              {usageData?.templates.map((template) => (
+            <div className="space-y-4">
+              {usageData?.templates.length ? <div className="space-y-2">
+                <p className="text-sm text-text-secondary">
+                  Used in {usageData.usageCount} template{usageData.usageCount !== 1 ? 's' : ''}:
+                </p>
+                {usageData.templates.map((template) => (
                 <div
                   key={template.templateId}
                   className="flex items-center justify-between p-3 rounded-md bg-background-tertiary"
@@ -1026,7 +1029,24 @@ function TemplatePartialsTab({
                   </div>
                   <ChevronRight className="w-4 h-4 text-text-muted" />
                 </div>
-              ))}
+                ))}
+              </div> : null}
+              {usageData?.serviceVariants.length ? <div className="space-y-2">
+                <p className="text-sm text-text-secondary">
+                  Linked to {usageData.serviceVariantCount} service variant{usageData.serviceVariantCount !== 1 ? 's' : ''}:
+                </p>
+                {usageData.serviceVariants.map((variant) => (
+                  <div
+                    key={variant.id}
+                    className="flex items-center justify-between p-3 rounded-md bg-background-tertiary"
+                  >
+                    <p className="text-sm font-medium text-text-primary">{variant.name}</p>
+                    <span className={variant.isActive ? 'badge badge-success' : 'badge badge-neutral'}>
+                      {variant.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                ))}
+              </div> : null}
             </div>
           )}
         </ModalBody>
@@ -1048,13 +1068,18 @@ export default function TemplatesPage() {
   const { data: session } = useSession();
   const { can } = usePermissions();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabType>('templates');
+  const initialTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<TabType>(
+    initialTab === 'partials' || initialTab === 'services'
+      ? initialTab
+      : 'templates'
+  );
 
   // Read tab from URL query parameter
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'partials') {
-      setActiveTab('partials');
+    if (tabParam === 'templates' || tabParam === 'partials' || tabParam === 'services') {
+      setActiveTab(tabParam);
     }
   }, [searchParams]);
 
@@ -1073,7 +1098,7 @@ export default function TemplatesPage() {
             Templates
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            Manage document templates and reusable partials
+            Manage document templates, reusable partials, and service offerings.
           </p>
         </div>
       </div>
@@ -1112,6 +1137,20 @@ export default function TemplatesPage() {
                   Partials
                 </span>
               </button>
+              <button
+                onClick={() => setActiveTab('services')}
+                className={cn(
+                  'pb-3 text-sm font-medium border-b-2 transition-colors',
+                  activeTab === 'services'
+                    ? 'border-accent-primary text-accent-primary'
+                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border-secondary'
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <BriefcaseBusiness className="w-4 h-4" />
+                  Services
+                </span>
+              </button>
             </nav>
           </div>
 
@@ -1123,13 +1162,20 @@ export default function TemplatesPage() {
               canUpdate={can.updateDocument}
               canDelete={can.deleteDocument}
             />
-          ) : (
+          ) : activeTab === 'partials' ? (
             <TemplatePartialsTab
               activeTenantId={activeTenantId}
               canCreate={can.createDocument}
               canUpdate={can.updateDocument}
               canDelete={can.deleteDocument}
               isSuperAdmin={session?.isSuperAdmin ?? false}
+            />
+          ) : (
+            <ServiceCatalogPanel
+              workspaceId={activeTenantId}
+              canCreate={can.createDocument}
+              canUpdate={can.updateDocument}
+              canDelete={can.deleteDocument}
             />
           )}
         </>

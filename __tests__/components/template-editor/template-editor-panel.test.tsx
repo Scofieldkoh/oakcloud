@@ -12,6 +12,7 @@ const templateForm = {
   name: 'Board resolution',
   description: 'A board resolution',
   category: 'RESOLUTION',
+  compositionType: 'STANDARD' as const,
   content: '<p>{{company.unknown}}</p>',
   isActive: true,
   layout: DEFAULT_A4_DOCUMENT_LAYOUT,
@@ -87,6 +88,20 @@ describe('TemplateEditorPanel', () => {
     });
   });
 
+  it('loads and updates the persisted composition type', () => {
+    const onTemplateChange = vi.fn();
+    render(<TemplateEditorPanel {...defaultProps} onTemplateChange={onTemplateChange} />);
+
+    const composition = screen.getByLabelText('Composition');
+    expect(composition).toHaveValue('STANDARD');
+
+    fireEvent.change(composition, { target: { value: 'SERVICE_AGREEMENT' } });
+
+    expect(onTemplateChange).toHaveBeenCalledWith({
+      compositionType: 'SERVICE_AGREEMENT',
+    });
+  });
+
   it('never renders template typography controls in partial mode', () => {
     const partialForm = {
       name: 'director-details',
@@ -145,5 +160,25 @@ describe('TemplateEditorPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: issue.message }));
 
     expect(onFocusIssue).toHaveBeenCalledWith(issue.flowId);
+  });
+
+  it('opens validation when agreement composition slots block saving', () => {
+    render(
+      <TemplateEditorPanel
+        {...defaultProps}
+        validationIssues={[{
+          id: 'agreement-feeTable-missing-agreement-slot',
+          severity: 'error',
+          code: 'missing-agreement-slot',
+          message: 'Service Agreement template must contain exactly one feeTable slot.',
+        }]}
+      />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Test & Preview' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByText(/exactly one feeTable slot/)).toBeVisible();
   });
 });
