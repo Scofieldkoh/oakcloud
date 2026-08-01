@@ -131,6 +131,7 @@ export const ModelName = {
   Form: 'Form',
   FormField: 'FormField',
   FormOptionPreset: 'FormOptionPreset',
+  FormUrlHealth: 'FormUrlHealth',
   FormSubmission: 'FormSubmission',
   FormDraft: 'FormDraft',
   FormUpload: 'FormUpload',
@@ -1755,6 +1756,28 @@ export const FormOptionPresetScalarFieldEnum = {
 } as const
 
 export type FormOptionPresetScalarFieldEnum = (typeof FormOptionPresetScalarFieldEnum)[keyof typeof FormOptionPresetScalarFieldEnum]
+
+
+export const FormUrlHealthScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  formId: 'formId',
+  fieldKey: 'fieldKey',
+  checkedUrl: 'checkedUrl',
+  urlFingerprint: 'urlFingerprint',
+  classification: 'classification',
+  lastHttpStatus: 'lastHttpStatus',
+  lastErrorCode: 'lastErrorCode',
+  lastErrorMessage: 'lastErrorMessage',
+  consecutiveFailures: 'consecutiveFailures',
+  lastCheckedAt: 'lastCheckedAt',
+  lastSucceededAt: 'lastSucceededAt',
+  warningActivatedAt: 'warningActivatedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FormUrlHealthScalarFieldEnum = (typeof FormUrlHealthScalarFieldEnum)[keyof typeof FormUrlHealthScalarFieldEnum]
 
 
 export const FormSubmissionScalarFieldEnum = {

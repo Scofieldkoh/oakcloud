@@ -418,6 +418,11 @@ export type FormField = Prisma.FormFieldModel
  */
 export type FormOptionPreset = Prisma.FormOptionPresetModel
 /**
+ * Model FormUrlHealth
+ *
+ */
+export type FormUrlHealth = Prisma.FormUrlHealthModel
+/**
  * Model FormSubmission
  *
  */

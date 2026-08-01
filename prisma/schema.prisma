@@ -41,6 +41,7 @@ model Workspace {
   exchangeRates               ExchangeRate[]
   formFields                  FormField[]
   formOptionPresets           FormOptionPreset[]
+  formUrlHealth               FormUrlHealth[]
   formDrafts                  FormDraft[]
   formSubmissions             FormSubmission[]
   formUploads                 FormUpload[]
@@ -2067,6 +2068,7 @@ model Form {
   updatedAt        DateTime         @updatedAt @map("updated_at")
   deletedAt        DateTime?        @map("deleted_at")
   fields           FormField[]
+  formUrlHealth    FormUrlHealth[]
   drafts           FormDraft[]
   submissions      FormSubmission[]
   tenant           Workspace        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -2132,6 +2134,32 @@ model FormOptionPreset {
   @@unique([tenantId, builtInKey])
   @@index([tenantId, updatedAt])
   @@map("form_option_presets")
+}
+
+model FormUrlHealth {
+  id                  String    @id @default(uuid())
+  tenantId            String    @map("tenant_id")
+  formId              String    @map("form_id")
+  fieldKey            String    @map("field_key")
+  checkedUrl          String    @map("checked_url")
+  urlFingerprint      String    @map("url_fingerprint")
+  classification      String
+  lastHttpStatus      Int?      @map("last_http_status")
+  lastErrorCode       String?   @map("last_error_code")
+  lastErrorMessage    String?   @map("last_error_message")
+  consecutiveFailures Int       @default(0) @map("consecutive_failures")
+  lastCheckedAt       DateTime  @map("last_checked_at")
+  lastSucceededAt     DateTime? @map("last_succeeded_at")
+  warningActivatedAt  DateTime? @map("warning_activated_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  tenant              Workspace @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  form                Form      @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, formId, fieldKey])
+  @@index([tenantId, warningActivatedAt])
+  @@index([lastCheckedAt])
+  @@map("form_url_health")
 }
 
 model FormSubmission {

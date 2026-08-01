@@ -464,6 +464,7 @@ export const ModelName = {
   Form: 'Form',
   FormField: 'FormField',
   FormOptionPreset: 'FormOptionPreset',
+  FormUrlHealth: 'FormUrlHealth',
   FormSubmission: 'FormSubmission',
   FormDraft: 'FormDraft',
   FormUpload: 'FormUpload',
@@ -501,7 +502,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -6425,6 +6426,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    FormUrlHealth: {
+      payload: Prisma.$FormUrlHealthPayload<ExtArgs>
+      fields: Prisma.FormUrlHealthFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FormUrlHealthFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUrlHealthPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FormUrlHealthFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUrlHealthPayload>
+        }
+        findFirst: {
+          args: Prisma.FormUrlHealthFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUrlHealthPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FormUrlHealthFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUrlHealthPayload>
+        }
+        findMany: {
+          args: Prisma.FormUrlHealthFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUrlHealthPayload>[]
+        }
+        create: {
+          args: Prisma.FormUrlHealthCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUrlHealthPayload>
+        }
+        createMany: {
+          args: Prisma.FormUrlHealthCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FormUrlHealthCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUrlHealthPayload>[]
+        }
+        delete: {
+          args: Prisma.FormUrlHealthDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUrlHealthPayload>
+        }
+        update: {
+          args: Prisma.FormUrlHealthUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUrlHealthPayload>
+        }
+        deleteMany: {
+          args: Prisma.FormUrlHealthDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FormUrlHealthUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FormUrlHealthUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUrlHealthPayload>[]
+        }
+        upsert: {
+          args: Prisma.FormUrlHealthUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormUrlHealthPayload>
+        }
+        aggregate: {
+          args: Prisma.FormUrlHealthAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFormUrlHealth>
+        }
+        groupBy: {
+          args: Prisma.FormUrlHealthGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormUrlHealthGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FormUrlHealthCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormUrlHealthCountAggregateOutputType> | number
+        }
+      }
+    }
     FormSubmission: {
       payload: Prisma.$FormSubmissionPayload<ExtArgs>
       fields: Prisma.FormSubmissionFieldRefs
@@ -9678,6 +9753,28 @@ export const FormOptionPresetScalarFieldEnum = {
 export type FormOptionPresetScalarFieldEnum = (typeof FormOptionPresetScalarFieldEnum)[keyof typeof FormOptionPresetScalarFieldEnum]
 
 
+export const FormUrlHealthScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  formId: 'formId',
+  fieldKey: 'fieldKey',
+  checkedUrl: 'checkedUrl',
+  urlFingerprint: 'urlFingerprint',
+  classification: 'classification',
+  lastHttpStatus: 'lastHttpStatus',
+  lastErrorCode: 'lastErrorCode',
+  lastErrorMessage: 'lastErrorMessage',
+  consecutiveFailures: 'consecutiveFailures',
+  lastCheckedAt: 'lastCheckedAt',
+  lastSucceededAt: 'lastSucceededAt',
+  warningActivatedAt: 'warningActivatedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FormUrlHealthScalarFieldEnum = (typeof FormUrlHealthScalarFieldEnum)[keyof typeof FormUrlHealthScalarFieldEnum]
+
+
 export const FormSubmissionScalarFieldEnum = {
   id: 'id',
   formId: 'formId',
@@ -11513,6 +11610,7 @@ export type GlobalOmitConfig = {
   form?: Prisma.FormOmit
   formField?: Prisma.FormFieldOmit
   formOptionPreset?: Prisma.FormOptionPresetOmit
+  formUrlHealth?: Prisma.FormUrlHealthOmit
   formSubmission?: Prisma.FormSubmissionOmit
   formDraft?: Prisma.FormDraftOmit
   formUpload?: Prisma.FormUploadOmit
