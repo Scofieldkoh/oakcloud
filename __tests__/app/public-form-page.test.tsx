@@ -65,7 +65,7 @@ const publicForm = {
   status: 'PUBLISHED',
   tenantLogoUrl: null,
   tenantName: 'OakCloud',
-  fields: [],
+  fields: [] as Array<Record<string, unknown>>,
   settings: {
     i18n: {
       defaultLocale: 'en',
