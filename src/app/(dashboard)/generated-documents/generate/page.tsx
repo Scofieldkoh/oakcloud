@@ -15,7 +15,7 @@ import {
 } from '@/components/documents/document-generation-wizard';
 import type { DocumentTemplate } from '@/components/documents/template-selector';
 import type { GenerationSessionEnvelope } from '@/lib/document-generation-session';
-import type { GenerationSessionState } from '@/lib/validations/generated-document';
+import type { SaveGenerationSessionInput } from '@/lib/validations/generated-document';
 import {
   readTaskLaunchContext,
   withTaskLaunchContext,
@@ -101,7 +101,12 @@ export default function GenerateDocumentPage() {
     if (!response.ok) return;
 
     const data = await response.json();
-    setCompanies((data.options || []).map(mapCompanyOption));
+    const next = (data.options || []).map(mapCompanyOption);
+    setCompanies((current) => {
+      const merged = new Map(current.map((company) => [company.id, company]));
+      next.forEach((company: Company) => merged.set(company.id, company));
+      return [...merged.values()];
+    });
   }, []);
 
   const searchContacts = useCallback(async (query: string) => {
@@ -178,15 +183,29 @@ export default function GenerateDocumentPage() {
           ? mapCompanyOption(await requestedCompanyRes.json())
           : null;
         const companyOptions = (companiesData.options || []).map(mapCompanyOption);
+        const savedAgreementCompanies = (sessionData?.agreement?.entities || []).map(
+          (entity: { companyId: string; nameSnapshot: string; uenSnapshot: string }) => ({
+            id: entity.companyId,
+            name: entity.nameSnapshot,
+            uen: entity.uenSnapshot,
+            status: '',
+          }),
+        );
+        const companyById = new Map<string, Company>(
+          companyOptions.map((company: Company) => [company.id, company]),
+        );
+        savedAgreementCompanies.forEach((company: Company) => {
+          if (!companyById.has(company.id)) companyById.set(company.id, company);
+        });
         if (
           requestedCompanyData
-          && !companyOptions.some((company: Company) => company.id === requestedCompanyData.id)
+          && !companyById.has(requestedCompanyData.id)
         ) {
-          companyOptions.unshift(requestedCompanyData);
+          companyById.set(requestedCompanyData.id, requestedCompanyData);
         }
 
         setTemplates(templatesData.templates || []);
-        setCompanies(companyOptions);
+        setCompanies([...companyById.values()]);
         setContacts((contactsData.options || []).map(mapContactOption));
         setPartials(partialsData.partials || []);
         setInitialSession(sessionData);
@@ -203,7 +222,7 @@ export default function GenerateDocumentPage() {
 
   const handleSaveDraft = useCallback(async (
     draftId: string | null,
-    state: GenerationSessionState,
+    state: SaveGenerationSessionInput,
   ): Promise<GenerationSessionEnvelope> => {
     const response = await fetch(
       draftId
@@ -237,6 +256,8 @@ export default function GenerateDocumentPage() {
         customData: data.customData,
         useLetterhead: data.useLetterhead,
         editedContent: data.editedContent,
+        serviceAgreementId: data.serviceAgreementId,
+        discardServiceAgreement: data.discardServiceAgreement,
         taskContext,
       };
 

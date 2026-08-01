@@ -52,6 +52,11 @@ model Workspace {
   serviceFamilies             ServiceFamily[]
   serviceVariants             ServiceVariant[]
   serviceVariantFeeTemplates  ServiceVariantFeeTemplate[]
+  serviceAgreements           ServiceAgreement[]
+  serviceAgreementEntities    ServiceAgreementEntity[]
+  serviceAgreementItems       ServiceAgreementItem[]
+  serviceAgreementItemEntities ServiceAgreementItemEntity[]
+  serviceAgreementFeeLines    ServiceAgreementFeeLine[]
   backups                     WorkspaceBackup[]
   connectorAccess             WorkspaceConnectorAccess[]
   letterhead                  WorkspaceLetterhead?
@@ -297,6 +302,8 @@ model Company {
   tasks                       Task[]
   taskStageOutcomes           TaskStageOutcome[]
   taskRecoveryContexts        TaskCompanyRecoveryContext[]
+  primaryServiceAgreements    ServiceAgreement[]       @relation("ServiceAgreementPrimaryCompany")
+  serviceAgreementEntities    ServiceAgreementEntity[]
 
   @@unique([tenantId, uen])
   @@index([tenantId])
@@ -390,6 +397,7 @@ model Contact {
   contactDetails       ContactDetail[]
   tenant               Workspace            @relation(fields: [tenantId], references: [id])
   noteTabs             NoteTab[]
+  authorizedServiceAgreements ServiceAgreement[]
 
   @@unique([tenantId, identificationType, identificationNumber])
   @@index([tenantId])
@@ -816,6 +824,7 @@ model GeneratedDocument {
   taskStageOutcomes         TaskStageOutcome[]
   esigningEnvelopeDocuments EsigningEnvelopeDocument[]
   taskEsigningPreparations  TaskEsigningPreparation[]
+  serviceAgreement          ServiceAgreement?
 
   @@index([tenantId])
   @@index([templateId])
@@ -930,6 +939,7 @@ model TemplatePartial {
   createdBy       User             @relation("PartialCreator", fields: [createdById], references: [id])
   tenant          Workspace        @relation(fields: [tenantId], references: [id])
   serviceVariants ServiceVariant[]
+  serviceAgreementItems ServiceAgreementItem[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -976,6 +986,7 @@ model ServiceVariant {
   family              ServiceFamily               @relation(fields: [familyId], references: [id], onDelete: Restrict)
   sowPartial          TemplatePartial             @relation(fields: [sowPartialId], references: [id], onDelete: Restrict)
   defaultFeeTemplates ServiceVariantFeeTemplate[]
+  serviceAgreementItems ServiceAgreementItem[]
 
   @@unique([tenantId, code])
   @@index([tenantId, familyId, deletedAt, isActive])
@@ -1001,6 +1012,124 @@ model ServiceVariantFeeTemplate {
 
   @@index([tenantId, variantId, displayOrder])
   @@map("service_variant_fee_templates")
+}
+
+model ServiceAgreement {
+  id                               String                    @id @default(uuid())
+  tenantId                         String                    @map("tenant_id")
+  generatedDocumentId String @unique @map("generated_document_id")
+  primaryCompanyId                 String                    @map("primary_company_id")
+  authorizedContactId              String?                   @map("authorized_contact_id")
+  authorizedRepresentativeSnapshot Json                     @map("authorized_representative_snapshot")
+  agreementDate                    DateTime                  @map("agreement_date") @db.Date
+  effectiveDate                    DateTime?                 @map("effective_date") @db.Date
+  termMonths                       Int                       @default(12) @map("term_months")
+  status                           ServiceAgreementStatus    @default(DRAFT)
+  signedAt                         DateTime?                  @map("signed_at")
+  activatedAt                      DateTime?                  @map("activated_at")
+  cancelledAt                      DateTime?                  @map("cancelled_at")
+  createdAt                        DateTime                  @default(now()) @map("created_at")
+  updatedAt                        DateTime                  @updatedAt @map("updated_at")
+  tenant                           Workspace                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  generatedDocument                GeneratedDocument         @relation(fields: [generatedDocumentId], references: [id], onDelete: Cascade)
+  primaryCompany                   Company                   @relation("ServiceAgreementPrimaryCompany", fields: [primaryCompanyId], references: [id], onDelete: Restrict)
+  authorizedContact                Contact?                  @relation(fields: [authorizedContactId], references: [id], onDelete: SetNull)
+  entities                         ServiceAgreementEntity[]
+  items                            ServiceAgreementItem[]
+
+  @@index([tenantId, status, updatedAt])
+  @@index([tenantId, primaryCompanyId])
+  @@map("service_agreements")
+}
+
+model ServiceAgreementEntity {
+  id           String                       @id @default(uuid())
+  tenantId     String                       @map("tenant_id")
+  agreementId  String                       @map("agreement_id")
+  companyId    String                       @map("company_id")
+  nameSnapshot String                       @map("name_snapshot") @db.VarChar(255)
+  uenSnapshot  String                       @map("uen_snapshot") @db.VarChar(50)
+  displayOrder Int                          @default(0) @map("display_order")
+  tenant       Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  agreement    ServiceAgreement             @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  company      Company                      @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  itemLinks    ServiceAgreementItemEntity[]
+  feeLines     ServiceAgreementFeeLine[]
+
+  @@unique([agreementId, companyId])
+  @@index([tenantId, companyId])
+  @@index([agreementId, displayOrder])
+  @@map("service_agreement_entities")
+}
+
+model ServiceAgreementItem {
+  id                          String                       @id @default(uuid())
+  tenantId                    String                       @map("tenant_id")
+  agreementId                 String                       @map("agreement_id")
+  serviceVariantId            String                       @map("service_variant_id")
+  variantVersion              Int                          @map("variant_version")
+  familyNameSnapshot          String                       @map("family_name_snapshot") @db.VarChar(200)
+  variantNameSnapshot         String                       @map("variant_name_snapshot") @db.VarChar(200)
+  serviceCadence              ServiceCadence               @map("service_cadence")
+  customCadenceLabel          String?                      @map("custom_cadence_label") @db.VarChar(100)
+  sowPartialId                String                       @map("sow_partial_id")
+  partialVersion              Int                          @map("partial_version")
+  partialContentSnapshot      String                       @map("partial_content_snapshot")
+  partialPlaceholdersSnapshot Json                         @map("partial_placeholders_snapshot")
+  partialDependencySnapshot   Json                         @map("partial_dependency_snapshot")
+  startDate                   DateTime                     @map("start_date") @db.Date
+  endDate                     DateTime?                    @map("end_date") @db.Date
+  fieldValues                 Json                         @default("{}") @map("field_values")
+  displayOrder                Int                          @default(0) @map("display_order")
+  createdAt                   DateTime                     @default(now()) @map("created_at")
+  updatedAt                   DateTime                     @updatedAt @map("updated_at")
+  tenant                      Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  agreement                   ServiceAgreement             @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  serviceVariant              ServiceVariant               @relation(fields: [serviceVariantId], references: [id], onDelete: Restrict)
+  sowPartial                  TemplatePartial              @relation(fields: [sowPartialId], references: [id], onDelete: Restrict)
+  entityLinks                 ServiceAgreementItemEntity[]
+  feeLines                    ServiceAgreementFeeLine[]
+
+  @@index([tenantId, agreementId, displayOrder])
+  @@index([serviceVariantId])
+  @@map("service_agreement_items")
+}
+
+model ServiceAgreementItemEntity {
+  id                String                  @id @default(uuid())
+  tenantId          String                  @map("tenant_id")
+  itemId            String                  @map("item_id")
+  agreementEntityId String                  @map("agreement_entity_id")
+  tenant            Workspace               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  item              ServiceAgreementItem    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  agreementEntity   ServiceAgreementEntity  @relation(fields: [agreementEntityId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, agreementEntityId])
+  @@index([tenantId, agreementEntityId])
+  @@map("service_agreement_item_entities")
+}
+
+model ServiceAgreementFeeLine {
+  id                   String                  @id @default(uuid())
+  tenantId             String                  @map("tenant_id")
+  itemId               String                  @map("item_id")
+  agreementEntityId    String                  @map("agreement_entity_id")
+  description          String                  @db.VarChar(500)
+  amount               Decimal                 @db.Decimal(18, 2)
+  currency             String                  @default("SGD") @db.VarChar(3)
+  billingFrequency     BillingFrequency        @map("billing_frequency")
+  customFrequencyLabel String?                 @map("custom_frequency_label") @db.VarChar(100)
+  billingStartDate     DateTime?               @map("billing_start_date") @db.Date
+  displayOrder         Int                     @default(0) @map("display_order")
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @updatedAt @map("updated_at")
+  tenant               Workspace               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  item                 ServiceAgreementItem    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  agreementEntity      ServiceAgreementEntity  @relation(fields: [agreementEntityId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, itemId, displayOrder])
+  @@index([agreementEntityId])
+  @@map("service_agreement_fee_lines")
 }
 
 model AiConversation {
@@ -2674,6 +2803,12 @@ enum BillingFrequency {
   ANNUALLY
   ONE_TIME
   CUSTOM
+}
+
+enum ServiceAgreementStatus {
+  DRAFT
+  EFFECTIVE
+  CANCELLED
 }
 
 enum GeneratedDocumentStatus {

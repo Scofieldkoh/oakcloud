@@ -7,6 +7,7 @@ import { validateForGeneration } from '@/services/document-validation.service';
 
 // Validation schema for validation request
 const validateSchema = z.object({
+  draftId: z.string().uuid().optional(),
   templateId: z.string().uuid(),
   companyId: z.string().uuid().optional(),
   contactIds: z.array(z.string().uuid()).optional(),
@@ -14,6 +15,7 @@ const validateSchema = z.object({
   selectedShareholderId: z.string().uuid().optional(),
   selectedContactId: z.string().uuid().optional(),
   customData: z.record(z.unknown()).optional(),
+  serviceAgreementId: z.string().uuid().optional(),
 });
 
 /**
@@ -41,10 +43,12 @@ export async function POST(request: NextRequest) {
       selectedShareholderId: data.selectedShareholderId,
       selectedContactId: data.selectedContactId,
       customData: data.customData,
+      draftId: data.draftId,
+      serviceAgreementId: data.serviceAgreementId,
     }, [session.firstName, session.lastName]
       .map((part) => part?.trim())
       .filter(Boolean)
-      .join(' '));
+      .join(' '), session.id);
 
     return NextResponse.json({
       isValid: result.isValid,

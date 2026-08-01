@@ -327,6 +327,7 @@ export type GeneratedDocumentWhereInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentListRelationFilter
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationListRelationFilter
+  serviceAgreement?: Prisma.XOR<Prisma.ServiceAgreementNullableScalarRelationFilter, Prisma.ServiceAgreementWhereInput> | null
 }
 
 export type GeneratedDocumentOrderByWithRelationInput = {
@@ -360,6 +361,7 @@ export type GeneratedDocumentOrderByWithRelationInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeOrderByRelationAggregateInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentOrderByRelationAggregateInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationOrderByRelationAggregateInput
+  serviceAgreement?: Prisma.ServiceAgreementOrderByWithRelationInput
 }
 
 export type GeneratedDocumentWhereUniqueInput = Prisma.AtLeast<{
@@ -396,6 +398,7 @@ export type GeneratedDocumentWhereUniqueInput = Prisma.AtLeast<{
   taskStageOutcomes?: Prisma.TaskStageOutcomeListRelationFilter
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentListRelationFilter
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationListRelationFilter
+  serviceAgreement?: Prisma.XOR<Prisma.ServiceAgreementNullableScalarRelationFilter, Prisma.ServiceAgreementWhereInput> | null
 }, "id">
 
 export type GeneratedDocumentOrderByWithAggregationInput = {
@@ -476,6 +479,7 @@ export type GeneratedDocumentCreateInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateInput = {
@@ -504,6 +508,7 @@ export type GeneratedDocumentUncheckedCreateInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUpdateInput = {
@@ -532,6 +537,7 @@ export type GeneratedDocumentUpdateInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateInput = {
@@ -560,6 +566,7 @@ export type GeneratedDocumentUncheckedUpdateInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentCreateManyInput = {
@@ -967,6 +974,20 @@ export type GeneratedDocumentUpdateOneRequiredWithoutDraftsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.GeneratedDocumentUpdateToOneWithWhereWithoutDraftsInput, Prisma.GeneratedDocumentUpdateWithoutDraftsInput>, Prisma.GeneratedDocumentUncheckedUpdateWithoutDraftsInput>
 }
 
+export type GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput = {
+  create?: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutServiceAgreementInput, Prisma.GeneratedDocumentUncheckedCreateWithoutServiceAgreementInput>
+  connectOrCreate?: Prisma.GeneratedDocumentCreateOrConnectWithoutServiceAgreementInput
+  connect?: Prisma.GeneratedDocumentWhereUniqueInput
+}
+
+export type GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput = {
+  create?: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutServiceAgreementInput, Prisma.GeneratedDocumentUncheckedCreateWithoutServiceAgreementInput>
+  connectOrCreate?: Prisma.GeneratedDocumentCreateOrConnectWithoutServiceAgreementInput
+  upsert?: Prisma.GeneratedDocumentUpsertWithoutServiceAgreementInput
+  connect?: Prisma.GeneratedDocumentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.GeneratedDocumentUpdateToOneWithWhereWithoutServiceAgreementInput, Prisma.GeneratedDocumentUpdateWithoutServiceAgreementInput>, Prisma.GeneratedDocumentUncheckedUpdateWithoutServiceAgreementInput>
+}
+
 export type GeneratedDocumentCreateNestedOneWithoutEsigningEnvelopeDocumentsInput = {
   create?: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutEsigningEnvelopeDocumentsInput, Prisma.GeneratedDocumentUncheckedCreateWithoutEsigningEnvelopeDocumentsInput>
   connectOrCreate?: Prisma.GeneratedDocumentCreateOrConnectWithoutEsigningEnvelopeDocumentsInput
@@ -1040,6 +1061,7 @@ export type GeneratedDocumentCreateWithoutTenantInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutTenantInput = {
@@ -1067,6 +1089,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTenantInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutTenantInput = {
@@ -1145,6 +1168,7 @@ export type GeneratedDocumentCreateWithoutCreatedByInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutCreatedByInput = {
@@ -1172,6 +1196,7 @@ export type GeneratedDocumentUncheckedCreateWithoutCreatedByInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutCreatedByInput = {
@@ -1209,6 +1234,7 @@ export type GeneratedDocumentCreateWithoutFinalizedByInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutFinalizedByInput = {
@@ -1236,6 +1262,7 @@ export type GeneratedDocumentUncheckedCreateWithoutFinalizedByInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutFinalizedByInput = {
@@ -1305,6 +1332,7 @@ export type GeneratedDocumentCreateWithoutCompanyInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutCompanyInput = {
@@ -1332,6 +1360,7 @@ export type GeneratedDocumentUncheckedCreateWithoutCompanyInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutCompanyInput = {
@@ -1385,6 +1414,7 @@ export type GeneratedDocumentCreateWithoutTemplateInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutTemplateInput = {
@@ -1412,6 +1442,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTemplateInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutTemplateInput = {
@@ -1465,6 +1496,7 @@ export type GeneratedDocumentCreateWithoutSectionsInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutSectionsInput = {
@@ -1492,6 +1524,7 @@ export type GeneratedDocumentUncheckedCreateWithoutSectionsInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutSectionsInput = {
@@ -1535,6 +1568,7 @@ export type GeneratedDocumentUpdateWithoutSectionsInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutSectionsInput = {
@@ -1562,6 +1596,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutSectionsInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentCreateWithoutCommentsInput = {
@@ -1589,6 +1624,7 @@ export type GeneratedDocumentCreateWithoutCommentsInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutCommentsInput = {
@@ -1616,6 +1652,7 @@ export type GeneratedDocumentUncheckedCreateWithoutCommentsInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutCommentsInput = {
@@ -1659,6 +1696,7 @@ export type GeneratedDocumentUpdateWithoutCommentsInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutCommentsInput = {
@@ -1686,6 +1724,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutCommentsInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentCreateWithoutDraftsInput = {
@@ -1713,6 +1752,7 @@ export type GeneratedDocumentCreateWithoutDraftsInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutDraftsInput = {
@@ -1740,6 +1780,7 @@ export type GeneratedDocumentUncheckedCreateWithoutDraftsInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutDraftsInput = {
@@ -1783,6 +1824,7 @@ export type GeneratedDocumentUpdateWithoutDraftsInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutDraftsInput = {
@@ -1806,6 +1848,135 @@ export type GeneratedDocumentUncheckedUpdateWithoutDraftsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
+}
+
+export type GeneratedDocumentCreateWithoutServiceAgreementInput = {
+  id?: string
+  templateVersion?: number | null
+  title: string
+  content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.GeneratedDocumentStatus
+  finalizedAt?: Date | string | null
+  unfinalizedAt?: Date | string | null
+  useLetterhead?: boolean
+  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  comments?: Prisma.DocumentCommentCreateNestedManyWithoutDocumentInput
+  drafts?: Prisma.DocumentDraftCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutGeneratedDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedDocumentsInput
+  finalizedBy?: Prisma.UserCreateNestedOneWithoutFinalizedDocumentsInput
+  template?: Prisma.DocumentTemplateCreateNestedOneWithoutGeneratedDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutGeneratedDocumentsInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
+  esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+}
+
+export type GeneratedDocumentUncheckedCreateWithoutServiceAgreementInput = {
+  id?: string
+  tenantId: string
+  templateId?: string | null
+  templateVersion?: number | null
+  companyId?: string | null
+  title: string
+  content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.GeneratedDocumentStatus
+  finalizedAt?: Date | string | null
+  finalizedById?: string | null
+  unfinalizedAt?: Date | string | null
+  useLetterhead?: boolean
+  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdById: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  comments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutDocumentInput
+  drafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutDocumentInput
+  sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+}
+
+export type GeneratedDocumentCreateOrConnectWithoutServiceAgreementInput = {
+  where: Prisma.GeneratedDocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutServiceAgreementInput, Prisma.GeneratedDocumentUncheckedCreateWithoutServiceAgreementInput>
+}
+
+export type GeneratedDocumentUpsertWithoutServiceAgreementInput = {
+  update: Prisma.XOR<Prisma.GeneratedDocumentUpdateWithoutServiceAgreementInput, Prisma.GeneratedDocumentUncheckedUpdateWithoutServiceAgreementInput>
+  create: Prisma.XOR<Prisma.GeneratedDocumentCreateWithoutServiceAgreementInput, Prisma.GeneratedDocumentUncheckedCreateWithoutServiceAgreementInput>
+  where?: Prisma.GeneratedDocumentWhereInput
+}
+
+export type GeneratedDocumentUpdateToOneWithWhereWithoutServiceAgreementInput = {
+  where?: Prisma.GeneratedDocumentWhereInput
+  data: Prisma.XOR<Prisma.GeneratedDocumentUpdateWithoutServiceAgreementInput, Prisma.GeneratedDocumentUncheckedUpdateWithoutServiceAgreementInput>
+}
+
+export type GeneratedDocumentUpdateWithoutServiceAgreementInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
+  finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  comments?: Prisma.DocumentCommentUpdateManyWithoutDocumentNestedInput
+  drafts?: Prisma.DocumentDraftUpdateManyWithoutDocumentNestedInput
+  sections?: Prisma.DocumentSectionUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutGeneratedDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedDocumentsNestedInput
+  finalizedBy?: Prisma.UserUpdateOneWithoutFinalizedDocumentsNestedInput
+  template?: Prisma.DocumentTemplateUpdateOneWithoutGeneratedDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
+  esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+}
+
+export type GeneratedDocumentUncheckedUpdateWithoutServiceAgreementInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  templateVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumGeneratedDocumentStatusFieldUpdateOperationsInput | $Enums.GeneratedDocumentStatus
+  finalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalizedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unfinalizedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  useLetterhead?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  placeholderData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  comments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutDocumentNestedInput
+  drafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutDocumentNestedInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
@@ -1837,6 +2008,7 @@ export type GeneratedDocumentCreateWithoutEsigningEnvelopeDocumentsInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutGeneratedDocumentsInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutEsigningEnvelopeDocumentsInput = {
@@ -1864,6 +2036,7 @@ export type GeneratedDocumentUncheckedCreateWithoutEsigningEnvelopeDocumentsInpu
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutEsigningEnvelopeDocumentsInput = {
@@ -1907,6 +2080,7 @@ export type GeneratedDocumentUpdateWithoutEsigningEnvelopeDocumentsInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutEsigningEnvelopeDocumentsInput = {
@@ -1934,6 +2108,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutEsigningEnvelopeDocumentsInpu
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentCreateWithoutTaskStageOutcomesInput = {
@@ -1961,6 +2136,7 @@ export type GeneratedDocumentCreateWithoutTaskStageOutcomesInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutGeneratedDocumentsInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutTaskStageOutcomesInput = {
@@ -1988,6 +2164,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTaskStageOutcomesInput = {
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutTaskStageOutcomesInput = {
@@ -2031,6 +2208,7 @@ export type GeneratedDocumentUpdateWithoutTaskStageOutcomesInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutTaskStageOutcomesInput = {
@@ -2058,6 +2236,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTaskStageOutcomesInput = {
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentCreateWithoutTaskEsigningPreparationsInput = {
@@ -2085,6 +2264,7 @@ export type GeneratedDocumentCreateWithoutTaskEsigningPreparationsInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutGeneratedDocumentsInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentUncheckedCreateWithoutTaskEsigningPreparationsInput = {
@@ -2112,6 +2292,7 @@ export type GeneratedDocumentUncheckedCreateWithoutTaskEsigningPreparationsInput
   sections?: Prisma.DocumentSectionUncheckedCreateNestedManyWithoutDocumentInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutGeneratedDocumentInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedCreateNestedManyWithoutGeneratedDocumentInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedCreateNestedOneWithoutGeneratedDocumentInput
 }
 
 export type GeneratedDocumentCreateOrConnectWithoutTaskEsigningPreparationsInput = {
@@ -2155,6 +2336,7 @@ export type GeneratedDocumentUpdateWithoutTaskEsigningPreparationsInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutGeneratedDocumentsNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutTaskEsigningPreparationsInput = {
@@ -2182,6 +2364,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTaskEsigningPreparationsInput
   sections?: Prisma.DocumentSectionUncheckedUpdateManyWithoutDocumentNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentCreateManyTenantInput = {
@@ -2230,6 +2413,7 @@ export type GeneratedDocumentUpdateWithoutTenantInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutTenantInput = {
@@ -2257,6 +2441,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTenantInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateManyWithoutTenantInput = {
@@ -2347,6 +2532,7 @@ export type GeneratedDocumentUpdateWithoutCreatedByInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutCreatedByInput = {
@@ -2374,6 +2560,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutCreatedByInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateManyWithoutCreatedByInput = {
@@ -2422,6 +2609,7 @@ export type GeneratedDocumentUpdateWithoutFinalizedByInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutFinalizedByInput = {
@@ -2449,6 +2637,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutFinalizedByInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByInput = {
@@ -2518,6 +2707,7 @@ export type GeneratedDocumentUpdateWithoutCompanyInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutCompanyInput = {
@@ -2545,6 +2735,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutCompanyInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateManyWithoutCompanyInput = {
@@ -2614,6 +2805,7 @@ export type GeneratedDocumentUpdateWithoutTemplateInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateWithoutTemplateInput = {
@@ -2641,6 +2833,7 @@ export type GeneratedDocumentUncheckedUpdateWithoutTemplateInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   esigningEnvelopeDocuments?: Prisma.EsigningEnvelopeDocumentUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
   taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutGeneratedDocumentNestedInput
+  serviceAgreement?: Prisma.ServiceAgreementUncheckedUpdateOneWithoutGeneratedDocumentNestedInput
 }
 
 export type GeneratedDocumentUncheckedUpdateManyWithoutTemplateInput = {
@@ -2771,6 +2964,7 @@ export type GeneratedDocumentSelect<ExtArgs extends runtime.Types.Extensions.Int
   taskStageOutcomes?: boolean | Prisma.GeneratedDocument$taskStageOutcomesArgs<ExtArgs>
   esigningEnvelopeDocuments?: boolean | Prisma.GeneratedDocument$esigningEnvelopeDocumentsArgs<ExtArgs>
   taskEsigningPreparations?: boolean | Prisma.GeneratedDocument$taskEsigningPreparationsArgs<ExtArgs>
+  serviceAgreement?: boolean | Prisma.GeneratedDocument$serviceAgreementArgs<ExtArgs>
   _count?: boolean | Prisma.GeneratedDocumentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["generatedDocument"]>
 
@@ -2863,6 +3057,7 @@ export type GeneratedDocumentInclude<ExtArgs extends runtime.Types.Extensions.In
   taskStageOutcomes?: boolean | Prisma.GeneratedDocument$taskStageOutcomesArgs<ExtArgs>
   esigningEnvelopeDocuments?: boolean | Prisma.GeneratedDocument$esigningEnvelopeDocumentsArgs<ExtArgs>
   taskEsigningPreparations?: boolean | Prisma.GeneratedDocument$taskEsigningPreparationsArgs<ExtArgs>
+  serviceAgreement?: boolean | Prisma.GeneratedDocument$serviceAgreementArgs<ExtArgs>
   _count?: boolean | Prisma.GeneratedDocumentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type GeneratedDocumentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2894,6 +3089,7 @@ export type $GeneratedDocumentPayload<ExtArgs extends runtime.Types.Extensions.I
     taskStageOutcomes: Prisma.$TaskStageOutcomePayload<ExtArgs>[]
     esigningEnvelopeDocuments: Prisma.$EsigningEnvelopeDocumentPayload<ExtArgs>[]
     taskEsigningPreparations: Prisma.$TaskEsigningPreparationPayload<ExtArgs>[]
+    serviceAgreement: Prisma.$ServiceAgreementPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3320,6 +3516,7 @@ export interface Prisma__GeneratedDocumentClient<T, Null = never, ExtArgs extend
   taskStageOutcomes<T extends Prisma.GeneratedDocument$taskStageOutcomesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$taskStageOutcomesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStageOutcomePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   esigningEnvelopeDocuments<T extends Prisma.GeneratedDocument$esigningEnvelopeDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$esigningEnvelopeDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningEnvelopeDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   taskEsigningPreparations<T extends Prisma.GeneratedDocument$taskEsigningPreparationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$taskEsigningPreparationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskEsigningPreparationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  serviceAgreement<T extends Prisma.GeneratedDocument$serviceAgreementArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocument$serviceAgreementArgs<ExtArgs>>): Prisma.Prisma__ServiceAgreementClient<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3962,6 +4159,25 @@ export type GeneratedDocument$taskEsigningPreparationsArgs<ExtArgs extends runti
   take?: number
   skip?: number
   distinct?: Prisma.TaskEsigningPreparationScalarFieldEnum | Prisma.TaskEsigningPreparationScalarFieldEnum[]
+}
+
+/**
+ * GeneratedDocument.serviceAgreement
+ */
+export type GeneratedDocument$serviceAgreementArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceAgreement
+   */
+  select?: Prisma.ServiceAgreementSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ServiceAgreement
+   */
+  omit?: Prisma.ServiceAgreementOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ServiceAgreementInclude<ExtArgs> | null
+  where?: Prisma.ServiceAgreementWhereInput
 }
 
 /**

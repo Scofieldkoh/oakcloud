@@ -251,6 +251,33 @@ per update when its name, linked partial, cadence/custom cadence label, or fee
 template set changes. Labels, descriptions, display order, and active-state
 maintenance do not independently create new material versions.
 
+### Service Agreement generation
+
+A Service Agreement generation draft has one tenant-scoped
+`ServiceAgreement` record linked one-to-one to its `GeneratedDocument`.
+Agreement entities, service items, item/entity assignments, and fee lines are
+normalized relational data. This structured draft is the authority used by
+the later Client Services activation workflow.
+
+Generation session metadata is versioned. Version 1 sessions remain readable
+and are normalized to the three-stage version 2 model in memory; the next save
+writes version 2. A version 2 Service Agreement session also returns its
+relational agreement DTO. The document-session write and agreement upsert use
+one interactive transaction.
+
+For `SERVICE_AGREEMENT` templates, server rendering first replaces the three
+reserved agreement slots. Each pinned SOW snapshot is resolved in an isolated
+`service` context, followed by the entity-specific fee table and Appendix 3.
+Normal master-template partial expansion and placeholder resolution run only
+after that deterministic assembly. Saved wording never refreshes implicitly;
+the explicit refresh endpoint replaces snapshot/version fields only.
+
+The generated HTML remains editable. Its metadata records the agreement ID, a
+canonical structured-data hash, and whether the user-edited HTML diverged from
+the server render. HTML edits never reverse-sync to the relational agreement,
+and later operational Services must consume the structured rows rather than
+parse document content.
+
 ## Tasks And Pipelines Architecture
 
 `/pipelines` manages tenant-scoped templates and `/tasks` runs work from them. Creating or editing a pipeline publishes a new immutable pipeline version. Creating a task copies that version's ordered stage definitions and checklist items into a locked live-task snapshot. Later template edits therefore affect future tasks only; an existing task never changes its stage structure or pipeline version.

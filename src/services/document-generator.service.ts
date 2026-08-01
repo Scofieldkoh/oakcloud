@@ -44,10 +44,17 @@ import type {
 } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
-import { NotFoundError } from '@/lib/errors';
+import { NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { readActiveGenerationSession } from '@/lib/document-generation-session';
 import { safelyReconcileGeneratedDocumentTaskOutcomes } from '@/services/tasks/integration.service';
+import { createHash } from 'node:crypto';
+import {
+  assembleServiceAgreementTemplate,
+  canonicalServiceAgreementData,
+  getServiceAgreementDraft,
+  getServiceAgreementDraftById,
+} from '@/services/service-agreement';
 import {
   assertGeneratedDocumentCanBeUnfinalized,
   queueTaskEsigningPreparationsForGeneratedDocument,
@@ -104,6 +111,7 @@ export interface RenderTemplateForGenerationParams {
   templateCategory?: string;
   templateVersion?: number;
   tenantId: string;
+  userId?: string;
   companyId?: string | null;
   contactIds?: string[];
   selectedDirectorId?: string;
@@ -113,6 +121,8 @@ export interface RenderTemplateForGenerationParams {
   contextOverride?: PlaceholderContext;
   generatedBy?: string;
   mode?: 'preview' | 'test' | 'generate' | 'validate';
+  serviceAgreementId?: string;
+  generatedDocumentId?: string;
 }
 
 export interface RenderTemplateForGenerationResult {
@@ -146,7 +156,37 @@ export interface RenderTemplateForGenerationResult {
       version?: number | null;
       updatedAt?: string | null;
     }>;
+    serviceAgreement?: {
+      id: string;
+      items: Array<{
+        itemId: string;
+        variantVersion: number;
+        partialVersion: number;
+        dependencies: Array<{
+          id: string;
+          name: string;
+          version: number;
+          updatedAt: string;
+        }>;
+      }>;
+    };
   };
+}
+
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value as Record<string, unknown>)
+      .sort()
+      .map(
+        (key) =>
+          `${JSON.stringify(key)}:${canonicalJson(
+            (value as Record<string, unknown>)[key],
+          )}`,
+      )
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
 }
 
 // Re-export shared type for backwards compatibility
@@ -276,6 +316,7 @@ export async function renderTemplateForGeneration(
   const {
     templateId,
     tenantId,
+    userId,
     companyId,
     contactIds = [],
     selectedDirectorId,
@@ -289,6 +330,8 @@ export async function renderTemplateForGeneration(
     templateName = 'Unsaved template',
     templateCategory = 'OTHER',
     templateVersion = 1,
+    serviceAgreementId,
+    generatedDocumentId,
   } = params;
 
   if (!tenantId) {
@@ -309,10 +352,39 @@ export async function renderTemplateForGeneration(
     throw new Error('Template is not active');
   }
 
-  const renderContent = template?.content ?? templateContent;
+  let renderContent = template?.content ?? templateContent;
   if (!renderContent) {
     throw new Error('Template content is required for rendering');
   }
+
+  const isServiceAgreement = template?.compositionType === 'SERVICE_AGREEMENT';
+  if (!isServiceAgreement && serviceAgreementId) {
+    throw new Error('Standard templates cannot use Service Agreement data');
+  }
+  if (isServiceAgreement && serviceAgreementId && !userId && mode !== 'test') {
+    throw new ValidationError('An authenticated actor is required to render a Service Agreement');
+  }
+  const agreement = isServiceAgreement
+    ? serviceAgreementId
+      ? await getServiceAgreementDraftById(
+          serviceAgreementId,
+          userId ? { tenantId, userId } : tenantId,
+        )
+      : null
+    : null;
+  if (isServiceAgreement && !agreement) {
+    throw new Error('A saved Service Agreement draft is required');
+  }
+  if (agreement && agreement.primaryCompanyId !== companyId) {
+    throw new Error('Service Agreement primary company does not match the selected company');
+  }
+  if (agreement && generatedDocumentId && agreement.generatedDocumentId !== generatedDocumentId) {
+    throw new Error('Service Agreement does not match the document draft');
+  }
+  const agreementAssembly = agreement
+    ? assembleServiceAgreementTemplate({ templateContent: renderContent, agreement })
+    : null;
+  if (agreementAssembly) renderContent = agreementAssembly.content;
 
   let context: PlaceholderContext = contextOverride
     ? {
@@ -390,7 +462,11 @@ export async function renderTemplateForGeneration(
     };
   }
 
-  if (selectedDirectorId || selectedShareholderId || selectedContactId) {
+  // A Service Agreement pins its authorised representative. Retain a stale
+  // selectedContactId for session compatibility, but never resolve it from the
+  // current company/contact graph: the snapshot below is the authority.
+  const selectedContactRequiresResolution = Boolean(selectedContactId && !agreement);
+  if (selectedDirectorId || selectedShareholderId || selectedContactRequiresResolution) {
     if (!companyId) {
       throw new Error('Company selection is required for selected parties');
     }
@@ -399,11 +475,30 @@ export async function renderTemplateForGeneration(
       tenantId,
       selectedDirectorId,
       selectedShareholderId,
-      selectedContactId,
+      selectedContactId: selectedContactRequiresResolution
+        ? selectedContactId
+        : undefined,
     });
     context = {
       ...context,
       ...selections,
+    };
+  }
+  if (agreement) {
+    const representative = agreement.authorizedRepresentativeSnapshot;
+    context = {
+      ...context,
+      selectedContact: {
+        id: representative.id,
+        contactId: representative.id,
+        name: representative.name,
+        detail: representative.role,
+        role: representative.role,
+        contactType: 'INDIVIDUAL',
+        email: representative.email,
+        phone: representative.phone,
+        address: { full: null, letter: null },
+      },
     };
   }
 
@@ -425,6 +520,17 @@ export async function renderTemplateForGeneration(
       custom: {
         ...context.custom,
         contacts,
+      },
+    };
+  }
+  if (agreement) {
+    context = {
+      ...context,
+      custom: {
+        ...context.custom,
+        agreementDate: agreement.agreementDate,
+        effectiveDate: agreement.effectiveDate ?? agreement.agreementDate,
+        termMonths: String(agreement.termMonths),
       },
     };
   }
@@ -450,7 +556,7 @@ export async function renderTemplateForGeneration(
     if (partyRequirements.shareholder && !selectedShareholderId) {
       throw new Error('Select a shareholder for this template.');
     }
-    if (partyRequirements.contact && !selectedContactId) {
+    if (partyRequirements.contact && !selectedContactId && !agreement) {
       throw new Error('Select a company contact for this template.');
     }
   }
@@ -485,7 +591,15 @@ export async function renderTemplateForGeneration(
       hasContacts: contacts.length > 0,
       hasCustomData: Object.keys(customData).length > 0,
     },
-    blockingErrors: buildBlockingErrors(missing, missingPartials, diagnostics),
+    blockingErrors: [
+      ...buildBlockingErrors(missing, missingPartials, diagnostics),
+      ...(agreementAssembly?.itemDiagnostics.flatMap((item) =>
+        item.missingPlaceholders.map(
+          (placeholder) =>
+            `Service item ${item.itemId} is missing required field ${placeholder}`,
+        ),
+      ) ?? []),
+    ],
     context,
     diagnostics,
     dependencySnapshot: {
@@ -498,6 +612,19 @@ export async function renderTemplateForGeneration(
         version: dependency.version,
         updatedAt: dependency.updatedAt,
       })),
+      ...(agreement
+        ? {
+            serviceAgreement: {
+              id: agreement.id,
+              items: agreement.items.map((item) => ({
+                itemId: item.id,
+                variantVersion: item.variantVersion,
+                partialVersion: item.partialVersion,
+                dependencies: item.partialDependencySnapshot,
+              })),
+            },
+          }
+        : {}),
     },
   };
 }
@@ -537,7 +664,6 @@ export async function createDocumentFromTemplate(
   ) {
     throw new NotFoundError('Document draft not found');
   }
-
   // Get template
   const template = await prisma.documentTemplate.findFirst({
     where: { id: data.templateId, tenantId, deletedAt: null },
@@ -550,10 +676,39 @@ export async function createDocumentFromTemplate(
   if (!template.isActive) {
     throw new Error('Template is not active');
   }
+  const attachedAgreement = data.draftId
+    ? await getServiceAgreementDraft(data.draftId, params)
+    : null;
+  if (
+    template.compositionType === 'STANDARD'
+    && attachedAgreement
+    && !data.discardServiceAgreement
+  ) {
+    throw new ValidationError(
+      'Discard the attached Service Agreement before switching templates',
+    );
+  }
+  if (
+    template.compositionType === 'STANDARD'
+    && attachedAgreement
+    && attachedAgreement.status !== 'DRAFT'
+  ) {
+    throw new ValidationError('Only draft Service Agreements can be discarded');
+  }
+  const linkedAgreement = template.compositionType === 'SERVICE_AGREEMENT'
+    ? attachedAgreement
+    : null;
+  if (
+    data.serviceAgreementId &&
+    linkedAgreement?.id !== data.serviceAgreementId
+  ) {
+    throw new Error('Service Agreement does not match the document draft');
+  }
 
   const rendered = await renderTemplateForGeneration({
     templateId: data.templateId,
     tenantId,
+    userId,
     companyId: data.companyId,
     contactIds,
     selectedDirectorId: data.selectedDirectorId,
@@ -562,7 +717,14 @@ export async function createDocumentFromTemplate(
     customData: data.customData,
     generatedBy,
     mode: 'generate',
+    serviceAgreementId: linkedAgreement?.id,
+    generatedDocumentId: data.draftId,
   });
+  if (rendered.blockingErrors.length > 0) {
+    throw new ValidationError(rendered.blockingErrors.join('; '), {
+      blockingErrors: rendered.blockingErrors,
+    });
+  }
 
   const selectedParties = {
     ...(data.selectedDirectorId ? { directorId: data.selectedDirectorId } : {}),
@@ -578,6 +740,17 @@ export async function createDocumentFromTemplate(
     unknownPlaceholders: rendered.diagnostics.unknownPlaceholders,
     dependencySnapshot: rendered.dependencySnapshot,
     selectedParties,
+    ...(linkedAgreement
+      ? {
+          serviceAgreementId: linkedAgreement.id,
+          serviceAgreementStructuredHash: createHash('sha256')
+            .update(canonicalJson(canonicalServiceAgreementData(linkedAgreement)))
+            .digest('hex'),
+          serviceAgreementContentEdited: Boolean(
+            data.editedContent && data.editedContent !== rendered.content,
+          ),
+        }
+      : {}),
     ...(taskIntegrationContext ? {
       taskIntegrationContext: {
         taskId: taskIntegrationContext.taskId,
@@ -589,21 +762,30 @@ export async function createDocumentFromTemplate(
     } : {}),
   };
 
-  const document = data.draftId
-    ? await prisma.generatedDocument.update({
+  const updateData = {
+    templateId: template.id,
+    templateVersion: template.version,
+    companyId: data.companyId ?? null,
+    title: data.title,
+    content: data.editedContent ?? rendered.content,
+    contentJson: data.editedContentJson ?? template.contentJson ?? Prisma.JsonNull,
+    status: 'DRAFT' as const,
+    useLetterhead,
+    placeholderData: rendered.context as Prisma.InputJsonValue,
+    metadata: generatedMetadata as Prisma.InputJsonValue,
+  };
+  const document = data.draftId && attachedAgreement && template.compositionType === 'STANDARD'
+    ? await prisma.$transaction(async (tx) => {
+        await tx.serviceAgreement.delete({ where: { id: attachedAgreement.id } });
+        return tx.generatedDocument.update({
+          where: { id: data.draftId },
+          data: updateData,
+        });
+      })
+    : data.draftId
+      ? await prisma.generatedDocument.update({
       where: { id: data.draftId },
-      data: {
-        templateId: template.id,
-        templateVersion: template.version,
-        companyId: data.companyId ?? null,
-        title: data.title,
-        content: data.editedContent ?? rendered.content,
-        contentJson: data.editedContentJson ?? template.contentJson ?? Prisma.JsonNull,
-        status: 'DRAFT',
-        useLetterhead,
-        placeholderData: rendered.context as Prisma.InputJsonValue,
-        metadata: generatedMetadata,
-      },
+      data: updateData,
     })
     : await prisma.generatedDocument.create({
       data: {
@@ -617,7 +799,7 @@ export async function createDocumentFromTemplate(
         status: 'DRAFT',
         useLetterhead,
         placeholderData: rendered.context as Prisma.InputJsonValue,
-        metadata: generatedMetadata,
+        metadata: generatedMetadata as Prisma.InputJsonValue,
         createdById: userId,
       },
     });

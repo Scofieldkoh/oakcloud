@@ -87,6 +87,11 @@ export const ModelName = {
   ServiceFamily: 'ServiceFamily',
   ServiceVariant: 'ServiceVariant',
   ServiceVariantFeeTemplate: 'ServiceVariantFeeTemplate',
+  ServiceAgreement: 'ServiceAgreement',
+  ServiceAgreementEntity: 'ServiceAgreementEntity',
+  ServiceAgreementItem: 'ServiceAgreementItem',
+  ServiceAgreementItemEntity: 'ServiceAgreementItemEntity',
+  ServiceAgreementFeeLine: 'ServiceAgreementFeeLine',
   AiConversation: 'AiConversation',
   EsigningEnvelope: 'EsigningEnvelope',
   EsigningEnvelopeDocument: 'EsigningEnvelopeDocument',
@@ -852,6 +857,95 @@ export const ServiceVariantFeeTemplateScalarFieldEnum = {
 } as const
 
 export type ServiceVariantFeeTemplateScalarFieldEnum = (typeof ServiceVariantFeeTemplateScalarFieldEnum)[keyof typeof ServiceVariantFeeTemplateScalarFieldEnum]
+
+
+export const ServiceAgreementScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  generatedDocumentId: 'generatedDocumentId',
+  primaryCompanyId: 'primaryCompanyId',
+  authorizedContactId: 'authorizedContactId',
+  authorizedRepresentativeSnapshot: 'authorizedRepresentativeSnapshot',
+  agreementDate: 'agreementDate',
+  effectiveDate: 'effectiveDate',
+  termMonths: 'termMonths',
+  status: 'status',
+  signedAt: 'signedAt',
+  activatedAt: 'activatedAt',
+  cancelledAt: 'cancelledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ServiceAgreementScalarFieldEnum = (typeof ServiceAgreementScalarFieldEnum)[keyof typeof ServiceAgreementScalarFieldEnum]
+
+
+export const ServiceAgreementEntityScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  agreementId: 'agreementId',
+  companyId: 'companyId',
+  nameSnapshot: 'nameSnapshot',
+  uenSnapshot: 'uenSnapshot',
+  displayOrder: 'displayOrder'
+} as const
+
+export type ServiceAgreementEntityScalarFieldEnum = (typeof ServiceAgreementEntityScalarFieldEnum)[keyof typeof ServiceAgreementEntityScalarFieldEnum]
+
+
+export const ServiceAgreementItemScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  agreementId: 'agreementId',
+  serviceVariantId: 'serviceVariantId',
+  variantVersion: 'variantVersion',
+  familyNameSnapshot: 'familyNameSnapshot',
+  variantNameSnapshot: 'variantNameSnapshot',
+  serviceCadence: 'serviceCadence',
+  customCadenceLabel: 'customCadenceLabel',
+  sowPartialId: 'sowPartialId',
+  partialVersion: 'partialVersion',
+  partialContentSnapshot: 'partialContentSnapshot',
+  partialPlaceholdersSnapshot: 'partialPlaceholdersSnapshot',
+  partialDependencySnapshot: 'partialDependencySnapshot',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  fieldValues: 'fieldValues',
+  displayOrder: 'displayOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ServiceAgreementItemScalarFieldEnum = (typeof ServiceAgreementItemScalarFieldEnum)[keyof typeof ServiceAgreementItemScalarFieldEnum]
+
+
+export const ServiceAgreementItemEntityScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  itemId: 'itemId',
+  agreementEntityId: 'agreementEntityId'
+} as const
+
+export type ServiceAgreementItemEntityScalarFieldEnum = (typeof ServiceAgreementItemEntityScalarFieldEnum)[keyof typeof ServiceAgreementItemEntityScalarFieldEnum]
+
+
+export const ServiceAgreementFeeLineScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  itemId: 'itemId',
+  agreementEntityId: 'agreementEntityId',
+  description: 'description',
+  amount: 'amount',
+  currency: 'currency',
+  billingFrequency: 'billingFrequency',
+  customFrequencyLabel: 'customFrequencyLabel',
+  billingStartDate: 'billingStartDate',
+  displayOrder: 'displayOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ServiceAgreementFeeLineScalarFieldEnum = (typeof ServiceAgreementFeeLineScalarFieldEnum)[keyof typeof ServiceAgreementFeeLineScalarFieldEnum]
 
 
 export const AiConversationScalarFieldEnum = {

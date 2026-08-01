@@ -36,6 +36,7 @@ export interface DocumentTemplate {
   version: number;
   createdAt: string;
   updatedAt: string;
+  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
   createdBy?: {
     firstName: string;
     lastName: string;

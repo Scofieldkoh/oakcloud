@@ -39,6 +39,18 @@ export interface PlaceholderContext extends DocumentPartySelections {
   secretaries?: OfficerData[];
   shareholders?: ShareholderData[];
   contacts?: ContactData[];
+  service?: ServicePlaceholderData;
+}
+
+export interface ServicePlaceholderData {
+  itemId: string;
+  familyName: string;
+  variantName: string;
+  cadence: string;
+  startDate: Date;
+  endDate?: Date | null;
+  entities: Array<{ id: string; name: string; uen: string }>;
+  fields: Record<string, string>;
 }
 
 export interface CompanyData {

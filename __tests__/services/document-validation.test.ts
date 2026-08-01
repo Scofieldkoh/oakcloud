@@ -29,6 +29,13 @@ vi.mock('@/services/document-party.service', () => ({
   resolveDocumentPartySelections: vi.fn(),
 }));
 
+const serviceAgreementMock = vi.hoisted(() => ({
+  assembleServiceAgreementTemplate: vi.fn(),
+  getServiceAgreementDraftById: vi.fn(),
+}));
+
+vi.mock('@/services/service-agreement', () => serviceAgreementMock);
+
 const company = {
   id: 'company-1',
   name: 'Oakcloud Pte. Ltd.',
@@ -53,6 +60,11 @@ describe('Document Validation Service', () => {
     vi.clearAllMocks();
     vi.mocked(prisma.company.findFirst).mockResolvedValue(company as never);
     vi.mocked(resolveDocumentPartySelections).mockResolvedValue({});
+    serviceAgreementMock.getServiceAgreementDraftById.mockResolvedValue(null);
+    serviceAgreementMock.assembleServiceAgreementTemplate.mockReturnValue({
+      content: '',
+      itemDiagnostics: [],
+    });
   });
 
   describe('validateForGeneration', () => {
@@ -223,6 +235,96 @@ describe('Document Validation Service', () => {
       expect(result.errors).toEqual([]);
       expect(result.resolvedData.availablePlaceholders).toContain('company.address.letter');
       expect(result.resolvedData.missingPlaceholders).toEqual([]);
+    });
+
+    it('returns pinned service-item diagnostics as blocking validation errors', async () => {
+      vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+        id: 'template-1',
+        name: 'Service Agreement',
+        content: '{{@agreement.serviceSections}}{{@agreement.feeTable}}{{@agreement.entityAppendix}}',
+        placeholders: [],
+        compositionType: 'SERVICE_AGREEMENT',
+      } as never);
+      serviceAgreementMock.getServiceAgreementDraftById.mockResolvedValue({
+        id: 'agreement-1',
+        generatedDocumentId: 'document-1',
+        primaryCompanyId: 'company-1',
+      });
+      serviceAgreementMock.assembleServiceAgreementTemplate.mockReturnValue({
+        content: '<p>Agreement</p>',
+        itemDiagnostics: [{
+          itemId: 'item-1',
+          missingPlaceholders: ['service.fields.software'],
+        }],
+      });
+
+      const result = await validateForGeneration(
+        'tenant-1',
+        {
+          draftId: 'document-1',
+          templateId: 'template-1',
+          companyId: 'company-1',
+          serviceAgreementId: 'agreement-1',
+        },
+        'Taylor User',
+        'user-1',
+      );
+
+      expect(result.errors).toContainEqual({
+        field: 'service.fields.software',
+        message: 'Service item item-1 is missing required field service.fields.software',
+        category: 'custom',
+      });
+      expect(result.isValid).toBe(false);
+    });
+
+    it('validates Service Agreement contact placeholders from the saved representative snapshot', async () => {
+      vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+        id: 'template-1',
+        name: 'Service Agreement',
+        content: '{{selectedContact.name}}',
+        placeholders: [],
+        compositionType: 'SERVICE_AGREEMENT',
+      } as never);
+      serviceAgreementMock.getServiceAgreementDraftById.mockResolvedValue({
+        id: 'agreement-1',
+        generatedDocumentId: 'document-1',
+        primaryCompanyId: 'company-1',
+        authorizedRepresentativeSnapshot: {
+          id: 'deleted-contact',
+          name: 'Pinned representative',
+          role: 'Director',
+          email: 'pinned@example.com',
+          phone: null,
+        },
+      });
+      serviceAgreementMock.assembleServiceAgreementTemplate.mockReturnValue({
+        content: '{{selectedContact.name}}',
+        itemDiagnostics: [],
+      });
+      vi.mocked(resolveDocumentPartySelections).mockRejectedValue(
+        new Error('Selected contact is not linked to this company'),
+      );
+
+      const result = await validateForGeneration(
+        'tenant-1',
+        {
+          draftId: 'document-1',
+          templateId: 'template-1',
+          companyId: 'company-1',
+          serviceAgreementId: 'agreement-1',
+          selectedContactId: 'deleted-contact',
+        },
+        'Taylor User',
+        'user-1',
+      );
+
+      expect(resolveDocumentPartySelections).not.toHaveBeenCalled();
+      expect(result.errors).toEqual([]);
+      expect(result.resolvedData.selectedContact).toEqual(expect.objectContaining({
+        id: 'deleted-contact',
+        name: 'Pinned representative',
+      }));
     });
   });
 

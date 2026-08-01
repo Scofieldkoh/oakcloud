@@ -13,7 +13,7 @@ const session = {
 };
 
 const validState: GenerationSessionState = {
-  version: 1,
+  version: 2,
   currentStep: 0,
   templateId: null,
   companyId: null,
@@ -27,6 +27,7 @@ const validState: GenerationSessionState = {
   previewContent: null,
   editedContent: null,
   editedContentJson: null,
+  serviceAgreementId: null,
 };
 
 vi.mock('@/lib/auth', () => ({ requireAuth: vi.fn() }));
@@ -62,16 +63,19 @@ describe('generated document generation session routes', () => {
       id: draftId,
       savedAt: '2026-07-18T01:00:00.000Z',
       state: validState,
+      agreement: null,
     });
     vi.mocked(getGenerationSession).mockResolvedValue({
       id: draftId,
       savedAt: '2026-07-18T01:00:00.000Z',
       state: validState,
+      agreement: null,
     });
     vi.mocked(updateGenerationSession).mockResolvedValue({
       id: draftId,
       savedAt: '2026-07-18T02:00:00.000Z',
       state: validState,
+      agreement: null,
     });
   });
 

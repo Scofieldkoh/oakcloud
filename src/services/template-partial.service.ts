@@ -91,11 +91,11 @@ const TRACKED_FIELDS: (keyof TemplatePartial)[] = [
   'placeholders',
 ];
 
-function normalizeMaterialContent(content: string): string {
+export function normalizeMaterialContent(content: string): string {
   return content.replace(/\r\n/g, '\n').trim();
 }
 
-function stableSerialize(value: unknown): string {
+export function stableSerialize(value: unknown): string {
   if (Array.isArray(value)) {
     return `[${value.map(stableSerialize).join(',')}]`;
   }

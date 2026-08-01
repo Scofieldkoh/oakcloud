@@ -7,6 +7,7 @@ import { renderTemplateForGeneration } from '@/services/document-generator.servi
 
 // Validation schema for preview request
 const previewSchema = z.object({
+  draftId: z.string().uuid().optional(),
   templateId: z.string().uuid(),
   companyId: z.string().uuid().optional(),
   contactIds: z.array(z.string().uuid()).optional(),
@@ -14,6 +15,7 @@ const previewSchema = z.object({
   selectedShareholderId: z.string().uuid().optional(),
   selectedContactId: z.string().uuid().optional(),
   customData: z.record(z.unknown()).optional(),
+  serviceAgreementId: z.string().uuid().optional(),
 });
 
 /**
@@ -34,6 +36,7 @@ export async function POST(request: NextRequest) {
     const rendered = await renderTemplateForGeneration({
       templateId: data.templateId,
       tenantId,
+      userId: session.id,
       companyId: data.companyId,
       contactIds: data.contactIds,
       selectedDirectorId: data.selectedDirectorId,
@@ -42,6 +45,8 @@ export async function POST(request: NextRequest) {
       customData: data.customData,
       generatedBy: `${session.firstName} ${session.lastName}`.trim(),
       mode: 'preview',
+      serviceAgreementId: data.serviceAgreementId,
+      generatedDocumentId: data.draftId,
     });
 
     return NextResponse.json({

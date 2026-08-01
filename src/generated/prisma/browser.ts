@@ -198,6 +198,31 @@ export type ServiceVariant = Prisma.ServiceVariantModel
  */
 export type ServiceVariantFeeTemplate = Prisma.ServiceVariantFeeTemplateModel
 /**
+ * Model ServiceAgreement
+ *
+ */
+export type ServiceAgreement = Prisma.ServiceAgreementModel
+/**
+ * Model ServiceAgreementEntity
+ *
+ */
+export type ServiceAgreementEntity = Prisma.ServiceAgreementEntityModel
+/**
+ * Model ServiceAgreementItem
+ *
+ */
+export type ServiceAgreementItem = Prisma.ServiceAgreementItemModel
+/**
+ * Model ServiceAgreementItemEntity
+ *
+ */
+export type ServiceAgreementItemEntity = Prisma.ServiceAgreementItemEntityModel
+/**
+ * Model ServiceAgreementFeeLine
+ *
+ */
+export type ServiceAgreementFeeLine = Prisma.ServiceAgreementFeeLineModel
+/**
  * Model AiConversation
  *
  */

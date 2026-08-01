@@ -4,11 +4,13 @@ const prismaMock = vi.hoisted(() => ({
   documentTemplate: { findFirst: vi.fn() },
   company: { findFirst: vi.fn() },
   contact: { findMany: vi.fn() },
+  serviceAgreement: { findUnique: vi.fn(), delete: vi.fn() },
   generatedDocument: {
     create: vi.fn(),
     findFirst: vi.fn(),
     update: vi.fn(),
   },
+  $transaction: vi.fn(),
 }));
 
 const createAuditLogMock = vi.hoisted(() => vi.fn());
@@ -21,6 +23,7 @@ import {
   createDocumentFromTemplateSchema,
   saveGenerationSessionSchema,
 } from '@/lib/validations/generated-document';
+import { readActiveGenerationSession } from '@/lib/document-generation-session';
 import {
   createGenerationSession,
   getGenerationSession,
@@ -47,6 +50,7 @@ const emptySession = {
   previewContent: null,
   editedContent: null,
   editedContentJson: null,
+  serviceAgreementId: null,
 };
 
 beforeEach(() => {
@@ -54,9 +58,36 @@ beforeEach(() => {
   prismaMock.documentTemplate.findFirst.mockResolvedValue(null);
   prismaMock.company.findFirst.mockResolvedValue(null);
   prismaMock.contact.findMany.mockResolvedValue([]);
+  prismaMock.serviceAgreement.findUnique.mockResolvedValue(null);
+  prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
 });
 
 describe('generation session validation', () => {
+  it('normalizes a persisted v1 session to the v2 stage model in memory', () => {
+    expect(readActiveGenerationSession({
+      generationSession: {
+        version: 1,
+        currentStep: 4,
+        templateId: null,
+        companyId: null,
+        contactIds: [],
+        selectedDirectorId: null,
+        selectedShareholderId: null,
+        selectedContactId: null,
+        title: '',
+        customData: {},
+        useLetterhead: true,
+        previewContent: null,
+        editedContent: null,
+        editedContentJson: null,
+      },
+    })).toMatchObject({
+      version: 2,
+      currentStep: 2,
+      serviceAgreementId: null,
+    });
+  });
+
   it('accepts an untouched first-step session', () => {
     const result = saveGenerationSessionSchema.parse({
       version: GENERATION_SESSION_VERSION,
@@ -73,10 +104,12 @@ describe('generation session validation', () => {
       previewContent: null,
       editedContent: null,
       editedContentJson: null,
+      serviceAgreementId: null,
     });
 
     expect(result.currentStep).toBe(0);
     expect(result.templateId).toBeNull();
+    expect(result.serviceAgreementId).toBeNull();
   });
 
   it('rejects an unsupported session version and out-of-range step', () => {
@@ -195,6 +228,128 @@ describe('generation session persistence', () => {
     });
   });
 
+  it('rejects a standard-template save while a Service Agreement remains attached', async () => {
+    const standardTemplateId = '33333333-3333-4333-8333-333333333333';
+    prismaMock.generatedDocument.findFirst.mockResolvedValue({
+      id: 'draft-1',
+      tenantId: tenantParams.tenantId,
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: { generationSession: emptySession },
+    });
+    prismaMock.documentTemplate.findFirst.mockResolvedValue({
+      id: standardTemplateId,
+      name: 'Resolution',
+      compositionType: 'STANDARD',
+    });
+    prismaMock.serviceAgreement.findUnique.mockResolvedValue({
+      id: 'agreement-1',
+      status: 'DRAFT',
+    });
+
+    await expect(updateGenerationSession('draft-1', {
+      ...emptySession,
+      templateId: standardTemplateId,
+    }, tenantParams)).rejects.toThrow(
+      'Discard the attached Service Agreement before switching templates',
+    );
+  });
+
+  it('discards an attached draft agreement when a standard-template save confirms it', async () => {
+    const standardTemplateId = '33333333-3333-4333-8333-333333333333';
+    prismaMock.generatedDocument.findFirst.mockResolvedValue({
+      id: 'draft-1',
+      tenantId: tenantParams.tenantId,
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: { generationSession: emptySession },
+    });
+    prismaMock.documentTemplate.findFirst.mockResolvedValue({
+      id: standardTemplateId,
+      name: 'Resolution',
+      compositionType: 'STANDARD',
+    });
+    prismaMock.serviceAgreement.findUnique.mockResolvedValue({
+      id: 'agreement-1',
+      status: 'DRAFT',
+    });
+    prismaMock.generatedDocument.update.mockResolvedValue({
+      id: 'draft-1',
+      updatedAt: new Date('2026-07-18T03:00:00Z'),
+    });
+
+    const result = await updateGenerationSession('draft-1', {
+      ...emptySession,
+      templateId: standardTemplateId,
+      serviceAgreementId: 'agreement-1',
+      discardServiceAgreement: true,
+    }, tenantParams);
+
+    expect(prismaMock.serviceAgreement.delete).toHaveBeenCalledWith({
+      where: { id: 'agreement-1' },
+    });
+    expect(result.state.serviceAgreementId).toBeNull();
+  });
+
+  it('rejects hiding an attached agreement from a Service Agreement session', async () => {
+    const serviceTemplateId = '44444444-4444-4444-8444-444444444444';
+    prismaMock.generatedDocument.findFirst.mockResolvedValue({
+      id: 'draft-1',
+      tenantId: tenantParams.tenantId,
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: { generationSession: emptySession },
+    });
+    prismaMock.documentTemplate.findFirst.mockResolvedValue({
+      id: serviceTemplateId,
+      name: 'Service Agreement',
+      compositionType: 'SERVICE_AGREEMENT',
+    });
+    prismaMock.serviceAgreement.findUnique.mockResolvedValue({
+      id: 'agreement-1',
+      status: 'DRAFT',
+    });
+
+    await expect(updateGenerationSession('draft-1', {
+      ...emptySession,
+      templateId: serviceTemplateId,
+      serviceAgreementId: null,
+    }, tenantParams)).rejects.toThrow(
+      'Service Agreement session does not match the attached draft',
+    );
+    expect(prismaMock.generatedDocument.update).not.toHaveBeenCalled();
+  });
+
+  it('never discards an attached non-draft agreement', async () => {
+    const standardTemplateId = '33333333-3333-4333-8333-333333333333';
+    prismaMock.generatedDocument.findFirst.mockResolvedValue({
+      id: 'draft-1',
+      tenantId: tenantParams.tenantId,
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: { generationSession: emptySession },
+    });
+    prismaMock.documentTemplate.findFirst.mockResolvedValue({
+      id: standardTemplateId,
+      name: 'Resolution',
+      compositionType: 'STANDARD',
+    });
+    prismaMock.serviceAgreement.findUnique.mockResolvedValue({
+      id: 'agreement-1',
+      status: 'EFFECTIVE',
+    });
+
+    await expect(updateGenerationSession('draft-1', {
+      ...emptySession,
+      templateId: standardTemplateId,
+      serviceAgreementId: 'agreement-1',
+      discardServiceAgreement: true,
+    }, tenantParams)).rejects.toThrow(
+      'Only draft Service Agreements can be discarded',
+    );
+    expect(prismaMock.serviceAgreement.delete).not.toHaveBeenCalled();
+  });
+
   it('loads an active session envelope', async () => {
     prismaMock.generatedDocument.findFirst.mockResolvedValue({
       id: 'draft-1',
@@ -209,6 +364,7 @@ describe('generation session persistence', () => {
       id: 'draft-1',
       savedAt: '2026-07-18T04:00:00.000Z',
       state: emptySession,
+      agreement: null,
     });
   });
 

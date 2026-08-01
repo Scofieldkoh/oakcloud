@@ -406,6 +406,36 @@ const company = await prisma.company.findFirst({
 
 ## Validation
 
+## Service Agreement draft and generation patterns
+
+- Store one `ServiceAgreement` beside the active generated-document draft.
+  Store entity name/UEN and authorised-representative snapshots so later
+  source-record edits do not rewrite saved agreements.
+- Pin the selected variant version, linked partial version, recursively
+  expanded partial content, placeholder definitions, and dependency versions
+  on every item. Do not query current catalog wording while previewing or
+  generating a saved draft.
+- Every fee line references both one agreement item and one agreement entity.
+  Group-total fees are not supported. Serialize database decimals as
+  fixed-point strings at the service boundary.
+- Assemble `serviceSections`, `feeTable`, and `entityAppendix` exactly once,
+  in that order, before normal template partial and placeholder resolution.
+  A SOW receives only its local `service` context.
+- Refresh wording only through the optimistic version-checked refresh route.
+  Preserve dates, entity assignments, fields, and fees during refresh.
+- Full-editor changes affect document HTML only. Display the divergence warning
+  and direct operational-data changes back to the Services stage.
+
+The controlled initial content is installed explicitly and remains inactive:
+
+```powershell
+npm.cmd run db:seed-service-agreement -- --tenantId <uuid> --userId <uuid>
+```
+
+The command is idempotent, verifies tenant membership, and does not print legal
+wording or personal data. A content owner must review the wording and rendered
+PDF before activating the template, families, or variants.
+
 ### Input Validation with Zod
 
 Use Zod schemas for input validation:

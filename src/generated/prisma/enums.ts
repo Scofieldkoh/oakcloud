@@ -335,6 +335,15 @@ export const BillingFrequency = {
 export type BillingFrequency = (typeof BillingFrequency)[keyof typeof BillingFrequency]
 
 
+export const ServiceAgreementStatus = {
+  DRAFT: 'DRAFT',
+  EFFECTIVE: 'EFFECTIVE',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type ServiceAgreementStatus = (typeof ServiceAgreementStatus)[keyof typeof ServiceAgreementStatus]
+
+
 export const GeneratedDocumentStatus = {
   DRAFT: 'DRAFT',
   FINALIZED: 'FINALIZED',

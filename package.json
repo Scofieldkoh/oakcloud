@@ -16,6 +16,7 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed-service-agreement": "tsx scripts/seed-service-agreement-template.ts",
     "db:backfill-contact-canonical-names": "tsx scripts/backfill-contact-canonical-names.ts",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",

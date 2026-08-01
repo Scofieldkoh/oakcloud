@@ -9,6 +9,9 @@ vi.mock('@/lib/prisma', () => ({
       findMany: vi.fn(),
       count: vi.fn(),
     },
+    serviceAgreement: {
+      delete: vi.fn(),
+    },
     documentTemplate: {
       findFirst: vi.fn(),
     },
@@ -18,6 +21,7 @@ vi.mock('@/lib/prisma', () => ({
     user: {
       findFirst: vi.fn(),
     },
+    $transaction: vi.fn(),
   },
 }));
 
@@ -43,6 +47,16 @@ vi.mock('@/services/company.service', () => ({
 vi.mock('@/services/document-party.service', () => ({
   getDocumentPartyOptions: vi.fn(),
   resolveDocumentPartySelections: vi.fn(),
+}));
+
+const serviceAgreementMock = vi.hoisted(() => ({
+  getServiceAgreementDraft: vi.fn(),
+  getServiceAgreementDraftById: vi.fn(),
+}));
+
+vi.mock('@/services/service-agreement', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/service-agreement')>()),
+  ...serviceAgreementMock,
 }));
 
 vi.mock('@/lib/encryption', () => ({
@@ -82,6 +96,26 @@ import {
 } from '@/services/tasks/esigning-preparation.service';
 
 describe('Document generator service', () => {
+  const activeSessionMetadata = (templateId: string) => ({
+    generationSession: {
+      version: 2,
+      currentStep: 0,
+      templateId,
+      companyId: null,
+      contactIds: [],
+      selectedDirectorId: null,
+      selectedShareholderId: null,
+      selectedContactId: null,
+      title: '',
+      customData: {},
+      useLetterhead: true,
+      previewContent: null,
+      editedContent: null,
+      editedContentJson: null,
+      serviceAgreementId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    },
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(prisma.generatedDocument.findMany).mockResolvedValue([]);
@@ -99,6 +133,9 @@ describe('Document generator service', () => {
     });
     vi.mocked(prisma.contact.findMany).mockResolvedValue([]);
     vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
+    serviceAgreementMock.getServiceAgreementDraft.mockResolvedValue(null);
+    serviceAgreementMock.getServiceAgreementDraftById.mockResolvedValue(null);
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback) => callback(prisma));
     vi.mocked(getDocumentPartyOptions).mockResolvedValue({
       directors: [],
       shareholders: [],
@@ -251,6 +288,121 @@ describe('Document generator service', () => {
         }),
       }),
     });
+  });
+
+  it('requires confirmation before a standard generation discards an attached agreement', async () => {
+    const draftId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const templateId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: templateId,
+      tenantId: 'workspace-1',
+      name: 'Resolution',
+      content: '<p>Resolution</p>',
+      contentJson: null,
+      version: 1,
+      isActive: true,
+      compositionType: 'STANDARD',
+    } as never);
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
+      id: draftId,
+      tenantId: 'workspace-1',
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: activeSessionMetadata(templateId),
+    } as never);
+    serviceAgreementMock.getServiceAgreementDraft.mockResolvedValue({
+      id: 'agreement-1',
+      status: 'DRAFT',
+    } as never);
+
+    await expect(createDocumentFromTemplate({
+      draftId,
+      templateId,
+      title: 'Resolution',
+    }, { tenantId: 'workspace-1', userId: 'user-1' })).rejects.toThrow(
+      'Discard the attached Service Agreement before switching templates',
+    );
+
+    expect(prisma.generatedDocument.update).not.toHaveBeenCalled();
+    expect(prisma.serviceAgreement.delete).not.toHaveBeenCalled();
+  });
+
+  it('atomically discards an attached draft agreement during confirmed standard generation', async () => {
+    const draftId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const templateId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: templateId,
+      tenantId: 'workspace-1',
+      name: 'Resolution',
+      content: '<p>Resolution</p>',
+      contentJson: null,
+      version: 1,
+      isActive: true,
+      compositionType: 'STANDARD',
+    } as never);
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
+      id: draftId,
+      tenantId: 'workspace-1',
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: activeSessionMetadata(templateId),
+    } as never);
+    serviceAgreementMock.getServiceAgreementDraft.mockResolvedValue({
+      id: 'agreement-1',
+      status: 'DRAFT',
+    } as never);
+
+    await createDocumentFromTemplate({
+      draftId,
+      templateId,
+      title: 'Resolution',
+      discardServiceAgreement: true,
+    }, { tenantId: 'workspace-1', userId: 'user-1' });
+
+    expect(prisma.$transaction).toHaveBeenCalledOnce();
+    expect(prisma.serviceAgreement.delete).toHaveBeenCalledWith({
+      where: { id: 'agreement-1' },
+    });
+    expect(prisma.generatedDocument.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: draftId },
+    }));
+  });
+
+  it('never discards an attached non-draft agreement during generation', async () => {
+    const draftId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const templateId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: templateId,
+      tenantId: 'workspace-1',
+      name: 'Resolution',
+      content: '<p>Resolution</p>',
+      contentJson: null,
+      version: 1,
+      isActive: true,
+      compositionType: 'STANDARD',
+    } as never);
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
+      id: draftId,
+      tenantId: 'workspace-1',
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: activeSessionMetadata(templateId),
+    } as never);
+    serviceAgreementMock.getServiceAgreementDraft.mockResolvedValue({
+      id: 'agreement-1',
+      status: 'EFFECTIVE',
+    } as never);
+
+    await expect(createDocumentFromTemplate({
+      draftId,
+      templateId,
+      title: 'Resolution',
+      discardServiceAgreement: true,
+    }, { tenantId: 'workspace-1', userId: 'user-1' })).rejects.toThrow(
+      'Only draft Service Agreements can be discarded',
+    );
+
+    expect(prisma.serviceAgreement.delete).not.toHaveBeenCalled();
   });
 
   it('leaves a saved generation session untouched when rendering fails', async () => {
@@ -742,6 +894,104 @@ describe('Document generator service', () => {
     expect(result.context.selectedContact?.id).toBe('contact-1');
     expect(result.context.contact).toBe(result.context.contacts?.[0]);
     expect(result.context.custom?.contacts).toBe(result.context.contacts);
+  });
+
+  it('renders Service Agreement representative placeholders from the saved snapshot', async () => {
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: 'template-1',
+      tenantId: 'workspace-1',
+      name: 'Service Agreement',
+      category: 'CONTRACT',
+      content: [
+        '<p>{{selectedContact.name}} {{selectedContact.detail}} ',
+        '{{selectedContact.email}} {{selectedContact.phone}}</p>',
+        '{{@agreement.serviceSections}}',
+        '{{@agreement.feeTable}}',
+        '{{@agreement.entityAppendix}}',
+      ].join(''),
+      version: 1,
+      isActive: true,
+      compositionType: 'SERVICE_AGREEMENT',
+      placeholders: [],
+    } as never);
+    serviceAgreementMock.getServiceAgreementDraftById.mockResolvedValue({
+      id: 'agreement-1',
+      generatedDocumentId: 'document-1',
+      primaryCompanyId: 'company-1',
+      authorizedContactId: 'deleted-contact',
+      authorizedRepresentativeSnapshot: {
+        id: 'deleted-contact',
+        name: 'Pinned Name',
+        role: 'Director',
+        email: 'pinned@example.com',
+        phone: '+65 6123 4567',
+      },
+      agreementDate: '2026-07-30',
+      effectiveDate: '2026-08-01',
+      termMonths: 12,
+      status: 'DRAFT',
+      entities: [{
+        id: 'entity-1',
+        companyId: 'company-1',
+        nameSnapshot: 'Alpha Pte. Ltd.',
+        uenSnapshot: '11111111A',
+        displayOrder: 0,
+      }],
+      items: [],
+      createdAt: '2026-07-30T00:00:00.000Z',
+      updatedAt: '2026-07-30T00:00:00.000Z',
+    });
+
+    const result = await renderTemplateForGeneration({
+      tenantId: 'workspace-1',
+      userId: 'user-1',
+      companyId: 'company-1',
+      templateId: 'template-1',
+      serviceAgreementId: 'agreement-1',
+      generatedDocumentId: 'document-1',
+      // The wizard retains this historical ID, even after the contact has
+      // been removed. The saved representative snapshot must remain usable.
+      selectedContactId: 'deleted-contact',
+      contextOverride: {
+        company: { id: 'company-1', name: 'Alpha Pte. Ltd.', uen: '11111111A' },
+      },
+    });
+
+    expect(resolveDocumentPartySelections).not.toHaveBeenCalled();
+    expect(result.context.selectedContact).toEqual(expect.objectContaining({
+      id: 'deleted-contact',
+      name: 'Pinned Name',
+      detail: 'Director',
+      email: 'pinned@example.com',
+      phone: '+65 6123 4567',
+    }));
+  });
+
+  it('refuses to persist a generated document with blocking diagnostics', async () => {
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: 'template-1',
+      tenantId: 'workspace-1',
+      name: 'Broken template',
+      category: 'OTHER',
+      content: '<p>{{missing.value}}</p>',
+      contentJson: null,
+      version: 1,
+      isActive: true,
+      compositionType: 'STANDARD',
+      placeholders: [],
+    } as never);
+    vi.mocked(resolvePlaceholders).mockReturnValue({
+      resolved: '<p>{{missing.value}}</p>',
+      missing: ['missing.value'],
+      missingPartials: [],
+    });
+
+    await expect(createDocumentFromTemplate(
+      { templateId: 'template-1', title: 'Blocked document' },
+      { tenantId: 'workspace-1', userId: 'user-1' },
+    )).rejects.toThrow('Unresolved placeholders: missing.value');
+
+    expect(prisma.generatedDocument.create).not.toHaveBeenCalled();
   });
 
   it('uses the authenticated creator name and persists selected party metadata', async () => {

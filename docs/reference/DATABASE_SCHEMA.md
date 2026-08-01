@@ -2592,6 +2592,27 @@ All rows are tenant-scoped. Published pipeline versions and locked task snapshot
 
 A pipeline create/update transaction inserts an unpublished `task_pipeline_versions` row, writes every ordered `task_pipeline_stages` row, then publishes it. A task create transaction copies the selected published version and checklist definitions into `task_stages` and `task_stage_checklist_items`, then locks the snapshot. Pipeline edits publish another version and never rewrite existing tasks.
 
+### Service Agreement generation tables
+
+| Table | Purpose | Key constraints |
+|---|---|---|
+| `service_agreements` | Structured agreement header beside a generated-document draft | Unique generated document; tenant/status and primary-company indexes |
+| `service_agreement_entities` | Included company name/UEN snapshots | Unique company within an agreement |
+| `service_agreement_items` | Repeated service selections and pinned SOW/version data | Tenant/agreement/display-order index |
+| `service_agreement_item_entities` | Many-to-many item targeting | Unique item/entity pair |
+| `service_agreement_fee_lines` | Entity-specific decimal fees | Item/display-order and entity indexes |
+
+`ServiceAgreementStatus` is `DRAFT`, `EFFECTIVE`, or `CANCELLED`. Stage 2
+creates and edits only `DRAFT` rows. Every relation is tenant-scoped and uses
+additive foreign keys; deleting a generation draft cascades its structured
+agreement, while company, contact, variant, and partial references are
+restricted or set null as declared in the Prisma schema.
+
+Agreement item snapshots store the material service-variant version, SOW
+partial version, expanded legal wording, service placeholder definitions, and
+nested dependency versions. Decimal fee amounts are returned by APIs as
+fixed-point strings.
+
 ### Status And Lifecycle Rules
 
 - Derived task lifecycle: `NOT_STARTED → IN_PROGRESS → COMPLETED`.

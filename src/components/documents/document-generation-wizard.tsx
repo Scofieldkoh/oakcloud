@@ -26,7 +26,9 @@ import { Pagination } from '@/components/ui/pagination';
 import { TemplateSelector, type DocumentTemplate } from './template-selector';
 import {
   DOCUMENT_GENERATION_STAGES,
+  SERVICE_AGREEMENT_GENERATION_STAGES,
   normalizeDocumentGenerationStage,
+  normalizeServiceAgreementGenerationStage,
 } from './document-generation-stage';
 import { DocumentPartyChoiceList } from './document-party-choice-list';
 import {
@@ -42,9 +44,18 @@ import {
 import type { GenerationSessionEnvelope } from '@/lib/document-generation-session';
 import {
   GENERATION_SESSION_VERSION,
+  type SaveGenerationSessionInput,
   type GenerationSessionState,
 } from '@/lib/validations/generated-document';
 import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
+import type {
+  ServiceAgreementDraftDto,
+  ServiceAgreementItemDto,
+  ServiceAgreementItemInput,
+} from '@/services/service-agreement';
+import { ServiceAgreementSetup } from './service-agreement/service-agreement-setup';
+import { ServiceSelectionStep } from './service-agreement/service-selection-step';
+import { ServiceAgreementWarning } from './service-agreement/service-agreement-warning';
 
 // ============================================================================
 // Types
@@ -81,7 +92,7 @@ export interface GenerationWizardProps {
   initialCompanyId?: string;
   onSaveDraft?: (
     draftId: string | null,
-    state: GenerationSessionState,
+    state: SaveGenerationSessionInput,
   ) => Promise<GenerationSessionEnvelope>;
   onGenerationComplete?: (result: GeneratedDocumentResult) => void;
   onPreviewTemplate?: (template: DocumentTemplate) => void;
@@ -113,6 +124,8 @@ export interface GenerateDocumentData {
   customData: Record<string, string>;
   useLetterhead: boolean;
   editedContent?: string;
+  serviceAgreementId?: string;
+  discardServiceAgreement?: boolean;
 }
 
 export interface GeneratedDocumentResult {
@@ -143,11 +156,101 @@ interface WizardState {
   fieldErrors: string[];
 }
 
+interface ServiceAgreementWizardState {
+  authorizedContactId: string;
+  entityIds: string[];
+  agreementDate: string;
+  effectiveDate: string;
+  termMonths: number;
+  items: ServiceAgreementItemInput[];
+}
+
+function agreementRemovalImpact(
+  items: ServiceAgreementItemInput[],
+  retainedCompanyIds: Set<string>,
+): { serviceAssignments: number; feeLines: number } {
+  return items.reduce(
+    (impact, item) => ({
+      serviceAssignments: impact.serviceAssignments
+        + item.entityIds.filter((id) => !retainedCompanyIds.has(id)).length,
+      feeLines: impact.feeLines
+        + item.feeLines.filter((fee) => !retainedCompanyIds.has(fee.companyId)).length,
+    }),
+    { serviceAssignments: 0, feeLines: 0 },
+  );
+}
+
+function removalImpactLabel(impact: {
+  serviceAssignments: number;
+  feeLines: number;
+}): string {
+  return `${impact.serviceAssignments} service assignment${
+    impact.serviceAssignments === 1 ? '' : 's'
+  } and ${impact.feeLines} fee line${impact.feeLines === 1 ? '' : 's'}`;
+}
+
+function agreementDtoToInput(
+  saved: ServiceAgreementDraftDto,
+): NonNullable<SaveGenerationSessionInput['serviceAgreement']> {
+  return {
+    primaryCompanyId: saved.primaryCompanyId,
+    authorizedContactId:
+      saved.authorizedContactId ?? saved.authorizedRepresentativeSnapshot.id,
+    entityIds: saved.entities.map((entity) => entity.companyId),
+    agreementDate: saved.agreementDate,
+    effectiveDate: saved.effectiveDate,
+    termMonths: saved.termMonths,
+    items: saved.items.map((item) => ({
+      id: item.id,
+      clientKey: item.id,
+      variantId: item.serviceVariantId,
+      entityIds: item.entityIds
+        .map((entityId) =>
+          saved.entities.find((entity) => entity.id === entityId)?.companyId)
+        .filter((id): id is string => Boolean(id)),
+      startDate: item.startDate,
+      endDate: item.endDate,
+      fieldValues: item.fieldValues,
+      displayOrder: item.displayOrder,
+      feeLines: item.feeLines.map((fee) => ({
+        id: fee.id,
+        clientKey: fee.id,
+        companyId: fee.companyId,
+        description: fee.description,
+        amount: fee.amount,
+        currency: fee.currency,
+        billingFrequency: fee.billingFrequency,
+        customFrequencyLabel: fee.customFrequencyLabel ?? null,
+        billingStartDate: fee.billingStartDate,
+        displayOrder: fee.displayOrder,
+      })),
+    })),
+  };
+}
+
+function agreementDtoToWizardState(
+  saved: ServiceAgreementDraftDto,
+): ServiceAgreementWizardState {
+  const input = agreementDtoToInput(saved);
+  return {
+    ...input,
+    effectiveDate: input.effectiveDate ?? '',
+  };
+}
+
+function envelopeSaveSnapshot(envelope: GenerationSessionEnvelope | null): string {
+  if (!envelope) return JSON.stringify(EMPTY_GENERATION_SESSION_STATE);
+  return JSON.stringify({
+    ...envelope.state,
+    ...(envelope.agreement
+      ? { serviceAgreement: agreementDtoToInput(envelope.agreement) }
+      : {}),
+  });
+}
+
 // ============================================================================
 // Step Definitions
 // ============================================================================
-
-const WIZARD_STEPS: Step[] = DOCUMENT_GENERATION_STAGES.map((stage) => ({ ...stage }));
 
 const WIZARD_DRAFT_STORAGE_KEY = 'oakcloud:document-generation-wizard-draft';
 
@@ -166,6 +269,7 @@ const EMPTY_GENERATION_SESSION_STATE: GenerationSessionState = {
   previewContent: null,
   editedContent: null,
   editedContentJson: null,
+  serviceAgreementId: null,
 };
 
 interface DocumentPartyOptions {
@@ -803,9 +907,8 @@ export function DocumentGenerationWizard({
   const [resumeWarning, setResumeWarning] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(initialSession?.id ?? null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(initialSession?.savedAt ?? null);
-  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(
-    initialSession?.state ?? EMPTY_GENERATION_SESSION_STATE,
-  ));
+  const [savedSnapshot, setSavedSnapshot] = useState(() =>
+    envelopeSaveSnapshot(initialSession));
   const [sessionHydrated, setSessionHydrated] = useState(!initialSession);
   const [partyOptions, setPartyOptions] = useState<DocumentPartyOptions>(EMPTY_PARTY_OPTIONS);
   const [isLoadingParties, setIsLoadingParties] = useState(false);
@@ -840,6 +943,50 @@ export function DocumentGenerationWizard({
     blockingErrors: [],
     fieldErrors: [],
   });
+  const [serviceAgreementId, setServiceAgreementId] = useState<string | null>(
+    initialSession?.agreement?.id ?? initialSession?.state.serviceAgreementId ?? null,
+  );
+  const [shouldDiscardServiceAgreement, setShouldDiscardServiceAgreement] = useState(false);
+  const [pinnedAgreementItems, setPinnedAgreementItems] = useState<
+    ServiceAgreementItemDto[]
+  >(initialSession?.agreement?.items ?? []);
+  const [serviceAgreementItemErrors, setServiceAgreementItemErrors] = useState<string[]>([]);
+  const [serviceAgreement, setServiceAgreement] = useState<ServiceAgreementWizardState>(() => {
+    const saved = initialSession?.agreement;
+    const today = new Date().toISOString().slice(0, 10);
+    return {
+      authorizedContactId:
+        saved?.authorizedContactId ?? saved?.authorizedRepresentativeSnapshot.id ?? '',
+      entityIds: saved?.entities.map((entity) => entity.companyId) ?? [],
+      agreementDate: saved?.agreementDate ?? today,
+      effectiveDate: saved?.effectiveDate ?? today,
+      termMonths: saved?.termMonths ?? 12,
+      items: saved ? agreementDtoToInput(saved).items : [],
+    };
+  });
+  const isServiceAgreement =
+    state.selectedTemplate?.compositionType === 'SERVICE_AGREEMENT';
+  const hasPinnedRepresentative = Boolean(
+    isServiceAgreement && serviceAgreementId && serviceAgreement.authorizedContactId,
+  );
+  const wizardSteps = useMemo<Step[]>(
+    () =>
+      (isServiceAgreement
+        ? SERVICE_AGREEMENT_GENERATION_STAGES
+        : DOCUMENT_GENERATION_STAGES
+      ).map((stage) => ({ ...stage })),
+    [isServiceAgreement],
+  );
+  useEffect(() => {
+    if (!isServiceAgreement || !state.selectedCompany) return;
+    setServiceAgreement((previous) => ({
+      ...previous,
+      entityIds: [
+        state.selectedCompany!.id,
+        ...previous.entityIds.filter((id) => id !== state.selectedCompany!.id),
+      ],
+    }));
+  }, [isServiceAgreement, state.selectedCompany]);
 
   const partyRequirements = useMemo(() => {
     if (!state.selectedTemplate) return { director: false, shareholder: false, contact: false };
@@ -898,9 +1045,27 @@ export function DocumentGenerationWizard({
     const selectedCompany = companies.find((company) => company.id === draft.companyId) || null;
     const selectedContactIds = new Set(draft.contactIds);
     const selectedContacts = contacts.filter((contact) => selectedContactIds.has(contact.id));
-    const restoredStep = normalizeDocumentGenerationStage(draft.currentStep);
+    const normalizedRestoredStep = selectedTemplate.compositionType === 'SERVICE_AGREEMENT'
+      ? normalizeServiceAgreementGenerationStage(draft.currentStep)
+      : normalizeDocumentGenerationStage(draft.currentStep);
+    const restoredStep = selectedTemplate.compositionType === 'SERVICE_AGREEMENT'
+      && normalizedRestoredStep === 3
+      && !draft.previewContent
+      && !draft.editedContent
+        ? 2
+        : normalizedRestoredStep;
     const requirements = getRequiredPartySelections(selectedTemplate.content || '', partials);
-    const requiresSingularSelections = requirements.director || requirements.shareholder || requirements.contact;
+    // A resumed Service Agreement has its representative pinned in the
+    // relational draft, so a missing current contact cannot invalidate it.
+    const resumeRequirements = selectedTemplate.compositionType === 'SERVICE_AGREEMENT'
+      && initialSession.agreement
+      ? { ...requirements, contact: false }
+      : requirements;
+    const requiresSingularSelections = (
+      resumeRequirements.director
+      || resumeRequirements.shareholder
+      || resumeRequirements.contact
+    );
     const savedCompanyIsUnavailable = Boolean(draft.companyId && !selectedCompany);
     const failedSavedCompanyEligibility = savedCompanyIsUnavailable && requiresSingularSelections;
     const requiresEligibility = Boolean(selectedCompany && requiresSingularSelections);
@@ -914,7 +1079,7 @@ export function DocumentGenerationWizard({
       director: draft.selectedDirectorId || '',
       shareholder: draft.selectedShareholderId || '',
       contact: draft.selectedContactId || '',
-      requirements,
+      requirements: resumeRequirements,
       restoredStep,
     } : null;
 
@@ -972,7 +1137,11 @@ export function DocumentGenerationWizard({
         if (pending) {
           const selectedDirectorId = options.directors.some((option) => option.id === pending.director) ? pending.director : '';
           const selectedShareholderId = options.shareholders.some((option) => option.id === pending.shareholder) ? pending.shareholder : '';
-          const selectedContactId = options.contacts.some((option) => option.id === pending.contact) ? pending.contact : '';
+          const selectedContactId = hasPinnedRepresentative
+            ? pending.contact
+            : options.contacts.some((option) => option.id === pending.contact)
+              ? pending.contact
+              : '';
           const hasInvalidRequiredSelection = (
             (pending.requirements.director && !selectedDirectorId)
             || (pending.requirements.shareholder && !selectedShareholderId)
@@ -1002,7 +1171,11 @@ export function DocumentGenerationWizard({
             ...previous,
             selectedDirectorId: options.directors.some((option) => option.id === previous.selectedDirectorId) ? previous.selectedDirectorId : '',
             selectedShareholderId: options.shareholders.some((option) => option.id === previous.selectedShareholderId) ? previous.selectedShareholderId : '',
-            selectedContactId: options.contacts.some((option) => option.id === previous.selectedContactId) ? previous.selectedContactId : '',
+            selectedContactId: hasPinnedRepresentative
+              ? previous.selectedContactId
+              : options.contacts.some((option) => option.id === previous.selectedContactId)
+                ? previous.selectedContactId
+                : '',
           }));
         }
         setIsPartyEligibilityResolved(true);
@@ -1020,7 +1193,9 @@ export function DocumentGenerationWizard({
             ...previous,
             selectedDirectorId: '',
             selectedShareholderId: '',
-            selectedContactId: '',
+            selectedContactId: hasPinnedRepresentative
+              ? previous.selectedContactId
+              : '',
             previewContent: null,
             editedContent: null,
             missingPlaceholders: [],
@@ -1035,7 +1210,7 @@ export function DocumentGenerationWizard({
       });
 
     return () => controller.abort();
-  }, [partyReloadVersion, requiresSingularPartySelection, state.selectedCompany?.id]);
+  }, [hasPinnedRepresentative, partyReloadVersion, requiresSingularPartySelection, state.selectedCompany?.id]);
 
   const retryPartyOptions = useCallback(() => {
     if (!state.selectedCompany || !requiresSingularPartySelection) return;
@@ -1061,8 +1236,44 @@ export function DocumentGenerationWizard({
     previewContent: state.previewContent,
     editedContent: state.editedContent,
     editedContentJson: null,
-  }), [currentStep, state]);
-  const isDirty = sessionHydrated && JSON.stringify(currentSessionState) !== savedSnapshot;
+    serviceAgreementId,
+  }), [currentStep, serviceAgreementId, state]);
+  const serviceAgreementInput = useMemo<
+    NonNullable<SaveGenerationSessionInput['serviceAgreement']> | null
+  >(() => {
+    if (
+      !isServiceAgreement ||
+      !state.selectedCompany ||
+      !serviceAgreement.authorizedContactId ||
+      serviceAgreement.items.length === 0
+    ) {
+      return null;
+    }
+    return {
+      primaryCompanyId: state.selectedCompany.id,
+      authorizedContactId: serviceAgreement.authorizedContactId,
+      entityIds: serviceAgreement.entityIds,
+      agreementDate: serviceAgreement.agreementDate,
+      effectiveDate: serviceAgreement.effectiveDate || null,
+      termMonths: serviceAgreement.termMonths,
+      items: serviceAgreement.items.map((item) => ({
+        ...item,
+        feeLines: item.feeLines.map((fee) => ({
+          ...fee,
+          customFrequencyLabel: fee.customFrequencyLabel ?? null,
+        })),
+      })),
+    };
+  }, [isServiceAgreement, serviceAgreement, state.selectedCompany]);
+  const currentSaveInput = useMemo<SaveGenerationSessionInput>(
+    () => ({
+      ...currentSessionState,
+      ...(serviceAgreementInput ? { serviceAgreement: serviceAgreementInput } : {}),
+      ...(shouldDiscardServiceAgreement ? { discardServiceAgreement: true } : {}),
+    }),
+    [currentSessionState, serviceAgreementInput, shouldDiscardServiceAgreement],
+  );
+  const isDirty = sessionHydrated && JSON.stringify(currentSaveInput) !== savedSnapshot;
   const navigationGuard = useUnsavedNavigationGuard(
     isDirty,
     {
@@ -1070,21 +1281,38 @@ export function DocumentGenerationWizard({
     },
   );
 
+  const applySavedEnvelope = useCallback((saved: GenerationSessionEnvelope) => {
+    setDraftId(saved.id);
+    setServiceAgreementId(saved.agreement?.id ?? saved.state.serviceAgreementId);
+    setPinnedAgreementItems(saved.agreement?.items ?? []);
+    if (saved.agreement) {
+      setServiceAgreement(agreementDtoToWizardState(saved.agreement));
+    } else if (!saved.state.serviceAgreementId) {
+      setServiceAgreement((previous) => ({
+        ...previous,
+        authorizedContactId: '',
+        entityIds: [],
+        items: [],
+      }));
+    }
+    setShouldDiscardServiceAgreement(false);
+    setLastSavedAt(saved.savedAt);
+    setSavedSnapshot(envelopeSaveSnapshot(saved));
+  }, []);
+
   const handleSaveDraft = useCallback(async () => {
     if (!onSaveDraft || isSavingDraft || isGenerating) return;
     setIsSavingDraft(true);
     setError(null);
     try {
-      const saved = await onSaveDraft(draftId, currentSessionState);
-      setDraftId(saved.id);
-      setLastSavedAt(saved.savedAt);
-      setSavedSnapshot(JSON.stringify(saved.state));
+      const saved = await onSaveDraft(draftId, currentSaveInput);
+      applySavedEnvelope(saved);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Failed to save draft');
     } finally {
       setIsSavingDraft(false);
     }
-  }, [currentSessionState, draftId, isGenerating, isSavingDraft, onSaveDraft]);
+  }, [applySavedEnvelope, currentSaveInput, draftId, isGenerating, isSavingDraft, onSaveDraft]);
 
   // Count filled custom fields for summary
   const filledCustomFieldCount = useMemo(() => {
@@ -1100,13 +1328,34 @@ export function DocumentGenerationWizard({
     const errors: string[] = [];
     if (partyRequirements.director && !state.selectedDirectorId) errors.push('Select a director for this template.');
     if (partyRequirements.shareholder && !state.selectedShareholderId) errors.push('Select a shareholder for this template.');
-    if (partyRequirements.contact && !state.selectedContactId) errors.push('Select a company contact for this template.');
+    if (
+      partyRequirements.contact
+      && !state.selectedContactId
+      && !hasPinnedRepresentative
+    ) {
+      errors.push('Select a company contact for this template.');
+    }
     return errors;
-  }, [partyRequirements, state.selectedContactId, state.selectedDirectorId, state.selectedShareholderId]);
+  }, [hasPinnedRepresentative, partyRequirements, state.selectedContactId, state.selectedDirectorId, state.selectedShareholderId]);
 
   // Check if the current stage is valid.
   const isStepValid = useCallback(
     (step: number): boolean => {
+      if (isServiceAgreement) {
+        if (step === 0) {
+          return Boolean(
+            state.selectedTemplate &&
+            state.selectedCompany &&
+            serviceAgreement.authorizedContactId,
+          );
+        }
+        if (step === 1) {
+          return serviceAgreement.items.length > 0
+            && serviceAgreementItemErrors.length === 0;
+        }
+        if (step === 2) return state.title.trim().length > 0;
+        return step === 3;
+      }
       switch (step) {
         case 0: // Setup
           return state.selectedTemplate !== null
@@ -1121,7 +1370,7 @@ export function DocumentGenerationWizard({
           return false;
       }
     },
-    [getRequiredPartyErrors, isPartyEligibilityResolved, requiresSingularPartySelection, state.selectedCompany, state.selectedTemplate, state.title]
+    [getRequiredPartyErrors, isPartyEligibilityResolved, isServiceAgreement, requiresSingularPartySelection, serviceAgreement.authorizedContactId, serviceAgreement.items.length, serviceAgreementItemErrors.length, state.selectedCompany, state.selectedTemplate, state.title]
   );
 
   const getRequiredCustomFieldErrors = useCallback((): string[] => {
@@ -1144,6 +1393,61 @@ export function DocumentGenerationWizard({
 
   // Handle step navigation
   const goToNextStep = async () => {
+    if (isServiceAgreement) {
+      if (!isStepValid(currentStep)) {
+        setError(
+          currentStep === 0
+            ? 'Select a primary company and authorised representative.'
+            : currentStep === 1
+              ? serviceAgreementItemErrors[0] ?? 'Add at least one service.'
+              : 'Complete the agreement details.',
+        );
+        return;
+      }
+      if (currentStep === 2) {
+        if (!onSaveDraft || !serviceAgreementInput) return;
+        setIsSavingDraft(true);
+        try {
+          const saved = await onSaveDraft(draftId, {
+            ...currentSaveInput,
+            currentStep: 2,
+            serviceAgreement: serviceAgreementInput,
+          });
+          applySavedEnvelope(saved);
+          const previewContent = await generatePreview(
+            saved.id,
+            saved.agreement?.id ?? saved.state.serviceAgreementId,
+          );
+          if (!previewContent) return;
+          const previewSaved = await onSaveDraft(saved.id, {
+            ...saved.state,
+            currentStep: 3,
+            previewContent,
+            editedContent: null,
+            serviceAgreement: saved.agreement
+              ? agreementDtoToInput(saved.agreement)
+              : serviceAgreementInput,
+          });
+          applySavedEnvelope(previewSaved);
+          setCurrentStep(3);
+        } catch (saveError) {
+          setError(
+            saveError instanceof Error
+              ? saveError.message
+              : 'Failed to prepare the agreement preview',
+          );
+        } finally {
+          setIsSavingDraft(false);
+        }
+        return;
+      }
+      if (currentStep === 3) {
+        await handleGenerate();
+        return;
+      }
+      setCurrentStep((previous) => previous + 1);
+      return;
+    }
     if (currentStep === 0 && requiresSingularPartySelection && !state.selectedCompany) {
       setState((previous) => ({
         ...previous,
@@ -1192,8 +1496,9 @@ export function DocumentGenerationWizard({
       }
 
       // Generate preview content
-      await generatePreview();
+      const previewSucceeded = await generatePreview();
       setIsValidating(false);
+      if (!previewSucceeded) return;
     }
 
     if (!isStepValid(currentStep)) return;
@@ -1203,7 +1508,7 @@ export function DocumentGenerationWizard({
       return;
     }
 
-    setCurrentStep((prev) => Math.min(prev + 1, WIZARD_STEPS.length - 1));
+    setCurrentStep((prev) => Math.min(prev + 1, wizardSteps.length - 1));
   };
 
   const goToPreviousStep = () => {
@@ -1212,8 +1517,11 @@ export function DocumentGenerationWizard({
   };
 
   // Generate preview content
-  const generatePreview = async () => {
-    if (!state.selectedTemplate) return;
+  const generatePreview = async (
+    previewDraftId = draftId,
+    previewAgreementId = serviceAgreementId,
+  ) => {
+    if (!state.selectedTemplate) return false;
 
     setIsValidating(true);
     setError(null);
@@ -1227,6 +1535,12 @@ export function DocumentGenerationWizard({
         selectedShareholderId: state.selectedShareholderId || undefined,
         selectedContactId: state.selectedContactId || undefined,
         customData: state.customData,
+        ...(isServiceAgreement
+          ? {
+              draftId: previewDraftId,
+              serviceAgreementId: previewAgreementId,
+            }
+          : {}),
       };
 
       // Call preview API
@@ -1242,23 +1556,36 @@ export function DocumentGenerationWizard({
       }
 
       const data = await response.json();
+      const blockingErrors = data.preview?.blockingErrors || [];
+      const previewContent = data.preview?.content || data.content;
       setState((prev) => ({
         ...prev,
-        previewContent: data.preview?.content || data.content,
+        previewContent,
         missingPlaceholders: data.preview?.unresolvedPlaceholders || [],
         missingPartials: data.preview?.missingPartials || [],
-        blockingErrors: data.preview?.blockingErrors || [],
+        blockingErrors,
       }));
+      if (blockingErrors.length > 0) {
+        setError(blockingErrors.join(' '));
+        return false;
+      }
+      return previewContent || null;
     } catch (err) {
       console.error('Preview error:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate preview');
+      return null;
+    } finally {
+      setIsValidating(false);
     }
-    setIsValidating(false);
   };
 
   // Handle document generation
   const handleGenerate = async () => {
     if (!state.selectedTemplate || !isPartyEligibilityResolved || getRequiredPartyErrors().length > 0) return;
+    if (state.blockingErrors.length > 0) {
+      setError(state.blockingErrors.join(' '));
+      return;
+    }
 
     setIsGenerating(true);
     setError(null);
@@ -1276,8 +1603,23 @@ export function DocumentGenerationWizard({
         customData: state.customData,
         useLetterhead: state.useLetterhead,
         editedContent: state.editedContent || state.previewContent || undefined,
+        serviceAgreementId: isServiceAgreement
+          ? serviceAgreementId ?? undefined
+          : undefined,
+        discardServiceAgreement: shouldDiscardServiceAgreement || undefined,
       });
 
+      if (shouldDiscardServiceAgreement) {
+        setServiceAgreementId(null);
+        setPinnedAgreementItems([]);
+        setServiceAgreement((previous) => ({
+          ...previous,
+          authorizedContactId: '',
+          entityIds: [],
+          items: [],
+        }));
+        setShouldDiscardServiceAgreement(false);
+      }
       setState((prev) => ({ ...prev, generatedDocument: result }));
       setSavedSnapshot(JSON.stringify(currentSessionState));
       navigationGuard.disarm();
@@ -1333,13 +1675,34 @@ export function DocumentGenerationWizard({
                 <TemplateSelector
                   templates={templates}
                   selectedTemplate={state.selectedTemplate}
-                  onSelect={(template) => setState((prev) => ({
-                    ...prev,
-                    selectedTemplate: template,
-                    previewContent: null,
-                    editedContent: null,
-                    fieldErrors: [],
-                  }))}
+                  onSelect={(template) => {
+                    const isSwitchingAwayFromAgreement = Boolean(
+                      isServiceAgreement
+                        && template.compositionType !== 'SERVICE_AGREEMENT'
+                        && (serviceAgreementId || serviceAgreement.items.length),
+                    );
+                    if (
+                      isSwitchingAwayFromAgreement
+                      && !window.confirm(
+                        'Discard the saved Service Agreement selections and switch templates?',
+                      )
+                    ) {
+                      return;
+                    }
+                    if (isSwitchingAwayFromAgreement) {
+                      setShouldDiscardServiceAgreement(true);
+                    } else if (template.compositionType === 'SERVICE_AGREEMENT') {
+                      setShouldDiscardServiceAgreement(false);
+                    }
+                    setState((prev) => ({
+                      ...prev,
+                      selectedTemplate: template,
+                      selectedContactId: prev.selectedContactId,
+                      previewContent: null,
+                      editedContent: null,
+                      fieldErrors: [],
+                    }));
+                  }}
                   onPreview={onPreviewTemplate}
                   onSearch={onSearchTemplates}
                   isLoading={isLoading}
@@ -1381,6 +1744,22 @@ export function DocumentGenerationWizard({
                       if (partyLoadError && requiresSingularPartySelection) retryPartyOptions();
                       return;
                     }
+                    if (isServiceAgreement) {
+                      const impact = agreementRemovalImpact(
+                        serviceAgreement.items,
+                        new Set(company ? [company.id] : []),
+                      );
+                      if (
+                        (impact.serviceAssignments > 0 || impact.feeLines > 0)
+                        && !window.confirm(
+                          `Changing the primary company will remove ${
+                            removalImpactLabel(impact)
+                          }. Continue?`,
+                        )
+                      ) {
+                        return;
+                      }
+                    }
                     pendingDraftPartyIdsRef.current = null;
                     setPartyOptions(EMPTY_PARTY_OPTIONS);
                     setPartyLoadError(null);
@@ -1396,15 +1775,102 @@ export function DocumentGenerationWizard({
                       editedContent: null,
                       fieldErrors: [],
                     }));
+                    setServiceAgreement((previous) => ({
+                      ...previous,
+                      authorizedContactId: '',
+                      entityIds: company ? [company.id] : [],
+                      items: previous.items.map((item) => ({
+                        ...item,
+                        entityIds: company && item.entityIds.includes(company.id)
+                          ? [company.id]
+                          : [],
+                        feeLines: company
+                          ? item.feeLines.filter((fee) => fee.companyId === company.id)
+                          : [],
+                      })),
+                    }));
                   }}
                   onSearch={onSearchCompanies}
                 />
               </section>
             </div>
+            {isServiceAgreement ? (
+              <ServiceAgreementSetup
+                primaryCompany={state.selectedCompany}
+                companies={companies}
+                contacts={partyOptions.contacts.map((contact) => ({
+                  id: contact.id,
+                  fullName: contact.name,
+                  designation: contact.detail,
+                  email: contact.email,
+                  phone: contact.phone,
+                }))}
+                entityIds={serviceAgreement.entityIds}
+                authorizedContactId={serviceAgreement.authorizedContactId}
+                onBeforeEntityRemove={(company) => {
+                  const impact = agreementRemovalImpact(
+                    serviceAgreement.items,
+                    new Set(serviceAgreement.entityIds.filter((id) => id !== company.id)),
+                  );
+                  if (impact.serviceAssignments === 0 && impact.feeLines === 0) return true;
+                  return window.confirm(
+                    `Remove ${removalImpactLabel(impact)} for ${company.name}?`,
+                  );
+                }}
+                onEntityIdsChange={(entityIds) =>
+                  setServiceAgreement((previous) => {
+                    const primaryId = state.selectedCompany?.id;
+                    const orderedIds = primaryId
+                      ? [primaryId, ...entityIds.filter((id) => id !== primaryId)]
+                      : entityIds;
+                    const allowed = new Set(orderedIds);
+                    return {
+                      ...previous,
+                      entityIds: orderedIds,
+                      items: previous.items.map((item) => ({
+                        ...item,
+                        entityIds: item.entityIds.filter((id) => allowed.has(id)),
+                        feeLines: item.feeLines.filter((fee) => allowed.has(fee.companyId)),
+                      })),
+                    };
+                  })
+                }
+                onAuthorizedContactIdChange={(authorizedContactId) => {
+                  setServiceAgreement((previous) => ({
+                    ...previous,
+                    authorizedContactId,
+                  }));
+                  setState((previous) => ({
+                    ...previous,
+                    selectedContactId: authorizedContactId,
+                  }));
+                }}
+                onSearchCompanies={onSearchCompanies}
+              />
+            ) : null}
           </div>
         );
 
       case 1:
+        if (isServiceAgreement) {
+          return (
+            <ServiceSelectionStep
+              entities={companies.filter((company) =>
+                serviceAgreement.entityIds.includes(company.id))}
+              items={serviceAgreement.items}
+              pinnedItems={pinnedAgreementItems}
+              agreementId={serviceAgreementId}
+              onPinnedItemChange={(changed) =>
+                setPinnedAgreementItems((current) =>
+                  current.map((item) => item.id === changed.id ? changed : item))
+              }
+              onValidationErrorsChange={setServiceAgreementItemErrors}
+              onChange={(items) =>
+                setServiceAgreement((previous) => ({ ...previous, items }))
+              }
+            />
+          );
+        }
         return (
           <div className="space-y-6">
             {state.fieldErrors.length > 0 ? (
@@ -1503,6 +1969,32 @@ export function DocumentGenerationWizard({
         );
 
       case 2:
+        if (isServiceAgreement) {
+          return (
+            <section className="rounded-xl border border-border-primary bg-background-primary p-4">
+              <h2 className="text-lg font-semibold text-text-primary">Agreement details</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <label className="text-xs text-text-secondary">
+                  Agreement date
+                  <input type="date" value={serviceAgreement.agreementDate} onChange={(event) => setServiceAgreement((previous) => ({ ...previous, agreementDate: event.target.value }))} className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 sm:h-9" />
+                </label>
+                <label className="text-xs text-text-secondary">
+                  Effective date
+                  <input type="date" value={serviceAgreement.effectiveDate} onChange={(event) => setServiceAgreement((previous) => ({ ...previous, effectiveDate: event.target.value }))} className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 sm:h-9" />
+                </label>
+                <label className="text-xs text-text-secondary">
+                  Term (months)
+                  <input type="number" min="1" value={String(serviceAgreement.termMonths)} onChange={(event) => setServiceAgreement((previous) => ({ ...previous, termMonths: Number(event.target.value) || 1 }))} className="mt-1 h-11 w-full rounded border border-border-primary bg-background-primary px-2 sm:h-9" />
+                </label>
+              </div>
+              {state.selectedTemplate ? (
+                <div className="mt-4">
+                  <CustomDataForm template={state.selectedTemplate} title={state.title} customData={state.customData} useLetterhead={state.useLetterhead} partials={partials} onTitleChange={(title) => setState((previous) => ({ ...previous, title }))} onCustomDataChange={(customData) => setState((previous) => ({ ...previous, customData }))} onLetterheadChange={(useLetterhead) => setState((previous) => ({ ...previous, useLetterhead }))} />
+                </div>
+              ) : null}
+            </section>
+          );
+        }
         return (
           <div className="grid min-w-0 gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(320px,384px)]">
             <div className="min-w-0">
@@ -1546,6 +2038,30 @@ export function DocumentGenerationWizard({
           </div>
         );
 
+      case 3:
+        if (!isServiceAgreement) return null;
+        return (
+          <div className="min-w-0">
+            <ServiceAgreementWarning onBackToServices={() => setCurrentStep(1)} />
+            <EditStep
+              content={state.previewContent || ''}
+              layout={extractA4DocumentLayout(state.selectedTemplate?.contentJson)}
+              validationResult={state.validationResult}
+              missingPlaceholders={state.missingPlaceholders}
+              missingPartials={state.missingPartials}
+              blockingErrors={state.blockingErrors}
+              isLoading={isValidating}
+              onChange={(content) =>
+                setState((previous) => ({
+                  ...previous,
+                  previewContent: content,
+                  editedContent: content,
+                }))
+              }
+              onRefresh={() => generatePreview()}
+            />
+          </div>
+        );
       default:
         return null;
     }
@@ -1579,7 +2095,7 @@ export function DocumentGenerationWizard({
       {/* Stepper */}
       <div className="mb-5 rounded-xl border border-border-primary bg-background-secondary/70 px-3 py-3 sm:px-5">
         <Stepper
-          steps={WIZARD_STEPS}
+          steps={wizardSteps}
           currentStep={currentStep}
           onStepClick={(step) => {
             if (step < currentStep) {
@@ -1603,7 +2119,7 @@ export function DocumentGenerationWizard({
       <div className="flex-1 min-h-[400px]">{renderStepContent()}</div>
 
       {/* Navigation buttons */}
-      {currentStep < WIZARD_STEPS.length && (
+      {currentStep < wizardSteps.length && (
         <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center justify-between border-t border-border-primary bg-background-primary/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
           <Button
             variant="ghost"
@@ -1649,14 +2165,22 @@ export function DocumentGenerationWizard({
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   {isValidating ? 'Processing...' : 'Generating...'}
                 </>
-              ) : currentStep === 2 ? (
+              ) : currentStep === wizardSteps.length - 1 ? (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
                   Generate Document
                 </>
               ) : (
                 <>
-                  {currentStep === 0 ? 'Continue to Details' : 'Continue to Review'}
+                  {isServiceAgreement
+                    ? currentStep === 0
+                      ? 'Continue to Services'
+                      : currentStep === 1
+                        ? 'Continue to Agreement details'
+                        : 'Continue to Review'
+                    : currentStep === 0
+                      ? 'Continue to Details'
+                      : 'Continue to Review'}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </>
               )}

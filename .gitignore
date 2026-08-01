@@ -66,3 +66,6 @@ ralph-claude
 # Local implementation-plan working reports
 .superpowers/sdd/
 .superpowers/brainstorm/
+
+# Reviewed source-PDF renders may contain personal and signing information.
+tmp/pdfs/

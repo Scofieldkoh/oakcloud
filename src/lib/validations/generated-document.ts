@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { serviceAgreementDraftSchema } from '@/lib/validations/service-agreement';
 
 // ============================================================================
 // Enums
@@ -6,12 +7,11 @@ import { z } from 'zod';
 
 export const generatedDocumentStatusEnum = z.enum(['DRAFT', 'FINALIZED', 'ARCHIVED']);
 
-export const GENERATION_SESSION_VERSION = 1 as const;
+export const GENERATION_SESSION_VERSION = 2 as const;
 
 const nullableUuid = z.string().uuid().nullable();
 
-export const generationSessionStateSchema = z.object({
-  version: z.literal(GENERATION_SESSION_VERSION),
+const generationSessionFields = {
   currentStep: z.number().int().min(0).max(4),
   templateId: nullableUuid,
   companyId: nullableUuid,
@@ -25,9 +25,25 @@ export const generationSessionStateSchema = z.object({
   previewContent: z.string().nullable(),
   editedContent: z.string().nullable(),
   editedContentJson: z.unknown().nullable(),
+};
+
+export const generationSessionStateV1Schema = z.object({
+  version: z.literal(1),
+  ...generationSessionFields,
 });
 
-export const saveGenerationSessionSchema = generationSessionStateSchema;
+export const generationSessionStateV2Schema = z.object({
+  version: z.literal(GENERATION_SESSION_VERSION),
+  ...generationSessionFields,
+  currentStep: z.number().int().min(0).max(3),
+  serviceAgreementId: nullableUuid,
+});
+
+export const generationSessionStateSchema = generationSessionStateV2Schema;
+export const saveGenerationSessionSchema = generationSessionStateV2Schema.extend({
+  serviceAgreement: serviceAgreementDraftSchema.nullable().optional(),
+  discardServiceAgreement: z.boolean().optional(),
+});
 
 export type GenerationSessionState = z.infer<typeof generationSessionStateSchema>;
 export type SaveGenerationSessionInput = z.infer<typeof saveGenerationSessionSchema>;
@@ -38,6 +54,8 @@ export type SaveGenerationSessionInput = z.infer<typeof saveGenerationSessionSch
 
 export const createDocumentFromTemplateSchema = z.object({
   draftId: z.string().uuid().optional(),
+  serviceAgreementId: z.string().uuid().optional(),
+  discardServiceAgreement: z.boolean().optional(),
   templateId: z.string().uuid(),
   companyId: z.string().uuid().optional().nullable(),
   contactIds: z.array(z.string().uuid()).optional().default([]),

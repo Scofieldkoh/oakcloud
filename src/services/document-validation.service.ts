@@ -7,13 +7,17 @@
 
 import { prisma } from '@/lib/prisma';
 import { extractPlaceholders, type CompanyData, type OfficerData, type ShareholderData, type CompanyAddressData } from '@/lib/placeholder-resolver';
-import { formatLetterAddress } from '@/lib/document-party';
+import { formatLetterAddress, type DocumentParty } from '@/lib/document-party';
 import { getRequiredPartySelections } from '@/lib/template-analysis';
 import {
   resolveDocumentPartySelections,
   type DocumentPartySelections,
 } from '@/services/document-party.service';
 import { resolvePartials } from '@/services/template-partial.service';
+import {
+  assembleServiceAgreementTemplate,
+  getServiceAgreementDraftById,
+} from '@/services/service-agreement';
 import type { PlaceholderDefinition, PlaceholderRequirement, PlaceholderSource } from '@/types/placeholders';
 
 // ============================================================================
@@ -51,6 +55,7 @@ export interface ValidationResult {
 }
 
 export interface ValidateForGenerationInput {
+  draftId?: string;
   templateId: string;
   companyId?: string;
   contactIds?: string[];
@@ -58,6 +63,7 @@ export interface ValidateForGenerationInput {
   selectedShareholderId?: string;
   selectedContactId?: string;
   customData?: Record<string, unknown>;
+  serviceAgreementId?: string;
 }
 
 // PlaceholderRequirement is imported from @/types/placeholders
@@ -476,6 +482,7 @@ export async function validateForGeneration(
   tenantId: string,
   input: ValidateForGenerationInput,
   preparerName?: string,
+  userId?: string,
 ): Promise<ValidationResult> {
   const { templateId, companyId, customData } = input;
 
@@ -487,6 +494,7 @@ export async function validateForGeneration(
       name: true,
       content: true,
       placeholders: true,
+      compositionType: true,
     },
   });
 
@@ -509,8 +517,97 @@ export async function validateForGeneration(
 
   // Resolve partials first to include their placeholders in validation
   let contentToValidate = template.content;
+  const agreementErrors: ValidationError[] = [];
+  let snapshotRepresentative: DocumentParty | undefined;
+  if (template.compositionType === 'SERVICE_AGREEMENT') {
+    if (!userId) {
+      return {
+        isValid: false,
+        errors: [{
+          field: 'serviceAgreement',
+          message: 'An authenticated actor is required to validate a Service Agreement',
+          category: 'custom',
+        }],
+        warnings: [],
+        resolvedData: {
+          requiredPlaceholders: [],
+          availablePlaceholders: [],
+          missingPlaceholders: [],
+        },
+      };
+    }
+    const agreement = input.serviceAgreementId
+      ? await getServiceAgreementDraftById(
+          input.serviceAgreementId,
+          { tenantId, userId },
+        )
+      : null;
+    if (
+      !agreement ||
+      (input.draftId && agreement.generatedDocumentId !== input.draftId) ||
+      agreement.primaryCompanyId !== input.companyId
+    ) {
+      return {
+        isValid: false,
+        errors: [{
+          field: 'serviceAgreement',
+          message: 'A matching saved Service Agreement draft is required',
+          category: 'custom',
+        }],
+        warnings: [],
+        resolvedData: {
+          requiredPlaceholders: [],
+          availablePlaceholders: [],
+          missingPlaceholders: [],
+        },
+      };
+    }
+    const assembly = assembleServiceAgreementTemplate({
+      templateContent: contentToValidate,
+      agreement,
+    });
+    const representative = agreement.authorizedRepresentativeSnapshot;
+    if (representative) {
+      snapshotRepresentative = {
+        id: representative.id,
+        contactId: representative.id,
+        name: representative.name,
+        detail: representative.role,
+        role: representative.role,
+        contactType: 'INDIVIDUAL',
+        email: representative.email,
+        phone: representative.phone,
+        address: { full: null, letter: null },
+      };
+    }
+    contentToValidate = assembly.content;
+    agreementErrors.push(
+      ...assembly.itemDiagnostics.flatMap((item) =>
+        item.missingPlaceholders.map((placeholder) => ({
+          field: placeholder,
+          message: `Service item ${item.itemId} is missing required field ${placeholder}`,
+          category: 'custom' as const,
+        })),
+      ),
+    );
+  } else if (input.serviceAgreementId) {
+    return {
+      isValid: false,
+      errors: [{
+        field: 'serviceAgreement',
+        message: 'Standard templates cannot use Service Agreement data',
+        category: 'custom',
+      }],
+      warnings: [],
+      resolvedData: {
+        requiredPlaceholders: [],
+        availablePlaceholders: [],
+        missingPlaceholders: [],
+      },
+    };
+  }
   try {
-    contentToValidate = await resolvePartials(template.content, tenantId);
+    contentToValidate = await resolvePartials(contentToValidate, tenantId);
   } catch (partialError) {
     // If partial resolution fails, continue with original content
     console.warn('Failed to resolve partials for validation:', partialError);
@@ -538,7 +635,7 @@ export async function validateForGeneration(
       category: 'shareholders',
     });
   }
-  if (partyRequirements.contact && !input.selectedContactId) {
+  if (partyRequirements.contact && !input.selectedContactId && !snapshotRepresentative) {
     selectionErrors.push({
       field: 'selectedContact',
       message: 'Select a company contact for this template.',
@@ -551,8 +648,11 @@ export async function validateForGeneration(
 
   let selections: DocumentPartySelections = {};
   const membershipErrors: ValidationError[] = [];
+  const selectedContactRequiresResolution = Boolean(
+    input.selectedContactId && !snapshotRepresentative,
+  );
   const hasPartySelection = Boolean(
-    input.selectedDirectorId || input.selectedShareholderId || input.selectedContactId
+    input.selectedDirectorId || input.selectedShareholderId || selectedContactRequiresResolution,
   );
   if (hasPartySelection && !companyId) {
     membershipErrors.push({
@@ -567,11 +667,16 @@ export async function validateForGeneration(
         tenantId,
         selectedDirectorId: input.selectedDirectorId,
         selectedShareholderId: input.selectedShareholderId,
-        selectedContactId: input.selectedContactId,
+        selectedContactId: selectedContactRequiresResolution
+          ? input.selectedContactId
+          : undefined,
       });
     } catch (error) {
       membershipErrors.push(toSelectionMembershipError(error));
     }
+  }
+  if (snapshotRepresentative) {
+    selections = { ...selections, selectedContact: snapshotRepresentative };
   }
 
   // Run all validations
@@ -582,6 +687,7 @@ export async function validateForGeneration(
 
   // Combine results
   const allErrors = [
+    ...agreementErrors,
     ...selectionErrors,
     ...membershipErrors,
     ...companyValidation.errors,
