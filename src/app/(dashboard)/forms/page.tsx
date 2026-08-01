@@ -13,6 +13,7 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  ListChecks,
   Search,
   Trash2,
 } from 'lucide-react';
@@ -38,6 +39,7 @@ import {
 } from '@/hooks/use-forms';
 import type { FormStatus } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
+import { PresetListManager } from '@/components/forms/preset-list-manager';
 
 const PAGE_SIZE = 20;
 
@@ -92,6 +94,7 @@ export default function FormsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('published');
   const [page, setPage] = useState(1);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isPresetsOpen, setIsPresetsOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [hardDeleteTargetId, setHardDeleteTargetId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
@@ -263,13 +266,23 @@ export default function FormsPage() {
                 </p>
               </div>
             </div>
-            <Button
-              leftIcon={<Plus className="h-4 w-4" />}
-              onClick={() => setIsCreateOpen(true)}
-              disabled={!activeTenantId}
-            >
-              New Form
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                leftIcon={<ListChecks className="h-4 w-4" />}
+                onClick={() => setIsPresetsOpen(true)}
+                disabled={!activeTenantId}
+              >
+                Preset lists
+              </Button>
+              <Button
+                leftIcon={<Plus className="h-4 w-4" />}
+                onClick={() => setIsCreateOpen(true)}
+                disabled={!activeTenantId}
+              >
+                New Form
+              </Button>
+            </div>
           </div>
         </section>
 
@@ -624,6 +637,8 @@ export default function FormsPage() {
       </div>
 
       {/* Create form modal */}
+      <PresetListManager isOpen={isPresetsOpen} onClose={() => setIsPresetsOpen(false)} />
+
       <Modal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}

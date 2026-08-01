@@ -54,7 +54,20 @@ vi.mock('@/components/ui/toast', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
 }));
 
+vi.mock('@/components/forms/preset-list-manager', () => ({
+  PresetListManager: ({ isOpen }: { isOpen: boolean }) => isOpen
+    ? <div role="dialog" aria-label="Preset lists">Preset manager</div>
+    : null,
+}));
+
 describe('FormsPage tabs', () => {
+  it('opens preset list management from the compact header action', () => {
+    render(<FormsPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preset lists' }));
+    expect(screen.getByRole('dialog', { name: 'Preset lists' })).toBeVisible();
+  });
+
   it('shows the loaded count badge without requiring navigation to the active tab', () => {
     render(<FormsPage />);
 
