@@ -2,7 +2,6 @@
 
 import { useState, type ReactNode } from 'react';
 import type { CompanyWithRelations } from '@/services/company/types';
-import { calculateAttributedCapital } from '@/lib/company-profile-sections';
 import { ActiveBadge, OfficerRoleBadge, ShareholderTypeBadge } from './company-profile-badges';
 
 function day(value: Date | string | null | undefined): string {
@@ -19,6 +18,20 @@ function money(currency: string, value: number | string | { toString(): string }
 
 function number(value: number): string {
   return value.toLocaleString('en-SG');
+}
+
+function attributedCapital(input: {
+  currency: string;
+  shareholderShares: number;
+  classShares: number;
+  classValue: number | string | { toString(): string };
+}) {
+  const classValue = Number(input.classValue.toString());
+  if (input.classShares <= 0 || !Number.isFinite(classValue)) return null;
+  return {
+    currency: input.currency,
+    amount: ((input.shareholderShares / input.classShares) * classValue).toFixed(2),
+  };
 }
 
 function title(value: string): string {
@@ -94,7 +107,7 @@ export function CompanyProfileSections({ company }: { company: CompanyWithRelati
         <div className="divide-y divide-border-primary px-3">
           {shareholders.length ? shareholders.map((shareholder) => {
             const shareClass = company.shareCapital?.find((capital) => !capital.isTreasury && capital.shareClass.toLowerCase() === (shareholder.shareClass ?? 'ORDINARY').toLowerCase());
-            const attributed = shareClass ? calculateAttributedCapital({
+            const attributed = shareClass ? attributedCapital({
               currency: shareholder.currency ?? shareClass.currency,
               shareholderShares: shareholder.numberOfShares,
               classShares: shareClass.numberOfShares,
