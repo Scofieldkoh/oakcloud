@@ -18,6 +18,7 @@
 
 // Re-export types
 export * from './types';
+export * from './profile-sections';
 
 // Re-export main service functions
 // Note: These are re-exported from the original file for backward compatibility

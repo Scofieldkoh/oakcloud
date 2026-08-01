@@ -70,5 +70,5 @@ function canonicalize(value: unknown): unknown {
 export function computeSectionVersion(value: unknown): string {
   return createHash('sha256')
     .update(JSON.stringify(canonicalize(value)))
-    .digest('base64url');
+    .digest('hex');
 }
