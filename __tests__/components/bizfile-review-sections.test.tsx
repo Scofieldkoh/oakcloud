@@ -96,7 +96,7 @@ const fullDraft: BizFileReviewDraft = {
     address: "3 Oak Street",
     appointmentDate: "2021-01-01",
   },
-  financialYear: { endDay: 31, endMonth: 12, fyeAsAtLastAr: "2024-12-31" },
+  financialYear: { endDay: 31, endMonth: 12 },
   compliance: {
     lastAgmDate: "2025-05-01",
     lastArFiledDate: "2025-06-01",
@@ -135,6 +135,11 @@ function view(
 }
 
 describe("BizFileReviewSections", () => {
+  it("shows only the canonical compliance FYE as at last AR field", () => {
+    view(fullDraft, "compliance");
+    expect(screen.getAllByLabelText(/FYE as at last AR/i)).toHaveLength(1);
+  });
+
   it("renders and edits the complete extraction field surface", () => {
     const onChange = vi.fn();
     let result = view(fullDraft, "entity", onChange);

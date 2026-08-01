@@ -107,7 +107,6 @@ export interface ExtractedBizFileData {
   financialYear?: {
     endDay: number;
     endMonth: number;
-    fyeAsAtLastAr?: string;
   };
   homeCurrency?: string;
   compliance?: {

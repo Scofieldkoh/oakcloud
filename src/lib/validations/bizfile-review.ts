@@ -146,7 +146,6 @@ export const bizFileReviewSchema = z.object({
   financialYear: z.object({
     endDay: z.number().finite().int().min(1).max(31),
     endMonth: z.number().finite().int().min(1).max(12),
-    fyeAsAtLastAr: optionalDate,
   }).superRefine(({ endDay, endMonth }, context) => {
     if (endDay > new Date(Date.UTC(2000, endMonth, 0)).getUTCDate()) context.addIssue({ code: z.ZodIssueCode.custom, path: ['endDay'], message: 'Must be a valid day for the selected month' });
   }).optional(),

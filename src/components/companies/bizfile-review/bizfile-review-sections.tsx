@@ -841,19 +841,6 @@ export function ComplianceSection({ draft, onChange, issues }: Props) {
           }
           error={issue(issues, "financialYear.endMonth")}
         />
-        <ReviewField
-          id="financial-fye-last-ar"
-          label="Financial year FYE as at last AR"
-          type="date"
-          value={financial.fyeAsAtLastAr ?? ""}
-          onChange={(e) =>
-            onChange({
-              ...draft,
-              financialYear: { ...financial, fyeAsAtLastAr: e.target.value },
-            })
-          }
-          error={issue(issues, "financialYear.fyeAsAtLastAr")}
-        />
         {(
           [
             ["lastAgmDate", "Last AGM date"],

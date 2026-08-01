@@ -1,11 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bizFileReviewSchema,
   createEmptyBizFileReviewDraft,
   normalizeBizFileReviewDraft,
   validateBizFileReview,
 } from '@/lib/validations/bizfile-review';
 
 describe('BizFile review validation', () => {
+  it('keeps FYE as at last AR only in the canonical compliance record', () => {
+    const parsed = bizFileReviewSchema.parse({
+      entityDetails: { uen: '1', name: 'X', entityType: 'PRIVATE_LIMITED', status: 'LIVE' },
+      financialYear: { endDay: 31, endMonth: 12, fyeAsAtLastAr: '2024-12-31' },
+      compliance: { fyeAsAtLastAr: '2024-12-31' },
+    });
+
+    expect(parsed.financialYear).not.toHaveProperty('fyeAsAtLastAr');
+    expect(parsed.compliance).toEqual({ fyeAsAtLastAr: '2024-12-31' });
+  });
+
   it('maps nested issues to sections', () => {
     const draft = createEmptyBizFileReviewDraft();
     draft.entityDetails.name = '';
