@@ -40,6 +40,7 @@ export type FormFieldMinAggregateOutputType = {
   id: string | null
   formId: string | null
   tenantId: string | null
+  optionPresetId: string | null
   type: $Enums.FormFieldType | null
   label: string | null
   key: string | null
@@ -60,6 +61,7 @@ export type FormFieldMaxAggregateOutputType = {
   id: string | null
   formId: string | null
   tenantId: string | null
+  optionPresetId: string | null
   type: $Enums.FormFieldType | null
   label: string | null
   key: string | null
@@ -80,6 +82,7 @@ export type FormFieldCountAggregateOutputType = {
   id: number
   formId: number
   tenantId: number
+  optionPresetId: number
   type: number
   label: number
   key: number
@@ -115,6 +118,7 @@ export type FormFieldMinAggregateInputType = {
   id?: true
   formId?: true
   tenantId?: true
+  optionPresetId?: true
   type?: true
   label?: true
   key?: true
@@ -135,6 +139,7 @@ export type FormFieldMaxAggregateInputType = {
   id?: true
   formId?: true
   tenantId?: true
+  optionPresetId?: true
   type?: true
   label?: true
   key?: true
@@ -155,6 +160,7 @@ export type FormFieldCountAggregateInputType = {
   id?: true
   formId?: true
   tenantId?: true
+  optionPresetId?: true
   type?: true
   label?: true
   key?: true
@@ -265,6 +271,7 @@ export type FormFieldGroupByOutputType = {
   id: string
   formId: string
   tenantId: string
+  optionPresetId: string | null
   type: $Enums.FormFieldType
   label: string | null
   key: string
@@ -311,6 +318,7 @@ export type FormFieldWhereInput = {
   id?: Prisma.StringFilter<"FormField"> | string
   formId?: Prisma.StringFilter<"FormField"> | string
   tenantId?: Prisma.StringFilter<"FormField"> | string
+  optionPresetId?: Prisma.StringNullableFilter<"FormField"> | string | null
   type?: Prisma.EnumFormFieldTypeFilter<"FormField"> | $Enums.FormFieldType
   label?: Prisma.StringNullableFilter<"FormField"> | string | null
   key?: Prisma.StringFilter<"FormField"> | string
@@ -330,12 +338,14 @@ export type FormFieldWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"FormField"> | Date | string
   form?: Prisma.XOR<Prisma.FormScalarRelationFilter, Prisma.FormWhereInput>
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
+  optionPreset?: Prisma.XOR<Prisma.FormOptionPresetNullableScalarRelationFilter, Prisma.FormOptionPresetWhereInput> | null
 }
 
 export type FormFieldOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   formId?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
+  optionPresetId?: Prisma.SortOrderInput | Prisma.SortOrder
   type?: Prisma.SortOrder
   label?: Prisma.SortOrderInput | Prisma.SortOrder
   key?: Prisma.SortOrder
@@ -355,6 +365,7 @@ export type FormFieldOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   form?: Prisma.FormOrderByWithRelationInput
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
+  optionPreset?: Prisma.FormOptionPresetOrderByWithRelationInput
 }
 
 export type FormFieldWhereUniqueInput = Prisma.AtLeast<{
@@ -365,6 +376,7 @@ export type FormFieldWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.FormFieldWhereInput | Prisma.FormFieldWhereInput[]
   formId?: Prisma.StringFilter<"FormField"> | string
   tenantId?: Prisma.StringFilter<"FormField"> | string
+  optionPresetId?: Prisma.StringNullableFilter<"FormField"> | string | null
   type?: Prisma.EnumFormFieldTypeFilter<"FormField"> | $Enums.FormFieldType
   label?: Prisma.StringNullableFilter<"FormField"> | string | null
   key?: Prisma.StringFilter<"FormField"> | string
@@ -384,12 +396,14 @@ export type FormFieldWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"FormField"> | Date | string
   form?: Prisma.XOR<Prisma.FormScalarRelationFilter, Prisma.FormWhereInput>
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
+  optionPreset?: Prisma.XOR<Prisma.FormOptionPresetNullableScalarRelationFilter, Prisma.FormOptionPresetWhereInput> | null
 }, "id" | "formId_key">
 
 export type FormFieldOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   formId?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
+  optionPresetId?: Prisma.SortOrderInput | Prisma.SortOrder
   type?: Prisma.SortOrder
   label?: Prisma.SortOrderInput | Prisma.SortOrder
   key?: Prisma.SortOrder
@@ -421,6 +435,7 @@ export type FormFieldScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"FormField"> | string
   formId?: Prisma.StringWithAggregatesFilter<"FormField"> | string
   tenantId?: Prisma.StringWithAggregatesFilter<"FormField"> | string
+  optionPresetId?: Prisma.StringNullableWithAggregatesFilter<"FormField"> | string | null
   type?: Prisma.EnumFormFieldTypeWithAggregatesFilter<"FormField"> | $Enums.FormFieldType
   label?: Prisma.StringNullableWithAggregatesFilter<"FormField"> | string | null
   key?: Prisma.StringWithAggregatesFilter<"FormField"> | string
@@ -461,12 +476,14 @@ export type FormFieldCreateInput = {
   updatedAt?: Date | string
   form: Prisma.FormCreateNestedOneWithoutFieldsInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutFormFieldsInput
+  optionPreset?: Prisma.FormOptionPresetCreateNestedOneWithoutFieldsInput
 }
 
 export type FormFieldUncheckedCreateInput = {
   id?: string
   formId: string
   tenantId: string
+  optionPresetId?: string | null
   type: $Enums.FormFieldType
   label?: string | null
   key: string
@@ -507,12 +524,14 @@ export type FormFieldUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   form?: Prisma.FormUpdateOneRequiredWithoutFieldsNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutFormFieldsNestedInput
+  optionPreset?: Prisma.FormOptionPresetUpdateOneWithoutFieldsNestedInput
 }
 
 export type FormFieldUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   formId?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  optionPresetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumFormFieldTypeFieldUpdateOperationsInput | $Enums.FormFieldType
   label?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   key?: Prisma.StringFieldUpdateOperationsInput | string
@@ -536,6 +555,7 @@ export type FormFieldCreateManyInput = {
   id?: string
   formId: string
   tenantId: string
+  optionPresetId?: string | null
   type: $Enums.FormFieldType
   label?: string | null
   key: string
@@ -580,6 +600,7 @@ export type FormFieldUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   formId?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  optionPresetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumFormFieldTypeFieldUpdateOperationsInput | $Enums.FormFieldType
   label?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   key?: Prisma.StringFieldUpdateOperationsInput | string
@@ -618,6 +639,7 @@ export type FormFieldCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   formId?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
+  optionPresetId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   label?: Prisma.SortOrder
   key?: Prisma.SortOrder
@@ -646,6 +668,7 @@ export type FormFieldMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   formId?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
+  optionPresetId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   label?: Prisma.SortOrder
   key?: Prisma.SortOrder
@@ -666,6 +689,7 @@ export type FormFieldMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   formId?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
+  optionPresetId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   label?: Prisma.SortOrder
   key?: Prisma.SortOrder
@@ -775,6 +799,48 @@ export type EnumFormFieldTypeFieldUpdateOperationsInput = {
   set?: $Enums.FormFieldType
 }
 
+export type FormFieldCreateNestedManyWithoutOptionPresetInput = {
+  create?: Prisma.XOR<Prisma.FormFieldCreateWithoutOptionPresetInput, Prisma.FormFieldUncheckedCreateWithoutOptionPresetInput> | Prisma.FormFieldCreateWithoutOptionPresetInput[] | Prisma.FormFieldUncheckedCreateWithoutOptionPresetInput[]
+  connectOrCreate?: Prisma.FormFieldCreateOrConnectWithoutOptionPresetInput | Prisma.FormFieldCreateOrConnectWithoutOptionPresetInput[]
+  createMany?: Prisma.FormFieldCreateManyOptionPresetInputEnvelope
+  connect?: Prisma.FormFieldWhereUniqueInput | Prisma.FormFieldWhereUniqueInput[]
+}
+
+export type FormFieldUncheckedCreateNestedManyWithoutOptionPresetInput = {
+  create?: Prisma.XOR<Prisma.FormFieldCreateWithoutOptionPresetInput, Prisma.FormFieldUncheckedCreateWithoutOptionPresetInput> | Prisma.FormFieldCreateWithoutOptionPresetInput[] | Prisma.FormFieldUncheckedCreateWithoutOptionPresetInput[]
+  connectOrCreate?: Prisma.FormFieldCreateOrConnectWithoutOptionPresetInput | Prisma.FormFieldCreateOrConnectWithoutOptionPresetInput[]
+  createMany?: Prisma.FormFieldCreateManyOptionPresetInputEnvelope
+  connect?: Prisma.FormFieldWhereUniqueInput | Prisma.FormFieldWhereUniqueInput[]
+}
+
+export type FormFieldUpdateManyWithoutOptionPresetNestedInput = {
+  create?: Prisma.XOR<Prisma.FormFieldCreateWithoutOptionPresetInput, Prisma.FormFieldUncheckedCreateWithoutOptionPresetInput> | Prisma.FormFieldCreateWithoutOptionPresetInput[] | Prisma.FormFieldUncheckedCreateWithoutOptionPresetInput[]
+  connectOrCreate?: Prisma.FormFieldCreateOrConnectWithoutOptionPresetInput | Prisma.FormFieldCreateOrConnectWithoutOptionPresetInput[]
+  upsert?: Prisma.FormFieldUpsertWithWhereUniqueWithoutOptionPresetInput | Prisma.FormFieldUpsertWithWhereUniqueWithoutOptionPresetInput[]
+  createMany?: Prisma.FormFieldCreateManyOptionPresetInputEnvelope
+  set?: Prisma.FormFieldWhereUniqueInput | Prisma.FormFieldWhereUniqueInput[]
+  disconnect?: Prisma.FormFieldWhereUniqueInput | Prisma.FormFieldWhereUniqueInput[]
+  delete?: Prisma.FormFieldWhereUniqueInput | Prisma.FormFieldWhereUniqueInput[]
+  connect?: Prisma.FormFieldWhereUniqueInput | Prisma.FormFieldWhereUniqueInput[]
+  update?: Prisma.FormFieldUpdateWithWhereUniqueWithoutOptionPresetInput | Prisma.FormFieldUpdateWithWhereUniqueWithoutOptionPresetInput[]
+  updateMany?: Prisma.FormFieldUpdateManyWithWhereWithoutOptionPresetInput | Prisma.FormFieldUpdateManyWithWhereWithoutOptionPresetInput[]
+  deleteMany?: Prisma.FormFieldScalarWhereInput | Prisma.FormFieldScalarWhereInput[]
+}
+
+export type FormFieldUncheckedUpdateManyWithoutOptionPresetNestedInput = {
+  create?: Prisma.XOR<Prisma.FormFieldCreateWithoutOptionPresetInput, Prisma.FormFieldUncheckedCreateWithoutOptionPresetInput> | Prisma.FormFieldCreateWithoutOptionPresetInput[] | Prisma.FormFieldUncheckedCreateWithoutOptionPresetInput[]
+  connectOrCreate?: Prisma.FormFieldCreateOrConnectWithoutOptionPresetInput | Prisma.FormFieldCreateOrConnectWithoutOptionPresetInput[]
+  upsert?: Prisma.FormFieldUpsertWithWhereUniqueWithoutOptionPresetInput | Prisma.FormFieldUpsertWithWhereUniqueWithoutOptionPresetInput[]
+  createMany?: Prisma.FormFieldCreateManyOptionPresetInputEnvelope
+  set?: Prisma.FormFieldWhereUniqueInput | Prisma.FormFieldWhereUniqueInput[]
+  disconnect?: Prisma.FormFieldWhereUniqueInput | Prisma.FormFieldWhereUniqueInput[]
+  delete?: Prisma.FormFieldWhereUniqueInput | Prisma.FormFieldWhereUniqueInput[]
+  connect?: Prisma.FormFieldWhereUniqueInput | Prisma.FormFieldWhereUniqueInput[]
+  update?: Prisma.FormFieldUpdateWithWhereUniqueWithoutOptionPresetInput | Prisma.FormFieldUpdateWithWhereUniqueWithoutOptionPresetInput[]
+  updateMany?: Prisma.FormFieldUpdateManyWithWhereWithoutOptionPresetInput | Prisma.FormFieldUpdateManyWithWhereWithoutOptionPresetInput[]
+  deleteMany?: Prisma.FormFieldScalarWhereInput | Prisma.FormFieldScalarWhereInput[]
+}
+
 export type FormFieldCreateWithoutTenantInput = {
   id?: string
   type: $Enums.FormFieldType
@@ -795,11 +861,13 @@ export type FormFieldCreateWithoutTenantInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   form: Prisma.FormCreateNestedOneWithoutFieldsInput
+  optionPreset?: Prisma.FormOptionPresetCreateNestedOneWithoutFieldsInput
 }
 
 export type FormFieldUncheckedCreateWithoutTenantInput = {
   id?: string
   formId: string
+  optionPresetId?: string | null
   type: $Enums.FormFieldType
   label?: string | null
   key: string
@@ -852,6 +920,7 @@ export type FormFieldScalarWhereInput = {
   id?: Prisma.StringFilter<"FormField"> | string
   formId?: Prisma.StringFilter<"FormField"> | string
   tenantId?: Prisma.StringFilter<"FormField"> | string
+  optionPresetId?: Prisma.StringNullableFilter<"FormField"> | string | null
   type?: Prisma.EnumFormFieldTypeFilter<"FormField"> | $Enums.FormFieldType
   label?: Prisma.StringNullableFilter<"FormField"> | string | null
   key?: Prisma.StringFilter<"FormField"> | string
@@ -891,11 +960,13 @@ export type FormFieldCreateWithoutFormInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutFormFieldsInput
+  optionPreset?: Prisma.FormOptionPresetCreateNestedOneWithoutFieldsInput
 }
 
 export type FormFieldUncheckedCreateWithoutFormInput = {
   id?: string
   tenantId: string
+  optionPresetId?: string | null
   type: $Enums.FormFieldType
   label?: string | null
   key: string
@@ -941,9 +1012,82 @@ export type FormFieldUpdateManyWithWhereWithoutFormInput = {
   data: Prisma.XOR<Prisma.FormFieldUpdateManyMutationInput, Prisma.FormFieldUncheckedUpdateManyWithoutFormInput>
 }
 
+export type FormFieldCreateWithoutOptionPresetInput = {
+  id?: string
+  type: $Enums.FormFieldType
+  label?: string | null
+  key: string
+  placeholder?: string | null
+  subtext?: string | null
+  helpText?: string | null
+  inputType?: string | null
+  options?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  validation?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  condition?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isRequired?: boolean
+  hideLabel?: boolean
+  isReadOnly?: boolean
+  layoutWidth?: number
+  position: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  form: Prisma.FormCreateNestedOneWithoutFieldsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutFormFieldsInput
+}
+
+export type FormFieldUncheckedCreateWithoutOptionPresetInput = {
+  id?: string
+  formId: string
+  tenantId: string
+  type: $Enums.FormFieldType
+  label?: string | null
+  key: string
+  placeholder?: string | null
+  subtext?: string | null
+  helpText?: string | null
+  inputType?: string | null
+  options?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  validation?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  condition?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isRequired?: boolean
+  hideLabel?: boolean
+  isReadOnly?: boolean
+  layoutWidth?: number
+  position: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type FormFieldCreateOrConnectWithoutOptionPresetInput = {
+  where: Prisma.FormFieldWhereUniqueInput
+  create: Prisma.XOR<Prisma.FormFieldCreateWithoutOptionPresetInput, Prisma.FormFieldUncheckedCreateWithoutOptionPresetInput>
+}
+
+export type FormFieldCreateManyOptionPresetInputEnvelope = {
+  data: Prisma.FormFieldCreateManyOptionPresetInput | Prisma.FormFieldCreateManyOptionPresetInput[]
+  skipDuplicates?: boolean
+}
+
+export type FormFieldUpsertWithWhereUniqueWithoutOptionPresetInput = {
+  where: Prisma.FormFieldWhereUniqueInput
+  update: Prisma.XOR<Prisma.FormFieldUpdateWithoutOptionPresetInput, Prisma.FormFieldUncheckedUpdateWithoutOptionPresetInput>
+  create: Prisma.XOR<Prisma.FormFieldCreateWithoutOptionPresetInput, Prisma.FormFieldUncheckedCreateWithoutOptionPresetInput>
+}
+
+export type FormFieldUpdateWithWhereUniqueWithoutOptionPresetInput = {
+  where: Prisma.FormFieldWhereUniqueInput
+  data: Prisma.XOR<Prisma.FormFieldUpdateWithoutOptionPresetInput, Prisma.FormFieldUncheckedUpdateWithoutOptionPresetInput>
+}
+
+export type FormFieldUpdateManyWithWhereWithoutOptionPresetInput = {
+  where: Prisma.FormFieldScalarWhereInput
+  data: Prisma.XOR<Prisma.FormFieldUpdateManyMutationInput, Prisma.FormFieldUncheckedUpdateManyWithoutOptionPresetInput>
+}
+
 export type FormFieldCreateManyTenantInput = {
   id?: string
   formId: string
+  optionPresetId?: string | null
   type: $Enums.FormFieldType
   label?: string | null
   key: string
@@ -983,11 +1127,13 @@ export type FormFieldUpdateWithoutTenantInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   form?: Prisma.FormUpdateOneRequiredWithoutFieldsNestedInput
+  optionPreset?: Prisma.FormOptionPresetUpdateOneWithoutFieldsNestedInput
 }
 
 export type FormFieldUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   formId?: Prisma.StringFieldUpdateOperationsInput | string
+  optionPresetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumFormFieldTypeFieldUpdateOperationsInput | $Enums.FormFieldType
   label?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   key?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1010,6 +1156,7 @@ export type FormFieldUncheckedUpdateWithoutTenantInput = {
 export type FormFieldUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   formId?: Prisma.StringFieldUpdateOperationsInput | string
+  optionPresetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumFormFieldTypeFieldUpdateOperationsInput | $Enums.FormFieldType
   label?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   key?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1032,6 +1179,7 @@ export type FormFieldUncheckedUpdateManyWithoutTenantInput = {
 export type FormFieldCreateManyFormInput = {
   id?: string
   tenantId: string
+  optionPresetId?: string | null
   type: $Enums.FormFieldType
   label?: string | null
   key: string
@@ -1071,11 +1219,13 @@ export type FormFieldUpdateWithoutFormInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutFormFieldsNestedInput
+  optionPreset?: Prisma.FormOptionPresetUpdateOneWithoutFieldsNestedInput
 }
 
 export type FormFieldUncheckedUpdateWithoutFormInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  optionPresetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumFormFieldTypeFieldUpdateOperationsInput | $Enums.FormFieldType
   label?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   key?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1097,6 +1247,99 @@ export type FormFieldUncheckedUpdateWithoutFormInput = {
 
 export type FormFieldUncheckedUpdateManyWithoutFormInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  optionPresetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumFormFieldTypeFieldUpdateOperationsInput | $Enums.FormFieldType
+  label?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  placeholder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subtext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  helpText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  options?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  validation?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  condition?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideLabel?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isReadOnly?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  layoutWidth?: Prisma.IntFieldUpdateOperationsInput | number
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type FormFieldCreateManyOptionPresetInput = {
+  id?: string
+  formId: string
+  tenantId: string
+  type: $Enums.FormFieldType
+  label?: string | null
+  key: string
+  placeholder?: string | null
+  subtext?: string | null
+  helpText?: string | null
+  inputType?: string | null
+  options?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  validation?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  condition?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isRequired?: boolean
+  hideLabel?: boolean
+  isReadOnly?: boolean
+  layoutWidth?: number
+  position: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type FormFieldUpdateWithoutOptionPresetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumFormFieldTypeFieldUpdateOperationsInput | $Enums.FormFieldType
+  label?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  placeholder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subtext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  helpText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  options?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  validation?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  condition?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideLabel?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isReadOnly?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  layoutWidth?: Prisma.IntFieldUpdateOperationsInput | number
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  form?: Prisma.FormUpdateOneRequiredWithoutFieldsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutFormFieldsNestedInput
+}
+
+export type FormFieldUncheckedUpdateWithoutOptionPresetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  formId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumFormFieldTypeFieldUpdateOperationsInput | $Enums.FormFieldType
+  label?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  key?: Prisma.StringFieldUpdateOperationsInput | string
+  placeholder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subtext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  helpText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  options?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  validation?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  condition?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  isRequired?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  hideLabel?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isReadOnly?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  layoutWidth?: Prisma.IntFieldUpdateOperationsInput | number
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type FormFieldUncheckedUpdateManyWithoutOptionPresetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  formId?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumFormFieldTypeFieldUpdateOperationsInput | $Enums.FormFieldType
   label?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1123,6 +1366,7 @@ export type FormFieldSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   id?: boolean
   formId?: boolean
   tenantId?: boolean
+  optionPresetId?: boolean
   type?: boolean
   label?: boolean
   key?: boolean
@@ -1142,12 +1386,14 @@ export type FormFieldSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   updatedAt?: boolean
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  optionPreset?: boolean | Prisma.FormField$optionPresetArgs<ExtArgs>
 }, ExtArgs["result"]["formField"]>
 
 export type FormFieldSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   formId?: boolean
   tenantId?: boolean
+  optionPresetId?: boolean
   type?: boolean
   label?: boolean
   key?: boolean
@@ -1167,12 +1413,14 @@ export type FormFieldSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   updatedAt?: boolean
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  optionPreset?: boolean | Prisma.FormField$optionPresetArgs<ExtArgs>
 }, ExtArgs["result"]["formField"]>
 
 export type FormFieldSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   formId?: boolean
   tenantId?: boolean
+  optionPresetId?: boolean
   type?: boolean
   label?: boolean
   key?: boolean
@@ -1192,12 +1440,14 @@ export type FormFieldSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   updatedAt?: boolean
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  optionPreset?: boolean | Prisma.FormField$optionPresetArgs<ExtArgs>
 }, ExtArgs["result"]["formField"]>
 
 export type FormFieldSelectScalar = {
   id?: boolean
   formId?: boolean
   tenantId?: boolean
+  optionPresetId?: boolean
   type?: boolean
   label?: boolean
   key?: boolean
@@ -1217,18 +1467,21 @@ export type FormFieldSelectScalar = {
   updatedAt?: boolean
 }
 
-export type FormFieldOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "formId" | "tenantId" | "type" | "label" | "key" | "placeholder" | "subtext" | "helpText" | "inputType" | "options" | "validation" | "condition" | "isRequired" | "hideLabel" | "isReadOnly" | "layoutWidth" | "position" | "createdAt" | "updatedAt", ExtArgs["result"]["formField"]>
+export type FormFieldOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "formId" | "tenantId" | "optionPresetId" | "type" | "label" | "key" | "placeholder" | "subtext" | "helpText" | "inputType" | "options" | "validation" | "condition" | "isRequired" | "hideLabel" | "isReadOnly" | "layoutWidth" | "position" | "createdAt" | "updatedAt", ExtArgs["result"]["formField"]>
 export type FormFieldInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  optionPreset?: boolean | Prisma.FormField$optionPresetArgs<ExtArgs>
 }
 export type FormFieldIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  optionPreset?: boolean | Prisma.FormField$optionPresetArgs<ExtArgs>
 }
 export type FormFieldIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   form?: boolean | Prisma.FormDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  optionPreset?: boolean | Prisma.FormField$optionPresetArgs<ExtArgs>
 }
 
 export type $FormFieldPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1236,11 +1489,13 @@ export type $FormFieldPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   objects: {
     form: Prisma.$FormPayload<ExtArgs>
     tenant: Prisma.$WorkspacePayload<ExtArgs>
+    optionPreset: Prisma.$FormOptionPresetPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     formId: string
     tenantId: string
+    optionPresetId: string | null
     type: $Enums.FormFieldType
     label: string | null
     key: string
@@ -1654,6 +1909,7 @@ export interface Prisma__FormFieldClient<T, Null = never, ExtArgs extends runtim
   readonly [Symbol.toStringTag]: "PrismaPromise"
   form<T extends Prisma.FormDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormDefaultArgs<ExtArgs>>): Prisma.Prisma__FormClient<runtime.Types.Result.GetResult<Prisma.$FormPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  optionPreset<T extends Prisma.FormField$optionPresetArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FormField$optionPresetArgs<ExtArgs>>): Prisma.Prisma__FormOptionPresetClient<runtime.Types.Result.GetResult<Prisma.$FormOptionPresetPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1686,6 +1942,7 @@ export interface FormFieldFieldRefs {
   readonly id: Prisma.FieldRef<"FormField", 'String'>
   readonly formId: Prisma.FieldRef<"FormField", 'String'>
   readonly tenantId: Prisma.FieldRef<"FormField", 'String'>
+  readonly optionPresetId: Prisma.FieldRef<"FormField", 'String'>
   readonly type: Prisma.FieldRef<"FormField", 'FormFieldType'>
   readonly label: Prisma.FieldRef<"FormField", 'String'>
   readonly key: Prisma.FieldRef<"FormField", 'String'>
@@ -2096,6 +2353,25 @@ export type FormFieldDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Limit how many FormFields to delete.
    */
   limit?: number
+}
+
+/**
+ * FormField.optionPreset
+ */
+export type FormField$optionPresetArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FormOptionPreset
+   */
+  select?: Prisma.FormOptionPresetSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FormOptionPreset
+   */
+  omit?: Prisma.FormOptionPresetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FormOptionPresetInclude<ExtArgs> | null
+  where?: Prisma.FormOptionPresetWhereInput
 }
 
 /**

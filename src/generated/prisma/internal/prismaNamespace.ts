@@ -463,6 +463,7 @@ export const ModelName = {
   ReconciliationPeriod: 'ReconciliationPeriod',
   Form: 'Form',
   FormField: 'FormField',
+  FormOptionPreset: 'FormOptionPreset',
   FormSubmission: 'FormSubmission',
   FormDraft: 'FormDraft',
   FormUpload: 'FormUpload',
@@ -500,7 +501,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -6350,6 +6351,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    FormOptionPreset: {
+      payload: Prisma.$FormOptionPresetPayload<ExtArgs>
+      fields: Prisma.FormOptionPresetFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FormOptionPresetFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormOptionPresetPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FormOptionPresetFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormOptionPresetPayload>
+        }
+        findFirst: {
+          args: Prisma.FormOptionPresetFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormOptionPresetPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FormOptionPresetFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormOptionPresetPayload>
+        }
+        findMany: {
+          args: Prisma.FormOptionPresetFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormOptionPresetPayload>[]
+        }
+        create: {
+          args: Prisma.FormOptionPresetCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormOptionPresetPayload>
+        }
+        createMany: {
+          args: Prisma.FormOptionPresetCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.FormOptionPresetCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormOptionPresetPayload>[]
+        }
+        delete: {
+          args: Prisma.FormOptionPresetDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormOptionPresetPayload>
+        }
+        update: {
+          args: Prisma.FormOptionPresetUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormOptionPresetPayload>
+        }
+        deleteMany: {
+          args: Prisma.FormOptionPresetDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FormOptionPresetUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.FormOptionPresetUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormOptionPresetPayload>[]
+        }
+        upsert: {
+          args: Prisma.FormOptionPresetUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FormOptionPresetPayload>
+        }
+        aggregate: {
+          args: Prisma.FormOptionPresetAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFormOptionPreset>
+        }
+        groupBy: {
+          args: Prisma.FormOptionPresetGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormOptionPresetGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FormOptionPresetCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FormOptionPresetCountAggregateOutputType> | number
+        }
+      }
+    }
     FormSubmission: {
       payload: Prisma.$FormSubmissionPayload<ExtArgs>
       fields: Prisma.FormSubmissionFieldRefs
@@ -9561,6 +9636,7 @@ export const FormFieldScalarFieldEnum = {
   id: 'id',
   formId: 'formId',
   tenantId: 'tenantId',
+  optionPresetId: 'optionPresetId',
   type: 'type',
   label: 'label',
   key: 'key',
@@ -9581,6 +9657,25 @@ export const FormFieldScalarFieldEnum = {
 } as const
 
 export type FormFieldScalarFieldEnum = (typeof FormFieldScalarFieldEnum)[keyof typeof FormFieldScalarFieldEnum]
+
+
+export const FormOptionPresetScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  normalizedKey: 'normalizedKey',
+  builtInKey: 'builtInKey',
+  isProtected: 'isProtected',
+  allowCsvReplace: 'allowCsvReplace',
+  options: 'options',
+  optionCount: 'optionCount',
+  createdById: 'createdById',
+  updatedById: 'updatedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FormOptionPresetScalarFieldEnum = (typeof FormOptionPresetScalarFieldEnum)[keyof typeof FormOptionPresetScalarFieldEnum]
 
 
 export const FormSubmissionScalarFieldEnum = {
@@ -11417,6 +11512,7 @@ export type GlobalOmitConfig = {
   reconciliationPeriod?: Prisma.ReconciliationPeriodOmit
   form?: Prisma.FormOmit
   formField?: Prisma.FormFieldOmit
+  formOptionPreset?: Prisma.FormOptionPresetOmit
   formSubmission?: Prisma.FormSubmissionOmit
   formDraft?: Prisma.FormDraftOmit
   formUpload?: Prisma.FormUploadOmit

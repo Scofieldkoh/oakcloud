@@ -130,6 +130,7 @@ export const ModelName = {
   ReconciliationPeriod: 'ReconciliationPeriod',
   Form: 'Form',
   FormField: 'FormField',
+  FormOptionPreset: 'FormOptionPreset',
   FormSubmission: 'FormSubmission',
   FormDraft: 'FormDraft',
   FormUpload: 'FormUpload',
@@ -1714,6 +1715,7 @@ export const FormFieldScalarFieldEnum = {
   id: 'id',
   formId: 'formId',
   tenantId: 'tenantId',
+  optionPresetId: 'optionPresetId',
   type: 'type',
   label: 'label',
   key: 'key',
@@ -1734,6 +1736,25 @@ export const FormFieldScalarFieldEnum = {
 } as const
 
 export type FormFieldScalarFieldEnum = (typeof FormFieldScalarFieldEnum)[keyof typeof FormFieldScalarFieldEnum]
+
+
+export const FormOptionPresetScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  normalizedKey: 'normalizedKey',
+  builtInKey: 'builtInKey',
+  isProtected: 'isProtected',
+  allowCsvReplace: 'allowCsvReplace',
+  options: 'options',
+  optionCount: 'optionCount',
+  createdById: 'createdById',
+  updatedById: 'updatedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FormOptionPresetScalarFieldEnum = (typeof FormOptionPresetScalarFieldEnum)[keyof typeof FormOptionPresetScalarFieldEnum]
 
 
 export const FormSubmissionScalarFieldEnum = {

@@ -40,6 +40,7 @@ model Workspace {
   documents                   Document[]
   exchangeRates               ExchangeRate[]
   formFields                  FormField[]
+  formOptionPresets           FormOptionPreset[]
   formDrafts                  FormDraft[]
   formSubmissions             FormSubmission[]
   formUploads                 FormUpload[]
@@ -2078,33 +2079,59 @@ model Form {
 }
 
 model FormField {
-  id          String        @id @default(uuid())
-  formId      String        @map("form_id")
-  tenantId    String        @map("tenant_id")
-  type        FormFieldType
-  label       String?
-  key         String        @map("field_key")
-  placeholder String?
-  subtext     String?
-  helpText    String?       @map("help_text")
-  inputType   String?       @map("input_type")
-  options     Json?
-  validation  Json?
-  condition   Json?
-  isRequired  Boolean       @default(false) @map("is_required")
-  hideLabel   Boolean       @default(false) @map("hide_label")
-  isReadOnly  Boolean       @default(false) @map("is_read_only")
-  layoutWidth Int           @default(100) @map("layout_width")
-  position    Int
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  form        Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
-  tenant      Workspace     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id               String            @id @default(uuid())
+  formId           String            @map("form_id")
+  tenantId         String            @map("tenant_id")
+  optionPresetId   String?           @map("option_preset_id")
+  type             FormFieldType
+  label            String?
+  key              String            @map("field_key")
+  placeholder      String?
+  subtext          String?
+  helpText         String?           @map("help_text")
+  inputType        String?           @map("input_type")
+  options          Json?
+  validation       Json?
+  condition        Json?
+  isRequired       Boolean           @default(false) @map("is_required")
+  hideLabel        Boolean           @default(false) @map("hide_label")
+  isReadOnly       Boolean           @default(false) @map("is_read_only")
+  layoutWidth      Int               @default(100) @map("layout_width")
+  position         Int
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  form             Form              @relation(fields: [formId], references: [id], onDelete: Cascade)
+  tenant           Workspace         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  optionPreset     FormOptionPreset? @relation(fields: [optionPresetId], references: [id], onDelete: Restrict)
 
   @@unique([formId, key])
   @@index([formId, position])
   @@index([tenantId, formId])
+  @@index([optionPresetId])
   @@map("form_fields")
+}
+
+model FormOptionPreset {
+  id              String      @id @default(uuid())
+  tenantId        String      @map("tenant_id")
+  name            String
+  normalizedKey   String      @map("normalized_key")
+  builtInKey      String?     @map("built_in_key")
+  isProtected     Boolean     @default(false) @map("is_protected")
+  allowCsvReplace Boolean     @default(true) @map("allow_csv_replace")
+  options         Json
+  optionCount     Int         @map("option_count")
+  createdById     String?     @map("created_by_id")
+  updatedById     String?     @map("updated_by_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  tenant          Workspace   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fields          FormField[]
+
+  @@unique([tenantId, normalizedKey])
+  @@unique([tenantId, builtInKey])
+  @@index([tenantId, updatedAt])
+  @@map("form_option_presets")
 }
 
 model FormSubmission {

@@ -413,6 +413,11 @@ export type Form = Prisma.FormModel
  */
 export type FormField = Prisma.FormFieldModel
 /**
+ * Model FormOptionPreset
+ *
+ */
+export type FormOptionPreset = Prisma.FormOptionPresetModel
+/**
  * Model FormSubmission
  *
  */
