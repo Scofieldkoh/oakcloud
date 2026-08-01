@@ -54,6 +54,8 @@ The Forms module does not yet have a single stable spec file under `docs/feature
 | [Form Submission PDF Redesign](./plans/2026-03-09-form-submission-pdf-redesign.md) | HTML-to-PDF export for form responses |
 | [Resume Draft UI Implementation](./plans/2026-03-09-resume-draft-ui-implementation.md) | Public draft resume and email flow |
 | [Forms Implementation Review](./plans/2026-03-10-forms-implementation-review.md) | Security, performance, and logic review |
+| [Forms API: option presets](./reference/API_REFERENCE.md#get-apiformspresets) | Managed CSV dropdown lists, protected built-ins, limits, and live form linkage |
+| [Forms design: option presets](./guides/DESIGN_GUIDELINE.md#form-option-presets) | Preset manager and respondent dropdown interaction rules |
 
 ## Other
 

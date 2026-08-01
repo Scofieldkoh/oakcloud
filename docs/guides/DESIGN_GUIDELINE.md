@@ -5153,6 +5153,17 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/compone
 </Dropdown>
 ```
 
+#### Form Option Presets
+
+The Forms list places a compact **Preset lists** secondary action beside **New Form**. Its modal owns the create, CSV preview, replace, and delete workflows so large controlled vocabularies do not inflate form-save payloads.
+
+- Accept UTF-8 CSV with either `label` or `value,label` headers and show detected columns, accepted/rejected counts, row errors, and a short sample before saving.
+- Keep Countries, Nationalities, and SSIC visibly marked as protected. Countries and Nationalities cannot be replaced; SSIC can be replaced but not deleted.
+- Require confirmation before replacement because linked dropdowns receive the new values immediately.
+- Disable deletion while a custom preset is linked to an active or archived form and show the usage count in context.
+- When a linked dropdown switches to Custom, copy the currently resolved options into the field before removing the link.
+- Respondent dropdown fields are clearable unless read-only. Required fields may still be cleared, then show their normal required validation on blur or submit. Phone and timezone selectors remain non-clearable.
+
 ### Toast
 
 ```tsx

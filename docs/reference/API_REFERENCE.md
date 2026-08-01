@@ -581,7 +581,60 @@ Update form metadata, settings, and/or fields.
 
 - Metadata keys supported: `title`, `description`, `status`, `tags`, `slug`, `settings`
 - Field updates are sent as `fields: FormFieldInput[]`
+- A linked dropdown sends `optionPresetId` and may omit embedded `options`. Form reads resolve the preset's latest `{ value, label }` options, so replacing a preset updates every linked form without rewriting the form.
+- Embedded custom dropdowns support at most 5,000 options.
 - `reason` is optional and is recorded in audit logs
+
+---
+
+### GET /api/forms/presets
+List option presets for the active tenant, including the protected Countries, Nationalities, and SSIC lists and each preset's current usage count.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+- `tenantId` (optional SUPER_ADMIN tenant scope)
+
+---
+
+### POST /api/forms/presets
+Preview a CSV import or create a tenant-scoped dropdown preset.
+
+**Auth:** Authenticated with `document:update`
+
+**Request Body:**
+
+```json
+{
+  "name": "Industry codes",
+  "csv": "value,label\n01111,Growing of leafy and fruit vegetables",
+  "preview": false,
+  "tenantId": "uuid (optional for SUPER_ADMIN)"
+}
+```
+
+Set `preview` to `true` to validate without saving. Preview and validation responses report detected columns, total/valid/rejected rows, row-level errors, and a five-row sample.
+
+CSV imports must be UTF-8, no larger than 5 MB, and contain at most 5,000 valid rows. Accepted headers are `label` or `value,label` (case-insensitive). A label-only import uses each label as its submitted value.
+
+---
+
+### PATCH /api/forms/presets/[id]
+Rename a preset and/or replace its options with validated CSV content.
+
+**Auth:** Authenticated with `document:update`
+
+Countries and Nationalities are protected from replacement. SSIC is protected from deletion but can be replaced with a newer CSV. Replacing any allowed preset takes effect immediately for linked form fields.
+
+---
+
+### DELETE /api/forms/presets/[id]
+Delete a custom preset.
+
+**Auth:** Authenticated with `document:update`
+
+Protected built-ins cannot be deleted. A custom preset referenced by any active or archived form must be unlinked before deletion.
 
 ---
 
