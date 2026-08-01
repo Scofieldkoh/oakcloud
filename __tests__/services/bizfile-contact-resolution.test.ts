@@ -14,8 +14,14 @@ const mocks = vi.hoisted(() => ({
 const tx = {
   company: { upsert: vi.fn(), update: vi.fn() },
   document: { update: vi.fn() },
-  companyOfficer: { create: vi.fn(), update: vi.fn() },
-  companyShareholder: { create: vi.fn(), update: vi.fn(), findMany: vi.fn() },
+  companyFormerName: { deleteMany: vi.fn(), create: vi.fn() },
+  companyAddress: { findFirst: vi.fn(), update: vi.fn(), create: vi.fn() },
+  shareCapital: { deleteMany: vi.fn(), create: vi.fn() },
+  companyOfficer: { create: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+  companyShareholder: { create: vi.fn(), update: vi.fn(), updateMany: vi.fn(), findMany: vi.fn() },
+  companyAuditor: { upsert: vi.fn(), deleteMany: vi.fn() },
+  companyCharge: { deleteMany: vi.fn(), create: vi.fn() },
+  auditLog: { createMany: vi.fn() },
   processingDocument: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
   documentRevision: { create: vi.fn() },
   taskCompanyRecoveryContext: { upsert: mocks.recoveryUpsert },
@@ -67,6 +73,7 @@ describe('BizFile contact identity resolution', () => {
     mocks.companyFindFirst.mockResolvedValue(null);
     mocks.previewContactIdentity.mockResolvedValue(null);
     tx.company.upsert.mockResolvedValue({ id: 'company-1' });
+    tx.companyAddress.findFirst.mockResolvedValue(null);
     tx.processingDocument.create.mockResolvedValue({ id: 'processing-1' });
     tx.documentRevision.create.mockResolvedValue({ id: 'revision-1' });
     tx.processingDocument.findUnique.mockResolvedValue({ id: 'processing-existing' });
@@ -88,9 +95,10 @@ describe('BizFile contact identity resolution', () => {
       taskContext,
     );
 
-    expect(tx.company.upsert).toHaveBeenCalledWith(expect.objectContaining({
-      create: expect.objectContaining({ taskIntegrationContext: taskContext }),
-    }));
+    expect(tx.company.update).toHaveBeenCalledWith({
+      where: { id: 'company-1' },
+      data: { taskIntegrationContext: taskContext },
+    });
   });
 
   it('stores task recovery context in the BizFile existing-company update branch', async () => {
@@ -107,9 +115,10 @@ describe('BizFile contact identity resolution', () => {
       taskContext,
     );
 
-    expect(tx.company.upsert).toHaveBeenCalledWith(expect.objectContaining({
-      update: expect.objectContaining({ taskIntegrationContext: taskContext }),
-    }));
+    expect(tx.company.update).toHaveBeenCalledWith({
+      where: { id: 'company-existing' },
+      data: { taskIntegrationContext: taskContext },
+    });
   });
 
   it('stores task recovery context during a selective existing-company update', async () => {
@@ -217,8 +226,7 @@ describe('BizFile contact identity resolution', () => {
   });
 
   it('replaces Company A with Company B for the same task stage', async () => {
-    mocks.companyFindFirst.mockResolvedValue({ id: 'company-existing' });
-    tx.company.upsert
+    mocks.companyFindFirst
       .mockResolvedValueOnce({ id: 'company-a' })
       .mockResolvedValueOnce({ id: 'company-b' });
     mocks.resolveOrCreateContact.mockResolvedValue({ contact: { id: 'contact-existing' } });

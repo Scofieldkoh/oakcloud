@@ -197,7 +197,7 @@ export interface BizFileDiffEntry {
   label: string;
   oldValue: string | number | null | undefined;
   newValue: string | number | null | undefined;
-  category: 'entity' | 'ssic' | 'address' | 'compliance' | 'capital';
+  category: 'entity' | 'ssic' | 'address' | 'compliance' | 'capital' | 'additional' | 'charges';
 }
 
 /**

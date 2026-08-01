@@ -1,0 +1,78 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { syncCompanyFromBizfileInTransaction } from '@/services/bizfile/company-sync';
+
+const tx = {
+  company: { upsert: vi.fn(), update: vi.fn() },
+  companyFormerName: { deleteMany: vi.fn(), create: vi.fn() },
+  companyAddress: { findFirst: vi.fn(), update: vi.fn(), create: vi.fn() },
+  shareCapital: { deleteMany: vi.fn(), create: vi.fn() },
+  companyOfficer: { updateMany: vi.fn(), create: vi.fn() },
+  companyShareholder: { updateMany: vi.fn(), create: vi.fn() },
+  companyAuditor: { upsert: vi.fn(), deleteMany: vi.fn() },
+  companyCharge: { deleteMany: vi.fn(), create: vi.fn() },
+  auditLog: { createMany: vi.fn() },
+};
+
+const data = {
+  entityDetails: {
+    uen: '202400001A', name: 'Complete Pte. Ltd.', formerName: 'Old Complete',
+    dateOfNameChange: '2024-01-01',
+    formerNames: [{ name: 'First Complete', effectiveFrom: '2020-01-01', effectiveTo: '2023-12-31' }],
+    entityType: 'PRIVATE_LIMITED', status: 'LIVE', statusDate: '2024-01-02',
+    incorporationDate: '2020-01-01', registrationDate: '2020-01-02',
+  },
+  ssicActivities: {
+    primary: { code: '62011', description: 'Software development' },
+    secondary: { code: '70201', description: 'Management consultancy' },
+  },
+  registeredAddress: { block: '1', streetName: 'Oak Street', level: '02', unit: '03', buildingName: 'Oak House', postalCode: '123456', country: 'Singapore', effectiveFrom: '2024-01-01' },
+  mailingAddress: { block: '2', streetName: 'Mail Street', postalCode: '654321', country: 'Singapore' },
+  paidUpCapital: { amount: 100000, currency: 'SGD' },
+  issuedCapital: { amount: 120000, currency: 'SGD' },
+  shareCapital: [{ shareClass: 'ORDINARY', currency: 'SGD', numberOfShares: 100000, parValue: 1, totalValue: 100000, isPaidUp: true, isTreasury: false }],
+  treasuryShares: { numberOfShares: 100, currency: 'SGD' },
+  homeCurrency: 'SGD',
+  officers: [{ name: 'Tan Mei Ling', role: 'DIRECTOR', identificationType: 'NRIC', identificationNumber: 'S1234567A', nationality: 'Singaporean', address: '1 Oak Street', appointmentDate: '2020-01-01' }],
+  shareholders: [{ name: 'Tan Mei Ling', type: 'INDIVIDUAL' as const, identificationType: 'NRIC', identificationNumber: 'S1234567A', nationality: 'Singaporean', placeOfOrigin: 'Singapore', address: '1 Oak Street', shareClass: 'ORDINARY', numberOfShares: 60000, percentageHeld: 60, currency: 'SGD' }],
+  auditor: { name: 'Oak Audit LLP', address: '3 Audit Street', appointmentDate: '2021-01-01' },
+  financialYear: { endDay: 31, endMonth: 12 },
+  compliance: { lastAgmDate: '2025-05-01', lastArFiledDate: '2025-06-01', accountsDueDate: '2026-06-30', fyeAsAtLastAr: '2024-12-31' },
+  charges: [{ chargeNumber: 'C1', chargeType: 'FIXED', description: 'Bank charge', chargeHolderName: 'Oak Bank', amountSecured: 5000, amountSecuredText: 'Five thousand', currency: 'SGD', registrationDate: '2022-01-01' }],
+  documentMetadata: { receiptNo: 'ACRA-1', receiptDate: '2025-01-01' },
+};
+
+describe('syncCompanyFromBizfileInTransaction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    tx.company.upsert.mockResolvedValue({ id: 'company-1' });
+    tx.companyAddress.findFirst.mockResolvedValue(null);
+  });
+
+  it.each([
+    ['new company', undefined],
+    ['existing company', 'company-1'],
+  ])('normalizes every reviewed company section for a %s', async (_label, existingCompanyId) => {
+    const resolveContact = vi.fn()
+      .mockResolvedValueOnce('contact-officer')
+      .mockResolvedValueOnce('contact-shareholder');
+
+    const result = await syncCompanyFromBizfileInTransaction({
+      data, documentId: 'doc-1', tenantId: 'tenant-1', userId: 'user-1', existingCompanyId,
+    }, tx as never, { resolveContact });
+
+    expect(result.companyId).toBe('company-1');
+    expect(existingCompanyId ? tx.company.update : tx.company.upsert).toHaveBeenCalled();
+    expect(tx.companyAddress.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ addressType: 'MAILING', sourceDocumentId: 'doc-1' }) }));
+    expect(tx.shareCapital.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ shareClass: 'ORDINARY', totalValue: 100000 }) }));
+    expect(tx.shareCapital.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ shareClass: 'TREASURY', numberOfShares: 100 }) }));
+    expect(tx.companyOfficer.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ identificationNumber: 'S1234567A', appointmentDate: new Date('2020-01-01'), contactId: 'contact-officer' }) }));
+    expect(tx.companyShareholder.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ placeOfOrigin: 'Singapore', percentageHeld: 60, currency: 'SGD', contactId: 'contact-shareholder' }) }));
+    expect(tx.companyAuditor.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: expect.objectContaining({ name: 'Oak Audit LLP', sourceDocumentId: 'doc-1' }) }));
+    expect(tx.companyCharge.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ chargeNumber: 'C1', amountSecuredText: 'Five thousand' }) }));
+    expect(tx.company.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ homeCurrency: 'SGD', fyeAsAtLastAr: new Date('2024-12-31') }) }));
+    expect(JSON.stringify([
+      ...tx.company.upsert.mock.calls,
+      ...tx.company.update.mock.calls,
+    ])).not.toContain('ACRA-1');
+  });
+});

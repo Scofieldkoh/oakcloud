@@ -59,3 +59,11 @@ export {
   processBizFileExtraction,
   processBizFileExtractionSelective,
 } from './processor';
+
+export {
+  syncCompanyFromBizfileInTransaction,
+} from './company-sync';
+export type {
+  SyncCompanyFromBizfileArgs,
+  SyncCompanyFromBizfileResult,
+} from './company-sync';

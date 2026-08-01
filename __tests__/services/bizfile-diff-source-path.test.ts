@@ -34,4 +34,27 @@ describe('BizFile diff source paths', () => {
     expect(result.officerDiffs.map((entry) => entry.sourceRecordId)).toEqual(['officers.0', 'officers.1']);
     expect(result.shareholderDiffs.map((entry) => entry.sourceRecordId)).toEqual(['shareholders.0', 'shareholders.1']);
   });
+
+  it('surfaces changes from every normalized singleton and repeating section', async () => {
+    const { generateBizFileDiff } = await import('@/services/bizfile/diff');
+    const result = await generateBizFileDiff('company-1', {
+      entityDetails: {
+        uen: '1', name: 'Example', entityType: 'PRIVATE_LIMITED', status: 'LIVE',
+        registrationDate: '2020-01-01',
+        formerNames: [{ name: 'Old Example', effectiveFrom: '2019-01-01' }],
+      },
+      mailingAddress: { streetName: 'Mail Street', postalCode: '123456' },
+      homeCurrency: 'USD',
+      shareCapital: [{ shareClass: 'ORDINARY', currency: 'SGD', numberOfShares: 10, totalValue: 10, isPaidUp: true }],
+      treasuryShares: { numberOfShares: 2, currency: 'SGD' },
+      auditor: { name: 'Audit LLP' },
+      compliance: { fyeAsAtLastAr: '2024-12-31' },
+      charges: [{ chargeHolderName: 'Oak Bank', chargeNumber: 'C1' }],
+    }, 'tenant-1');
+
+    expect(result.differences.map((difference) => difference.field)).toEqual(expect.arrayContaining([
+      'registrationDate', 'formerNames', 'mailingAddress', 'homeCurrency',
+      'shareCapital', 'treasuryShares', 'auditor', 'fyeAsAtLastAr', 'charges',
+    ]));
+  });
 });

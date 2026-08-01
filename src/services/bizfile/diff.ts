@@ -150,6 +150,10 @@ export async function generateBizFileDiff(
       addresses: { where: { isCurrent: true } },
       officers: { where: { isCurrent: true } },
       shareholders: { where: { isCurrent: true } },
+      formerNames: true,
+      shareCapital: true,
+      auditor: true,
+      charges: true,
     },
   });
 
@@ -159,6 +163,81 @@ export async function generateBizFileDiff(
 
   const differences: BizFileDiffEntry[] = [];
   const { entityDetails, ssicActivities, registeredAddress, compliance, financialYear } = extractedData;
+
+  const comparable = (value: unknown): string => JSON.stringify(value, (_key, child) => {
+    if (child instanceof Date) return child.toISOString().split('T')[0];
+    if (child && typeof child === 'object' && typeof child.toJSON === 'function') return child.toJSON();
+    return child;
+  });
+  const addStructuredDifference = (
+    field: string,
+    label: string,
+    oldValue: unknown,
+    newValue: unknown,
+    category: BizFileDiffEntry['category'],
+  ) => {
+    if (newValue === undefined || comparable(oldValue) === comparable(newValue)) return;
+    differences.push({
+      field,
+      label,
+      oldValue: oldValue == null ? null : comparable(oldValue),
+      newValue: newValue == null ? null : comparable(newValue),
+      category,
+    });
+  };
+
+  addStructuredDifference('registrationDate', 'Registration Date', formatDate(company.registrationDate), entityDetails.registrationDate, 'entity');
+  addStructuredDifference(
+    'formerNames',
+    'Company History',
+    (company.formerNames ?? []).map((record) => ({
+      name: record.formerName,
+      effectiveFrom: formatDate(record.effectiveFrom),
+      effectiveTo: formatDate(record.effectiveTo),
+    })),
+    entityDetails.formerNames ?? [],
+    'additional',
+  );
+  const mailingAddress = company.addresses.find((address) => address.addressType === 'MAILING');
+  addStructuredDifference('mailingAddress', 'Mailing Address', mailingAddress?.fullAddress ?? null, extractedData.mailingAddress ? buildFullAddress(extractedData.mailingAddress) : undefined, 'address');
+  addStructuredDifference('homeCurrency', 'Home Currency', company.homeCurrency, extractedData.homeCurrency, 'compliance');
+  addStructuredDifference(
+    'shareCapital',
+    'Share Capital Breakdown',
+    (company.shareCapital ?? []).filter((record) => !record.isTreasury).map((record) => ({
+      shareClass: record.shareClass,
+      currency: record.currency,
+      numberOfShares: record.numberOfShares,
+      parValue: record.parValue?.toString(),
+      totalValue: record.totalValue.toString(),
+      isPaidUp: record.isPaidUp,
+      isTreasury: record.isTreasury,
+    })),
+    extractedData.shareCapital,
+    'capital',
+  );
+  addStructuredDifference(
+    'treasuryShares',
+    'Treasury Shares',
+    (company.shareCapital ?? []).filter((record) => record.isTreasury).map((record) => ({ numberOfShares: record.numberOfShares, currency: record.currency })),
+    extractedData.treasuryShares,
+    'capital',
+  );
+  addStructuredDifference(
+    'auditor',
+    'Auditor',
+    company.auditor ? { name: company.auditor.name, address: company.auditor.address, appointmentDate: formatDate(company.auditor.appointmentDate) } : null,
+    extractedData.auditor,
+    'additional',
+  );
+  addStructuredDifference('fyeAsAtLastAr', 'FYE as at Last AR', formatDate(company.fyeAsAtLastAr), compliance?.fyeAsAtLastAr, 'compliance');
+  addStructuredDifference(
+    'charges',
+    'Charges',
+    company.charges ?? [],
+    extractedData.charges,
+    'charges',
+  );
 
   // Compare entity details
   const entityComparisons: Array<{ field: string; label: string; oldVal: unknown; newVal: unknown }> = [
