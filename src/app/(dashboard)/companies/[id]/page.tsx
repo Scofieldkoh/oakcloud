@@ -6,24 +6,20 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   AlertCircle,
-  Calendar,
   Pencil,
-  Sparkles,
   Trash2,
   Upload,
-  Hash,
-  Building2,
-  RefreshCw,
+  ExternalLink,
 } from 'lucide-react';
 import {
   useCompany,
   useDeleteCompany,
   useRetrieveFYE,
   useUpdateCompany,
+  useCompanyBizFile,
 } from '@/hooks/use-companies';
 import { useCompanyContactDetails } from '@/hooks/use-contact-details';
 import { usePermissions } from '@/hooks/use-permissions';
-import { formatDate } from '@/lib/utils';
 import { getEntityTypeLabel } from '@/lib/constants';
 import { isCompanyEntityType } from '@/lib/external/acra-fye';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -36,14 +32,13 @@ import {
   CompanyTabs,
   useTabState,
 } from '@/components/companies/company-detail';
-import { EdenPanel } from '@/components/ai-helpbot';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { getSafeListReturnUrl } from '@/lib/list-navigation';
 
 // Inner component that uses useSearchParams (needs Suspense boundary)
 function CompanyDetailContent({ id }: { id: string }) {
   const router = useRouter();
-  const { data: company, isLoading, error, refetch, isFetching } = useCompany(id);
+  const { data: company, isLoading, error, refetch } = useCompany(id);
   const deleteCompany = useDeleteCompany();
   const retrieveFYEMutation = useRetrieveFYE(id);
   const updateCompanyMutation = useUpdateCompany();
@@ -52,7 +47,7 @@ function CompanyDetailContent({ id }: { id: string }) {
   const { can } = usePermissions(id);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [edenOpen, setEdenOpen] = useState(false);
+  const { data: bizFileInfo } = useCompanyBizFile(id);
 
   // URL-persisted tab state
   const [activeTab, setActiveTab] = useTabState();
@@ -61,7 +56,7 @@ function CompanyDetailContent({ id }: { id: string }) {
   // This prevents sequential loading where prefetch waits for company to load first
 
   // Get contact details to check hasPoc for the warning icon
-  const { data: contactDetailsData, refetch: refetchContactDetails, isFetching: isContactDetailsFetching } = useCompanyContactDetails(id);
+  const { data: contactDetailsData, refetch: refetchContactDetails } = useCompanyContactDetails(id);
 
   // OPTIMIZED: Use counts from already-fetched company data instead of separate useCompanyLinkInfo hook
   // Build warning message based on company._count (already fetched with company data)
@@ -142,7 +137,6 @@ function CompanyDetailContent({ id }: { id: string }) {
     }
   };
 
-  const isRefreshing = isFetching || isContactDetailsFetching;
   const isRetrievingFYE = retrieveFYEMutation.isPending || updateCompanyMutation.isPending;
   const hasFinancialYearEnd = !!(company?.financialYearEndMonth && company?.financialYearEndDay);
   const showRetrieveFYEButton =
@@ -231,98 +225,36 @@ function CompanyDetailContent({ id }: { id: string }) {
   const currentStatus = statusConfig[company.status] || { color: 'badge-neutral', label: company.status };
   return (
     <div className="p-4 sm:p-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+      {/* Approved company identity and actions */}
+      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <Link
             href={backHref}
-            className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
+            className="mb-3 inline-flex items-center gap-1 text-xs text-text-secondary transition-colors hover:text-text-primary"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Companies
+            Companies / {company.name}
           </Link>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">{company.name}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-lg font-semibold text-text-primary"><span className="text-oak-primary">{company.name}</span> <span>({company.uen})</span></h1>
             <span className={`badge ${currentStatus.color}`}>
               {currentStatus.label}
             </span>
-            {company.statusDate && (
-              <span className="text-xs text-text-muted">
-                As at {formatDate(company.statusDate)}
-              </span>
-            )}
           </div>
-          <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-text-secondary">
-            <span className="flex items-center gap-1.5">
-              <Hash className="w-4 h-4 text-text-tertiary" />
-              {company.uen}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-text-tertiary" />
-              {getEntityTypeLabel(company.entityType, true)}
-            </span>
-            {company.incorporationDate && (
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-text-tertiary" />
-                Incorporated {formatDate(company.incorporationDate)}
-              </span>
-            )}
-          </div>
+          <p className="mt-1 text-xs text-text-secondary">{getEntityTypeLabel(company.entityType, true)}</p>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-          <button
-            onClick={() => setEdenOpen(true)}
-            className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
-            title="Open Eden"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span className="hidden xl:inline">Eden</span>
-            <span className="xl:hidden">AI</span>
-          </button>
-          <button
-            onClick={() => handleRefresh()}
-            className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
-            title="Refresh (Ctrl+R)"
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden xl:inline">Refresh (Ctrl+R)</span>
-            <span className="xl:hidden">Refresh</span>
-          </button>
-          {showRetrieveFYEButton && (
-            <button
-              onClick={handleRetrieveFYE}
-              className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
-              title="Retrieve FYE (F3)"
-              disabled={isRetrievingFYE}
-            >
-              <RefreshCw className={`w-4 h-4 ${isRetrievingFYE ? 'animate-spin' : ''}`} />
-              <span className="hidden xl:inline">Retrieve FYE (F3)</span>
-              <span className="xl:hidden">Retrieve FYE</span>
-            </button>
-          )}
-          {can.updateCompany && (
-            <Link
-              href={`/companies/${id}/edit`}
-              className="btn-primary btn-sm flex items-center gap-2 whitespace-nowrap"
-              title="Edit (Ctrl+E)"
-            >
-              <Pencil className="w-4 h-4" />
-              <span className="hidden xl:inline">Edit (Ctrl+E)</span>
-              <span className="xl:hidden">Edit</span>
-            </Link>
-          )}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {bizFileInfo ? <button type="button" onClick={() => window.open(bizFileInfo.pdfUrl, '_blank')} className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"><ExternalLink className="h-3.5 w-3.5" />View BizFile</button> : null}
           {can.updateDocument && (
             <Link
               href={`/companies/upload?companyId=${id}`}
               className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
               title="Update via BizFile (F2)"
             >
-              <Upload className="w-4 h-4" />
-              <span className="hidden xl:inline">Update via BizFile (F2)</span>
-              <span className="xl:hidden">BizFile</span>
+              <Upload className="h-3.5 w-3.5" />
+              Update via BizFile
             </Link>
           )}
+          {can.updateCompany && <Link href={`/companies/${id}/edit`} className="btn-primary btn-sm flex items-center gap-2 whitespace-nowrap" title="Edit (Ctrl+E)"><Pencil className="h-3.5 w-3.5" />Edit</Link>}
           {can.deleteCompany && (
             <button
               onClick={() => setDeleteDialogOpen(true)}
@@ -385,15 +317,6 @@ function CompanyDetailContent({ id }: { id: string }) {
         isLoading={deleteCompany.isPending}
       />
 
-      <EdenPanel
-        isOpen={edenOpen}
-        onClose={() => setEdenOpen(false)}
-        companyId={id}
-        companyName={company.name}
-        activeTab={activeTab}
-        canReadCompany={can.readCompany}
-        canWriteCompany={can.updateCompany}
-      />
     </div>
   );
 }

@@ -1103,6 +1103,7 @@ export async function getCompanyFullDetails(
     shareholders,
     shareCapital,
     charges,
+    auditor,
     documents,
   ] = await Promise.all([
     // Main company data (minimal select for speed)
@@ -1170,9 +1171,12 @@ export async function getCompanyFullDetails(
     }),
     // Active charges only
     prisma.companyCharge.findMany({
-      where: { companyId: id, isFullyDischarged: false },
+      where: { companyId: id },
       orderBy: { registrationDate: 'desc' },
       take: 20,
+    }),
+    prisma.companyAuditor.findUnique({
+      where: { companyId: id },
     }),
     // Recent documents
     prisma.document.findMany({
@@ -1207,6 +1211,7 @@ export async function getCompanyFullDetails(
     shareholders,
     shareCapital,
     charges,
+    auditor,
     documents,
     _count: {
       documents: documents.length,

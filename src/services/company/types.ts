@@ -31,6 +31,12 @@ export interface RelatedContact {
  * Company with all related data included
  */
 export interface CompanyWithRelations extends Company {
+  formerNames?: Array<{
+    id: string;
+    formerName: string;
+    effectiveFrom: Date;
+    effectiveTo?: Date | null;
+  }>;
   addresses?: Array<{
     id: string;
     addressType: string;
@@ -88,6 +94,21 @@ export interface CompanyWithRelations extends Company {
     dischargeDate?: Date | null;
     isFullyDischarged: boolean;
   }>;
+  shareCapital?: Array<{
+    id: string;
+    shareClass: string;
+    currency: string;
+    numberOfShares: number;
+    parValue?: Decimal | null;
+    totalValue: Decimal;
+    isPaidUp: boolean;
+    isTreasury: boolean;
+  }>;
+  auditor?: {
+    name: string;
+    address?: string | null;
+    appointmentDate?: Date | null;
+  } | null;
   _count?: {
     documents: number;
     officers: number;
