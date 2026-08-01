@@ -2401,6 +2401,13 @@ function extractFieldValue(field: unknown): { value: string; confidence: number 
   return { value: String(field), confidence: 0.8 };
 }
 
+function normalizeExtractedLineNo(field: unknown, fallback: number): number {
+  const extracted = extractFieldValue(field);
+  const parsed = extracted ? Number(extracted.value) : Number.NaN;
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 export function mapCounterpartyIdentityDraft(
   data: Record<string, unknown>,
   _pages: { pageNumber: number; storageKey: string | null; imageFingerprint: string | null }[] = [],
@@ -2536,7 +2543,7 @@ function mapLineItemsFromAIData(
     }
 
     return {
-      lineNo: (item.lineNo as number) || idx + 1,
+      lineNo: normalizeExtractedLineNo(item.lineNo, idx + 1),
       description: {
         value: descField?.value || 'Unknown',
         confidence: descField?.confidence || 0.9,
@@ -2678,7 +2685,7 @@ function normalizeHeaderAmountsFromLineItems(result: FieldExtractionResult): Fie
 /**
  * Map AI response to FieldExtractionResult format
  */
-function mapAIResponseToResult(
+export function mapAIResponseToResult(
   data: Record<string, unknown>,
   pages: { pageNumber: number; storageKey: string | null; imageFingerprint: string | null }[]
 ): FieldExtractionResult {
@@ -2854,7 +2861,7 @@ function mapAIResponseToResult(
     }
 
     return {
-      lineNo: (item.lineNo as number) || idx + 1,
+      lineNo: normalizeExtractedLineNo(item.lineNo, idx + 1),
       description: {
         value: descField?.value || 'Unknown',
         confidence: descField?.confidence || 0.9,

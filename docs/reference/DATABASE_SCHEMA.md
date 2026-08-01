@@ -2613,6 +2613,45 @@ partial version, expanded legal wording, service placeholder definitions, and
 nested dependency versions. Decimal fee amounts are returned by APIs as
 fixed-point strings.
 
+### Operational Client Services and activation
+
+| Table | Purpose | Key constraints |
+|---|---|---|
+| `client_services` | Editable operational service for one agreement item and company | Unique `(agreement_item_id, company_id)`; tenant/company/status/archive index |
+| `client_service_fee_lines` | Entity-owned operational fee rows | Parent/source-fee uniqueness and tenant/parent/display-order index |
+
+`ClientServiceStatus` is `ACTIVE`, `PAUSED`, or `ENDED`. Operational edits are
+audited and never update agreement snapshots or generated/signed documents.
+Legal SOW content remains only on `service_agreement_items`.
+
+`ServiceAgreementActivationStatus` moves through `NOT_READY`, `PENDING`,
+`PROCESSING`, `COMPLETED`, `FAILED_RETRYABLE`, and `FAILED_PERMANENT`.
+Availability, a unique claim token, and claim/lease timestamps support
+overlapping scheduler instances and stale-worker recovery. Partial PostgreSQL
+indexes cover available pending/retryable rows and expired processing leases.
+These predicate-specific indexes are migration-managed because Prisma schema
+declarations cannot represent their `WHERE` clauses:
+`service_agreements_activation_available_claim_idx` covers
+`(activation_available_at, id)` for `PENDING`/`FAILED_RETRYABLE` rows, and
+`service_agreements_activation_expired_lease_idx` covers
+`(activation_lease_expires_at, id)` for `PROCESSING` rows. Do not add equivalent
+full `@@index` declarations to `schema.prisma`.
+Attempt count, public-safe last error with correlation reference,
+source, requester, and reason retain recovery and audit context. E-signing uses
+source `ESIGNING`; externally signed agreements use `MANUAL` with explicit
+signed/effective dates.
+
+Operational Service updates require the caller's last observed `updated_at`.
+The service performs a compare-and-set before replacing fee rows and returns
+HTTP 409 on a stale version. Service mutations and audit rows share the same
+serializable transaction; audit summaries contain scalar old/new values and
+fee counts/totals, while field values and signed wording remain redacted.
+
+Backup restore order is partials, service families, variants, fee templates,
+generated documents, agreement header/entities/items/item-entity links/fees,
+Client Services, then Client Service fees. Tenant cleanup uses the reverse
+child-first order.
+
 ### Status And Lifecycle Rules
 
 - Derived task lifecycle: `NOT_STARTED → IN_PROGRESS → COMPLETED`.

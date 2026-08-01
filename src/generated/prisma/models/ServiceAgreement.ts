@@ -28,10 +28,12 @@ export type AggregateServiceAgreement = {
 
 export type ServiceAgreementAvgAggregateOutputType = {
   termMonths: number | null
+  activationAttemptCount: number | null
 }
 
 export type ServiceAgreementSumAggregateOutputType = {
   termMonths: number | null
+  activationAttemptCount: number | null
 }
 
 export type ServiceAgreementMinAggregateOutputType = {
@@ -46,6 +48,16 @@ export type ServiceAgreementMinAggregateOutputType = {
   status: $Enums.ServiceAgreementStatus | null
   signedAt: Date | null
   activatedAt: Date | null
+  activationStatus: $Enums.ServiceAgreementActivationStatus | null
+  activationSource: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount: number | null
+  activationAvailableAt: Date | null
+  activationClaimedAt: Date | null
+  activationLeaseExpiresAt: Date | null
+  activationClaimToken: string | null
+  activationLastError: string | null
+  activationRequestedById: string | null
+  activationReason: string | null
   cancelledAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -63,6 +75,16 @@ export type ServiceAgreementMaxAggregateOutputType = {
   status: $Enums.ServiceAgreementStatus | null
   signedAt: Date | null
   activatedAt: Date | null
+  activationStatus: $Enums.ServiceAgreementActivationStatus | null
+  activationSource: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount: number | null
+  activationAvailableAt: Date | null
+  activationClaimedAt: Date | null
+  activationLeaseExpiresAt: Date | null
+  activationClaimToken: string | null
+  activationLastError: string | null
+  activationRequestedById: string | null
+  activationReason: string | null
   cancelledAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -81,6 +103,16 @@ export type ServiceAgreementCountAggregateOutputType = {
   status: number
   signedAt: number
   activatedAt: number
+  activationStatus: number
+  activationSource: number
+  activationAttemptCount: number
+  activationAvailableAt: number
+  activationClaimedAt: number
+  activationLeaseExpiresAt: number
+  activationClaimToken: number
+  activationLastError: number
+  activationRequestedById: number
+  activationReason: number
   cancelledAt: number
   createdAt: number
   updatedAt: number
@@ -90,10 +122,12 @@ export type ServiceAgreementCountAggregateOutputType = {
 
 export type ServiceAgreementAvgAggregateInputType = {
   termMonths?: true
+  activationAttemptCount?: true
 }
 
 export type ServiceAgreementSumAggregateInputType = {
   termMonths?: true
+  activationAttemptCount?: true
 }
 
 export type ServiceAgreementMinAggregateInputType = {
@@ -108,6 +142,16 @@ export type ServiceAgreementMinAggregateInputType = {
   status?: true
   signedAt?: true
   activatedAt?: true
+  activationStatus?: true
+  activationSource?: true
+  activationAttemptCount?: true
+  activationAvailableAt?: true
+  activationClaimedAt?: true
+  activationLeaseExpiresAt?: true
+  activationClaimToken?: true
+  activationLastError?: true
+  activationRequestedById?: true
+  activationReason?: true
   cancelledAt?: true
   createdAt?: true
   updatedAt?: true
@@ -125,6 +169,16 @@ export type ServiceAgreementMaxAggregateInputType = {
   status?: true
   signedAt?: true
   activatedAt?: true
+  activationStatus?: true
+  activationSource?: true
+  activationAttemptCount?: true
+  activationAvailableAt?: true
+  activationClaimedAt?: true
+  activationLeaseExpiresAt?: true
+  activationClaimToken?: true
+  activationLastError?: true
+  activationRequestedById?: true
+  activationReason?: true
   cancelledAt?: true
   createdAt?: true
   updatedAt?: true
@@ -143,6 +197,16 @@ export type ServiceAgreementCountAggregateInputType = {
   status?: true
   signedAt?: true
   activatedAt?: true
+  activationStatus?: true
+  activationSource?: true
+  activationAttemptCount?: true
+  activationAvailableAt?: true
+  activationClaimedAt?: true
+  activationLeaseExpiresAt?: true
+  activationClaimToken?: true
+  activationLastError?: true
+  activationRequestedById?: true
+  activationReason?: true
   cancelledAt?: true
   createdAt?: true
   updatedAt?: true
@@ -248,6 +312,16 @@ export type ServiceAgreementGroupByOutputType = {
   status: $Enums.ServiceAgreementStatus
   signedAt: Date | null
   activatedAt: Date | null
+  activationStatus: $Enums.ServiceAgreementActivationStatus
+  activationSource: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount: number
+  activationAvailableAt: Date | null
+  activationClaimedAt: Date | null
+  activationLeaseExpiresAt: Date | null
+  activationClaimToken: string | null
+  activationLastError: string | null
+  activationRequestedById: string | null
+  activationReason: string | null
   cancelledAt: Date | null
   createdAt: Date
   updatedAt: Date
@@ -289,6 +363,16 @@ export type ServiceAgreementWhereInput = {
   status?: Prisma.EnumServiceAgreementStatusFilter<"ServiceAgreement"> | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
   activatedAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFilter<"ServiceAgreement"> | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.EnumServiceAgreementActivationSourceNullableFilter<"ServiceAgreement"> | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFilter<"ServiceAgreement"> | number
+  activationAvailableAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationClaimedAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationLeaseExpiresAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationClaimToken?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
+  activationLastError?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
+  activationRequestedById?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
+  activationReason?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
   cancelledAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"ServiceAgreement"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ServiceAgreement"> | Date | string
@@ -296,8 +380,10 @@ export type ServiceAgreementWhereInput = {
   generatedDocument?: Prisma.XOR<Prisma.GeneratedDocumentScalarRelationFilter, Prisma.GeneratedDocumentWhereInput>
   primaryCompany?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   authorizedContact?: Prisma.XOR<Prisma.ContactNullableScalarRelationFilter, Prisma.ContactWhereInput> | null
+  activationRequestedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   entities?: Prisma.ServiceAgreementEntityListRelationFilter
   items?: Prisma.ServiceAgreementItemListRelationFilter
+  clientServices?: Prisma.ClientServiceListRelationFilter
 }
 
 export type ServiceAgreementOrderByWithRelationInput = {
@@ -313,6 +399,16 @@ export type ServiceAgreementOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   signedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   activatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationStatus?: Prisma.SortOrder
+  activationSource?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationAttemptCount?: Prisma.SortOrder
+  activationAvailableAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationClaimedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationLeaseExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationClaimToken?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationLastError?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationRequestedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationReason?: Prisma.SortOrderInput | Prisma.SortOrder
   cancelledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -320,8 +416,10 @@ export type ServiceAgreementOrderByWithRelationInput = {
   generatedDocument?: Prisma.GeneratedDocumentOrderByWithRelationInput
   primaryCompany?: Prisma.CompanyOrderByWithRelationInput
   authorizedContact?: Prisma.ContactOrderByWithRelationInput
+  activationRequestedBy?: Prisma.UserOrderByWithRelationInput
   entities?: Prisma.ServiceAgreementEntityOrderByRelationAggregateInput
   items?: Prisma.ServiceAgreementItemOrderByRelationAggregateInput
+  clientServices?: Prisma.ClientServiceOrderByRelationAggregateInput
 }
 
 export type ServiceAgreementWhereUniqueInput = Prisma.AtLeast<{
@@ -340,6 +438,16 @@ export type ServiceAgreementWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumServiceAgreementStatusFilter<"ServiceAgreement"> | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
   activatedAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFilter<"ServiceAgreement"> | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.EnumServiceAgreementActivationSourceNullableFilter<"ServiceAgreement"> | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFilter<"ServiceAgreement"> | number
+  activationAvailableAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationClaimedAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationLeaseExpiresAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationClaimToken?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
+  activationLastError?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
+  activationRequestedById?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
+  activationReason?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
   cancelledAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"ServiceAgreement"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ServiceAgreement"> | Date | string
@@ -347,8 +455,10 @@ export type ServiceAgreementWhereUniqueInput = Prisma.AtLeast<{
   generatedDocument?: Prisma.XOR<Prisma.GeneratedDocumentScalarRelationFilter, Prisma.GeneratedDocumentWhereInput>
   primaryCompany?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   authorizedContact?: Prisma.XOR<Prisma.ContactNullableScalarRelationFilter, Prisma.ContactWhereInput> | null
+  activationRequestedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   entities?: Prisma.ServiceAgreementEntityListRelationFilter
   items?: Prisma.ServiceAgreementItemListRelationFilter
+  clientServices?: Prisma.ClientServiceListRelationFilter
 }, "id" | "generatedDocumentId">
 
 export type ServiceAgreementOrderByWithAggregationInput = {
@@ -364,6 +474,16 @@ export type ServiceAgreementOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   signedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   activatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationStatus?: Prisma.SortOrder
+  activationSource?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationAttemptCount?: Prisma.SortOrder
+  activationAvailableAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationClaimedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationLeaseExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationClaimToken?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationLastError?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationRequestedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationReason?: Prisma.SortOrderInput | Prisma.SortOrder
   cancelledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -390,6 +510,16 @@ export type ServiceAgreementScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumServiceAgreementStatusWithAggregatesFilter<"ServiceAgreement"> | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ServiceAgreement"> | Date | string | null
   activatedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ServiceAgreement"> | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusWithAggregatesFilter<"ServiceAgreement"> | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.EnumServiceAgreementActivationSourceNullableWithAggregatesFilter<"ServiceAgreement"> | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntWithAggregatesFilter<"ServiceAgreement"> | number
+  activationAvailableAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ServiceAgreement"> | Date | string | null
+  activationClaimedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ServiceAgreement"> | Date | string | null
+  activationLeaseExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ServiceAgreement"> | Date | string | null
+  activationClaimToken?: Prisma.StringNullableWithAggregatesFilter<"ServiceAgreement"> | string | null
+  activationLastError?: Prisma.StringNullableWithAggregatesFilter<"ServiceAgreement"> | string | null
+  activationRequestedById?: Prisma.StringNullableWithAggregatesFilter<"ServiceAgreement"> | string | null
+  activationReason?: Prisma.StringNullableWithAggregatesFilter<"ServiceAgreement"> | string | null
   cancelledAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ServiceAgreement"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ServiceAgreement"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ServiceAgreement"> | Date | string
@@ -404,6 +534,15 @@ export type ServiceAgreementCreateInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -411,8 +550,10 @@ export type ServiceAgreementCreateInput = {
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
   authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
+  activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementUncheckedCreateInput = {
@@ -428,11 +569,22 @@ export type ServiceAgreementUncheckedCreateInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementUpdateInput = {
@@ -444,6 +596,15 @@ export type ServiceAgreementUpdateInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -451,8 +612,10 @@ export type ServiceAgreementUpdateInput = {
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
   authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
+  activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementUncheckedUpdateInput = {
@@ -468,11 +631,22 @@ export type ServiceAgreementUncheckedUpdateInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementCreateManyInput = {
@@ -488,6 +662,16 @@ export type ServiceAgreementCreateManyInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -502,6 +686,15 @@ export type ServiceAgreementUpdateManyMutationInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -520,6 +713,16 @@ export type ServiceAgreementUncheckedUpdateManyInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -553,6 +756,16 @@ export type ServiceAgreementCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   signedAt?: Prisma.SortOrder
   activatedAt?: Prisma.SortOrder
+  activationStatus?: Prisma.SortOrder
+  activationSource?: Prisma.SortOrder
+  activationAttemptCount?: Prisma.SortOrder
+  activationAvailableAt?: Prisma.SortOrder
+  activationClaimedAt?: Prisma.SortOrder
+  activationLeaseExpiresAt?: Prisma.SortOrder
+  activationClaimToken?: Prisma.SortOrder
+  activationLastError?: Prisma.SortOrder
+  activationRequestedById?: Prisma.SortOrder
+  activationReason?: Prisma.SortOrder
   cancelledAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -560,6 +773,7 @@ export type ServiceAgreementCountOrderByAggregateInput = {
 
 export type ServiceAgreementAvgOrderByAggregateInput = {
   termMonths?: Prisma.SortOrder
+  activationAttemptCount?: Prisma.SortOrder
 }
 
 export type ServiceAgreementMaxOrderByAggregateInput = {
@@ -574,6 +788,16 @@ export type ServiceAgreementMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   signedAt?: Prisma.SortOrder
   activatedAt?: Prisma.SortOrder
+  activationStatus?: Prisma.SortOrder
+  activationSource?: Prisma.SortOrder
+  activationAttemptCount?: Prisma.SortOrder
+  activationAvailableAt?: Prisma.SortOrder
+  activationClaimedAt?: Prisma.SortOrder
+  activationLeaseExpiresAt?: Prisma.SortOrder
+  activationClaimToken?: Prisma.SortOrder
+  activationLastError?: Prisma.SortOrder
+  activationRequestedById?: Prisma.SortOrder
+  activationReason?: Prisma.SortOrder
   cancelledAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -591,6 +815,16 @@ export type ServiceAgreementMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   signedAt?: Prisma.SortOrder
   activatedAt?: Prisma.SortOrder
+  activationStatus?: Prisma.SortOrder
+  activationSource?: Prisma.SortOrder
+  activationAttemptCount?: Prisma.SortOrder
+  activationAvailableAt?: Prisma.SortOrder
+  activationClaimedAt?: Prisma.SortOrder
+  activationLeaseExpiresAt?: Prisma.SortOrder
+  activationClaimToken?: Prisma.SortOrder
+  activationLastError?: Prisma.SortOrder
+  activationRequestedById?: Prisma.SortOrder
+  activationReason?: Prisma.SortOrder
   cancelledAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -598,6 +832,7 @@ export type ServiceAgreementMinOrderByAggregateInput = {
 
 export type ServiceAgreementSumOrderByAggregateInput = {
   termMonths?: Prisma.SortOrder
+  activationAttemptCount?: Prisma.SortOrder
 }
 
 export type ServiceAgreementScalarRelationFilter = {
@@ -644,6 +879,48 @@ export type ServiceAgreementUncheckedUpdateManyWithoutTenantNestedInput = {
   connect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
   update?: Prisma.ServiceAgreementUpdateWithWhereUniqueWithoutTenantInput | Prisma.ServiceAgreementUpdateWithWhereUniqueWithoutTenantInput[]
   updateMany?: Prisma.ServiceAgreementUpdateManyWithWhereWithoutTenantInput | Prisma.ServiceAgreementUpdateManyWithWhereWithoutTenantInput[]
+  deleteMany?: Prisma.ServiceAgreementScalarWhereInput | Prisma.ServiceAgreementScalarWhereInput[]
+}
+
+export type ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput = {
+  create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutActivationRequestedByInput, Prisma.ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput> | Prisma.ServiceAgreementCreateWithoutActivationRequestedByInput[] | Prisma.ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput[]
+  connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutActivationRequestedByInput | Prisma.ServiceAgreementCreateOrConnectWithoutActivationRequestedByInput[]
+  createMany?: Prisma.ServiceAgreementCreateManyActivationRequestedByInputEnvelope
+  connect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
+}
+
+export type ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput = {
+  create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutActivationRequestedByInput, Prisma.ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput> | Prisma.ServiceAgreementCreateWithoutActivationRequestedByInput[] | Prisma.ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput[]
+  connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutActivationRequestedByInput | Prisma.ServiceAgreementCreateOrConnectWithoutActivationRequestedByInput[]
+  createMany?: Prisma.ServiceAgreementCreateManyActivationRequestedByInputEnvelope
+  connect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
+}
+
+export type ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput = {
+  create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutActivationRequestedByInput, Prisma.ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput> | Prisma.ServiceAgreementCreateWithoutActivationRequestedByInput[] | Prisma.ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput[]
+  connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutActivationRequestedByInput | Prisma.ServiceAgreementCreateOrConnectWithoutActivationRequestedByInput[]
+  upsert?: Prisma.ServiceAgreementUpsertWithWhereUniqueWithoutActivationRequestedByInput | Prisma.ServiceAgreementUpsertWithWhereUniqueWithoutActivationRequestedByInput[]
+  createMany?: Prisma.ServiceAgreementCreateManyActivationRequestedByInputEnvelope
+  set?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
+  disconnect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
+  delete?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
+  connect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
+  update?: Prisma.ServiceAgreementUpdateWithWhereUniqueWithoutActivationRequestedByInput | Prisma.ServiceAgreementUpdateWithWhereUniqueWithoutActivationRequestedByInput[]
+  updateMany?: Prisma.ServiceAgreementUpdateManyWithWhereWithoutActivationRequestedByInput | Prisma.ServiceAgreementUpdateManyWithWhereWithoutActivationRequestedByInput[]
+  deleteMany?: Prisma.ServiceAgreementScalarWhereInput | Prisma.ServiceAgreementScalarWhereInput[]
+}
+
+export type ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput = {
+  create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutActivationRequestedByInput, Prisma.ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput> | Prisma.ServiceAgreementCreateWithoutActivationRequestedByInput[] | Prisma.ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput[]
+  connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutActivationRequestedByInput | Prisma.ServiceAgreementCreateOrConnectWithoutActivationRequestedByInput[]
+  upsert?: Prisma.ServiceAgreementUpsertWithWhereUniqueWithoutActivationRequestedByInput | Prisma.ServiceAgreementUpsertWithWhereUniqueWithoutActivationRequestedByInput[]
+  createMany?: Prisma.ServiceAgreementCreateManyActivationRequestedByInputEnvelope
+  set?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
+  disconnect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
+  delete?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
+  connect?: Prisma.ServiceAgreementWhereUniqueInput | Prisma.ServiceAgreementWhereUniqueInput[]
+  update?: Prisma.ServiceAgreementUpdateWithWhereUniqueWithoutActivationRequestedByInput | Prisma.ServiceAgreementUpdateWithWhereUniqueWithoutActivationRequestedByInput[]
+  updateMany?: Prisma.ServiceAgreementUpdateManyWithWhereWithoutActivationRequestedByInput | Prisma.ServiceAgreementUpdateManyWithWhereWithoutActivationRequestedByInput[]
   deleteMany?: Prisma.ServiceAgreementScalarWhereInput | Prisma.ServiceAgreementScalarWhereInput[]
 }
 
@@ -767,6 +1044,14 @@ export type EnumServiceAgreementStatusFieldUpdateOperationsInput = {
   set?: $Enums.ServiceAgreementStatus
 }
 
+export type EnumServiceAgreementActivationStatusFieldUpdateOperationsInput = {
+  set?: $Enums.ServiceAgreementActivationStatus
+}
+
+export type NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput = {
+  set?: $Enums.ServiceAgreementActivationSource | null
+}
+
 export type ServiceAgreementCreateNestedOneWithoutEntitiesInput = {
   create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutEntitiesInput, Prisma.ServiceAgreementUncheckedCreateWithoutEntitiesInput>
   connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutEntitiesInput
@@ -795,6 +1080,20 @@ export type ServiceAgreementUpdateOneRequiredWithoutItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ServiceAgreementUpdateToOneWithWhereWithoutItemsInput, Prisma.ServiceAgreementUpdateWithoutItemsInput>, Prisma.ServiceAgreementUncheckedUpdateWithoutItemsInput>
 }
 
+export type ServiceAgreementCreateNestedOneWithoutClientServicesInput = {
+  create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutClientServicesInput, Prisma.ServiceAgreementUncheckedCreateWithoutClientServicesInput>
+  connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutClientServicesInput
+  connect?: Prisma.ServiceAgreementWhereUniqueInput
+}
+
+export type ServiceAgreementUpdateOneRequiredWithoutClientServicesNestedInput = {
+  create?: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutClientServicesInput, Prisma.ServiceAgreementUncheckedCreateWithoutClientServicesInput>
+  connectOrCreate?: Prisma.ServiceAgreementCreateOrConnectWithoutClientServicesInput
+  upsert?: Prisma.ServiceAgreementUpsertWithoutClientServicesInput
+  connect?: Prisma.ServiceAgreementWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ServiceAgreementUpdateToOneWithWhereWithoutClientServicesInput, Prisma.ServiceAgreementUpdateWithoutClientServicesInput>, Prisma.ServiceAgreementUncheckedUpdateWithoutClientServicesInput>
+}
+
 export type ServiceAgreementCreateWithoutTenantInput = {
   id?: string
   authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -804,14 +1103,25 @@ export type ServiceAgreementCreateWithoutTenantInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
   authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
+  activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementUncheckedCreateWithoutTenantInput = {
@@ -826,11 +1136,22 @@ export type ServiceAgreementUncheckedCreateWithoutTenantInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementCreateOrConnectWithoutTenantInput = {
@@ -875,9 +1196,105 @@ export type ServiceAgreementScalarWhereInput = {
   status?: Prisma.EnumServiceAgreementStatusFilter<"ServiceAgreement"> | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
   activatedAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFilter<"ServiceAgreement"> | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.EnumServiceAgreementActivationSourceNullableFilter<"ServiceAgreement"> | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFilter<"ServiceAgreement"> | number
+  activationAvailableAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationClaimedAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationLeaseExpiresAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
+  activationClaimToken?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
+  activationLastError?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
+  activationRequestedById?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
+  activationReason?: Prisma.StringNullableFilter<"ServiceAgreement"> | string | null
   cancelledAt?: Prisma.DateTimeNullableFilter<"ServiceAgreement"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"ServiceAgreement"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ServiceAgreement"> | Date | string
+}
+
+export type ServiceAgreementCreateWithoutActivationRequestedByInput = {
+  id?: string
+  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  agreementDate: Date | string
+  effectiveDate?: Date | string | null
+  termMonths?: number
+  status?: $Enums.ServiceAgreementStatus
+  signedAt?: Date | string | null
+  activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationReason?: string | null
+  cancelledAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
+  generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
+  primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
+  authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
+  entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
+  items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
+}
+
+export type ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput = {
+  id?: string
+  tenantId: string
+  generatedDocumentId: string
+  primaryCompanyId: string
+  authorizedContactId?: string | null
+  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  agreementDate: Date | string
+  effectiveDate?: Date | string | null
+  termMonths?: number
+  status?: $Enums.ServiceAgreementStatus
+  signedAt?: Date | string | null
+  activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationReason?: string | null
+  cancelledAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  entities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutAgreementInput
+  items?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutAgreementInput
+}
+
+export type ServiceAgreementCreateOrConnectWithoutActivationRequestedByInput = {
+  where: Prisma.ServiceAgreementWhereUniqueInput
+  create: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutActivationRequestedByInput, Prisma.ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput>
+}
+
+export type ServiceAgreementCreateManyActivationRequestedByInputEnvelope = {
+  data: Prisma.ServiceAgreementCreateManyActivationRequestedByInput | Prisma.ServiceAgreementCreateManyActivationRequestedByInput[]
+  skipDuplicates?: boolean
+}
+
+export type ServiceAgreementUpsertWithWhereUniqueWithoutActivationRequestedByInput = {
+  where: Prisma.ServiceAgreementWhereUniqueInput
+  update: Prisma.XOR<Prisma.ServiceAgreementUpdateWithoutActivationRequestedByInput, Prisma.ServiceAgreementUncheckedUpdateWithoutActivationRequestedByInput>
+  create: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutActivationRequestedByInput, Prisma.ServiceAgreementUncheckedCreateWithoutActivationRequestedByInput>
+}
+
+export type ServiceAgreementUpdateWithWhereUniqueWithoutActivationRequestedByInput = {
+  where: Prisma.ServiceAgreementWhereUniqueInput
+  data: Prisma.XOR<Prisma.ServiceAgreementUpdateWithoutActivationRequestedByInput, Prisma.ServiceAgreementUncheckedUpdateWithoutActivationRequestedByInput>
+}
+
+export type ServiceAgreementUpdateManyWithWhereWithoutActivationRequestedByInput = {
+  where: Prisma.ServiceAgreementScalarWhereInput
+  data: Prisma.XOR<Prisma.ServiceAgreementUpdateManyMutationInput, Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByInput>
 }
 
 export type ServiceAgreementCreateWithoutPrimaryCompanyInput = {
@@ -889,14 +1306,25 @@ export type ServiceAgreementCreateWithoutPrimaryCompanyInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
+  activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementUncheckedCreateWithoutPrimaryCompanyInput = {
@@ -911,11 +1339,22 @@ export type ServiceAgreementUncheckedCreateWithoutPrimaryCompanyInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementCreateOrConnectWithoutPrimaryCompanyInput = {
@@ -953,14 +1392,25 @@ export type ServiceAgreementCreateWithoutAuthorizedContactInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
+  activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput = {
@@ -975,11 +1425,22 @@ export type ServiceAgreementUncheckedCreateWithoutAuthorizedContactInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementCreateOrConnectWithoutAuthorizedContactInput = {
@@ -1017,14 +1478,25 @@ export type ServiceAgreementCreateWithoutGeneratedDocumentInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
   authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
+  activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementUncheckedCreateWithoutGeneratedDocumentInput = {
@@ -1039,11 +1511,22 @@ export type ServiceAgreementUncheckedCreateWithoutGeneratedDocumentInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutAgreementInput
   items?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementCreateOrConnectWithoutGeneratedDocumentInput = {
@@ -1071,14 +1554,25 @@ export type ServiceAgreementUpdateWithoutGeneratedDocumentInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
   authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
+  activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementUncheckedUpdateWithoutGeneratedDocumentInput = {
@@ -1093,11 +1587,22 @@ export type ServiceAgreementUncheckedUpdateWithoutGeneratedDocumentInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementCreateWithoutEntitiesInput = {
@@ -1109,6 +1614,15 @@ export type ServiceAgreementCreateWithoutEntitiesInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1116,7 +1630,9 @@ export type ServiceAgreementCreateWithoutEntitiesInput = {
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
   authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
+  activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementUncheckedCreateWithoutEntitiesInput = {
@@ -1132,10 +1648,21 @@ export type ServiceAgreementUncheckedCreateWithoutEntitiesInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementCreateOrConnectWithoutEntitiesInput = {
@@ -1163,6 +1690,15 @@ export type ServiceAgreementUpdateWithoutEntitiesInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1170,7 +1706,9 @@ export type ServiceAgreementUpdateWithoutEntitiesInput = {
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
   authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
+  activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementUncheckedUpdateWithoutEntitiesInput = {
@@ -1186,10 +1724,21 @@ export type ServiceAgreementUncheckedUpdateWithoutEntitiesInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementCreateWithoutItemsInput = {
@@ -1201,6 +1750,15 @@ export type ServiceAgreementCreateWithoutItemsInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1208,7 +1766,9 @@ export type ServiceAgreementCreateWithoutItemsInput = {
   generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
   primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
   authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
+  activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
   entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementUncheckedCreateWithoutItemsInput = {
@@ -1224,10 +1784,21 @@ export type ServiceAgreementUncheckedCreateWithoutItemsInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutAgreementInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutAgreementInput
 }
 
 export type ServiceAgreementCreateOrConnectWithoutItemsInput = {
@@ -1255,6 +1826,15 @@ export type ServiceAgreementUpdateWithoutItemsInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1262,7 +1842,9 @@ export type ServiceAgreementUpdateWithoutItemsInput = {
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
   authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
+  activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementUncheckedUpdateWithoutItemsInput = {
@@ -1278,10 +1860,157 @@ export type ServiceAgreementUncheckedUpdateWithoutItemsInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutAgreementNestedInput
+}
+
+export type ServiceAgreementCreateWithoutClientServicesInput = {
+  id?: string
+  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  agreementDate: Date | string
+  effectiveDate?: Date | string | null
+  termMonths?: number
+  status?: $Enums.ServiceAgreementStatus
+  signedAt?: Date | string | null
+  activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationReason?: string | null
+  cancelledAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementsInput
+  generatedDocument: Prisma.GeneratedDocumentCreateNestedOneWithoutServiceAgreementInput
+  primaryCompany: Prisma.CompanyCreateNestedOneWithoutPrimaryServiceAgreementsInput
+  authorizedContact?: Prisma.ContactCreateNestedOneWithoutAuthorizedServiceAgreementsInput
+  activationRequestedBy?: Prisma.UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput
+  entities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutAgreementInput
+  items?: Prisma.ServiceAgreementItemCreateNestedManyWithoutAgreementInput
+}
+
+export type ServiceAgreementUncheckedCreateWithoutClientServicesInput = {
+  id?: string
+  tenantId: string
+  generatedDocumentId: string
+  primaryCompanyId: string
+  authorizedContactId?: string | null
+  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  agreementDate: Date | string
+  effectiveDate?: Date | string | null
+  termMonths?: number
+  status?: $Enums.ServiceAgreementStatus
+  signedAt?: Date | string | null
+  activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
+  cancelledAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  entities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutAgreementInput
+  items?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutAgreementInput
+}
+
+export type ServiceAgreementCreateOrConnectWithoutClientServicesInput = {
+  where: Prisma.ServiceAgreementWhereUniqueInput
+  create: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutClientServicesInput, Prisma.ServiceAgreementUncheckedCreateWithoutClientServicesInput>
+}
+
+export type ServiceAgreementUpsertWithoutClientServicesInput = {
+  update: Prisma.XOR<Prisma.ServiceAgreementUpdateWithoutClientServicesInput, Prisma.ServiceAgreementUncheckedUpdateWithoutClientServicesInput>
+  create: Prisma.XOR<Prisma.ServiceAgreementCreateWithoutClientServicesInput, Prisma.ServiceAgreementUncheckedCreateWithoutClientServicesInput>
+  where?: Prisma.ServiceAgreementWhereInput
+}
+
+export type ServiceAgreementUpdateToOneWithWhereWithoutClientServicesInput = {
+  where?: Prisma.ServiceAgreementWhereInput
+  data: Prisma.XOR<Prisma.ServiceAgreementUpdateWithoutClientServicesInput, Prisma.ServiceAgreementUncheckedUpdateWithoutClientServicesInput>
+}
+
+export type ServiceAgreementUpdateWithoutClientServicesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termMonths?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
+  generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
+  primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
+  authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
+  activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
+  entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
+  items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
+}
+
+export type ServiceAgreementUncheckedUpdateWithoutClientServicesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
+  primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
+  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termMonths?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  entities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutAgreementNestedInput
+  items?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementCreateManyTenantInput = {
@@ -1296,6 +2025,16 @@ export type ServiceAgreementCreateManyTenantInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1310,14 +2049,25 @@ export type ServiceAgreementUpdateWithoutTenantInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
   authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
+  activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementUncheckedUpdateWithoutTenantInput = {
@@ -1332,11 +2082,22 @@ export type ServiceAgreementUncheckedUpdateWithoutTenantInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementUncheckedUpdateManyWithoutTenantInput = {
@@ -1351,6 +2112,130 @@ export type ServiceAgreementUncheckedUpdateManyWithoutTenantInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ServiceAgreementCreateManyActivationRequestedByInput = {
+  id?: string
+  tenantId: string
+  generatedDocumentId: string
+  primaryCompanyId: string
+  authorizedContactId?: string | null
+  authorizedRepresentativeSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  agreementDate: Date | string
+  effectiveDate?: Date | string | null
+  termMonths?: number
+  status?: $Enums.ServiceAgreementStatus
+  signedAt?: Date | string | null
+  activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationReason?: string | null
+  cancelledAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type ServiceAgreementUpdateWithoutActivationRequestedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termMonths?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
+  generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
+  primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
+  authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
+  entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
+  items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
+}
+
+export type ServiceAgreementUncheckedUpdateWithoutActivationRequestedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
+  primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
+  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termMonths?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  entities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutAgreementNestedInput
+  items?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutAgreementNestedInput
+}
+
+export type ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  generatedDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
+  primaryCompanyId?: Prisma.StringFieldUpdateOperationsInput | string
+  authorizedContactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authorizedRepresentativeSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  agreementDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  termMonths?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
+  signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1368,6 +2253,16 @@ export type ServiceAgreementCreateManyPrimaryCompanyInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1382,14 +2277,25 @@ export type ServiceAgreementUpdateWithoutPrimaryCompanyInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   authorizedContact?: Prisma.ContactUpdateOneWithoutAuthorizedServiceAgreementsNestedInput
+  activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementUncheckedUpdateWithoutPrimaryCompanyInput = {
@@ -1404,11 +2310,22 @@ export type ServiceAgreementUncheckedUpdateWithoutPrimaryCompanyInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyInput = {
@@ -1423,6 +2340,16 @@ export type ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1440,6 +2367,16 @@ export type ServiceAgreementCreateManyAuthorizedContactInput = {
   status?: $Enums.ServiceAgreementStatus
   signedAt?: Date | string | null
   activatedAt?: Date | string | null
+  activationStatus?: $Enums.ServiceAgreementActivationStatus
+  activationSource?: $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: number
+  activationAvailableAt?: Date | string | null
+  activationClaimedAt?: Date | string | null
+  activationLeaseExpiresAt?: Date | string | null
+  activationClaimToken?: string | null
+  activationLastError?: string | null
+  activationRequestedById?: string | null
+  activationReason?: string | null
   cancelledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1454,14 +2391,25 @@ export type ServiceAgreementUpdateWithoutAuthorizedContactInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementsNestedInput
   generatedDocument?: Prisma.GeneratedDocumentUpdateOneRequiredWithoutServiceAgreementNestedInput
   primaryCompany?: Prisma.CompanyUpdateOneRequiredWithoutPrimaryServiceAgreementsNestedInput
+  activationRequestedBy?: Prisma.UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput
   entities?: Prisma.ServiceAgreementEntityUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementUncheckedUpdateWithoutAuthorizedContactInput = {
@@ -1476,11 +2424,22 @@ export type ServiceAgreementUncheckedUpdateWithoutAuthorizedContactInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutAgreementNestedInput
   items?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutAgreementNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutAgreementNestedInput
 }
 
 export type ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactInput = {
@@ -1495,6 +2454,16 @@ export type ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactInput = {
   status?: Prisma.EnumServiceAgreementStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementStatus
   signedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationStatus?: Prisma.EnumServiceAgreementActivationStatusFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationStatus
+  activationSource?: Prisma.NullableEnumServiceAgreementActivationSourceFieldUpdateOperationsInput | $Enums.ServiceAgreementActivationSource | null
+  activationAttemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activationAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationLeaseExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activationClaimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationLastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationRequestedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1508,11 +2477,13 @@ export type ServiceAgreementUncheckedUpdateManyWithoutAuthorizedContactInput = {
 export type ServiceAgreementCountOutputType = {
   entities: number
   items: number
+  clientServices: number
 }
 
 export type ServiceAgreementCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   entities?: boolean | ServiceAgreementCountOutputTypeCountEntitiesArgs
   items?: boolean | ServiceAgreementCountOutputTypeCountItemsArgs
+  clientServices?: boolean | ServiceAgreementCountOutputTypeCountClientServicesArgs
 }
 
 /**
@@ -1539,6 +2510,13 @@ export type ServiceAgreementCountOutputTypeCountItemsArgs<ExtArgs extends runtim
   where?: Prisma.ServiceAgreementItemWhereInput
 }
 
+/**
+ * ServiceAgreementCountOutputType without action
+ */
+export type ServiceAgreementCountOutputTypeCountClientServicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ClientServiceWhereInput
+}
+
 
 export type ServiceAgreementSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1553,6 +2531,16 @@ export type ServiceAgreementSelect<ExtArgs extends runtime.Types.Extensions.Inte
   status?: boolean
   signedAt?: boolean
   activatedAt?: boolean
+  activationStatus?: boolean
+  activationSource?: boolean
+  activationAttemptCount?: boolean
+  activationAvailableAt?: boolean
+  activationClaimedAt?: boolean
+  activationLeaseExpiresAt?: boolean
+  activationClaimToken?: boolean
+  activationLastError?: boolean
+  activationRequestedById?: boolean
+  activationReason?: boolean
   cancelledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1560,8 +2548,10 @@ export type ServiceAgreementSelect<ExtArgs extends runtime.Types.Extensions.Inte
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
+  activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
   entities?: boolean | Prisma.ServiceAgreement$entitiesArgs<ExtArgs>
   items?: boolean | Prisma.ServiceAgreement$itemsArgs<ExtArgs>
+  clientServices?: boolean | Prisma.ServiceAgreement$clientServicesArgs<ExtArgs>
   _count?: boolean | Prisma.ServiceAgreementCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["serviceAgreement"]>
 
@@ -1578,6 +2568,16 @@ export type ServiceAgreementSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   status?: boolean
   signedAt?: boolean
   activatedAt?: boolean
+  activationStatus?: boolean
+  activationSource?: boolean
+  activationAttemptCount?: boolean
+  activationAvailableAt?: boolean
+  activationClaimedAt?: boolean
+  activationLeaseExpiresAt?: boolean
+  activationClaimToken?: boolean
+  activationLastError?: boolean
+  activationRequestedById?: boolean
+  activationReason?: boolean
   cancelledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1585,6 +2585,7 @@ export type ServiceAgreementSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
+  activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
 }, ExtArgs["result"]["serviceAgreement"]>
 
 export type ServiceAgreementSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1600,6 +2601,16 @@ export type ServiceAgreementSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   status?: boolean
   signedAt?: boolean
   activatedAt?: boolean
+  activationStatus?: boolean
+  activationSource?: boolean
+  activationAttemptCount?: boolean
+  activationAvailableAt?: boolean
+  activationClaimedAt?: boolean
+  activationLeaseExpiresAt?: boolean
+  activationClaimToken?: boolean
+  activationLastError?: boolean
+  activationRequestedById?: boolean
+  activationReason?: boolean
   cancelledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1607,6 +2618,7 @@ export type ServiceAgreementSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
+  activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
 }, ExtArgs["result"]["serviceAgreement"]>
 
 export type ServiceAgreementSelectScalar = {
@@ -1622,19 +2634,31 @@ export type ServiceAgreementSelectScalar = {
   status?: boolean
   signedAt?: boolean
   activatedAt?: boolean
+  activationStatus?: boolean
+  activationSource?: boolean
+  activationAttemptCount?: boolean
+  activationAvailableAt?: boolean
+  activationClaimedAt?: boolean
+  activationLeaseExpiresAt?: boolean
+  activationClaimToken?: boolean
+  activationLastError?: boolean
+  activationRequestedById?: boolean
+  activationReason?: boolean
   cancelledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ServiceAgreementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "generatedDocumentId" | "primaryCompanyId" | "authorizedContactId" | "authorizedRepresentativeSnapshot" | "agreementDate" | "effectiveDate" | "termMonths" | "status" | "signedAt" | "activatedAt" | "cancelledAt" | "createdAt" | "updatedAt", ExtArgs["result"]["serviceAgreement"]>
+export type ServiceAgreementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "generatedDocumentId" | "primaryCompanyId" | "authorizedContactId" | "authorizedRepresentativeSnapshot" | "agreementDate" | "effectiveDate" | "termMonths" | "status" | "signedAt" | "activatedAt" | "activationStatus" | "activationSource" | "activationAttemptCount" | "activationAvailableAt" | "activationClaimedAt" | "activationLeaseExpiresAt" | "activationClaimToken" | "activationLastError" | "activationRequestedById" | "activationReason" | "cancelledAt" | "createdAt" | "updatedAt", ExtArgs["result"]["serviceAgreement"]>
 export type ServiceAgreementInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
+  activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
   entities?: boolean | Prisma.ServiceAgreement$entitiesArgs<ExtArgs>
   items?: boolean | Prisma.ServiceAgreement$itemsArgs<ExtArgs>
+  clientServices?: boolean | Prisma.ServiceAgreement$clientServicesArgs<ExtArgs>
   _count?: boolean | Prisma.ServiceAgreementCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ServiceAgreementIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1642,12 +2666,14 @@ export type ServiceAgreementIncludeCreateManyAndReturn<ExtArgs extends runtime.T
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
+  activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
 }
 export type ServiceAgreementIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   generatedDocument?: boolean | Prisma.GeneratedDocumentDefaultArgs<ExtArgs>
   primaryCompany?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   authorizedContact?: boolean | Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>
+  activationRequestedBy?: boolean | Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>
 }
 
 export type $ServiceAgreementPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1657,8 +2683,10 @@ export type $ServiceAgreementPayload<ExtArgs extends runtime.Types.Extensions.In
     generatedDocument: Prisma.$GeneratedDocumentPayload<ExtArgs>
     primaryCompany: Prisma.$CompanyPayload<ExtArgs>
     authorizedContact: Prisma.$ContactPayload<ExtArgs> | null
+    activationRequestedBy: Prisma.$UserPayload<ExtArgs> | null
     entities: Prisma.$ServiceAgreementEntityPayload<ExtArgs>[]
     items: Prisma.$ServiceAgreementItemPayload<ExtArgs>[]
+    clientServices: Prisma.$ClientServicePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1673,6 +2701,16 @@ export type $ServiceAgreementPayload<ExtArgs extends runtime.Types.Extensions.In
     status: $Enums.ServiceAgreementStatus
     signedAt: Date | null
     activatedAt: Date | null
+    activationStatus: $Enums.ServiceAgreementActivationStatus
+    activationSource: $Enums.ServiceAgreementActivationSource | null
+    activationAttemptCount: number
+    activationAvailableAt: Date | null
+    activationClaimedAt: Date | null
+    activationLeaseExpiresAt: Date | null
+    activationClaimToken: string | null
+    activationLastError: string | null
+    activationRequestedById: string | null
+    activationReason: string | null
     cancelledAt: Date | null
     createdAt: Date
     updatedAt: Date
@@ -2074,8 +3112,10 @@ export interface Prisma__ServiceAgreementClient<T, Null = never, ExtArgs extends
   generatedDocument<T extends Prisma.GeneratedDocumentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GeneratedDocumentDefaultArgs<ExtArgs>>): Prisma.Prisma__GeneratedDocumentClient<runtime.Types.Result.GetResult<Prisma.$GeneratedDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   primaryCompany<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   authorizedContact<T extends Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreement$authorizedContactArgs<ExtArgs>>): Prisma.Prisma__ContactClient<runtime.Types.Result.GetResult<Prisma.$ContactPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  activationRequestedBy<T extends Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreement$activationRequestedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   entities<T extends Prisma.ServiceAgreement$entitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreement$entitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementEntityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   items<T extends Prisma.ServiceAgreement$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreement$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  clientServices<T extends Prisma.ServiceAgreement$clientServicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreement$clientServicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClientServicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2117,6 +3157,16 @@ export interface ServiceAgreementFieldRefs {
   readonly status: Prisma.FieldRef<"ServiceAgreement", 'ServiceAgreementStatus'>
   readonly signedAt: Prisma.FieldRef<"ServiceAgreement", 'DateTime'>
   readonly activatedAt: Prisma.FieldRef<"ServiceAgreement", 'DateTime'>
+  readonly activationStatus: Prisma.FieldRef<"ServiceAgreement", 'ServiceAgreementActivationStatus'>
+  readonly activationSource: Prisma.FieldRef<"ServiceAgreement", 'ServiceAgreementActivationSource'>
+  readonly activationAttemptCount: Prisma.FieldRef<"ServiceAgreement", 'Int'>
+  readonly activationAvailableAt: Prisma.FieldRef<"ServiceAgreement", 'DateTime'>
+  readonly activationClaimedAt: Prisma.FieldRef<"ServiceAgreement", 'DateTime'>
+  readonly activationLeaseExpiresAt: Prisma.FieldRef<"ServiceAgreement", 'DateTime'>
+  readonly activationClaimToken: Prisma.FieldRef<"ServiceAgreement", 'String'>
+  readonly activationLastError: Prisma.FieldRef<"ServiceAgreement", 'String'>
+  readonly activationRequestedById: Prisma.FieldRef<"ServiceAgreement", 'String'>
+  readonly activationReason: Prisma.FieldRef<"ServiceAgreement", 'String'>
   readonly cancelledAt: Prisma.FieldRef<"ServiceAgreement", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"ServiceAgreement", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ServiceAgreement", 'DateTime'>
@@ -2535,6 +3585,25 @@ export type ServiceAgreement$authorizedContactArgs<ExtArgs extends runtime.Types
 }
 
 /**
+ * ServiceAgreement.activationRequestedBy
+ */
+export type ServiceAgreement$activationRequestedByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
+}
+
+/**
  * ServiceAgreement.entities
  */
 export type ServiceAgreement$entitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2580,6 +3649,30 @@ export type ServiceAgreement$itemsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.ServiceAgreementItemScalarFieldEnum | Prisma.ServiceAgreementItemScalarFieldEnum[]
+}
+
+/**
+ * ServiceAgreement.clientServices
+ */
+export type ServiceAgreement$clientServicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ClientService
+   */
+  select?: Prisma.ClientServiceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ClientService
+   */
+  omit?: Prisma.ClientServiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ClientServiceInclude<ExtArgs> | null
+  where?: Prisma.ClientServiceWhereInput
+  orderBy?: Prisma.ClientServiceOrderByWithRelationInput | Prisma.ClientServiceOrderByWithRelationInput[]
+  cursor?: Prisma.ClientServiceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ClientServiceScalarFieldEnum | Prisma.ClientServiceScalarFieldEnum[]
 }
 
 /**

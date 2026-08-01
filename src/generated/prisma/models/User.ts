@@ -282,6 +282,7 @@ export type UserWhereInput = {
   tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   ownedTasks?: Prisma.TaskListRelationFilter
   assignedTaskStages?: Prisma.TaskStageListRelationFilter
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -320,6 +321,7 @@ export type UserOrderByWithRelationInput = {
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
   ownedTasks?: Prisma.TaskOrderByRelationAggregateInput
   assignedTaskStages?: Prisma.TaskStageOrderByRelationAggregateInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -361,6 +363,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   tenant?: Prisma.XOR<Prisma.WorkspaceNullableScalarRelationFilter, Prisma.WorkspaceWhereInput> | null
   ownedTasks?: Prisma.TaskListRelationFilter
   assignedTaskStages?: Prisma.TaskStageListRelationFilter
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementListRelationFilter
 }, "id" | "email" | "passwordResetToken">
 
 export type UserOrderByWithAggregationInput = {
@@ -440,6 +443,7 @@ export type UserCreateInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -477,6 +481,7 @@ export type UserUncheckedCreateInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUpdateInput = {
@@ -514,6 +519,7 @@ export type UserUpdateInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -551,6 +557,7 @@ export type UserUncheckedUpdateInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -930,6 +937,22 @@ export type UserUpdateOneRequiredWithoutCreatedPartialsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCreatedPartialsInput, Prisma.UserUpdateWithoutCreatedPartialsInput>, Prisma.UserUncheckedUpdateWithoutCreatedPartialsInput>
 }
 
+export type UserCreateNestedOneWithoutRequestedServiceAgreementActivationsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestedServiceAgreementActivationsInput, Prisma.UserUncheckedCreateWithoutRequestedServiceAgreementActivationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestedServiceAgreementActivationsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutRequestedServiceAgreementActivationsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRequestedServiceAgreementActivationsInput, Prisma.UserUncheckedCreateWithoutRequestedServiceAgreementActivationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRequestedServiceAgreementActivationsInput
+  upsert?: Prisma.UserUpsertWithoutRequestedServiceAgreementActivationsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRequestedServiceAgreementActivationsInput, Prisma.UserUpdateWithoutRequestedServiceAgreementActivationsInput>, Prisma.UserUncheckedUpdateWithoutRequestedServiceAgreementActivationsInput>
+}
+
 export type UserCreateNestedOneWithoutAiConversationsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutAiConversationsInput, Prisma.UserUncheckedCreateWithoutAiConversationsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutAiConversationsInput
@@ -1040,6 +1063,7 @@ export type UserCreateWithoutTenantInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutTenantInput = {
@@ -1076,6 +1100,7 @@ export type UserUncheckedCreateWithoutTenantInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutTenantInput = {
@@ -1159,6 +1184,7 @@ export type UserCreateWithoutRoleAssignmentsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutRoleAssignmentsInput = {
@@ -1195,6 +1221,7 @@ export type UserUncheckedCreateWithoutRoleAssignmentsInput = {
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutRoleAssignmentsInput = {
@@ -1247,6 +1274,7 @@ export type UserUpdateWithoutRoleAssignmentsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRoleAssignmentsInput = {
@@ -1283,6 +1311,7 @@ export type UserUncheckedUpdateWithoutRoleAssignmentsInput = {
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutPreferencesInput = {
@@ -1319,6 +1348,7 @@ export type UserCreateWithoutPreferencesInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutPreferencesInput = {
@@ -1355,6 +1385,7 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutPreferencesInput = {
@@ -1407,6 +1438,7 @@ export type UserUpdateWithoutPreferencesInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPreferencesInput = {
@@ -1443,6 +1475,7 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutCompanyAssignmentsInput = {
@@ -1479,6 +1512,7 @@ export type UserCreateWithoutCompanyAssignmentsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCompanyAssignmentsInput = {
@@ -1515,6 +1549,7 @@ export type UserUncheckedCreateWithoutCompanyAssignmentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCompanyAssignmentsInput = {
@@ -1567,6 +1602,7 @@ export type UserUpdateWithoutCompanyAssignmentsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCompanyAssignmentsInput = {
@@ -1603,6 +1639,7 @@ export type UserUncheckedUpdateWithoutCompanyAssignmentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutUploadedDocumentsInput = {
@@ -1639,6 +1676,7 @@ export type UserCreateWithoutUploadedDocumentsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutUploadedDocumentsInput = {
@@ -1675,6 +1713,7 @@ export type UserUncheckedCreateWithoutUploadedDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutUploadedDocumentsInput = {
@@ -1727,6 +1766,7 @@ export type UserUpdateWithoutUploadedDocumentsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUploadedDocumentsInput = {
@@ -1763,6 +1803,7 @@ export type UserUncheckedUpdateWithoutUploadedDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutAuditLogsInput = {
@@ -1799,6 +1840,7 @@ export type UserCreateWithoutAuditLogsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -1835,6 +1877,7 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -1887,6 +1930,7 @@ export type UserUpdateWithoutAuditLogsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -1923,6 +1967,7 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutConnectorUsageLogsInput = {
@@ -1959,6 +2004,7 @@ export type UserCreateWithoutConnectorUsageLogsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutConnectorUsageLogsInput = {
@@ -1995,6 +2041,7 @@ export type UserUncheckedCreateWithoutConnectorUsageLogsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutConnectorUsageLogsInput = {
@@ -2047,6 +2094,7 @@ export type UserUpdateWithoutConnectorUsageLogsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutConnectorUsageLogsInput = {
@@ -2083,6 +2131,7 @@ export type UserUncheckedUpdateWithoutConnectorUsageLogsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedTemplatesInput = {
@@ -2119,6 +2168,7 @@ export type UserCreateWithoutCreatedTemplatesInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedTemplatesInput = {
@@ -2155,6 +2205,7 @@ export type UserUncheckedCreateWithoutCreatedTemplatesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedTemplatesInput = {
@@ -2207,6 +2258,7 @@ export type UserUpdateWithoutCreatedTemplatesInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedTemplatesInput = {
@@ -2243,6 +2295,7 @@ export type UserUncheckedUpdateWithoutCreatedTemplatesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedDocumentsInput = {
@@ -2279,6 +2332,7 @@ export type UserCreateWithoutCreatedDocumentsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedDocumentsInput = {
@@ -2315,6 +2369,7 @@ export type UserUncheckedCreateWithoutCreatedDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedDocumentsInput = {
@@ -2356,6 +2411,7 @@ export type UserCreateWithoutFinalizedDocumentsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutFinalizedDocumentsInput = {
@@ -2392,6 +2448,7 @@ export type UserUncheckedCreateWithoutFinalizedDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutFinalizedDocumentsInput = {
@@ -2444,6 +2501,7 @@ export type UserUpdateWithoutCreatedDocumentsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedDocumentsInput = {
@@ -2480,6 +2538,7 @@ export type UserUncheckedUpdateWithoutCreatedDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUpsertWithoutFinalizedDocumentsInput = {
@@ -2527,6 +2586,7 @@ export type UserUpdateWithoutFinalizedDocumentsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFinalizedDocumentsInput = {
@@ -2563,6 +2623,7 @@ export type UserUncheckedUpdateWithoutFinalizedDocumentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutHiddenCommentsInput = {
@@ -2599,6 +2660,7 @@ export type UserCreateWithoutHiddenCommentsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutHiddenCommentsInput = {
@@ -2635,6 +2697,7 @@ export type UserUncheckedCreateWithoutHiddenCommentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutHiddenCommentsInput = {
@@ -2676,6 +2739,7 @@ export type UserCreateWithoutResolvedCommentsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutResolvedCommentsInput = {
@@ -2712,6 +2776,7 @@ export type UserUncheckedCreateWithoutResolvedCommentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutResolvedCommentsInput = {
@@ -2753,6 +2818,7 @@ export type UserCreateWithoutAuthoredCommentsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAuthoredCommentsInput = {
@@ -2789,6 +2855,7 @@ export type UserUncheckedCreateWithoutAuthoredCommentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAuthoredCommentsInput = {
@@ -2841,6 +2908,7 @@ export type UserUpdateWithoutHiddenCommentsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutHiddenCommentsInput = {
@@ -2877,6 +2945,7 @@ export type UserUncheckedUpdateWithoutHiddenCommentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUpsertWithoutResolvedCommentsInput = {
@@ -2924,6 +2993,7 @@ export type UserUpdateWithoutResolvedCommentsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutResolvedCommentsInput = {
@@ -2960,6 +3030,7 @@ export type UserUncheckedUpdateWithoutResolvedCommentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUpsertWithoutAuthoredCommentsInput = {
@@ -3007,6 +3078,7 @@ export type UserUpdateWithoutAuthoredCommentsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuthoredCommentsInput = {
@@ -3043,6 +3115,7 @@ export type UserUncheckedUpdateWithoutAuthoredCommentsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutDocumentDraftsInput = {
@@ -3079,6 +3152,7 @@ export type UserCreateWithoutDocumentDraftsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutDocumentDraftsInput = {
@@ -3115,6 +3189,7 @@ export type UserUncheckedCreateWithoutDocumentDraftsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutDocumentDraftsInput = {
@@ -3167,6 +3242,7 @@ export type UserUpdateWithoutDocumentDraftsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDocumentDraftsInput = {
@@ -3203,6 +3279,7 @@ export type UserUncheckedUpdateWithoutDocumentDraftsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedPartialsInput = {
@@ -3239,6 +3316,7 @@ export type UserCreateWithoutCreatedPartialsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedPartialsInput = {
@@ -3275,6 +3353,7 @@ export type UserUncheckedCreateWithoutCreatedPartialsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedPartialsInput = {
@@ -3327,6 +3406,7 @@ export type UserUpdateWithoutCreatedPartialsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedPartialsInput = {
@@ -3358,6 +3438,171 @@ export type UserUncheckedUpdateWithoutCreatedPartialsInput = {
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
   initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+}
+
+export type UserCreateWithoutRequestedServiceAgreementActivationsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+}
+
+export type UserUncheckedCreateWithoutRequestedServiceAgreementActivationsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+}
+
+export type UserCreateOrConnectWithoutRequestedServiceAgreementActivationsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestedServiceAgreementActivationsInput, Prisma.UserUncheckedCreateWithoutRequestedServiceAgreementActivationsInput>
+}
+
+export type UserUpsertWithoutRequestedServiceAgreementActivationsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRequestedServiceAgreementActivationsInput, Prisma.UserUncheckedUpdateWithoutRequestedServiceAgreementActivationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRequestedServiceAgreementActivationsInput, Prisma.UserUncheckedCreateWithoutRequestedServiceAgreementActivationsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRequestedServiceAgreementActivationsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRequestedServiceAgreementActivationsInput, Prisma.UserUncheckedUpdateWithoutRequestedServiceAgreementActivationsInput>
+}
+
+export type UserUpdateWithoutRequestedServiceAgreementActivationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRequestedServiceAgreementActivationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -3399,6 +3644,7 @@ export type UserCreateWithoutAiConversationsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAiConversationsInput = {
@@ -3435,6 +3681,7 @@ export type UserUncheckedCreateWithoutAiConversationsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAiConversationsInput = {
@@ -3487,6 +3734,7 @@ export type UserUpdateWithoutAiConversationsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAiConversationsInput = {
@@ -3523,6 +3771,7 @@ export type UserUncheckedUpdateWithoutAiConversationsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedEsigningEnvelopesInput = {
@@ -3559,6 +3808,7 @@ export type UserCreateWithoutCreatedEsigningEnvelopesInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedEsigningEnvelopesInput = {
@@ -3595,6 +3845,7 @@ export type UserUncheckedCreateWithoutCreatedEsigningEnvelopesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedEsigningEnvelopesInput = {
@@ -3647,6 +3898,7 @@ export type UserUpdateWithoutCreatedEsigningEnvelopesInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedEsigningEnvelopesInput = {
@@ -3683,6 +3935,7 @@ export type UserUncheckedUpdateWithoutCreatedEsigningEnvelopesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutOwnedTasksInput = {
@@ -3719,6 +3972,7 @@ export type UserCreateWithoutOwnedTasksInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutOwnedTasksInput = {
@@ -3755,6 +4009,7 @@ export type UserUncheckedCreateWithoutOwnedTasksInput = {
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutOwnedTasksInput = {
@@ -3807,6 +4062,7 @@ export type UserUpdateWithoutOwnedTasksInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOwnedTasksInput = {
@@ -3843,6 +4099,7 @@ export type UserUncheckedUpdateWithoutOwnedTasksInput = {
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutAssignedTaskStagesInput = {
@@ -3879,6 +4136,7 @@ export type UserCreateWithoutAssignedTaskStagesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAssignedTaskStagesInput = {
@@ -3915,6 +4173,7 @@ export type UserUncheckedCreateWithoutAssignedTaskStagesInput = {
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAssignedTaskStagesInput = {
@@ -3967,6 +4226,7 @@ export type UserUpdateWithoutAssignedTaskStagesInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAssignedTaskStagesInput = {
@@ -4003,6 +4263,7 @@ export type UserUncheckedUpdateWithoutAssignedTaskStagesInput = {
   preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -4039,6 +4300,7 @@ export type UserCreateWithoutInitiatedTaskEsigningPreparationsInput = {
   tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
   ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -4075,6 +4337,7 @@ export type UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
   ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
   assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -4127,6 +4390,7 @@ export type UserUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
   tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -4163,6 +4427,7 @@ export type UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserCreateManyTenantInput = {
@@ -4216,6 +4481,7 @@ export type UserUpdateWithoutTenantInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTenantInput = {
@@ -4252,6 +4518,7 @@ export type UserUncheckedUpdateWithoutTenantInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
   ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
   assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutTenantInput = {
@@ -4296,6 +4563,7 @@ export type UserCountOutputType = {
   roleAssignments: number
   ownedTasks: number
   assignedTaskStages: number
+  requestedServiceAgreementActivations: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4318,6 +4586,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   roleAssignments?: boolean | UserCountOutputTypeCountRoleAssignmentsArgs
   ownedTasks?: boolean | UserCountOutputTypeCountOwnedTasksArgs
   assignedTaskStages?: boolean | UserCountOutputTypeCountAssignedTaskStagesArgs
+  requestedServiceAgreementActivations?: boolean | UserCountOutputTypeCountRequestedServiceAgreementActivationsArgs
 }
 
 /**
@@ -4463,6 +4732,13 @@ export type UserCountOutputTypeCountAssignedTaskStagesArgs<ExtArgs extends runti
   where?: Prisma.TaskStageWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRequestedServiceAgreementActivationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ServiceAgreementWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -4500,6 +4776,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   tenant?: boolean | Prisma.User$tenantArgs<ExtArgs>
   ownedTasks?: boolean | Prisma.User$ownedTasksArgs<ExtArgs>
   assignedTaskStages?: boolean | Prisma.User$assignedTaskStagesArgs<ExtArgs>
+  requestedServiceAgreementActivations?: boolean | Prisma.User$requestedServiceAgreementActivationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -4581,6 +4858,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   tenant?: boolean | Prisma.User$tenantArgs<ExtArgs>
   ownedTasks?: boolean | Prisma.User$ownedTasksArgs<ExtArgs>
   assignedTaskStages?: boolean | Prisma.User$assignedTaskStagesArgs<ExtArgs>
+  requestedServiceAgreementActivations?: boolean | Prisma.User$requestedServiceAgreementActivationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4613,6 +4891,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     tenant: Prisma.$WorkspacePayload<ExtArgs> | null
     ownedTasks: Prisma.$TaskPayload<ExtArgs>[]
     assignedTaskStages: Prisma.$TaskStagePayload<ExtArgs>[]
+    requestedServiceAgreementActivations: Prisma.$ServiceAgreementPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -5044,6 +5323,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   tenant<T extends Prisma.User$tenantArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$tenantArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   ownedTasks<T extends Prisma.User$ownedTasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$ownedTasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   assignedTaskStages<T extends Prisma.User$assignedTaskStagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$assignedTaskStagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaskStagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  requestedServiceAgreementActivations<T extends Prisma.User$requestedServiceAgreementActivationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$requestedServiceAgreementActivationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5956,6 +6236,30 @@ export type User$assignedTaskStagesArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.TaskStageScalarFieldEnum | Prisma.TaskStageScalarFieldEnum[]
+}
+
+/**
+ * User.requestedServiceAgreementActivations
+ */
+export type User$requestedServiceAgreementActivationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceAgreement
+   */
+  select?: Prisma.ServiceAgreementSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ServiceAgreement
+   */
+  omit?: Prisma.ServiceAgreementOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ServiceAgreementInclude<ExtArgs> | null
+  where?: Prisma.ServiceAgreementWhereInput
+  orderBy?: Prisma.ServiceAgreementOrderByWithRelationInput | Prisma.ServiceAgreementOrderByWithRelationInput[]
+  cursor?: Prisma.ServiceAgreementWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ServiceAgreementScalarFieldEnum | Prisma.ServiceAgreementScalarFieldEnum[]
 }
 
 /**

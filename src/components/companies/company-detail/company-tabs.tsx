@@ -2,10 +2,10 @@
 
 import { useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { Building2, Contact, AlertTriangle } from 'lucide-react';
+import { Building2, BriefcaseBusiness, Contact, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-export type TabId = 'profile' | 'contacts';
+export type TabId = 'profile' | 'contacts' | 'services';
 
 interface Tab {
   id: TabId;
@@ -16,6 +16,7 @@ interface Tab {
 const tabs: Tab[] = [
   { id: 'profile', label: 'Company Profile', icon: Building2 },
   { id: 'contacts', label: 'Contact Details', icon: Contact },
+  { id: 'services', label: 'Services', icon: BriefcaseBusiness },
 ];
 
 interface CompanyTabsProps {
@@ -27,7 +28,7 @@ interface CompanyTabsProps {
 
 export function CompanyTabs({ activeTab, onTabChange, hasPoc, hasFye }: CompanyTabsProps) {
   return (
-    <div className="flex items-center border-b border-border-primary mb-6">
+    <div role="tablist" aria-label="Company sections" className="mb-6 flex items-center overflow-x-auto border-b border-border-primary">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -40,8 +41,10 @@ export function CompanyTabs({ activeTab, onTabChange, hasPoc, hasFye }: CompanyT
         return (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={isActive}
             onClick={() => onTabChange(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm transition-colors ${
+            className={`flex min-h-11 shrink-0 items-center gap-2 px-4 py-2.5 text-sm transition-colors sm:min-h-0 ${
               isActive
                 ? 'text-text-primary border-b-2 border-oak-light -mb-px font-medium'
                 : 'text-text-muted hover:bg-background-secondary hover:text-text-primary'
@@ -68,14 +71,14 @@ export function useTabState(): [TabId, (tabId: TabId) => void] {
   const searchParams = useSearchParams();
 
   // Get current tab from URL, default to 'profile'.
-  // Supports legacy service/deadline tabs by mapping them to `profile`.
+  // Supports removed legacy contract/deadline tabs by mapping them to `profile`.
   const tabParam = searchParams.get('tab');
   const remappedTab =
-    tabParam === 'contracts' || tabParam === 'services' || tabParam === 'deadlines'
+    tabParam === 'contracts' || tabParam === 'deadlines'
       ? 'profile'
       : tabParam;
   const currentTab = remappedTab as TabId | null;
-  const validTabs: TabId[] = ['profile', 'contacts'];
+  const validTabs: TabId[] = ['profile', 'contacts', 'services'];
   const validTab: TabId = currentTab && validTabs.includes(currentTab) ? currentTab : 'profile';
 
   // Update URL when tab changes

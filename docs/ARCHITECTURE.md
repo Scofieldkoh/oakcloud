@@ -278,6 +278,33 @@ the server render. HTML edits never reverse-sync to the relational agreement,
 and later operational Services must consume the structured rows rather than
 parse document content.
 
+### Signed agreement activation and operational Services
+
+Signing activates the relational agreement data, never the rendered HTML. One
+`ClientService` is created for every unique agreement-item/company pairing and
+owns copies of only that entity's fee rows. Identity, cadence, dates, and field
+values are operational and remain fully editable; pinned SOW wording and signed
+document content remain immutable and are not exposed as Client Service fields.
+
+Envelope completion queues activation without depending on the post-commit
+worker. The scheduler claims pending or retryable agreements with
+`FOR UPDATE SKIP LOCKED`, a unique claim token, a five-minute lease, partial
+queue indexes, and 1/5/15/60 minute backoff. Compare-and-set transitions keep
+stale workers, retries, and repeated manual requests from overwriting newer
+state. The task inherits the master scheduler switch and polls every minute.
+Five failed attempts become `FAILED_PERMANENT`; an authorized retry resets the
+agreement to `PENDING`. External agreements use Mark effective, which records
+the actor, signed/effective dates, and audit reason. Automatic activation uses
+the system change source; manual activation preserves its actor.
+Automatic activation preserves an existing effective date or derives the
+Singapore calendar date from envelope completion. It never uses delayed worker
+execution time. Client Service edits use `updatedAt` optimistic preconditions;
+domain writes and their audit entries commit or roll back together.
+
+Backup export, restore, and tenant cleanup explicitly include every catalog,
+agreement, and Client Service table. Restore orders parents before fee children;
+cleanup reverses those dependencies.
+
 ## Tasks And Pipelines Architecture
 
 `/pipelines` manages tenant-scoped templates and `/tasks` runs work from them. Creating or editing a pipeline publishes a new immutable pipeline version. Creating a task copies that version's ordered stage definitions and checklist items into a locked live-task snapshot. Later template edits therefore affect future tasks only; an existing task never changes its stage structure or pipeline version.

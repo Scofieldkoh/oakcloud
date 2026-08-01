@@ -425,6 +425,8 @@ export const ModelName = {
   ServiceAgreementItem: 'ServiceAgreementItem',
   ServiceAgreementItemEntity: 'ServiceAgreementItemEntity',
   ServiceAgreementFeeLine: 'ServiceAgreementFeeLine',
+  ClientService: 'ClientService',
+  ClientServiceFeeLine: 'ClientServiceFeeLine',
   AiConversation: 'AiConversation',
   EsigningEnvelope: 'EsigningEnvelope',
   EsigningEnvelopeDocument: 'EsigningEnvelopeDocument',
@@ -497,7 +499,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3532,6 +3534,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ServiceAgreementFeeLineCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ServiceAgreementFeeLineCountAggregateOutputType> | number
+        }
+      }
+    }
+    ClientService: {
+      payload: Prisma.$ClientServicePayload<ExtArgs>
+      fields: Prisma.ClientServiceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ClientServiceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServicePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ClientServiceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServicePayload>
+        }
+        findFirst: {
+          args: Prisma.ClientServiceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServicePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ClientServiceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServicePayload>
+        }
+        findMany: {
+          args: Prisma.ClientServiceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServicePayload>[]
+        }
+        create: {
+          args: Prisma.ClientServiceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServicePayload>
+        }
+        createMany: {
+          args: Prisma.ClientServiceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ClientServiceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServicePayload>[]
+        }
+        delete: {
+          args: Prisma.ClientServiceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServicePayload>
+        }
+        update: {
+          args: Prisma.ClientServiceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServicePayload>
+        }
+        deleteMany: {
+          args: Prisma.ClientServiceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ClientServiceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ClientServiceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServicePayload>[]
+        }
+        upsert: {
+          args: Prisma.ClientServiceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServicePayload>
+        }
+        aggregate: {
+          args: Prisma.ClientServiceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateClientService>
+        }
+        groupBy: {
+          args: Prisma.ClientServiceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ClientServiceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ClientServiceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ClientServiceCountAggregateOutputType> | number
+        }
+      }
+    }
+    ClientServiceFeeLine: {
+      payload: Prisma.$ClientServiceFeeLinePayload<ExtArgs>
+      fields: Prisma.ClientServiceFeeLineFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ClientServiceFeeLineFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceFeeLinePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ClientServiceFeeLineFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceFeeLinePayload>
+        }
+        findFirst: {
+          args: Prisma.ClientServiceFeeLineFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceFeeLinePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ClientServiceFeeLineFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceFeeLinePayload>
+        }
+        findMany: {
+          args: Prisma.ClientServiceFeeLineFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceFeeLinePayload>[]
+        }
+        create: {
+          args: Prisma.ClientServiceFeeLineCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceFeeLinePayload>
+        }
+        createMany: {
+          args: Prisma.ClientServiceFeeLineCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ClientServiceFeeLineCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceFeeLinePayload>[]
+        }
+        delete: {
+          args: Prisma.ClientServiceFeeLineDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceFeeLinePayload>
+        }
+        update: {
+          args: Prisma.ClientServiceFeeLineUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceFeeLinePayload>
+        }
+        deleteMany: {
+          args: Prisma.ClientServiceFeeLineDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ClientServiceFeeLineUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ClientServiceFeeLineUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceFeeLinePayload>[]
+        }
+        upsert: {
+          args: Prisma.ClientServiceFeeLineUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceFeeLinePayload>
+        }
+        aggregate: {
+          args: Prisma.ClientServiceFeeLineAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateClientServiceFeeLine>
+        }
+        groupBy: {
+          args: Prisma.ClientServiceFeeLineGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ClientServiceFeeLineGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ClientServiceFeeLineCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ClientServiceFeeLineCountAggregateOutputType> | number
         }
       }
     }
@@ -8497,6 +8647,16 @@ export const ServiceAgreementScalarFieldEnum = {
   status: 'status',
   signedAt: 'signedAt',
   activatedAt: 'activatedAt',
+  activationStatus: 'activationStatus',
+  activationSource: 'activationSource',
+  activationAttemptCount: 'activationAttemptCount',
+  activationAvailableAt: 'activationAvailableAt',
+  activationClaimedAt: 'activationClaimedAt',
+  activationLeaseExpiresAt: 'activationLeaseExpiresAt',
+  activationClaimToken: 'activationClaimToken',
+  activationLastError: 'activationLastError',
+  activationRequestedById: 'activationRequestedById',
+  activationReason: 'activationReason',
   cancelledAt: 'cancelledAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -8571,6 +8731,49 @@ export const ServiceAgreementFeeLineScalarFieldEnum = {
 } as const
 
 export type ServiceAgreementFeeLineScalarFieldEnum = (typeof ServiceAgreementFeeLineScalarFieldEnum)[keyof typeof ServiceAgreementFeeLineScalarFieldEnum]
+
+
+export const ClientServiceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  agreementId: 'agreementId',
+  agreementItemId: 'agreementItemId',
+  serviceVariantId: 'serviceVariantId',
+  familyName: 'familyName',
+  serviceName: 'serviceName',
+  status: 'status',
+  serviceCadence: 'serviceCadence',
+  customCadenceLabel: 'customCadenceLabel',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  fieldValues: 'fieldValues',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt',
+  deletedReason: 'deletedReason'
+} as const
+
+export type ClientServiceScalarFieldEnum = (typeof ClientServiceScalarFieldEnum)[keyof typeof ClientServiceScalarFieldEnum]
+
+
+export const ClientServiceFeeLineScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  clientServiceId: 'clientServiceId',
+  sourceAgreementFeeLineId: 'sourceAgreementFeeLineId',
+  description: 'description',
+  amount: 'amount',
+  currency: 'currency',
+  billingFrequency: 'billingFrequency',
+  customFrequencyLabel: 'customFrequencyLabel',
+  billingStartDate: 'billingStartDate',
+  displayOrder: 'displayOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ClientServiceFeeLineScalarFieldEnum = (typeof ClientServiceFeeLineScalarFieldEnum)[keyof typeof ClientServiceFeeLineScalarFieldEnum]
 
 
 export const AiConversationScalarFieldEnum = {
@@ -10099,6 +10302,48 @@ export type ListEnumServiceAgreementStatusFieldRefInput<$PrismaModel> = FieldRef
 
 
 /**
+ * Reference to a field of type 'ServiceAgreementActivationStatus'
+ */
+export type EnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ServiceAgreementActivationStatus'>
+
+
+
+/**
+ * Reference to a field of type 'ServiceAgreementActivationStatus[]'
+ */
+export type ListEnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ServiceAgreementActivationStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'ServiceAgreementActivationSource'
+ */
+export type EnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ServiceAgreementActivationSource'>
+
+
+
+/**
+ * Reference to a field of type 'ServiceAgreementActivationSource[]'
+ */
+export type ListEnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ServiceAgreementActivationSource[]'>
+
+
+
+/**
+ * Reference to a field of type 'ClientServiceStatus'
+ */
+export type EnumClientServiceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ClientServiceStatus'>
+
+
+
+/**
+ * Reference to a field of type 'ClientServiceStatus[]'
+ */
+export type ListEnumClientServiceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ClientServiceStatus[]'>
+
+
+
+/**
  * Reference to a field of type 'EsigningEnvelopeStatus'
  */
 export type EnumEsigningEnvelopeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EsigningEnvelopeStatus'>
@@ -11045,6 +11290,8 @@ export type GlobalOmitConfig = {
   serviceAgreementItem?: Prisma.ServiceAgreementItemOmit
   serviceAgreementItemEntity?: Prisma.ServiceAgreementItemEntityOmit
   serviceAgreementFeeLine?: Prisma.ServiceAgreementFeeLineOmit
+  clientService?: Prisma.ClientServiceOmit
+  clientServiceFeeLine?: Prisma.ClientServiceFeeLineOmit
   aiConversation?: Prisma.AiConversationOmit
   esigningEnvelope?: Prisma.EsigningEnvelopeOmit
   esigningEnvelopeDocument?: Prisma.EsigningEnvelopeDocumentOmit

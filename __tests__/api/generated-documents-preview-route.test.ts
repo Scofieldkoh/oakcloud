@@ -90,6 +90,9 @@ describe('generated documents preview route', () => {
       selectedContactId: contactId,
       customData: { resolutionNumber: '2026-001' },
       generatedBy: 'Test User',
+      generatedDocumentId: undefined,
+      serviceAgreementId: undefined,
+      userId: 'user-1',
       mode: 'preview',
     });
     expect(body.preview.unresolvedPlaceholders).toEqual(['custom.missing']);

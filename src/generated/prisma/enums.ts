@@ -335,6 +335,35 @@ export const BillingFrequency = {
 export type BillingFrequency = (typeof BillingFrequency)[keyof typeof BillingFrequency]
 
 
+export const ClientServiceStatus = {
+  ACTIVE: 'ACTIVE',
+  PAUSED: 'PAUSED',
+  ENDED: 'ENDED'
+} as const
+
+export type ClientServiceStatus = (typeof ClientServiceStatus)[keyof typeof ClientServiceStatus]
+
+
+export const ServiceAgreementActivationStatus = {
+  NOT_READY: 'NOT_READY',
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED_RETRYABLE: 'FAILED_RETRYABLE',
+  FAILED_PERMANENT: 'FAILED_PERMANENT'
+} as const
+
+export type ServiceAgreementActivationStatus = (typeof ServiceAgreementActivationStatus)[keyof typeof ServiceAgreementActivationStatus]
+
+
+export const ServiceAgreementActivationSource = {
+  ESIGNING: 'ESIGNING',
+  MANUAL: 'MANUAL'
+} as const
+
+export type ServiceAgreementActivationSource = (typeof ServiceAgreementActivationSource)[keyof typeof ServiceAgreementActivationSource]
+
+
 export const ServiceAgreementStatus = {
   DRAFT: 'DRAFT',
   EFFECTIVE: 'EFFECTIVE',

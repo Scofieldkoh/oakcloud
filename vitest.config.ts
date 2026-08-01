@@ -8,6 +8,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    // Keep large jsdom suites from starving individual tests on high-core hosts.
+    maxWorkers: 4,
     include: ['**/__tests__/**/*.test.{ts,tsx}', '**/*.test.{ts,tsx}'],
     exclude: ['node_modules', '.next', 'dist', '**/.worktrees/**', '**/*.browser.test.*'],
     coverage: {

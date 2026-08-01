@@ -287,6 +287,7 @@ export type ServiceAgreementFeeLineWhereInput = {
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   item?: Prisma.XOR<Prisma.ServiceAgreementItemScalarRelationFilter, Prisma.ServiceAgreementItemWhereInput>
   agreementEntity?: Prisma.XOR<Prisma.ServiceAgreementEntityScalarRelationFilter, Prisma.ServiceAgreementEntityWhereInput>
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineListRelationFilter
 }
 
 export type ServiceAgreementFeeLineOrderByWithRelationInput = {
@@ -306,6 +307,7 @@ export type ServiceAgreementFeeLineOrderByWithRelationInput = {
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
   item?: Prisma.ServiceAgreementItemOrderByWithRelationInput
   agreementEntity?: Prisma.ServiceAgreementEntityOrderByWithRelationInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineOrderByRelationAggregateInput
 }
 
 export type ServiceAgreementFeeLineWhereUniqueInput = Prisma.AtLeast<{
@@ -328,6 +330,7 @@ export type ServiceAgreementFeeLineWhereUniqueInput = Prisma.AtLeast<{
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   item?: Prisma.XOR<Prisma.ServiceAgreementItemScalarRelationFilter, Prisma.ServiceAgreementItemWhereInput>
   agreementEntity?: Prisma.XOR<Prisma.ServiceAgreementEntityScalarRelationFilter, Prisma.ServiceAgreementEntityWhereInput>
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineListRelationFilter
 }, "id">
 
 export type ServiceAgreementFeeLineOrderByWithAggregationInput = {
@@ -384,6 +387,7 @@ export type ServiceAgreementFeeLineCreateInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementFeeLinesInput
   item: Prisma.ServiceAgreementItemCreateNestedOneWithoutFeeLinesInput
   agreementEntity: Prisma.ServiceAgreementEntityCreateNestedOneWithoutFeeLinesInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutSourceAgreementFeeLineInput
 }
 
 export type ServiceAgreementFeeLineUncheckedCreateInput = {
@@ -400,6 +404,7 @@ export type ServiceAgreementFeeLineUncheckedCreateInput = {
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutSourceAgreementFeeLineInput
 }
 
 export type ServiceAgreementFeeLineUpdateInput = {
@@ -416,6 +421,7 @@ export type ServiceAgreementFeeLineUpdateInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementFeeLinesNestedInput
   item?: Prisma.ServiceAgreementItemUpdateOneRequiredWithoutFeeLinesNestedInput
   agreementEntity?: Prisma.ServiceAgreementEntityUpdateOneRequiredWithoutFeeLinesNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutSourceAgreementFeeLineNestedInput
 }
 
 export type ServiceAgreementFeeLineUncheckedUpdateInput = {
@@ -432,6 +438,7 @@ export type ServiceAgreementFeeLineUncheckedUpdateInput = {
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutSourceAgreementFeeLineNestedInput
 }
 
 export type ServiceAgreementFeeLineCreateManyInput = {
@@ -545,6 +552,11 @@ export type ServiceAgreementFeeLineMinOrderByAggregateInput = {
 export type ServiceAgreementFeeLineSumOrderByAggregateInput = {
   amount?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
+}
+
+export type ServiceAgreementFeeLineNullableScalarRelationFilter = {
+  is?: Prisma.ServiceAgreementFeeLineWhereInput | null
+  isNot?: Prisma.ServiceAgreementFeeLineWhereInput | null
 }
 
 export type ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput = {
@@ -673,6 +685,22 @@ export type ServiceAgreementFeeLineUncheckedUpdateManyWithoutItemNestedInput = {
   deleteMany?: Prisma.ServiceAgreementFeeLineScalarWhereInput | Prisma.ServiceAgreementFeeLineScalarWhereInput[]
 }
 
+export type ServiceAgreementFeeLineCreateNestedOneWithoutClientServiceFeeLinesInput = {
+  create?: Prisma.XOR<Prisma.ServiceAgreementFeeLineCreateWithoutClientServiceFeeLinesInput, Prisma.ServiceAgreementFeeLineUncheckedCreateWithoutClientServiceFeeLinesInput>
+  connectOrCreate?: Prisma.ServiceAgreementFeeLineCreateOrConnectWithoutClientServiceFeeLinesInput
+  connect?: Prisma.ServiceAgreementFeeLineWhereUniqueInput
+}
+
+export type ServiceAgreementFeeLineUpdateOneWithoutClientServiceFeeLinesNestedInput = {
+  create?: Prisma.XOR<Prisma.ServiceAgreementFeeLineCreateWithoutClientServiceFeeLinesInput, Prisma.ServiceAgreementFeeLineUncheckedCreateWithoutClientServiceFeeLinesInput>
+  connectOrCreate?: Prisma.ServiceAgreementFeeLineCreateOrConnectWithoutClientServiceFeeLinesInput
+  upsert?: Prisma.ServiceAgreementFeeLineUpsertWithoutClientServiceFeeLinesInput
+  disconnect?: Prisma.ServiceAgreementFeeLineWhereInput | boolean
+  delete?: Prisma.ServiceAgreementFeeLineWhereInput | boolean
+  connect?: Prisma.ServiceAgreementFeeLineWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ServiceAgreementFeeLineUpdateToOneWithWhereWithoutClientServiceFeeLinesInput, Prisma.ServiceAgreementFeeLineUpdateWithoutClientServiceFeeLinesInput>, Prisma.ServiceAgreementFeeLineUncheckedUpdateWithoutClientServiceFeeLinesInput>
+}
+
 export type ServiceAgreementFeeLineCreateWithoutTenantInput = {
   id?: string
   description: string
@@ -686,6 +714,7 @@ export type ServiceAgreementFeeLineCreateWithoutTenantInput = {
   updatedAt?: Date | string
   item: Prisma.ServiceAgreementItemCreateNestedOneWithoutFeeLinesInput
   agreementEntity: Prisma.ServiceAgreementEntityCreateNestedOneWithoutFeeLinesInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutSourceAgreementFeeLineInput
 }
 
 export type ServiceAgreementFeeLineUncheckedCreateWithoutTenantInput = {
@@ -701,6 +730,7 @@ export type ServiceAgreementFeeLineUncheckedCreateWithoutTenantInput = {
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutSourceAgreementFeeLineInput
 }
 
 export type ServiceAgreementFeeLineCreateOrConnectWithoutTenantInput = {
@@ -761,6 +791,7 @@ export type ServiceAgreementFeeLineCreateWithoutAgreementEntityInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementFeeLinesInput
   item: Prisma.ServiceAgreementItemCreateNestedOneWithoutFeeLinesInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutSourceAgreementFeeLineInput
 }
 
 export type ServiceAgreementFeeLineUncheckedCreateWithoutAgreementEntityInput = {
@@ -776,6 +807,7 @@ export type ServiceAgreementFeeLineUncheckedCreateWithoutAgreementEntityInput = 
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutSourceAgreementFeeLineInput
 }
 
 export type ServiceAgreementFeeLineCreateOrConnectWithoutAgreementEntityInput = {
@@ -817,6 +849,7 @@ export type ServiceAgreementFeeLineCreateWithoutItemInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementFeeLinesInput
   agreementEntity: Prisma.ServiceAgreementEntityCreateNestedOneWithoutFeeLinesInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutSourceAgreementFeeLineInput
 }
 
 export type ServiceAgreementFeeLineUncheckedCreateWithoutItemInput = {
@@ -832,6 +865,7 @@ export type ServiceAgreementFeeLineUncheckedCreateWithoutItemInput = {
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutSourceAgreementFeeLineInput
 }
 
 export type ServiceAgreementFeeLineCreateOrConnectWithoutItemInput = {
@@ -858,6 +892,86 @@ export type ServiceAgreementFeeLineUpdateWithWhereUniqueWithoutItemInput = {
 export type ServiceAgreementFeeLineUpdateManyWithWhereWithoutItemInput = {
   where: Prisma.ServiceAgreementFeeLineScalarWhereInput
   data: Prisma.XOR<Prisma.ServiceAgreementFeeLineUpdateManyMutationInput, Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutItemInput>
+}
+
+export type ServiceAgreementFeeLineCreateWithoutClientServiceFeeLinesInput = {
+  id?: string
+  description: string
+  amount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  billingFrequency: $Enums.BillingFrequency
+  customFrequencyLabel?: string | null
+  billingStartDate?: Date | string | null
+  displayOrder?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceAgreementFeeLinesInput
+  item: Prisma.ServiceAgreementItemCreateNestedOneWithoutFeeLinesInput
+  agreementEntity: Prisma.ServiceAgreementEntityCreateNestedOneWithoutFeeLinesInput
+}
+
+export type ServiceAgreementFeeLineUncheckedCreateWithoutClientServiceFeeLinesInput = {
+  id?: string
+  tenantId: string
+  itemId: string
+  agreementEntityId: string
+  description: string
+  amount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  billingFrequency: $Enums.BillingFrequency
+  customFrequencyLabel?: string | null
+  billingStartDate?: Date | string | null
+  displayOrder?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type ServiceAgreementFeeLineCreateOrConnectWithoutClientServiceFeeLinesInput = {
+  where: Prisma.ServiceAgreementFeeLineWhereUniqueInput
+  create: Prisma.XOR<Prisma.ServiceAgreementFeeLineCreateWithoutClientServiceFeeLinesInput, Prisma.ServiceAgreementFeeLineUncheckedCreateWithoutClientServiceFeeLinesInput>
+}
+
+export type ServiceAgreementFeeLineUpsertWithoutClientServiceFeeLinesInput = {
+  update: Prisma.XOR<Prisma.ServiceAgreementFeeLineUpdateWithoutClientServiceFeeLinesInput, Prisma.ServiceAgreementFeeLineUncheckedUpdateWithoutClientServiceFeeLinesInput>
+  create: Prisma.XOR<Prisma.ServiceAgreementFeeLineCreateWithoutClientServiceFeeLinesInput, Prisma.ServiceAgreementFeeLineUncheckedCreateWithoutClientServiceFeeLinesInput>
+  where?: Prisma.ServiceAgreementFeeLineWhereInput
+}
+
+export type ServiceAgreementFeeLineUpdateToOneWithWhereWithoutClientServiceFeeLinesInput = {
+  where?: Prisma.ServiceAgreementFeeLineWhereInput
+  data: Prisma.XOR<Prisma.ServiceAgreementFeeLineUpdateWithoutClientServiceFeeLinesInput, Prisma.ServiceAgreementFeeLineUncheckedUpdateWithoutClientServiceFeeLinesInput>
+}
+
+export type ServiceAgreementFeeLineUpdateWithoutClientServiceFeeLinesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
+  customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingStartDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementFeeLinesNestedInput
+  item?: Prisma.ServiceAgreementItemUpdateOneRequiredWithoutFeeLinesNestedInput
+  agreementEntity?: Prisma.ServiceAgreementEntityUpdateOneRequiredWithoutFeeLinesNestedInput
+}
+
+export type ServiceAgreementFeeLineUncheckedUpdateWithoutClientServiceFeeLinesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  itemId?: Prisma.StringFieldUpdateOperationsInput | string
+  agreementEntityId?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
+  customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingStartDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ServiceAgreementFeeLineCreateManyTenantInput = {
@@ -888,6 +1002,7 @@ export type ServiceAgreementFeeLineUpdateWithoutTenantInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   item?: Prisma.ServiceAgreementItemUpdateOneRequiredWithoutFeeLinesNestedInput
   agreementEntity?: Prisma.ServiceAgreementEntityUpdateOneRequiredWithoutFeeLinesNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutSourceAgreementFeeLineNestedInput
 }
 
 export type ServiceAgreementFeeLineUncheckedUpdateWithoutTenantInput = {
@@ -903,6 +1018,7 @@ export type ServiceAgreementFeeLineUncheckedUpdateWithoutTenantInput = {
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutSourceAgreementFeeLineNestedInput
 }
 
 export type ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantInput = {
@@ -948,6 +1064,7 @@ export type ServiceAgreementFeeLineUpdateWithoutAgreementEntityInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementFeeLinesNestedInput
   item?: Prisma.ServiceAgreementItemUpdateOneRequiredWithoutFeeLinesNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutSourceAgreementFeeLineNestedInput
 }
 
 export type ServiceAgreementFeeLineUncheckedUpdateWithoutAgreementEntityInput = {
@@ -963,6 +1080,7 @@ export type ServiceAgreementFeeLineUncheckedUpdateWithoutAgreementEntityInput = 
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutSourceAgreementFeeLineNestedInput
 }
 
 export type ServiceAgreementFeeLineUncheckedUpdateManyWithoutAgreementEntityInput = {
@@ -1008,6 +1126,7 @@ export type ServiceAgreementFeeLineUpdateWithoutItemInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceAgreementFeeLinesNestedInput
   agreementEntity?: Prisma.ServiceAgreementEntityUpdateOneRequiredWithoutFeeLinesNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutSourceAgreementFeeLineNestedInput
 }
 
 export type ServiceAgreementFeeLineUncheckedUpdateWithoutItemInput = {
@@ -1023,6 +1142,7 @@ export type ServiceAgreementFeeLineUncheckedUpdateWithoutItemInput = {
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutSourceAgreementFeeLineNestedInput
 }
 
 export type ServiceAgreementFeeLineUncheckedUpdateManyWithoutItemInput = {
@@ -1040,6 +1160,35 @@ export type ServiceAgreementFeeLineUncheckedUpdateManyWithoutItemInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+
+/**
+ * Count Type ServiceAgreementFeeLineCountOutputType
+ */
+
+export type ServiceAgreementFeeLineCountOutputType = {
+  clientServiceFeeLines: number
+}
+
+export type ServiceAgreementFeeLineCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  clientServiceFeeLines?: boolean | ServiceAgreementFeeLineCountOutputTypeCountClientServiceFeeLinesArgs
+}
+
+/**
+ * ServiceAgreementFeeLineCountOutputType without action
+ */
+export type ServiceAgreementFeeLineCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ServiceAgreementFeeLineCountOutputType
+   */
+  select?: Prisma.ServiceAgreementFeeLineCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * ServiceAgreementFeeLineCountOutputType without action
+ */
+export type ServiceAgreementFeeLineCountOutputTypeCountClientServiceFeeLinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ClientServiceFeeLineWhereInput
+}
 
 
 export type ServiceAgreementFeeLineSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1059,6 +1208,8 @@ export type ServiceAgreementFeeLineSelect<ExtArgs extends runtime.Types.Extensio
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   item?: boolean | Prisma.ServiceAgreementItemDefaultArgs<ExtArgs>
   agreementEntity?: boolean | Prisma.ServiceAgreementEntityDefaultArgs<ExtArgs>
+  clientServiceFeeLines?: boolean | Prisma.ServiceAgreementFeeLine$clientServiceFeeLinesArgs<ExtArgs>
+  _count?: boolean | Prisma.ServiceAgreementFeeLineCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["serviceAgreementFeeLine"]>
 
 export type ServiceAgreementFeeLineSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1120,6 +1271,8 @@ export type ServiceAgreementFeeLineInclude<ExtArgs extends runtime.Types.Extensi
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   item?: boolean | Prisma.ServiceAgreementItemDefaultArgs<ExtArgs>
   agreementEntity?: boolean | Prisma.ServiceAgreementEntityDefaultArgs<ExtArgs>
+  clientServiceFeeLines?: boolean | Prisma.ServiceAgreementFeeLine$clientServiceFeeLinesArgs<ExtArgs>
+  _count?: boolean | Prisma.ServiceAgreementFeeLineCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ServiceAgreementFeeLineIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -1138,6 +1291,7 @@ export type $ServiceAgreementFeeLinePayload<ExtArgs extends runtime.Types.Extens
     tenant: Prisma.$WorkspacePayload<ExtArgs>
     item: Prisma.$ServiceAgreementItemPayload<ExtArgs>
     agreementEntity: Prisma.$ServiceAgreementEntityPayload<ExtArgs>
+    clientServiceFeeLines: Prisma.$ClientServiceFeeLinePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1550,6 +1704,7 @@ export interface Prisma__ServiceAgreementFeeLineClient<T, Null = never, ExtArgs 
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   item<T extends Prisma.ServiceAgreementItemDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreementItemDefaultArgs<ExtArgs>>): Prisma.Prisma__ServiceAgreementItemClient<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   agreementEntity<T extends Prisma.ServiceAgreementEntityDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreementEntityDefaultArgs<ExtArgs>>): Prisma.Prisma__ServiceAgreementEntityClient<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementEntityPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  clientServiceFeeLines<T extends Prisma.ServiceAgreementFeeLine$clientServiceFeeLinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceAgreementFeeLine$clientServiceFeeLinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClientServiceFeeLinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1985,6 +2140,30 @@ export type ServiceAgreementFeeLineDeleteManyArgs<ExtArgs extends runtime.Types.
    * Limit how many ServiceAgreementFeeLines to delete.
    */
   limit?: number
+}
+
+/**
+ * ServiceAgreementFeeLine.clientServiceFeeLines
+ */
+export type ServiceAgreementFeeLine$clientServiceFeeLinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ClientServiceFeeLine
+   */
+  select?: Prisma.ClientServiceFeeLineSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ClientServiceFeeLine
+   */
+  omit?: Prisma.ClientServiceFeeLineOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ClientServiceFeeLineInclude<ExtArgs> | null
+  where?: Prisma.ClientServiceFeeLineWhereInput
+  orderBy?: Prisma.ClientServiceFeeLineOrderByWithRelationInput | Prisma.ClientServiceFeeLineOrderByWithRelationInput[]
+  cursor?: Prisma.ClientServiceFeeLineWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ClientServiceFeeLineScalarFieldEnum | Prisma.ClientServiceFeeLineScalarFieldEnum[]
 }
 
 /**

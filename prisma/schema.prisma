@@ -57,6 +57,8 @@ model Workspace {
   serviceAgreementItems       ServiceAgreementItem[]
   serviceAgreementItemEntities ServiceAgreementItemEntity[]
   serviceAgreementFeeLines    ServiceAgreementFeeLine[]
+  clientServices              ClientService[]
+  clientServiceFeeLines       ClientServiceFeeLine[]
   backups                     WorkspaceBackup[]
   connectorAccess             WorkspaceConnectorAccess[]
   letterhead                  WorkspaceLetterhead?
@@ -175,6 +177,7 @@ model User {
   tenant                            Workspace?                @relation(fields: [tenantId], references: [id])
   ownedTasks                        Task[]                    @relation("TaskOwner")
   assignedTaskStages                TaskStage[]               @relation("TaskStageAssignee")
+  requestedServiceAgreementActivations ServiceAgreement[]     @relation("ServiceAgreementActivationRequester")
 
   @@index([email])
   @@index([tenantId])
@@ -284,6 +287,7 @@ model Company {
   chartOfAccounts             ChartOfAccount[]
   accountMappings             ChartOfAccountsMapping[]
   tenant                      Workspace                    @relation(fields: [tenantId], references: [id])
+  clientServices              ClientService[]
   addresses                   CompanyAddress[]
   charges                     CompanyCharge[]
   contacts                    CompanyContact[]
@@ -987,6 +991,7 @@ model ServiceVariant {
   sowPartial          TemplatePartial             @relation(fields: [sowPartialId], references: [id], onDelete: Restrict)
   defaultFeeTemplates ServiceVariantFeeTemplate[]
   serviceAgreementItems ServiceAgreementItem[]
+  clientServices       ClientService[]
 
   @@unique([tenantId, code])
   @@index([tenantId, familyId, deletedAt, isActive])
@@ -1027,6 +1032,16 @@ model ServiceAgreement {
   status                           ServiceAgreementStatus    @default(DRAFT)
   signedAt                         DateTime?                  @map("signed_at")
   activatedAt                      DateTime?                  @map("activated_at")
+  activationStatus                 ServiceAgreementActivationStatus @default(NOT_READY) @map("activation_status")
+  activationSource                 ServiceAgreementActivationSource? @map("activation_source")
+  activationAttemptCount           Int                       @default(0) @map("activation_attempt_count")
+  activationAvailableAt            DateTime?                 @map("activation_available_at")
+  activationClaimedAt              DateTime?                 @map("activation_claimed_at")
+  activationLeaseExpiresAt         DateTime?                 @map("activation_lease_expires_at")
+  activationClaimToken             String?                   @map("activation_claim_token") @db.VarChar(36)
+  activationLastError              String?                   @map("activation_last_error")
+  activationRequestedById          String?                   @map("activation_requested_by_id")
+  activationReason                 String?                   @map("activation_reason") @db.VarChar(1000)
   cancelledAt                      DateTime?                  @map("cancelled_at")
   createdAt                        DateTime                  @default(now()) @map("created_at")
   updatedAt                        DateTime                  @updatedAt @map("updated_at")
@@ -1034,8 +1049,10 @@ model ServiceAgreement {
   generatedDocument                GeneratedDocument         @relation(fields: [generatedDocumentId], references: [id], onDelete: Cascade)
   primaryCompany                   Company                   @relation("ServiceAgreementPrimaryCompany", fields: [primaryCompanyId], references: [id], onDelete: Restrict)
   authorizedContact                Contact?                  @relation(fields: [authorizedContactId], references: [id], onDelete: SetNull)
+  activationRequestedBy            User?                     @relation("ServiceAgreementActivationRequester", fields: [activationRequestedById], references: [id], onDelete: SetNull)
   entities                         ServiceAgreementEntity[]
   items                            ServiceAgreementItem[]
+  clientServices                   ClientService[]
 
   @@index([tenantId, status, updatedAt])
   @@index([tenantId, primaryCompanyId])
@@ -1089,6 +1106,7 @@ model ServiceAgreementItem {
   sowPartial                  TemplatePartial              @relation(fields: [sowPartialId], references: [id], onDelete: Restrict)
   entityLinks                 ServiceAgreementItemEntity[]
   feeLines                    ServiceAgreementFeeLine[]
+  clientServices              ClientService[]
 
   @@index([tenantId, agreementId, displayOrder])
   @@index([serviceVariantId])
@@ -1126,10 +1144,67 @@ model ServiceAgreementFeeLine {
   tenant               Workspace               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   item                 ServiceAgreementItem    @relation(fields: [itemId], references: [id], onDelete: Cascade)
   agreementEntity      ServiceAgreementEntity  @relation(fields: [agreementEntityId], references: [id], onDelete: Cascade)
+  clientServiceFeeLines ClientServiceFeeLine[]
 
   @@index([tenantId, itemId, displayOrder])
   @@index([agreementEntityId])
   @@map("service_agreement_fee_lines")
+}
+
+model ClientService {
+  id                   String               @id @default(uuid())
+  tenantId             String               @map("tenant_id")
+  companyId            String               @map("company_id")
+  agreementId          String               @map("agreement_id")
+  agreementItemId      String               @map("agreement_item_id")
+  serviceVariantId     String               @map("service_variant_id")
+  familyName           String               @map("family_name") @db.VarChar(200)
+  serviceName          String               @map("service_name") @db.VarChar(200)
+  status               ClientServiceStatus  @default(ACTIVE)
+  serviceCadence       ServiceCadence       @map("service_cadence")
+  customCadenceLabel   String?              @map("custom_cadence_label") @db.VarChar(100)
+  startDate            DateTime             @map("start_date") @db.Date
+  endDate              DateTime?            @map("end_date") @db.Date
+  fieldValues          Json                 @default("{}") @map("field_values")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+  deletedAt            DateTime?            @map("deleted_at")
+  deletedReason        String?              @map("deleted_reason")
+  tenant               Workspace            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company              Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  agreement            ServiceAgreement     @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+  agreementItem        ServiceAgreementItem @relation(fields: [agreementItemId], references: [id], onDelete: Restrict)
+  serviceVariant       ServiceVariant       @relation(fields: [serviceVariantId], references: [id], onDelete: Restrict)
+  feeLines             ClientServiceFeeLine[]
+
+  @@unique([agreementItemId, companyId])
+  @@index([tenantId, companyId, status, deletedAt])
+  @@index([tenantId, agreementId])
+  @@index([serviceVariantId])
+  @@map("client_services")
+}
+
+model ClientServiceFeeLine {
+  id                       String                   @id @default(uuid())
+  tenantId                 String                   @map("tenant_id")
+  clientServiceId          String                   @map("client_service_id")
+  sourceAgreementFeeLineId String?                  @map("source_agreement_fee_line_id")
+  description              String                   @db.VarChar(500)
+  amount                   Decimal                  @db.Decimal(18, 2)
+  currency                 String                   @default("SGD") @db.VarChar(3)
+  billingFrequency         BillingFrequency         @map("billing_frequency")
+  customFrequencyLabel     String?                  @map("custom_frequency_label") @db.VarChar(100)
+  billingStartDate         DateTime?                @map("billing_start_date") @db.Date
+  displayOrder             Int                      @default(0) @map("display_order")
+  createdAt                DateTime                 @default(now()) @map("created_at")
+  updatedAt                DateTime                 @updatedAt @map("updated_at")
+  tenant                   Workspace                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  clientService            ClientService            @relation(fields: [clientServiceId], references: [id], onDelete: Cascade)
+  sourceAgreementFeeLine   ServiceAgreementFeeLine? @relation(fields: [sourceAgreementFeeLineId], references: [id], onDelete: SetNull)
+
+  @@unique([clientServiceId, sourceAgreementFeeLineId])
+  @@index([tenantId, clientServiceId, displayOrder])
+  @@map("client_service_fee_lines")
 }
 
 model AiConversation {
@@ -2803,6 +2878,26 @@ enum BillingFrequency {
   ANNUALLY
   ONE_TIME
   CUSTOM
+}
+
+enum ClientServiceStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum ServiceAgreementActivationStatus {
+  NOT_READY
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED_RETRYABLE
+  FAILED_PERMANENT
+}
+
+enum ServiceAgreementActivationSource {
+  ESIGNING
+  MANUAL
 }
 
 enum ServiceAgreementStatus {

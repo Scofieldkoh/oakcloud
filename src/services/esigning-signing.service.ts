@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { randomUUID } from 'node:crypto';
 import { verifyPassword } from '@/lib/encryption';
 import {
   clearEsigningChallengeCookie,
@@ -17,6 +18,7 @@ import type {
   EsigningSigningSessionDto,
   EsigningSigningSessionStatusDto,
 } from '@/types/esigning';
+import type { EsigningEnvelopeStatus, Prisma } from '@/generated/prisma';
 import { storage } from '@/lib/storage';
 import { createLogger } from '@/lib/logger';
 import { sendEsigningDeclinedEmailToSender } from '@/services/esigning-notification.service';
@@ -25,8 +27,71 @@ import { recordEsigningEnvelopeEmailDeliveryResults } from '@/services/esigning-
 import { summarizeEsigningUserAgent } from '@/services/esigning-evidence';
 import { isRequiredEsigningFieldComplete, saveRecipientFieldValues } from '@/services/esigning-field.service';
 import { safelyReconcileEsigningEnvelopeTaskOutcomes } from '@/services/tasks/integration.service';
+import {
+  processQueuedServiceAgreementActivations,
+  queueServiceAgreementActivationsForEnvelope,
+} from '@/services/service-agreement';
 
 const log = createLogger('esigning-signing');
+
+export async function safelyProcessServiceAgreementActivations(envelopeId: string): Promise<void> {
+  try {
+    await processQueuedServiceAgreementActivations({ limit: 10, concurrency: 2 });
+  } catch (error) {
+    const correlationId = randomUUID();
+    log.warn('Service Agreement activation will be retried by the scheduler', {
+      envelopeId,
+      correlationId,
+      error,
+    });
+  }
+}
+
+export async function finalizeEsigningEnvelopeCompletion(
+  tx: Prisma.TransactionClient,
+  input: {
+    tenantId: string;
+    envelopeId: string;
+    currentStatus: EsigningEnvelopeStatus;
+    remainingSignerCount: number;
+    completedAt: Date;
+  },
+): Promise<boolean> {
+  if (input.remainingSignerCount === 0) {
+    const completionUpdate = await tx.esigningEnvelope.updateMany({
+      where: {
+        id: input.envelopeId,
+        status: { in: ['SENT', 'IN_PROGRESS'] },
+      },
+      data: {
+        status: 'COMPLETED',
+        completedAt: input.completedAt,
+        pdfGenerationStatus: 'PENDING',
+        pdfGenerationClaimedAt: null,
+        pdfGenerationError: null,
+      },
+    });
+    if (completionUpdate.count === 0) return false;
+
+    await tx.esigningEnvelopeEvent.create({
+      data: {
+        tenantId: input.tenantId,
+        envelopeId: input.envelopeId,
+        action: 'COMPLETED',
+      },
+    });
+    await queueServiceAgreementActivationsForEnvelope(tx, input.envelopeId, input.completedAt);
+    return true;
+  }
+
+  if (input.currentStatus === 'SENT') {
+    await tx.esigningEnvelope.updateMany({
+      where: { id: input.envelopeId, status: 'SENT' },
+      data: { status: 'IN_PROGRESS' },
+    });
+  }
+  return false;
+}
 
 type SigningContext = Awaited<ReturnType<typeof getSigningContext>>;
 
@@ -702,6 +767,7 @@ export async function completeEsigningSigningSession(input: {
     values: input.values,
   });
 
+  let envelopeCompleted = false;
   await prisma.$transaction(async (tx) => {
     await saveRecipientFieldValues(
       {
@@ -770,39 +836,17 @@ export async function completeEsigningSigningSession(input: {
       },
     });
 
-    if (remainingSignerCount === 0) {
-      const completionUpdate = await tx.esigningEnvelope.updateMany({
-        where: {
-          id: context.envelope.id,
-          status: {
-            in: ['SENT', 'IN_PROGRESS'],
-          },
-        },
-        data: {
-          status: 'COMPLETED',
-          completedAt: now,
-          pdfGenerationStatus: 'PENDING',
-          pdfGenerationClaimedAt: null,
-          pdfGenerationError: null,
-        },
-      });
-
-      if (completionUpdate.count > 0) {
-        await tx.esigningEnvelopeEvent.create({
-          data: {
-            tenantId: context.envelope.tenantId,
-            envelopeId: context.envelope.id,
-            action: 'COMPLETED',
-          },
-        });
-      }
-    } else if (context.envelope.status === 'SENT') {
-      await tx.esigningEnvelope.updateMany({
-        where: { id: context.envelope.id, status: 'SENT' },
-        data: { status: 'IN_PROGRESS' },
-      });
-    }
+    envelopeCompleted = await finalizeEsigningEnvelopeCompletion(tx, {
+      tenantId: context.envelope.tenantId,
+      envelopeId: context.envelope.id,
+      currentStatus: context.envelope.status,
+      remainingSignerCount,
+      completedAt: now,
+    });
   });
+  if (envelopeCompleted) {
+    await safelyProcessServiceAgreementActivations(context.envelope.id);
+  }
   await safelyReconcileEsigningEnvelopeTaskOutcomes(
     context.envelope.tenantId,
     context.envelope.id,

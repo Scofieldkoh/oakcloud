@@ -63,6 +63,16 @@ const MANUALLY_HANDLED_MODEL_DELEGATES = new Set([
   'documentComment',
   'documentDraft',
   'templatePartial',
+  'serviceFamily',
+  'serviceVariant',
+  'serviceVariantFeeTemplate',
+  'serviceAgreement',
+  'serviceAgreementEntity',
+  'serviceAgreementItem',
+  'serviceAgreementItemEntity',
+  'serviceAgreementFeeLine',
+  'clientService',
+  'clientServiceFeeLine',
   'WorkspaceLetterhead',
   'connector',
   'WorkspaceConnectorAccess',
@@ -638,6 +648,16 @@ export class BackupService {
       documentComments,
       documentDrafts,
       templatePartials,
+      serviceFamilies,
+      serviceVariants,
+      serviceVariantFeeTemplates,
+      serviceAgreements,
+      serviceAgreementEntities,
+      serviceAgreementItems,
+      serviceAgreementItemEntities,
+      serviceAgreementFeeLines,
+      clientServices,
+      clientServiceFeeLines,
       letterhead,
       connectors,
       connectorAccess,
@@ -704,6 +724,16 @@ export class BackupService {
       db.documentComment.findMany({ where: { document: { tenantId } } }),
       db.documentDraft.findMany({ where: { document: { tenantId } } }),
       db.templatePartial.findMany({ where: { tenantId } }),
+      db.serviceFamily.findMany({ where: { tenantId } }),
+      db.serviceVariant.findMany({ where: { tenantId } }),
+      db.serviceVariantFeeTemplate.findMany({ where: { tenantId } }),
+      db.serviceAgreement.findMany({ where: { tenantId } }),
+      db.serviceAgreementEntity.findMany({ where: { tenantId } }),
+      db.serviceAgreementItem.findMany({ where: { tenantId } }),
+      db.serviceAgreementItemEntity.findMany({ where: { tenantId } }),
+      db.serviceAgreementFeeLine.findMany({ where: { tenantId } }),
+      db.clientService.findMany({ where: { tenantId } }),
+      db.clientServiceFeeLine.findMany({ where: { tenantId } }),
       db.workspaceLetterhead.findUnique({ where: { tenantId } }),
       db.connector.findMany({ where: { workspaceId: tenantId } }),
       db.workspaceConnectorAccess.findMany({ where: { workspaceId: tenantId } }),
@@ -771,6 +801,16 @@ export class BackupService {
       documentComments,
       documentDrafts,
       templatePartials,
+      serviceFamilies,
+      serviceVariants,
+      serviceVariantFeeTemplates,
+      serviceAgreements,
+      serviceAgreementEntities,
+      serviceAgreementItems,
+      serviceAgreementItemEntities,
+      serviceAgreementFeeLines,
+      clientServices,
+      clientServiceFeeLines,
       letterhead,
       connectors,
       connectorAccess,
@@ -1208,6 +1248,16 @@ export class BackupService {
       await tx.processingDocument.deleteMany({ where: { tenantId } });
 
       // Delete generated documents
+      await tx.clientServiceFeeLine.deleteMany({ where: { tenantId } });
+      await tx.clientService.deleteMany({ where: { tenantId } });
+      await tx.serviceAgreementFeeLine.deleteMany({ where: { tenantId } });
+      await tx.serviceAgreementItemEntity.deleteMany({ where: { tenantId } });
+      await tx.serviceAgreementItem.deleteMany({ where: { tenantId } });
+      await tx.serviceAgreementEntity.deleteMany({ where: { tenantId } });
+      await tx.serviceAgreement.deleteMany({ where: { tenantId } });
+      await tx.serviceVariantFeeTemplate.deleteMany({ where: { tenantId } });
+      await tx.serviceVariant.deleteMany({ where: { tenantId } });
+      await tx.serviceFamily.deleteMany({ where: { tenantId } });
       await tx.documentDraft.deleteMany({ where: { document: { tenantId } } });
       await tx.documentComment.deleteMany({ where: { document: { tenantId } } });
       await tx.documentSection.deleteMany({ where: { document: { tenantId } } });
@@ -1564,6 +1614,16 @@ export class BackupService {
         });
       }
 
+      if (Array.isArray(data.serviceFamilies) && data.serviceFamilies.length > 0) {
+        await tx.serviceFamily.createMany({ data: data.serviceFamilies as Prisma.ServiceFamilyCreateManyInput[], skipDuplicates: true });
+      }
+      if (Array.isArray(data.serviceVariants) && data.serviceVariants.length > 0) {
+        await tx.serviceVariant.createMany({ data: data.serviceVariants as Prisma.ServiceVariantCreateManyInput[], skipDuplicates: true });
+      }
+      if (Array.isArray(data.serviceVariantFeeTemplates) && data.serviceVariantFeeTemplates.length > 0) {
+        await tx.serviceVariantFeeTemplate.createMany({ data: data.serviceVariantFeeTemplates as Prisma.ServiceVariantFeeTemplateCreateManyInput[], skipDuplicates: true });
+      }
+
       // 25. Tenant Letterhead
       if (data.letterhead) {
         const letterhead = data.letterhead as Record<string, unknown>;
@@ -1580,6 +1640,28 @@ export class BackupService {
           data: data.generatedDocuments as Prisma.GeneratedDocumentCreateManyInput[],
           skipDuplicates: true,
         });
+      }
+
+      if (Array.isArray(data.serviceAgreements) && data.serviceAgreements.length > 0) {
+        await tx.serviceAgreement.createMany({ data: data.serviceAgreements as Prisma.ServiceAgreementCreateManyInput[], skipDuplicates: true });
+      }
+      if (Array.isArray(data.serviceAgreementEntities) && data.serviceAgreementEntities.length > 0) {
+        await tx.serviceAgreementEntity.createMany({ data: data.serviceAgreementEntities as Prisma.ServiceAgreementEntityCreateManyInput[], skipDuplicates: true });
+      }
+      if (Array.isArray(data.serviceAgreementItems) && data.serviceAgreementItems.length > 0) {
+        await tx.serviceAgreementItem.createMany({ data: data.serviceAgreementItems as Prisma.ServiceAgreementItemCreateManyInput[], skipDuplicates: true });
+      }
+      if (Array.isArray(data.serviceAgreementItemEntities) && data.serviceAgreementItemEntities.length > 0) {
+        await tx.serviceAgreementItemEntity.createMany({ data: data.serviceAgreementItemEntities as Prisma.ServiceAgreementItemEntityCreateManyInput[], skipDuplicates: true });
+      }
+      if (Array.isArray(data.serviceAgreementFeeLines) && data.serviceAgreementFeeLines.length > 0) {
+        await tx.serviceAgreementFeeLine.createMany({ data: data.serviceAgreementFeeLines as Prisma.ServiceAgreementFeeLineCreateManyInput[], skipDuplicates: true });
+      }
+      if (Array.isArray(data.clientServices) && data.clientServices.length > 0) {
+        await tx.clientService.createMany({ data: data.clientServices as Prisma.ClientServiceCreateManyInput[], skipDuplicates: true });
+      }
+      if (Array.isArray(data.clientServiceFeeLines) && data.clientServiceFeeLines.length > 0) {
+        await tx.clientServiceFeeLine.createMany({ data: data.clientServiceFeeLines as Prisma.ClientServiceFeeLineCreateManyInput[], skipDuplicates: true });
       }
 
       // 27. Document Sections
@@ -1734,8 +1816,18 @@ export class BackupService {
           'processingDocumentTags',
           'documentTemplates',
           'templatePartials',
+          'serviceFamilies',
+          'serviceVariants',
+          'serviceVariantFeeTemplates',
           'letterhead',
           'generatedDocuments',
+          'serviceAgreements',
+          'serviceAgreementEntities',
+          'serviceAgreementItems',
+          'serviceAgreementItemEntities',
+          'serviceAgreementFeeLines',
+          'clientServices',
+          'clientServiceFeeLines',
           'documentSections',
           'documentComments',
           'documentDrafts',

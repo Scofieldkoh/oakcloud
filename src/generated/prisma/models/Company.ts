@@ -608,6 +608,7 @@ export type CompanyWhereInput = {
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   accountMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
+  clientServices?: Prisma.ClientServiceListRelationFilter
   addresses?: Prisma.CompanyAddressListRelationFilter
   charges?: Prisma.CompanyChargeListRelationFilter
   contacts?: Prisma.CompanyContactListRelationFilter
@@ -685,6 +686,7 @@ export type CompanyOrderByWithRelationInput = {
   chartOfAccounts?: Prisma.ChartOfAccountOrderByRelationAggregateInput
   accountMappings?: Prisma.ChartOfAccountsMappingOrderByRelationAggregateInput
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
+  clientServices?: Prisma.ClientServiceOrderByRelationAggregateInput
   addresses?: Prisma.CompanyAddressOrderByRelationAggregateInput
   charges?: Prisma.CompanyChargeOrderByRelationAggregateInput
   contacts?: Prisma.CompanyContactOrderByRelationAggregateInput
@@ -766,6 +768,7 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   chartOfAccounts?: Prisma.ChartOfAccountListRelationFilter
   accountMappings?: Prisma.ChartOfAccountsMappingListRelationFilter
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
+  clientServices?: Prisma.ClientServiceListRelationFilter
   addresses?: Prisma.CompanyAddressListRelationFilter
   charges?: Prisma.CompanyChargeListRelationFilter
   contacts?: Prisma.CompanyContactListRelationFilter
@@ -956,6 +959,7 @@ export type CompanyCreateInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -1032,6 +1036,7 @@ export type CompanyUncheckedCreateInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -1108,6 +1113,7 @@ export type CompanyUpdateInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -1184,6 +1190,7 @@ export type CompanyUncheckedUpdateInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -1872,6 +1879,20 @@ export type CompanyUpdateOneRequiredWithoutServiceAgreementEntitiesNestedInput =
   update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutServiceAgreementEntitiesInput, Prisma.CompanyUpdateWithoutServiceAgreementEntitiesInput>, Prisma.CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput>
 }
 
+export type CompanyCreateNestedOneWithoutClientServicesInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutClientServicesInput, Prisma.CompanyUncheckedCreateWithoutClientServicesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutClientServicesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutClientServicesNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutClientServicesInput, Prisma.CompanyUncheckedCreateWithoutClientServicesInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutClientServicesInput
+  upsert?: Prisma.CompanyUpsertWithoutClientServicesInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutClientServicesInput, Prisma.CompanyUpdateWithoutClientServicesInput>, Prisma.CompanyUncheckedUpdateWithoutClientServicesInput>
+}
+
 export type CompanyCreateNestedOneWithoutEsigningEnvelopesInput = {
   create?: Prisma.XOR<Prisma.CompanyCreateWithoutEsigningEnvelopesInput, Prisma.CompanyUncheckedCreateWithoutEsigningEnvelopesInput>
   connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutEsigningEnvelopesInput
@@ -2035,6 +2056,7 @@ export type CompanyCreateWithoutTenantInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -2110,6 +2132,7 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -2268,6 +2291,7 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -2343,6 +2367,7 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -2434,6 +2459,7 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -2509,6 +2535,7 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -2584,6 +2611,7 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -2659,6 +2687,7 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -2750,6 +2779,7 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -2825,6 +2855,7 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -2900,6 +2931,7 @@ export type CompanyCreateWithoutFormerNamesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -2975,6 +3007,7 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -3066,6 +3099,7 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -3141,6 +3175,7 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -3216,6 +3251,7 @@ export type CompanyCreateWithoutAddressesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
@@ -3291,6 +3327,7 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
@@ -3382,6 +3419,7 @@ export type CompanyUpdateWithoutAddressesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
@@ -3457,6 +3495,7 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
@@ -3532,6 +3571,7 @@ export type CompanyCreateWithoutContactsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
@@ -3607,6 +3647,7 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
@@ -3698,6 +3739,7 @@ export type CompanyUpdateWithoutContactsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
@@ -3773,6 +3815,7 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
@@ -3848,6 +3891,7 @@ export type CompanyCreateWithoutContactDetailsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -3923,6 +3967,7 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -4014,6 +4059,7 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -4089,6 +4135,7 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -4164,6 +4211,7 @@ export type CompanyCreateWithoutOfficersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -4239,6 +4287,7 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -4330,6 +4379,7 @@ export type CompanyUpdateWithoutOfficersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -4405,6 +4455,7 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -4480,6 +4531,7 @@ export type CompanyCreateWithoutShareCapitalInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -4555,6 +4607,7 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -4646,6 +4699,7 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -4721,6 +4775,7 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -4796,6 +4851,7 @@ export type CompanyCreateWithoutShareholdersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -4871,6 +4927,7 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -4962,6 +5019,7 @@ export type CompanyUpdateWithoutShareholdersInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -5037,6 +5095,7 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -5112,6 +5171,7 @@ export type CompanyCreateWithoutChargesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
@@ -5187,6 +5247,7 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
@@ -5278,6 +5339,7 @@ export type CompanyUpdateWithoutChargesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
@@ -5353,6 +5415,7 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
@@ -5428,6 +5491,7 @@ export type CompanyCreateWithoutDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -5503,6 +5567,7 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -5594,6 +5659,7 @@ export type CompanyUpdateWithoutDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -5669,6 +5735,7 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -5743,6 +5810,7 @@ export type CompanyCreateWithoutAuditLogsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -5818,6 +5886,7 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -5909,6 +5978,7 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -5984,6 +6054,7 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -6060,6 +6131,7 @@ export type CompanyCreateWithoutNoteTabsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -6135,6 +6207,7 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -6226,6 +6299,7 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -6301,6 +6375,7 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -6376,6 +6451,7 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -6451,6 +6527,7 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -6542,6 +6619,7 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -6617,6 +6695,7 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -6692,6 +6771,7 @@ export type CompanyCreateWithoutPrimaryServiceAgreementsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -6767,6 +6847,7 @@ export type CompanyUncheckedCreateWithoutPrimaryServiceAgreementsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -6858,6 +6939,7 @@ export type CompanyUpdateWithoutPrimaryServiceAgreementsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -6933,6 +7015,7 @@ export type CompanyUncheckedUpdateWithoutPrimaryServiceAgreementsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -7008,6 +7091,7 @@ export type CompanyCreateWithoutServiceAgreementEntitiesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -7083,6 +7167,7 @@ export type CompanyUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -7174,6 +7259,7 @@ export type CompanyUpdateWithoutServiceAgreementEntitiesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -7249,6 +7335,7 @@ export type CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -7268,6 +7355,326 @@ export type CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
   taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+}
+
+export type CompanyCreateWithoutClientServicesInput = {
+  id?: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyUncheckedCreateWithoutClientServicesInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  nextAgmDueDate?: Date | string | null
+  nextArDueDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyCreateOrConnectWithoutClientServicesInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutClientServicesInput, Prisma.CompanyUncheckedCreateWithoutClientServicesInput>
+}
+
+export type CompanyUpsertWithoutClientServicesInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutClientServicesInput, Prisma.CompanyUncheckedUpdateWithoutClientServicesInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutClientServicesInput, Prisma.CompanyUncheckedCreateWithoutClientServicesInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutClientServicesInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutClientServicesInput, Prisma.CompanyUncheckedUpdateWithoutClientServicesInput>
+}
+
+export type CompanyUpdateWithoutClientServicesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutClientServicesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextAgmDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  nextArDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutEsigningEnvelopesInput = {
@@ -7324,6 +7731,7 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -7399,6 +7807,7 @@ export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -7490,6 +7899,7 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -7565,6 +7975,7 @@ export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -7640,6 +8051,7 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -7715,6 +8127,7 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -7806,6 +8219,7 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -7881,6 +8295,7 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -7955,6 +8370,7 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -8030,6 +8446,7 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -8121,6 +8538,7 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -8196,6 +8614,7 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -8271,6 +8690,7 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -8346,6 +8766,7 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -8437,6 +8858,7 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -8512,6 +8934,7 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -8588,6 +9011,7 @@ export type CompanyCreateWithoutTasksInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -8663,6 +9087,7 @@ export type CompanyUncheckedCreateWithoutTasksInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -8754,6 +9179,7 @@ export type CompanyUpdateWithoutTasksInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -8829,6 +9255,7 @@ export type CompanyUncheckedUpdateWithoutTasksInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -8904,6 +9331,7 @@ export type CompanyCreateWithoutTaskStageOutcomesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -8979,6 +9407,7 @@ export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -9070,6 +9499,7 @@ export type CompanyUpdateWithoutTaskStageOutcomesInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -9145,6 +9575,7 @@ export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -9220,6 +9651,7 @@ export type CompanyCreateWithoutTaskRecoveryContextsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
@@ -9295,6 +9727,7 @@ export type CompanyUncheckedCreateWithoutTaskRecoveryContextsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
   contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
@@ -9386,6 +9819,7 @@ export type CompanyUpdateWithoutTaskRecoveryContextsInput = {
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -9461,6 +9895,7 @@ export type CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -9587,6 +10022,7 @@ export type CompanyUpdateWithoutTenantInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
@@ -9662,6 +10098,7 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
   chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
   accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
   contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
@@ -9745,6 +10182,7 @@ export type CompanyCountOutputType = {
   auditLogs: number
   chartOfAccounts: number
   accountMappings: number
+  clientServices: number
   addresses: number
   charges: number
   contacts: number
@@ -9771,6 +10209,7 @@ export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   auditLogs?: boolean | CompanyCountOutputTypeCountAuditLogsArgs
   chartOfAccounts?: boolean | CompanyCountOutputTypeCountChartOfAccountsArgs
   accountMappings?: boolean | CompanyCountOutputTypeCountAccountMappingsArgs
+  clientServices?: boolean | CompanyCountOutputTypeCountClientServicesArgs
   addresses?: boolean | CompanyCountOutputTypeCountAddressesArgs
   charges?: boolean | CompanyCountOutputTypeCountChargesArgs
   contacts?: boolean | CompanyCountOutputTypeCountContactsArgs
@@ -9822,6 +10261,13 @@ export type CompanyCountOutputTypeCountChartOfAccountsArgs<ExtArgs extends runti
  */
 export type CompanyCountOutputTypeCountAccountMappingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ChartOfAccountsMappingWhereInput
+}
+
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountClientServicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ClientServiceWhereInput
 }
 
 /**
@@ -10020,6 +10466,7 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
   accountMappings?: boolean | Prisma.Company$accountMappingsArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  clientServices?: boolean | Prisma.Company$clientServicesArgs<ExtArgs>
   addresses?: boolean | Prisma.Company$addressesArgs<ExtArgs>
   charges?: boolean | Prisma.Company$chargesArgs<ExtArgs>
   contacts?: boolean | Prisma.Company$contactsArgs<ExtArgs>
@@ -10210,6 +10657,7 @@ export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   chartOfAccounts?: boolean | Prisma.Company$chartOfAccountsArgs<ExtArgs>
   accountMappings?: boolean | Prisma.Company$accountMappingsArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
+  clientServices?: boolean | Prisma.Company$clientServicesArgs<ExtArgs>
   addresses?: boolean | Prisma.Company$addressesArgs<ExtArgs>
   charges?: boolean | Prisma.Company$chargesArgs<ExtArgs>
   contacts?: boolean | Prisma.Company$contactsArgs<ExtArgs>
@@ -10246,6 +10694,7 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     chartOfAccounts: Prisma.$ChartOfAccountPayload<ExtArgs>[]
     accountMappings: Prisma.$ChartOfAccountsMappingPayload<ExtArgs>[]
     tenant: Prisma.$WorkspacePayload<ExtArgs>
+    clientServices: Prisma.$ClientServicePayload<ExtArgs>[]
     addresses: Prisma.$CompanyAddressPayload<ExtArgs>[]
     charges: Prisma.$CompanyChargePayload<ExtArgs>[]
     contacts: Prisma.$CompanyContactPayload<ExtArgs>[]
@@ -10716,6 +11165,7 @@ export interface Prisma__CompanyClient<T, Null = never, ExtArgs extends runtime.
   chartOfAccounts<T extends Prisma.Company$chartOfAccountsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$chartOfAccountsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   accountMappings<T extends Prisma.Company$accountMappingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$accountMappingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChartOfAccountsMappingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  clientServices<T extends Prisma.Company$clientServicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$clientServicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClientServicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   addresses<T extends Prisma.Company$addressesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$addressesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyAddressPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   charges<T extends Prisma.Company$chargesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$chargesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyChargePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   contacts<T extends Prisma.Company$contactsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$contactsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyContactPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -11280,6 +11730,30 @@ export type Company$accountMappingsArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.ChartOfAccountsMappingScalarFieldEnum | Prisma.ChartOfAccountsMappingScalarFieldEnum[]
+}
+
+/**
+ * Company.clientServices
+ */
+export type Company$clientServicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ClientService
+   */
+  select?: Prisma.ClientServiceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ClientService
+   */
+  omit?: Prisma.ClientServiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ClientServiceInclude<ExtArgs> | null
+  where?: Prisma.ClientServiceWhereInput
+  orderBy?: Prisma.ClientServiceOrderByWithRelationInput | Prisma.ClientServiceOrderByWithRelationInput[]
+  cursor?: Prisma.ClientServiceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ClientServiceScalarFieldEnum | Prisma.ClientServiceScalarFieldEnum[]
 }
 
 /**

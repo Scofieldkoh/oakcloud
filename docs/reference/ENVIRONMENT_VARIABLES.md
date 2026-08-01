@@ -25,13 +25,19 @@ Configuration options for Oakcloud.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DATABASE_URL` | - | PostgreSQL connection string |
+| `TEST_DATABASE_URL` | - | Dedicated disposable PostgreSQL database for destructive integration tests; required by Stage 3 tests in CI |
 | `DATABASE_SSL` | `true` in production | Enable SSL for database connections unless explicitly disabled |
 
 Example:
 
 ```env
 DATABASE_URL="postgresql://oakcloud:oakcloud_password@localhost:5433/oakcloud?schema=public"
+TEST_DATABASE_URL="postgresql://oakcloud:oakcloud_password@localhost:5433/oakcloud_stage3_test?schema=public"
 ```
+
+`TEST_DATABASE_URL` must never reuse the development or production database.
+`npm run test:stage3:postgres` creates and deletes tenant-scoped fixtures and
+fails in CI when the variable is absent.
 
 ## Authentication
 
@@ -167,6 +173,7 @@ The in-process scheduler is started by the app and can be configured per task.
 | `SCHEDULER_BACKUP_CRON` | `0,15,30,45 * * * *` | Backup polling cadence |
 | `SCHEDULER_CLEANUP_ENABLED` | `true` | Enable cleanup processing |
 | `SCHEDULER_CLEANUP_CRON` | `0 2 * * *` | Cleanup schedule |
+| `SCHEDULER_SERVICE_AGREEMENT_ACTIVATION_CRON` | `* * * * *` | Service Agreement activation retry polling cadence; task inherits the master scheduler switch |
 | `SCHEDULER_FORM_AI_REVIEW_ENABLED` | `true` | Enable queued form AI review processing |
 | `SCHEDULER_FORM_AI_REVIEW_CRON` | `*/2 * * * *` | Form AI review polling interval |
 | `SCHEDULER_FORM_COUNT_RECONCILIATION_ENABLED` | `false` unless set | Enable form submission count reconciliation |

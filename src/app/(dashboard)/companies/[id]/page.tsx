@@ -32,6 +32,7 @@ import { InternalNotes } from '@/components/notes/internal-notes';
 import {
   CompanyProfileTab,
   ContactDetailsTab,
+  CompanyServicesTab,
   CompanyTabs,
   useTabState,
 } from '@/components/companies/company-detail';
@@ -356,6 +357,9 @@ function CompanyDetailContent({ id }: { id: string }) {
           companyName={company.name}
           canEdit={can.updateCompany}
         />
+      )}
+      {activeTab === 'services' && (
+        <CompanyServicesTab companyId={id} canEdit={can.updateCompany} />
       )}
 
       {/* Internal Notes - Full Width */}

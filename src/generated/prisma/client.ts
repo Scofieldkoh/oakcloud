@@ -245,6 +245,16 @@ export type ServiceAgreementItemEntity = Prisma.ServiceAgreementItemEntityModel
  */
 export type ServiceAgreementFeeLine = Prisma.ServiceAgreementFeeLineModel
 /**
+ * Model ClientService
+ *
+ */
+export type ClientService = Prisma.ClientServiceModel
+/**
+ * Model ClientServiceFeeLine
+ *
+ */
+export type ClientServiceFeeLine = Prisma.ClientServiceFeeLineModel
+/**
  * Model AiConversation
  *
  */

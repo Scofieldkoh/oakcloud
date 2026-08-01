@@ -671,6 +671,20 @@ export type EnumServiceAgreementStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumServiceAgreementStatusFilter<$PrismaModel> | $Enums.ServiceAgreementStatus
 }
 
+export type EnumServiceAgreementActivationStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceAgreementActivationStatus | Prisma.EnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ServiceAgreementActivationStatus[] | Prisma.ListEnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ServiceAgreementActivationStatus[] | Prisma.ListEnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumServiceAgreementActivationStatusFilter<$PrismaModel> | $Enums.ServiceAgreementActivationStatus
+}
+
+export type EnumServiceAgreementActivationSourceNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceAgreementActivationSource | Prisma.EnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ServiceAgreementActivationSource[] | Prisma.ListEnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ServiceAgreementActivationSource[] | Prisma.ListEnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumServiceAgreementActivationSourceNullableFilter<$PrismaModel> | $Enums.ServiceAgreementActivationSource | null
+}
+
 export type EnumServiceAgreementStatusWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.ServiceAgreementStatus | Prisma.EnumServiceAgreementStatusFieldRefInput<$PrismaModel>
   in?: $Enums.ServiceAgreementStatus[] | Prisma.ListEnumServiceAgreementStatusFieldRefInput<$PrismaModel>
@@ -679,6 +693,43 @@ export type EnumServiceAgreementStatusWithAggregatesFilter<$PrismaModel = never>
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumServiceAgreementStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumServiceAgreementStatusFilter<$PrismaModel>
+}
+
+export type EnumServiceAgreementActivationStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceAgreementActivationStatus | Prisma.EnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ServiceAgreementActivationStatus[] | Prisma.ListEnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ServiceAgreementActivationStatus[] | Prisma.ListEnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumServiceAgreementActivationStatusWithAggregatesFilter<$PrismaModel> | $Enums.ServiceAgreementActivationStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumServiceAgreementActivationStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumServiceAgreementActivationStatusFilter<$PrismaModel>
+}
+
+export type EnumServiceAgreementActivationSourceNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceAgreementActivationSource | Prisma.EnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ServiceAgreementActivationSource[] | Prisma.ListEnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ServiceAgreementActivationSource[] | Prisma.ListEnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumServiceAgreementActivationSourceNullableWithAggregatesFilter<$PrismaModel> | $Enums.ServiceAgreementActivationSource | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumServiceAgreementActivationSourceNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumServiceAgreementActivationSourceNullableFilter<$PrismaModel>
+}
+
+export type EnumClientServiceStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.ClientServiceStatus | Prisma.EnumClientServiceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ClientServiceStatus[] | Prisma.ListEnumClientServiceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ClientServiceStatus[] | Prisma.ListEnumClientServiceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel> | $Enums.ClientServiceStatus
+}
+
+export type EnumClientServiceStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ClientServiceStatus | Prisma.EnumClientServiceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ClientServiceStatus[] | Prisma.ListEnumClientServiceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ClientServiceStatus[] | Prisma.ListEnumClientServiceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumClientServiceStatusWithAggregatesFilter<$PrismaModel> | $Enums.ClientServiceStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel>
 }
 
 export type EnumEsigningEnvelopeStatusFilter<$PrismaModel = never> = {
@@ -2330,6 +2381,20 @@ export type NestedEnumServiceAgreementStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumServiceAgreementStatusFilter<$PrismaModel> | $Enums.ServiceAgreementStatus
 }
 
+export type NestedEnumServiceAgreementActivationStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceAgreementActivationStatus | Prisma.EnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ServiceAgreementActivationStatus[] | Prisma.ListEnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ServiceAgreementActivationStatus[] | Prisma.ListEnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumServiceAgreementActivationStatusFilter<$PrismaModel> | $Enums.ServiceAgreementActivationStatus
+}
+
+export type NestedEnumServiceAgreementActivationSourceNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceAgreementActivationSource | Prisma.EnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ServiceAgreementActivationSource[] | Prisma.ListEnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ServiceAgreementActivationSource[] | Prisma.ListEnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumServiceAgreementActivationSourceNullableFilter<$PrismaModel> | $Enums.ServiceAgreementActivationSource | null
+}
+
 export type NestedEnumServiceAgreementStatusWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.ServiceAgreementStatus | Prisma.EnumServiceAgreementStatusFieldRefInput<$PrismaModel>
   in?: $Enums.ServiceAgreementStatus[] | Prisma.ListEnumServiceAgreementStatusFieldRefInput<$PrismaModel>
@@ -2338,6 +2403,43 @@ export type NestedEnumServiceAgreementStatusWithAggregatesFilter<$PrismaModel = 
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumServiceAgreementStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumServiceAgreementStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumServiceAgreementActivationStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceAgreementActivationStatus | Prisma.EnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ServiceAgreementActivationStatus[] | Prisma.ListEnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ServiceAgreementActivationStatus[] | Prisma.ListEnumServiceAgreementActivationStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumServiceAgreementActivationStatusWithAggregatesFilter<$PrismaModel> | $Enums.ServiceAgreementActivationStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumServiceAgreementActivationStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumServiceAgreementActivationStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumServiceAgreementActivationSourceNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ServiceAgreementActivationSource | Prisma.EnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ServiceAgreementActivationSource[] | Prisma.ListEnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ServiceAgreementActivationSource[] | Prisma.ListEnumServiceAgreementActivationSourceFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumServiceAgreementActivationSourceNullableWithAggregatesFilter<$PrismaModel> | $Enums.ServiceAgreementActivationSource | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumServiceAgreementActivationSourceNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumServiceAgreementActivationSourceNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumClientServiceStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.ClientServiceStatus | Prisma.EnumClientServiceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ClientServiceStatus[] | Prisma.ListEnumClientServiceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ClientServiceStatus[] | Prisma.ListEnumClientServiceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel> | $Enums.ClientServiceStatus
+}
+
+export type NestedEnumClientServiceStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ClientServiceStatus | Prisma.EnumClientServiceStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ClientServiceStatus[] | Prisma.ListEnumClientServiceStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ClientServiceStatus[] | Prisma.ListEnumClientServiceStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumClientServiceStatusWithAggregatesFilter<$PrismaModel> | $Enums.ClientServiceStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumClientServiceStatusFilter<$PrismaModel>
 }
 
 export type NestedEnumEsigningEnvelopeStatusFilter<$PrismaModel = never> = {

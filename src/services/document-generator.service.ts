@@ -47,6 +47,7 @@ import type { TaskLaunchContext } from '@/services/tasks/types';
 import { NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { readActiveGenerationSession } from '@/lib/document-generation-session';
+import { metadataHasUnresolvedTemplateData } from '@/lib/document-finalization';
 import { safelyReconcileGeneratedDocumentTaskOutcomes } from '@/services/tasks/integration.service';
 import { createHash } from 'node:crypto';
 import {
@@ -251,37 +252,6 @@ async function buildContactsContext(
     firstContact: mappedContacts[0],
     contacts: mappedContacts,
   };
-}
-
-function metadataHasUnresolvedTemplateData(metadata: unknown): boolean {
-  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
-    return false;
-  }
-
-  const data = metadata as Record<string, unknown>;
-  const missingPlaceholders = Array.isArray(data.missingPlaceholders)
-    ? data.missingPlaceholders
-    : [];
-  const missingPartials = Array.isArray(data.missingPartials)
-    ? data.missingPartials
-    : [];
-  const circularPartials = Array.isArray(data.circularPartials)
-    ? data.circularPartials
-    : [];
-  const syntaxErrors = Array.isArray(data.syntaxErrors)
-    ? data.syntaxErrors
-    : [];
-  const unknownPlaceholders = Array.isArray(data.unknownPlaceholders)
-    ? data.unknownPlaceholders
-    : [];
-
-  return (
-    missingPlaceholders.length > 0
-    || missingPartials.length > 0
-    || circularPartials.length > 0
-    || syntaxErrors.length > 0
-    || unknownPlaceholders.length > 0
-  );
 }
 
 function buildBlockingErrors(

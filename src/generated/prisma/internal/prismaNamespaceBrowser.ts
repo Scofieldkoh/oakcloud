@@ -92,6 +92,8 @@ export const ModelName = {
   ServiceAgreementItem: 'ServiceAgreementItem',
   ServiceAgreementItemEntity: 'ServiceAgreementItemEntity',
   ServiceAgreementFeeLine: 'ServiceAgreementFeeLine',
+  ClientService: 'ClientService',
+  ClientServiceFeeLine: 'ClientServiceFeeLine',
   AiConversation: 'AiConversation',
   EsigningEnvelope: 'EsigningEnvelope',
   EsigningEnvelopeDocument: 'EsigningEnvelopeDocument',
@@ -872,6 +874,16 @@ export const ServiceAgreementScalarFieldEnum = {
   status: 'status',
   signedAt: 'signedAt',
   activatedAt: 'activatedAt',
+  activationStatus: 'activationStatus',
+  activationSource: 'activationSource',
+  activationAttemptCount: 'activationAttemptCount',
+  activationAvailableAt: 'activationAvailableAt',
+  activationClaimedAt: 'activationClaimedAt',
+  activationLeaseExpiresAt: 'activationLeaseExpiresAt',
+  activationClaimToken: 'activationClaimToken',
+  activationLastError: 'activationLastError',
+  activationRequestedById: 'activationRequestedById',
+  activationReason: 'activationReason',
   cancelledAt: 'cancelledAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -946,6 +958,49 @@ export const ServiceAgreementFeeLineScalarFieldEnum = {
 } as const
 
 export type ServiceAgreementFeeLineScalarFieldEnum = (typeof ServiceAgreementFeeLineScalarFieldEnum)[keyof typeof ServiceAgreementFeeLineScalarFieldEnum]
+
+
+export const ClientServiceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  agreementId: 'agreementId',
+  agreementItemId: 'agreementItemId',
+  serviceVariantId: 'serviceVariantId',
+  familyName: 'familyName',
+  serviceName: 'serviceName',
+  status: 'status',
+  serviceCadence: 'serviceCadence',
+  customCadenceLabel: 'customCadenceLabel',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  fieldValues: 'fieldValues',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt',
+  deletedReason: 'deletedReason'
+} as const
+
+export type ClientServiceScalarFieldEnum = (typeof ClientServiceScalarFieldEnum)[keyof typeof ClientServiceScalarFieldEnum]
+
+
+export const ClientServiceFeeLineScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  clientServiceId: 'clientServiceId',
+  sourceAgreementFeeLineId: 'sourceAgreementFeeLineId',
+  description: 'description',
+  amount: 'amount',
+  currency: 'currency',
+  billingFrequency: 'billingFrequency',
+  customFrequencyLabel: 'customFrequencyLabel',
+  billingStartDate: 'billingStartDate',
+  displayOrder: 'displayOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ClientServiceFeeLineScalarFieldEnum = (typeof ClientServiceFeeLineScalarFieldEnum)[keyof typeof ClientServiceFeeLineScalarFieldEnum]
 
 
 export const AiConversationScalarFieldEnum = {

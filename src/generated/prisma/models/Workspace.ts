@@ -362,6 +362,8 @@ export type WorkspaceWhereInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemListRelationFilter
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityListRelationFilter
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineListRelationFilter
+  clientServices?: Prisma.ClientServiceListRelationFilter
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineListRelationFilter
   backups?: Prisma.WorkspaceBackupListRelationFilter
   connectorAccess?: Prisma.WorkspaceConnectorAccessListRelationFilter
   letterhead?: Prisma.XOR<Prisma.WorkspaceLetterheadNullableScalarRelationFilter, Prisma.WorkspaceLetterheadWhereInput> | null
@@ -426,6 +428,8 @@ export type WorkspaceOrderByWithRelationInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemOrderByRelationAggregateInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityOrderByRelationAggregateInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineOrderByRelationAggregateInput
+  clientServices?: Prisma.ClientServiceOrderByRelationAggregateInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineOrderByRelationAggregateInput
   backups?: Prisma.WorkspaceBackupOrderByRelationAggregateInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessOrderByRelationAggregateInput
   letterhead?: Prisma.WorkspaceLetterheadOrderByWithRelationInput
@@ -493,6 +497,8 @@ export type WorkspaceWhereUniqueInput = Prisma.AtLeast<{
   serviceAgreementItems?: Prisma.ServiceAgreementItemListRelationFilter
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityListRelationFilter
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineListRelationFilter
+  clientServices?: Prisma.ClientServiceListRelationFilter
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineListRelationFilter
   backups?: Prisma.WorkspaceBackupListRelationFilter
   connectorAccess?: Prisma.WorkspaceConnectorAccessListRelationFilter
   letterhead?: Prisma.XOR<Prisma.WorkspaceLetterheadNullableScalarRelationFilter, Prisma.WorkspaceLetterheadWhereInput> | null
@@ -609,6 +615,8 @@ export type WorkspaceCreateInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -673,6 +681,8 @@ export type WorkspaceUncheckedCreateInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -737,6 +747,8 @@ export type WorkspaceUpdateInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -801,6 +813,8 @@ export type WorkspaceUncheckedUpdateInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -1313,6 +1327,34 @@ export type WorkspaceUpdateOneRequiredWithoutServiceAgreementFeeLinesNestedInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutServiceAgreementFeeLinesInput, Prisma.WorkspaceUpdateWithoutServiceAgreementFeeLinesInput>, Prisma.WorkspaceUncheckedUpdateWithoutServiceAgreementFeeLinesInput>
 }
 
+export type WorkspaceCreateNestedOneWithoutClientServicesInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutClientServicesInput, Prisma.WorkspaceUncheckedCreateWithoutClientServicesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutClientServicesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+}
+
+export type WorkspaceUpdateOneRequiredWithoutClientServicesNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutClientServicesInput, Prisma.WorkspaceUncheckedCreateWithoutClientServicesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutClientServicesInput
+  upsert?: Prisma.WorkspaceUpsertWithoutClientServicesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutClientServicesInput, Prisma.WorkspaceUpdateWithoutClientServicesInput>, Prisma.WorkspaceUncheckedUpdateWithoutClientServicesInput>
+}
+
+export type WorkspaceCreateNestedOneWithoutClientServiceFeeLinesInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutClientServiceFeeLinesInput, Prisma.WorkspaceUncheckedCreateWithoutClientServiceFeeLinesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutClientServiceFeeLinesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+}
+
+export type WorkspaceUpdateOneRequiredWithoutClientServiceFeeLinesNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutClientServiceFeeLinesInput, Prisma.WorkspaceUncheckedCreateWithoutClientServiceFeeLinesInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutClientServiceFeeLinesInput
+  upsert?: Prisma.WorkspaceUpsertWithoutClientServiceFeeLinesInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutClientServiceFeeLinesInput, Prisma.WorkspaceUpdateWithoutClientServiceFeeLinesInput>, Prisma.WorkspaceUncheckedUpdateWithoutClientServiceFeeLinesInput>
+}
+
 export type WorkspaceCreateNestedOneWithoutAiConversationsInput = {
   create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutAiConversationsInput, Prisma.WorkspaceUncheckedCreateWithoutAiConversationsInput>
   connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutAiConversationsInput
@@ -1646,6 +1688,8 @@ export type WorkspaceCreateWithoutRolesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -1709,6 +1753,8 @@ export type WorkspaceUncheckedCreateWithoutRolesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -1788,6 +1834,8 @@ export type WorkspaceUpdateWithoutRolesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -1851,6 +1899,8 @@ export type WorkspaceUncheckedUpdateWithoutRolesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -1915,6 +1965,8 @@ export type WorkspaceCreateWithoutUsersInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -1978,6 +2030,8 @@ export type WorkspaceUncheckedCreateWithoutUsersInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -2057,6 +2111,8 @@ export type WorkspaceUpdateWithoutUsersInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -2120,6 +2176,8 @@ export type WorkspaceUncheckedUpdateWithoutUsersInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -2182,6 +2240,8 @@ export type WorkspaceCreateWithoutCompaniesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -2245,6 +2305,8 @@ export type WorkspaceUncheckedCreateWithoutCompaniesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -2324,6 +2386,8 @@ export type WorkspaceUpdateWithoutCompaniesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -2387,6 +2451,8 @@ export type WorkspaceUncheckedUpdateWithoutCompaniesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -2450,6 +2516,8 @@ export type WorkspaceCreateWithoutContactsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -2513,6 +2581,8 @@ export type WorkspaceUncheckedCreateWithoutContactsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -2592,6 +2662,8 @@ export type WorkspaceUpdateWithoutContactsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -2655,6 +2727,8 @@ export type WorkspaceUncheckedUpdateWithoutContactsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -2718,6 +2792,8 @@ export type WorkspaceCreateWithoutContactDetailsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -2781,6 +2857,8 @@ export type WorkspaceUncheckedCreateWithoutContactDetailsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -2860,6 +2938,8 @@ export type WorkspaceUpdateWithoutContactDetailsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -2923,6 +3003,8 @@ export type WorkspaceUncheckedUpdateWithoutContactDetailsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -2986,6 +3068,8 @@ export type WorkspaceCreateWithoutDocumentsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -3049,6 +3133,8 @@ export type WorkspaceUncheckedCreateWithoutDocumentsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -3128,6 +3214,8 @@ export type WorkspaceUpdateWithoutDocumentsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -3191,6 +3279,8 @@ export type WorkspaceUncheckedUpdateWithoutDocumentsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -3254,6 +3344,8 @@ export type WorkspaceCreateWithoutAuditLogsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -3317,6 +3409,8 @@ export type WorkspaceUncheckedCreateWithoutAuditLogsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -3396,6 +3490,8 @@ export type WorkspaceUpdateWithoutAuditLogsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -3459,6 +3555,8 @@ export type WorkspaceUncheckedUpdateWithoutAuditLogsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -3522,6 +3620,8 @@ export type WorkspaceCreateWithoutConnectorsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -3585,6 +3685,8 @@ export type WorkspaceUncheckedCreateWithoutConnectorsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -3664,6 +3766,8 @@ export type WorkspaceUpdateWithoutConnectorsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -3727,6 +3831,8 @@ export type WorkspaceUncheckedUpdateWithoutConnectorsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -3791,6 +3897,8 @@ export type WorkspaceCreateWithoutConnectorAccessInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
@@ -3854,6 +3962,8 @@ export type WorkspaceUncheckedCreateWithoutConnectorAccessInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -3933,6 +4043,8 @@ export type WorkspaceUpdateWithoutConnectorAccessInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
@@ -3996,6 +4108,8 @@ export type WorkspaceUncheckedUpdateWithoutConnectorAccessInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -4058,6 +4172,8 @@ export type WorkspaceCreateWithoutConnectorUsageLogsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -4121,6 +4237,8 @@ export type WorkspaceUncheckedCreateWithoutConnectorUsageLogsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -4200,6 +4318,8 @@ export type WorkspaceUpdateWithoutConnectorUsageLogsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -4263,6 +4383,8 @@ export type WorkspaceUncheckedUpdateWithoutConnectorUsageLogsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -4326,6 +4448,8 @@ export type WorkspaceCreateWithoutDocumentTemplatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -4389,6 +4513,8 @@ export type WorkspaceUncheckedCreateWithoutDocumentTemplatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -4468,6 +4594,8 @@ export type WorkspaceUpdateWithoutDocumentTemplatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -4531,6 +4659,8 @@ export type WorkspaceUncheckedUpdateWithoutDocumentTemplatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -4594,6 +4724,8 @@ export type WorkspaceCreateWithoutGeneratedDocumentsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -4657,6 +4789,8 @@ export type WorkspaceUncheckedCreateWithoutGeneratedDocumentsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -4736,6 +4870,8 @@ export type WorkspaceUpdateWithoutGeneratedDocumentsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -4799,6 +4935,8 @@ export type WorkspaceUncheckedUpdateWithoutGeneratedDocumentsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -4863,6 +5001,8 @@ export type WorkspaceCreateWithoutLetterheadInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
@@ -4926,6 +5066,8 @@ export type WorkspaceUncheckedCreateWithoutLetterheadInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -5005,6 +5147,8 @@ export type WorkspaceUpdateWithoutLetterheadInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
@@ -5068,6 +5212,8 @@ export type WorkspaceUncheckedUpdateWithoutLetterheadInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -5130,6 +5276,8 @@ export type WorkspaceCreateWithoutTemplatePartialsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -5193,6 +5341,8 @@ export type WorkspaceUncheckedCreateWithoutTemplatePartialsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -5272,6 +5422,8 @@ export type WorkspaceUpdateWithoutTemplatePartialsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -5335,6 +5487,8 @@ export type WorkspaceUncheckedUpdateWithoutTemplatePartialsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -5398,6 +5552,8 @@ export type WorkspaceCreateWithoutServiceFamiliesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -5461,6 +5617,8 @@ export type WorkspaceUncheckedCreateWithoutServiceFamiliesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -5540,6 +5698,8 @@ export type WorkspaceUpdateWithoutServiceFamiliesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -5603,6 +5763,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceFamiliesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -5666,6 +5828,8 @@ export type WorkspaceCreateWithoutServiceVariantsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -5729,6 +5893,8 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -5808,6 +5974,8 @@ export type WorkspaceUpdateWithoutServiceVariantsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -5871,6 +6039,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -5934,6 +6104,8 @@ export type WorkspaceCreateWithoutServiceVariantFeeTemplatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -5997,6 +6169,8 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantFeeTemplatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -6076,6 +6250,8 @@ export type WorkspaceUpdateWithoutServiceVariantFeeTemplatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -6139,6 +6315,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantFeeTemplatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -6202,6 +6380,8 @@ export type WorkspaceCreateWithoutServiceAgreementsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -6265,6 +6445,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -6344,6 +6526,8 @@ export type WorkspaceUpdateWithoutServiceAgreementsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -6407,6 +6591,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -6470,6 +6656,8 @@ export type WorkspaceCreateWithoutServiceAgreementEntitiesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -6533,6 +6721,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -6612,6 +6802,8 @@ export type WorkspaceUpdateWithoutServiceAgreementEntitiesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -6675,6 +6867,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -6738,6 +6932,8 @@ export type WorkspaceCreateWithoutServiceAgreementItemsInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -6801,6 +6997,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementItemsInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -6880,6 +7078,8 @@ export type WorkspaceUpdateWithoutServiceAgreementItemsInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -6943,6 +7143,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemsInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -7006,6 +7208,8 @@ export type WorkspaceCreateWithoutServiceAgreementItemEntitiesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutTenantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -7069,6 +7273,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementItemEntitiesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -7148,6 +7354,8 @@ export type WorkspaceUpdateWithoutServiceAgreementItemEntitiesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -7211,6 +7419,8 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemEntitiesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -7274,6 +7484,8 @@ export type WorkspaceCreateWithoutServiceAgreementFeeLinesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutTenantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -7337,6 +7549,8 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementFeeLinesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -7416,6 +7630,8 @@ export type WorkspaceUpdateWithoutServiceAgreementFeeLinesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -7479,6 +7695,560 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementFeeLinesInput = {
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceCreateWithoutClientServicesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceUncheckedCreateWithoutClientServicesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceCreateOrConnectWithoutClientServicesInput = {
+  where: Prisma.WorkspaceWhereUniqueInput
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutClientServicesInput, Prisma.WorkspaceUncheckedCreateWithoutClientServicesInput>
+}
+
+export type WorkspaceUpsertWithoutClientServicesInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutClientServicesInput, Prisma.WorkspaceUncheckedUpdateWithoutClientServicesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutClientServicesInput, Prisma.WorkspaceUncheckedCreateWithoutClientServicesInput>
+  where?: Prisma.WorkspaceWhereInput
+}
+
+export type WorkspaceUpdateToOneWithWhereWithoutClientServicesInput = {
+  where?: Prisma.WorkspaceWhereInput
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutClientServicesInput, Prisma.WorkspaceUncheckedUpdateWithoutClientServicesInput>
+}
+
+export type WorkspaceUpdateWithoutClientServicesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceUncheckedUpdateWithoutClientServicesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceCreateWithoutClientServiceFeeLinesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceUncheckedCreateWithoutClientServiceFeeLinesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceCreateOrConnectWithoutClientServiceFeeLinesInput = {
+  where: Prisma.WorkspaceWhereUniqueInput
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutClientServiceFeeLinesInput, Prisma.WorkspaceUncheckedCreateWithoutClientServiceFeeLinesInput>
+}
+
+export type WorkspaceUpsertWithoutClientServiceFeeLinesInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutClientServiceFeeLinesInput, Prisma.WorkspaceUncheckedUpdateWithoutClientServiceFeeLinesInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutClientServiceFeeLinesInput, Prisma.WorkspaceUncheckedCreateWithoutClientServiceFeeLinesInput>
+  where?: Prisma.WorkspaceWhereInput
+}
+
+export type WorkspaceUpdateToOneWithWhereWithoutClientServiceFeeLinesInput = {
+  where?: Prisma.WorkspaceWhereInput
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutClientServiceFeeLinesInput, Prisma.WorkspaceUncheckedUpdateWithoutClientServiceFeeLinesInput>
+}
+
+export type WorkspaceUpdateWithoutClientServiceFeeLinesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceUncheckedUpdateWithoutClientServiceFeeLinesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -7542,6 +8312,8 @@ export type WorkspaceCreateWithoutAiConversationsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -7605,6 +8377,8 @@ export type WorkspaceUncheckedCreateWithoutAiConversationsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -7684,6 +8458,8 @@ export type WorkspaceUpdateWithoutAiConversationsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -7747,6 +8523,8 @@ export type WorkspaceUncheckedUpdateWithoutAiConversationsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -7810,6 +8588,8 @@ export type WorkspaceCreateWithoutEsigningEnvelopesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -7873,6 +8653,8 @@ export type WorkspaceUncheckedCreateWithoutEsigningEnvelopesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -7952,6 +8734,8 @@ export type WorkspaceUpdateWithoutEsigningEnvelopesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -8015,6 +8799,8 @@ export type WorkspaceUncheckedUpdateWithoutEsigningEnvelopesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -8078,6 +8864,8 @@ export type WorkspaceCreateWithoutExchangeRatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -8141,6 +8929,8 @@ export type WorkspaceUncheckedCreateWithoutExchangeRatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -8220,6 +9010,8 @@ export type WorkspaceUpdateWithoutExchangeRatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -8283,6 +9075,8 @@ export type WorkspaceUncheckedUpdateWithoutExchangeRatesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -8346,6 +9140,8 @@ export type WorkspaceCreateWithoutFormsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -8409,6 +9205,8 @@ export type WorkspaceUncheckedCreateWithoutFormsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -8488,6 +9286,8 @@ export type WorkspaceUpdateWithoutFormsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -8551,6 +9351,8 @@ export type WorkspaceUncheckedUpdateWithoutFormsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -8614,6 +9416,8 @@ export type WorkspaceCreateWithoutFormFieldsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -8677,6 +9481,8 @@ export type WorkspaceUncheckedCreateWithoutFormFieldsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -8756,6 +9562,8 @@ export type WorkspaceUpdateWithoutFormFieldsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -8819,6 +9627,8 @@ export type WorkspaceUncheckedUpdateWithoutFormFieldsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -8882,6 +9692,8 @@ export type WorkspaceCreateWithoutFormSubmissionsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -8945,6 +9757,8 @@ export type WorkspaceUncheckedCreateWithoutFormSubmissionsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -9024,6 +9838,8 @@ export type WorkspaceUpdateWithoutFormSubmissionsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -9087,6 +9903,8 @@ export type WorkspaceUncheckedUpdateWithoutFormSubmissionsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -9150,6 +9968,8 @@ export type WorkspaceCreateWithoutFormDraftsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -9213,6 +10033,8 @@ export type WorkspaceUncheckedCreateWithoutFormDraftsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -9292,6 +10114,8 @@ export type WorkspaceUpdateWithoutFormDraftsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -9355,6 +10179,8 @@ export type WorkspaceUncheckedUpdateWithoutFormDraftsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -9418,6 +10244,8 @@ export type WorkspaceCreateWithoutFormUploadsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -9481,6 +10309,8 @@ export type WorkspaceUncheckedCreateWithoutFormUploadsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -9560,6 +10390,8 @@ export type WorkspaceUpdateWithoutFormUploadsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -9623,6 +10455,8 @@ export type WorkspaceUncheckedUpdateWithoutFormUploadsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -9687,6 +10521,8 @@ export type WorkspaceCreateWithoutBackupsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
@@ -9750,6 +10586,8 @@ export type WorkspaceUncheckedCreateWithoutBackupsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
@@ -9829,6 +10667,8 @@ export type WorkspaceUpdateWithoutBackupsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
@@ -9892,6 +10732,8 @@ export type WorkspaceUncheckedUpdateWithoutBackupsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
@@ -9954,6 +10796,8 @@ export type WorkspaceCreateWithoutBackupScheduleInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -10017,6 +10861,8 @@ export type WorkspaceUncheckedCreateWithoutBackupScheduleInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -10096,6 +10942,8 @@ export type WorkspaceUpdateWithoutBackupScheduleInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -10159,6 +11007,8 @@ export type WorkspaceUncheckedUpdateWithoutBackupScheduleInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -10222,6 +11072,8 @@ export type WorkspaceCreateWithoutChartOfAccountsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -10285,6 +11137,8 @@ export type WorkspaceUncheckedCreateWithoutChartOfAccountsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -10364,6 +11218,8 @@ export type WorkspaceUpdateWithoutChartOfAccountsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -10427,6 +11283,8 @@ export type WorkspaceUncheckedUpdateWithoutChartOfAccountsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -10491,6 +11349,8 @@ export type WorkspaceCreateWithoutTaskPipelinesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -10554,6 +11414,8 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelinesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -10633,6 +11495,8 @@ export type WorkspaceUpdateWithoutTaskPipelinesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -10696,6 +11560,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelinesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -10759,6 +11625,8 @@ export type WorkspaceCreateWithoutTaskPipelineVersionsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -10822,6 +11690,8 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelineVersionsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -10901,6 +11771,8 @@ export type WorkspaceUpdateWithoutTaskPipelineVersionsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -10964,6 +11836,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelineVersionsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -11027,6 +11901,8 @@ export type WorkspaceCreateWithoutTaskPipelineStagesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -11090,6 +11966,8 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelineStagesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -11169,6 +12047,8 @@ export type WorkspaceUpdateWithoutTaskPipelineStagesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -11232,6 +12112,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelineStagesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -11295,6 +12177,8 @@ export type WorkspaceCreateWithoutTasksInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -11358,6 +12242,8 @@ export type WorkspaceUncheckedCreateWithoutTasksInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -11437,6 +12323,8 @@ export type WorkspaceUpdateWithoutTasksInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -11500,6 +12388,8 @@ export type WorkspaceUncheckedUpdateWithoutTasksInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -11563,6 +12453,8 @@ export type WorkspaceCreateWithoutTaskStagesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -11626,6 +12518,8 @@ export type WorkspaceUncheckedCreateWithoutTaskStagesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -11705,6 +12599,8 @@ export type WorkspaceUpdateWithoutTaskStagesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -11768,6 +12664,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskStagesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -11831,6 +12729,8 @@ export type WorkspaceCreateWithoutTaskStageChecklistItemsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -11894,6 +12794,8 @@ export type WorkspaceUncheckedCreateWithoutTaskStageChecklistItemsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -11973,6 +12875,8 @@ export type WorkspaceUpdateWithoutTaskStageChecklistItemsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -12036,6 +12940,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskStageChecklistItemsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -12099,6 +13005,8 @@ export type WorkspaceCreateWithoutTaskStageOutcomesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -12162,6 +13070,8 @@ export type WorkspaceUncheckedCreateWithoutTaskStageOutcomesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -12241,6 +13151,8 @@ export type WorkspaceUpdateWithoutTaskStageOutcomesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -12304,6 +13216,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskStageOutcomesInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -12366,6 +13280,8 @@ export type WorkspaceCreateWithoutTaskEsigningPreparationsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -12429,6 +13345,8 @@ export type WorkspaceUncheckedCreateWithoutTaskEsigningPreparationsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -12508,6 +13426,8 @@ export type WorkspaceUpdateWithoutTaskEsigningPreparationsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -12571,6 +13491,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskEsigningPreparationsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -12635,6 +13557,8 @@ export type WorkspaceCreateWithoutTaskCompanyRecoveryContextsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
@@ -12698,6 +13622,8 @@ export type WorkspaceUncheckedCreateWithoutTaskCompanyRecoveryContextsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
   backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
@@ -12777,6 +13703,8 @@ export type WorkspaceUpdateWithoutTaskCompanyRecoveryContextsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
@@ -12840,6 +13768,8 @@ export type WorkspaceUncheckedUpdateWithoutTaskCompanyRecoveryContextsInput = {
   serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
   serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
   backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
   connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
   letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
@@ -12888,6 +13818,8 @@ export type WorkspaceCountOutputType = {
   serviceAgreementItems: number
   serviceAgreementItemEntities: number
   serviceAgreementFeeLines: number
+  clientServices: number
+  clientServiceFeeLines: number
   backups: number
   connectorAccess: number
   users: number
@@ -12931,6 +13863,8 @@ export type WorkspaceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensi
   serviceAgreementItems?: boolean | WorkspaceCountOutputTypeCountServiceAgreementItemsArgs
   serviceAgreementItemEntities?: boolean | WorkspaceCountOutputTypeCountServiceAgreementItemEntitiesArgs
   serviceAgreementFeeLines?: boolean | WorkspaceCountOutputTypeCountServiceAgreementFeeLinesArgs
+  clientServices?: boolean | WorkspaceCountOutputTypeCountClientServicesArgs
+  clientServiceFeeLines?: boolean | WorkspaceCountOutputTypeCountClientServiceFeeLinesArgs
   backups?: boolean | WorkspaceCountOutputTypeCountBackupsArgs
   connectorAccess?: boolean | WorkspaceCountOutputTypeCountConnectorAccessArgs
   users?: boolean | WorkspaceCountOutputTypeCountUsersArgs
@@ -13160,6 +14094,20 @@ export type WorkspaceCountOutputTypeCountServiceAgreementFeeLinesArgs<ExtArgs ex
 /**
  * WorkspaceCountOutputType without action
  */
+export type WorkspaceCountOutputTypeCountClientServicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ClientServiceWhereInput
+}
+
+/**
+ * WorkspaceCountOutputType without action
+ */
+export type WorkspaceCountOutputTypeCountClientServiceFeeLinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ClientServiceFeeLineWhereInput
+}
+
+/**
+ * WorkspaceCountOutputType without action
+ */
 export type WorkspaceCountOutputTypeCountBackupsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.WorkspaceBackupWhereInput
 }
@@ -13285,6 +14233,8 @@ export type WorkspaceSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   serviceAgreementItems?: boolean | Prisma.Workspace$serviceAgreementItemsArgs<ExtArgs>
   serviceAgreementItemEntities?: boolean | Prisma.Workspace$serviceAgreementItemEntitiesArgs<ExtArgs>
   serviceAgreementFeeLines?: boolean | Prisma.Workspace$serviceAgreementFeeLinesArgs<ExtArgs>
+  clientServices?: boolean | Prisma.Workspace$clientServicesArgs<ExtArgs>
+  clientServiceFeeLines?: boolean | Prisma.Workspace$clientServiceFeeLinesArgs<ExtArgs>
   backups?: boolean | Prisma.Workspace$backupsArgs<ExtArgs>
   connectorAccess?: boolean | Prisma.Workspace$connectorAccessArgs<ExtArgs>
   letterhead?: boolean | Prisma.Workspace$letterheadArgs<ExtArgs>
@@ -13398,6 +14348,8 @@ export type WorkspaceInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   serviceAgreementItems?: boolean | Prisma.Workspace$serviceAgreementItemsArgs<ExtArgs>
   serviceAgreementItemEntities?: boolean | Prisma.Workspace$serviceAgreementItemEntitiesArgs<ExtArgs>
   serviceAgreementFeeLines?: boolean | Prisma.Workspace$serviceAgreementFeeLinesArgs<ExtArgs>
+  clientServices?: boolean | Prisma.Workspace$clientServicesArgs<ExtArgs>
+  clientServiceFeeLines?: boolean | Prisma.Workspace$clientServiceFeeLinesArgs<ExtArgs>
   backups?: boolean | Prisma.Workspace$backupsArgs<ExtArgs>
   connectorAccess?: boolean | Prisma.Workspace$connectorAccessArgs<ExtArgs>
   letterhead?: boolean | Prisma.Workspace$letterheadArgs<ExtArgs>
@@ -13448,6 +14400,8 @@ export type $WorkspacePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     serviceAgreementItems: Prisma.$ServiceAgreementItemPayload<ExtArgs>[]
     serviceAgreementItemEntities: Prisma.$ServiceAgreementItemEntityPayload<ExtArgs>[]
     serviceAgreementFeeLines: Prisma.$ServiceAgreementFeeLinePayload<ExtArgs>[]
+    clientServices: Prisma.$ClientServicePayload<ExtArgs>[]
+    clientServiceFeeLines: Prisma.$ClientServiceFeeLinePayload<ExtArgs>[]
     backups: Prisma.$WorkspaceBackupPayload<ExtArgs>[]
     connectorAccess: Prisma.$WorkspaceConnectorAccessPayload<ExtArgs>[]
     letterhead: Prisma.$WorkspaceLetterheadPayload<ExtArgs> | null
@@ -13905,6 +14859,8 @@ export interface Prisma__WorkspaceClient<T, Null = never, ExtArgs extends runtim
   serviceAgreementItems<T extends Prisma.Workspace$serviceAgreementItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$serviceAgreementItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   serviceAgreementItemEntities<T extends Prisma.Workspace$serviceAgreementItemEntitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$serviceAgreementItemEntitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementItemEntityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   serviceAgreementFeeLines<T extends Prisma.Workspace$serviceAgreementFeeLinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$serviceAgreementFeeLinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceAgreementFeeLinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  clientServices<T extends Prisma.Workspace$clientServicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$clientServicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClientServicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  clientServiceFeeLines<T extends Prisma.Workspace$clientServiceFeeLinesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$clientServiceFeeLinesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClientServiceFeeLinePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   backups<T extends Prisma.Workspace$backupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$backupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkspaceBackupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   connectorAccess<T extends Prisma.Workspace$connectorAccessArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$connectorAccessArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkspaceConnectorAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   letterhead<T extends Prisma.Workspace$letterheadArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$letterheadArgs<ExtArgs>>): Prisma.Prisma__WorkspaceLetterheadClient<runtime.Types.Result.GetResult<Prisma.$WorkspaceLetterheadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -15065,6 +16021,54 @@ export type Workspace$serviceAgreementFeeLinesArgs<ExtArgs extends runtime.Types
   take?: number
   skip?: number
   distinct?: Prisma.ServiceAgreementFeeLineScalarFieldEnum | Prisma.ServiceAgreementFeeLineScalarFieldEnum[]
+}
+
+/**
+ * Workspace.clientServices
+ */
+export type Workspace$clientServicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ClientService
+   */
+  select?: Prisma.ClientServiceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ClientService
+   */
+  omit?: Prisma.ClientServiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ClientServiceInclude<ExtArgs> | null
+  where?: Prisma.ClientServiceWhereInput
+  orderBy?: Prisma.ClientServiceOrderByWithRelationInput | Prisma.ClientServiceOrderByWithRelationInput[]
+  cursor?: Prisma.ClientServiceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ClientServiceScalarFieldEnum | Prisma.ClientServiceScalarFieldEnum[]
+}
+
+/**
+ * Workspace.clientServiceFeeLines
+ */
+export type Workspace$clientServiceFeeLinesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ClientServiceFeeLine
+   */
+  select?: Prisma.ClientServiceFeeLineSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ClientServiceFeeLine
+   */
+  omit?: Prisma.ClientServiceFeeLineOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ClientServiceFeeLineInclude<ExtArgs> | null
+  where?: Prisma.ClientServiceFeeLineWhereInput
+  orderBy?: Prisma.ClientServiceFeeLineOrderByWithRelationInput | Prisma.ClientServiceFeeLineOrderByWithRelationInput[]
+  cursor?: Prisma.ClientServiceFeeLineWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ClientServiceFeeLineScalarFieldEnum | Prisma.ClientServiceFeeLineScalarFieldEnum[]
 }
 
 /**

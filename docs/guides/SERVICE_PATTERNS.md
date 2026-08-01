@@ -426,6 +426,39 @@ const company = await prisma.company.findFirst({
 - Full-editor changes affect document HTML only. Display the divergence warning
   and direct operational-data changes back to the Services stage.
 
+## Client Service activation and editing patterns
+
+- Create operational Services only through signed agreement activation. Upsert
+  exactly one `ClientService` per agreement-item/company pair and copy only the
+  fee lines owned by that agreement entity.
+- Treat the signed agreement and pinned SOW snapshots as legal authority.
+  Client Service DTOs and editors may expose identity labels, status, cadence,
+  dates, field values, and fee rows, but never legal clause content.
+- Apply `company:read` to list/detail access and `company:update` to editing and
+  archiving. Retry and manual activation additionally require `document:update`
+  plus `company:update` for every agreement entity; return this complete retry
+  capability to the UI instead of inferring it from the current company.
+- Queue E-sign activation in the envelope completion transaction, then process
+  after commit without allowing worker failure to fail signature completion.
+- Claim work with `FOR UPDATE SKIP LOCKED`, a unique claim token, a five-minute
+  lease, 1/5/15/60 minute backoff, and a five-attempt limit. Success, failure,
+  retry, and manual queue transitions compare the observed state and claim;
+  stale workers exit without overwriting newer state. Explicit retry resets a
+  failed draft agreement to pending.
+- The activation task inherits `SCHEDULER_ENABLED` and polls every minute by
+  default. `SCHEDULER_SERVICE_AGREEMENT_ACTIVATION_CRON` may override cadence.
+- Preserve an existing automatic effective date. When absent, derive it from
+  envelope completion in `Asia/Singapore`, never from worker execution time.
+- Operational PATCH requests include `updatedAt`; stale editors receive HTTP
+  409 before fee replacement. Mutation and audit writes share one transaction.
+- Audit every operational mutation. Use `SYSTEM` for automatic activation and
+  retain actor, dates, and reason for manual activation. Never include field
+  values or signed wording in audit summaries.
+- Persist only stable public activation errors with correlation references;
+  detailed exceptions remain in restricted server logs.
+- Restore catalog parents before agreements and Client Services; delete Client
+  Service fee children first during tenant cleanup.
+
 The controlled initial content is installed explicitly and remains inactive:
 
 ```powershell

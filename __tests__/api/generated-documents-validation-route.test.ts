@@ -69,11 +69,13 @@ describe('generated documents validation route', () => {
       templateId,
       companyId,
       contactIds: undefined,
+      draftId: undefined,
       selectedDirectorId: directorId,
       selectedShareholderId: shareholderId,
       selectedContactId: contactId,
+      serviceAgreementId: undefined,
       customData: undefined,
-    }, 'Test User');
+    }, 'Test User', 'user-1');
     expect(body.resolvedData).toMatchObject({
       hasSelectedDirector: true,
       hasSelectedShareholder: true,
@@ -98,6 +100,6 @@ describe('generated documents validation route', () => {
 
     expect(validateForGeneration).toHaveBeenCalledWith(workspaceId, expect.objectContaining({
       customData: { preparerName: 'Client Supplied', generatedBy: 'Client Supplied' },
-    }), '');
+    }), '', 'user-1');
   });
 });

@@ -1,15 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockRequireAuth = vi.fn();
-const mockDocumentFindUnique = vi.fn();
-const mockDocumentUpdate = vi.fn();
-const mockProcess = vi.fn();
+const { mockRequireAuth, mockDocumentFindUnique, mockDocumentUpdate, mockProcess } = vi.hoisted(() => ({
+  mockRequireAuth: vi.fn(),
+  mockDocumentFindUnique: vi.fn(),
+  mockDocumentUpdate: vi.fn(),
+  mockProcess: vi.fn(),
+}));
 
 vi.mock('@/lib/auth', () => ({ requireAuth: mockRequireAuth }));
 vi.mock('@/lib/prisma', () => ({
   prisma: { document: { findUnique: mockDocumentFindUnique, update: mockDocumentUpdate } },
 }));
 vi.mock('@/services/bizfile', () => ({ processBizFileExtraction: mockProcess }));
+
+import { POST } from '@/app/api/documents/[documentId]/confirm/route';
 
 const validPayload = {
   entityDetails: {
@@ -47,18 +51,15 @@ function rawRequest(body: string) {
 }
 
 async function post(body?: unknown) {
-  const { POST } = await import('@/app/api/documents/[documentId]/confirm/route');
   return POST(request(body) as never, { params: Promise.resolve({ documentId: 'doc-1' }) });
 }
 
 async function postRaw(body: string) {
-  const { POST } = await import('@/app/api/documents/[documentId]/confirm/route');
   return POST(rawRequest(body) as never, { params: Promise.resolve({ documentId: 'doc-1' }) });
 }
 
 describe('POST /api/documents/:documentId/confirm', () => {
   beforeEach(() => {
-    vi.resetModules();
     vi.clearAllMocks();
     mockRequireAuth.mockResolvedValue({
       id: 'user-1', tenantId: 'tenant-1', isSuperAdmin: false, isWorkspaceAdmin: false,
