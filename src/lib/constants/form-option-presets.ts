@@ -83,6 +83,10 @@ const COUNTRY_PRESET_ENTRIES = COUNTRY_REGION_CODES
   .filter((entry, idx, arr) => arr.findIndex((candidate) => candidate.value === entry.value) === idx)
   .sort((a, b) => a.value.localeCompare(b.value, 'en', { sensitivity: 'base' }));
 
+export const COUNTRY_PRESET_OPTION_ENTRIES: LocalizedPresetOption[] = COUNTRY_PRESET_ENTRIES.map(
+  ({ value }) => ({ value, label: value })
+);
+
 const COUNTRY_NAME_TO_CODE = new Map<string, string>(
   COUNTRY_PRESET_ENTRIES.map((entry) => [normalizePresetLookupValue(entry.value), entry.code])
 );
@@ -597,6 +601,9 @@ export const NATIONALITY_PRESET_OPTIONS = [
   'Zambian',
   'Zimbabwean',
 ] as const;
+
+export const NATIONALITY_PRESET_OPTION_ENTRIES: LocalizedPresetOption[] =
+  NATIONALITY_PRESET_OPTIONS.map((value) => ({ value, label: value }));
 
 export function getLocalizedNationalityPresetOptions(locale: string): LocalizedPresetOption[] {
   return NATIONALITY_PRESET_OPTIONS.map((value) => {
