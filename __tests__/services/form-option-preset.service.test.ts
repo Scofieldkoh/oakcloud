@@ -149,7 +149,7 @@ describe('form option preset service', () => {
   it('blocks protected and in-use deletes but deletes unused custom presets', async () => {
     mocks.findFirst.mockResolvedValueOnce({ id: 'built-in', name: 'Countries', isProtected: true });
     await expect(deleteFormOptionPreset('built-in', { tenantId: 'tenant-1', userId: 'user-1' }))
-      .rejects.toBeInstanceOf(ForbiddenError);
+      .rejects.toBeInstanceOf(ConflictError);
 
     mocks.findFirst.mockResolvedValueOnce({ id: 'custom-1', name: 'Clients', isProtected: false });
     mocks.fieldCount.mockResolvedValueOnce(2);

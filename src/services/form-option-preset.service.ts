@@ -195,7 +195,7 @@ export async function deleteFormOptionPreset(id: string, params: ActorContext) {
       select: { id: true, name: true, isProtected: true },
     });
     if (!current) throw new NotFoundError('Form option preset not found');
-    if (current.isProtected) throw new ForbiddenError('Built-in presets cannot be deleted');
+    if (current.isProtected) throw new ConflictError('Built-in presets cannot be deleted');
 
     const usageCount = await tx.formField.count({
       where: { tenantId: params.tenantId, optionPresetId: id },
