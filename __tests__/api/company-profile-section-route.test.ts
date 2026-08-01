@@ -47,7 +47,7 @@ describe('company profile section route', () => {
 
   it('maps a section conflict to 409 with the latest data', async () => {
     const { CompanyProfileConflictError } = await import('@/services/company/profile-sections');
-    const latest = { section: 'addresses', version: 'b'.repeat(64), data: {} };
+    const latest = { section: 'addresses' as const, version: 'b'.repeat(64), data: {} };
     mocks.saveSection.mockRejectedValue(new CompanyProfileConflictError(latest));
     const response = await PATCH(new Request('http://local', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
