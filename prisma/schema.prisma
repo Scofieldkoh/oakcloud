@@ -289,6 +289,7 @@ model Company {
   tenant                      Workspace                    @relation(fields: [tenantId], references: [id])
   clientServices              ClientService[]
   addresses                   CompanyAddress[]
+  auditor                     CompanyAuditor?
   charges                     CompanyCharge[]
   contacts                    CompanyContact[]
   formerNames                 CompanyFormerName[]
@@ -518,6 +519,22 @@ model ShareCapital {
   @@map("share_capital")
 }
 
+model CompanyAuditor {
+  id               String    @id @default(uuid())
+  companyId        String    @unique
+  name             String
+  address          String?
+  appointmentDate  DateTime?
+  sourceDocumentId String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  company          Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  document         Document? @relation(fields: [sourceDocumentId], references: [id])
+
+  @@index([sourceDocumentId])
+  @@map("company_auditors")
+}
+
 model CompanyShareholder {
   id                   String              @id @default(uuid())
   companyId            String
@@ -605,6 +622,7 @@ model Document {
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   addresses          CompanyAddress[]
+  auditors           CompanyAuditor[]
   charges            CompanyCharge[]
   formerNames        CompanyFormerName[]
   officers           CompanyOfficer[]

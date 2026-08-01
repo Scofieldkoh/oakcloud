@@ -353,6 +353,7 @@ export type DocumentWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Document"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Document"> | Date | string
   addresses?: Prisma.CompanyAddressListRelationFilter
+  auditors?: Prisma.CompanyAuditorListRelationFilter
   charges?: Prisma.CompanyChargeListRelationFilter
   formerNames?: Prisma.CompanyFormerNameListRelationFilter
   officers?: Prisma.CompanyOfficerListRelationFilter
@@ -388,6 +389,7 @@ export type DocumentOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   addresses?: Prisma.CompanyAddressOrderByRelationAggregateInput
+  auditors?: Prisma.CompanyAuditorOrderByRelationAggregateInput
   charges?: Prisma.CompanyChargeOrderByRelationAggregateInput
   formerNames?: Prisma.CompanyFormerNameOrderByRelationAggregateInput
   officers?: Prisma.CompanyOfficerOrderByRelationAggregateInput
@@ -426,6 +428,7 @@ export type DocumentWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Document"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Document"> | Date | string
   addresses?: Prisma.CompanyAddressListRelationFilter
+  auditors?: Prisma.CompanyAuditorListRelationFilter
   charges?: Prisma.CompanyChargeListRelationFilter
   formerNames?: Prisma.CompanyFormerNameListRelationFilter
   officers?: Prisma.CompanyOfficerListRelationFilter
@@ -516,6 +519,7 @@ export type DocumentCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
@@ -551,6 +555,7 @@ export type DocumentUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
@@ -580,6 +585,7 @@ export type DocumentUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
@@ -615,6 +621,7 @@ export type DocumentUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
@@ -988,6 +995,22 @@ export type DocumentUpdateOneWithoutShareCapitalNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentUpdateToOneWithWhereWithoutShareCapitalInput, Prisma.DocumentUpdateWithoutShareCapitalInput>, Prisma.DocumentUncheckedUpdateWithoutShareCapitalInput>
 }
 
+export type DocumentCreateNestedOneWithoutAuditorsInput = {
+  create?: Prisma.XOR<Prisma.DocumentCreateWithoutAuditorsInput, Prisma.DocumentUncheckedCreateWithoutAuditorsInput>
+  connectOrCreate?: Prisma.DocumentCreateOrConnectWithoutAuditorsInput
+  connect?: Prisma.DocumentWhereUniqueInput
+}
+
+export type DocumentUpdateOneWithoutAuditorsNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentCreateWithoutAuditorsInput, Prisma.DocumentUncheckedCreateWithoutAuditorsInput>
+  connectOrCreate?: Prisma.DocumentCreateOrConnectWithoutAuditorsInput
+  upsert?: Prisma.DocumentUpsertWithoutAuditorsInput
+  disconnect?: Prisma.DocumentWhereInput | boolean
+  delete?: Prisma.DocumentWhereInput | boolean
+  connect?: Prisma.DocumentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentUpdateToOneWithWhereWithoutAuditorsInput, Prisma.DocumentUpdateWithoutAuditorsInput>, Prisma.DocumentUncheckedUpdateWithoutAuditorsInput>
+}
+
 export type DocumentCreateNestedOneWithoutShareholdersInput = {
   create?: Prisma.XOR<Prisma.DocumentCreateWithoutShareholdersInput, Prisma.DocumentUncheckedCreateWithoutShareholdersInput>
   connectOrCreate?: Prisma.DocumentCreateOrConnectWithoutShareholdersInput
@@ -1055,6 +1078,7 @@ export type DocumentCreateWithoutTenantInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
@@ -1088,6 +1112,7 @@ export type DocumentUncheckedCreateWithoutTenantInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
@@ -1171,6 +1196,7 @@ export type DocumentCreateWithoutUploadedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
@@ -1204,6 +1230,7 @@ export type DocumentUncheckedCreateWithoutUploadedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
@@ -1259,6 +1286,7 @@ export type DocumentCreateWithoutCompanyInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
@@ -1292,6 +1320,7 @@ export type DocumentUncheckedCreateWithoutCompanyInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
@@ -1347,6 +1376,7 @@ export type DocumentCreateWithoutFormerNamesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
@@ -1381,6 +1411,7 @@ export type DocumentUncheckedCreateWithoutFormerNamesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
@@ -1425,6 +1456,7 @@ export type DocumentUpdateWithoutFormerNamesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
@@ -1459,6 +1491,7 @@ export type DocumentUncheckedUpdateWithoutFormerNamesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
@@ -1486,6 +1519,7 @@ export type DocumentCreateWithoutAddressesInput = {
   deletedById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
@@ -1520,6 +1554,7 @@ export type DocumentUncheckedCreateWithoutAddressesInput = {
   deletedById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
@@ -1564,6 +1599,7 @@ export type DocumentUpdateWithoutAddressesInput = {
   deletedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
@@ -1598,6 +1634,7 @@ export type DocumentUncheckedUpdateWithoutAddressesInput = {
   deletedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
@@ -1627,6 +1664,7 @@ export type DocumentCreateWithoutOfficersInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
@@ -1661,6 +1699,7 @@ export type DocumentUncheckedCreateWithoutOfficersInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
@@ -1705,6 +1744,7 @@ export type DocumentUpdateWithoutOfficersInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
@@ -1739,6 +1779,7 @@ export type DocumentUncheckedUpdateWithoutOfficersInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
@@ -1767,6 +1808,7 @@ export type DocumentCreateWithoutShareCapitalInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
@@ -1801,6 +1843,7 @@ export type DocumentUncheckedCreateWithoutShareCapitalInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
@@ -1845,6 +1888,7 @@ export type DocumentUpdateWithoutShareCapitalInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
@@ -1879,11 +1923,156 @@ export type DocumentUncheckedUpdateWithoutShareCapitalInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
+}
+
+export type DocumentCreateWithoutAuditorsInput = {
+  id?: string
+  documentType: string
+  fileName: string
+  originalFileName: string
+  storageKey: string
+  fileSize: number
+  mimeType: string
+  extractedAt?: Date | string | null
+  extractionStatus?: string | null
+  extractionError?: string | null
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  isLatest?: boolean
+  previousVersionId?: string | null
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  deletedById?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
+  uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
+  processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+}
+
+export type DocumentUncheckedCreateWithoutAuditorsInput = {
+  id?: string
+  tenantId: string
+  companyId?: string | null
+  uploadedById: string
+  documentType: string
+  fileName: string
+  originalFileName: string
+  storageKey: string
+  fileSize: number
+  mimeType: string
+  extractedAt?: Date | string | null
+  extractionStatus?: string | null
+  extractionError?: string | null
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  isLatest?: boolean
+  previousVersionId?: string | null
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  deletedById?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
+  processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+}
+
+export type DocumentCreateOrConnectWithoutAuditorsInput = {
+  where: Prisma.DocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.DocumentCreateWithoutAuditorsInput, Prisma.DocumentUncheckedCreateWithoutAuditorsInput>
+}
+
+export type DocumentUpsertWithoutAuditorsInput = {
+  update: Prisma.XOR<Prisma.DocumentUpdateWithoutAuditorsInput, Prisma.DocumentUncheckedUpdateWithoutAuditorsInput>
+  create: Prisma.XOR<Prisma.DocumentCreateWithoutAuditorsInput, Prisma.DocumentUncheckedCreateWithoutAuditorsInput>
+  where?: Prisma.DocumentWhereInput
+}
+
+export type DocumentUpdateToOneWithWhereWithoutAuditorsInput = {
+  where?: Prisma.DocumentWhereInput
+  data: Prisma.XOR<Prisma.DocumentUpdateWithoutAuditorsInput, Prisma.DocumentUncheckedUpdateWithoutAuditorsInput>
+}
+
+export type DocumentUpdateWithoutAuditorsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  extractedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  extractionStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
+  uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+}
+
+export type DocumentUncheckedUpdateWithoutAuditorsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedById?: Prisma.StringFieldUpdateOperationsInput | string
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  extractedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  extractionStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentCreateWithoutShareholdersInput = {
@@ -1907,6 +2096,7 @@ export type DocumentCreateWithoutShareholdersInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
@@ -1941,6 +2131,7 @@ export type DocumentUncheckedCreateWithoutShareholdersInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
@@ -1985,6 +2176,7 @@ export type DocumentUpdateWithoutShareholdersInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
@@ -2019,6 +2211,7 @@ export type DocumentUncheckedUpdateWithoutShareholdersInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
@@ -2047,6 +2240,7 @@ export type DocumentCreateWithoutChargesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
@@ -2081,6 +2275,7 @@ export type DocumentUncheckedCreateWithoutChargesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
@@ -2125,6 +2320,7 @@ export type DocumentUpdateWithoutChargesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
@@ -2159,6 +2355,7 @@ export type DocumentUncheckedUpdateWithoutChargesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
@@ -2187,6 +2384,7 @@ export type DocumentCreateWithoutProcessingDocumentInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
@@ -2221,6 +2419,7 @@ export type DocumentUncheckedCreateWithoutProcessingDocumentInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
   charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
   formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
@@ -2265,6 +2464,7 @@ export type DocumentUpdateWithoutProcessingDocumentInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
@@ -2299,6 +2499,7 @@ export type DocumentUncheckedUpdateWithoutProcessingDocumentInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
@@ -2351,6 +2552,7 @@ export type DocumentUpdateWithoutTenantInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
@@ -2384,6 +2586,7 @@ export type DocumentUncheckedUpdateWithoutTenantInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
@@ -2461,6 +2664,7 @@ export type DocumentUpdateWithoutUploadedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
@@ -2494,6 +2698,7 @@ export type DocumentUncheckedUpdateWithoutUploadedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
@@ -2571,6 +2776,7 @@ export type DocumentUpdateWithoutCompanyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
@@ -2604,6 +2810,7 @@ export type DocumentUncheckedUpdateWithoutCompanyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
   charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
@@ -2643,6 +2850,7 @@ export type DocumentUncheckedUpdateManyWithoutCompanyInput = {
 
 export type DocumentCountOutputType = {
   addresses: number
+  auditors: number
   charges: number
   formerNames: number
   officers: number
@@ -2652,6 +2860,7 @@ export type DocumentCountOutputType = {
 
 export type DocumentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   addresses?: boolean | DocumentCountOutputTypeCountAddressesArgs
+  auditors?: boolean | DocumentCountOutputTypeCountAuditorsArgs
   charges?: boolean | DocumentCountOutputTypeCountChargesArgs
   formerNames?: boolean | DocumentCountOutputTypeCountFormerNamesArgs
   officers?: boolean | DocumentCountOutputTypeCountOfficersArgs
@@ -2674,6 +2883,13 @@ export type DocumentCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ext
  */
 export type DocumentCountOutputTypeCountAddressesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.CompanyAddressWhereInput
+}
+
+/**
+ * DocumentCountOutputType without action
+ */
+export type DocumentCountOutputTypeCountAuditorsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CompanyAuditorWhereInput
 }
 
 /**
@@ -2736,6 +2952,7 @@ export type DocumentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   createdAt?: boolean
   updatedAt?: boolean
   addresses?: boolean | Prisma.Document$addressesArgs<ExtArgs>
+  auditors?: boolean | Prisma.Document$auditorsArgs<ExtArgs>
   charges?: boolean | Prisma.Document$chargesArgs<ExtArgs>
   formerNames?: boolean | Prisma.Document$formerNamesArgs<ExtArgs>
   officers?: boolean | Prisma.Document$officersArgs<ExtArgs>
@@ -2832,6 +3049,7 @@ export type DocumentSelectScalar = {
 export type DocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "uploadedById" | "documentType" | "fileName" | "originalFileName" | "storageKey" | "fileSize" | "mimeType" | "extractedAt" | "extractionStatus" | "extractionError" | "extractedData" | "version" | "isLatest" | "previousVersionId" | "deletedAt" | "deletedReason" | "deletedById" | "createdAt" | "updatedAt", ExtArgs["result"]["document"]>
 export type DocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   addresses?: boolean | Prisma.Document$addressesArgs<ExtArgs>
+  auditors?: boolean | Prisma.Document$auditorsArgs<ExtArgs>
   charges?: boolean | Prisma.Document$chargesArgs<ExtArgs>
   formerNames?: boolean | Prisma.Document$formerNamesArgs<ExtArgs>
   officers?: boolean | Prisma.Document$officersArgs<ExtArgs>
@@ -2858,6 +3076,7 @@ export type $DocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   name: "Document"
   objects: {
     addresses: Prisma.$CompanyAddressPayload<ExtArgs>[]
+    auditors: Prisma.$CompanyAuditorPayload<ExtArgs>[]
     charges: Prisma.$CompanyChargePayload<ExtArgs>[]
     formerNames: Prisma.$CompanyFormerNamePayload<ExtArgs>[]
     officers: Prisma.$CompanyOfficerPayload<ExtArgs>[]
@@ -3286,6 +3505,7 @@ readonly fields: DocumentFieldRefs;
 export interface Prisma__DocumentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   addresses<T extends Prisma.Document$addressesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$addressesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyAddressPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  auditors<T extends Prisma.Document$auditorsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$auditorsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyAuditorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   charges<T extends Prisma.Document$chargesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$chargesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyChargePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   formerNames<T extends Prisma.Document$formerNamesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$formerNamesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyFormerNamePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   officers<T extends Prisma.Document$officersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$officersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyOfficerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -3763,6 +3983,30 @@ export type Document$addressesArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.CompanyAddressScalarFieldEnum | Prisma.CompanyAddressScalarFieldEnum[]
+}
+
+/**
+ * Document.auditors
+ */
+export type Document$auditorsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CompanyAuditor
+   */
+  select?: Prisma.CompanyAuditorSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CompanyAuditor
+   */
+  omit?: Prisma.CompanyAuditorOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanyAuditorInclude<ExtArgs> | null
+  where?: Prisma.CompanyAuditorWhereInput
+  orderBy?: Prisma.CompanyAuditorOrderByWithRelationInput | Prisma.CompanyAuditorOrderByWithRelationInput[]
+  cursor?: Prisma.CompanyAuditorWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CompanyAuditorScalarFieldEnum | Prisma.CompanyAuditorScalarFieldEnum[]
 }
 
 /**

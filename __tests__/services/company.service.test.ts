@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Prisma } from '@/generated/prisma';
 
 // Mock Prisma before importing the service
 vi.mock('@/lib/prisma', () => ({
@@ -43,6 +44,20 @@ import {
   createCompany,
 } from '@/services/company.service';
 import type { CreateCompanyInput } from '@/lib/validations/company';
+
+describe('Company schema contract', () => {
+  it('exposes normalized auditor fields through the generated Prisma client', () => {
+    expect(
+      (Prisma as unknown as Record<string, unknown>).CompanyAuditorScalarFieldEnum
+    ).toEqual(expect.objectContaining({
+      companyId: 'companyId',
+      name: 'name',
+      address: 'address',
+      appointmentDate: 'appointmentDate',
+      sourceDocumentId: 'sourceDocumentId',
+    }));
+  });
+});
 
 describe('Company Service', () => {
   beforeEach(() => {

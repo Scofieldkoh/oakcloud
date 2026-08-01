@@ -68,6 +68,7 @@ export const ModelName = {
   ContactDetail: 'ContactDetail',
   CompanyOfficer: 'CompanyOfficer',
   ShareCapital: 'ShareCapital',
+  CompanyAuditor: 'CompanyAuditor',
   CompanyShareholder: 'CompanyShareholder',
   CompanyCharge: 'CompanyCharge',
   Document: 'Document',
@@ -489,6 +490,20 @@ export const ShareCapitalScalarFieldEnum = {
 } as const
 
 export type ShareCapitalScalarFieldEnum = (typeof ShareCapitalScalarFieldEnum)[keyof typeof ShareCapitalScalarFieldEnum]
+
+
+export const CompanyAuditorScalarFieldEnum = {
+  id: 'id',
+  companyId: 'companyId',
+  name: 'name',
+  address: 'address',
+  appointmentDate: 'appointmentDate',
+  sourceDocumentId: 'sourceDocumentId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CompanyAuditorScalarFieldEnum = (typeof CompanyAuditorScalarFieldEnum)[keyof typeof CompanyAuditorScalarFieldEnum]
 
 
 export const CompanyShareholderScalarFieldEnum = {

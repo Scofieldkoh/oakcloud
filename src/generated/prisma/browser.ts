@@ -103,6 +103,11 @@ export type CompanyOfficer = Prisma.CompanyOfficerModel
  */
 export type ShareCapital = Prisma.ShareCapitalModel
 /**
+ * Model CompanyAuditor
+ *
+ */
+export type CompanyAuditor = Prisma.CompanyAuditorModel
+/**
  * Model CompanyShareholder
  *
  */

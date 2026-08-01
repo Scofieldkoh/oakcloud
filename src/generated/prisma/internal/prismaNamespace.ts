@@ -401,6 +401,7 @@ export const ModelName = {
   ContactDetail: 'ContactDetail',
   CompanyOfficer: 'CompanyOfficer',
   ShareCapital: 'ShareCapital',
+  CompanyAuditor: 'CompanyAuditor',
   CompanyShareholder: 'CompanyShareholder',
   CompanyCharge: 'CompanyCharge',
   Document: 'Document',
@@ -499,7 +500,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1758,6 +1759,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ShareCapitalCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ShareCapitalCountAggregateOutputType> | number
+        }
+      }
+    }
+    CompanyAuditor: {
+      payload: Prisma.$CompanyAuditorPayload<ExtArgs>
+      fields: Prisma.CompanyAuditorFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CompanyAuditorFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyAuditorPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CompanyAuditorFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyAuditorPayload>
+        }
+        findFirst: {
+          args: Prisma.CompanyAuditorFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyAuditorPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CompanyAuditorFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyAuditorPayload>
+        }
+        findMany: {
+          args: Prisma.CompanyAuditorFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyAuditorPayload>[]
+        }
+        create: {
+          args: Prisma.CompanyAuditorCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyAuditorPayload>
+        }
+        createMany: {
+          args: Prisma.CompanyAuditorCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CompanyAuditorCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyAuditorPayload>[]
+        }
+        delete: {
+          args: Prisma.CompanyAuditorDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyAuditorPayload>
+        }
+        update: {
+          args: Prisma.CompanyAuditorUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyAuditorPayload>
+        }
+        deleteMany: {
+          args: Prisma.CompanyAuditorDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CompanyAuditorUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CompanyAuditorUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyAuditorPayload>[]
+        }
+        upsert: {
+          args: Prisma.CompanyAuditorUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyAuditorPayload>
+        }
+        aggregate: {
+          args: Prisma.CompanyAuditorAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCompanyAuditor>
+        }
+        groupBy: {
+          args: Prisma.CompanyAuditorGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanyAuditorGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CompanyAuditorCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanyAuditorCountAggregateOutputType> | number
         }
       }
     }
@@ -8264,6 +8339,20 @@ export const ShareCapitalScalarFieldEnum = {
 export type ShareCapitalScalarFieldEnum = (typeof ShareCapitalScalarFieldEnum)[keyof typeof ShareCapitalScalarFieldEnum]
 
 
+export const CompanyAuditorScalarFieldEnum = {
+  id: 'id',
+  companyId: 'companyId',
+  name: 'name',
+  address: 'address',
+  appointmentDate: 'appointmentDate',
+  sourceDocumentId: 'sourceDocumentId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CompanyAuditorScalarFieldEnum = (typeof CompanyAuditorScalarFieldEnum)[keyof typeof CompanyAuditorScalarFieldEnum]
+
+
 export const CompanyShareholderScalarFieldEnum = {
   id: 'id',
   companyId: 'companyId',
@@ -11266,6 +11355,7 @@ export type GlobalOmitConfig = {
   contactDetail?: Prisma.ContactDetailOmit
   companyOfficer?: Prisma.CompanyOfficerOmit
   shareCapital?: Prisma.ShareCapitalOmit
+  companyAuditor?: Prisma.CompanyAuditorOmit
   companyShareholder?: Prisma.CompanyShareholderOmit
   companyCharge?: Prisma.CompanyChargeOmit
   document?: Prisma.DocumentOmit
