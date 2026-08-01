@@ -3994,7 +3994,7 @@ export default function PublicFormPage() {
               value={typeof value === 'string' ? value : ''}
               onChange={(val) => setFieldValue(field.key, val)}
               placeholder={localizedField.placeholder || uiLabel('select_option_placeholder')}
-              clearable={false}
+              clearable={!field.isReadOnly}
               showKeyboardHints={false}
               containerClassName={cn('h-10', errorText && ERROR_FIELD_CLASS)}
               onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}

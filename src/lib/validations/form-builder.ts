@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { FORM_FIELD_KEY_MAX_LENGTH } from '@/lib/form-utils';
 import { evaluateArithmeticExpression } from '@/lib/safe-math';
+import { FORM_PRESET_MAX_OPTIONS } from '@/lib/validations/form-option-preset';
 
-const MAX_FIELD_OPTIONS = 500;
+const MAX_FIELD_OPTIONS = FORM_PRESET_MAX_OPTIONS;
 const MAX_FIELD_LABEL_LENGTH = 1000;
 const MAX_FIELD_SUBTEXT_LENGTH = 10000;
 const DATE_BOUND_PATTERN = /^(?:\d{4}-\d{2}-\d{2}|today)$/;
