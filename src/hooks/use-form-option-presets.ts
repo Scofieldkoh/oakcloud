@@ -38,7 +38,8 @@ export const formOptionPresetKeys = {
   list: (tenantId?: string | null) => ['form-option-presets', tenantId] as const,
 };
 
-async function parseResponse<T>(response: Response): Promise<T> {
+async function parseResponse<T>(responseOrPromise: Response | Promise<Response>): Promise<T> {
+  const response = await responseOrPromise;
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new PresetRequestError(body.error || 'Preset request failed', body);
   return body as T;

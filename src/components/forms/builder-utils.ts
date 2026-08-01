@@ -153,6 +153,7 @@ export type FieldConditionConfig = ConditionConfig | ConditionGroupConfig;
 export interface BuilderField {
   clientId: string;
   id?: string;
+  optionPresetId?: string | null;
   type: FormFieldInput['type'];
   label: string;
   key: string;
@@ -189,6 +190,7 @@ export function defaultField(type: FormFieldInput['type'], position: number): Bu
 
   return {
     clientId: newClientId(),
+    optionPresetId: null,
     type,
     label,
     key,
@@ -301,6 +303,7 @@ export function normalizeConditionConfig(value: unknown): FieldConditionConfig |
 
 export function fromServerField(field: {
   id: string;
+  optionPresetId: string | null;
   type: FormFieldInput['type'];
   label: string | null;
   key: string;
@@ -324,6 +327,7 @@ export function fromServerField(field: {
   return {
     clientId: field.id,
     id: field.id,
+    optionPresetId: field.optionPresetId,
     type: field.type,
     label: field.label || '',
     key: field.key,
@@ -352,7 +356,9 @@ export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
     depth: number = 0
   ): SerializedChoiceOption | null => {
     const label = option.label?.trim();
-    const value = fieldType === 'PARAGRAPH' ? (option.value?.trim() || newClientId()) : label;
+    const value = fieldType === 'PARAGRAPH'
+      ? (option.value?.trim() || newClientId())
+      : (option.value?.trim() || label);
     if (!label || !value) return null;
     const childOptions: SerializedChoiceOption[] = fieldType === 'MULTIPLE_CHOICE' && depth < 1
       ? (option.childOptions || [])
@@ -376,6 +382,7 @@ export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
 
   return fields.map((field, idx) => ({
     id: field.id,
+    optionPresetId: field.optionPresetId,
     type: field.type,
     label: field.label || null,
     key: normalizeKey(field.key || field.label || `field_${idx + 1}`),
@@ -393,10 +400,12 @@ export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
       ? field.options
         .map((option) => serializeChoiceOption(option, field.type))
         .filter((option): option is NonNullable<typeof option> => !!option)
-      : (field.type === 'DROPDOWN'
+      : (field.type === 'DROPDOWN' && field.optionPresetId
+        ? null
+        : field.type === 'DROPDOWN'
         ? field.options
-          .map((option) => option.label.trim())
-          .filter(Boolean)
+          .map((option) => serializeChoiceOption(option, field.type))
+          .filter((option): option is NonNullable<typeof option> => !!option)
         : null),
     validation: field.validation,
     condition: field.condition,

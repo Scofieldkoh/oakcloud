@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { FormInput } from '@/components/ui/form-input';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
-import { DROPDOWN_PRESETS } from '@/lib/constants/form-option-presets';
+import { useFormOptionPresets } from '@/hooks/use-form-option-presets';
 import { isSummaryEligibleFieldType } from '@/lib/form-utils';
 import { getConditionDependents } from './builder-analysis';
 import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS, normalizeKey, isRepeatMarkerInputType, isBlockDividerInputType, isFaqField, newClientId } from './builder-utils';
@@ -105,10 +104,10 @@ export function FieldGeneralTab({
   allFields?: BuilderField[];
   onChange: (next: BuilderField) => void;
 }) {
-  const [dropdownPresetId, setDropdownPresetId] = useState('');
+  const presets = useFormOptionPresets();
 
   const canShowOnSummary = isSummaryEligibleFieldType(field.type);
-  const selectedDropdownPreset = DROPDOWN_PRESETS.find((preset) => preset.id === dropdownPresetId) || null;
+  const selectedDropdownPreset = presets.data?.find((preset) => preset.id === field.optionPresetId) ?? null;
   const normalizedInfoBackgroundColor = normalizeHexColor(field.validation?.infoBackgroundColor || '');
   const normalizedInfoPaddingTopPx = normalizeInfoPaddingPx(field.validation?.infoPaddingTopPx);
   const normalizedInfoPaddingRightPx = normalizeInfoPaddingPx(field.validation?.infoPaddingRightPx);
@@ -1164,38 +1163,41 @@ export function FieldGeneralTab({
         <div className="space-y-3">
           <SectionHeader title="Options" />
           <div className="rounded-lg border border-border-primary bg-background-elevated p-3">
-            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Preset list</label>
+            <label htmlFor="dropdown-preset-list" className="mb-1.5 block text-xs font-medium text-text-secondary">Preset list</label>
             <div className="flex flex-wrap items-end gap-2">
               <select
-                value={dropdownPresetId}
-                onChange={(e) => setDropdownPresetId(e.target.value)}
+                id="dropdown-preset-list"
+                value={field.optionPresetId ?? 'custom'}
+                onChange={(e) => {
+                  if (e.target.value === 'custom') {
+                    onChange({ ...field, optionPresetId: null });
+                    return;
+                  }
+                  const preset = presets.data?.find((candidate) => candidate.id === e.target.value);
+                  if (!preset) return;
+                  onChange({ ...field, optionPresetId: preset.id, options: preset.options });
+                }}
                 className="min-w-48 flex-1 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
               >
-                <option value="">Select preset</option>
-                {DROPDOWN_PRESETS.map((preset) => (
-                  <option key={preset.id} value={preset.id}>{preset.label}</option>
+                <option value="custom">Custom options</option>
+                {(presets.data ?? []).map((preset) => (
+                  <option key={preset.id} value={preset.id}>{preset.name}</option>
                 ))}
               </select>
-              <button
-                type="button"
-                disabled={!selectedDropdownPreset}
-                onClick={() => {
-                  if (!selectedDropdownPreset) return;
-                  onChange({
-                    ...field,
-                    options: selectedDropdownPreset.options.map((option) => ({ label: option, value: option })),
-                  });
-                }}
-                className="rounded border border-border-primary bg-background-primary px-3 py-2 text-xs text-text-secondary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Apply preset
-              </button>
             </div>
-            {selectedDropdownPreset?.description && (
-              <p className="mt-2 text-xs text-text-tertiary">{selectedDropdownPreset.description}</p>
-            )}
+            {presets.isLoading ? <p className="mt-2 text-xs text-text-tertiary">Loading preset lists…</p> : null}
+            {presets.error ? <p className="mt-2 text-xs text-status-error">Unable to load preset lists.</p> : null}
+            {selectedDropdownPreset ? (
+              <p className="mt-2 text-xs text-text-tertiary">
+                Linked to {selectedDropdownPreset.name} · {selectedDropdownPreset.optionCount.toLocaleString()} options
+              </p>
+            ) : null}
           </div>
-          <div>
+          {field.optionPresetId ? (
+            <div className="rounded-lg border border-border-primary bg-background-primary p-3 text-xs text-text-secondary">
+              Options are managed by the linked preset. Choose Custom options to make an editable copy of the current list.
+            </div>
+          ) : <div>
             <label className="mb-1.5 block text-xs font-medium text-text-secondary">Options</label>
             <textarea
               value={field.options.map((option) => option.label).join('\n')}
@@ -1208,7 +1210,7 @@ export function FieldGeneralTab({
               className="w-full min-h-24 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
               placeholder="One option per line"
             />
-          </div>
+          </div>}
         </div>
       )}
 

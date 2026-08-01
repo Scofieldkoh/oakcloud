@@ -36,6 +36,7 @@ import {
 } from '@/lib/form-utils';
 import { SIGNATURE_DATA_URL_MAX_LENGTH, extractSignatureDataUrl } from '@/lib/signature-utils';
 import { prisma } from '@/lib/prisma';
+import { resolvePresetOptionsForFields } from '@/services/form-option-preset.service';
 import { storage, StorageKeys } from '@/lib/storage';
 import { getAppBaseUrl, sendEmail, type EmailAttachment } from '@/lib/email';
 import { createLogger } from '@/lib/logger';
@@ -2147,6 +2148,8 @@ export async function getPublicFormBySlug(slug: string): Promise<PublicFormDefin
     return null;
   }
 
+  form.fields = await resolvePresetOptionsForFields(form.tenantId, form.fields);
+
   incrementViewCount(form.id);
 
   return {
@@ -2258,6 +2261,8 @@ export async function createPublicSubmission(
   if (!form) {
     throw new Error('Form not found');
   }
+
+  form.fields = await resolvePresetOptionsForFields(form.tenantId, form.fields);
 
   if ((input.draftCode && !input.accessToken) || (!input.draftCode && input.accessToken)) {
     throw new Error('Draft access is incomplete');

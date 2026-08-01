@@ -457,6 +457,7 @@ export default function FormBuilderPage() {
 
     const mappedFields = form.fields.map((field) => fromServerField({
       id: field.id,
+      optionPresetId: field.optionPresetId,
       type: field.type,
       label: field.label,
       key: field.key,

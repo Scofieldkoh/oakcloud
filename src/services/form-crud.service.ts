@@ -20,6 +20,8 @@ import type {
   UpdateFormInput,
 } from '@/lib/validations/form-builder';
 import { toJsonInput } from './form-builder.helpers';
+import { resolvePresetOptionsForFields } from './form-option-preset.service';
+import { ValidationError } from '@/lib/errors';
 
 export interface FormListItem extends Form {
   fieldCount: number;
@@ -93,6 +95,7 @@ function normalizeFieldsForPersistence(fields: FormFieldInput[]): Array<{
   subtext: string | null;
   helpText: string | null;
   inputType: string | null;
+  optionPresetId: string | null;
   options: Prisma.InputJsonValue | typeof Prisma.JsonNull;
   validation: Prisma.InputJsonValue | typeof Prisma.JsonNull;
   condition: Prisma.InputJsonValue | typeof Prisma.JsonNull;
@@ -118,7 +121,8 @@ function normalizeFieldsForPersistence(fields: FormFieldInput[]): Array<{
         subtext: field.subtext?.trim() || null,
         helpText: field.helpText?.trim() || null,
         inputType: field.inputType || null,
-        options: toJsonInput(field.options ?? null),
+        optionPresetId: field.optionPresetId ?? null,
+        options: field.optionPresetId ? Prisma.JsonNull : toJsonInput(field.options ?? null),
         validation: toJsonInput(field.validation ?? null),
         condition: toJsonInput(field.condition ?? null),
         isRequired: field.isRequired ?? false,
@@ -246,8 +250,11 @@ export async function getFormById(formId: string, tenantId: string): Promise<For
     return null;
   }
 
+  const fields = await resolvePresetOptionsForFields(tenantId, form.fields);
+
   return {
     ...form,
+    fields,
     tenantLogoUrl: normalizeWorkspaceLogoUrl(form.tenant?.logoUrl),
     tenantName: form.tenant?.name ?? null,
   };
@@ -334,6 +341,16 @@ export async function saveFormFields(
   }
 
   const normalizedFields = normalizeFieldsForPersistence(fields);
+  const presetIds = [...new Set(normalizedFields.flatMap((field) => field.optionPresetId ? [field.optionPresetId] : []))];
+  if (presetIds.length > 0) {
+    const ownedPresets = await prisma.formOptionPreset.findMany({
+      where: { tenantId: params.tenantId, id: { in: presetIds } },
+      select: { id: true },
+    });
+    if (ownedPresets.length !== presetIds.length) {
+      throw new ValidationError('One or more option presets are unavailable in this workspace');
+    }
+  }
 
   const savedFields = await prisma.$transaction(async (tx) => {
     await tx.formField.deleteMany({ where: { formId } });
@@ -350,6 +367,7 @@ export async function saveFormFields(
           subtext: field.subtext,
           helpText: field.helpText,
           inputType: field.inputType,
+          optionPresetId: field.optionPresetId,
           options: field.options,
           validation: field.validation,
           condition: field.condition,
@@ -445,6 +463,7 @@ export async function duplicateForm(
           subtext: field.subtext,
           helpText: field.helpText,
           inputType: field.inputType,
+          optionPresetId: field.optionPresetId,
           options: field.options ?? Prisma.JsonNull,
           validation: field.validation ?? Prisma.JsonNull,
           condition: field.condition ?? Prisma.JsonNull,
@@ -482,7 +501,10 @@ export async function duplicateForm(
     changeSource: 'MANUAL',
   });
 
-  return duplicated;
+  return {
+    ...duplicated,
+    fields: await resolvePresetOptionsForFields(params.tenantId, duplicated.fields),
+  };
 }
 
 export async function deleteForm(

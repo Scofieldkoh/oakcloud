@@ -194,6 +194,7 @@ const layoutWidthSchema = z.union([
 
 export const formFieldSchema = z.object({
   id: z.string().uuid().optional(),
+  optionPresetId: z.string().uuid().optional().nullable(),
   type: formFieldTypeSchema,
   label: z.string().max(MAX_FIELD_LABEL_LENGTH).optional().nullable(),
   key: z
