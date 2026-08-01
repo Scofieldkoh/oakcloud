@@ -63,6 +63,7 @@ import {
   exchangeRateSyncTask,
   formAiReviewTask,
   formCountReconciliationTask,
+  formUrlHealthTask,
   processingRevisionBackfillTask,
   summaryCountRefreshTask,
   serviceAgreementActivationTask,
@@ -85,6 +86,7 @@ export async function initializeScheduler(): Promise<void> {
   scheduler.registerTask(exchangeRateSyncTask);
   scheduler.registerTask(formAiReviewTask);
   scheduler.registerTask(formCountReconciliationTask);
+  scheduler.registerTask(formUrlHealthTask);
   scheduler.registerTask(processingRevisionBackfillTask);
   scheduler.registerTask(summaryCountRefreshTask);
   scheduler.registerTask(serviceAgreementActivationTask);
