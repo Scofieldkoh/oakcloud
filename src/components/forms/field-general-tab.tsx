@@ -501,7 +501,7 @@ export function FieldGeneralTab({
                     </div>
                   )}
                 </div>
-                {(field.inputType === 'info_text' || !INFO_INPUT_TYPES.includes(field.inputType)) && (
+                {(field.inputType === 'info_text' || field.inputType === 'info_url' || !INFO_INPUT_TYPES.includes(field.inputType)) && (
                   <div className="border-t border-border-primary pt-3">
                     <Toggle
                       checked={infoBareStyle}
@@ -513,7 +513,7 @@ export function FieldGeneralTab({
                         },
                       })}
                       label="Plain text style"
-                      description="Show this text block without border or background."
+                      description="Show this information block without border or background."
                       size="sm"
                     />
                   </div>

@@ -538,13 +538,13 @@ export function buildSubmissionPdfHtml(input: {
     if (inputType === 'info_url') {
       const href = field.placeholder?.trim() || '';
       const label = richTextToPlainText(field.subtext || field.label || href).trim();
+      const validation = parseObject(field.validation);
+      const linkHtml = isHttpUrl(href)
+        ? `<a class="info-link" href="${esc(href)}">${esc(label || href)}</a>`
+        : '<span class="info-muted">URL is not available.</span>';
       return `
         <div class="info-block" style="${blockStyle}">
-          <div class="info-box">
-            ${isHttpUrl(href)
-              ? `<a class="info-link" href="${esc(href)}">${esc(label || href)}</a>`
-              : `<span class="info-muted">URL is not available.</span>`}
-          </div>
+          ${validation?.infoBareStyle === true ? linkHtml : `<div class="info-box">${linkHtml}</div>`}
         </div>`;
     }
 

@@ -473,10 +473,10 @@ function getInfoBackgroundColor(field: PublicField): string | null {
   return normalizeHexColor(validation?.infoBackgroundColor);
 }
 
-function isBareInfoTextBlock(field: PublicField): boolean {
+function isBareInfoBlock(field: PublicField): boolean {
   const validation = parseObject(field.validation);
-  const isTextBlock = field.inputType === 'info_text' || !field.inputType;
-  return field.type === 'PARAGRAPH' && isTextBlock && validation?.infoBareStyle === true;
+  const supportsBareStyle = field.inputType === 'info_text' || field.inputType === 'info_url' || !field.inputType;
+  return field.type === 'PARAGRAPH' && supportsBareStyle && validation?.infoBareStyle === true;
 }
 
 type InfoPadding = {
@@ -2912,7 +2912,7 @@ export default function PublicFormPage() {
         }
       : undefined;
     const infoStopsProgress = isProgressStopInfoBlock(localizedField);
-    const bareInfoTextBlock = isBareInfoTextBlock(localizedField);
+    const bareInfoBlock = isBareInfoBlock(localizedField);
 
     // Heading blocks
     if (isHeadingInfoBlock(localizedField)) {
@@ -2962,8 +2962,9 @@ export default function PublicFormPage() {
         <div key={field.id} className={cn(widthClass, isLayoutBreakBeforeEnabled(field) && 'md:col-start-1')}>
           <div
             className={cn(
-              'rounded-lg border bg-background-primary px-3 py-2 text-sm',
-              infoStopsProgress ? 'border-status-warning/60 ring-1 ring-status-warning/20' : 'border-border-primary'
+              'text-sm',
+              bareInfoBlock ? 'bg-transparent' : 'rounded-lg border bg-background-primary px-3 py-2',
+              !bareInfoBlock && (infoStopsProgress ? 'border-status-warning/60 ring-1 ring-status-warning/20' : 'border-border-primary')
             )}
             style={infoStyle}
           >
@@ -2989,10 +2990,10 @@ export default function PublicFormPage() {
           <div
             className={cn(
               'text-sm text-text-primary',
-              bareInfoTextBlock
+              bareInfoBlock
                 ? 'bg-transparent'
                 : 'rounded-lg border bg-background-primary px-3 py-2',
-              !bareInfoTextBlock && (infoStopsProgress ? 'border-status-warning/60 ring-1 ring-status-warning/20' : 'border-border-primary')
+              !bareInfoBlock && (infoStopsProgress ? 'border-status-warning/60 ring-1 ring-status-warning/20' : 'border-border-primary')
             )}
             style={infoStyle}
           >
