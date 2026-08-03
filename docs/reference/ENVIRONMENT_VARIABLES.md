@@ -178,6 +178,10 @@ The in-process scheduler is started by the app and can be configured per task.
 | `SCHEDULER_FORM_AI_REVIEW_CRON` | `*/2 * * * *` | Form AI review polling interval |
 | `SCHEDULER_FORM_COUNT_RECONCILIATION_ENABLED` | `false` unless set | Enable form submission count reconciliation |
 | `SCHEDULER_FORM_COUNT_RECONCILIATION_CRON` | `0 3 * * 0` | Reconciliation schedule |
+| `SCHEDULER_FORM_URL_HEALTH_ENABLED` | `true` | Enable periodic checks for URL information fields |
+| `SCHEDULER_FORM_URL_HEALTH_CRON` | `0 2 * * *` | URL health check schedule (daily at 02:00 by default) |
+
+Form URL health scheduling also obeys the master `SCHEDULER_ENABLED` switch. Each run is bounded to 500 URLs and five concurrent checks; warnings remain visible only on authenticated Forms surfaces.
 
 Backup-related settings:
 

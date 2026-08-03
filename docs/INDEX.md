@@ -56,6 +56,8 @@ The Forms module does not yet have a single stable spec file under `docs/feature
 | [Forms Implementation Review](./plans/2026-03-10-forms-implementation-review.md) | Security, performance, and logic review |
 | [Forms API: option presets](./reference/API_REFERENCE.md#get-apiformspresets) | Managed CSV dropdown lists, protected built-ins, limits, and live form linkage |
 | [Forms design: option presets](./guides/DESIGN_GUIDELINE.md#form-option-presets) | Preset manager and respondent dropdown interaction rules |
+| [Forms API: URL health](./reference/API_REFERENCE.md#get-apiformsurl-health) | Tenant-scoped broken-link warning APIs, classifications, and safety bounds |
+| [Forms design: URL information fields](./guides/DESIGN_GUIDELINE.md#form-url-information-fields) | Plain link styling and authenticated-only warning behavior |
 
 ## Other
 

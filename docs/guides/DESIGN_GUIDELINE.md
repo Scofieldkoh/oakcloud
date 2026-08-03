@@ -5164,6 +5164,13 @@ The Forms list places a compact **Preset lists** secondary action beside **New F
 - When a linked dropdown switches to Custom, copy the currently resolved options into the field before removing the link.
 - Respondent dropdown fields are clearable unless read-only. Required fields may still be cleared, then show their normal required validation on blur or submit. Phone and timezone selectors remain non-clearable.
 
+#### Form URL Information Fields
+
+- URL information fields offer the same **Plain text style** toggle as text information fields. Plain style removes the bordered background in both the public web form and generated submission PDF while preserving the clickable link.
+- Broken-link warnings are backend-only operational guidance. Show a compact warning on the authenticated Forms list and beside the affected field in the builder; never expose URL health state to public respondents.
+- Activate the warning only after two consecutive definite failures. Clear it after a healthy result, and leave the current warning/failure count unchanged for unverifiable 401, 403, or 429 responses.
+- Warning copy should identify the affected field and last check result without blocking form publication, editing, or submission.
+
 ### Toast
 
 ```tsx

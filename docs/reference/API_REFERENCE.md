@@ -692,6 +692,38 @@ Get forms that currently have unresolved AI review warnings.
 
 ---
 
+### GET /api/forms/url-health
+List forms in the active tenant that have one or more URL information fields with an active broken-link warning.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+- `tenantId` (optional SUPER_ADMIN tenant scope)
+
+Warnings are administrative only: they appear on authenticated Forms surfaces and are never included in public form payloads. A warning activates after two consecutive definite failures and clears after a healthy check. Unverifiable responses do not activate or advance a warning.
+
+---
+
+### GET /api/forms/[id]/url-health
+Get the URL-check records for one form in the active tenant, including field key, checked URL, classification, last status/error, consecutive failures, check timestamps, and warning activation time.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+- `tenantId` (optional SUPER_ADMIN tenant scope)
+
+Classifications use these rules:
+
+- `HEALTHY`: HTTP 2xx or a successfully followed redirect ending in 2xx.
+- `FAILED`: DNS, connection, timeout, malformed redirect, redirect-limit, 404/410, or other definite 4xx/5xx failures.
+- `UNVERIFIABLE`: 401, 403, or 429; these do not increase consecutive failures or activate a warning.
+
+The checker accepts HTTP/HTTPS only, rejects credentials and non-public DNS/IP results, pins the resolved public address, follows at most five revalidated redirects, applies a 10-second timeout per request, uses `HEAD` with `GET` fallback only for 405/501, and reads at most 64 KB from fallback responses. Each scheduled run checks at most 500 URLs with concurrency limited to five.
+
+---
+
 ### GET /api/forms/[id]/responses
 Get paginated submissions, drafts, and chart data for one form.
 
