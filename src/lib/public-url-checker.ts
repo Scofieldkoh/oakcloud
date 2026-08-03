@@ -218,7 +218,10 @@ export async function checkPublicHttpUrl(
       return errorResult(url.toString(), details.code, details.message);
     }
 
-    if (response.status >= 300 && response.status < 400 && response.location) {
+    if (response.status >= 300 && response.status < 400) {
+      if (!response.location) {
+        return errorResult(url.toString(), 'MISSING_REDIRECT_LOCATION', 'Redirect response did not include a location');
+      }
       if (redirectCount >= MAX_REDIRECTS) {
         return errorResult(url.toString(), 'TOO_MANY_REDIRECTS', `URL exceeded ${MAX_REDIRECTS} redirects`);
       }
@@ -230,6 +233,9 @@ export async function checkPublicHttpUrl(
       }
       if (redirectUrl.protocol !== 'http:' && redirectUrl.protocol !== 'https:') {
         return errorResult(redirectUrl.toString(), 'UNSUPPORTED_PROTOCOL', 'Redirect used a non-HTTP protocol');
+      }
+      if (redirectUrl.username || redirectUrl.password) {
+        return errorResult(redirectUrl.toString(), 'URL_CREDENTIALS_NOT_ALLOWED', 'Redirect URLs containing credentials cannot be checked');
       }
       return checkAt(redirectUrl, redirectCount + 1, method);
     }

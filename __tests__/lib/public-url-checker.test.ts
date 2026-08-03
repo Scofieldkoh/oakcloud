@@ -156,6 +156,21 @@ describe('public URL checker', () => {
     expect(queue.calls).toHaveLength(6);
   });
 
+  it('rejects redirects without a location or with embedded credentials', async () => {
+    const missingLocation = requestQueue([{ status: 302 }]);
+    await expect(checkPublicHttpUrl('http://example.com', {
+      resolve: publicDns,
+      request: missingLocation.request,
+    })).resolves.toMatchObject({ status: null, errorCode: 'MISSING_REDIRECT_LOCATION' });
+
+    const credentials = requestQueue([{ status: 302, location: 'https://user:secret@example.com/private' }]);
+    await expect(checkPublicHttpUrl('http://example.com', {
+      resolve: publicDns,
+      request: credentials.request,
+    })).resolves.toMatchObject({ status: null, errorCode: 'URL_CREDENTIALS_NOT_ALLOWED' });
+    expect(credentials.calls).toHaveLength(1);
+  });
+
   it('returns bounded DNS, request-timeout, and GET body results', async () => {
     const dnsError = Object.assign(new Error('lookup failed'), { code: 'ENOTFOUND' });
     await expect(checkPublicHttpUrl('https://missing.example', {
