@@ -242,7 +242,7 @@ async function replaceAddress(
   else await tx.companyAddress.create({ data: { companyId, addressType: type, ...values } });
 }
 
-async function mutateSection(tx: Tx, companyId: string, section: CompanyProfileSectionId, rawData: unknown) {
+export async function mutateCompanyProfileSection(tx: Tx, companyId: string, section: CompanyProfileSectionId, rawData: unknown) {
   const data = companyProfileSectionSchemas[section].parse(rawData) as Record<string, any>;
   switch (section) {
     case 'identity':
@@ -351,7 +351,7 @@ export async function saveCompanyProfileSection<T = CompanyProfileSectionData>(
   return prisma.$transaction(async (tx) => {
     const current = await getCompanyProfileSection<T>(args.companyId, args.tenantId, args.section, tx);
     if (current.version !== args.ifMatchVersion) throw new CompanyProfileConflictError(current);
-    await mutateSection(tx, args.companyId, args.section, args.data);
+    await mutateCompanyProfileSection(tx, args.companyId, args.section, args.data);
     await tx.auditLog.create({ data: {
       tenantId: args.tenantId,
       userId: args.userId,

@@ -53,6 +53,8 @@ export interface ExtractedBizFileData {
     postalCode: string;
     country?: string;
   };
+  /** Review-only intent used to keep the mailing address synchronized with the registered address. */
+  mailingAddressSameAsRegistered?: boolean;
   paidUpCapital?: {
     amount: number;
     currency: string;

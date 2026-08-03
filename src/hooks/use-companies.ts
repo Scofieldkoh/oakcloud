@@ -11,7 +11,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Company, CompanyStatus, EntityType } from '@/generated/prisma';
-import type { CreateCompanyInput, UpdateCompanyInput } from '@/lib/validations/company';
+import type { CreateCompanyRequestInput, UpdateCompanyInput } from '@/lib/validations/company';
 import type { CompanyWithRelations, CompanyStats, CompanyLinkInfo } from '@/services/company/types';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
@@ -128,7 +128,7 @@ async function fetchCompanyStats(tenantId?: string): Promise<CompanyStats> {
   return response.json();
 }
 
-async function createCompany(data: CreateCompanyInput & {
+async function createCompany(data: CreateCompanyRequestInput & {
   tenantId?: string;
   taskContext?: TaskLaunchContext;
 }): Promise<Company> {
@@ -361,7 +361,7 @@ export function useCreateCompany() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateCompanyInput & {
+    mutationFn: (data: CreateCompanyRequestInput & {
       tenantId?: string;
       taskContext?: TaskLaunchContext;
     }) => createCompany(data),

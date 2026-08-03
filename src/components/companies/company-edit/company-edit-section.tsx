@@ -45,7 +45,7 @@ function isDateField(key: string): boolean {
   return /date|effectiveFrom|effectiveTo|fyeAsAtLastAr/i.test(key);
 }
 
-function ValueEditor({ value, path, onChange }: { value: unknown; path: string[]; onChange: (value: unknown) => void }) {
+export function CompanyProfileValueEditor({ value, path, onChange }: { value: unknown; path: string[]; onChange: (value: unknown) => void }) {
   const key = path.at(-1) ?? '';
   const label = fieldLabel(path);
   if (Array.isArray(value)) {
@@ -53,12 +53,12 @@ function ValueEditor({ value, path, onChange }: { value: unknown; path: string[]
       <div className="flex items-center justify-between"><p className="label mb-0">{label}</p><Button size="xs" variant="secondary" onClick={() => onChange([...value, { ...(arrayDefaults[key] ?? {}) }])} leftIcon={<Plus />}>Add {words(key).replace(/s$/, '')}</Button></div>
       {value.map((item, index) => <div key={index} className="rounded-lg border border-border-primary bg-background-primary p-3">
         <div className="mb-2 flex items-center justify-between"><p className="text-xs font-semibold text-text-secondary">{label} {index + 1}</p><Button size="xs" variant="ghost" iconOnly aria-label={`Remove ${label} ${index + 1}`} onClick={() => onChange(value.filter((_, itemIndex) => itemIndex !== index))} leftIcon={<Trash2 />} /></div>
-        <ValueEditor value={item} path={[...path, String(index)]} onChange={(next) => onChange(value.map((entry, itemIndex) => itemIndex === index ? next : entry))} />
+        <CompanyProfileValueEditor value={item} path={[...path, String(index)]} onChange={(next) => onChange(value.map((entry, itemIndex) => itemIndex === index ? next : entry))} />
       </div>)}
     </div>;
   }
   if (value && typeof value === 'object') {
-    return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:col-span-2">{Object.entries(value as Record<string, unknown>).filter(([child]) => child !== 'id').map(([child, childValue]) => <ValueEditor key={child} value={childValue} path={[...path, child]} onChange={(next) => onChange({ ...(value as Record<string, unknown>), [child]: next })} />)}</div>;
+    return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:col-span-2">{Object.entries(value as Record<string, unknown>).filter(([child]) => child !== 'id').map(([child, childValue]) => <CompanyProfileValueEditor key={child} value={childValue} path={[...path, child]} onChange={(next) => onChange({ ...(value as Record<string, unknown>), [child]: next })} />)}</div>;
   }
   if (value === null && objectDefaults[key]) {
     return <div><p className="label">{label}</p><Button variant="secondary" size="xs" onClick={() => onChange({ ...objectDefaults[key] })}>Add {words(key)}</Button></div>;
@@ -120,6 +120,6 @@ export function CompanyEditSection({ companyId, section, title, initialData, onS
   if (query.isLoading || draft === undefined) return <div className="card p-4 text-sm text-text-secondary">Loading {title}…</div>;
   return <CompanyAccentSection title={title} actions={<div className="flex items-center gap-2"><Button size="xs" variant="secondary" disabled={!dirty} onClick={() => { setDraft(baseline); setError(null); setLatest(null); }}>Cancel</Button><Button size="xs" onClick={save} isLoading={mutation.isPending} disabled={!dirty} aria-label={`Save ${title}`}>Save section</Button></div>}>
     {error ? <div className="border-b border-status-error/30 bg-status-error/5 px-4 py-3 text-sm text-status-error"><div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" />{error}</div>{latest ? <Button className="mt-2" size="xs" variant="secondary" onClick={() => { setDraft(latest.data); setBaseline(latest.data); setVersion(latest.version); setLatest(null); setError(null); }}>Reload latest section</Button> : null}</div> : null}
-    <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2"><ValueEditor value={draft} path={[section]} onChange={setDraft} /></div>
+    <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2"><CompanyProfileValueEditor value={draft} path={[section]} onChange={setDraft} /></div>
   </CompanyAccentSection>;
 }

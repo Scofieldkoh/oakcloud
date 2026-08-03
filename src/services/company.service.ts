@@ -11,9 +11,12 @@ import { canAddCompany, assertWorkspaceOwned } from '@/lib/workspace';
 import { NotFoundError, ValidationError } from '@/lib/errors';
 import type {
   CreateCompanyInput,
+  CreateCompanyRequestInput,
   UpdateCompanyInput,
   CompanySearchInput,
 } from '@/lib/validations/company';
+import { mutateCompanyProfileSection } from '@/services/company/profile-sections';
+import { COMPANY_PROFILE_SECTIONS } from '@/lib/company-profile-sections';
 import { Prisma } from '@/generated/prisma';
 import type { Company } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
@@ -137,7 +140,7 @@ const COMPANY_SCOPE_INCLUDE = {
 // ============================================================================
 
 export async function createCompany(
-  data: CreateCompanyInput,
+  data: CreateCompanyInput | CreateCompanyRequestInput,
   params: TenantAwareParams,
   taskIntegrationContext?: TaskLaunchContext,
 ): Promise<Company> {
@@ -186,8 +189,7 @@ export async function createCompany(
     }
   }
 
-  const company = await prisma.company.create({
-    data: {
+  const companyData: Prisma.CompanyUncheckedCreateInput = {
       tenantId,
       uen: data.uen.toUpperCase(),
       name: data.name,
@@ -223,8 +225,18 @@ export async function createCompany(
             : {}),
         }
         : undefined,
-    },
-  });
+  };
+
+  const profileSections = 'profileSections' in data ? data.profileSections : undefined;
+  const company = profileSections
+    ? await prisma.$transaction(async (tx) => {
+      const created = await tx.company.create({ data: companyData });
+      for (const section of COMPANY_PROFILE_SECTIONS) {
+        await mutateCompanyProfileSection(tx, created.id, section, profileSections[section]);
+      }
+      return tx.company.findUniqueOrThrow({ where: { id: created.id } });
+    })
+    : await prisma.company.create({ data: companyData });
 
   await createAuditLog({
     tenantId,

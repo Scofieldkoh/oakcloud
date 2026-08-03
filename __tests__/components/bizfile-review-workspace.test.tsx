@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BizFileReviewWorkspace } from "@/components/companies/bizfile-review/bizfile-review-workspace";
+import { applyAutomaticContactResolutions, BizFileReviewWorkspace } from "@/components/companies/bizfile-review/bizfile-review-workspace";
 import type { ExtractedBizFileData } from "@/services/bizfile";
 
 const fixture: ExtractedBizFileData = {
@@ -23,10 +23,61 @@ function useLargeViewport() {
 describe("BizFileReviewWorkspace", () => {
   afterEach(() => vi.unstubAllGlobals());
 
+  it("automatically reuses an unconflicted contact with the same name and identifier", () => {
+    const data: ExtractedBizFileData = {
+      ...fixture,
+      officers: [{ name: "Alex Tan", role: "DIRECTOR", identificationType: "NRIC", identificationNumber: "S1234567A" }],
+    };
+    const resolved = applyAutomaticContactResolutions(data, {
+      "officers.0": {
+        contactId: "00000000-0000-4000-8000-000000000001", score: 1, automatic: true,
+        blockedByIdentifierConflict: false, reasons: ["IDENTIFIER"], conflicts: [],
+        contact: { id: "00000000-0000-4000-8000-000000000001", fullName: "Alex Tan", identificationType: "NRIC", identificationNumber: "S1234567A", corporateUen: null, companies: [] },
+      },
+    });
+
+    expect(resolved.officers?.[0].contactResolution).toEqual({
+      action: "REUSE", contactId: "00000000-0000-4000-8000-000000000001",
+    });
+  });
+
+  it("does not prompt for an exact name-and-identifier contact match", async () => {
+    const onConfirm = vi.fn();
+    const exactFixture: ExtractedBizFileData = {
+      ...fixture,
+      officers: [{ name: "Tan Tze Yong (Chen Zhiyong)", role: "DIRECTOR", identificationType: "NRIC", identificationNumber: "S8005231F" }],
+    };
+    const exactMatch = {
+      contactId: "00000000-0000-4000-8000-000000000001", score: 1, automatic: true,
+      blockedByIdentifierConflict: false, reasons: ["IDENTIFIER"], conflicts: [],
+      contact: { id: "00000000-0000-4000-8000-000000000001", fullName: "Tan Tze Yong (Chen Zhiyong)", identificationType: "NRIC", identificationNumber: "S8005231F", corporateUen: null, companies: [] },
+    };
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ matches: { "officers.0": exactMatch } }), {
+      status: 200, headers: { "Content-Type": "application/json" },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<BizFileReviewWorkspace initialData={exactFixture} sourcePanel={<div>PDF source</div>}
+      onCancel={vi.fn()} onReset={vi.fn()} onConfirm={onConfirm} />);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Review section" }), { target: { value: "officers" } });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(screen.queryByText("Existing contact match")).not.toBeInTheDocument();
+    expect(screen.queryByText("Choose how to resolve this contact match")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm & Save" }));
+    await waitFor(() => expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({
+      officers: [expect.objectContaining({ contactResolution: { action: "REUSE", contactId: exactMatch.contactId } })],
+    })));
+  });
+
+  it("shows extraction metadata in the bottom-left footer", () => {
+    setup(vi.fn(), { extractionMetadata: <span>GPT-5 · 1,234 tokens · Est. $0.01</span> });
+    expect(within(screen.getByRole("contentinfo")).getByText(/GPT-5.*1,234 tokens.*Est\. \$0\.01/)).toBeVisible();
+  });
+
   it("blocks invalid confirmation, focuses the field, and submits normalized corrections", async () => {
     const onConfirm = vi.fn();
     setup(onConfirm);
-    expect(screen.getByText("Review extracted information")).toBeVisible();
+    expect(screen.queryByText("Review extracted information")).not.toBeInTheDocument();
     expect(screen.queryByText("10 sections")).not.toBeInTheDocument();
     const name = screen.getByLabelText("Company name");
     fireEvent.change(name, { target: { value: "" } });
@@ -47,7 +98,6 @@ describe("BizFileReviewWorkspace", () => {
     setup();
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "" } });
     expect(screen.getByRole("tab", { name: /Entity.*1 error/i })).toBeVisible();
-    expect(screen.getByText("Needs attention")).toBeVisible();
   });
 
   it("previews officer matches, blocks an undecided save, and persists explicit reuse", async () => {
@@ -170,15 +220,17 @@ describe("BizFileReviewWorkspace", () => {
     expect(screen.getByRole("tab", { name: /Activities.*Complete/i })).toHaveAttribute("aria-selected", "true");
   });
 
-  it("keeps the footer outside the equal-height viewport-capped content region", () => {
+  it("keeps the desktop footer visible in normal flex flow below the full-height split", () => {
     useLargeViewport();
     setup();
 
-    const content = screen.getByTestId("review-content-region");
-    expect(content).toHaveClass("absolute", "inset-x-0", "bottom-16", "top-0", "min-h-0");
-    expect(content.closest("section")).toHaveClass("lg:h-[calc(100dvh-7rem)]");
+    const split = screen.getByTestId("desktop-split");
+    expect(split).toHaveClass("min-h-0", "flex-1");
+    expect(split).not.toHaveClass("relative");
+    expect(split.closest("section")).toHaveClass("h-full");
     expect(within(screen.getByTestId("review-editor")).queryByRole("contentinfo")).not.toBeInTheDocument();
     expect(screen.getByRole("contentinfo")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Confirm & Save" })).toBeVisible();
     expect(screen.getByTestId("review-source")).toHaveClass("h-full");
     expect(screen.getByTestId("review-editor")).toHaveClass("h-full");
   });

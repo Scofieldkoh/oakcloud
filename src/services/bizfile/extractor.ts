@@ -46,7 +46,7 @@ Return a JSON object with the following structure (include only fields that have
 {
   "entityDetails": {
     "uen": "string - Unique Entity Number",
-    "name": "string - Current company name",
+    "name": "string - Current company name using its correct brand casing; preserve acronyms such as DAP, while legal suffixes must use title case such as Pte Ltd, never PTE LTD",
     "formerName": "string - Previous company name if any (from 'former_name' field)",
     "dateOfNameChange": "YYYY-MM-DD - Date when name was changed",
     "formerNames": [{ "name": "string", "effectiveFrom": "YYYY-MM-DD", "effectiveTo": "YYYY-MM-DD" }],
@@ -82,7 +82,7 @@ Return a JSON object with the following structure (include only fields that have
     "shareClass": "ORDINARY | PREFERENCE | etc",
     "currency": "SGD",
     "numberOfShares": number,
-    "parValue": number,
+    "parValue": number - value per share; if not printed explicitly, calculate totalValue / numberOfShares when numberOfShares is greater than zero,
     "totalValue": number,
     "isPaidUp": boolean,
     "isTreasury": boolean
@@ -152,6 +152,7 @@ Important:
 - Include all officers (current and ceased)
 - Include all shareholders with their nationality and address
 - Extract share capital structure completely including treasury shares
+- For every share-capital row, extract parValue when printed; otherwise calculate it as totalValue divided by numberOfShares (for example, 168 SGD / 168 shares = 1 SGD per share)
 - IMPORTANT: Extract paidUpCapital and issuedCapital amounts directly from the "PAID-UP CAPITAL" and "ISSUED/REGISTERED CAPITAL" sections in the document - do NOT calculate from share capital
 - Mark cessation dates as null for current officers
 - Include both primary and secondary SSIC codes if available
@@ -166,6 +167,7 @@ Important:
   Parse the date format (DD MMM YYYY) into YYYY-MM-DD format for receiptDate
 - For FREE BUSINESS PROFILE documents (no receipt number), use "FREE" as the receiptNo value
 - Country names and nationalities must use title case (e.g. "Singapore", "Malaysia", "United States"), never full caps (e.g. NOT "SINGAPORE")
+- Preserve meaningful uppercase brand acronyms in company names (for example "DAP Atelier"), but always format legal suffixes in title case (for example "Pte Ltd", never "PTE LTD")
 
 Respond ONLY with valid JSON, no markdown or explanation.`;
 

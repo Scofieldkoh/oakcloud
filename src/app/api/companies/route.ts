@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { createCompanySchema, companySearchSchema } from '@/lib/validations/company';
+import { createCompanyRequestSchema, companySearchSchema } from '@/lib/validations/company';
 import { createCompany, searchCompanies, getCompanyByUen } from '@/services/company.service';
 import { migrateBizFileToProcessing } from '@/services/document-processing.service';
 import { createLogger, sanitizeError } from '@/lib/logger';
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const taskContext = parseTaskLaunchContext(body.taskContext);
-    const data = createCompanySchema.parse(body);
+    const data = createCompanyRequestSchema.parse(body);
 
     const tenantId = session.tenantId;
 

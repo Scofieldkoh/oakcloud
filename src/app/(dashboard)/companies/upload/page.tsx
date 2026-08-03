@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useDropzone } from 'react-dropzone';
 import {
-  ArrowLeft,
   FileUp,
   File,
   X,
@@ -30,7 +29,7 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 import { DocumentPageViewer, ResizableSplitView } from '@/components/processing';
 import { postFormDataWithFallback } from '@/lib/browser-upload';
-import { BizFileReviewWorkspace, buildBizFileContactIdentityCandidates } from '@/components/companies/bizfile-review/bizfile-review-workspace';
+import { applyAutomaticContactResolutions, BizFileReviewWorkspace, buildBizFileContactIdentityCandidates } from '@/components/companies/bizfile-review/bizfile-review-workspace';
 import { ContactMatchPanel } from '@/components/companies/bizfile-review/bizfile-review-sections';
 import type { BizFileReviewIssue } from '@/lib/validations/bizfile-review';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
@@ -172,6 +171,20 @@ interface AIMetadata {
   };
   estimatedCost?: number;
   formattedCost?: string;
+}
+
+function AIExtractionMetadata({ metadata }: { metadata: AIMetadata | null }) {
+  if (!metadata) return null;
+  return <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+    <Sparkles className="h-3.5 w-3.5 shrink-0 text-oak-primary" />
+    <span>
+      {metadata.modelName || metadata.modelUsed} ({metadata.providerUsed})
+      {metadata.usage && <span className="ml-1 text-text-muted">· {metadata.providerUsed === 'mistral' && metadata.usage.pagesProcessed
+        ? `${metadata.usage.pagesProcessed.toLocaleString()} pages`
+        : `${metadata.usage.totalTokens.toLocaleString()} tokens`}</span>}
+      {metadata.formattedCost && <span className="ml-1 text-text-muted">· Est. {metadata.formattedCost}</span>}
+    </span>
+  </div>;
 }
 
 export default function UploadBizFilePage() {
@@ -470,6 +483,7 @@ export default function UploadBizFilePage() {
     if (candidates.length === 0) return {};
     const matches = await fetchBizFileContactMatchPreviews(candidates, fetch, activeTenantId || undefined);
     setContactMatchPreviews(matches);
+    setExtractedData((current) => current ? applyAutomaticContactResolutions(current, matches) : current);
     return matches;
   }, [activeTenantId]);
 
@@ -515,10 +529,12 @@ export default function UploadBizFilePage() {
 
     try {
       const latestMatches = await requestContactMatchPreviews(extractedData);
+      const resolvedData = applyAutomaticContactResolutions(extractedData, latestMatches);
+      setExtractedData(resolvedData);
       const unresolved = Object.entries(latestMatches).find(([path, match]) => {
         if (!match) return false;
         const [section, rawIndex] = path.split('.') as ['officers' | 'shareholders', string];
-        const resolution = extractedData[section]?.[Number(rawIndex)]?.contactResolution;
+        const resolution = resolvedData[section]?.[Number(rawIndex)]?.contactResolution;
         return !resolution || (resolution.action === 'REUSE'
           && (resolution.contactId !== match.contactId || match.blockedByIdentifierConflict));
       });
@@ -533,7 +549,7 @@ export default function UploadBizFilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           companyId,
-          extractedData,
+          extractedData: resolvedData,
           taskContext,
           officerActions: officerActions.length > 0 ? officerActions : undefined,
           expectedUpdatedAt: companyUpdatedAt || undefined, // For concurrent update detection
@@ -730,10 +746,11 @@ export default function UploadBizFilePage() {
   const previewPanel = (
     <div className="h-full bg-background-secondary border border-border-primary rounded-lg overflow-hidden">
       <div className="px-4 py-3 border-b border-border-primary bg-background-tertiary">
-        <p className="text-sm font-medium text-text-primary">BizFile Preview</p>
-        <p className="text-xs text-text-tertiary truncate">{file?.name || 'No file selected'}</p>
+        <p className="truncate text-sm font-medium text-text-primary">
+          BizFile Preview (File: {file?.name || 'No file selected'})
+        </p>
       </div>
-      <div className="h-[calc(100%-52px)] bg-background-primary">
+      <div className="h-[calc(100%-45px)] bg-background-primary">
         {!file || !previewUrl ? (
           <div className="h-full flex items-center justify-center text-sm text-text-tertiary">
             Upload a file to preview the BizFile pages.
@@ -759,27 +776,12 @@ export default function UploadBizFilePage() {
   );
 
   return (
-    <div className={`p-4 sm:p-6 w-full ${(step === 'preview' || step === 'diff-preview') ? 'max-w-none' : 'max-w-7xl'}`}>
+    <div data-testid="bizfile-upload-page" className={`p-4 sm:p-6 w-full ${(step === 'preview' || step === 'diff-preview') ? 'max-w-none h-dvh overflow-hidden flex flex-col' : 'max-w-7xl'}`}>
       {/* Header */}
-      <div className="mb-6">
-        <Link
-          href={isUpdateMode ? `/companies/${existingCompanyId}` : '/companies'}
-          title={isUpdateMode ? 'Back to Company (Ctrl+Backspace)' : 'Back to Companies (Ctrl+Backspace)'}
-          className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {isUpdateMode ? 'Back to Company' : 'Back to Companies'}
-        </Link>
+      <div className={(step === 'preview' || step === 'diff-preview') ? 'mb-3 shrink-0' : 'mb-6'}>
         <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
           {isUpdateMode ? 'Update via BizFile' : 'Upload BizFile'}
         </h1>
-        <p className="text-sm text-text-secondary mt-1">
-          {isUpdateMode ? (
-            <>Upload a new BizFile to update company information. Existing data will be overwritten with extracted data.</>
-          ) : (
-            <>Upload an ACRA BizFile document (PDF or image) to automatically extract company information using AI vision.</>
-          )}
-        </p>
       </div>
 
       {/* Update Mode Notice */}
@@ -914,13 +916,14 @@ export default function UploadBizFilePage() {
 
       {/* Step: Preview */}
       {step === 'preview' && extractedData && (
-        <div>
+        <div className="min-h-0 flex-1 overflow-hidden">
           <BizFileReviewWorkspace
             initialData={extractedData}
             sourcePanel={previewPanel}
             isSaving={isConfirming}
             serverIssues={serverIssues}
             tenantId={activeTenantId || undefined}
+            extractionMetadata={<AIExtractionMetadata metadata={aiMetadata} />}
             onConfirm={handleConfirm}
             onReset={handleReset}
             onCancel={handleCancel}
@@ -942,26 +945,6 @@ export default function UploadBizFilePage() {
                 <CheckCircle className="w-5 h-5" />
                 <p className="font-medium">Successfully extracted data from BizFile</p>
               </div>
-              {aiMetadata && (
-                <div className="flex items-center gap-2 text-xs text-text-secondary">
-                  <Sparkles className="w-3 h-3" />
-                  <span>
-                    {aiMetadata.modelName || aiMetadata.modelUsed} ({aiMetadata.providerUsed})
-                    {aiMetadata.usage && (
-                      <span className="ml-1 text-text-muted">
-                        • {aiMetadata.providerUsed === 'mistral' && aiMetadata.usage.pagesProcessed
-                          ? `${aiMetadata.usage.pagesProcessed.toLocaleString()} pages`
-                          : `${aiMetadata.usage.totalTokens.toLocaleString()} tokens`}
-                      </span>
-                    )}
-                    {aiMetadata.formattedCost && (
-                      <span className="ml-1 text-text-muted">
-                        • Est. {aiMetadata.formattedCost}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -1107,6 +1090,7 @@ export default function UploadBizFilePage() {
                       <div className="mt-3 ml-0 sm:ml-11">
                         <ContactMatchPanel
                           path={officer.sourceRecordId}
+                          recordName={officer.name}
                           match={contactMatchPreviews[officer.sourceRecordId]!}
                           resolution={extractedData.officers?.[sourceIndex(officer.sourceRecordId)]?.contactResolution}
                           onChange={(decision) => setContactResolution('officers', sourceIndex(officer.sourceRecordId), decision)}
@@ -1288,6 +1272,7 @@ export default function UploadBizFilePage() {
                       <div className="mt-3 ml-0 sm:ml-11">
                         <ContactMatchPanel
                           path={shareholder.sourceRecordId}
+                          recordName={shareholder.name}
                           match={contactMatchPreviews[shareholder.sourceRecordId]!}
                           resolution={extractedData.shareholders?.[sourceIndex(shareholder.sourceRecordId)]?.contactResolution}
                           onChange={(decision) => setContactResolution('shareholders', sourceIndex(shareholder.sourceRecordId), decision)}
@@ -1300,10 +1285,13 @@ export default function UploadBizFilePage() {
             </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <button onClick={handleReset} className="btn-ghost btn-sm">
-              Upload Different File
-            </button>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
+              <AIExtractionMetadata metadata={aiMetadata} />
+              <button onClick={handleReset} className="btn-ghost btn-sm">
+                Upload Different File
+              </button>
+            </div>
             <div className="flex items-center gap-3">
               <Link href={`/companies/${companyId}`} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
                 <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>

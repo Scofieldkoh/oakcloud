@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { companyProfileSectionSchemas } from '@/lib/validations/company-profile';
 
 export const entityTypeEnum = z.enum([
   'PRIVATE_LIMITED',
@@ -75,6 +76,10 @@ export const createCompanySchema = z.object({
   isGstRegistered: z.boolean().default(false),
   gstRegistrationNumber: z.string().max(20).optional().nullable(),
   gstRegistrationDate: dateStringTransform,
+});
+
+export const createCompanyRequestSchema = createCompanySchema.extend({
+  profileSections: z.object(companyProfileSectionSchemas).optional(),
 });
 
 // Schema for updating registered office address
@@ -155,6 +160,7 @@ export const companyAddressSchema = z.object({
 });
 
 export type CreateCompanyInput = z.infer<typeof createCompanySchema>;
+export type CreateCompanyRequestInput = z.infer<typeof createCompanyRequestSchema>;
 export type UpdateCompanyInput = z.infer<typeof updateCompanySchema>;
 export type DeleteCompanyInput = z.infer<typeof deleteCompanySchema>;
 export type CompanySearchInput = z.infer<typeof companySearchSchema>;

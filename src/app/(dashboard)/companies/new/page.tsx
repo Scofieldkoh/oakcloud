@@ -1,409 +1,110 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { createCompanySchema, type CreateCompanyInput } from '@/lib/validations/company';
-import { useCreateCompany } from '@/hooks/use-companies';
-import { usePermissions } from '@/hooks/use-permissions';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { AlertCircle, ArrowLeft, Loader2, Save, ShieldAlert, Upload } from 'lucide-react';
+import { CompanyCreateWorkspace, type CompanyCreateProfile } from '@/components/companies/company-edit/company-create-workspace';
 import { useSession } from '@/hooks/use-auth';
+import { useCreateCompany } from '@/hooks/use-companies';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
-import { ENTITY_TYPES } from '@/lib/constants';
-import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
-import {
-  readTaskLaunchContext,
-  withTaskLaunchContext,
-} from '@/lib/task-launch-context';
+import { createCompanyRequestSchema, type CreateCompanyRequestInput } from '@/lib/validations/company';
+import { readTaskLaunchContext, withTaskLaunchContext } from '@/lib/task-launch-context';
 
-const statuses = [
-  { value: 'LIVE', label: 'Live' },
-  { value: 'STRUCK_OFF', label: 'Struck Off' },
-  { value: 'WINDING_UP', label: 'Winding Up' },
-  { value: 'DISSOLVED', label: 'Dissolved' },
-  { value: 'IN_LIQUIDATION', label: 'In Liquidation' },
-  { value: 'IN_RECEIVERSHIP', label: 'In Receivership' },
-  { value: 'AMALGAMATED', label: 'Amalgamated' },
-  { value: 'CONVERTED', label: 'Converted' },
-  { value: 'OTHER', label: 'Other' },
-];
+const formId = 'add-company-form';
 
-const months = [
-  { value: 1, label: 'January' },
-  { value: 2, label: 'February' },
-  { value: 3, label: 'March' },
-  { value: 4, label: 'April' },
-  { value: 5, label: 'May' },
-  { value: 6, label: 'June' },
-  { value: 7, label: 'July' },
-  { value: 8, label: 'August' },
-  { value: 9, label: 'September' },
-  { value: 10, label: 'October' },
-  { value: 11, label: 'November' },
-  { value: 12, label: 'December' },
-];
+function createRequest(profile: CompanyCreateProfile): CreateCompanyRequestInput {
+  const identity = profile.identity as Record<string, unknown>;
+  const activities = profile.activities as { primary?: { code?: string; description?: string } | null; secondary?: { code?: string; description?: string } | null };
+  const compliance = profile.compliance as Record<string, unknown>;
+  const capital = profile.capital as Record<string, unknown>;
+  const additional = profile.additional as Record<string, unknown>;
+
+  return createCompanyRequestSchema.parse({
+    ...identity,
+    uen: String(identity.uen ?? '').toUpperCase(),
+    primarySsicCode: activities.primary?.code ?? null,
+    primarySsicDescription: activities.primary?.description ?? null,
+    secondarySsicCode: activities.secondary?.code ?? null,
+    secondarySsicDescription: activities.secondary?.description ?? null,
+    financialYearEndDay: compliance.financialYearEndDay,
+    financialYearEndMonth: compliance.financialYearEndMonth,
+    fyeAsAtLastAr: compliance.fyeAsAtLastAr,
+    homeCurrency: compliance.homeCurrency,
+    paidUpCapitalCurrency: capital.paidUpCapitalCurrency,
+    paidUpCapitalAmount: capital.paidUpCapitalAmount,
+    issuedCapitalCurrency: capital.issuedCapitalCurrency,
+    issuedCapitalAmount: capital.issuedCapitalAmount,
+    formerName: additional.formerName,
+    dateOfNameChange: additional.dateOfNameChange,
+    registrationDate: additional.registrationDate,
+    isGstRegistered: false,
+    profileSections: profile,
+  });
+}
 
 export default function NewCompanyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const taskContext = useMemo(
-    () => readTaskLaunchContext(searchParams),
-    [searchParams],
-  );
+  const taskContext = useMemo(() => readTaskLaunchContext(searchParams), [searchParams]);
   const returnHref = taskContext?.returnTo ?? '/companies';
   const { data: session } = useSession();
   const createCompany = useCreateCompany();
   const { can, isLoading: permissionsLoading } = usePermissions();
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  // SUPER_ADMIN tenant selection (from centralized store)
+  const [isDirty, setIsDirty] = useState(false);
   const isSuperAdmin = session?.isSuperAdmin ?? false;
   const activeTenantId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
+  const isSubmitting = createCompany.isPending;
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting, isDirty },
-  } = useForm<CreateCompanyInput>({
-    resolver: zodResolver(createCompanySchema),
-    defaultValues: {
-      entityType: 'PRIVATE_LIMITED',
-      status: 'LIVE',
-      paidUpCapitalCurrency: 'SGD',
-      issuedCapitalCurrency: 'SGD',
-      isGstRegistered: false,
-    },
-  });
-
-  // Warn about unsaved changes when leaving the page
   useUnsavedChangesWarning(isDirty, !isSubmitting);
 
-  const handleCancel = () => {
-    router.push(returnHref);
+  const handleCancel = () => router.push(returnHref);
+  const submitForm = () => {
+    const form = document.getElementById(formId);
+    if (form instanceof HTMLFormElement) form.requestSubmit();
   };
 
-  const onSubmit = async (data: CreateCompanyInput) => {
+  const onSubmit = async (profile: CompanyCreateProfile) => {
     setSubmitError(null);
-
-    // SUPER_ADMIN must select a tenant
     if (isSuperAdmin && !activeTenantId) {
       setSubmitError('Please select a tenant before creating a company');
       return;
     }
-
     try {
       const company = await createCompany.mutateAsync({
-        ...data,
-        // Include tenantId for SUPER_ADMIN
+        ...createRequest(profile),
         ...(isSuperAdmin && activeTenantId ? { tenantId: activeTenantId } : {}),
         taskContext,
       });
+      setIsDirty(false);
       router.push(taskContext?.returnTo ?? `/companies/${company.id}`);
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to create company');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Failed to create company');
     }
   };
 
   useKeyboardShortcuts([
-    {
-      key: 'Backspace',
-      ctrl: true,
-      handler: handleCancel,
-      description: 'Cancel and go back',
-    },
-    {
-      key: 's',
-      ctrl: true,
-      handler: () => handleSubmit(onSubmit)(),
-      description: 'Create company',
-    },
-    {
-      key: 'F2',
-      handler: () => router.push(withTaskLaunchContext('/companies/upload', taskContext)),
-      description: 'Upload BizFile',
-    },
+    { key: 'Backspace', ctrl: true, handler: handleCancel, description: 'Cancel and go back' },
+    { key: 's', ctrl: true, handler: submitForm, description: 'Create company' },
+    { key: 'F2', handler: () => router.push(withTaskLaunchContext('/companies/upload', taskContext)), description: 'Upload BizFile' },
   ], !isSubmitting);
 
-  // Check permission to create
-  if (permissionsLoading) {
-    return (
-      <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 text-oak-primary animate-spin" />
-      </div>
-    );
-  }
+  if (permissionsLoading) return <div className="flex min-h-[400px] items-center justify-center p-6"><Loader2 className="h-8 w-8 animate-spin text-oak-primary" /></div>;
+  if (!can.createCompany) return <div className="p-4 sm:p-6"><div className="card p-8 text-center"><ShieldAlert className="mx-auto mb-4 h-12 w-12 text-status-warning" /><h1 className="mb-2 text-lg font-medium text-text-primary">Access denied</h1><p className="mb-4 text-sm text-text-secondary">You do not have permission to create companies.</p><Link href={returnHref} className="btn-primary btn-sm inline-flex items-center gap-2"><ArrowLeft className="h-4 w-4" />Back to companies</Link></div></div>;
 
-  if (!can.createCompany) {
-    return (
-      <div className="p-4 sm:p-6">
-        <div className="card p-8 text-center">
-          <ShieldAlert className="w-12 h-12 text-status-warning mx-auto mb-4" />
-          <h2 className="text-lg font-medium text-text-primary mb-2">Access Denied</h2>
-          <p className="text-sm text-text-secondary mb-4">
-            You do not have permission to create companies.
-          </p>
-          <Link href={returnHref} className="btn-primary btn-sm inline-flex items-center gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Companies
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-4 sm:p-6 max-w-4xl">
-      {/* Header */}
-      <div className="mb-6">
-        <Link
-          href={returnHref}
-          title="Back to Companies (Ctrl+Backspace)"
-          className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-3 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Companies
-        </Link>
-        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">Add New Company</h1>
-        <p className="text-sm text-text-secondary mt-1">
-          Enter company details manually or upload a BizFile for automatic extraction.
-        </p>
-      </div>
-
-      {/* Error */}
-      {submitError && (
-        <div className="card border-status-error bg-status-error/5 mb-4">
-          <div className="flex items-center gap-3 text-status-error">
-            <AlertCircle className="w-5 h-5" />
-            <p>{submitError}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Tenant context info for SUPER_ADMIN */}
-      {isSuperAdmin && !activeTenantId && (
-        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <p className="text-sm text-amber-800 dark:text-amber-200">
-            Please select a tenant from the sidebar to create a company.
-          </p>
-        </div>
-      )}
-
-      {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Basic Information */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="text-lg font-semibold text-text-primary">Basic Information</h2>
-          </div>
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">UEN *</label>
-                <input
-                  type="text"
-                  {...register('uen')}
-                  placeholder="e.g., 202012345A"
-                  className={`input input-sm uppercase ${errors.uen ? 'input-error' : ''}`}
-                />
-                {errors.uen && (
-                  <p className="text-xs text-status-error mt-1.5">{errors.uen.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="label">Company Name *</label>
-                <input
-                  type="text"
-                  {...register('name')}
-                  placeholder="Company Name Pte Ltd"
-                  className={`input input-sm ${errors.name ? 'input-error' : ''}`}
-                />
-                {errors.name && (
-                  <p className="text-xs text-status-error mt-1.5">{errors.name.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Entity Type</label>
-                <select {...register('entityType')} className="input input-sm">
-                  {ENTITY_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="label">Status</label>
-                <select {...register('status')} className="input input-sm">
-                  {statuses.map((status) => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="label">Incorporation Date</label>
-              <input
-                type="date"
-                {...register('incorporationDate')}
-                className="input input-sm"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Business Activity */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="text-lg font-semibold text-text-primary">Business Activity</h2>
-          </div>
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="label">Primary SSIC Code</label>
-                <input
-                  type="text"
-                  {...register('primarySsicCode')}
-                  placeholder="e.g., 62011"
-                  className="input input-sm"
-                />
-              </div>
-              <div className="md:col-span-3">
-                <label className="label">Primary Activity Description</label>
-                <input
-                  type="text"
-                  {...register('primarySsicDescription')}
-                  placeholder="Description of primary business activity"
-                  className="input input-sm"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="label">Secondary SSIC Code</label>
-                <input
-                  type="text"
-                  {...register('secondarySsicCode')}
-                  placeholder="e.g., 62090"
-                  className="input input-sm"
-                />
-              </div>
-              <div className="md:col-span-3">
-                <label className="label">Secondary Activity Description</label>
-                <input
-                  type="text"
-                  {...register('secondarySsicDescription')}
-                  placeholder="Description of secondary business activity"
-                  className="input input-sm"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Financial Information */}
-        <div className="card">
-          <div className="p-4 border-b border-border-primary">
-            <h2 className="text-lg font-semibold text-text-primary">Financial Information</h2>
-          </div>
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="label">Financial Year End Day</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="31"
-                  {...register('financialYearEndDay', { valueAsNumber: true })}
-                  placeholder="31"
-                  className="input input-sm"
-                />
-              </div>
-              <div>
-                <label className="label">Financial Year End Month</label>
-                <select {...register('financialYearEndMonth', { valueAsNumber: true })} className="input input-sm">
-                  <option value="">Select month</option>
-                  {months.map((month) => (
-                    <option key={month.value} value={month.value}>
-                      {month.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Paid Up Capital (SGD)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  {...register('paidUpCapitalAmount', { valueAsNumber: true })}
-                  placeholder="0.00"
-                  className="input input-sm"
-                />
-              </div>
-              <div>
-                <label className="label">Issued Capital (SGD)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  {...register('issuedCapitalAmount', { valueAsNumber: true })}
-                  placeholder="0.00"
-                  className="input input-sm"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="isGstRegistered"
-                {...register('isGstRegistered')}
-                className="w-4 h-4 rounded-md border-border-primary bg-background-secondary text-oak-primary focus:ring-oak-primary"
-              />
-              <label htmlFor="isGstRegistered" className="text-sm text-text-primary">
-                GST Registered
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <Link href={returnHref} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
-            <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
-            <span className="sm:hidden">Cancel</span>
-          </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="btn-primary btn-sm flex items-center gap-2"
-            title="Create Company (Ctrl+S)"
-          >
-            <Save className="w-4 h-4" />
-            {isSubmitting ? 'Creating...' : (
-              <>
-                <span className="hidden sm:inline">Create Company (Ctrl+S)</span>
-                <span className="sm:hidden">Create Company</span>
-              </>
-            )}
-          </button>
-        </div>
-      </form>
+  return <main className="mx-auto max-w-5xl p-4 sm:p-6">
+    <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div><Link href={returnHref} className="mb-3 inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary"><ArrowLeft className="h-4 w-4" />Back to companies</Link><h1 className="text-xl font-semibold text-text-primary">Add Company</h1><p className="mt-1 text-sm text-text-secondary">Complete the company profile or upload a BizFile for automatic extraction.</p></div>
+      <Link href={withTaskLaunchContext('/companies/upload', taskContext)} className="btn-secondary btn-sm inline-flex items-center gap-2"><Upload className="h-4 w-4" />Upload BizFile (F2)</Link>
     </div>
-  );
+
+    {submitError ? <div className="card mb-4 border-status-error bg-status-error/5"><div className="flex items-center gap-3 text-status-error"><AlertCircle className="h-5 w-5" /><p>{submitError}</p></div></div> : null}
+    {isSuperAdmin && !activeTenantId ? <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20"><p className="text-sm text-amber-800 dark:text-amber-200">Please select a tenant from the sidebar to create a company.</p></div> : null}
+
+    <CompanyCreateWorkspace formId={formId} onSubmit={onSubmit} onDirtyChange={setIsDirty} actions={<div className="flex items-center justify-end gap-3 pt-2"><Link href={returnHref} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">Cancel (Ctrl+Backspace)</Link><button type="submit" disabled={isSubmitting} className="btn-primary btn-sm flex items-center gap-2" title="Create Company (Ctrl+S)"><Save className="h-4 w-4" />{isSubmitting ? 'Creating...' : 'Create Company (Ctrl+S)'}</button></div>} />
+  </main>;
 }

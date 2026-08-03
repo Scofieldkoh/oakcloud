@@ -22,6 +22,7 @@ import {
 } from "./bizfile-review-fields";
 import { RepeatingRecordEditor } from "./repeating-record-editor";
 import { canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from "@/services/bizfile/canonical-values";
+import { isExactIdentifierContactMatch } from "@/services/bizfile/contact-match-preview.client";
 
 type Props = {
   draft: BizFileReviewDraft;
@@ -29,7 +30,10 @@ type Props = {
   issues: BizFileReviewIssue[];
   matchPreviews?: Record<string, ContactMatchPreview | null>;
 };
-const optionLabel = (value: string) => value.split("_").map((word) => word.charAt(0) + word.slice(1).toLowerCase()).join(" ");
+const UPPERCASE_OPTION_LABELS = new Set(["NRIC", "FIN", "UEN"]);
+const optionLabel = (value: string) => UPPERCASE_OPTION_LABELS.has(value)
+  ? value
+  : value.split("_").map((word) => word.charAt(0) + word.slice(1).toLowerCase()).join(" ");
 type Address = NonNullable<BizFileReviewDraft["registeredAddress"]>;
 type FormerName = NonNullable<
   BizFileReviewDraft["entityDetails"]["formerNames"]
@@ -251,6 +255,7 @@ function AddressFields({
   );
 }
 export function AddressesSection({ draft, onChange, issues }: Props) {
+  const mailingAddressSameAsRegistered = draft.mailingAddressSameAsRegistered ?? !draft.mailingAddress;
   return (
     <Section title="Addresses">
       <fieldset aria-label="Registered address">
@@ -267,14 +272,28 @@ export function AddressesSection({ draft, onChange, issues }: Props) {
         />
       </fieldset>
       <fieldset aria-label="Mailing address">
-        <AddressFields
-          prefix="mailing"
-          labelPrefix="Mailing"
-          value={draft.mailingAddress ?? {}}
-          issues={issues}
-          path="mailingAddress"
-          onChange={(mailingAddress) => onChange({ ...draft, mailingAddress })}
+        <ReviewCheckbox
+          id="mailing-same-as-registered"
+          label="Same as Registered Address"
+          checked={mailingAddressSameAsRegistered}
+          onChange={(event) => onChange({
+            ...draft,
+            mailingAddressSameAsRegistered: event.target.checked,
+            mailingAddress: event.target.checked ? draft.mailingAddress : undefined,
+          })}
         />
+        {!mailingAddressSameAsRegistered && (
+          <div className="mt-3">
+            <AddressFields
+              prefix="mailing"
+              labelPrefix="Mailing"
+              value={draft.mailingAddress ?? {}}
+              issues={issues}
+              path="mailingAddress"
+              onChange={(mailingAddress) => onChange({ ...draft, mailingAddress })}
+            />
+          </div>
+        )}
       </fieldset>
     </Section>
   );
@@ -514,14 +533,16 @@ const reasonLabels: Record<string, string> = {
 };
 
 export function ContactMatchPanel({
-  path, match, resolution, onChange, error,
+  path, recordName, match, resolution, onChange, error,
 }: {
   path: string;
+  recordName: string;
   match: ContactMatchPreview;
   resolution: Exclude<ContactResolutionDecision, { action: "AUTO" }> | undefined;
   onChange: (resolution: Exclude<ContactResolutionDecision, { action: "AUTO" }>) => void;
   error?: BizFileReviewIssue;
 }) {
+  if (isExactIdentifierContactMatch(recordName, match)) return null;
   return <div tabIndex={-1} data-field-path={`${path}.contactResolution`}
     className="col-span-full rounded-md border border-oak-primary/30 bg-oak-primary/5 p-3">
     <p className="text-sm font-medium text-text-primary">Existing contact match</p>
@@ -641,6 +662,7 @@ export function OfficersSection({ draft, onChange, issues, matchPreviews = {} }:
             />
             {matchPreviews[`officers.${i}`] ? <ContactMatchPanel
               path={`officers.${i}`} match={matchPreviews[`officers.${i}`]!}
+              recordName={item.name}
               resolution={item.contactResolution}
               onChange={(contactResolution) => update({ ...item, contactResolution })}
               error={issue(issues, `officers.${i}.contactResolution`) ?? issue(issues, `officers.${i}.contactResolution.reason`)}
@@ -752,6 +774,7 @@ export function ShareholdersSection({ draft, onChange, issues, matchPreviews = {
             />
             {matchPreviews[`shareholders.${i}`] ? <ContactMatchPanel
               path={`shareholders.${i}`} match={matchPreviews[`shareholders.${i}`]!}
+              recordName={item.name}
               resolution={item.contactResolution}
               onChange={(contactResolution) => update({ ...item, contactResolution })}
               error={issue(issues, `shareholders.${i}.contactResolution`) ?? issue(issues, `shareholders.${i}.contactResolution.reason`)}

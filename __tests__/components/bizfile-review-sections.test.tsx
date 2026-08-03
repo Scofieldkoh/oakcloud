@@ -180,6 +180,21 @@ describe("BizFileReviewSections", () => {
     result.unmount();
   });
 
+  it("hides mailing fields when the mailing address is the registered address", () => {
+    function Harness() {
+      const [draft, setDraft] = useState<BizFileReviewDraft>({ ...fullDraft, mailingAddressSameAsRegistered: true });
+      return <><BizFileReviewSections draft={draft} onChange={setDraft} activeSection="addresses" issues={[]} /><output data-testid="draft">{JSON.stringify(draft)}</output></>;
+    }
+    render(<Harness />);
+    const checkbox = screen.getByRole("checkbox", { name: "Same as Registered Address" });
+    expect(screen.queryByLabelText("Mailing street")).not.toBeInTheDocument();
+    fireEvent.click(checkbox);
+    expect(screen.getByLabelText("Mailing street")).toHaveValue("");
+    expect(screen.getByLabelText("Mailing postal code")).toHaveValue("");
+    expect(screen.getByTestId("draft")).toHaveTextContent('"mailingAddressSameAsRegistered":false');
+    expect(screen.getByTestId("draft")).not.toHaveTextContent('Mail Street');
+  });
+
   it("preserves row focus across immutable edits and middle-row operations", () => {
     function Harness() {
       const [draft, setDraft] = useState<BizFileReviewDraft>({
@@ -339,6 +354,8 @@ describe("BizFileReviewSections", () => {
     result = view(aliased, "officers");
     expect(screen.getByLabelText("Officer role")).toHaveValue("SECRETARY");
     expect(screen.getByLabelText("Identification type")).toHaveValue("NRIC");
+    expect(screen.getByRole("option", { name: "NRIC" })).toBeVisible();
+    expect(screen.getByRole("option", { name: "FIN" })).toBeVisible();
     result.unmount();
     result = view(aliased, "shareholders");
     expect(screen.getByLabelText("Identification type")).toHaveValue("UEN");

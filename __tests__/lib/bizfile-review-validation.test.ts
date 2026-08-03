@@ -43,6 +43,18 @@ describe('BizFile review validation', () => {
     expect(Object.hasOwn(normalized, 'auditor')).toBe(false);
   });
 
+  it('copies the registered address into mailing address when marked the same', () => {
+    const draft = createEmptyBizFileReviewDraft();
+    draft.entityDetails = { uen: '202626103M', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };
+    draft.registeredAddress = { streetName: 'Oak Street', postalCode: '123456', country: 'Singapore', effectiveFrom: '2026-01-01' };
+    draft.mailingAddress = { streetName: 'Old Mail Street', postalCode: '654321' };
+    draft.mailingAddressSameAsRegistered = true;
+
+    expect(normalizeBizFileReviewDraft(draft).mailingAddress).toEqual({
+      streetName: 'Oak Street', postalCode: '123456', country: 'Singapore',
+    });
+  });
+
   it('omits empty optional arrays while preserving populated arrays', () => {
     const draft = createEmptyBizFileReviewDraft();
     draft.entityDetails = { uen: '202626103M', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };

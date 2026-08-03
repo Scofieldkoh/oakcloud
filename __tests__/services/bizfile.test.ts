@@ -204,6 +204,25 @@ describe('BizFile Service', () => {
   });
 
   describe('normalizeExtractedData', () => {
+    it('defaults the registered country to Singapore and derives missing share par value', () => {
+      const result = normalizeExtractedData({
+        entityDetails: { uen: '202312345A', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE' },
+        registeredAddress: { streetName: 'Sample Road', postalCode: '123456' },
+        shareCapital: [{ shareClass: 'ORDINARY', currency: 'SGD', numberOfShares: 168, totalValue: 168, isPaidUp: true }],
+      });
+
+      expect(result.registeredAddress?.country).toBe('Singapore');
+      expect(result.shareCapital?.[0].parValue).toBe(1);
+    });
+
+    it('preserves short leading brand acronyms and normalizes legal suffix casing', () => {
+      const result = normalizeExtractedData({
+        entityDetails: { uen: '202312345A', name: 'DAP ATELIER PTE LTD', entityType: 'PRIVATE_LIMITED', status: 'LIVE' },
+      });
+
+      expect(result.entityDetails.name).toBe('DAP Atelier Pte Ltd');
+    });
+
     it('should normalize company name to title case', () => {
       const data: ExtractedBizFileData = {
         entityDetails: {

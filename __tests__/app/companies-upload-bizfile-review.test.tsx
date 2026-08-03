@@ -58,6 +58,11 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+const aiMetadata = {
+  modelUsed: 'gpt-5', modelName: 'GPT-5', providerUsed: 'openai',
+  usage: { inputTokens: 1000, outputTokens: 234, totalTokens: 1234 }, formattedCost: '$0.01',
+};
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason?: unknown) => void;
@@ -77,14 +82,15 @@ async function reachPreview(updateMode = false) {
         diff: { hasDifferences: true, differences: [], existingCompany: { name: 'Existing Pte. Ltd.', uen: '202400001A' } },
         companyUpdatedAt: '2026-07-12T00:00:00.000Z',
       })
-    : jsonResponse({ extractedData }));
+    : jsonResponse({ extractedData, aiMetadata }));
 
   const view = render(<UploadBizFilePage />);
   const input = view.container.querySelector('input[type="file"]');
   expect(input).not.toBeNull();
   fireEvent.change(input!, { target: { files: [new File(['pdf'], 'bizfile.pdf', { type: 'application/pdf' })] } });
   fireEvent.click(screen.getByRole('button', { name: 'Upload & Extract' }));
-  await screen.findByText(updateMode ? 'Changes to Apply' : 'Review extracted information');
+  if (updateMode) await screen.findByText('Changes to Apply');
+  else await screen.findByLabelText('Company name');
   return view;
 }
 
@@ -99,6 +105,25 @@ describe('companies upload BizFile review integration', () => {
     Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
   });
 
+  it('uses the compact upload heading without back navigation or extraction subtext', () => {
+    render(<UploadBizFilePage />);
+    expect(screen.getByRole('heading', { name: 'Upload BizFile' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Back to Companies' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Upload an ACRA BizFile document/)).not.toBeInTheDocument();
+  });
+
+  it('uses a one-line preview title, keeps review overflow internal, and shows AI usage in the footer', async () => {
+    const view = await reachPreview();
+    fireEvent.click(screen.getByRole('tab', { name: 'Document' }));
+    expect(screen.getByText('BizFile Preview (File: bizfile.pdf)')).toBeVisible();
+    expect(screen.queryByText('BizFile Preview', { selector: 'p' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Review' }));
+    expect(screen.getByRole('contentinfo')).toHaveTextContent(/GPT-5 \(openai\).*1,234 tokens.*Est\. \$0\.01/);
+    expect(view.container.firstElementChild).toHaveClass('overflow-hidden');
+    expect(view.container.firstElementChild).toHaveClass('h-dvh');
+    expect(view.container.firstElementChild).not.toHaveClass('h-[calc(100dvh-4rem)]');
+  });
+
   it('resumes an uploaded task BizFile and opens the review workspace without uploading twice', async () => {
     mocks.searchParams = new URLSearchParams(
       'documentId=doc-1&fileName=task-bizfile.pdf&taskId=00000000-0000-4000-8000-000000000001&taskStageId=00000000-0000-4000-8000-000000000002&returnTo=%2Ftasks',
@@ -111,7 +136,7 @@ describe('companies upload BizFile review integration', () => {
 
     render(<UploadBizFilePage />);
 
-    expect(await screen.findByText('Review extracted information')).toBeVisible();
+    expect(await screen.findByLabelText('Company name')).toBeVisible();
     expect(mocks.upload).not.toHaveBeenCalled();
     expect(mocks.fetch).toHaveBeenNthCalledWith(1, '/api/documents/doc-1');
     expect(mocks.fetch).toHaveBeenNthCalledWith(
@@ -159,7 +184,7 @@ describe('companies upload BizFile review integration', () => {
 
     expect(await screen.findByText('Name conflicts with UEN')).toBeVisible();
     expect(screen.getByLabelText('Company name')).toHaveValue('Corrected Pte. Ltd.');
-    expect(screen.getByText('Review extracted information')).toBeVisible();
+    expect(screen.queryByText('Review extracted information')).not.toBeInTheDocument();
   });
 
   it('keeps the workspace mounted and reports a generic 500 response', async () => {

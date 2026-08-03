@@ -13,7 +13,7 @@ import {
 } from "@/lib/validations/bizfile-review";
 import { mapIdentificationType, type ExtractedBizFileData } from "@/services/bizfile/types";
 import type { ContactIdentityCandidate, ContactMatchPreview } from "@/types/contact-identity";
-import { fetchBizFileContactMatchPreviews } from "@/services/bizfile/contact-match-preview.client";
+import { fetchBizFileContactMatchPreviews, isExactIdentifierContactMatch } from "@/services/bizfile/contact-match-preview.client";
 import { BizFileReviewSections } from "./bizfile-review-sections";
 
 export interface BizFileReviewWorkspaceProps {
@@ -22,6 +22,7 @@ export interface BizFileReviewWorkspaceProps {
   isSaving?: boolean;
   serverIssues?: BizFileReviewIssue[];
   tenantId?: string;
+  extractionMetadata?: React.ReactNode;
   onConfirm: (data: ExtractedBizFileData) => void | Promise<void>;
   onCancel: () => void;
   onReset: () => void;
@@ -35,6 +36,25 @@ const sectionLabels: Record<BizFileReviewSectionId, string> = {
 const EMPTY_SERVER_ISSUES: BizFileReviewIssue[] = [];
 
 type MatchPreviews = Record<string, ContactMatchPreview | null>;
+
+export function applyAutomaticContactResolutions<T extends BizFileReviewDraft>(
+  draft: T,
+  previews: MatchPreviews,
+): T {
+  let next = draft;
+  for (const section of ["officers", "shareholders"] as const) {
+    (draft[section] ?? []).forEach((record, index) => {
+      const preview = previews[`${section}.${index}`];
+      if (!preview || !isExactIdentifierContactMatch(record.name, preview)
+        || record.contactResolution?.action === "CREATE_SEPARATE") return;
+      if (record.contactResolution?.action === "REUSE" && record.contactResolution.contactId === preview.contactId) return;
+      const records = [...(next[section] ?? [])];
+      records[index] = { ...records[index], contactResolution: { action: "REUSE", contactId: preview.contactId } };
+      next = { ...next, [section]: records };
+    });
+  }
+  return next;
+}
 
 export function buildBizFileContactIdentityCandidates(
   draft: BizFileReviewDraft,
@@ -194,7 +214,7 @@ function useDirtyHistoryGuard(isDirty: boolean) {
 }
 
 export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = false,
-  serverIssues = EMPTY_SERVER_ISSUES, tenantId, onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
+  serverIssues = EMPTY_SERVER_ISSUES, tenantId, extractionMetadata, onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
   const workspaceRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<Partial<Record<BizFileReviewSectionId, HTMLButtonElement | null>>>({});
   const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -273,6 +293,7 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
     if (candidates.length === 0) return {};
     const matches = await fetchBizFileContactMatchPreviews(candidates, fetch, tenantId);
     setMatchPreviews((current) => ({ ...current, ...matches }));
+    setDraft((current) => applyAutomaticContactResolutions(current, matches));
     return matches;
   }, [tenantId]);
 
@@ -303,11 +324,16 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
   const confirm = useCallback(async () => {
     if (busy || saveInFlightRef.current) return;
     let currentIssues = issues;
+    let draftForSave = draft;
     if (buildBizFileContactIdentityCandidates(draft, ["officers", "shareholders"]).length > 0) {
       try {
         const latest = await requestMatchPreviews(draft, ["officers", "shareholders"]);
-        const freshMatchIssues = unresolvedMatchIssues(draft, { ...matchPreviews, ...latest });
-        const byPath = new Map(currentIssues.map((item) => [item.path, item]));
+        draftForSave = applyAutomaticContactResolutions(draft, latest);
+        if (draftForSave !== draft) setDraft(draftForSave);
+        const freshMatchIssues = unresolvedMatchIssues(draftForSave, { ...matchPreviews, ...latest });
+        const byPath = new Map(currentIssues
+          .filter((item) => !item.path.endsWith(".contactResolution"))
+          .map((item) => [item.path, item]));
         freshMatchIssues.forEach((item) => byPath.set(item.path, item));
         currentIssues = Array.from(byPath.values());
       } catch {
@@ -326,7 +352,7 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
     setSaveSummary("Saving reviewed information…");
     historyGuard.disarm();
     try {
-      await onConfirm(normalizeBizFileReviewDraft(draft));
+      await onConfirm(normalizeBizFileReviewDraft(draftForSave));
       setSaveSummary("Save completed.");
     } catch {
       historyGuard.rearm();
@@ -352,7 +378,6 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
   }, [confirm, exit, moveSection, onCancel]);
 
   const issuesFor = (section: BizFileReviewSectionId) => issues.filter((item) => item.section === section);
-  const reviewedValidSections = BIZFILE_REVIEW_SECTIONS.filter((section) => visitedSections.has(section) && issuesFor(section).length === 0).length;
   const sectionNavigation = isLarge ? (
     <div className="sticky top-0 z-10 flex shrink-0 items-center gap-1 border-b border-border-primary bg-background-primary p-2">
       <button type="button" onClick={() => moveSection(-1)} title="Previous section (Ctrl + <)"
@@ -405,7 +430,10 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
 
   const actionFooter = (
     <footer role="contentinfo" className="flex min-h-14 flex-wrap items-center justify-end gap-2 border-t border-border-primary bg-background-primary p-3">
-      {saveSummary && <p role="status" data-review-summary tabIndex={-1} className="mr-auto text-xs text-text-secondary">{saveSummary}</p>}
+      {(extractionMetadata || saveSummary) && <div className="mr-auto space-y-0.5 text-xs text-text-secondary">
+        {extractionMetadata}
+        {saveSummary && <p role="status" data-review-summary tabIndex={-1}>{saveSummary}</p>}
+      </div>}
       <button type="button" disabled={busy} onClick={() => exit(onCancel)} className="btn-ghost btn-sm">Cancel</button>
       <button type="button" disabled={busy} onClick={() => exit(onReset)} className="btn-secondary btn-sm">Upload Different File</button>
       <button type="button" disabled={busy} onClick={() => void confirm()} className="btn-primary btn-sm">
@@ -414,29 +442,23 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
     </footer>
   );
 
-  return <section ref={workspaceRef} className="flex min-h-0 flex-col lg:h-[calc(100dvh-7rem)]">
-    <header className="shrink-0 border-b border-border-primary p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-semibold">Review extracted information</h1>
-        <span className="text-xs">{issues.length ? "Needs attention" : reviewedValidSections === 10 ? "Ready to save" : "Review in progress"}</span>
-      </div>
-      {!isLarge && <div role="tablist" className="mt-3 flex gap-2">
+  return <section ref={workspaceRef} className="flex h-full min-h-0 flex-col">
+    {!isLarge && <div className="shrink-0 border-b border-border-primary p-2">
+      <div role="tablist" className="flex gap-2">
         {(["document", "review"] as const).map((panel) => <button key={panel} role="tab" aria-selected={mobilePanel === panel}
           onClick={() => setMobilePanel(panel)} className="rounded border px-3 py-1.5 text-xs">{panel === "document" ? "Document" : "Review"}</button>)}
-      </div>}
-    </header>
-    {isLarge ? <div data-testid="desktop-split" className="relative min-h-0 flex-1">
-      <div data-testid="review-content-region" className="absolute inset-x-0 bottom-16 top-0 min-h-0">
+      </div>
+    </div>}
+    {isLarge ? <>
+      <div data-testid="desktop-split" className="min-h-0 flex-1">
         <ResizableSplitView className="h-full"
           leftPanel={<div data-testid="review-source" data-review-source className="h-full overflow-hidden">{sourcePanel}</div>}
-          rightPanel={<div className="relative h-full">
-            <div data-testid="review-editor" data-review-editor className="h-full">{editorContent}</div>
-            <div className="absolute left-0 right-0 top-full">{actionFooter}</div>
-          </div>}
-          leftPanelClassName="!overflow-hidden" rightPanelClassName="min-w-0 !overflow-visible"
+          rightPanel={<div data-testid="review-editor" data-review-editor className="h-full">{editorContent}</div>}
+          leftPanelClassName="!overflow-hidden" rightPanelClassName="min-w-0 !overflow-hidden"
           defaultLeftWidth={70} minLeftWidth={40} maxLeftWidth={80} />
       </div>
-    </div> : <div data-testid="mobile-workspace" className="h-[min(780px,calc(100dvh-88px))] min-h-0">
+      {actionFooter}
+    </> : <div data-testid="mobile-workspace" className="min-h-0 flex-1">
       {mobilePanel === "document" ? <div className="h-full overflow-hidden">{sourcePanel}</div>
         : <div className="flex h-full min-h-0 flex-col"><div className="min-h-0 flex-1">{editorContent}</div>{actionFooter}</div>}
     </div>}

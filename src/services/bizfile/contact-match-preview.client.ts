@@ -3,6 +3,19 @@ import type { ContactIdentityCandidate, ContactMatchPreview } from '@/types/cont
 const MAX_PREVIEW_BATCH_SIZE = 100;
 type ContactPreviewFetcher = (input: string, init: RequestInit) => Promise<Response>;
 
+function comparableName(value: string): string {
+  return value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+export function isExactIdentifierContactMatch(
+  incomingName: string,
+  match: ContactMatchPreview | null | undefined,
+): boolean {
+  if (!match?.contact || match.blockedByIdentifierConflict || match.conflicts.length > 0) return false;
+  const identifierMatches = match.reasons.some((reason) => reason === 'IDENTIFIER' || reason === 'CORPORATE_UEN');
+  return identifierMatches && comparableName(incomingName) === comparableName(match.contact.fullName);
+}
+
 export async function fetchBizFileContactMatchPreviews(
   candidates: ContactIdentityCandidate[],
   fetcher: ContactPreviewFetcher = fetch,

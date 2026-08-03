@@ -101,6 +101,7 @@ export const bizFileReviewSchema = z.object({
   }).optional(),
   registeredAddress: addressSchema.extend({ effectiveFrom: optionalDate }).optional(),
   mailingAddress: addressSchema.optional(),
+  mailingAddressSameAsRegistered: z.boolean().optional(),
   paidUpCapital: z.object({ amount: nonNegativeNumber, currency: requiredString }).optional(),
   issuedCapital: z.object({ amount: nonNegativeNumber, currency: requiredString }).optional(),
   shareCapital: z.array(z.object({
@@ -223,6 +224,11 @@ export function normalizeBizFileReviewDraft(draft: BizFileReviewDraft): Extracte
   normalized.entityDetails.status = canonicalizeCompanyStatus(normalized.entityDetails.status) as string;
   normalized.officers?.forEach((officer) => { officer.role = canonicalizeOfficerRole(officer.role) as string; if (officer.identificationType) officer.identificationType = canonicalizeIdentificationType(officer.identificationType) as string; });
   normalized.shareholders?.forEach((shareholder) => { if (shareholder.identificationType) shareholder.identificationType = canonicalizeIdentificationType(shareholder.identificationType) as string; });
+  normalized.mailingAddressSameAsRegistered = draft.mailingAddressSameAsRegistered ?? !normalized.mailingAddress;
+  if (normalized.mailingAddressSameAsRegistered && normalized.registeredAddress) {
+    const { effectiveFrom: _effectiveFrom, ...mailingAddress } = normalized.registeredAddress;
+    normalized.mailingAddress = mailingAddress;
+  }
   return normalized;
 }
 

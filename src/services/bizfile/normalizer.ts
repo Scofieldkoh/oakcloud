@@ -57,6 +57,21 @@ function normalizeCountry(value?: string): string | undefined {
   return normalizeCompanyName(trimmed) || trimmed;
 }
 
+const LEADING_WORDS_THAT_ARE_NOT_BRANDS = new Set(['A', 'AN', 'AND', 'AT', 'BY', 'FOR', 'IN', 'OF', 'ON', 'OR', 'THE', 'TO']);
+
+function normalizeBizFileCompanyName(value: string): string {
+  const source = value.trim();
+  let result = normalizeCompanyName(source) || source;
+  const firstSourceWord = source.split(/\s+/)[0];
+  if (/^[A-Z][A-Z0-9&]{1,3}$/.test(firstSourceWord) && !LEADING_WORDS_THAT_ARE_NOT_BRANDS.has(firstSourceWord)) {
+    result = result.replace(/^\S+/, firstSourceWord);
+  }
+  return result
+    .replace(/\bPTE\.?\s+LTD\.?\b/gi, 'Pte Ltd')
+    .replace(/\bPRIVATE\s+LIMITED\b/gi, 'Private Limited')
+    .replace(/\bPUBLIC\s+LIMITED\b/gi, 'Public Limited');
+}
+
 function splitLevelAndUnit(level?: string, unit?: string): { level?: string; unit?: string } {
   const cleanLevel = level?.trim().replace(/^#/, '');
   const cleanUnit = unit?.trim().replace(/^#/, '');
@@ -159,6 +174,9 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
     normalized.shareCapital = normalized.shareCapital.map((capital) => ({
       ...capital,
       currency: normalizeCurrency(capital.currency) || 'SGD',
+      parValue: capital.parValue ?? (capital.numberOfShares > 0
+        ? capital.totalValue / capital.numberOfShares
+        : undefined),
     }));
   }
 
@@ -173,7 +191,7 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
   if (normalized.entityDetails) {
     normalized.entityDetails = {
       ...normalized.entityDetails,
-      name: normalizeCompanyName(normalized.entityDetails.name) || normalized.entityDetails.name,
+      name: normalizeBizFileCompanyName(normalized.entityDetails.name),
       formerName: normalized.entityDetails.formerName
         ? normalizeCompanyName(normalized.entityDetails.formerName)
         : undefined,
@@ -204,7 +222,10 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
 
   // Normalize addresses
   if (normalized.registeredAddress) {
-    normalized.registeredAddress = normalizeStructuredAddress(normalized.registeredAddress);
+    normalized.registeredAddress = {
+      ...normalizeStructuredAddress(normalized.registeredAddress),
+      country: normalizeCountry(normalized.registeredAddress.country) || 'Singapore',
+    };
   }
 
   if (normalized.mailingAddress) {
