@@ -10,6 +10,10 @@ vi.mock('@/components/ui/workspace-selector', () => ({
   useActiveWorkspaceId: () => 'tenant-1',
 }));
 
+vi.mock('@/hooks/use-form-url-health', () => ({
+  useFormUrlWarningSummaries: () => ({ data: [] }),
+}));
+
 vi.mock('@/hooks/use-forms', () => ({
   useForms: (params: { status?: string }) => {
     const totals: Record<string, number> = {

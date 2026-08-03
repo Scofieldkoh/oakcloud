@@ -27,6 +27,7 @@ import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/toast';
 import { useForm, useUpdateForm } from '@/hooks/use-forms';
+import { useFormUrlHealthDetails } from '@/hooks/use-form-url-health';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { FieldEditorDrawer } from '@/components/forms/field-editor-drawer';
@@ -398,6 +399,7 @@ export default function FormBuilderPage() {
   const formId = params.id;
 
   const { data: form, isLoading, error } = useForm(formId);
+  const { data: urlHealthDetails } = useFormUrlHealthDetails(formId);
   const updateForm = useUpdateForm(formId);
 
   const [title, setTitle] = useState('');
@@ -2698,6 +2700,7 @@ export default function FormBuilderPage() {
           onChange={(next) => updateField(selectedField.clientId, () => next)}
           isDirty={isDirty}
           onSave={handleSave}
+          urlHealth={urlHealthDetails?.find((record) => record.fieldKey === selectedField.key) ?? null}
         />
       )}
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { FormInput } from '@/components/ui/form-input';
+import { Alert } from '@/components/ui/alert';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
@@ -9,6 +10,7 @@ import { isSummaryEligibleFieldType } from '@/lib/form-utils';
 import { getConditionDependents } from './builder-analysis';
 import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS, normalizeKey, isRepeatMarkerInputType, isBlockDividerInputType, isFaqField, newClientId } from './builder-utils';
 import type { BuilderField, ShortInputType } from './builder-utils';
+import type { FormUrlHealthDetail } from '@/hooks/use-form-url-health';
 
 const INFO_INPUT_TYPES: ReadonlyArray<ShortInputType> = ['info_text', 'info_image', 'info_url', 'info_heading_1', 'info_heading_2', 'info_heading_3', 'info_faq'];
 const PAGE_BREAK_REPEAT_START: ShortInputType = 'repeat_start';
@@ -99,10 +101,12 @@ export function FieldGeneralTab({
   field,
   allFields = [],
   onChange,
+  urlHealth,
 }: {
   field: BuilderField;
   allFields?: BuilderField[];
   onChange: (next: BuilderField) => void;
+  urlHealth?: FormUrlHealthDetail | null;
 }) {
   const presets = useFormOptionPresets();
 
@@ -124,6 +128,24 @@ export function FieldGeneralTab({
 
   return (
     <div className="space-y-4">
+
+      {field.inputType === 'info_url' && urlHealth?.warningActivatedAt ? (
+        <Alert variant="warning" title="Broken link warning" compact>
+          <div className="space-y-1">
+            <p>
+              Last checked {new Intl.DateTimeFormat('en-SG', {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+              }).format(new Date(urlHealth.lastCheckedAt))}
+            </p>
+            <p className="flex flex-wrap gap-x-3 gap-y-1">
+              <span>{urlHealth.lastHttpStatus ? `HTTP ${urlHealth.lastHttpStatus}` : urlHealth.lastErrorCode || 'Check failed'}</span>
+              <span>{urlHealth.consecutiveFailures} consecutive failures</span>
+            </p>
+            {urlHealth.lastErrorMessage ? <p>{urlHealth.lastErrorMessage}</p> : null}
+          </div>
+        </Alert>
+      ) : null}
 
       {/* ── Field identity ─────────────────────────────────────────── */}
       <div className="space-y-3">

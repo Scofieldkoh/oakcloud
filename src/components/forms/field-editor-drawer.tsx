@@ -8,6 +8,7 @@ import { FIELD_TYPE_LABEL } from './builder-utils';
 import { FieldGeneralTab } from './field-general-tab';
 import { FieldValidationTab } from './field-validation-tab';
 import { FieldConditionTab } from './field-condition-tab';
+import type { FormUrlHealthDetail } from '@/hooks/use-form-url-health';
 
 const FIELD_DRAWER_MIN_WIDTH = 360;
 const FIELD_DRAWER_MAX_WIDTH = 860;
@@ -21,6 +22,7 @@ export function FieldEditorDrawer({
   onChange,
   isDirty,
   onSave,
+  urlHealth,
 }: {
   field: BuilderField;
   allFields: BuilderField[];
@@ -28,6 +30,7 @@ export function FieldEditorDrawer({
   onChange: (next: BuilderField) => void;
   isDirty?: boolean;
   onSave?: () => void;
+  urlHealth?: FormUrlHealthDetail | null;
 }) {
   const [activeTab, setActiveTab] = useState<'general' | 'validation' | 'condition'>('general');
   const [panelWidth, setPanelWidth] = useState(FIELD_DRAWER_DEFAULT_WIDTH);
@@ -136,7 +139,7 @@ export function FieldEditorDrawer({
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {activeTab === 'general' && (
-            <FieldGeneralTab field={field} allFields={allFields} onChange={onChange} />
+            <FieldGeneralTab field={field} allFields={allFields} onChange={onChange} urlHealth={urlHealth} />
           )}
 
           {activeTab === 'validation' && (

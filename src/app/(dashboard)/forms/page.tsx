@@ -40,6 +40,7 @@ import {
 import type { FormStatus } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
 import { PresetListManager } from '@/components/forms/preset-list-manager';
+import { useFormUrlWarningSummaries } from '@/hooks/use-form-url-health';
 
 const PAGE_SIZE = 20;
 
@@ -158,6 +159,11 @@ export default function FormsPage() {
     isLoading: isWarningLoading,
     error: warningError,
   } = useFormsWithWarnings(8);
+  const { data: urlWarningSummaries } = useFormUrlWarningSummaries();
+  const urlWarningsByForm = useMemo(
+    () => new Map((urlWarningSummaries ?? []).map((summary) => [summary.formId, summary])),
+    [urlWarningSummaries],
+  );
 
   const createForm = useCreateForm();
   const duplicateForm = useDuplicateForm();
@@ -386,6 +392,7 @@ export default function FormsPage() {
           {!isLoading &&
             data?.forms.map((form) => {
               const isPublished = form.status === 'PUBLISHED';
+              const urlWarning = urlWarningsByForm.get(form.id);
               return (
                 <article
                   key={form.id}
@@ -417,6 +424,15 @@ export default function FormsPage() {
                             <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-0.5 text-xs text-text-secondary">
                               {form.conversionRate}% conversion
                             </span>
+                            {urlWarning ? (
+                              <span
+                                aria-label={`${urlWarning.warningCount} broken link${urlWarning.warningCount === 1 ? '' : 's'}`}
+                                className="inline-flex items-center gap-1 rounded-full bg-status-warning/10 px-2.5 py-0.5 text-xs font-medium text-status-warning"
+                              >
+                                <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                                {urlWarning.warningCount}
+                              </span>
+                            ) : null}
                           </div>
 
                           {/* Title */}
