@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ChangeEvent } from 'react';
-import { LockKeyhole, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Download, LockKeyhole, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -20,6 +20,21 @@ import {
 
 type Props = { isOpen: boolean; onClose: () => void };
 type ImportTarget = FormOptionPresetListItem | null;
+
+const PRESET_CSV_TEMPLATE = '\uFEFFvalue,label\r\nSG,Singapore\r\nMY,Malaysia\r\n';
+const PRESET_CSV_TEMPLATE_FILENAME = 'preset-list-template.csv';
+
+function downloadPresetCsvTemplate(): void {
+  const blob = new Blob([PRESET_CSV_TEMPLATE], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = PRESET_CSV_TEMPLATE_FILENAME;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
 
 function formatUpdatedAt(value: string): string {
   return new Intl.DateTimeFormat('en-SG', { dateStyle: 'medium' }).format(new Date(value));
@@ -140,8 +155,25 @@ export function PresetListManager({ isOpen, onClose }: Props) {
                   {importTarget ? `Update ${importTarget.name}` : 'Create preset list'}
                 </h3>
                 <p className="mt-1 text-xs text-text-secondary">
-                  Upload UTF-8 CSV with a label column, or value and label columns. Maximum 5 MB and 5,000 rows.
+                  Upload UTF-8 CSV. Maximum 5 MB and 5,000 rows.
                 </p>
+              </div>
+              <div className="flex flex-col gap-3 rounded-lg border border-border-primary bg-background-primary p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1 text-xs text-text-secondary">
+                  <p>Label is required and is the text shown in the dropdown.</p>
+                  <p>Value is optional and is the unique stored or submitted value.</p>
+                  <p>If omitted, the label is used as the value.</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="xs"
+                  leftIcon={<Download />}
+                  className="shrink-0"
+                  onClick={downloadPresetCsvTemplate}
+                >
+                  Download CSV template
+                </Button>
               </div>
               <FormInput
                 id="preset-name"

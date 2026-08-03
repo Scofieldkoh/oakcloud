@@ -48,14 +48,13 @@ describe('Sidebar task workspace destinations', () => {
     useUIStore.setState({ sidebarCollapsed: false, sidebarMobileOpen: false, theme: 'light' });
   });
 
-  it('exposes Tasks and Pipelines as top-level destinations without legacy workflow links', () => {
+  it('exposes Tasks without Pipelines or legacy workflow links', () => {
     render(<Sidebar />);
 
     const menu = screen.getByRole('navigation', { name: 'Main menu' });
     expect(menu).toContainElement(screen.getByRole('link', { name: 'Tasks' }));
-    expect(menu).toContainElement(screen.getByRole('link', { name: 'Pipelines' }));
     expect(screen.getByRole('link', { name: 'Tasks' })).toHaveAttribute('href', '/tasks');
-    expect(screen.getByRole('link', { name: 'Pipelines' })).toHaveAttribute('href', '/pipelines');
+    expect(screen.queryByRole('link', { name: 'Pipelines' })).not.toBeInTheDocument();
     expect(screen.queryByText('Workflow')).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Projects' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Templates' })).not.toBeInTheDocument();

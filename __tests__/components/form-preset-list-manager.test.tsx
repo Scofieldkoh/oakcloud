@@ -66,6 +66,39 @@ describe('PresetListManager', () => {
     expect(screen.getByText('Used by 2 fields')).toBeVisible();
   });
 
+  it('downloads an upload-ready CSV template and explains optional values', async () => {
+    const createObjectURL = vi.fn((_blob: Blob) => 'blob:preset-list-template');
+    const revokeObjectURL = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectURL });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectURL });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+
+    render(<PresetListManager isOpen onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Create preset list' }));
+
+    expect(screen.getByText(/label is required and is the text shown in the dropdown/i)).toBeVisible();
+    expect(screen.getByText(/value is optional and is the unique stored or submitted value/i)).toBeVisible();
+    expect(screen.getByText(/if omitted, the label is used as the value/i)).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Download CSV template' }));
+
+    expect(click).toHaveBeenCalledOnce();
+    const anchor = click.mock.instances[0] as HTMLAnchorElement;
+    expect(anchor.download).toBe('preset-list-template.csv');
+    expect(anchor.href).toBe('blob:preset-list-template');
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:preset-list-template');
+
+    const blob = createObjectURL.mock.calls[0][0];
+    expect(blob).toBeInstanceOf(Blob);
+    const csv = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => resolve(String(reader.result)));
+      reader.addEventListener('error', () => reject(reader.error));
+      reader.readAsText(blob);
+    });
+    expect(csv).toBe('value,label\r\nSG,Singapore\r\nMY,Malaysia\r\n');
+  });
+
   it('previews counts and sample rows before confirming an atomic replacement', async () => {
     render(<PresetListManager isOpen onClose={vi.fn()} />);
 

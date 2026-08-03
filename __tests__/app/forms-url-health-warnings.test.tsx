@@ -39,4 +39,13 @@ describe('Forms URL health warnings', () => {
     render(<FormsPage />);
     expect(screen.getByLabelText('2 broken links')).toBeVisible();
   });
+
+  it('allows action tooltips to extend beyond the form card', () => {
+    render(<FormsPage />);
+
+    const formCard = screen.getByLabelText('View responses').closest('article');
+    expect(formCard).not.toBeNull();
+    expect(formCard).toHaveClass('overflow-visible');
+    expect(formCard).not.toHaveClass('overflow-hidden');
+  });
 });

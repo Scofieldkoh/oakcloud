@@ -28,7 +28,6 @@ import {
   Lock,
   Calculator,
   ListTodo,
-  GitBranch,
   Mail,
   ClipboardList,
   PenSquare,
@@ -63,7 +62,6 @@ const primaryNavigation: NavItem[] = [
   { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Users },
   { name: 'Tasks', href: '/tasks', icon: ListTodo },
-  { name: 'Pipelines', href: '/pipelines', icon: GitBranch },
 ];
 
 const secondaryNavigation: NavItem[] = [

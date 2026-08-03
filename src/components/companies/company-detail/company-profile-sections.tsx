@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { CompanyAccentSection } from '@/components/companies/company-accent-section';
 import type { CompanyWithRelations } from '@/services/company/types';
 import { ActiveBadge, OfficerRoleBadge, ShareholderTypeBadge } from './company-profile-badges';
 
@@ -39,18 +40,12 @@ function title(value: string): string {
 }
 
 function Section({ title: heading, actions, children }: { title: string; actions?: ReactNode; children: ReactNode }) {
-  return <section className="card overflow-hidden">
-    <header className="flex min-h-9 items-center justify-between gap-3 bg-oak-primary px-3 py-2 text-white">
-      <h2 className="text-sm font-semibold leading-5">{heading}</h2>
-      {actions}
-    </header>
-    <div>{children}</div>
-  </section>;
+  return <CompanyAccentSection title={heading} actions={actions}>{children}</CompanyAccentSection>;
 }
 
 function Filter({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-white">
-    <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-3.5 w-3.5 rounded border-white/50 accent-white" />
+    <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-3.5 w-3.5 rounded-sm border-white/50 accent-white" />
     {label}
   </label>;
 }
@@ -85,7 +80,7 @@ export function CompanyProfileSections({ company }: { company: CompanyWithRelati
       </Section>
 
       <Section title="Business activities">
-        <div className="grid gap-3 p-3 text-sm sm:grid-cols-2">
+        <div className="grid gap-4 p-3 text-sm sm:grid-cols-2 sm:gap-8">
           <div><FieldLabel>Primary activity</FieldLabel><p>{company.primarySsicCode ? `${company.primarySsicCode} · ${company.primarySsicDescription ?? ''}` : '-'}</p></div>
           <div><FieldLabel>Secondary activity</FieldLabel><p>{company.secondarySsicCode ? `${company.secondarySsicCode} · ${company.secondarySsicDescription ?? ''}` : '-'}</p></div>
         </div>
@@ -159,7 +154,7 @@ export function CompanyProfileSections({ company }: { company: CompanyWithRelati
           <div><FieldLabel>Paid-up capital</FieldLabel><p>{company.paidUpCapitalAmount == null ? '-' : money(company.paidUpCapitalCurrency ?? company.homeCurrency ?? 'SGD', company.paidUpCapitalAmount)}</p></div>
           <div><FieldLabel>Issued capital</FieldLabel><p>{company.issuedCapitalAmount == null ? '-' : money(company.issuedCapitalCurrency ?? company.homeCurrency ?? 'SGD', company.issuedCapitalAmount)}</p></div>
         </div>
-        <details className="border-t border-border-primary px-3 py-2.5 text-sm">
+        <details open className="border-t border-border-primary px-3 py-2.5 text-sm">
           <summary className="cursor-pointer font-medium text-oak-primary">Show share capital breakdown</summary>
           <div className="mt-3 space-y-2 text-text-secondary">{company.shareCapital?.length ? company.shareCapital.map((capital) => <p key={capital.id}>{money(capital.currency, capital.totalValue)} / {number(capital.numberOfShares)} {title(capital.shareClass)} Shares{capital.isTreasury ? ' · Treasury' : ''}{capital.parValue != null ? ` · Par ${money(capital.currency, capital.parValue)}` : ''}</p>) : <p>No class breakdown</p>}</div>
         </details>

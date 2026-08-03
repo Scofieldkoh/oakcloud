@@ -58,4 +58,10 @@ describe('CompanyProfileSections', () => {
     expect(screen.getByText('Former Owner (1% ownership)')).toBeInTheDocument();
     expect(screen.getByText('Old Bank')).toBeInTheDocument();
   });
+
+  it('shows the share capital breakdown by default', () => {
+    render(<CompanyProfileSections company={company} />);
+
+    expect(screen.getByText('Show share capital breakdown').closest('details')).toHaveAttribute('open');
+  });
 });

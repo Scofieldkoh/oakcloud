@@ -232,7 +232,7 @@ function CompanyDetailContent({ id }: { id: string }) {
             href={backHref}
             className="mb-3 inline-flex items-center gap-1 text-xs text-text-secondary transition-colors hover:text-text-primary"
           >
-            Companies / {company.name}
+            Back to Companies
           </Link>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-semibold text-text-primary"><span className="text-oak-primary">{company.name}</span> <span>({company.uen})</span></h1>

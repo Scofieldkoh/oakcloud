@@ -28,7 +28,7 @@ interface CompanyTabsProps {
 
 export function CompanyTabs({ activeTab, onTabChange, hasPoc, hasFye }: CompanyTabsProps) {
   return (
-    <div role="tablist" aria-label="Company sections" className="mb-6 flex items-center overflow-x-auto border-b border-border-primary">
+    <div role="tablist" aria-label="Company sections" className="mb-6 flex items-center overflow-x-auto overflow-y-hidden border-b border-border-primary">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;

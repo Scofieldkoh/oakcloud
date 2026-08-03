@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
+import { CompanyAccentSection } from '@/components/companies/company-accent-section';
 import { Button } from '@/components/ui/button';
 import type { CompanyProfileSectionId } from '@/lib/company-profile-sections';
 import type { CompanyProfileSectionDto } from '@/services/company/profile-sections';
@@ -117,9 +118,8 @@ export function CompanyEditSection({ companyId, section, title, initialData, onS
   };
 
   if (query.isLoading || draft === undefined) return <div className="card p-4 text-sm text-text-secondary">Loading {title}…</div>;
-  return <section className="card overflow-hidden">
-    <header className="flex items-center justify-between gap-3 bg-oak-primary px-4 py-3 text-white"><h2 className="text-sm font-semibold">{title}</h2><div className="flex items-center gap-2"><Button size="xs" variant="secondary" disabled={!dirty} onClick={() => { setDraft(baseline); setError(null); setLatest(null); }}>Cancel</Button><Button size="xs" onClick={save} isLoading={mutation.isPending} disabled={!dirty} aria-label={`Save ${title}`}>Save section</Button></div></header>
+  return <CompanyAccentSection title={title} actions={<div className="flex items-center gap-2"><Button size="xs" variant="secondary" disabled={!dirty} onClick={() => { setDraft(baseline); setError(null); setLatest(null); }}>Cancel</Button><Button size="xs" onClick={save} isLoading={mutation.isPending} disabled={!dirty} aria-label={`Save ${title}`}>Save section</Button></div>}>
     {error ? <div className="border-b border-status-error/30 bg-status-error/5 px-4 py-3 text-sm text-status-error"><div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" />{error}</div>{latest ? <Button className="mt-2" size="xs" variant="secondary" onClick={() => { setDraft(latest.data); setBaseline(latest.data); setVersion(latest.version); setLatest(null); setError(null); }}>Reload latest section</Button> : null}</div> : null}
     <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2"><ValueEditor value={draft} path={[section]} onChange={setDraft} /></div>
-  </section>;
+  </CompanyAccentSection>;
 }

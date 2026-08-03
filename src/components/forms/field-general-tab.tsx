@@ -1215,24 +1215,32 @@ export function FieldGeneralTab({
               </p>
             ) : null}
           </div>
-          {field.optionPresetId ? (
-            <div className="rounded-lg border border-border-primary bg-background-primary p-3 text-xs text-text-secondary">
-              Options are managed by the linked preset. Choose Custom options to make an editable copy of the current list.
-            </div>
-          ) : <div>
-            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Options</label>
+          <div>
+            <label htmlFor="dropdown-options" className="mb-1.5 block text-xs font-medium text-text-secondary">Options</label>
             <textarea
-              value={field.options.map((option) => option.label).join('\n')}
+              id="dropdown-options"
+              value={(selectedDropdownPreset?.options ?? field.options).map((option) => option.label).join('\n')}
+              readOnly={Boolean(field.optionPresetId)}
               onChange={(e) => onChange({
                 ...field,
                 options: e.target.value
                   .split('\n')
                   .map((line) => ({ label: line, value: line })),
               })}
-              className="w-full min-h-24 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
+              className={cn(
+                'min-h-24 w-full rounded-lg border border-border-primary px-3 py-2 text-sm',
+                field.optionPresetId
+                  ? 'cursor-default bg-background-tertiary text-text-secondary'
+                  : 'bg-background-primary text-text-primary',
+              )}
               placeholder="One option per line"
             />
-          </div>}
+          </div>
+          {field.optionPresetId ? (
+            <div className="rounded-lg border border-border-primary bg-background-primary p-3 text-xs text-text-secondary">
+              Options are managed by the linked preset. Choose Custom options to make an editable copy of the current list.
+            </div>
+          ) : null}
         </div>
       )}
 

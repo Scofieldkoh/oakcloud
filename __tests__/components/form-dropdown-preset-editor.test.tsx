@@ -8,6 +8,7 @@ const SSIC_ID = '11111111-1111-4111-8111-111111111111';
 const SSIC_OPTIONS = [
   { value: '01111', label: '01111 - Growing vegetables' },
   { value: '62011', label: '62011 - Software development' },
+  { value: 'internal-code', label: 'Visible label only' },
 ];
 
 vi.mock('@/hooks/use-form-option-presets', () => ({
@@ -18,7 +19,7 @@ vi.mock('@/hooks/use-form-option-presets', () => ({
       builtInKey: 'ssic',
       isProtected: true,
       allowCsvReplace: true,
-      optionCount: 2,
+      optionCount: 3,
       updatedAt: '2026-08-01T00:00:00.000Z',
       _count: { fields: 0 },
       options: SSIC_OPTIONS,
@@ -71,5 +72,27 @@ describe('dropdown preset editor', () => {
       optionPresetId: null,
       options: SSIC_OPTIONS,
     });
+  });
+
+  it('shows linked preset labels in a read-only list that becomes editable for Custom options', () => {
+    render(<Harness />);
+    const select = screen.getByLabelText('Preset list');
+
+    fireEvent.change(select, { target: { value: SSIC_ID } });
+
+    const linkedOptions = screen.getByRole('textbox', { name: 'Options' });
+    expect(linkedOptions).toHaveValue(
+      '01111 - Growing vegetables\n62011 - Software development\nVisible label only',
+    );
+    expect(linkedOptions).toHaveAttribute('readonly');
+    expect(linkedOptions).not.toHaveValue(expect.stringContaining('internal-code'));
+
+    fireEvent.change(select, { target: { value: 'custom' } });
+
+    const customOptions = screen.getByRole('textbox', { name: 'Options' });
+    expect(customOptions).not.toHaveAttribute('readonly');
+    expect(customOptions).toHaveValue(
+      '01111 - Growing vegetables\n62011 - Software development\nVisible label only',
+    );
   });
 });

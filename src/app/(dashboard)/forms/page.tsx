@@ -396,7 +396,7 @@ export default function FormsPage() {
               return (
                 <article
                   key={form.id}
-                  className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm transition-colors hover:border-oak-primary/40 sm:rounded-3xl sm:p-5"
+                  className="overflow-visible rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm transition-colors hover:border-oak-primary/40 sm:rounded-3xl sm:p-5"
                 >
                   <div className="flex items-start justify-between gap-3 sm:gap-4">
                     <Link href={`/forms/${form.id}/responses`} className="min-w-0 flex-1">

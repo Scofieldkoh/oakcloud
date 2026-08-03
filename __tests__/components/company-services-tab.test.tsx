@@ -150,7 +150,7 @@ describe('CompanyServicesTab', () => {
     render(<CompanyTabs activeTab="services" onTabChange={onTabChange} />);
 
     const tablist = screen.getByRole('tablist', { name: 'Company sections' });
-    expect(tablist).toHaveClass('overflow-x-auto');
+    expect(tablist).toHaveClass('overflow-x-auto', 'overflow-y-hidden');
     const servicesTab = screen.getByRole('tab', { name: 'Services' });
     expect(servicesTab).toHaveAttribute('aria-selected', 'true');
     expect(servicesTab).toHaveClass('min-h-11', 'shrink-0', 'sm:min-h-0');
