@@ -230,8 +230,9 @@ function CompanyDetailContent({ id }: { id: string }) {
         <div>
           <Link
             href={backHref}
-            className="mb-3 inline-flex items-center gap-1 text-xs text-text-secondary transition-colors hover:text-text-primary"
+            className="mb-3 inline-flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
           >
+            <ArrowLeft className="h-4 w-4" />
             Back to Companies
           </Link>
           <div className="flex flex-wrap items-center gap-2">
