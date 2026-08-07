@@ -147,6 +147,18 @@ describe('StorageKeys', () => {
     });
   });
 
+  describe('formBackground', () => {
+    it('should generate correct key for form backgrounds', () => {
+      expect(StorageKeys.formBackground(tenantId, 'form-1', '.png'))
+        .toBe(`${tenantId}/forms/form-1/branding/background.png`);
+    });
+
+    it('should handle different extensions', () => {
+      expect(StorageKeys.formBackground(tenantId, 'form-1', '.webp'))
+        .toBe(`${tenantId}/forms/form-1/branding/background.webp`);
+    });
+  });
+
   describe('pendingPrefix', () => {
     it('should generate correct prefix for pending documents', () => {
       const prefix = StorageKeys.pendingPrefix(tenantId);

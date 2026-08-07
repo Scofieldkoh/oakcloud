@@ -435,6 +435,8 @@ export function serializeBuilderState(input: {
   i18nTranslations?: unknown;
   hideLogo?: boolean;
   hideFooter?: boolean;
+  backgroundImageUrl?: string | null;
+  backgroundImageOpacity?: number;
   aiParsingEnabled?: boolean;
   aiParsingCustomContext?: string;
 }): string {
@@ -457,6 +459,12 @@ export function serializeBuilderState(input: {
     i18nTranslations: input.i18nTranslations || {},
     hideLogo: input.hideLogo === true,
     hideFooter: input.hideFooter === true,
+    backgroundImageUrl: typeof input.backgroundImageUrl === 'string' && input.backgroundImageUrl.trim()
+      ? input.backgroundImageUrl.trim()
+      : null,
+    backgroundImageOpacity: typeof input.backgroundImageOpacity === 'number' && Number.isFinite(input.backgroundImageOpacity)
+      ? Math.min(100, Math.max(0, Math.round(input.backgroundImageOpacity)))
+      : 40,
     aiParsingEnabled: input.aiParsingEnabled === true,
     aiParsingCustomContext: (input.aiParsingCustomContext || '').trim(),
     fields: input.fields.map((field, idx) => ({

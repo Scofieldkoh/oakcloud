@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { storage } from '@/lib/storage';
 import { isWorkspaceLogoStorageKey } from '@/lib/workspace-logo-url';
+import { isFormBackgroundStorageKey } from '@/lib/form-background-url';
 
 interface RouteParams {
   params: Promise<{ key: string[] }>;
@@ -16,7 +17,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  if (!isWorkspaceLogoStorageKey(storageKey)) {
+  if (!isWorkspaceLogoStorageKey(storageKey) && !isFormBackgroundStorageKey(storageKey)) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 

@@ -32,8 +32,10 @@ import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { FieldEditorDrawer } from '@/components/forms/field-editor-drawer';
 import { SortableFieldCard } from '@/components/forms/sortable-field-card';
+import { FormBackgroundUploader } from '@/components/forms/form-background-uploader';
 import { getConditionDependents, getPublishReadiness } from '@/components/forms/builder-analysis';
 import { COUNTRY_PRESET_OPTIONS, NATIONALITY_PRESET_OPTIONS } from '@/lib/constants/form-option-presets';
+import { normalizeFormBackgroundUrl } from '@/lib/form-background-url';
 import {
   FIELD_TYPE_LABEL,
   defaultField,
@@ -420,6 +422,8 @@ export default function FormBuilderPage() {
   const [editingLocale, setEditingLocale] = useState('en');
   const [hideLogo, setHideLogo] = useState(false);
   const [hideFooter, setHideFooter] = useState(false);
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null);
+  const [backgroundImageOpacity, setBackgroundImageOpacity] = useState(40);
   const [fields, setFields] = useState<BuilderField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
@@ -500,6 +504,14 @@ export default function FormBuilderPage() {
       : {};
     setHideLogo(settingsObj.hideLogo === true);
     setHideFooter(settingsObj.hideFooter === true);
+    setBackgroundImageUrl(normalizeFormBackgroundUrl(
+      typeof settingsObj.backgroundImageUrl === 'string' ? settingsObj.backgroundImageUrl : null
+    ));
+    setBackgroundImageOpacity(
+      typeof settingsObj.backgroundImageOpacity === 'number' && Number.isFinite(settingsObj.backgroundImageOpacity)
+        ? Math.min(100, Math.max(0, Math.round(settingsObj.backgroundImageOpacity)))
+        : 40
+    );
     setFields(mappedFields);
     setSelectedFieldId(null);
 
@@ -522,6 +534,8 @@ export default function FormBuilderPage() {
       i18nTranslations: i18nSettings.translations,
       hideLogo: settingsObj.hideLogo === true,
       hideFooter: settingsObj.hideFooter === true,
+      backgroundImageUrl,
+      backgroundImageOpacity,
       fields: mappedFields,
     });
   }, [form]);
@@ -756,6 +770,8 @@ export default function FormBuilderPage() {
       i18nTranslations,
       hideLogo,
       hideFooter,
+      backgroundImageUrl,
+      backgroundImageOpacity,
       fields,
     }),
     [
@@ -777,6 +793,8 @@ export default function FormBuilderPage() {
       i18nTranslations,
       hideLogo,
       hideFooter,
+      backgroundImageUrl,
+      backgroundImageOpacity,
       fields,
     ]
   );
@@ -1497,7 +1515,13 @@ export default function FormBuilderPage() {
       const settingsRecord = (nextSettings && typeof nextSettings === 'object' && !Array.isArray(nextSettings))
         ? nextSettings as Record<string, unknown>
         : {};
-      nextSettings = { ...settingsRecord, hideLogo: hideLogo === true, hideFooter: hideFooter === true };
+      nextSettings = {
+        ...settingsRecord,
+        hideLogo: hideLogo === true,
+        hideFooter: hideFooter === true,
+        backgroundImageUrl: backgroundImageUrl || null,
+        backgroundImageOpacity,
+      };
 
       const saved = await updateForm.mutateAsync({
         title: title.trim(),
@@ -1546,6 +1570,8 @@ export default function FormBuilderPage() {
         i18nTranslations: savedI18nSettings.translations,
         hideLogo,
         hideFooter,
+        backgroundImageUrl,
+        backgroundImageOpacity,
         fields: correctedFields,
       });
 
@@ -1992,12 +2018,20 @@ export default function FormBuilderPage() {
                 icon={<Paintbrush className="w-3.5 h-3.5" />}
                 title="Appearance & PDF"
                 summary={[
+                  ...(backgroundImageUrl ? ['Background image'] : []),
                   ...(!hideLogo ? ['Logo'] : []),
                   ...(!hideFooter ? ['Footer'] : []),
                   ...(pdfFileNameTemplate ? ['PDF template'] : []),
                 ].join(' · ') || 'Default appearance'}
-                configured={!!pdfFileNameTemplate || hideLogo || hideFooter}
+                configured={!!pdfFileNameTemplate || hideLogo || hideFooter || !!backgroundImageUrl}
               >
+                <FormBackgroundUploader
+                  formId={formId}
+                  value={backgroundImageUrl}
+                  opacity={backgroundImageOpacity}
+                  onUrlChange={setBackgroundImageUrl}
+                  onOpacityChange={setBackgroundImageOpacity}
+                />
                 <FormInput
                   label="PDF filename template"
                   value={pdfFileNameTemplate}
