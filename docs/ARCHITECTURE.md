@@ -163,7 +163,7 @@ Most builder configuration beyond title, slug, tags, and status lives in `Form.s
 - Internal AI review settings and custom context
 - Response PDF filename template
 - I18n defaults, enabled locales, and translations
-- Branding toggles such as `hideLogo` and `hideFooter`
+- Branding toggles such as `hideLogo` and `hideFooter`; per-form background images (`backgroundImageUrl` + `backgroundImageOpacity`) uploaded through `POST /api/forms/[id]/background` and served via `/api/storage/[...key]`
 
 ### Public Form Security And Delivery
 
