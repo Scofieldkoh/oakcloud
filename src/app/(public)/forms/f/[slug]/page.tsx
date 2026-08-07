@@ -1609,6 +1609,20 @@ export default function PublicFormPage() {
     return settingsObj.hideFooter !== true;
   }, [form?.tenantName, form?.settings]);
 
+  const backgroundSettings = useMemo(() => {
+    const settingsObj = (form?.settings && typeof form.settings === 'object' && !Array.isArray(form.settings))
+      ? form.settings as Record<string, unknown>
+      : {};
+    const url = typeof settingsObj.backgroundImageUrl === 'string' && settingsObj.backgroundImageUrl.trim().length > 0
+      ? settingsObj.backgroundImageUrl.trim()
+      : null;
+    const rawOpacity = settingsObj.backgroundImageOpacity;
+    const opacity = typeof rawOpacity === 'number' && Number.isFinite(rawOpacity)
+      ? Math.min(100, Math.max(0, Math.round(rawOpacity)))
+      : 40;
+    return { url, opacity };
+  }, [form?.settings]);
+
   const canSwitchLanguage = i18nSettings.allowLocaleSwitch && i18nSettings.enabledLocales.length > 1;
 
   const orderedFields = useMemo(() => {
@@ -4476,6 +4490,16 @@ export default function PublicFormPage() {
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8 flex items-center justify-center">
+        {!isEmbed && backgroundSettings.url && (
+          <div aria-hidden="true" className="pointer-events-none fixed inset-0">
+            <img
+              src={backgroundSettings.url}
+              alt=""
+              className="h-full w-full object-cover mix-blend-multiply"
+              style={{ opacity: backgroundSettings.opacity / 100 }}
+            />
+          </div>
+        )}
         <div className="w-full max-w-xl rounded-xl bg-white p-6 sm:p-8 shadow-sm">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-6 w-6 text-status-success shrink-0" />
@@ -4540,6 +4564,16 @@ export default function PublicFormPage() {
 
   return (
     <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8')}>
+      {!isEmbed && backgroundSettings.url && (
+        <div aria-hidden="true" className="pointer-events-none fixed inset-0">
+          <img
+            src={backgroundSettings.url}
+            alt=""
+            className="h-full w-full object-cover mix-blend-multiply"
+            style={{ opacity: backgroundSettings.opacity / 100 }}
+          />
+        </div>
+      )}
       <div ref={formTopRef} className={cn('mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
         {canSwitchLanguage && (
           <div className="mb-4 flex justify-end">
