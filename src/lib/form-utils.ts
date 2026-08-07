@@ -1,3 +1,5 @@
+import { normalizeFormBackgroundUrl } from '@/lib/form-background-url';
+
 export interface PublicFormField {
   id: string;
   type: string;
@@ -1025,6 +1027,20 @@ export function buildPublicFormSettings(settings: unknown): Record<string, unkno
   const root = parseObject(settings);
   nextSettings.hideLogo = root?.hideLogo === true;
   nextSettings.hideFooter = root?.hideFooter === true;
+
+  const backgroundImageUrl = normalizeFormBackgroundUrl(
+    typeof root?.backgroundImageUrl === 'string' ? root.backgroundImageUrl : null
+  );
+  const rawOpacity = root?.backgroundImageOpacity;
+  const opacityNumber = typeof rawOpacity === 'number' && Number.isFinite(rawOpacity)
+    ? rawOpacity
+    : null;
+  if (backgroundImageUrl || opacityNumber !== null) {
+    nextSettings.backgroundImageUrl = backgroundImageUrl;
+    nextSettings.backgroundImageOpacity = opacityNumber !== null
+      ? Math.min(100, Math.max(0, Math.round(opacityNumber)))
+      : 40;
+  }
 
   return Object.keys(nextSettings).length > 0 ? nextSettings : null;
 }
