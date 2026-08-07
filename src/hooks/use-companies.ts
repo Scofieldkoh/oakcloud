@@ -15,6 +15,10 @@ import type { CreateCompanyRequestInput, UpdateCompanyInput } from '@/lib/valida
 import type { CompanyWithRelations, CompanyStats, CompanyLinkInfo } from '@/services/company/types';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import {
+  usePersistSessionListSnapshot,
+  useSessionListRestore,
+} from '@/hooks/use-session-query-restore';
 import type { TaskLaunchContext } from '@/services/tasks/types';
 
 interface CompanySearchParams {
@@ -58,6 +62,18 @@ interface CompanyPageBootstrapResult {
     value: unknown | null;
     updatedAt: string | null;
   }>;
+}
+
+function isCompanyPageBootstrapResult(value: unknown): value is CompanyPageBootstrapResult {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<CompanyPageBootstrapResult>;
+  return (
+    !!candidate.companies &&
+    typeof candidate.companies === 'object' &&
+    Array.isArray(candidate.companies.companies) &&
+    typeof candidate.preferences === 'object' &&
+    candidate.preferences !== null
+  );
 }
 
 function withWorkspaceId(url: string, tenantId?: string): string {
@@ -219,9 +235,15 @@ export function useCompaniesPageBootstrap(
 ) {
   const queryClient = useQueryClient();
   const uniquePreferenceKeys = Array.from(new Set(preferenceKeys.filter(Boolean))).sort();
+  const queryKey = ['companies-page-bootstrap', params, uniquePreferenceKeys] as const;
+  const { initialData, restoredFromSession } = useSessionListRestore<CompanyPageBootstrapResult>(
+    queryClient,
+    queryKey,
+    { validate: isCompanyPageBootstrapResult },
+  );
 
-  return useQuery({
-    queryKey: ['companies-page-bootstrap', params, uniquePreferenceKeys],
+  const query = useQuery({
+    queryKey,
     queryFn: async () => {
       const result = await fetchCompaniesPageBootstrap(params, uniquePreferenceKeys);
 
@@ -237,9 +259,17 @@ export function useCompaniesPageBootstrap(
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnMount: false,
+    // A session-restored snapshot is stale by definition, so refresh it in the
+    // background. Warm in-memory caches keep the existing no-refetch behavior.
+    refetchOnMount: restoredFromSession ? true : false,
+    initialData,
+    initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
     placeholderData: (previousData) => previousData,
   });
+
+  usePersistSessionListSnapshot(queryKey, query.data);
+
+  return query;
 }
 
 /**

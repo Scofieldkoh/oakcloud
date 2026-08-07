@@ -118,10 +118,13 @@ export default function ContactsPage() {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   // Pass tenantId to filter contacts by selected tenant (for SUPER_ADMIN)
-  const { data, isLoading, isFetching, error, refetch } = useContacts({
-    ...params,
-    tenantId: activeTenantId,
-  });
+  const { data, isLoading, isFetching, error, refetch } = useContacts(
+    {
+      ...params,
+      tenantId: activeTenantId,
+    },
+    { restoreSession: true },
+  );
   const deleteContact = useDeleteContact();
   const bulkDeleteContacts = useBulkDeleteContacts();
 

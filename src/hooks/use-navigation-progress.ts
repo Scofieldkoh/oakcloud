@@ -67,33 +67,13 @@ export function useNavigationProgress() {
     return () => document.removeEventListener('click', handleClick, true);
   }, [pathname, startNavigation]);
 
-  // Patch router.push and router.replace via history API
+  // Browser back/forward: the popstate event fires before the route state
+  // updates, so the progress indicator can start immediately.
   useEffect(() => {
-    const originalPushState = history.pushState.bind(history);
-    const originalReplaceState = history.replaceState.bind(history);
-
-    history.pushState = function (...args) {
-      // Defer to avoid setState inside useInsertionEffect (Next.js internals)
-      setTimeout(startNavigation, 0);
-      return originalPushState(...args);
-    };
-
-    history.replaceState = function (...args) {
-      // Only trigger for actual navigation, not for search param updates from state
-      if (args[2] && typeof args[2] === 'string') {
-        const newPath = new URL(args[2], window.location.origin).pathname;
-        if (newPath !== pathname) {
-          setTimeout(startNavigation, 0);
-        }
-      }
-      return originalReplaceState(...args);
-    };
-
-    return () => {
-      history.pushState = originalPushState;
-      history.replaceState = originalReplaceState;
-    };
-  }, [pathname, startNavigation]);
+    const handlePopState = () => startNavigation();
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [startNavigation]);
 
   // Safety timeout: stop after 10s to prevent stuck state
   useEffect(() => {

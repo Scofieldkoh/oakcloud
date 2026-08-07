@@ -156,6 +156,13 @@ export const StorageKeys = {
   },
 
   /**
+   * Generate storage key for a form background image
+   */
+  formBackground(tenantId: string, formId: string, extension: string): string {
+    return `${tenantId}/forms/${formId}/branding/background${extension}`;
+  },
+
+  /**
    * Get prefix for pending documents of a tenant
    */
   pendingPrefix(tenantId: string): string {

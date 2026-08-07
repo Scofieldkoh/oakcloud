@@ -1,6 +1,10 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  usePersistSessionListSnapshot,
+  useSessionListRestore,
+} from '@/hooks/use-session-query-restore';
 import type { Contact, ContactType } from '@/generated/prisma';
 import type { CreateContactWithDetailsInput, UpdateContactInput } from '@/lib/validations/contact';
 import type { ContactMatchResult } from '@/types/contact-identity';
@@ -98,6 +102,17 @@ interface ContactSearchResult {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+function isContactSearchResult(value: unknown): value is ContactSearchResult {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<ContactSearchResult>;
+  return (
+    !!candidate.contacts &&
+    Array.isArray(candidate.contacts) &&
+    typeof candidate.total === 'number' &&
+    typeof candidate.totalPages === 'number'
+  );
 }
 
 async function fetchContacts(params: ContactSearchParams): Promise<ContactSearchResult> {
@@ -232,15 +247,35 @@ async function unlinkContactFromCompany(
   return response.json();
 }
 
-export function useContacts(params: ContactSearchParams = {}) {
-  return useQuery({
-    queryKey: ['contacts', params],
+export function useContacts(
+  params: ContactSearchParams = {},
+  options: { restoreSession?: boolean } = {},
+) {
+  const queryClient = useQueryClient();
+  const restoreSession = options.restoreSession === true;
+  const queryKey = ['contacts', params] as const;
+  const { initialData, restoredFromSession } = useSessionListRestore<ContactSearchResult>(
+    queryClient,
+    queryKey,
+    { enabled: restoreSession, validate: isContactSearchResult },
+  );
+
+  const query = useQuery({
+    queryKey,
     queryFn: () => fetchContacts(params),
     staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
+    // A session-restored snapshot is stale by definition, so refresh it in the
+    // background. Warm in-memory caches keep the existing no-refetch behavior.
+    refetchOnMount: restoredFromSession ? true : false,
+    initialData,
+    initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
     placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
   });
+
+  usePersistSessionListSnapshot(queryKey, restoreSession ? query.data : undefined);
+
+  return query;
 }
 
 export function useContact(id: string, full = true) {
