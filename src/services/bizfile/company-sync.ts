@@ -223,6 +223,7 @@ export async function syncCompanyFromBizfileInTransaction(
       contactId,
       name: shareholder.name,
       shareholderType: mapContactType(shareholder.type),
+      isNominee: Boolean(shareholder.isNominee),
       identificationType: mapIdentificationType(shareholder.identificationType),
       identificationNumber: shareholder.identificationNumber ?? null,
       nationality: shareholder.nationality ?? null,

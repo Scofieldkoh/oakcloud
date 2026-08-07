@@ -309,6 +309,118 @@ describe('contact identity service', () => {
     );
   });
 
+  it('restores and reuses a soft-deleted contact with the same deterministic identifier', async () => {
+    const deleted = existingContact({
+      id: 'deleted-contact',
+      firstName: '王小明',
+      fullName: '王小明',
+      canonicalName: '王小明',
+      identificationType: 'NRIC',
+      identificationNumber: 'S1234567A',
+      deletedAt: new Date('2021-01-01T00:00:00.000Z'),
+    });
+    const restored = {
+      ...deleted,
+      deletedAt: null,
+      isActive: true,
+    };
+    tx.contact.findFirst
+      .mockResolvedValueOnce(null) // unbackfilled check
+      .mockResolvedValueOnce(deleted) // raw identifier duplicate
+      .mockResolvedValueOnce(restored); // post-restore reload
+    tx.contact.findMany.mockResolvedValue([]);
+    tx.$queryRaw.mockResolvedValue([]);
+
+    const result = await resolveOrCreateContact(
+      candidate({
+        identificationType: 'NRIC',
+        identificationNumber: 'S1234567A',
+      }),
+      { action: 'AUTO' },
+      params,
+    );
+
+    expect(tx.contact.create).not.toHaveBeenCalled();
+    expect(tx.contact.update).toHaveBeenCalledWith({
+      where: { id: 'deleted-contact' },
+      data: { deletedAt: null, isActive: true },
+    });
+    expect(result.outcome).toBe('RESTORED');
+    expect(result.contact.id).toBe('deleted-contact');
+    expect(createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'RESTORE',
+        entityId: 'deleted-contact',
+        changeSource: 'MANUAL',
+      }),
+      tx,
+    );
+  });
+
+  it('fails clearly when the identifier is already used by a contact of the other type', async () => {
+    const corporate = existingContact({
+      id: 'corporate-contact',
+      contactType: 'CORPORATE',
+      corporateName: 'Acme Holdings Pte Ltd',
+      fullName: 'Acme Holdings Pte Ltd',
+      canonicalName: 'acmeholdingspteltd',
+      identificationType: 'UEN',
+      identificationNumber: '202400001A',
+    });
+    tx.contact.findFirst
+      .mockResolvedValueOnce(null) // unbackfilled check
+      .mockResolvedValueOnce(corporate); // raw identifier duplicate
+    tx.contact.findMany.mockResolvedValue([]);
+    tx.$queryRaw.mockResolvedValue([]);
+
+    await expect(
+      resolveOrCreateContact(
+        candidate({
+          identificationType: 'UEN',
+          identificationNumber: '202400001A',
+        }),
+        { action: 'AUTO' },
+        params,
+      ),
+    ).rejects.toThrow(/already exists as a CORPORATE contact/i);
+    expect(tx.contact.create).not.toHaveBeenCalled();
+  });
+
+  it('does not assign an identifier to a selected name-only contact when another row holds it', async () => {
+    const nameOnly = existingContact({
+      id: 'name-only-contact',
+      firstName: '王小明',
+      fullName: '王小明',
+      canonicalName: '王小明',
+    });
+    const holder = existingContact({
+      id: 'identifier-holder',
+      firstName: 'Different',
+      fullName: 'Different',
+      canonicalName: 'different',
+      identificationType: 'NRIC',
+      identificationNumber: 'S1234567A',
+      deletedAt: new Date('2021-01-01T00:00:00.000Z'),
+    });
+    tx.contact.findFirst
+      .mockResolvedValueOnce(null) // unbackfilled check
+      .mockResolvedValueOnce(holder); // identifier duplicate before enrichment update
+    tx.contact.findMany.mockResolvedValue([nameOnly]);
+    tx.$queryRaw.mockResolvedValue([]);
+
+    await expect(
+      resolveOrCreateContact(
+        candidate({
+          identificationType: 'NRIC',
+          identificationNumber: 'S1234567A',
+        }),
+        { action: 'AUTO' },
+        params,
+      ),
+    ).rejects.toThrow(/already exists on contact/i);
+    expect(tx.contact.update).not.toHaveBeenCalled();
+  });
+
   it('fills empty fields without overwriting conflicting non-empty values', async () => {
     tx.contact.findMany.mockResolvedValue([
       existingContact({

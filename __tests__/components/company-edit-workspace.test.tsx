@@ -26,6 +26,12 @@ function view(onSave = vi.fn().mockImplementation(async (section, data) => ({ se
 }
 
 describe('CompanyEditWorkspace', () => {
+  it('renders enum-backed profile fields as searchable dropdowns', () => {
+    view();
+    expect(screen.getByRole('combobox', { name: 'Entity type' })).toHaveValue('Private Limited');
+    expect(screen.getByRole('combobox', { name: 'Status' })).toHaveValue('Live');
+  });
+
   it('saves only the changed section while other section drafts remain independent', async () => {
     const { onSave } = view();
     fireEvent.change(screen.getByLabelText('Registered street name'), { target: { value: 'New Street' } });

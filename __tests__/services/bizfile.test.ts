@@ -116,6 +116,12 @@ describe('BizFile Service', () => {
       expect(mapOfficerRole('director')).toBe('DIRECTOR');
     });
 
+    it('should include and map NOMINEE_DIRECTOR correctly', () => {
+      expect(BIZFILE_OFFICER_ROLE_OPTIONS).toContain('NOMINEE_DIRECTOR');
+      expect(mapOfficerRole('NOMINEE_DIRECTOR')).toBe('NOMINEE_DIRECTOR');
+      expect(mapOfficerRole('NOMINEE DIRECTOR')).toBe('NOMINEE_DIRECTOR');
+    });
+
     it('should map MANAGING_DIRECTOR correctly', () => {
       expect(mapOfficerRole('MANAGING_DIRECTOR')).toBe('MANAGING_DIRECTOR');
       expect(mapOfficerRole('MANAGING DIRECTOR')).toBe('MANAGING_DIRECTOR');

@@ -685,6 +685,7 @@ export function ShareholdersSection({ draft, onChange, issues, matchPreviews = {
         createItem={() => ({
           name: "",
           type: "INDIVIDUAL",
+          isNominee: false,
           shareClass: "",
           numberOfShares: 0,
         })}
@@ -712,6 +713,12 @@ export function ShareholdersSection({ draft, onChange, issues, matchPreviews = {
               <option value="INDIVIDUAL">Individual</option>
               <option value="CORPORATE">Corporate</option>
             </ReviewSelect>
+            <ReviewCheckbox
+              id={`holder-nominee-${i}`}
+              label="Nominee shareholder"
+              checked={Boolean(item.isNominee)}
+              onChange={(e) => update({ ...item, isNominee: e.target.checked })}
+            />
             <ReviewSelect
               id={`holder-id-type-${i}`}
               label="Identification type"

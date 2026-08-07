@@ -61,7 +61,7 @@ export const BIZFILE_ENTITY_TYPE_ALIASES = [
   'PUBLIC COMPANY LIMITED BY SHARES', 'SOLE PROPRIETORSHIP', 'LIMITED PARTNERSHIP', 'LLP', 'FOREIGN COMPANY', 'VCC',
 ] as const;
 export const BIZFILE_STATUS_ALIASES = ['LIVE COMPANY', 'STRUCK OFF', 'WINDING UP', 'IN LIQUIDATION', 'IN RECEIVERSHIP'] as const;
-export const BIZFILE_OFFICER_ROLE_ALIASES = ['MANAGING DIRECTOR', 'ALTERNATE DIRECTOR', 'COMPANY SECRETARY', 'CHIEF EXECUTIVE OFFICER', 'CHIEF FINANCIAL OFFICER', 'JUDICIAL MANAGER'] as const;
+export const BIZFILE_OFFICER_ROLE_ALIASES = ['MANAGING DIRECTOR', 'ALTERNATE DIRECTOR', 'NOMINEE DIRECTOR', 'COMPANY SECRETARY', 'CHIEF EXECUTIVE OFFICER', 'CHIEF FINANCIAL OFFICER', 'JUDICIAL MANAGER'] as const;
 const accepted = <T extends readonly string[]>(values: T, canonicalizer: (value: unknown) => unknown) => z.preprocess(canonicalizer, z.string().trim().refine((value) => values.includes(value as T[number]), 'Unsupported value'));
 const optionalAccepted = <T extends readonly string[]>(values: T, canonicalizer: (value: unknown) => unknown) => z.preprocess(
   (value) => typeof value === 'string' && value.trim() === '' ? undefined : canonicalizer(value),
@@ -117,6 +117,7 @@ export const bizFileReviewSchema = z.object({
   shareholders: z.array(z.object({
     name: reviewString,
     type: z.enum(['INDIVIDUAL', 'CORPORATE']),
+    isNominee: z.boolean().optional(),
     identificationType: optionalAccepted(BIZFILE_IDENTIFICATION_TYPE_OPTIONS, canonicalizeIdentificationType),
     identificationNumber: optionalString,
     nationality: optionalString,

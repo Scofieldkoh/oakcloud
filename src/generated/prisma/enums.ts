@@ -109,6 +109,7 @@ export const OfficerRole = {
   DIRECTOR: 'DIRECTOR',
   MANAGING_DIRECTOR: 'MANAGING_DIRECTOR',
   ALTERNATE_DIRECTOR: 'ALTERNATE_DIRECTOR',
+  NOMINEE_DIRECTOR: 'NOMINEE_DIRECTOR',
   SECRETARY: 'SECRETARY',
   CEO: 'CEO',
   CFO: 'CFO',
@@ -776,7 +777,8 @@ export const FormFieldType = {
   PARAGRAPH: 'PARAGRAPH',
   HTML: 'HTML',
   PAGE_BREAK: 'PAGE_BREAK',
-  HIDDEN: 'HIDDEN'
+  HIDDEN: 'HIDDEN',
+  COMPANY_NAME_CHECK: 'COMPANY_NAME_CHECK'
 } as const
 
 export type FormFieldType = (typeof FormFieldType)[keyof typeof FormFieldType]

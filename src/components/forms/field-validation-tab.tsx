@@ -47,7 +47,7 @@ export function FieldValidationTab({
     )
   );
 
-  const isTextLike = (field.type === 'SHORT_TEXT' && field.inputType !== 'date' && field.inputType !== 'number' && field.inputType !== 'time_timezone') || field.type === 'LONG_TEXT';
+  const isTextLike = (field.type === 'SHORT_TEXT' && field.inputType !== 'date' && field.inputType !== 'number' && field.inputType !== 'time_timezone') || field.type === 'LONG_TEXT' || field.type === 'COMPANY_NAME_CHECK';
   const isNumber = field.type === 'SHORT_TEXT' && field.inputType === 'number';
   const isDate = field.type === 'SHORT_TEXT' && field.inputType === 'date';
   const isPhone = field.type === 'SHORT_TEXT' && field.inputType === 'phone';

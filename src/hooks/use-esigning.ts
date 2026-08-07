@@ -3,6 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import {
+  usePersistSessionListSnapshot,
+  useSessionListRestore,
+} from '@/hooks/use-session-query-restore';
 import type {
   CreateEsigningEnvelopeInput,
   EsigningFieldDefinitionInput,
@@ -27,6 +31,16 @@ interface EsigningListResult {
   page: number;
   limit: number;
   statusCounts: EsigningEnvelopeStatusCounts;
+}
+
+function isEsigningListResult(value: unknown): value is EsigningListResult {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<EsigningListResult>;
+  return (
+    !!candidate.envelopes &&
+    Array.isArray(candidate.envelopes) &&
+    typeof candidate.total === 'number'
+  );
 }
 
 function withTenant(path: string, tenantId?: string | null): string {
@@ -402,9 +416,16 @@ function invalidateEnvelopeQueries(queryClient: ReturnType<typeof useQueryClient
 
 export function useEsigningEnvelopes(params: Partial<EsigningListQueryInput> = {}) {
   const tenantId = useEsigningTenant();
+  const queryClient = useQueryClient();
+  const queryKey = ['esigning', 'list', tenantId, params] as const;
+  const { initialData, restoredFromSession } = useSessionListRestore<EsigningListResult>(
+    queryClient,
+    queryKey,
+    { validate: isEsigningListResult },
+  );
 
-  return useQuery({
-    queryKey: ['esigning', 'list', tenantId, params],
+  const query = useQuery({
+    queryKey,
     queryFn: () => fetchEsigningEnvelopes(params, tenantId),
     enabled: Boolean(tenantId),
     staleTime: 30_000,
@@ -416,7 +437,13 @@ export function useEsigningEnvelopes(params: Partial<EsigningListQueryInput> = {
       return hasLiveEnvelope ? 15_000 : false;
     },
     refetchIntervalInBackground: true,
+    initialData,
+    initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
   });
+
+  usePersistSessionListSnapshot(queryKey, query.data);
+
+  return query;
 }
 
 export function useEsigningEnvelope(id: string | null) {

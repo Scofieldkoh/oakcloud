@@ -34,6 +34,7 @@ export const formFieldTypeSchema = z.enum([
   'HTML',
   'PAGE_BREAK',
   'HIDDEN',
+  'COMPANY_NAME_CHECK',
 ]);
 
 export const shortInputTypeSchema = z.enum([

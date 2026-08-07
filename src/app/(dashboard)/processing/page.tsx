@@ -780,11 +780,14 @@ export default function ProcessingDocumentsPage() {
   }, [columnVisibility, saveColumnPref]);
 
   // Pass tenantId and effective companyId to filter documents
-  const { data, isLoading, isFetching, error, refetch } = useProcessingDocuments({
-    ...params,
-    companyId: effectiveCompanyId,
-    tenantId: activeTenantId,
-  });
+  const { data, isLoading, isFetching, error, refetch } = useProcessingDocuments(
+    {
+      ...params,
+      companyId: effectiveCompanyId,
+      tenantId: activeTenantId,
+    },
+    { restoreSession: true },
+  );
 
   // Get pending approval count for "Approve" button visibility
   const { data: pendingNavData, refetch: refetchPendingCount } = useDocumentNavigation(

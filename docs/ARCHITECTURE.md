@@ -56,6 +56,7 @@ Core design principles:
 | TipTap | Rich text editing |
 | pdf-lib | Existing document export paths |
 | Puppeteer | Form response PDF rendering |
+| GoBusiness eAdviser API | Company name availability checks for the form "Company name check" element |
 | Microsoft Graph | Word-to-PDF conversion for e-signing uploads through usable SharePoint/OneDrive connectors; uploads remain PDF-only when no valid connector is configured |
 | MinIO / S3 | Uploaded file storage |
 

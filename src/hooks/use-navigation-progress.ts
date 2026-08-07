@@ -67,14 +67,6 @@ export function useNavigationProgress() {
     return () => document.removeEventListener('click', handleClick, true);
   }, [pathname, startNavigation]);
 
-  // Browser back/forward: the popstate event fires before the route state
-  // updates, so the progress indicator can start immediately.
-  useEffect(() => {
-    const handlePopState = () => startNavigation();
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [startNavigation]);
-
   // Safety timeout: stop after 10s to prevent stuck state
   useEffect(() => {
     if (isNavigating) {

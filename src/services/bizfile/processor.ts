@@ -100,7 +100,9 @@ async function resolveBizfileContact(
   }
 
   const result = await resolveOrCreateContact(candidate, reviewedDecision(decision), context);
-  if (!decision && result.outcome === 'CREATED') autoCreatedContactIds.add(result.contact.id);
+  if (!decision && (result.outcome === 'CREATED' || result.outcome === 'RESTORED')) {
+    autoCreatedContactIds.add(result.contact.id);
+  }
   return result.contact.id;
 }
 

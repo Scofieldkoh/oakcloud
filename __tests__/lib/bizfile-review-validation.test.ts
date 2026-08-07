@@ -138,6 +138,21 @@ describe('BizFile review validation', () => {
     });
   });
 
+  it('accepts a nominee director and a shareholder nominee flag', () => {
+    const draft = createEmptyBizFileReviewDraft();
+    draft.entityDetails = { uen: '1', name: 'X', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };
+    draft.officers = [{ name: 'A', role: 'NOMINEE_DIRECTOR' }];
+    draft.shareholders = [
+      { name: 'B', type: 'INDIVIDUAL', shareClass: 'ORDINARY', numberOfShares: 1, isNominee: true },
+    ];
+
+    expect(validateBizFileReview(draft).isValid).toBe(true);
+    expect(normalizeBizFileReviewDraft(draft)).toMatchObject({
+      officers: [{ role: 'NOMINEE_DIRECTOR' }],
+      shareholders: [{ isNominee: true }],
+    });
+  });
+
   it('normalizes cleared optional identification types to absent keys', () => {
     const draft = createEmptyBizFileReviewDraft();
     draft.entityDetails = { uen: '1', name: 'X', entityType: 'PRIVATE_LIMITED', status: 'LIVE' };

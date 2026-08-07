@@ -14,6 +14,7 @@ const ADD_FIELD_GROUPS: Array<{ label: string; types: Array<BuilderField['type']
   { label: 'Choice', types: ['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN'] },
   { label: 'Content', types: ['PARAGRAPH', 'HTML'] },
   { label: 'Upload', types: ['FILE_UPLOAD', 'SIGNATURE'] },
+  { label: 'Custom', types: ['COMPANY_NAME_CHECK'] },
   { label: 'Structure', types: ['PAGE_BREAK', 'HIDDEN'] },
 ];
 

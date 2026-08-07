@@ -306,6 +306,19 @@ describe("BizFileReviewSections", () => {
     result.unmount();
   });
 
+  it("marks a shareholder as a nominee in the BizFile review", () => {
+    const onChange = vi.fn();
+    view(fullDraft, "shareholders", onChange);
+    const checkbox = screen.getByRole("checkbox", { name: "Nominee shareholder" });
+    expect(checkbox).not.toBeChecked();
+    fireEvent.click(checkbox);
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        shareholders: [expect.objectContaining({ isNominee: true })],
+      }),
+    );
+  });
+
   it("connects scalar and indexed issues to their exact controls", () => {
     const issues = [
       {

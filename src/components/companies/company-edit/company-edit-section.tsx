@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
 import { CompanyAccentSection } from '@/components/companies/company-accent-section';
 import { Button } from '@/components/ui/button';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { Toggle } from '@/components/ui/toggle';
 import type { CompanyProfileSectionId } from '@/lib/company-profile-sections';
 import type { CompanyProfileSectionDto } from '@/services/company/profile-sections';
 import {
@@ -11,6 +13,7 @@ import {
   useCompanyProfileSection,
   useSaveCompanyProfileSection,
 } from '@/hooks/use-company-profile-sections';
+import { COMPANY_PROFILE_FIELD_OPTIONS } from './company-profile-field-options';
 
 const objectDefaults: Record<string, Record<string, unknown>> = {
   registered: { block: '', streetName: '', level: '', unit: '', buildingName: '', postalCode: '', country: 'Singapore', effectiveFrom: null },
@@ -22,7 +25,7 @@ const objectDefaults: Record<string, Record<string, unknown>> = {
 
 const arrayDefaults: Record<string, Record<string, unknown>> = {
   officers: { name: '', role: 'DIRECTOR', identificationType: null, identificationNumber: '', nationality: '', address: '', appointmentDate: null, cessationDate: null, isCurrent: true },
-  shareholders: { name: '', shareholderType: 'INDIVIDUAL', identificationType: null, identificationNumber: '', nationality: '', placeOfOrigin: '', address: '', shareClass: 'ORDINARY', numberOfShares: 0, percentageHeld: null, currency: 'SGD', isCurrent: true },
+  shareholders: { name: '', shareholderType: 'INDIVIDUAL', isNominee: false, identificationType: null, identificationNumber: '', nationality: '', placeOfOrigin: '', address: '', shareClass: 'ORDINARY', numberOfShares: 0, percentageHeld: null, currency: 'SGD', isCurrent: true },
   shareCapital: { shareClass: 'ORDINARY', currency: 'SGD', numberOfShares: 0, parValue: null, totalValue: 0, isPaidUp: true, isTreasury: false },
   charges: { chargeNumber: '', chargeType: '', description: '', chargeHolderName: '', amountSecured: null, amountSecuredText: '', currency: 'SGD', registrationDate: null, dischargeDate: null, isFullyDischarged: false },
   formerNames: { formerName: '', effectiveFrom: '', effectiveTo: null },
@@ -64,9 +67,21 @@ export function CompanyProfileValueEditor({ value, path, onChange }: { value: un
     return <div><p className="label">{label}</p><Button variant="secondary" size="xs" onClick={() => onChange({ ...objectDefaults[key] })}>Add {words(key)}</Button></div>;
   }
   if (typeof value === 'boolean') {
-    return <label className="flex items-center gap-2 text-sm text-text-primary"><input type="checkbox" checked={value} onChange={(event) => onChange(event.target.checked)} />{label}</label>;
+    return <Toggle size="sm" labelPosition="top" label={label} checked={value} onChange={onChange} />;
   }
   const numeric = typeof value === 'number';
+  const enumOptions = COMPANY_PROFILE_FIELD_OPTIONS[key];
+  if (enumOptions) {
+    return <div className="block text-sm">
+      <SearchableSelect
+        label={label}
+        options={enumOptions}
+        value={typeof value === 'string' ? value : ''}
+        onChange={onChange}
+        showKeyboardHints={false}
+      />
+    </div>;
+  }
   return <label className="block text-sm"><span className="label">{label}</span><input aria-label={label} className="input input-sm w-full" type={numeric ? 'number' : isDateField(key) ? 'date' : 'text'} step={numeric ? 'any' : undefined} value={value == null ? '' : String(value)} onChange={(event) => onChange(numeric ? (event.target.value === '' ? null : Number(event.target.value)) : (event.target.value || (isDateField(key) ? null : '')))} /></label>;
 }
 

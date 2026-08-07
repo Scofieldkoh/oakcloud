@@ -1977,6 +1977,7 @@ PARAGRAPH
 HTML
 PAGE_BREAK
 HIDDEN
+COMPANY_NAME_CHECK  -- Text input with a mandatory live company name availability check
 ```
 
 ### FormSubmissionStatus

@@ -35,6 +35,7 @@ import {
   type PublicFormField,
 } from '@/lib/form-utils';
 import { SIGNATURE_DATA_URL_MAX_LENGTH, extractSignatureDataUrl } from '@/lib/signature-utils';
+import { COMPANY_NAME_RECORD_COUNT_CAP } from '@/lib/external/company-name-check';
 import { prisma } from '@/lib/prisma';
 import { resolvePresetOptionsForFields } from '@/services/form-option-preset.service';
 import { storage, StorageKeys } from '@/lib/storage';
@@ -1209,6 +1210,14 @@ function sanitizePublicAnswers(
           }
           break;
         }
+      case 'COMPANY_NAME_CHECK':
+        if (typeof value === 'string') {
+          const trimmed = value.trim().slice(0, 500);
+          if (trimmed) {
+            sanitizedAnswers[key] = trimmed;
+          }
+        }
+        break;
       case 'LONG_TEXT':
       case 'DROPDOWN':
         if (typeof value === 'string') {
@@ -1281,6 +1290,146 @@ function sanitizePublicAnswers(
   }
 
   return sanitizedAnswers;
+}
+
+function getVisibleCompanyNameCheckFields(fields: FormField[]): FormField[] {
+  const visible: FormField[] = [];
+
+  for (let index = 0; index < fields.length; index += 1) {
+    const field = fields[index];
+
+    if (isRepeatStartMarker(field)) {
+      while (index < fields.length && !isRepeatEndMarker(fields[index])) {
+        index += 1;
+      }
+      continue;
+    }
+
+    if (
+      isRepeatEndMarker(field) ||
+      field.type === 'PAGE_BREAK' ||
+      field.type === 'PARAGRAPH' ||
+      field.type === 'HTML' ||
+      field.type === 'HIDDEN'
+    ) {
+      continue;
+    }
+
+    if (field.type === 'COMPANY_NAME_CHECK') {
+      visible.push(field);
+    }
+  }
+
+  return visible;
+}
+
+export function validateCompanyNameCheckResults(
+  fields: FormField[],
+  answers: Record<string, unknown>,
+  metadata: unknown
+): void {
+  const metadataRoot = parseObject(metadata);
+  const results = metadataRoot ? parseObject(metadataRoot.nameCheckResults) : null;
+
+  for (const field of getVisibleCompanyNameCheckFields(fields)) {
+    if (!evaluateCondition(parseObject(field.condition), answers, { fields })) continue;
+
+    const value = answers[field.key];
+    const name = typeof value === 'string' ? value.trim() : '';
+    if (!name) {
+      throw new Error(`Company name availability check is required for ${field.label || field.key}`);
+    }
+
+    const result = results ? parseObject(results[field.key]) : null;
+    const checkedName = typeof result?.name === 'string' ? result.name.trim() : '';
+    const recordsAreValid = Array.isArray(result?.records);
+    const recordCount = recordsAreValid ? (result?.records as unknown[]).length : 0;
+    const availabilityIsConsistent =
+      typeof result?.available === 'boolean' &&
+      recordsAreValid &&
+      result.available === (recordCount === 0);
+
+    if (
+      !result ||
+      checkedName !== name ||
+      typeof result.checkedAt !== 'string' ||
+      !result.checkedAt.trim() ||
+      !recordsAreValid ||
+      !availabilityIsConsistent
+    ) {
+      throw new Error(`Company name availability check is required for ${field.label || field.key}`);
+    }
+
+    if (!result.available) {
+      throw new Error(
+        `Similar names were found for ${field.label || field.key}. Please enter an available company name.`
+      );
+    }
+  }
+}
+
+export function sanitizeSubmissionMetadata(
+  metadata: unknown,
+  fields: FormField[],
+  answers: Record<string, unknown>
+): Record<string, unknown> {
+  const root = parseObject(metadata) ? { ...(metadata as Record<string, unknown>) } : {};
+  const rawResults = parseObject(root.nameCheckResults);
+  const fieldByKey = new Map(fields.map((field) => [field.key, field]));
+  const sanitizedResults: Record<string, unknown> = {};
+
+  if (rawResults) {
+    for (const [fieldKey, entry] of Object.entries(rawResults)) {
+      const field = fieldByKey.get(fieldKey);
+      if (!field || field.type !== 'COMPANY_NAME_CHECK') continue;
+
+      const parsed = parseObject(entry);
+      if (!parsed) continue;
+
+      const answerName = typeof answers[fieldKey] === 'string' ? answers[fieldKey].trim() : '';
+      const resultName = typeof parsed.name === 'string' ? parsed.name.trim() : '';
+      if (!answerName || resultName !== answerName) continue;
+      if (typeof parsed.available !== 'boolean') continue;
+
+      const checkedAt = typeof parsed.checkedAt === 'string' ? parsed.checkedAt.trim().slice(0, 64) : '';
+      if (!checkedAt) continue;
+
+      const records: unknown[] = [];
+      if (Array.isArray(parsed.records)) {
+        for (const record of parsed.records.slice(0, COMPANY_NAME_RECORD_COUNT_CAP)) {
+          const recordObject = parseObject(record);
+          if (!recordObject) continue;
+
+          const uen = typeof recordObject.uen === 'string' ? recordObject.uen.trim().slice(0, 32) : '';
+          const entityName = typeof recordObject.entityName === 'string'
+            ? recordObject.entityName.trim().slice(0, 500)
+            : '';
+          const entityStatus = typeof recordObject.entityStatus === 'string'
+            ? recordObject.entityStatus.trim().slice(0, 200)
+            : '';
+
+          if (!uen && !entityName) continue;
+          records.push({ uen, entityName, entityStatus });
+        }
+      }
+
+      sanitizedResults[fieldKey] = {
+        name: resultName,
+        available: parsed.available,
+        checkedAt,
+        records,
+      };
+    }
+  }
+
+  const nextMetadata = { ...root };
+  if (Object.keys(sanitizedResults).length > 0) {
+    nextMetadata.nameCheckResults = sanitizedResults;
+  } else {
+    delete nextMetadata.nameCheckResults;
+  }
+
+  return nextMetadata;
 }
 
 // ---------------------------------------------------------------------------
@@ -2288,8 +2437,10 @@ export async function createPublicSubmission(
 
   validateRequiredPublicAnswers(form.fields, answers, uploadIdSet);
   validatePublicAnswerConstraints(form.fields, answers);
+  validateCompanyNameCheckResults(form.fields, answers, input.metadata);
 
   const sanitizedAnswers = sanitizePublicAnswers(form.fields, answers, uploadIdSet);
+  const sanitizedMetadata = sanitizeSubmissionMetadata(input.metadata, form.fields, sanitizedAnswers);
   const fieldById = new Map(form.fields.map((field) => [field.id, { key: field.key, validation: field.validation }]));
   const renamedUploadsById = new Map<string, string>();
 
@@ -2362,7 +2513,7 @@ export async function createPublicSubmission(
         respondentName: input.respondentName?.trim() || null,
         respondentEmail: input.respondentEmail?.trim() || null,
         answers: sanitizedAnswers as Prisma.InputJsonValue,
-        metadata: toJsonInput(input.metadata ?? null),
+        metadata: toJsonInput(sanitizedMetadata),
       },
     });
 

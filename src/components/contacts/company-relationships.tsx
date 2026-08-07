@@ -79,6 +79,7 @@ const OFFICER_ROLE_VALUES = new Set([
   'director',
   'managing director',
   'alternate director',
+  'nominee director',
   'secretary',
   'ceo',
   'cfo',

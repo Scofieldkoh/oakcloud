@@ -42,6 +42,7 @@ export type CompanyShareholderMinAggregateOutputType = {
   contactId: string | null
   name: string | null
   shareholderType: $Enums.ContactType | null
+  isNominee: boolean | null
   identificationType: $Enums.IdentificationType | null
   identificationNumber: string | null
   nationality: string | null
@@ -65,6 +66,7 @@ export type CompanyShareholderMaxAggregateOutputType = {
   contactId: string | null
   name: string | null
   shareholderType: $Enums.ContactType | null
+  isNominee: boolean | null
   identificationType: $Enums.IdentificationType | null
   identificationNumber: string | null
   nationality: string | null
@@ -88,6 +90,7 @@ export type CompanyShareholderCountAggregateOutputType = {
   contactId: number
   name: number
   shareholderType: number
+  isNominee: number
   identificationType: number
   identificationNumber: number
   nationality: number
@@ -123,6 +126,7 @@ export type CompanyShareholderMinAggregateInputType = {
   contactId?: true
   name?: true
   shareholderType?: true
+  isNominee?: true
   identificationType?: true
   identificationNumber?: true
   nationality?: true
@@ -146,6 +150,7 @@ export type CompanyShareholderMaxAggregateInputType = {
   contactId?: true
   name?: true
   shareholderType?: true
+  isNominee?: true
   identificationType?: true
   identificationNumber?: true
   nationality?: true
@@ -169,6 +174,7 @@ export type CompanyShareholderCountAggregateInputType = {
   contactId?: true
   name?: true
   shareholderType?: true
+  isNominee?: true
   identificationType?: true
   identificationNumber?: true
   nationality?: true
@@ -279,6 +285,7 @@ export type CompanyShareholderGroupByOutputType = {
   contactId: string | null
   name: string
   shareholderType: $Enums.ContactType
+  isNominee: boolean
   identificationType: $Enums.IdentificationType | null
   identificationNumber: string | null
   nationality: string | null
@@ -325,6 +332,7 @@ export type CompanyShareholderWhereInput = {
   contactId?: Prisma.StringNullableFilter<"CompanyShareholder"> | string | null
   name?: Prisma.StringFilter<"CompanyShareholder"> | string
   shareholderType?: Prisma.EnumContactTypeFilter<"CompanyShareholder"> | $Enums.ContactType
+  isNominee?: Prisma.BoolFilter<"CompanyShareholder"> | boolean
   identificationType?: Prisma.EnumIdentificationTypeNullableFilter<"CompanyShareholder"> | $Enums.IdentificationType | null
   identificationNumber?: Prisma.StringNullableFilter<"CompanyShareholder"> | string | null
   nationality?: Prisma.StringNullableFilter<"CompanyShareholder"> | string | null
@@ -351,6 +359,7 @@ export type CompanyShareholderOrderByWithRelationInput = {
   contactId?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   shareholderType?: Prisma.SortOrder
+  isNominee?: Prisma.SortOrder
   identificationType?: Prisma.SortOrderInput | Prisma.SortOrder
   identificationNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   nationality?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -380,6 +389,7 @@ export type CompanyShareholderWhereUniqueInput = Prisma.AtLeast<{
   contactId?: Prisma.StringNullableFilter<"CompanyShareholder"> | string | null
   name?: Prisma.StringFilter<"CompanyShareholder"> | string
   shareholderType?: Prisma.EnumContactTypeFilter<"CompanyShareholder"> | $Enums.ContactType
+  isNominee?: Prisma.BoolFilter<"CompanyShareholder"> | boolean
   identificationType?: Prisma.EnumIdentificationTypeNullableFilter<"CompanyShareholder"> | $Enums.IdentificationType | null
   identificationNumber?: Prisma.StringNullableFilter<"CompanyShareholder"> | string | null
   nationality?: Prisma.StringNullableFilter<"CompanyShareholder"> | string | null
@@ -406,6 +416,7 @@ export type CompanyShareholderOrderByWithAggregationInput = {
   contactId?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   shareholderType?: Prisma.SortOrder
+  isNominee?: Prisma.SortOrder
   identificationType?: Prisma.SortOrderInput | Prisma.SortOrder
   identificationNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   nationality?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -437,6 +448,7 @@ export type CompanyShareholderScalarWhereWithAggregatesInput = {
   contactId?: Prisma.StringNullableWithAggregatesFilter<"CompanyShareholder"> | string | null
   name?: Prisma.StringWithAggregatesFilter<"CompanyShareholder"> | string
   shareholderType?: Prisma.EnumContactTypeWithAggregatesFilter<"CompanyShareholder"> | $Enums.ContactType
+  isNominee?: Prisma.BoolWithAggregatesFilter<"CompanyShareholder"> | boolean
   identificationType?: Prisma.EnumIdentificationTypeNullableWithAggregatesFilter<"CompanyShareholder"> | $Enums.IdentificationType | null
   identificationNumber?: Prisma.StringNullableWithAggregatesFilter<"CompanyShareholder"> | string | null
   nationality?: Prisma.StringNullableWithAggregatesFilter<"CompanyShareholder"> | string | null
@@ -458,6 +470,7 @@ export type CompanyShareholderCreateInput = {
   id?: string
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -483,6 +496,7 @@ export type CompanyShareholderUncheckedCreateInput = {
   contactId?: string | null
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -504,6 +518,7 @@ export type CompanyShareholderUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -529,6 +544,7 @@ export type CompanyShareholderUncheckedUpdateInput = {
   contactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -552,6 +568,7 @@ export type CompanyShareholderCreateManyInput = {
   contactId?: string | null
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -573,6 +590,7 @@ export type CompanyShareholderUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -595,6 +613,7 @@ export type CompanyShareholderUncheckedUpdateManyInput = {
   contactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -628,6 +647,7 @@ export type CompanyShareholderCountOrderByAggregateInput = {
   contactId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   shareholderType?: Prisma.SortOrder
+  isNominee?: Prisma.SortOrder
   identificationType?: Prisma.SortOrder
   identificationNumber?: Prisma.SortOrder
   nationality?: Prisma.SortOrder
@@ -656,6 +676,7 @@ export type CompanyShareholderMaxOrderByAggregateInput = {
   contactId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   shareholderType?: Prisma.SortOrder
+  isNominee?: Prisma.SortOrder
   identificationType?: Prisma.SortOrder
   identificationNumber?: Prisma.SortOrder
   nationality?: Prisma.SortOrder
@@ -679,6 +700,7 @@ export type CompanyShareholderMinOrderByAggregateInput = {
   contactId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   shareholderType?: Prisma.SortOrder
+  isNominee?: Prisma.SortOrder
   identificationType?: Prisma.SortOrder
   identificationNumber?: Prisma.SortOrder
   nationality?: Prisma.SortOrder
@@ -831,6 +853,7 @@ export type CompanyShareholderCreateWithoutCompanyInput = {
   id?: string
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -854,6 +877,7 @@ export type CompanyShareholderUncheckedCreateWithoutCompanyInput = {
   contactId?: string | null
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -906,6 +930,7 @@ export type CompanyShareholderScalarWhereInput = {
   contactId?: Prisma.StringNullableFilter<"CompanyShareholder"> | string | null
   name?: Prisma.StringFilter<"CompanyShareholder"> | string
   shareholderType?: Prisma.EnumContactTypeFilter<"CompanyShareholder"> | $Enums.ContactType
+  isNominee?: Prisma.BoolFilter<"CompanyShareholder"> | boolean
   identificationType?: Prisma.EnumIdentificationTypeNullableFilter<"CompanyShareholder"> | $Enums.IdentificationType | null
   identificationNumber?: Prisma.StringNullableFilter<"CompanyShareholder"> | string | null
   nationality?: Prisma.StringNullableFilter<"CompanyShareholder"> | string | null
@@ -927,6 +952,7 @@ export type CompanyShareholderCreateWithoutContactInput = {
   id?: string
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -950,6 +976,7 @@ export type CompanyShareholderUncheckedCreateWithoutContactInput = {
   companyId: string
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -997,6 +1024,7 @@ export type CompanyShareholderCreateWithoutDocumentInput = {
   id?: string
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -1021,6 +1049,7 @@ export type CompanyShareholderUncheckedCreateWithoutDocumentInput = {
   contactId?: string | null
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -1068,6 +1097,7 @@ export type CompanyShareholderCreateManyCompanyInput = {
   contactId?: string | null
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -1089,6 +1119,7 @@ export type CompanyShareholderUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1112,6 +1143,7 @@ export type CompanyShareholderUncheckedUpdateWithoutCompanyInput = {
   contactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1134,6 +1166,7 @@ export type CompanyShareholderUncheckedUpdateManyWithoutCompanyInput = {
   contactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1156,6 +1189,7 @@ export type CompanyShareholderCreateManyContactInput = {
   companyId: string
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -1177,6 +1211,7 @@ export type CompanyShareholderUpdateWithoutContactInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1200,6 +1235,7 @@ export type CompanyShareholderUncheckedUpdateWithoutContactInput = {
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1222,6 +1258,7 @@ export type CompanyShareholderUncheckedUpdateManyWithoutContactInput = {
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1245,6 +1282,7 @@ export type CompanyShareholderCreateManyDocumentInput = {
   contactId?: string | null
   name: string
   shareholderType?: $Enums.ContactType
+  isNominee?: boolean
   identificationType?: $Enums.IdentificationType | null
   identificationNumber?: string | null
   nationality?: string | null
@@ -1265,6 +1303,7 @@ export type CompanyShareholderUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1289,6 +1328,7 @@ export type CompanyShareholderUncheckedUpdateWithoutDocumentInput = {
   contactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1311,6 +1351,7 @@ export type CompanyShareholderUncheckedUpdateManyWithoutDocumentInput = {
   contactId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   shareholderType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  isNominee?: Prisma.BoolFieldUpdateOperationsInput | boolean
   identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1335,6 +1376,7 @@ export type CompanyShareholderSelect<ExtArgs extends runtime.Types.Extensions.In
   contactId?: boolean
   name?: boolean
   shareholderType?: boolean
+  isNominee?: boolean
   identificationType?: boolean
   identificationNumber?: boolean
   nationality?: boolean
@@ -1361,6 +1403,7 @@ export type CompanyShareholderSelectCreateManyAndReturn<ExtArgs extends runtime.
   contactId?: boolean
   name?: boolean
   shareholderType?: boolean
+  isNominee?: boolean
   identificationType?: boolean
   identificationNumber?: boolean
   nationality?: boolean
@@ -1387,6 +1430,7 @@ export type CompanyShareholderSelectUpdateManyAndReturn<ExtArgs extends runtime.
   contactId?: boolean
   name?: boolean
   shareholderType?: boolean
+  isNominee?: boolean
   identificationType?: boolean
   identificationNumber?: boolean
   nationality?: boolean
@@ -1413,6 +1457,7 @@ export type CompanyShareholderSelectScalar = {
   contactId?: boolean
   name?: boolean
   shareholderType?: boolean
+  isNominee?: boolean
   identificationType?: boolean
   identificationNumber?: boolean
   nationality?: boolean
@@ -1430,7 +1475,7 @@ export type CompanyShareholderSelectScalar = {
   updatedAt?: boolean
 }
 
-export type CompanyShareholderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "companyId" | "contactId" | "name" | "shareholderType" | "identificationType" | "identificationNumber" | "nationality" | "placeOfOrigin" | "address" | "shareClass" | "numberOfShares" | "percentageHeld" | "currency" | "allotmentDate" | "transferDate" | "isCurrent" | "sourceDocumentId" | "createdAt" | "updatedAt", ExtArgs["result"]["companyShareholder"]>
+export type CompanyShareholderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "companyId" | "contactId" | "name" | "shareholderType" | "isNominee" | "identificationType" | "identificationNumber" | "nationality" | "placeOfOrigin" | "address" | "shareClass" | "numberOfShares" | "percentageHeld" | "currency" | "allotmentDate" | "transferDate" | "isCurrent" | "sourceDocumentId" | "createdAt" | "updatedAt", ExtArgs["result"]["companyShareholder"]>
 export type CompanyShareholderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   contact?: boolean | Prisma.CompanyShareholder$contactArgs<ExtArgs>
@@ -1460,6 +1505,7 @@ export type $CompanyShareholderPayload<ExtArgs extends runtime.Types.Extensions.
     contactId: string | null
     name: string
     shareholderType: $Enums.ContactType
+    isNominee: boolean
     identificationType: $Enums.IdentificationType | null
     identificationNumber: string | null
     nationality: string | null
@@ -1906,6 +1952,7 @@ export interface CompanyShareholderFieldRefs {
   readonly contactId: Prisma.FieldRef<"CompanyShareholder", 'String'>
   readonly name: Prisma.FieldRef<"CompanyShareholder", 'String'>
   readonly shareholderType: Prisma.FieldRef<"CompanyShareholder", 'ContactType'>
+  readonly isNominee: Prisma.FieldRef<"CompanyShareholder", 'Boolean'>
   readonly identificationType: Prisma.FieldRef<"CompanyShareholder", 'IdentificationType'>
   readonly identificationNumber: Prisma.FieldRef<"CompanyShareholder", 'String'>
   readonly nationality: Prisma.FieldRef<"CompanyShareholder", 'String'>

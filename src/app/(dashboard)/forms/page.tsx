@@ -104,14 +104,17 @@ export default function FormsPage() {
 
   const status = TAB_STATUSES[activeTab];
 
-  const { data, isLoading, error } = useForms({
-    query: query || undefined,
-    status,
-    page,
-    limit: PAGE_SIZE,
-    sortBy: 'updatedAt',
-    sortOrder: 'desc',
-  });
+  const { data, isLoading, error } = useForms(
+    {
+      query: query || undefined,
+      status,
+      page,
+      limit: PAGE_SIZE,
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+    },
+    { restoreSession: true },
+  );
   const { data: allCountData } = useForms({
     query: query || undefined,
     page: 1,

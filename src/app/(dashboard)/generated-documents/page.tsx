@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, AlertCircle, Search } from 'lucide-react';
@@ -8,6 +8,10 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { usePermissions } from '@/hooks/use-permissions';
+import {
+  readSessionListSnapshot,
+  writeSessionListSnapshot,
+} from '@/hooks/use-session-query-restore';
 import { DocumentTable, type GeneratedDocument } from '@/components/documents/document-table';
 import { DocumentGenerationTabs } from '@/components/documents/document-generation-tabs';
 import { Pagination } from '@/components/ui/pagination';
@@ -21,6 +25,25 @@ interface DocumentListResponse {
   total: number;
   page: number;
   limit: number;
+}
+
+function generatedDocumentsListKey(
+  page: number,
+  searchQuery: string,
+  statusFilter: string,
+  companyFilter: string,
+): readonly unknown[] {
+  return ['generated-documents', page, searchQuery, statusFilter, companyFilter];
+}
+
+function isDocumentListResponse(value: unknown): value is DocumentListResponse {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<DocumentListResponse>;
+  return (
+    !!candidate.documents &&
+    Array.isArray(candidate.documents) &&
+    typeof candidate.total === 'number'
+  );
 }
 
 
@@ -39,31 +62,43 @@ export default function GeneratedDocumentsPage() {
   const canDelete = can.deleteDocument;
   const canExport = can.exportDocument;
 
+  // Initial URL-derived list state, used both for filters and for restoring the
+  // last-known list snapshot when this page is mounted cold (e.g. browser Back).
+  const initialSearchQuery = searchParams.get('q') || '';
+  const initialStatusFilter = searchParams.get('status') || '';
+  const initialCompanyFilter = searchParams.get('company') || '';
+  const initialPage = parseInt(searchParams.get('page') || '1', 10);
+  const [initialListSnapshot] = useState<DocumentListResponse | undefined>(() => {
+    const snapshot = readSessionListSnapshot<DocumentListResponse>(
+      generatedDocumentsListKey(initialPage, initialSearchQuery, initialStatusFilter, initialCompanyFilter),
+    );
+    return isDocumentListResponse(snapshot) ? snapshot : undefined;
+  });
+
   // State
-  const [documents, setDocuments] = useState<GeneratedDocument[]>([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [documents, setDocuments] = useState<GeneratedDocument[]>(
+    () => initialListSnapshot?.documents ?? [],
+  );
+  const [total, setTotal] = useState(() => initialListSnapshot?.total ?? 0);
+  const [isLoading, setIsLoading] = useState(() => initialListSnapshot === undefined);
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [draftToDiscard, setDraftToDiscard] = useState<string | null>(null);
 
   // Filters
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [statusFilter, setStatusFilter] = useState<string>(
-    searchParams.get('status') || ''
-  );
-  const [companyFilter, setCompanyFilter] = useState<string>(
-    searchParams.get('company') || ''
-  );
-  const [page, setPage] = useState(
-    parseInt(searchParams.get('page') || '1', 10)
-  );
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatusFilter);
+  const [companyFilter, setCompanyFilter] = useState<string>(initialCompanyFilter);
+  const [page, setPage] = useState(initialPage);
   const limit = 20; // More items per page for list view
+  const firstFetchRef = useRef(true);
 
   // Fetch documents
   const fetchDocuments = useCallback(async () => {
-    setIsLoading(true);
+    const hasRestoredSnapshot = firstFetchRef.current && initialListSnapshot !== undefined;
+    firstFetchRef.current = false;
+    if (!hasRestoredSnapshot) setIsLoading(true);
     setError(null);
 
     try {
@@ -82,13 +117,17 @@ export default function GeneratedDocumentsPage() {
       const data: DocumentListResponse = await response.json();
       setDocuments(data.documents);
       setTotal(data.total);
+      writeSessionListSnapshot(
+        generatedDocumentsListKey(page, searchQuery, statusFilter, companyFilter),
+        data,
+      );
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load documents');
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, statusFilter, companyFilter, page]);
+  }, [searchQuery, statusFilter, companyFilter, page, initialListSnapshot]);
 
   useEffect(() => {
     fetchDocuments();

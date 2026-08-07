@@ -94,6 +94,7 @@ Return a JSON object with the following structure (include only fields that have
   "shareholders": [{
     "name": "string",
     "type": "INDIVIDUAL | CORPORATE",
+    "isNominee": "boolean - true when the shareholder holds shares as a nominee",
     "identificationType": "NRIC | FIN | PASSPORT | UEN | OTHER",
     "identificationNumber": "string",
     "nationality": "string",
@@ -106,7 +107,7 @@ Return a JSON object with the following structure (include only fields that have
   }],
   "officers": [{
     "name": "string",
-    "role": "DIRECTOR | MANAGING_DIRECTOR | ALTERNATE_DIRECTOR | SECRETARY | CEO | CFO | AUDITOR | LIQUIDATOR | RECEIVER | JUDICIAL_MANAGER",
+    "role": "DIRECTOR | MANAGING_DIRECTOR | ALTERNATE_DIRECTOR | NOMINEE_DIRECTOR | SECRETARY | CEO | CFO | AUDITOR | LIQUIDATOR | RECEIVER | JUDICIAL_MANAGER",
     "identificationType": "NRIC | FIN | PASSPORT",
     "identificationNumber": "string",
     "nationality": "string",

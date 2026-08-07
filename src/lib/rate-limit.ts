@@ -144,6 +144,12 @@ export const RATE_LIMIT_CONFIGS = {
     windowMs: 60 * 1000, // 1 minute
   } as RateLimitConfig,
 
+  /** Public form company name availability check: 20 per minute per IP */
+  FORM_NAME_CHECK: {
+    maxRequests: 20,
+    windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
+
   /** Public form file upload: 20 per minute per IP+slug */
   FORM_UPLOAD: {
     maxRequests: 20,

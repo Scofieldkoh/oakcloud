@@ -18,6 +18,7 @@ import type {
 import { mutateCompanyProfileSection } from '@/services/company/profile-sections';
 import { COMPANY_PROFILE_SECTIONS } from '@/lib/company-profile-sections';
 import { Prisma } from '@/generated/prisma';
+import { clearDuplicateReferencesToDocument } from '@/services/duplicate-detection.service';
 import type { Company } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
@@ -61,6 +62,7 @@ export interface CompanyWithRelations extends Company {
     id: string;
     name: string;
     shareholderType?: string | null;
+    isNominee?: boolean;
     nationality?: string | null;
     placeOfOrigin?: string | null;
     address?: string | null;
@@ -610,6 +612,14 @@ export async function permanentDeleteCompany(
     throw new Error('Company must be soft-deleted before permanent deletion');
   }
 
+  // Processing documents would otherwise survive with a nulled companyId and
+  // become stuck in the Document Vault (visible, but no longer deletable via
+  // company-scoped permissions). Soft-delete them so the vault stays clean.
+  const processingDocumentsToArchive = await prisma.processingDocument.findMany({
+    where: { document: { companyId: id } },
+    select: { id: true },
+  });
+
   const linkedTaskStageIds = await safelyCaptureCompanyTaskStageIds(tenantId, id);
   await prisma.$transaction(async (tx) => {
     await tx.companyCharge.deleteMany({ where: { companyId: id } });
@@ -621,6 +631,15 @@ export async function permanentDeleteCompany(
     await tx.companyContact.deleteMany({ where: { companyId: id } });
     await tx.userCompanyAssignment.deleteMany({ where: { companyId: id } });
     await tx.userRoleAssignment.deleteMany({ where: { companyId: id } });
+    if (processingDocumentsToArchive.length > 0) {
+      await tx.processingDocument.updateMany({
+        where: { id: { in: processingDocumentsToArchive.map((doc) => doc.id) } },
+        data: {
+          deletedAt: new Date(),
+          deletedReason: 'COMPANY_PERMANENTLY_DELETED',
+        },
+      });
+    }
     // AuditLog.companyId has no onDelete directive (defaults to Restrict).
     // Nullify the FK so the company row can be deleted; the audit history is
     // retained but the company reference is cleared.
@@ -648,6 +667,10 @@ export async function permanentDeleteCompany(
     });
     await tx.company.delete({ where: { id } });
   });
+
+  for (const procDoc of processingDocumentsToArchive) {
+    await clearDuplicateReferencesToDocument(procDoc.id);
+  }
 
   // Audit log is written AFTER the transaction succeeds so there is no dangling
   // audit record if the transaction rolls back.
@@ -754,6 +777,7 @@ export async function getCompanyById(
           id: true,
           name: true,
           shareholderType: true,
+          isNominee: true,
           identificationType: true,
           identificationNumber: true,
           nationality: true,

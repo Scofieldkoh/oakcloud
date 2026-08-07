@@ -4,6 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Form, FormStatus } from '@/generated/prisma';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import {
+  usePersistSessionListSnapshot,
+  useSessionListRestore,
+} from '@/hooks/use-session-query-restore';
 import type { CreateFormInput, FormFieldInput, UpdateFormInput } from '@/lib/validations/form-builder';
 import type {
   DeleteFormDraftResult,
@@ -25,6 +29,17 @@ import type {
 import type { FormResponseReviewStatus } from '@/lib/form-utils';
 
 export type { FormListItem, FormListResult, FormDetail, FormResponsesResult, FormResponseDetailResult };
+
+function isFormListResult(value: unknown): value is FormListResult {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<FormListResult>;
+  return (
+    !!candidate.forms &&
+    Array.isArray(candidate.forms) &&
+    typeof candidate.total === 'number' &&
+    typeof candidate.totalPages === 'number'
+  );
+}
 
 export type RecentFormSubmission = Omit<RecentFormSubmissionItem, 'submittedAt' | 'status'> & {
   submittedAt: string;
@@ -477,9 +492,14 @@ export const formKeys = {
     [...formKeys.all, 'warnings', limit, tenantId] as const,
 };
 
-export function useForms(params: FormListParams = {}) {
+export function useForms(
+  params: FormListParams = {},
+  options: { restoreSession?: boolean } = {},
+) {
   const { data: session } = useSession();
   const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
+  const queryClient = useQueryClient();
+  const restoreSession = options.restoreSession === true;
 
   const normalizedParams: FormListParams = {
     page: params.page ?? 1,
@@ -490,12 +510,25 @@ export function useForms(params: FormListParams = {}) {
     status: params.status,
   };
 
-  return useQuery({
-    queryKey: formKeys.list(normalizedParams, activeTenantId),
+  const queryKey = formKeys.list(normalizedParams, activeTenantId);
+  const { initialData, restoredFromSession } = useSessionListRestore<FormListResult>(
+    queryClient,
+    queryKey,
+    { enabled: restoreSession, validate: isFormListResult },
+  );
+
+  const query = useQuery({
+    queryKey,
     queryFn: () => fetchForms(normalizedParams, activeTenantId),
     enabled: session?.isSuperAdmin ? !!activeTenantId : true,
     placeholderData: (previousData) => previousData,
+    initialData,
+    initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
   });
+
+  usePersistSessionListSnapshot(queryKey, restoreSession ? query.data : undefined);
+
+  return query;
 }
 
 export function useForm(id: string | null) {

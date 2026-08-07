@@ -58,6 +58,7 @@ export const shareholdersSectionSchema = z.object({
     id: z.string().optional(),
     name: requiredText,
     shareholderType: z.enum(['INDIVIDUAL', 'CORPORATE']),
+    isNominee: z.boolean().optional(),
     placeOfOrigin: optionalText,
     shareClass: requiredText,
     numberOfShares: z.number().int().nonnegative(),

@@ -19,7 +19,7 @@ const company = {
     { id: 'o2', name: 'Past Director', role: 'DIRECTOR', cessationDate: new Date('2023-01-01'), isCurrent: false },
   ],
   shareholders: [
-    { id: 's1', name: 'Tan Mei Ling', shareholderType: 'INDIVIDUAL', shareClass: 'ORDINARY', numberOfShares: 60000, percentageHeld: 60, currency: 'SGD', isCurrent: true },
+    { id: 's1', name: 'Tan Mei Ling', shareholderType: 'INDIVIDUAL', shareClass: 'ORDINARY', numberOfShares: 60000, percentageHeld: 60, currency: 'SGD', isCurrent: true, isNominee: true },
     { id: 's2', name: 'Former Owner', shareholderType: 'CORPORATE', shareClass: 'ORDINARY', numberOfShares: 1000, percentageHeld: 1, currency: 'SGD', isCurrent: false },
   ],
   shareCapital: [{ id: 'c1', shareClass: 'ORDINARY', currency: 'SGD', numberOfShares: 100000, totalValue: 100000, isPaidUp: true, isTreasury: false }],
@@ -33,16 +33,18 @@ const company = {
 
 describe('CompanyProfileSections', () => {
   it('renders the approved priority order and normalized current details', () => {
-    render(<CompanyProfileSections company={company} />);
+    render(<CompanyProfileSections company={company} companyId="company-1" />);
     const headings = screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent);
     expect(headings).toEqual([
       'Addresses', 'Business activities', 'Officers', 'Shareholders',
-      'Additional company information', 'Compliance', 'Capital', 'Charges',
+      'Additional company information', 'Compliance', 'Capital', 'Charges', 'Documents',
     ]);
+    expect(screen.getByRole('link', { name: 'View All Documents' })).toHaveAttribute('href', '/processing?companyId=company-1');
     expect(screen.getByText(/10 Anson Road, Singapore 079903/)).toHaveTextContent('effective from: 18 March 2024');
     expect(screen.getByText('Tan Mei Ling (60% ownership)')).toBeInTheDocument();
     expect(screen.getByText('SGD 60,000.00 / 60,000 Ordinary Shares')).toBeInTheDocument();
     expect(screen.getByText('Individual')).toBeInTheDocument();
+    expect(screen.getByText('Nominee')).toBeInTheDocument();
     expect(screen.getByText('Director')).toBeInTheDocument();
     expect(screen.queryByText('Past Director')).not.toBeInTheDocument();
     expect(screen.queryByText('Former Owner')).not.toBeInTheDocument();
@@ -50,7 +52,7 @@ describe('CompanyProfileSections', () => {
   });
 
   it('reveals past records in their own segments', () => {
-    render(<CompanyProfileSections company={company} />);
+    render(<CompanyProfileSections company={company} companyId="company-1" />);
     fireEvent.click(screen.getByLabelText('Show ceased'));
     fireEvent.click(screen.getByLabelText('Show former'));
     fireEvent.click(screen.getByLabelText('Show discharged'));
@@ -60,7 +62,7 @@ describe('CompanyProfileSections', () => {
   });
 
   it('shows the share capital breakdown by default', () => {
-    render(<CompanyProfileSections company={company} />);
+    render(<CompanyProfileSections company={company} companyId="company-1" />);
 
     expect(screen.getByText('Show share capital breakdown').closest('details')).toHaveAttribute('open');
   });

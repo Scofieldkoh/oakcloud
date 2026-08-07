@@ -815,7 +815,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
               }))}
               companiesLoading={companiesQuery.isLoading}
               onNext={() => setCurrentStep(2)}
-              onBack={() => window.location.assign(returnHref)}
+              onBack={() => router.push(returnHref)}
             />
           )}
           {currentStep === 2 && (

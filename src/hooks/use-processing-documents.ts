@@ -11,6 +11,10 @@
 
 import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  usePersistSessionListSnapshot,
+  useSessionListRestore,
+} from '@/hooks/use-session-query-restore';
 import type {
   PipelineStatus,
   DuplicateStatus,
@@ -178,6 +182,19 @@ export interface ProcessingDocumentSearchResult {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+function isProcessingDocumentSearchResult(
+  value: unknown,
+): value is ProcessingDocumentSearchResult {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<ProcessingDocumentSearchResult>;
+  return (
+    !!candidate.documents &&
+    Array.isArray(candidate.documents) &&
+    typeof candidate.total === 'number' &&
+    typeof candidate.totalPages === 'number'
+  );
 }
 
 const SELECT_ALL_FETCH_PAGE_SIZE = 200;
@@ -411,68 +428,92 @@ async function recordDuplicateDecision(
 }
 
 // Hooks
-export function useProcessingDocuments(params: ProcessingDocumentSearchParams = {}) {
-  return useQuery({
-    queryKey: [
-      'processing-documents',
-      params.pipelineStatus,
-      params.duplicateStatus,
-      params.revisionStatus,
-      params.needsReview,
-      params.isContainer,
-      params.companyId,
-      params.tenantId,
-      params.page,
-      params.limit,
-      params.sortBy,
-      params.sortOrder,
-      // Date filter parameters
-      params.uploadDatePreset,
-      params.uploadDateFrom,
-      params.uploadDateTo,
-      params.documentDateFrom,
-      params.documentDateTo,
-      // Text search filters
-      params.search,
-      params.vendorName,
-      params.documentNumber,
-      params.fileName,
-      // Category filters
-      params.documentCategory,
-      params.documentSubCategory,
-      // Tag filter
-      params.tagIds,
-      // Currency filters
-      params.currency,
-      params.homeCurrency,
-      // Amount filters - single value
-      params.subtotal,
-      params.tax,
-      params.total,
-      params.homeSubtotal,
-      params.homeTax,
-      params.homeTotal,
-      // Amount filters - range
-      params.subtotalFrom,
-      params.subtotalTo,
-      params.taxFrom,
-      params.taxTo,
-      params.totalFrom,
-      params.totalTo,
-      params.homeSubtotalFrom,
-      params.homeSubtotalTo,
-      params.homeTaxFrom,
-      params.homeTaxTo,
-      params.homeTotalFrom,
-      params.homeTotalTo,
-    ],
+export function processingDocumentsQueryKey(
+  params: ProcessingDocumentSearchParams,
+): readonly unknown[] {
+  return [
+    'processing-documents',
+    params.pipelineStatus,
+    params.duplicateStatus,
+    params.revisionStatus,
+    params.needsReview,
+    params.isContainer,
+    params.companyId,
+    params.tenantId,
+    params.page,
+    params.limit,
+    params.sortBy,
+    params.sortOrder,
+    // Date filter parameters
+    params.uploadDatePreset,
+    params.uploadDateFrom,
+    params.uploadDateTo,
+    params.documentDateFrom,
+    params.documentDateTo,
+    // Text search filters
+    params.search,
+    params.vendorName,
+    params.documentNumber,
+    params.fileName,
+    // Category filters
+    params.documentCategory,
+    params.documentSubCategory,
+    // Tag filter
+    params.tagIds,
+    // Currency filters
+    params.currency,
+    params.homeCurrency,
+    // Amount filters - single value
+    params.subtotal,
+    params.tax,
+    params.total,
+    params.homeSubtotal,
+    params.homeTax,
+    params.homeTotal,
+    // Amount filters - range
+    params.subtotalFrom,
+    params.subtotalTo,
+    params.taxFrom,
+    params.taxTo,
+    params.totalFrom,
+    params.totalTo,
+    params.homeSubtotalFrom,
+    params.homeSubtotalTo,
+    params.homeTaxFrom,
+    params.homeTaxTo,
+    params.homeTotalFrom,
+    params.homeTotalTo,
+  ];
+}
+
+export function useProcessingDocuments(
+  params: ProcessingDocumentSearchParams = {},
+  options: { restoreSession?: boolean } = {},
+) {
+  const queryClient = useQueryClient();
+  const restoreSession = options.restoreSession === true;
+  const queryKey = processingDocumentsQueryKey(params);
+  const { initialData, restoredFromSession } = useSessionListRestore<ProcessingDocumentSearchResult>(
+    queryClient,
+    queryKey,
+    { enabled: restoreSession, validate: isProcessingDocumentSearchResult },
+  );
+
+  const query = useQuery({
+    queryKey,
     queryFn: () => fetchProcessingDocuments(params),
     // Processing status changes frequently while extraction jobs are running.
     staleTime: 15 * 1000,
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
     refetchOnMount: true,
     placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
+    initialData,
+    initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
   });
+
+  usePersistSessionListSnapshot(queryKey, restoreSession ? query.data : undefined);
+
+  return query;
 }
 
 export function useSelectAllProcessingDocuments() {

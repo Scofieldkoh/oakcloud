@@ -543,6 +543,7 @@ model CompanyShareholder {
   contactId            String?
   name                 String
   shareholderType      ContactType         @default(INDIVIDUAL)
+  isNominee            Boolean             @default(false)
   identificationType   IdentificationType?
   identificationNumber String?
   nationality          String?
@@ -2772,6 +2773,7 @@ enum OfficerRole {
   DIRECTOR
   MANAGING_DIRECTOR
   ALTERNATE_DIRECTOR
+  NOMINEE_DIRECTOR
   SECRETARY
   CEO
   CFO
@@ -3284,6 +3286,7 @@ enum FormFieldType {
   HTML
   PAGE_BREAK
   HIDDEN
+  COMPANY_NAME_CHECK
 }
 
 enum FormSubmissionStatus {

@@ -336,11 +336,12 @@ export async function getContactLinkInfo(
 import type { OfficerRole } from '@/generated/prisma';
 
 // Officer roles that create Officer records (legal positions that require ACRA registration)
-const OFFICER_ROLES = ['Director', 'Secretary', 'Auditor'];
+const OFFICER_ROLES = ['Director', 'Nominee Director', 'Secretary', 'Auditor'];
 
 // Map display name to OfficerRole enum
 const OFFICER_ROLE_MAP: Record<string, OfficerRole> = {
   'Director': 'DIRECTOR',
+  'Nominee Director': 'NOMINEE_DIRECTOR',
   'Secretary': 'SECRETARY',
   'Auditor': 'AUDITOR',
 };
@@ -905,6 +906,7 @@ async function getUniqueCompanyCountsForContacts(
     'director',
     'managing director',
     'alternate director',
+    'nominee director',
     'secretary',
     'ceo',
     'cfo',

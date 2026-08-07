@@ -75,4 +75,19 @@ describe('syncCompanyFromBizfileInTransaction', () => {
       ...tx.company.update.mock.calls,
     ])).not.toContain('ACRA-1');
   });
+
+  it('persists the nominee shareholder flag from reviewed BizFile data', async () => {
+    const nomineeData = {
+      ...data,
+      shareholders: [{ ...data.shareholders[0], isNominee: true }],
+    };
+
+    await syncCompanyFromBizfileInTransaction({
+      data: nomineeData as never, documentId: 'doc-1', tenantId: 'tenant-1', userId: 'user-1',
+    }, tx as never);
+
+    expect(tx.companyShareholder.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ isNominee: true }),
+    }));
+  });
 });

@@ -52,13 +52,13 @@ describe('useNavigationProgress', () => {
     expect(screen.getByTestId('nav-state')).toHaveTextContent('false');
   });
 
-  it('starts navigation on browser back/forward and stops when the route changes', () => {
+  it('does not start the progress overlay on browser back/forward', () => {
     const { rerender } = render(<Harness />);
 
     act(() => {
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
-    expect(screen.getByTestId('nav-state')).toHaveTextContent('true');
+    expect(screen.getByTestId('nav-state')).toHaveTextContent('false');
 
     pathnameState.value = '/contacts';
     rerender(<Harness />);

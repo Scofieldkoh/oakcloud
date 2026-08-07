@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { requireAuth, canAccessCompany } from '@/lib/auth';
+import { requireAuth, canAccessCompany, type SessionUser } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
@@ -29,6 +29,20 @@ interface BulkResult {
 }
 
 const MAX_BULK_DOCUMENTS = 1000;
+
+/**
+ * Unlinked documents are base documents whose company was permanently deleted
+ * (companyId was nulled). Only tenant-wide/all-companies users can see them in
+ * the vault, so the same audience is allowed to clean them up.
+ */
+function canAccessUnlinkedDocument(
+  session: SessionUser,
+  tenantId: string | null | undefined
+): boolean {
+  if (session.isSuperAdmin) return true;
+  if (!session.isWorkspaceAdmin && !session.hasAllCompaniesAccess) return false;
+  return !!tenantId && session.tenantId === tenantId;
+}
 
 /**
  * POST /api/processing-documents/bulk
@@ -80,7 +94,10 @@ export async function POST(request: NextRequest) {
 
     for (const doc of documents) {
       const companyId = doc.document?.companyId;
-      if (companyId && (await canAccessCompany(session, companyId))) {
+      if (
+        (companyId && (await canAccessCompany(session, companyId))) ||
+        (!companyId && canAccessUnlinkedDocument(session, doc.document?.tenantId ?? doc.tenantId))
+      ) {
         accessibleDocs.push(doc);
       } else {
         accessDenied.push(doc.id);
@@ -255,7 +272,11 @@ export async function POST(request: NextRequest) {
           try {
             // Check RBAC permission for document delete
             const companyId = doc.document?.companyId;
-            if (!companyId || !(await hasPermission(session.id, 'document', 'delete', companyId))) {
+            if (
+              companyId
+                ? !(await hasPermission(session.id, 'document', 'delete', companyId))
+                : !canAccessUnlinkedDocument(session, doc.document?.tenantId ?? doc.tenantId)
+            ) {
               results.push({ documentId: doc.id, success: false, error: 'Permission denied: document:delete' });
               continue;
             }
@@ -269,9 +290,9 @@ export async function POST(request: NextRequest) {
             await clearDuplicateReferencesToDocument(doc.id);
 
             await createAuditLog({
-              tenantId: doc.document!.tenantId,
+              tenantId: doc.document?.tenantId ?? doc.tenantId,
               userId: session.id,
-              companyId: doc.document!.companyId!,
+              companyId: doc.document?.companyId ?? undefined,
               action: 'DELETE',
               entityType: 'ProcessingDocument',
               entityId: doc.id,

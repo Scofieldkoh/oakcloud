@@ -79,6 +79,7 @@ interface ShareholderDiffEntry {
   extractedData?: {
     name: string;
     type: 'INDIVIDUAL' | 'CORPORATE';
+    isNominee?: boolean;
     shareClass: string;
     numberOfShares: number;
     percentageHeld?: number;
@@ -1265,6 +1266,12 @@ export default function UploadBizFilePage() {
                             <span className="text-text-primary">{shareholder.extractedData.percentageHeld}%</span>
                           </div>
                         )}
+                        {shareholder.extractedData.isNominee ? (
+                          <div>
+                            <span className="text-text-muted">Nominee:</span>{' '}
+                            <span className="text-text-primary">Yes</span>
+                          </div>
+                        ) : null}
                       </div>
                     )}
                     {shareholder.type === 'added' && sourceIndex(shareholder.sourceRecordId) >= 0

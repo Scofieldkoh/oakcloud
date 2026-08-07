@@ -15,6 +15,7 @@ const OFFICER_ROLES: SelectOption[] = [
   { value: 'Director', label: 'Director' },
   { value: 'Managing Director', label: 'Managing Director' },
   { value: 'Alternate Director', label: 'Alternate Director' },
+  { value: 'Nominee Director', label: 'Nominee Director' },
   { value: 'Secretary', label: 'Secretary' },
   { value: 'CEO', label: 'CEO' },
   { value: 'CFO', label: 'CFO' },

@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import {
+  usePersistSessionListSnapshot,
+  useSessionListRestore,
+} from '@/hooks/use-session-query-restore';
 
 export interface CommunicationConnectorStatus {
   configured: boolean;
@@ -30,6 +34,17 @@ export interface CommunicationItem {
 export interface CommunicationsResponse {
   connector: CommunicationConnectorStatus;
   communications: CommunicationItem[];
+}
+
+function isCommunicationsResponse(value: unknown): value is CommunicationsResponse {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<CommunicationsResponse>;
+  return (
+    !!candidate.communications &&
+    Array.isArray(candidate.communications) &&
+    !!candidate.connector &&
+    typeof candidate.connector === 'object'
+  );
 }
 
 export interface IngestCommunicationsInput {
@@ -63,14 +78,21 @@ export interface BulkDeleteCommunicationsInput {
 }
 
 export function useCommunications(limit: number = 100) {
+  const queryClient = useQueryClient();
   const { data: session } = useSession();
   const activeTenantId = useActiveWorkspaceId(
     session?.isSuperAdmin ?? false,
     session?.tenantId
   );
+  const queryKey = ['communications', activeTenantId, limit] as const;
+  const { initialData, restoredFromSession } = useSessionListRestore<CommunicationsResponse>(
+    queryClient,
+    queryKey,
+    { validate: isCommunicationsResponse },
+  );
 
-  return useQuery<CommunicationsResponse>({
-    queryKey: ['communications', activeTenantId, limit],
+  const query = useQuery<CommunicationsResponse>({
+    queryKey,
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set('limit', String(limit));
@@ -86,7 +108,13 @@ export function useCommunications(limit: number = 100) {
 
       return response.json();
     },
+    initialData,
+    initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
   });
+
+  usePersistSessionListSnapshot(queryKey, query.data);
+
+  return query;
 }
 
 export function useIngestCommunications() {

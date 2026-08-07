@@ -132,6 +132,14 @@ const DEFAULT_UI_LABELS = {
   signature_apply_all: 'Use this signature for all signature fields in this form',
   signature_name_label: 'Signer name',
   signature_name_fallback: 'Form respondent',
+  name_check_button: 'Check availability',
+  name_check_checking: 'Checking...',
+  name_check_enter_name: 'Enter a company name first',
+  name_check_required: 'Check availability before submitting',
+  name_check_not_available: 'Similar names found — please enter an available company name.',
+  name_check_available: 'No similar names found — the name appears to be available for incorporation.',
+  name_check_similar_found: 'Similar names found — final availability is determined by ACRA at application time.',
+  name_check_unavailable: 'Availability check temporarily unavailable. Please try again.',
   validation_required: '{field} is required',
   validation_email: '{field} must be a valid email',
   validation_choice_detail: '{field}: please specify for {option}',
@@ -185,6 +193,19 @@ type DraftSession = {
   resumeUrl: string;
   expiresAt: string;
   savedAt: string;
+};
+
+type NameCheckRecord = {
+  uen: string;
+  entityName: string;
+  entityStatus: string;
+};
+
+type NameCheckResult = {
+  name: string;
+  available: boolean;
+  checkedAt: string;
+  records: NameCheckRecord[];
 };
 
 type DraftRestorePayload = {
@@ -1163,7 +1184,46 @@ const CARD_ELIGIBLE_TYPES = new Set([
   'MULTIPLE_CHOICE',
   'FILE_UPLOAD',
   'SIGNATURE',
+  'COMPANY_NAME_CHECK',
 ]);
+
+function parseNameCheckResult(value: unknown): NameCheckResult | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const raw = value as Record<string, unknown>;
+  if (typeof raw.name !== 'string' || typeof raw.checkedAt !== 'string') return null;
+
+  const records: NameCheckRecord[] = [];
+  if (Array.isArray(raw.records)) {
+    for (const item of raw.records.slice(0, 10)) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+      const record = item as Record<string, unknown>;
+      const uen = typeof record.uen === 'string' ? record.uen.slice(0, 32) : '';
+      const entityName = typeof record.entityName === 'string' ? record.entityName.slice(0, 500) : '';
+      const entityStatus = typeof record.entityStatus === 'string' ? record.entityStatus.slice(0, 200) : '';
+      if (!uen && !entityName) continue;
+      records.push({ uen, entityName, entityStatus });
+    }
+  }
+
+  return {
+    name: raw.name.slice(0, 300),
+    available: raw.available === true,
+    checkedAt: raw.checkedAt.slice(0, 64),
+    records,
+  };
+}
+
+function parseNameCheckResults(value: unknown): Record<string, NameCheckResult> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+
+  const results: Record<string, NameCheckResult> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    const parsed = parseNameCheckResult(entry);
+    if (parsed) results[key] = parsed;
+  }
+  return results;
+}
 
 function isHeadingInfoBlock(field: PublicField): boolean {
   return field.type === 'PARAGRAPH' && (
@@ -1506,6 +1566,8 @@ export default function PublicFormPage() {
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [nameCheckResults, setNameCheckResults] = useState<Record<string, NameCheckResult>>({});
+  const [checkingNameCheckField, setCheckingNameCheckField] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
@@ -1777,6 +1839,7 @@ export default function PublicFormPage() {
           setForm(resolvedForm);
           setAnswers({});
           setFieldErrors({});
+          setNameCheckResults({});
           setCurrentPage(0);
           setUploadedByFieldKey({});
           setOpenInlineTooltips({});
@@ -1865,6 +1928,7 @@ export default function PublicFormPage() {
       getLocalTodayIsoDate()
     ));
     setUploadedByFieldKey(pendingDraftRestore.uploadsByFieldKey);
+    setNameCheckResults(parseNameCheckResults(pendingDraftRestore.metadata.nameCheckResults));
 
     const metadataRepeatCounts = pendingDraftRestore.metadata.repeatSectionCounts;
     if (metadataRepeatCounts && typeof metadataRepeatCounts === 'object' && !Array.isArray(metadataRepeatCounts)) {
@@ -2242,6 +2306,12 @@ export default function PublicFormPage() {
 
   function setFieldValue(key: string, value: unknown) {
     setAnswers((prev) => ({ ...prev, [key]: value }));
+    setNameCheckResults((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
     setFieldErrors((prev) => {
       const next = { ...prev };
       delete next[key];
@@ -2364,7 +2434,7 @@ export default function PublicFormPage() {
     }
 
     if (
-      ((field.type === 'SHORT_TEXT' && field.inputType !== 'date' && field.inputType !== 'number' && field.inputType !== 'time_timezone') || field.type === 'LONG_TEXT') &&
+      ((field.type === 'SHORT_TEXT' && field.inputType !== 'date' && field.inputType !== 'number' && field.inputType !== 'time_timezone') || field.type === 'LONG_TEXT' || field.type === 'COMPANY_NAME_CHECK') &&
       typeof value === 'string' &&
       value.length > 0
     ) {
@@ -2427,6 +2497,70 @@ export default function PublicFormPage() {
     });
   }
 
+  async function handleNameCheck(field: PublicField) {
+    const fieldKey = field.key;
+    const name = typeof answers[fieldKey] === 'string' ? (answers[fieldKey] as string).trim() : '';
+    const errorKey = getFieldErrorKey(fieldKey);
+
+    if (!name) {
+      setFieldErrors((prev) => ({ ...prev, [errorKey]: uiLabel('name_check_enter_name') }));
+      return;
+    }
+
+    if (isPreview) {
+      setFieldErrors((prev) => ({ ...prev, [errorKey]: uiLabel('preview_submit_notice') }));
+      return;
+    }
+
+    setCheckingNameCheckField(fieldKey);
+    try {
+      const response = await fetch('/api/forms/name-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || uiLabel('name_check_unavailable'));
+      }
+
+      const result: NameCheckResult = {
+        name,
+        available: data.available === true,
+        checkedAt: typeof data.checkedAt === 'string' ? data.checkedAt : new Date().toISOString(),
+        records: Array.isArray(data.records)
+          ? (data.records as unknown[])
+            .slice(0, 10)
+            .map((record: unknown) => {
+              if (!record || typeof record !== 'object' || Array.isArray(record)) return null;
+              const raw = record as Record<string, unknown>;
+              const uen = typeof raw.uen === 'string' ? raw.uen.slice(0, 32) : '';
+              const entityName = typeof raw.entityName === 'string' ? raw.entityName.slice(0, 500) : '';
+              const entityStatus = typeof raw.entityStatus === 'string' ? raw.entityStatus.slice(0, 200) : '';
+              if (!uen && !entityName) return null;
+              return { uen, entityName, entityStatus };
+            })
+            .filter((record): record is NameCheckRecord => !!record)
+          : [],
+      };
+
+      setNameCheckResults((prev) => ({ ...prev, [fieldKey]: result }));
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[errorKey];
+        return next;
+      });
+    } catch (err) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        [errorKey]: err instanceof Error ? err.message : uiLabel('name_check_unavailable'),
+      }));
+    } finally {
+      setCheckingNameCheckField(null);
+    }
+  }
+
   function validateCurrentPage(): boolean {
     const nextErrors: Record<string, string> = {};
     const pageFields = pages[currentPage] || [];
@@ -2486,6 +2620,14 @@ export default function PublicFormPage() {
       const error = validateField(field, value, getLocalizedField(field), effectiveAnswers);
       if (error) {
         nextErrors[errorKey] = error;
+      } else if (field.type === 'COMPANY_NAME_CHECK') {
+        const name = typeof value === 'string' ? value.trim() : '';
+        const result = nameCheckResults[field.key];
+        if (!name || !result || result.name !== name || result.checkedAt.length === 0) {
+          nextErrors[errorKey] = uiLabel('name_check_required');
+        } else if (!result.available) {
+          nextErrors[errorKey] = uiLabel('name_check_not_available');
+        }
       }
     }
 
@@ -2624,6 +2766,7 @@ export default function PublicFormPage() {
             userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
             locale: activeLocale,
             repeatSectionCounts,
+            nameCheckResults,
           },
         }),
       });
@@ -2769,6 +2912,7 @@ export default function PublicFormPage() {
           metadata: {
             userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
             locale: activeLocale,
+            nameCheckResults,
           },
         }),
       });
@@ -3543,7 +3687,7 @@ export default function PublicFormPage() {
                             </fieldset>
                           )}
 
-                          {(sectionField.type === 'FILE_UPLOAD' || sectionField.type === 'SIGNATURE') && (
+                          {(sectionField.type === 'FILE_UPLOAD' || sectionField.type === 'SIGNATURE' || sectionField.type === 'COMPANY_NAME_CHECK') && (
                             <div className="rounded-lg border border-border-primary/60 bg-background-secondary/40 px-3 py-2 text-xs text-text-muted">
                               {uiLabel('dynamic_section_unsupported_field')}
                             </div>
@@ -3648,6 +3792,7 @@ export default function PublicFormPage() {
     const phoneDefaultCountryCode = useSplitPhoneInput ? getPhoneDefaultCountryCode(field) : DEFAULT_PHONE_COUNTRY_CODE;
     const phoneParts = useSplitPhoneInput ? parsePhoneParts(value, phoneDefaultCountryCode) : null;
     const timeTimezoneParts = useTimeTimezoneInput ? parseTimeTimezoneValue(value, getTimezoneDefault(field)) : null;
+    const nameCheckResult = nameCheckResults[field.key];
     const resolvedDateValue = typeof value === 'string' && value.trim().length > 0
       ? value
       : '';
@@ -3894,6 +4039,80 @@ export default function PublicFormPage() {
                 field.isReadOnly && 'bg-[#EDE9E5] cursor-not-allowed opacity-70'
               )}
             />
+          )}
+
+          {/* COMPANY_NAME_CHECK */}
+          {field.type === 'COMPANY_NAME_CHECK' && (
+            <div className="space-y-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                <input
+                  id={controlId}
+                  type="text"
+                  value={typeof value === 'string' ? value : ''}
+                  onChange={(e) => setFieldValue(field.key, e.target.value)}
+                  onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
+                  placeholder={localizedField.placeholder || ''}
+                  readOnly={field.isReadOnly}
+                  required={field.isRequired}
+                  aria-label={field.hideLabel ? accessibleLabel : undefined}
+                  aria-invalid={errorText ? 'true' : undefined}
+                  aria-describedby={describedBy}
+                  className={cn(
+                    'w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50',
+                    'focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                    errorText && ERROR_FIELD_CLASS,
+                    field.isReadOnly && 'bg-[#EDE9E5] cursor-not-allowed opacity-70'
+                  )}
+                />
+                <button
+                  type="button"
+                  disabled={
+                    field.isReadOnly ||
+                    checkingNameCheckField === field.key ||
+                    !(typeof value === 'string' && value.trim().length > 0)
+                  }
+                  onClick={() => void handleNameCheck(field)}
+                  className={cn(
+                    'inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-transparent px-4 py-2.5 text-sm font-medium text-white transition-colors',
+                    'bg-oak-primary hover:bg-oak-dark',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2',
+                    'disabled:cursor-not-allowed disabled:opacity-50'
+                  )}
+                >
+                  {checkingNameCheckField === field.key
+                    ? uiLabel('name_check_checking')
+                    : uiLabel('name_check_button')}
+                </button>
+              </div>
+
+              {nameCheckResult && (
+                <div
+                  className={cn(
+                    'rounded-lg border px-3 py-2 text-sm',
+                    nameCheckResult.available
+                      ? 'border-status-success/40 bg-status-success/10 text-status-success'
+                      : 'border-status-warning/50 bg-status-warning/10 text-status-warning'
+                  )}
+                >
+                  <p className="font-medium">
+                    {nameCheckResult.available
+                      ? uiLabel('name_check_available')
+                      : uiLabel('name_check_similar_found')}
+                  </p>
+                  {!nameCheckResult.available && nameCheckResult.records.length > 0 && (
+                    <ul className="mt-1.5 space-y-1 text-xs">
+                      {nameCheckResult.records.map((record, index) => (
+                        <li key={`${record.uen || 'record'}-${index}`}>
+                          <span className="font-medium">{record.entityName || '-'}</span>
+                          {record.uen ? ` (${record.uen})` : ''}
+                          {record.entityStatus ? ` — ${record.entityStatus}` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           {useTimeTimezoneInput && timeTimezoneParts && (

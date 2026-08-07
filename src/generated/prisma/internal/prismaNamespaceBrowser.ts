@@ -514,6 +514,7 @@ export const CompanyShareholderScalarFieldEnum = {
   contactId: 'contactId',
   name: 'name',
   shareholderType: 'shareholderType',
+  isNominee: 'isNominee',
   identificationType: 'identificationType',
   identificationNumber: 'identificationNumber',
   nationality: 'nationality',

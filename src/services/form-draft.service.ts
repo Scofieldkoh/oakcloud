@@ -14,6 +14,7 @@ import {
   toAnswerRecord,
 } from '@/lib/form-utils';
 import { SIGNATURE_DATA_URL_MAX_LENGTH, extractSignatureDataUrl } from '@/lib/signature-utils';
+import { COMPANY_NAME_RECORD_COUNT_CAP } from '@/lib/external/company-name-check';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
@@ -116,6 +117,51 @@ function normalizeDraftMetadata(metadata: unknown): Record<string, unknown> {
 
   if (typeof raw.userAgent === 'string' && raw.userAgent.trim().length > 0) {
     normalized.userAgent = raw.userAgent.trim().slice(0, 500);
+  }
+
+  const nameCheckResults = parseObject(raw.nameCheckResults);
+  if (nameCheckResults) {
+    const normalizedResults: Record<string, unknown> = {};
+
+    for (const [fieldKey, entry] of Object.entries(nameCheckResults)) {
+      const parsed = parseObject(entry);
+      if (!parsed) continue;
+
+      const name = typeof parsed.name === 'string' ? parsed.name.trim().slice(0, 300) : '';
+      const checkedAt = typeof parsed.checkedAt === 'string' ? parsed.checkedAt.trim().slice(0, 64) : '';
+      if (!name || !checkedAt) continue;
+      if (typeof parsed.available !== 'boolean') continue;
+
+      const records: unknown[] = [];
+      if (Array.isArray(parsed.records)) {
+        for (const record of parsed.records.slice(0, COMPANY_NAME_RECORD_COUNT_CAP)) {
+          const recordObject = parseObject(record);
+          if (!recordObject) continue;
+
+          const uen = typeof recordObject.uen === 'string' ? recordObject.uen.trim().slice(0, 32) : '';
+          const entityName = typeof recordObject.entityName === 'string'
+            ? recordObject.entityName.trim().slice(0, 500)
+            : '';
+          const entityStatus = typeof recordObject.entityStatus === 'string'
+            ? recordObject.entityStatus.trim().slice(0, 200)
+            : '';
+
+          if (!uen && !entityName) continue;
+          records.push({ uen, entityName, entityStatus });
+        }
+      }
+
+      normalizedResults[fieldKey] = {
+        name,
+        available: parsed.available,
+        checkedAt,
+        records,
+      };
+    }
+
+    if (Object.keys(normalizedResults).length > 0) {
+      normalized.nameCheckResults = normalizedResults;
+    }
   }
 
   const repeatSectionCounts = parseObject(raw.repeatSectionCounts);

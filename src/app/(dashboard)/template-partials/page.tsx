@@ -16,6 +16,10 @@ import { useToast } from '@/components/ui/toast';
 import { Pagination } from '@/components/ui/pagination';
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import {
+  usePersistSessionListSnapshot,
+  useSessionListRestore,
+} from '@/hooks/use-session-query-restore';
+import {
   useTemplatePartials,
   useDeletePartial,
   useDuplicatePartial,
@@ -88,6 +92,17 @@ interface TemplateSearchResult {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+function isTemplateSearchResult(value: unknown): value is TemplateSearchResult {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<TemplateSearchResult>;
+  return (
+    !!candidate.templates &&
+    Array.isArray(candidate.templates) &&
+    typeof candidate.total === 'number' &&
+    typeof candidate.totalPages === 'number'
+  );
 }
 
 interface TemplateStats {
@@ -280,11 +295,24 @@ function DocumentTemplatesTab({
   const [duplicateName, setDuplicateName] = useState('');
 
   // Query
+  const queryKey = [
+    'document-templates',
+    { search, categoryFilter, page, limit },
+    activeTenantId,
+  ] as const;
+  const { initialData, restoredFromSession } = useSessionListRestore<TemplateSearchResult>(
+    queryClient,
+    queryKey,
+    { enabled: !!activeTenantId, validate: isTemplateSearchResult },
+  );
   const { data, isLoading, error } = useQuery({
-    queryKey: ['document-templates', { search, categoryFilter, page, limit }, activeTenantId],
+    queryKey,
     queryFn: () => fetchTemplates({ search, category: categoryFilter, page, limit }, activeTenantId),
     enabled: !!activeTenantId,
+    initialData,
+    initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
   });
+  usePersistSessionListSnapshot(queryKey, data);
 
   const { data: templateStats } = useQuery({
     queryKey: ['document-templates-stats', activeTenantId],

@@ -57,4 +57,32 @@ describe('BizFile diff source paths', () => {
       'shareCapital', 'treasuryShares', 'auditor', 'fyeAsAtLastAr', 'charges',
     ]));
   });
+
+  it('reports a nominee flag change for an existing shareholder', async () => {
+    findFirst.mockResolvedValue({
+      id: 'company-1', name: 'Example', formerName: null,
+      entityType: 'PRIVATE_LIMITED', status: 'LIVE', statusDate: null, incorporationDate: null,
+      primarySsicCode: null, primarySsicDescription: null,
+      secondarySsicCode: null, secondarySsicDescription: null,
+      lastAgmDate: null, lastArFiledDate: null, accountsDueDate: null,
+      financialYearEndDay: null, financialYearEndMonth: null,
+      paidUpCapitalAmount: null, issuedCapitalAmount: null,
+      addresses: [], officers: [],
+      shareholders: [{
+        id: 's1', name: 'Same Owner', shareholderType: 'INDIVIDUAL', shareClass: 'ORDINARY',
+        numberOfShares: 1, identificationType: null, identificationNumber: null,
+        isCurrent: true, isNominee: false,
+      }],
+    });
+    const { generateBizFileDiff } = await import('@/services/bizfile/diff');
+    const result = await generateBizFileDiff('company-1', {
+      entityDetails: { uen: '1', name: 'Example', entityType: 'PRIVATE_LIMITED', status: 'LIVE' },
+      shareholders: [{
+        name: 'Same Owner', type: 'INDIVIDUAL', shareClass: 'ORDINARY', numberOfShares: 1, isNominee: true,
+      }],
+    }, 'tenant-1');
+
+    const updated = result.shareholderDiffs.find((entry) => entry.type === 'updated');
+    expect(updated?.changes).toContainEqual(expect.objectContaining({ field: 'isNominee' }));
+  });
 });

@@ -79,6 +79,7 @@ export interface ExtractedBizFileData {
   shareholders?: Array<{
     name: string;
     type: 'INDIVIDUAL' | 'CORPORATE';
+    isNominee?: boolean;
     identificationType?: string;
     identificationNumber?: string;
     nationality?: string;
@@ -223,6 +224,7 @@ export interface ExtractedOfficerData {
 export interface ExtractedShareholderData {
   name: string;
   type: 'INDIVIDUAL' | 'CORPORATE';
+  isNominee?: boolean;
   identificationType?: string;
   identificationNumber?: string;
   nationality?: string;
@@ -391,6 +393,8 @@ export function mapOfficerRole(role: string | null | undefined): OfficerRole {
     'MANAGING DIRECTOR': 'MANAGING_DIRECTOR',
     ALTERNATE_DIRECTOR: 'ALTERNATE_DIRECTOR',
     'ALTERNATE DIRECTOR': 'ALTERNATE_DIRECTOR',
+    NOMINEE_DIRECTOR: 'NOMINEE_DIRECTOR',
+    'NOMINEE DIRECTOR': 'NOMINEE_DIRECTOR',
     SECRETARY: 'SECRETARY',
     'COMPANY SECRETARY': 'SECRETARY',
     CEO: 'CEO',

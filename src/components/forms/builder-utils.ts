@@ -13,6 +13,7 @@ export const FIELD_TYPE_OPTIONS: Array<{ value: FormFieldInput['type']; label: s
   { value: 'HTML', label: 'HTML / Code' },
   { value: 'FILE_UPLOAD', label: 'File upload' },
   { value: 'SIGNATURE', label: 'eSignature' },
+  { value: 'COMPANY_NAME_CHECK', label: 'Company name check' },
   { value: 'HIDDEN', label: 'Hidden field' },
   { value: 'PAGE_BREAK', label: 'Page break' },
 ];
@@ -185,7 +186,11 @@ export function newClientId(): string {
 
 
 export function defaultField(type: FormFieldInput['type'], position: number): BuilderField {
-  const label = type === 'PAGE_BREAK' ? 'Page break' : 'Untitled field';
+  const label = type === 'PAGE_BREAK'
+    ? 'Page break'
+    : type === 'COMPANY_NAME_CHECK'
+      ? 'Company name'
+      : 'Untitled field';
   const key = normalizeKey(label);
 
   return {

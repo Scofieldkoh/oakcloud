@@ -9,6 +9,6 @@ interface CompanyProfileTabProps {
   can: { updateCompany: boolean; deleteOfficer?: boolean; deleteShareholder?: boolean };
 }
 
-export function CompanyProfileTab({ company }: CompanyProfileTabProps) {
-  return <CompanyProfileSections company={company} />;
+export function CompanyProfileTab({ company, companyId }: CompanyProfileTabProps) {
+  return <CompanyProfileSections company={company} companyId={companyId} />;
 }

@@ -30,7 +30,7 @@ describe('document navigation source', () => {
 
   it('routes company document navigation through the filtered Document Vault', () => {
     const companyProfile = readSource(
-      'src/components/companies/company-detail/company-profile-tab.tsx',
+      'src/components/companies/company-detail/company-profile-sections.tsx',
     );
     const helpbot = readSource('src/services/ai-helpbot.service.ts');
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { CompanyAccentSection } from '@/components/companies/company-accent-section';
 import type { CompanyWithRelations } from '@/services/company/types';
 import { ActiveBadge, OfficerRoleBadge, ShareholderTypeBadge } from './company-profile-badges';
@@ -54,7 +55,7 @@ function FieldLabel({ children }: { children: ReactNode }) {
   return <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-text-secondary">{children}</p>;
 }
 
-export function CompanyProfileSections({ company }: { company: CompanyWithRelations }) {
+export function CompanyProfileSections({ company, companyId }: { company: CompanyWithRelations; companyId: string }) {
   const [showCeased, setShowCeased] = useState(false);
   const [showFormer, setShowFormer] = useState(false);
   const [showDischarged, setShowDischarged] = useState(false);
@@ -113,6 +114,7 @@ export function CompanyProfileSections({ company }: { company: CompanyWithRelati
               <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-text-primary">
                 <span>{shareholder.name}{ownership == null ? '' : ` (${ownership.toLocaleString('en-SG')}% ownership)`}</span>
                 <ShareholderTypeBadge type={shareholder.shareholderType ?? 'INDIVIDUAL'} />
+                {shareholder.isNominee ? <span className="badge badge-neutral">Nominee</span> : null}
               </div>
               <p className="mt-1 text-xs text-text-secondary">{attributed ? money(attributed.currency, attributed.amount) : 'Value unavailable'} / {number(shareholder.numberOfShares)} {title(shareholder.shareClass ?? 'ORDINARY')} Shares</p>
             </div>;
@@ -166,6 +168,14 @@ export function CompanyProfileSections({ company }: { company: CompanyWithRelati
             <div><p className="font-medium text-text-primary">{charge.chargeHolderName}</p><p className="mt-1 text-xs text-text-secondary">{[charge.chargeType, charge.registrationDate ? `Registered ${day(charge.registrationDate)}` : null, charge.amountSecured != null ? money(charge.currency ?? company.homeCurrency ?? 'SGD', charge.amountSecured) : charge.amountSecuredText].filter(Boolean).join(' · ')}</p></div>
             {!charge.isFullyDischarged ? <ActiveBadge /> : null}
           </div>) : <p className="py-3 text-sm text-text-secondary">No charge records</p>}
+        </div>
+      </Section>
+
+      <Section title="Documents" actions={<span className="text-xs font-medium">{company._count?.documents ?? 0}</span>}>
+        <div className="p-3">
+          <Link href={`/processing?companyId=${companyId}`} className="btn-secondary btn-sm w-full justify-center">
+            View All Documents
+          </Link>
         </div>
       </Section>
     </aside>

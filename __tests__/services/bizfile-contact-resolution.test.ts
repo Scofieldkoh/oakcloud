@@ -379,4 +379,39 @@ describe('BizFile contact identity resolution', () => {
       data: expect.objectContaining({ contactId: 'contact-created-in-import' }),
     }));
   });
+
+  it('tracks a restored contact as auto-created for duplicate records in the same import', async () => {
+    const samePersonShareholder = {
+      name: officer.name,
+      type: 'INDIVIDUAL' as const,
+      identificationType: officer.identificationType,
+      identificationNumber: officer.identificationNumber,
+      nationality: officer.nationality,
+      address: officer.address,
+      shareClass: 'ORDINARY',
+      numberOfShares: 100,
+    };
+    mocks.previewContactIdentity
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        contactId: 'contact-restored-in-import', score: 1, automatic: true,
+        blockedByIdentifierConflict: false, reasons: ['IDENTIFIER'], conflicts: [],
+      });
+    mocks.resolveOrCreateContact
+      .mockReset()
+      .mockResolvedValueOnce({ contact: { id: 'contact-restored-in-import' }, outcome: 'RESTORED' })
+      .mockResolvedValueOnce({ contact: { id: 'contact-restored-in-import' }, outcome: 'REUSED_IDENTIFIER' });
+    const undecidedDuplicate = {
+      ...extractedData,
+      officers: [{ ...officer, contactResolution: undefined }],
+      shareholders: [samePersonShareholder],
+    };
+    const { processBizFileExtraction } = await import('@/services/bizfile/processor');
+
+    await expect(processBizFileExtraction('doc-1', undecidedDuplicate, 'user-1', 'tenant-1'))
+      .resolves.toEqual(expect.objectContaining({ companyId: 'company-1' }));
+    expect(tx.companyShareholder.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ contactId: 'contact-restored-in-import' }),
+    }));
+  });
 });

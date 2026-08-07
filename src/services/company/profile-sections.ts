@@ -109,6 +109,7 @@ function selectSection(company: ProfileCompany, section: CompanyProfileSectionId
       id: shareholder.id,
       name: shareholder.name,
       shareholderType: shareholder.shareholderType,
+      isNominee: shareholder.isNominee,
       identificationType: shareholder.identificationType,
       identificationNumber: shareholder.identificationNumber,
       nationality: shareholder.nationality,
@@ -289,6 +290,7 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
       await tx.companyShareholder.deleteMany({ where: { companyId } });
       for (const shareholder of data.shareholders) await tx.companyShareholder.create({ data: {
         companyId, name: shareholder.name, shareholderType: shareholder.shareholderType,
+        isNominee: shareholder.isNominee ?? false,
         identificationType: shareholder.identificationType, identificationNumber: shareholder.identificationNumber,
         nationality: shareholder.nationality, placeOfOrigin: shareholder.placeOfOrigin, address: shareholder.address,
         shareClass: shareholder.shareClass, numberOfShares: shareholder.numberOfShares,

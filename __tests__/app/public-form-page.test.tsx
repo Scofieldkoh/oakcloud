@@ -86,6 +86,8 @@ const publicForm = {
 };
 
 let currentPublicForm = publicForm;
+let currentNameCheckFails = false;
+let currentNameCheckHasSimilar = false;
 
 function dropdownForm(isRequired: boolean) {
   return {
@@ -122,11 +124,37 @@ function backgroundForm(url: string | null, opacity = 55) {
   };
 }
 
+function companyNameCheckForm() {
+  return {
+    ...publicForm,
+    fields: [{
+      id: 'field-name-check',
+      type: 'COMPANY_NAME_CHECK',
+      label: 'Proposed company name',
+      key: 'company_name',
+      placeholder: 'e.g. Acme Holdings',
+      subtext: null,
+      helpText: null,
+      inputType: 'text',
+      options: [],
+      validation: null,
+      condition: null,
+      isRequired: false,
+      hideLabel: false,
+      isReadOnly: false,
+      layoutWidth: 100,
+      position: 0,
+    }],
+  };
+}
+
 describe('PublicFormPage', () => {
   beforeEach(() => {
     currentSearchParams = '';
     currentPublicForm = publicForm;
-    vi.spyOn(global, 'fetch').mockImplementation(async (input) => {
+    currentNameCheckFails = false;
+    currentNameCheckHasSimilar = false;
+    vi.spyOn(global, 'fetch').mockImplementation(async (input, init) => {
       const url = String(input);
       if (url === '/api/public-bootstrap/forms/annual-return-declaration') {
         return new Response(JSON.stringify({ form: currentPublicForm }), {
@@ -135,6 +163,48 @@ describe('PublicFormPage', () => {
         });
       }
 
+      if (url === '/api/forms/name-check') {
+        if (currentNameCheckFails) {
+          return new Response(
+            JSON.stringify({ error: 'Availability check temporarily unavailable. Please try again.' }),
+            { status: 502, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        if (currentNameCheckHasSimilar) {
+          return new Response(
+            JSON.stringify({
+              available: false,
+              checkedAt: '2026-08-06T00:00:00.000Z',
+              records: [{
+                uen: '201904999E',
+                entityName: 'BIF IV ACME HOLDINGS PTE. LTD.',
+                entityStatus: 'LIVE COMPANY',
+              }],
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        return new Response(
+          JSON.stringify({ available: true, checkedAt: '2026-08-06T00:00:00.000Z', records: [] }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (url === '/api/forms/public/annual-return-declaration/submit') {
+        return new Response(
+          JSON.stringify({
+            id: 'sub-1',
+            submittedAt: '2026-08-06T00:00:00.000Z',
+            pdfDownloadToken: 'token',
+            pdfDownloadTokenTtlSeconds: 1800,
+            pdfEmailAccessToken: 'mail-token',
+            pdfEmailAccessTokenTtlSeconds: 1800,
+          }),
+          { status: 201, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      void init;
       return new Response(JSON.stringify({ error: `Unexpected request: ${url}` }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
@@ -211,5 +281,93 @@ describe('PublicFormPage', () => {
     await screen.findByRole('button', { name: 'Send declaration' });
 
     expect(container.querySelector('img[src^="/api/storage/"]')).toBeNull();
+  });
+
+  it('lets respondents check company name availability', async () => {
+    currentPublicForm = companyNameCheckForm();
+    render(<PublicFormPage />);
+
+    const input = await screen.findByRole('textbox', { name: 'Proposed company name' });
+    fireEvent.change(input, { target: { value: 'Acme Holdings' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Check availability' }));
+
+    expect(await screen.findByText('No similar names found — the name appears to be available for incorporation.')).toBeVisible();
+  });
+
+  it('shows a retryable error when the availability check fails', async () => {
+    currentPublicForm = companyNameCheckForm();
+    currentNameCheckFails = true;
+    render(<PublicFormPage />);
+
+    const input = await screen.findByRole('textbox', { name: 'Proposed company name' });
+    fireEvent.change(input, { target: { value: 'Acme Holdings' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Check availability' }));
+
+    expect(await screen.findByText('Availability check temporarily unavailable. Please try again.')).toBeVisible();
+  });
+
+  it('clears the availability result when the name is edited', async () => {
+    currentPublicForm = companyNameCheckForm();
+    render(<PublicFormPage />);
+
+    const input = await screen.findByRole('textbox', { name: 'Proposed company name' });
+    fireEvent.change(input, { target: { value: 'Acme Holdings' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Check availability' }));
+    await screen.findByText(/No similar names found/);
+
+    fireEvent.change(input, { target: { value: 'Acme Holdings 2' } });
+
+    expect(screen.queryByText(/No similar names found/)).not.toBeInTheDocument();
+  });
+
+  it('blocks submission until availability is checked', async () => {
+    currentPublicForm = companyNameCheckForm();
+    render(<PublicFormPage />);
+
+    const input = await screen.findByRole('textbox', { name: 'Proposed company name' });
+    fireEvent.change(input, { target: { value: 'Acme Holdings' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send declaration' }));
+
+    expect(await screen.findByText('Check availability before submitting')).toBeVisible();
+  });
+
+  it('blocks submission when similar names are found', async () => {
+    currentPublicForm = companyNameCheckForm();
+    currentNameCheckHasSimilar = true;
+    render(<PublicFormPage />);
+
+    const input = await screen.findByRole('textbox', { name: 'Proposed company name' });
+    fireEvent.change(input, { target: { value: 'Acme Holdings' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Check availability' }));
+    await screen.findByText(/Similar names found — final availability is determined by ACRA/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send declaration' }));
+
+    expect(await screen.findByText('Similar names found — please enter an available company name.')).toBeVisible();
+    expect(vi.mocked(global.fetch).mock.calls.some(([url]) => String(url).includes('/submit'))).toBe(false);
+  });
+
+  it('includes the check result in submission metadata', async () => {
+    currentPublicForm = companyNameCheckForm();
+    render(<PublicFormPage />);
+
+    const input = await screen.findByRole('textbox', { name: 'Proposed company name' });
+    fireEvent.change(input, { target: { value: 'Acme Holdings' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Check availability' }));
+    await screen.findByText(/No similar names found/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send declaration' }));
+
+    await waitFor(() => {
+      const submitCall = vi.mocked(global.fetch).mock.calls.find(
+        ([url]) => String(url).includes('/submit')
+      );
+      expect(submitCall).toBeTruthy();
+      const body = JSON.parse(String(submitCall?.[1]?.body));
+      expect(body.metadata.nameCheckResults.company_name).toMatchObject({
+        name: 'Acme Holdings',
+        available: true,
+      });
+    });
   });
 });

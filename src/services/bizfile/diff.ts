@@ -101,7 +101,7 @@ function matchOfficer(
  */
 function matchShareholder(
   extracted: ExtractedShareholderData,
-  existingShareholders: Array<{ id: string; name: string; shareholderType: ContactType; identificationType: IdentificationType | null; identificationNumber: string | null; isCurrent: boolean; shareClass: string; numberOfShares: number }>
+  existingShareholders: Array<{ id: string; name: string; shareholderType: ContactType; identificationType: IdentificationType | null; identificationNumber: string | null; isCurrent: boolean; shareClass: string; numberOfShares: number; isNominee: boolean }>
 ): { shareholder: typeof existingShareholders[number] | null; confidence: 'high' | 'medium' | 'low' } {
   const extractedType = extracted.type === 'CORPORATE' ? 'CORPORATE' : 'INDIVIDUAL';
 
@@ -490,6 +490,15 @@ export async function generateBizFileDiff(
           label: 'Number of Shares',
           oldValue: matchResult.shareholder.numberOfShares,
           newValue: extractedShareholder.numberOfShares,
+        });
+      }
+
+      if (Boolean(matchResult.shareholder.isNominee) !== Boolean(extractedShareholder.isNominee)) {
+        changes.push({
+          field: 'isNominee',
+          label: 'Nominee Shareholder',
+          oldValue: matchResult.shareholder.isNominee ? 'Yes' : 'No',
+          newValue: extractedShareholder.isNominee ? 'Yes' : 'No',
         });
       }
 

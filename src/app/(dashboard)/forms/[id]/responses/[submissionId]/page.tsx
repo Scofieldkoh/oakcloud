@@ -98,6 +98,46 @@ function toAnswerRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+type SubmissionNameCheckResult = {
+  name: string;
+  available: boolean;
+  checkedAt: string;
+  records: Array<{ uen: string; entityName: string; entityStatus: string }>;
+};
+
+function getSubmissionNameCheckResult(metadata: unknown, fieldKey: string): SubmissionNameCheckResult | null {
+  const root = parseObject(metadata);
+  const results = root ? parseObject(root.nameCheckResults) : null;
+  if (!results) return null;
+
+  const entry = parseObject(results[fieldKey]);
+  if (!entry) return null;
+
+  const name = typeof entry.name === 'string' ? entry.name : '';
+  const checkedAt = typeof entry.checkedAt === 'string' ? entry.checkedAt : '';
+  if (!name || !checkedAt) return null;
+
+  const records: SubmissionNameCheckResult['records'] = [];
+  if (Array.isArray(entry.records)) {
+    for (const item of entry.records.slice(0, 10)) {
+      const record = parseObject(item);
+      if (!record) continue;
+      const uen = typeof record.uen === 'string' ? record.uen : '';
+      const entityName = typeof record.entityName === 'string' ? record.entityName : '';
+      const entityStatus = typeof record.entityStatus === 'string' ? record.entityStatus : '';
+      if (!uen && !entityName) continue;
+      records.push({ uen, entityName, entityStatus });
+    }
+  }
+
+  return {
+    name,
+    available: entry.available === true,
+    checkedAt,
+    records,
+  };
+}
+
 function toCopyValue(field: FormField, value: unknown): string | null {
   if (value === null || value === undefined || field.type === 'SIGNATURE') return null;
   return formatResponseFieldValue(field, value);
@@ -802,11 +842,51 @@ export default function FormResponseDetailPage() {
           })()
         )}
 
-        {!['SHORT_TEXT', 'DROPDOWN', 'SINGLE_CHOICE', 'LONG_TEXT', 'MULTIPLE_CHOICE', 'FILE_UPLOAD', 'SIGNATURE'].includes(field.type) && (
+        {!['SHORT_TEXT', 'DROPDOWN', 'SINGLE_CHOICE', 'LONG_TEXT', 'MULTIPLE_CHOICE', 'FILE_UPLOAD', 'SIGNATURE', 'COMPANY_NAME_CHECK'].includes(field.type) && (
           <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary">
             {formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>}
           </div>
         )}
+
+        {field.type === 'COMPANY_NAME_CHECK' && (() => {
+          const checkResult = getSubmissionNameCheckResult(submission?.metadata, field.key);
+          return (
+            <div className="space-y-1.5">
+              <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary">
+                {formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>}
+              </div>
+              {checkResult && (
+                <div
+                  className={
+                    checkResult.available
+                      ? 'rounded-lg border border-status-success/40 bg-status-success/10 px-3 py-2 text-xs text-status-success'
+                      : 'rounded-lg border border-status-warning/50 bg-status-warning/10 px-3 py-2 text-xs text-status-warning'
+                  }
+                >
+                  <p className="font-medium">
+                    {checkResult.available
+                      ? 'Available — no similar names found'
+                      : 'Similar names found — confirm with ACRA'}
+                  </p>
+                  {checkResult.records.length > 0 && (
+                    <ul className="mt-1 space-y-0.5">
+                      {checkResult.records.map((record, index) => (
+                        <li key={`${record.uen || 'record'}-${index}`}>
+                          {record.entityName || '-'}
+                          {record.uen ? ` (${record.uen})` : ''}
+                          {record.entityStatus ? ` — ${record.entityStatus}` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mt-1 text-2xs text-text-muted">
+                    Checked {new Date(checkResult.checkedAt).toLocaleString('en-SG')}
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
     );
   }

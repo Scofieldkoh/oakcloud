@@ -67,6 +67,7 @@ export interface CompanyWithRelations extends Company {
     id: string;
     name: string;
     shareholderType?: string | null;
+    isNominee?: boolean;
     nationality?: string | null;
     placeOfOrigin?: string | null;
     address?: string | null;

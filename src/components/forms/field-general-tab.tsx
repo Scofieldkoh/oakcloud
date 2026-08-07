@@ -160,6 +160,9 @@ export function FieldGeneralTab({
               if (nextType === 'SHORT_TEXT' && (!next.inputType || INFO_INPUT_TYPES.includes(next.inputType))) {
                 next.inputType = 'text';
               }
+              if (nextType === 'COMPANY_NAME_CHECK') {
+                next.inputType = 'text';
+              }
               if (nextType === 'PARAGRAPH' && !INFO_INPUT_TYPES.includes(next.inputType)) {
                 next.inputType = 'info_text';
               }
@@ -359,6 +362,18 @@ export function FieldGeneralTab({
             <option value="date">Datepicker</option>
             <option value="time_timezone">Time + timezone</option>
           </select>
+        </div>
+      )}
+
+      {field.type === 'COMPANY_NAME_CHECK' && (
+        <div className="space-y-3">
+          <SectionHeader title="Company name check" />
+          <div className="rounded-lg border border-border-primary bg-background-elevated p-3 text-xs text-text-secondary">
+            Respondents enter a proposed company name and must pass a live
+            availability check before submitting. Results are sourced from
+            GoBusiness / ACRA data and are indicative only; final availability
+            is determined by ACRA at application time.
+          </div>
         </div>
       )}
 

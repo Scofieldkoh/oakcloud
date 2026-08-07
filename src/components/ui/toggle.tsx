@@ -9,6 +9,8 @@ interface ToggleProps {
   label?: string;
   description?: string;
   size?: 'sm' | 'md';
+  /** Where the label sits relative to the switch. */
+  labelPosition?: 'side' | 'top';
   className?: string;
 }
 
@@ -32,6 +34,7 @@ export function Toggle({
   label,
   description,
   size = 'md',
+  labelPosition = 'side',
   className,
 }: ToggleProps) {
   const labelClassName = size === 'sm'
@@ -39,7 +42,12 @@ export function Toggle({
     : 'text-sm font-medium text-text-primary';
 
   return (
-    <div className={cn('flex items-center justify-between gap-4', className)}>
+    <div className={cn(
+      labelPosition === 'top'
+        ? 'flex flex-col items-start gap-2'
+        : 'flex items-center justify-between gap-4',
+      className,
+    )}>
       {(label || description) && (
         <div className="flex flex-col min-w-0">
           {label && (

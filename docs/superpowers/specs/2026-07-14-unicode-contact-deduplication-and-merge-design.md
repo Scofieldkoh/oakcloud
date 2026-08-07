@@ -138,6 +138,8 @@ Each creation request follows this flow:
 
 This lock prevents simultaneous document approvals or imports from creating the same canonical contact concurrently.
 
+Because the database unique key covers `(tenantId, identificationType, identificationNumber)` even for soft-deleted rows, identity resolution checks that exact raw identifier outside the active-contact scope before creating. A deleted or inactive contact holding the same identifier is restored and reused in the same transaction; an identifier already assigned to a contact of the other type is returned as a conflict rather than creating a second row.
+
 ## Source Data Capture and Enrichment
 
 Every creation path supplies one typed contact identity candidate containing all available fields:

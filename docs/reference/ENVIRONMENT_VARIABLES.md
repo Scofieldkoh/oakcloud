@@ -99,6 +99,15 @@ Notes:
 - In production, `FORM_RESPONSE_TOKEN_SECRET` (or a secure fallback secret) must be at least 32 characters.
 - Public form draft resume uses per-draft access tokens stored in the database and does not use these env vars.
 
+## GoBusiness Company Name Check
+
+The form builder's "Company name check" element queries the public GoBusiness
+eAdviser name search endpoint to find similar ACRA-registered business names.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GOBIZ_EADVISER_API_BASE_URL` | `https://api.eadviser.gobusiness.gov.sg` | Base URL of the GoBusiness eAdviser API used by the company name availability check |
+
 ## Storage
 
 | Variable | Default | Description |

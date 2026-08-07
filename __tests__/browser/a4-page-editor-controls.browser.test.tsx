@@ -12,6 +12,11 @@ import {
 import { A4PageEditor } from '@/components/documents/a4-page-editor';
 import '@/app/globals.css';
 
+declare global {
+  // React's act() checks this flag on globalThis to enable act environment.
+  var IS_REACT_ACT_ENVIRONMENT: boolean | undefined;
+}
+
 describe('A4PageEditor page controls', () => {
   let host: HTMLDivElement;
   let root: Root;

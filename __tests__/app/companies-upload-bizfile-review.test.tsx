@@ -237,6 +237,34 @@ describe('companies upload BizFile review integration', () => {
     expect(mocks.fetch.mock.calls.some(([url]) => String(url).endsWith('/confirm'))).toBe(false);
   });
 
+  it('shows the nominee flag for an added shareholder in update mode', async () => {
+    const nomineeShareholder = {
+      name: 'Jamie Lim', type: 'INDIVIDUAL' as const, isNominee: true, shareClass: 'ORDINARY', numberOfShares: 1,
+    };
+    mocks.searchParams = new URLSearchParams('companyId=company-1');
+    mocks.upload.mockResolvedValueOnce(jsonResponse({ documentId: 'doc-1' }));
+    mocks.fetch.mockImplementation(() => Promise.resolve(jsonResponse({ matches: {} })));
+    mocks.fetch.mockResolvedValueOnce(jsonResponse({
+      extractedData: { ...extractedData, shareholders: [nomineeShareholder] },
+      diff: {
+        hasDifferences: true, differences: [], existingCompany: { name: 'Existing Pte. Ltd.', uen: '202400001A' },
+        shareholderDiffs: [{
+          type: 'added', sourceRecordId: 'shareholders.0', name: nomineeShareholder.name,
+          shareholderType: 'INDIVIDUAL', extractedData: nomineeShareholder,
+        }],
+      },
+      companyUpdatedAt: '2026-07-12T00:00:00.000Z',
+    }));
+
+    const view = render(<UploadBizFilePage />);
+    fireEvent.change(view.container.querySelector('input[type="file"]')!, {
+      target: { files: [new File(['pdf'], 'bizfile.pdf', { type: 'application/pdf' })] },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Upload & Extract' }));
+    expect(await screen.findByText('Nominee:')).toBeVisible();
+    expect(screen.getByText('Yes')).toBeVisible();
+  });
+
   it('requires and sends an explicit contact decision for an update-mode match', async () => {
     const officerData = {
       ...extractedData,

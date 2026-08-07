@@ -26,6 +26,7 @@ export interface ResolveContactIdentityResult {
   contact: Contact;
   outcome:
     | 'CREATED'
+    | 'RESTORED'
     | 'REUSED_IDENTIFIER'
     | 'REUSED_NAME'
     | 'REUSED_ALIAS'
@@ -484,7 +485,7 @@ function buildEnrichment(
 
   if (hasUsableIdentificationNumber(candidate)) {
     const incomingType = candidate.identificationType!;
-    const incomingNumber = candidate.identificationNumber!;
+    const incomingNumber = candidate.identificationNumber!.trim() || null;
     const existingType = existing.identificationType;
     const existingNumber = existing.identificationNumber;
     if (isBlank(existingType) && isBlank(existingNumber)) {
@@ -545,6 +546,24 @@ const identityRelationsInclude = {
     },
   },
 } as const;
+
+async function findRawIdentifierDuplicate(
+  candidate: ContactIdentityCandidate,
+  tenantId: string,
+  db: PrismaTransactionClient | typeof prisma,
+): Promise<ContactWithIdentityRelations | null> {
+  if (!hasUsableIdentificationNumber(candidate)) return null;
+  const identificationNumber = candidate.identificationNumber?.trim() || null;
+  if (!identificationNumber || !candidate.identificationType) return null;
+  return db.contact.findFirst({
+    where: {
+      tenantId,
+      identificationType: candidate.identificationType,
+      identificationNumber,
+    },
+    include: identityRelationsInclude,
+  }) as Promise<ContactWithIdentityRelations | null>;
+}
 
 function sourceChangeSource(source: ContactIdentityCandidate['source']): 'MANUAL' | 'BIZFILE_UPLOAD' | 'API' {
   if (source === 'BIZFILE') return 'BIZFILE_UPLOAD';
@@ -706,6 +725,76 @@ async function resolveInTransaction(
   }
   if (decision.action === 'CREATE_SEPARATE') selected = undefined;
 
+  let restoredContactId: string | null = null;
+  if (!selected) {
+    const identifierDuplicate = await findRawIdentifierDuplicate(candidate, params.tenantId, tx);
+    if (identifierDuplicate) {
+      const identifierLabel = `${identifierDuplicate.identificationType ?? 'UNKNOWN'}:${identifierDuplicate.identificationNumber ?? ''}`;
+      if (decision.action === 'CREATE_SEPARATE') {
+        throw new Error(
+          `Cannot create a separate contact: ${identifierLabel} already exists on contact "${identifierDuplicate.fullName}"`,
+        );
+      }
+      if (identifierDuplicate.contactType !== candidate.contactType) {
+        throw new Error(
+          `Contact identifier ${identifierLabel} already exists as a ${identifierDuplicate.contactType} contact "${identifierDuplicate.fullName}"`,
+        );
+      }
+      if (identifierDuplicate.deletedAt !== null || !identifierDuplicate.isActive) {
+        restoredContactId = identifierDuplicate.id;
+        await tx.contact.update({
+          where: { id: identifierDuplicate.id },
+          data: { deletedAt: null, isActive: true },
+        });
+        const restored = await tx.contact.findFirst({
+          where: { id: identifierDuplicate.id, tenantId: params.tenantId },
+          include: identityRelationsInclude,
+        }) as ContactWithIdentityRelations | null;
+        if (!restored) {
+          throw new Error(`Restored contact ${identifierDuplicate.id} could not be reloaded`);
+        }
+        await createAuditLog({
+          tenantId: params.tenantId,
+          userId: params.userId,
+          action: 'RESTORE',
+          entityType: 'Contact',
+          entityId: restored.id,
+          entityName: restored.fullName,
+          summary: `Restored contact "${restored.fullName}" while resolving a matching identifier`,
+          changeSource: sourceChangeSource(candidate.source),
+          metadata: { source: candidate.source, sourceRecordId: candidate.sourceRecordId },
+        }, tx as Prisma.TransactionClient);
+        selected = {
+          contact: restored,
+          record: toIdentityRecord(restored),
+          match: {
+            contactId: restored.id,
+            score: 1,
+            automatic: true,
+            blockedByIdentifierConflict: false,
+            reasons: ['IDENTIFIER'],
+            conflicts: [],
+          },
+        };
+      } else {
+        // Active same-type row that the active-scope search missed (e.g. created by a
+        // concurrent import under a different lock key). Reuse it instead of colliding.
+        selected = {
+          contact: identifierDuplicate,
+          record: toIdentityRecord(identifierDuplicate),
+          match: {
+            contactId: identifierDuplicate.id,
+            score: 1,
+            automatic: true,
+            blockedByIdentifierConflict: false,
+            reasons: ['IDENTIFIER'],
+            conflicts: [],
+          },
+        };
+      }
+    }
+  }
+
   if (!selected) {
     const reviewMatch = ranked.find(({ match }) => match.score > 0 || match.conflicts.length > 0);
     if (decision.action === 'CREATE_SEPARATE') {
@@ -767,6 +856,17 @@ async function resolveInTransaction(
   }
 
   const enrichment = buildEnrichment(candidate, selected.contact);
+  if (
+    enrichment.fields.includes('identificationType') ||
+    enrichment.fields.includes('identificationNumber')
+  ) {
+    const identifierDuplicate = await findRawIdentifierDuplicate(candidate, params.tenantId, tx);
+    if (identifierDuplicate && identifierDuplicate.id !== selected.contact.id) {
+      throw new Error(
+        `Cannot assign ${identifierDuplicate.identificationType ?? 'UNKNOWN'}:${identifierDuplicate.identificationNumber ?? ''} to "${selected.contact.fullName}" because it already exists on contact "${identifierDuplicate.fullName}"`,
+      );
+    }
+  }
   const updated = enrichment.fields.length > 0
     ? await tx.contact.update({ where: { id: selected.contact.id }, data: enrichment.data })
     : selected.contact;
@@ -786,7 +886,9 @@ async function resolveInTransaction(
     }, tx as Prisma.TransactionClient);
   }
   const reasons = selected.match.reasons;
-  const outcome = reasons.some((reason) => reason === 'IDENTIFIER' || reason === 'CORPORATE_UEN')
+  const outcome = restoredContactId === selected.contact.id
+    ? 'RESTORED'
+    : reasons.some((reason) => reason === 'IDENTIFIER' || reason === 'CORPORATE_UEN')
     ? 'REUSED_IDENTIFIER'
     : reasons.includes('APPROVED_ALIAS')
       ? 'REUSED_ALIAS'
@@ -798,7 +900,9 @@ async function resolveInTransaction(
     entityType: 'Contact',
     entityId: updated.id,
     entityName: updated.fullName,
-    summary: `Reused contact "${updated.fullName}" through identity resolution`,
+    summary: outcome === 'RESTORED'
+      ? `Restored contact "${updated.fullName}" through identity resolution`
+      : `Reused contact "${updated.fullName}" through identity resolution`,
     changeSource: sourceChangeSource(candidate.source),
     metadata: {
       source: candidate.source,
