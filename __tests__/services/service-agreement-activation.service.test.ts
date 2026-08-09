@@ -3,7 +3,7 @@ import type { Prisma } from '@/generated/prisma';
 
 const prismaMock = vi.hoisted(() => ({
   serviceAgreement: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
-  clientService: { findUnique: vi.fn(), create: vi.fn(), count: vi.fn() },
+  clientService: { findUnique: vi.fn(), create: vi.fn(), count: vi.fn(), update: vi.fn() },
   clientServiceFeeLine: { createMany: vi.fn() },
   generatedDocument: { updateMany: vi.fn() },
   esigningEnvelopeDocument: { findMany: vi.fn() },
@@ -60,6 +60,19 @@ describe('service agreement activation', () => {
     expect(prismaMock.clientService.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ source: 'AGREEMENT' }) }));
     expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledTimes(1);
     expect(prismaMock.clientServiceFeeLine.createMany).toHaveBeenCalledWith(expect.objectContaining({ data: [expect.objectContaining({ sourceAgreementFeeLineId: 'agreement-fee-1' })] }));
+  });
+
+  it('creates an independent agreement service when a manual row with null lineage already exists', async () => {
+    prismaMock.serviceAgreement.findFirst.mockResolvedValue(agreement);
+    prismaMock.clientService.findUnique.mockResolvedValue(null);
+
+    const result = await processServiceAgreementActivation({ agreementId: agreement.id, tenantId: agreement.tenantId, claimToken: 'claim-1' });
+
+    expect(result).toEqual({ status: 'completed', clientServiceCount: 2 });
+    expect(prismaMock.clientService.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ source: 'AGREEMENT', agreementItemId: 'item-1' }),
+    }));
+    expect(prismaMock.clientService.update).not.toHaveBeenCalled();
   });
 
   it('returns without modifying operational rows after completion', async () => {

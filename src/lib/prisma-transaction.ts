@@ -5,7 +5,7 @@ interface SerializableTransactionClient<TTransaction> {
   ): Promise<TResult>;
 }
 
-function isSerializationConflict(error: unknown): boolean {
+export function isSerializationConflict(error: unknown): boolean {
   return Boolean(
     error
     && typeof error === 'object'

@@ -6,21 +6,11 @@ import type { SearchClientServicesInput, UpdateClientServiceInput } from '@/lib/
 import { Prisma } from '@/generated/prisma';
 import type { ClientServiceDto, CompanyServiceActivationDto } from './types';
 import { clientServiceInclude, dateOnly, toClientServiceDto, type ClientServiceRecord } from './mapper';
+import { summarizeClientServiceFees } from './fee-summary';
 
 function parseDate(value: string | null | undefined): Date | null | undefined {
   if (value === undefined) return undefined;
   return value === null ? null : new Date(`${value}T00:00:00.000Z`);
-}
-
-function summarizeFees(fees: Array<{ amount: Prisma.Decimal | string; currency: string }>) {
-  const totals = new Map<string, Prisma.Decimal>();
-  for (const fee of fees) {
-    totals.set(fee.currency, (totals.get(fee.currency) ?? new Prisma.Decimal(0)).add(fee.amount.toString()));
-  }
-  return {
-    count: fees.length,
-    totals: Object.fromEntries([...totals].sort(([left], [right]) => left.localeCompare(right)).map(([currency, total]) => [currency, total.toFixed(2)])),
-  };
 }
 
 function sameJson(left: unknown, right: unknown): boolean {
@@ -99,8 +89,8 @@ export async function updateClientService(id: string, input: UpdateClientService
       ['familyName', 'serviceName', 'status', 'serviceCadence', 'customCadenceLabel', 'startDate', 'endDate'],
     ) ?? {};
     const fieldValuesChanged = input.fieldValues !== undefined && !sameJson(current.fieldValues, input.fieldValues);
-    const feeSummaryBefore = summarizeFees(current.feeLines);
-    const feeSummaryAfter = input.feeLines ? summarizeFees(input.feeLines) : feeSummaryBefore;
+    const feeSummaryBefore = summarizeClientServiceFees(current.feeLines);
+    const feeSummaryAfter = input.feeLines ? summarizeClientServiceFees(input.feeLines) : feeSummaryBefore;
     const feesChanged = input.feeLines !== undefined && !sameJson(
       current.feeLines.map((fee) => ({ id: fee.id, description: fee.description, amount: fee.amount.toFixed(2), currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: dateOnly(fee.billingStartDate), displayOrder: fee.displayOrder })),
       input.feeLines.map((fee) => ({ ...fee, customFrequencyLabel: fee.customFrequencyLabel ?? null, billingStartDate: fee.billingStartDate ?? null })),
