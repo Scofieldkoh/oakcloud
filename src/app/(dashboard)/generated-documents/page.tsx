@@ -1,19 +1,38 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, AlertCircle, Search } from 'lucide-react';
+import {
+  Plus,
+  AlertCircle,
+  Search,
+  X,
+  Clock,
+  CheckCircle,
+  Archive,
+  CalendarDays,
+  FileText,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { usePermissions } from '@/hooks/use-permissions';
+import { FilterChip } from '@/components/ui/filter-chip';
+import { cn } from '@/lib/utils';
+import { useCompanySearch } from '@/hooks/use-company-search';
+import type { SelectOption } from '@/components/ui/searchable-select';
 import {
   readSessionListSnapshot,
   writeSessionListSnapshot,
 } from '@/hooks/use-session-query-restore';
-import { DocumentTable, type GeneratedDocument } from '@/components/documents/document-table';
-import { DocumentGenerationTabs } from '@/components/documents/document-generation-tabs';
+import {
+  DocumentTable,
+  type GeneratedDocument,
+  type GeneratedDocumentFilters,
+  type GeneratedDocumentSortField,
+  type GeneratedDocumentSortOrder,
+} from '@/components/documents/document-table';
 import { Pagination } from '@/components/ui/pagination';
 
 // ============================================================================
@@ -27,13 +46,32 @@ interface DocumentListResponse {
   limit: number;
 }
 
+const STATUS_LABELS: Record<GeneratedDocument['status'], string> = {
+  DRAFT: 'Draft',
+  FINALIZED: 'Finalized',
+  ARCHIVED: 'Archived',
+};
+
 function generatedDocumentsListKey(
   page: number,
   searchQuery: string,
-  statusFilter: string,
-  companyFilter: string,
+  filters: GeneratedDocumentFilters,
 ): readonly unknown[] {
-  return ['generated-documents', page, searchQuery, statusFilter, companyFilter];
+  return [
+    'generated-documents',
+    page,
+    searchQuery,
+    filters.title,
+    filters.companyId,
+    filters.companyName,
+    filters.templateId,
+    filters.status,
+    filters.createdBy,
+    filters.updatedFrom,
+    filters.updatedTo,
+    filters.sortBy,
+    filters.sortOrder,
+  ];
 }
 
 function isDocumentListResponse(value: unknown): value is DocumentListResponse {
@@ -46,6 +84,13 @@ function isDocumentListResponse(value: unknown): value is DocumentListResponse {
   );
 }
 
+function toLocalDateString(date?: Date): string | undefined {
+  if (!date) return undefined;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 // ============================================================================
 // Main Page Component
@@ -65,12 +110,33 @@ export default function GeneratedDocumentsPage() {
   // Initial URL-derived list state, used both for filters and for restoring the
   // last-known list snapshot when this page is mounted cold (e.g. browser Back).
   const initialSearchQuery = searchParams.get('q') || '';
+  const initialTitleFilter = searchParams.get('title') || '';
+  const initialCompanyIdFilter = searchParams.get('companyId') || '';
+  const initialCompanyFilter = searchParams.get('company') || searchParams.get('companyName') || '';
+  const initialTemplateIdFilter = searchParams.get('templateId') || '';
   const initialStatusFilter = searchParams.get('status') || '';
-  const initialCompanyFilter = searchParams.get('company') || '';
+  const initialCreatedByFilter = searchParams.get('createdBy') || '';
+  const initialUpdatedFrom = searchParams.get('updatedFrom') || '';
+  const initialUpdatedTo = searchParams.get('updatedTo') || '';
+  const initialSortBy = (searchParams.get('sortBy') as GeneratedDocumentSortField | null) || 'updatedAt';
+  const initialSortOrder: GeneratedDocumentSortOrder =
+    searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
   const initialPage = parseInt(searchParams.get('page') || '1', 10);
+
   const [initialListSnapshot] = useState<DocumentListResponse | undefined>(() => {
     const snapshot = readSessionListSnapshot<DocumentListResponse>(
-      generatedDocumentsListKey(initialPage, initialSearchQuery, initialStatusFilter, initialCompanyFilter),
+      generatedDocumentsListKey(initialPage, initialSearchQuery, {
+        title: initialTitleFilter || undefined,
+        companyId: initialCompanyIdFilter || undefined,
+        companyName: initialCompanyFilter || undefined,
+        templateId: initialTemplateIdFilter || undefined,
+        status: (initialStatusFilter || undefined) as GeneratedDocument['status'] | undefined,
+        createdBy: initialCreatedByFilter || undefined,
+        updatedFrom: initialUpdatedFrom || undefined,
+        updatedTo: initialUpdatedTo || undefined,
+        sortBy: initialSortBy,
+        sortOrder: initialSortOrder,
+      }),
     );
     return isDocumentListResponse(snapshot) ? snapshot : undefined;
   });
@@ -88,11 +154,53 @@ export default function GeneratedDocumentsPage() {
 
   // Filters
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
-  const [statusFilter, setStatusFilter] = useState<string>(initialStatusFilter);
-  const [companyFilter, setCompanyFilter] = useState<string>(initialCompanyFilter);
+  const [filters, setFilters] = useState<GeneratedDocumentFilters>({
+    title: initialTitleFilter || undefined,
+    companyId: initialCompanyIdFilter || undefined,
+    companyName: initialCompanyFilter || undefined,
+    templateId: initialTemplateIdFilter || undefined,
+    status: (initialStatusFilter || undefined) as GeneratedDocument['status'] | undefined,
+    createdBy: initialCreatedByFilter || undefined,
+    updatedFrom: initialUpdatedFrom || undefined,
+    updatedTo: initialUpdatedTo || undefined,
+    sortBy: initialSortBy,
+    sortOrder: initialSortOrder,
+  });
   const [page, setPage] = useState(initialPage);
   const limit = 20; // More items per page for list view
   const firstFetchRef = useRef(true);
+
+  const {
+    searchQuery: companySearchQuery,
+    setSearchQuery: setCompanySearchQuery,
+    options: companyOptions,
+    isLoading: companiesLoading,
+  } = useCompanySearch({ limit: 20 });
+
+  const [templateOptions, setTemplateOptions] = useState<SelectOption[]>([]);
+
+  useEffect(() => {
+    let active = true;
+
+    fetch('/api/document-templates?limit=100&sortBy=name&sortOrder=asc')
+      .then((response) => (response.ok ? response.json() : { templates: [] }))
+      .then((data: { templates?: Array<{ id: string; name: string }> }) => {
+        if (!active) return;
+        setTemplateOptions(
+          (data.templates ?? []).map((template) => ({
+            value: template.id,
+            label: template.name,
+          })),
+        );
+      })
+      .catch(() => {
+        if (active) setTemplateOptions([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Fetch documents
   const fetchDocuments = useCallback(async () => {
@@ -104,8 +212,16 @@ export default function GeneratedDocumentsPage() {
     try {
       const params = new URLSearchParams();
       if (searchQuery) params.set('query', searchQuery);
-      if (statusFilter) params.set('status', statusFilter);
-      if (companyFilter) params.set('companyName', companyFilter);
+      if (filters.title) params.set('title', filters.title);
+      if (filters.companyId) params.set('companyId', filters.companyId);
+      if (filters.companyName) params.set('companyName', filters.companyName);
+      if (filters.templateId) params.set('templateId', filters.templateId);
+      if (filters.status) params.set('status', filters.status);
+      if (filters.createdBy) params.set('createdBy', filters.createdBy);
+      if (filters.updatedFrom) params.set('updatedFrom', filters.updatedFrom);
+      if (filters.updatedTo) params.set('updatedTo', filters.updatedTo);
+      if (filters.sortBy) params.set('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.set('sortOrder', filters.sortOrder);
       params.set('page', page.toString());
       params.set('limit', limit.toString());
 
@@ -118,7 +234,7 @@ export default function GeneratedDocumentsPage() {
       setDocuments(data.documents);
       setTotal(data.total);
       writeSessionListSnapshot(
-        generatedDocumentsListKey(page, searchQuery, statusFilter, companyFilter),
+        generatedDocumentsListKey(page, searchQuery, filters),
         data,
       );
     } catch (err) {
@@ -127,11 +243,61 @@ export default function GeneratedDocumentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, statusFilter, companyFilter, page, initialListSnapshot]);
+  }, [searchQuery, filters, page, initialListSnapshot]);
 
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
+
+  // Filter handlers
+  const handleFilterChange = useCallback((patch: Partial<GeneratedDocumentFilters>) => {
+    setFilters((previous) => {
+      const next = { ...previous, ...patch };
+      if ('companyId' in patch) {
+        next.companyName = undefined;
+      }
+      return next;
+    });
+    setPage(1);
+  }, []);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  }, []);
+
+  const handleSortChange = useCallback((field: GeneratedDocumentSortField) => {
+    setFilters((previous) => ({
+      ...previous,
+      sortBy: field,
+      sortOrder:
+        previous.sortBy === field && previous.sortOrder === 'asc' ? 'desc' : 'asc',
+    }));
+    setPage(1);
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setFilters((previous) => ({
+      sortBy: previous.sortBy,
+      sortOrder: previous.sortOrder,
+    }));
+    setPage(1);
+  }, []);
+
+  const today = toLocalDateString(new Date());
+  const isUpdatedToday = Boolean(
+    today && filters.updatedFrom === today && filters.updatedTo === today,
+  );
+
+  const toggleUpdatedToday = useCallback(() => {
+    setFilters((previous) => {
+      const active = previous.updatedFrom === today && previous.updatedTo === today;
+      return active
+        ? { ...previous, updatedFrom: undefined, updatedTo: undefined }
+        : { ...previous, updatedFrom: today, updatedTo: today };
+    });
+    setPage(1);
+  }, [today]);
 
   // Handle delete
   const handleDelete = async (reason?: string) => {
@@ -213,11 +379,90 @@ export default function GeneratedDocumentsPage() {
     }
   };
 
+  // Active filter chips
+  const activeFilterChips = useMemo(() => {
+    const chips: Array<{ key: string; label: string; value: string; onRemove: () => void }> = [];
+
+    if (searchQuery.trim()) {
+      chips.push({
+        key: 'query',
+        label: 'Search',
+        value: searchQuery,
+        onRemove: () => handleSearchChange(''),
+      });
+    }
+    if (filters.title) {
+      chips.push({
+        key: 'title',
+        label: 'Title',
+        value: filters.title,
+        onRemove: () => handleFilterChange({ title: undefined }),
+      });
+    }
+    const companyOption = companyOptions.find((option) => option.id === filters.companyId);
+    if (filters.companyId || filters.companyName) {
+      chips.push({
+        key: 'company',
+        label: 'Company',
+        value: companyOption?.label || filters.companyName || filters.companyId || '',
+        onRemove: () => handleFilterChange({ companyId: undefined, companyName: undefined }),
+      });
+    }
+    if (filters.templateId) {
+      const templateOption = templateOptions.find((option) => option.value === filters.templateId);
+      chips.push({
+        key: 'template',
+        label: 'Template',
+        value: templateOption?.label || filters.templateId,
+        onRemove: () => handleFilterChange({ templateId: undefined }),
+      });
+    }
+    if (filters.status) {
+      chips.push({
+        key: 'status',
+        label: 'Status',
+        value: STATUS_LABELS[filters.status] || filters.status,
+        onRemove: () => handleFilterChange({ status: undefined }),
+      });
+    }
+    if (filters.createdBy) {
+      chips.push({
+        key: 'createdBy',
+        label: 'Created By',
+        value: filters.createdBy,
+        onRemove: () => handleFilterChange({ createdBy: undefined }),
+      });
+    }
+    if (filters.updatedFrom || filters.updatedTo) {
+      chips.push({
+        key: 'updated',
+        label: 'Updated',
+        value: `${filters.updatedFrom || '...'} to ${filters.updatedTo || '...'}`,
+        onRemove: () => handleFilterChange({ updatedFrom: undefined, updatedTo: undefined }),
+      });
+    }
+
+    return chips;
+  }, [
+    filters,
+    handleFilterChange,
+    handleSearchChange,
+    searchQuery,
+    companyOptions,
+    templateOptions,
+  ]);
+
+  const quickFilterClassName = (active: boolean) => cn(
+    'inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30',
+    active
+      ? 'bg-oak-primary text-white hover:bg-oak-dark'
+      : 'text-text-secondary hover:bg-background-tertiary hover:text-text-primary',
+  );
+
   const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="p-4 sm:p-6">
-      <DocumentGenerationTabs />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -228,61 +473,129 @@ export default function GeneratedDocumentsPage() {
             Manage and export your generated documents
           </p>
         </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="flex-1 min-w-[200px] max-w-md relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search documents..."
-            className="w-full pl-9 pr-4 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
-          />
-        </div>
-
-        {/* Company Filter */}
-        <input
-          type="text"
-          value={companyFilter}
-          onChange={(e) => {
-            setCompanyFilter(e.target.value);
-            setPage(1);
-          }}
-          placeholder="Filter by company..."
-          className="px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-primary min-w-[150px]"
-        />
-
-        {/* Status Filter */}
-        <select
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value);
-            setPage(1);
-          }}
-          className="px-3 py-2 text-sm border border-border-primary rounded-lg bg-background-elevated text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
-        >
-          <option value="">All Statuses</option>
-          <option value="DRAFT">Draft</option>
-          <option value="FINALIZED">Finalized</option>
-          <option value="ARCHIVED">Archived</option>
-        </select>
-
-        <div className="flex-1" />
-
-        {canCreate && (
-          <Link href="/generated-documents/generate">
-            <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-              Generate Document
-            </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/template-partials"
+            className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-border-primary bg-background-elevated px-4 text-sm font-medium text-text-primary transition-colors hover:bg-background-tertiary sm:min-h-8"
+          >
+            <FileText className="h-4 w-4" aria-hidden="true" />
+            Manage Template
           </Link>
-        )}
+          {canCreate && (
+            <Link href="/generated-documents/generate">
+              <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+                Generate Document
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
+
+      {/* Toolbar: search + quick filters */}
+      <div className="mb-4">
+        <div className="flex flex-col gap-3 rounded-lg border border-border-primary bg-background-secondary p-4 lg:flex-row lg:items-center">
+          <label className="relative block flex-1">
+            <span className="sr-only">Search documents</span>
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              aria-label="Search documents"
+              value={searchQuery}
+              onChange={(event) => handleSearchChange(event.target.value)}
+              placeholder="Search by title, company, or template..."
+              className="h-10 w-full rounded-lg border border-border-primary bg-background-primary pl-10 pr-9 text-sm text-text-primary transition-colors placeholder:text-text-muted hover:border-oak-primary/50 focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => handleSearchChange('')}
+                aria-label="Clear search"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-text-muted transition-colors hover:bg-background-tertiary hover:text-text-primary"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </label>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              aria-pressed={filters.status === 'DRAFT'}
+              aria-label="Show drafts"
+              title="Show drafts"
+              onClick={() => handleFilterChange({
+                status: filters.status === 'DRAFT' ? undefined : 'DRAFT',
+              })}
+              className={quickFilterClassName(filters.status === 'DRAFT')}
+            >
+              <Clock className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden xl:inline">Draft</span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={filters.status === 'FINALIZED'}
+              aria-label="Show finalized documents"
+              title="Show finalized documents"
+              onClick={() => handleFilterChange({
+                status: filters.status === 'FINALIZED' ? undefined : 'FINALIZED',
+              })}
+              className={quickFilterClassName(filters.status === 'FINALIZED')}
+            >
+              <CheckCircle className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden xl:inline">Finalized</span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={filters.status === 'ARCHIVED'}
+              aria-label="Show archived documents"
+              title="Show archived documents"
+              onClick={() => handleFilterChange({
+                status: filters.status === 'ARCHIVED' ? undefined : 'ARCHIVED',
+              })}
+              className={quickFilterClassName(filters.status === 'ARCHIVED')}
+            >
+              <Archive className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden xl:inline">Archived</span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={isUpdatedToday}
+              aria-label="Show documents updated today"
+              title="Show documents updated today"
+              onClick={toggleUpdatedToday}
+              className={quickFilterClassName(isUpdatedToday)}
+            >
+              <CalendarDays className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden xl:inline">Updated today</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Active filter chips */}
+      {activeFilterChips.length > 0 && (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <span className="text-sm text-text-secondary font-medium">Active filters:</span>
+          {activeFilterChips.map((chip) => (
+            <FilterChip
+              key={chip.key}
+              label={chip.label}
+              value={chip.value}
+              onRemove={chip.onRemove}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="text-sm text-oak-primary hover:text-oak-primary/80 font-medium transition-colors ml-2"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Error state */}
       {error && (
@@ -308,8 +621,15 @@ export default function GeneratedDocumentsPage() {
           canEdit={canUpdate}
           canDelete={canDelete}
           canExport={canExport}
-          canShare={canUpdate}
           canCreate={canCreate}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onSortChange={handleSortChange}
+          companyOptions={companyOptions}
+          companySearchQuery={companySearchQuery}
+          companySearchLoading={companiesLoading}
+          onCompanySearchChange={setCompanySearchQuery}
+          templateOptions={templateOptions}
         />
       </div>
 
@@ -317,16 +637,16 @@ export default function GeneratedDocumentsPage() {
       {!isLoading && totalPages > 0 && (
         <div className="mt-4">
           <Pagination
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          limit={limit}
-          onPageChange={setPage}
-          onLimitChange={() => {
-            setPage(1);
-            // Note: limit is a const, so we need to refetch with new limit
-            // For now, we'll keep the current behavior
-          }}
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={() => {
+              setPage(1);
+              // Note: limit is a const, so we need to refetch with new limit
+              // For now, we'll keep the current behavior
+            }}
           />
         </div>
       )}

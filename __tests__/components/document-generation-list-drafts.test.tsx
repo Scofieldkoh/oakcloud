@@ -2,6 +2,19 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { DocumentTable, type GeneratedDocument } from '@/components/documents/document-table';
 
+vi.mock('@/hooks/use-user-preferences', () => ({
+  useUserPreferences: () => ({
+    data: {
+      'generated-documents:list:columns:v1': {
+        key: 'generated-documents:list:columns:v1',
+        value: {},
+        updatedAt: null,
+      },
+    },
+  }),
+  useUpsertUserPreference: () => ({ mutate: vi.fn() }),
+}));
+
 const baseDocument: GeneratedDocument = {
   id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   title: 'Board resolution draft',

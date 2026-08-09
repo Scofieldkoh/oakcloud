@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
-import { DocumentGenerationTabs } from '@/components/documents/document-generation-tabs';
 import { ServiceCatalogPanel } from '@/components/documents/service-catalog/service-catalog-panel';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
@@ -1118,7 +1117,6 @@ export default function TemplatesPage() {
 
   return (
     <div className="p-4 sm:p-6">
-      <DocumentGenerationTabs />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>

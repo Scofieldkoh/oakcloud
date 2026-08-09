@@ -905,6 +905,39 @@ describe('TaskStageModal', () => {
     expect(screen.getByRole('button', { name: 'Link selected company' })).toBeEnabled();
   });
 
+  it('explains why a Company Profile stage is failed and offers relinking', () => {
+    const companyStage: TaskStageDetail = {
+      ...stageDetail,
+      id: 'stage-company',
+      name: 'Company Profile',
+      actionType: 'COMPANY_PROFILE',
+      status: 'FAILED',
+      blockers: [],
+      outcomeSummary: null,
+      launch: {
+        href: null,
+        context: { taskId: task.id, taskStageId: 'stage-company' },
+      },
+    };
+
+    render(
+      <TaskStageModal
+        isOpen
+        stage={companyStage}
+        companies={[{ id: 'company-other', name: 'Other Pte. Ltd.' }]}
+        taskCompanyId={null}
+        onClose={vi.fn()}
+        onUpdateMetadata={vi.fn()}
+        onTransition={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('alert', { name: 'Linked company no longer available' }))
+      .toHaveTextContent(/no longer available.*marked as failed/i);
+    expect(screen.getByRole('heading', { name: '2. Or link an existing company' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Select an existing company' })).toBeDisabled();
+  });
+
   it('autosaves notes after typing without a manual save action', async () => {
     let resolveSave!: () => void;
     const onUpdateMetadata = vi.fn(() => new Promise<void>((resolve) => {

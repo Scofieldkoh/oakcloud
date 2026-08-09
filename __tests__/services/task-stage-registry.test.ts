@@ -369,9 +369,11 @@ describe('task snapshots and stage mutations', () => {
   describe('stage-authoritative Company callback ordering', () => {
     const companyA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
     const companyB = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-    let recoveryCompanyId = companyA;
+    let recoveryCompanyId: string | null = companyA;
+    let deletedCompanyId: string | null = null;
 
     beforeEach(() => {
+      deletedCompanyId = null;
       mocks.stageFindFirst.mockResolvedValue({
         id: 'stage-1',
         tenantId: 'tenant-a',
@@ -404,8 +406,13 @@ describe('task snapshots and stage mutations', () => {
         }]);
       });
       mocks.companyFindFirst.mockImplementation(({ where }: {
-        where: { id: string };
-      }) => Promise.resolve({ id: where.id, name: `Company ${where.id}` }));
+        where: { id: string; tenantId?: string; deletedAt?: null };
+      }) => {
+        if (where.deletedAt === null && where.id === deletedCompanyId) {
+          return Promise.resolve(null);
+        }
+        return Promise.resolve({ id: where.id, name: `Company ${where.id}` });
+      });
       mocks.outcomeUpsert.mockResolvedValue({ id: 'outcome-1' });
       mocks.recoveryUpsert.mockResolvedValue({ id: 'recovery-1' });
       mocks.stageUpdate.mockResolvedValue({ id: 'stage-1' });
@@ -419,13 +426,15 @@ describe('task snapshots and stage mutations', () => {
       mocks.taskUpdate.mockResolvedValue({ id: 'task-1' });
     });
 
-    it('does not let delayed Company A overwrite Company B after B recovery commits', async () => {
+    it('does not let a protected callback replace active Company B after B recovery commits', async () => {
       recoveryCompanyId = companyB;
 
       const result = await linkTaskStageOutcome('tenant-a', 'stage-1', {
         type: 'COMPANY',
         companyId: companyA,
-      }, 'user-1');
+      }, 'user-1', {
+        protectAuthoritativeCompany: true,
+      });
 
       expect(result).toEqual(expect.objectContaining({
         stale: true,
@@ -434,6 +443,64 @@ describe('task snapshots and stage mutations', () => {
       expect(mocks.outcomeUpsert).not.toHaveBeenCalled();
       expect(mocks.taskUpdate).not.toHaveBeenCalled();
       expect(mocks.stageUpdate).not.toHaveBeenCalled();
+    });
+
+    it('lets an explicit stage link replace an active Company B like task metadata', async () => {
+      recoveryCompanyId = companyB;
+
+      const result = await linkTaskStageOutcome('tenant-a', 'stage-1', {
+        type: 'COMPANY',
+        companyId: companyA,
+      }, 'user-1');
+
+      expect(result).toEqual(expect.objectContaining({
+        outcome: expect.objectContaining({ id: 'outcome-1' }),
+        status: TaskStageStatus.COMPLETED,
+      }));
+      expect(mocks.outcomeUpsert).toHaveBeenCalledWith(expect.objectContaining({
+        update: expect.objectContaining({ companyId: companyA }),
+      }));
+      expect(mocks.recoveryUpsert).toHaveBeenCalledWith(expect.objectContaining({
+        update: expect.objectContaining({ companyId: companyA }),
+      }));
+    });
+
+    it('lets an explicit link replace a hard-deleted Company B tombstone', async () => {
+      recoveryCompanyId = null;
+
+      const result = await linkTaskStageOutcome('tenant-a', 'stage-1', {
+        type: 'COMPANY',
+        companyId: companyA,
+      }, 'user-1');
+
+      expect(result).toEqual(expect.objectContaining({
+        outcome: expect.objectContaining({ id: 'outcome-1' }),
+        status: TaskStageStatus.COMPLETED,
+      }));
+      expect(mocks.outcomeUpsert).toHaveBeenCalledWith(expect.objectContaining({
+        update: expect.objectContaining({ companyId: companyA }),
+      }));
+      expect(mocks.recoveryUpsert).toHaveBeenCalledWith(expect.objectContaining({
+        update: expect.objectContaining({ companyId: companyA }),
+      }));
+    });
+
+    it('lets an explicit link replace a soft-deleted Company B', async () => {
+      recoveryCompanyId = companyB;
+      deletedCompanyId = companyB;
+
+      const result = await linkTaskStageOutcome('tenant-a', 'stage-1', {
+        type: 'COMPANY',
+        companyId: companyA,
+      }, 'user-1');
+
+      expect(result).toEqual(expect.objectContaining({
+        outcome: expect.objectContaining({ id: 'outcome-1' }),
+        status: TaskStageStatus.COMPLETED,
+      }));
+      expect(mocks.outcomeUpsert).toHaveBeenCalledWith(expect.objectContaining({
+        update: expect.objectContaining({ companyId: companyA }),
+      }));
     });
 
     it('lets Company B win when A links before the B recovery commit', async () => {

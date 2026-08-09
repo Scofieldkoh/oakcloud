@@ -10,21 +10,6 @@ export default function ContactsLoading() {
         <div className="skeleton h-9 w-28" />
       </div>
 
-      {/* Stats Cards Skeleton */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="card card-compact sm:p-4">
-            <div className="flex items-center gap-3">
-              <div className="skeleton h-10 w-10 rounded" />
-              <div>
-                <div className="skeleton h-6 w-12 mb-1" />
-                <div className="skeleton h-4 w-16" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* Filters Skeleton */}
       <div className="flex items-center gap-3 mb-6">
         <div className="skeleton h-9 flex-1" />

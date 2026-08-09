@@ -33,9 +33,13 @@ export async function GET(request: NextRequest) {
 
     const params = searchGeneratedDocumentsSchema.parse({
       query: searchParams.get('query') || undefined,
+      title: searchParams.get('title') || undefined,
       companyId: searchParams.get('companyId') || undefined,
       companyName: searchParams.get('companyName') || undefined,
       templateId: searchParams.get('templateId') || undefined,
+      createdBy: searchParams.get('createdBy') || undefined,
+      updatedFrom: searchParams.get('updatedFrom') || undefined,
+      updatedTo: searchParams.get('updatedTo') || undefined,
       status: searchParams.get('status') || undefined,
       page: searchParams.get('page') ? Number(searchParams.get('page')) : undefined,
       limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,

@@ -192,6 +192,92 @@ describe('Document generator service', () => {
     });
   });
 
+  it('applies title, created-by and updated date filters to generated document search', async () => {
+    await searchGeneratedDocuments(
+      {
+        page: 1,
+        limit: 20,
+        sortBy: 'updatedAt',
+        sortOrder: 'desc',
+        title: 'minutes',
+        createdBy: 'sam',
+        updatedFrom: '2026-08-01',
+        updatedTo: '2026-08-07',
+      },
+      'workspace-1'
+    );
+
+    expect(prisma.generatedDocument.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          tenantId: 'workspace-1',
+          deletedAt: null,
+          title: { contains: 'minutes', mode: 'insensitive' },
+          createdBy: {
+            OR: [
+              { firstName: { contains: 'sam', mode: 'insensitive' } },
+              { lastName: { contains: 'sam', mode: 'insensitive' } },
+            ],
+          },
+          updatedAt: {
+            gte: expect.any(Date),
+            lte: expect.any(Date),
+          },
+        }),
+      })
+    );
+  });
+
+  it('sorts generated documents by related company and creator fields', async () => {
+    await searchGeneratedDocuments(
+      {
+        page: 1,
+        limit: 20,
+        sortBy: 'companyName',
+        sortOrder: 'asc',
+      },
+      'workspace-1'
+    );
+
+    expect(prisma.generatedDocument.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: { company: { name: 'asc' } },
+      })
+    );
+
+    await searchGeneratedDocuments(
+      {
+        page: 1,
+        limit: 20,
+        sortBy: 'createdByName',
+        sortOrder: 'desc',
+      },
+      'workspace-1'
+    );
+
+    expect(prisma.generatedDocument.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        orderBy: { createdBy: { firstName: 'desc' } },
+      })
+    );
+
+    await searchGeneratedDocuments(
+      {
+        page: 1,
+        limit: 20,
+        sortBy: 'templateName',
+        sortOrder: 'asc',
+      },
+      'workspace-1'
+    );
+
+    expect(prisma.generatedDocument.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        orderBy: { template: { name: 'asc' } },
+      })
+    );
+  });
+
   it('creates template-generated documents as editable drafts', async () => {
     vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
       id: 'template-1',

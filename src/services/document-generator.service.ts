@@ -1348,6 +1348,14 @@ export async function searchGeneratedDocuments(
     ];
   }
 
+  // Title filter (independent of the global search)
+  if (params.title) {
+    where.title = {
+      contains: params.title.trim(),
+      mode: 'insensitive',
+    };
+  }
+
   // Filters
   if (params.companyId) {
     where.companyId = params.companyId;
@@ -1368,9 +1376,45 @@ export async function searchGeneratedDocuments(
     where.status = params.status;
   }
 
+  // Created-by filter
+  if (params.createdBy) {
+    const searchTerm = params.createdBy.trim();
+    where.createdBy = {
+      OR: [
+        { firstName: { contains: searchTerm, mode: 'insensitive' } },
+        { lastName: { contains: searchTerm, mode: 'insensitive' } },
+      ],
+    };
+  }
+
+  // Updated date range
+  if (params.updatedFrom || params.updatedTo) {
+    where.updatedAt = {
+      ...(params.updatedFrom
+        ? { gte: new Date(`${params.updatedFrom}T00:00:00.000`) }
+        : {}),
+      ...(params.updatedTo
+        ? { lte: new Date(`${params.updatedTo}T23:59:59.999`) }
+        : {}),
+    };
+  }
+
   // Sorting
   const orderBy: Prisma.GeneratedDocumentOrderByWithRelationInput = {};
-  orderBy[params.sortBy] = params.sortOrder;
+  switch (params.sortBy) {
+    case 'companyName':
+      orderBy.company = { name: params.sortOrder };
+      break;
+    case 'createdByName':
+      orderBy.createdBy = { firstName: params.sortOrder };
+      break;
+    case 'templateName':
+      orderBy.template = { name: params.sortOrder };
+      break;
+    default:
+      orderBy[params.sortBy] = params.sortOrder;
+      break;
+  }
 
   // Pagination
   const skip = (params.page - 1) * params.limit;

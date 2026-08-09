@@ -45,6 +45,12 @@ Company validation, task metadata changes, outcome updates, stage transitions, t
 
 Existing authorization remains at the API boundary: the user must be able to update the task and the selected company. Tenant checks remain in the service.
 
+When the task's previously linked company is no longer available (hard-deleted tombstone or soft-deleted record), the affected Company Profile stage is marked `FAILED` and an explicit stage link is allowed to replace the missing company. Explicit stage links may also replace an active linked company, since they run the same synchronization helper as task metadata and produce the same outcome.
+
+The stale-callback guard applies only to background integration callbacks (for example, a late company-creation callback). It rejects the callback only when the recovery context points to a different company that remains active, so a delayed write cannot overwrite a company committed by an explicit user action. When that authoritative company is missing or deleted, even a callback is allowed to replace it.
+
+The stage modal always offers create-and-link actions for non-skipped Company Profile stages, including replacement when a company is already linked.
+
 ## Tests
 
 Regression tests will prove that:

@@ -314,6 +314,11 @@ export function TaskStageModal({
     >
       {isLoading ? <div role="status" className="py-8 text-center text-sm text-text-secondary">Loading stage…</div> : null}
       {error ? <Alert variant="error">{error.message}</Alert> : null}
+      {stage?.actionType === 'COMPANY_PROFILE' && stage.status === 'FAILED' ? (
+        <Alert variant="warning" title="Linked company no longer available">
+          The company previously linked to this stage is no longer available, so the stage was marked as failed. Select a company below to link this stage again.
+        </Alert>
+      ) : null}
       {stage ? (
         <>
           <PipelineStageLinkedOutcome stage={stage} />
@@ -443,7 +448,7 @@ export function TaskStageModal({
                   </div>
                 </div>
               </>
-            ) : null}
+          ) : null}
 
             {stage.checklistItems.length > 0 ? (
               <section>

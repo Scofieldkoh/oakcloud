@@ -867,11 +867,21 @@ async function resolveAuthoritativeOutcome(
   throw new ValidationError('Outcome type and linked entity do not match');
 }
 
+export interface LinkTaskStageOutcomeOptions {
+  /**
+   * Keep background callback links (e.g. a late company-creation callback)
+   * from replacing a company that is still active and already committed.
+   * Explicit stage links pass no option and may replace like task metadata.
+   */
+  protectAuthoritativeCompany?: boolean;
+}
+
 export async function linkTaskStageOutcome(
   tenantId: string,
   stageId: string,
   input: TaskStageOutcomeInput,
   userId?: string,
+  options: LinkTaskStageOutcomeOptions = {},
 ) {
   const parsed = taskStageOutcomeSchema.parse(input);
   let taskId: string | null = null;
@@ -881,7 +891,8 @@ export async function linkTaskStageOutcome(
     const lockedTask = await lockTaskForUpdate(tx, tenantId, stage.taskId);
     assertOutcomeMatchesAction(stage.actionType, parsed.type);
     if (
-      parsed.type === TaskStageOutcomeType.COMPANY
+      options.protectAuthoritativeCompany
+      && parsed.type === TaskStageOutcomeType.COMPANY
       && parsed.companyId
     ) {
       const recovery = await lockCompanyRecoveryContext(
@@ -890,17 +901,30 @@ export async function linkTaskStageOutcome(
         stage.taskId,
         stage.id,
       );
+      const authoritativeCompanyId = recovery?.taskId === stage.taskId
+        ? recovery.companyId
+        : null;
       if (
-        recovery?.taskId === stage.taskId
-        && recovery.companyId !== parsed.companyId
+        authoritativeCompanyId
+        && authoritativeCompanyId !== parsed.companyId
       ) {
-        return {
-          stale: true,
-          authoritativeCompanyId: recovery.companyId,
-          status: stage.status,
-          taskStatus: lockedTask.status,
-          outcome: stage.outcome,
-        };
+        const authoritativeCompany = await tx.company.findFirst({
+          where: {
+            id: authoritativeCompanyId,
+            tenantId,
+            deletedAt: null,
+          },
+          select: { id: true, name: true },
+        });
+        if (authoritativeCompany) {
+          return {
+            stale: true,
+            authoritativeCompanyId,
+            status: stage.status,
+            taskStatus: lockedTask.status,
+            outcome: stage.outcome,
+          };
+        }
       }
     }
     const authoritative = await resolveAuthoritativeOutcome(tx, tenantId, parsed);

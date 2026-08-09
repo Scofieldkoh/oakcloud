@@ -77,6 +77,7 @@ async function linkAuthoritativeOutcome(
     input.context.taskStageId,
     outcome,
     input.userId,
+    { protectAuthoritativeCompany: true },
   );
 }
 

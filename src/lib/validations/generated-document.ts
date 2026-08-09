@@ -106,13 +106,26 @@ export type UpdateGeneratedDocumentInput = z.infer<typeof updateGeneratedDocumen
 
 export const searchGeneratedDocumentsSchema = z.object({
   query: z.string().optional(),
+  title: z.string().optional(),
   companyId: z.string().uuid().optional(),
   companyName: z.string().optional(), // Free text filter by company name
   templateId: z.string().uuid().optional(),
+  createdBy: z.string().optional(),
+  updatedFrom: z.string().optional(),
+  updatedTo: z.string().optional(),
   status: generatedDocumentStatusEnum.optional(),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
-  sortBy: z.enum(['title', 'status', 'createdAt', 'updatedAt', 'finalizedAt']).default('updatedAt'),
+  sortBy: z.enum([
+    'title',
+    'companyName',
+    'templateName',
+    'status',
+    'createdByName',
+    'createdAt',
+    'updatedAt',
+    'finalizedAt',
+  ]).default('updatedAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 

@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
+  ChevronLeft,
   Loader2,
   AlertCircle,
   FileText,
@@ -400,7 +401,9 @@ export default function DocumentViewPage() {
             {error || 'Document not found'}
           </h3>
           <Link href={returnHref}>
-            <Button variant="secondary">Back to Documents</Button>
+            <Button variant="secondary" leftIcon={<ChevronLeft className="w-4 h-4" />}>
+              Back to Documents
+            </Button>
           </Link>
         </div>
       </div>
@@ -414,8 +417,9 @@ export default function DocumentViewPage() {
         <div>
           <Link
             href={returnHref}
-            className="mb-2 inline-flex text-sm text-text-secondary hover:text-text-primary"
+            className="mb-2 inline-flex items-center gap-1.5 text-sm text-text-secondary transition-colors hover:text-text-primary"
           >
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             {taskContext ? 'Return to task' : 'Back to documents'}
           </Link>
           <div className="flex items-center gap-3">

@@ -14,11 +14,14 @@ describe('document navigation source', () => {
     expect(sidebar).not.toContain("{ name: 'Templates', href: '/admin/template-partials'");
   });
 
-  it('shows the shared tabs on Generated Documents', () => {
+  it('replaces the shared Generated Documents/Templates tabs with a Manage Template action', () => {
     const generatedDocuments = readSource('src/app/(dashboard)/generated-documents/page.tsx');
+    const templates = readSource('src/app/(dashboard)/template-partials/page.tsx');
 
-    expect(generatedDocuments).toContain("import { DocumentGenerationTabs } from '@/components/documents/document-generation-tabs'");
-    expect(generatedDocuments).toContain('<DocumentGenerationTabs />');
+    expect(generatedDocuments).not.toContain('DocumentGenerationTabs');
+    expect(generatedDocuments).toContain('Manage Template');
+    expect(generatedDocuments).toContain('href="/template-partials"');
+    expect(templates).not.toContain('DocumentGenerationTabs');
   });
 
   it('uses Document Vault as the processing page heading', () => {

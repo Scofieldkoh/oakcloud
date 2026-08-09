@@ -152,6 +152,7 @@ describe('task module integration service', () => {
       context.taskStageId,
       expectedOutcome,
       'user-1',
+      { protectAuthoritativeCompany: true },
     );
     expect(mocks.getStageDetail.mock.invocationCallOrder[0])
       .toBeLessThan(mocks.linkOutcome.mock.invocationCallOrder[0]);
